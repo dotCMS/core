@@ -3,7 +3,7 @@ import { BehaviorSubject, Observable, of } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
+import { filter, map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-models';
 
@@ -142,6 +142,11 @@ export class DotcmsConfigService {
         return this.configParamsSubject.pipe(
             switchMap((config) => (config ? of(config) : this.requestConfig()))
         );
+    }
+
+    /** Observes successful configuration loads without starting or retrying a request. */
+    getConfigUpdates(): Observable<ConfigParams> {
+        return this.configParamsSubject.pipe(filter((config): config is ConfigParams => !!config));
     }
 
     loadConfig(): void {

@@ -545,6 +545,7 @@ describe('DotMessageService', () => {
                 languageBundleVersion: NEXT_VERSION
             });
             expect(service.loadedBundleVersion()).toBe(NEXT_VERSION);
+            expect(service.bundleVersionMismatch()).toBeNull();
             expect(service.get('dot.common.cancel')).toBe('Updated cancel');
         });
 
@@ -581,7 +582,7 @@ describe('DotMessageService', () => {
             expect(service.bundleVersionMismatch()?.serverVersion).toBe(NEXT_VERSION);
         });
 
-        it('should clear the mismatch on a subsequent matching check without refetching', () => {
+        it('should clear the mismatch after installation and keep matching checks free of refetches', () => {
             seedCache();
             service.init({ languageBundleVersion: NEXT_VERSION });
             http.expectOne(DEFAULT_URL).flush({

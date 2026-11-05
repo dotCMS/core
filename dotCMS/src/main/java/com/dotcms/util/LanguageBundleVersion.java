@@ -2,6 +2,9 @@ package com.dotcms.util;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.util.ReleaseInfo;
+import io.vavr.Lazy;
+import io.vavr.control.Try;
+import java.util.Objects;
 import org.apache.commons.codec.digest.DigestUtils;
 
 /**
@@ -9,6 +12,8 @@ import org.apache.commons.codec.digest.DigestUtils;
  * not with CMS language-variable edits, the server's start time, locale or timezone.
  */
 public final class LanguageBundleVersion {
+
+    private static final Lazy<String> VERSION = Lazy.of(LanguageBundleVersion::fromReleaseInfo);
 
     /** Prevents instantiation of this shared build-identity utility. */
     private LanguageBundleVersion() {
@@ -20,8 +25,14 @@ public final class LanguageBundleVersion {
      * @return the lowercase hexadecimal language bundle version
      */
     public static String get() {
-        return compute(ReleaseInfo.getVersion(), ReleaseInfo.getBuildNumber(),
-                ReleaseInfo.getBuildDate().getTime());
+        return VERSION.get();
+    }
+
+    @VisibleForTesting
+    static String fromReleaseInfo() {
+        // Development classpaths can contain an empty or incomplete build.properties file.
+        final long timestamp = Try.of(() -> ReleaseInfo.getBuildDate().getTime()).getOrElse(0L);
+        return compute(ReleaseInfo.getVersion(), ReleaseInfo.getBuildNumber(), timestamp);
     }
 
     /**
@@ -34,7 +45,9 @@ public final class LanguageBundleVersion {
      */
     @VisibleForTesting
     static String compute(final String version, final String buildNumber, final long buildDateEpoch) {
-        return DigestUtils.sha256Hex(version.length() + ":" + version
-                + buildNumber.length() + ":" + buildNumber + ":" + buildDateEpoch);
+        final String releaseVersion = Objects.toString(version, "");
+        final String revision = Objects.toString(buildNumber, "");
+        return DigestUtils.sha256Hex(releaseVersion.length() + ":" + releaseVersion
+                + revision.length() + ":" + revision + ":" + buildDateEpoch);
     }
 }

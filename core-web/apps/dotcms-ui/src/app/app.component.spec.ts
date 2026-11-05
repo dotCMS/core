@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { MockInstance, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -196,6 +196,36 @@ describe('AppComponent', () => {
 
             // App should continue functioning
             expect(dotUiColorsService.setColors).toHaveBeenCalledTimes(1);
+        });
+
+        it('should restore configured colors and logo after an initial failure recovers', () => {
+            const updates = new Subject<any>();
+            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
+                throwError(() => new Error('Offline'))
+            );
+            vi.spyOn(dotCmsConfigService, 'getConfigUpdates').mockReturnValue(updates);
+            fixture.detectChanges();
+            expect(dotUiColorsService.setColors).toHaveBeenCalledWith(
+                expect.any(HTMLElement),
+                DEFAULT_COLORS
+            );
+
+            updates.next({
+                colors: { primary: '#123', secondary: '#456', background: '#789' },
+                logos: { navBar: 'restored-logo' },
+                license: null
+            });
+            expect(dotUiColorsService.setColors).toHaveBeenLastCalledWith(expect.any(HTMLElement), {
+                primary: '#123',
+                secondary: '#456',
+                background: '#789'
+            });
+            expect(dotNavLogoService.setLogo).toHaveBeenCalledWith('restored-logo');
+            expect(dotMessageService.init).not.toHaveBeenCalled();
+
+            fixture.destroy();
+            updates.next({ colors: DEFAULT_COLORS, logos: { navBar: 'after-destroy' } });
+            expect(dotNavLogoService.setLogo).not.toHaveBeenCalledWith('after-destroy');
         });
 
         it('should always set colors even when configuration fails', () => {

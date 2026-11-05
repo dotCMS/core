@@ -41,7 +41,7 @@ export class DotMessageService {
     private readonly versionMismatch = signal<LanguageBundleVersionMismatch | null>(null);
     private readonly installedVersion = signal<string | null>(null);
 
-    /** Last detected mismatch; cleared by a subsequent check that finds no version mismatch. */
+    /** Detected version mismatch; cleared after a successful install or a matching cache check. */
     readonly bundleVersionMismatch = this.versionMismatch.asReadonly();
     /** Changes only after a validated bundle is installed, from cache or a successful request. */
     readonly loadedBundleVersion = this.installedVersion.asReadonly();
@@ -142,6 +142,7 @@ export class DotMessageService {
                     this.messageMap = response.entity;
                     this.cacheMessages(lang, response.entity, response.languageBundleVersion);
                     this.installedVersion.set(response.languageBundleVersion);
+                    this.versionMismatch.set(null);
                 }),
                 map(() => void 0),
                 finalize(() => this.inFlight.delete(requestKey)),

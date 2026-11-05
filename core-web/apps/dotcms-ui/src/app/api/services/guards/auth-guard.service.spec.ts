@@ -5,7 +5,7 @@ import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
-import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, LoginService } from '@dotcms/dotcms-js';
 
 import { AuthGuardService } from './auth-guard.service';
 
@@ -15,6 +15,7 @@ describe('AuthGuardService', () => {
     let login: { isLogin$: Observable<boolean>; currentUserLanguageId: string };
     let config: { getConfig: ReturnType<typeof vi.fn> };
     let messages: { init: ReturnType<typeof vi.fn> };
+    let logger: { warn: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
     const route = {} as ActivatedRouteSnapshot;
     const state = { url: '/test' } as RouterStateSnapshot;
 
@@ -25,13 +26,15 @@ describe('AuthGuardService', () => {
             getConfig: vi.fn().mockReturnValue(of({ languageBundleVersion: 'build-hash' }))
         };
         messages = { init: vi.fn().mockReturnValue(of(void 0)) };
+        logger = { warn: vi.fn(), error: vi.fn() };
         TestBed.configureTestingModule({
             providers: [
                 AuthGuardService,
                 { provide: DotRouterService, useValue: router },
                 { provide: LoginService, useValue: login },
                 { provide: DotcmsConfigService, useValue: config },
-                { provide: DotMessageService, useValue: messages }
+                { provide: DotMessageService, useValue: messages },
+                { provide: LoggerService, useValue: logger }
             ]
         });
         guard = TestBed.inject(AuthGuardService);
@@ -83,11 +86,45 @@ describe('AuthGuardService', () => {
         });
     });
 
-    it('should propagate a failed load without activating and allow a later attempt to retry', async () => {
+    it('should log a bundle failure and allow authenticated access, then retry on a later navigation', async () => {
         const failure = new Error('Language request failed');
         messages.init.mockReturnValueOnce(throwError(() => failure));
-        await expect(firstValueFrom(guard.canActivate(route, state))).rejects.toBe(failure);
+        expect(await firstValueFrom(guard.canActivate(route, state))).toBe(true);
+        expect(logger.error).toHaveBeenCalledWith(
+            'Unable to load translations; continuing with available messages.',
+            failure
+        );
         expect(await firstValueFrom(guard.canActivate(route, state))).toBe(true);
         expect(messages.init).toHaveBeenCalledTimes(2);
+    });
+
+    it('should fetch an uncached bundle when configuration cannot be loaded', async () => {
+        const failure = new Error('Configuration request failed');
+        config.getConfig.mockReturnValueOnce(throwError(() => failure));
+        expect(await firstValueFrom(guard.canActivate(route, state))).toBe(true);
+        expect(messages.init).toHaveBeenCalledWith({
+            language: 'en_US',
+            languageBundleVersion: undefined
+        });
+        expect(logger.warn).toHaveBeenCalledWith(
+            'Unable to load configuration; fetching uncached translations.',
+            failure
+        );
+    });
+
+    it('should still allow authenticated entry if both configuration and translations fail', async () => {
+        config.getConfig.mockReturnValueOnce(throwError(() => new Error('Configuration failed')));
+        messages.init.mockReturnValueOnce(throwError(() => new Error('Bundle failed')));
+        expect(await firstValueFrom(guard.canActivate(route, state))).toBe(true);
+        expect(logger.warn).toHaveBeenCalledOnce();
+        expect(logger.error).toHaveBeenCalledOnce();
+    });
+
+    it('should not downgrade authentication failures into successful activation', async () => {
+        const failure = new Error('Authentication failed');
+        login.isLogin$ = throwError(() => failure);
+        await expect(firstValueFrom(guard.canActivate(route, state))).rejects.toBe(failure);
+        expect(config.getConfig).not.toHaveBeenCalled();
+        expect(messages.init).not.toHaveBeenCalled();
     });
 });

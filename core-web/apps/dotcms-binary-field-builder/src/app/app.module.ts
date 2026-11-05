@@ -1,5 +1,5 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import {
@@ -14,11 +14,15 @@ import { createCustomElement } from '@angular/elements';
 import { BrowserModule } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
+import { catchError, switchMap, take } from 'rxjs/operators';
+
 import {
+    DotLocalstorageService,
     DotMessageService,
     DotUploadService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
+import { DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DotBinaryFieldCeBridgeComponent } from '@dotcms/edit-content';
 import { provideDotCMSTheme } from '@dotcms/ui';
 
@@ -43,13 +47,48 @@ const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [
         provideHttpClient(),
         provideAnimations(),
         DotMessageService,
+        LoggerService,
+        StringUtils,
         DotUploadService,
         DotWorkflowActionsFireService,
         provideDotCMSTheme(),
         provideAppInitializer(() => {
-            const dotMessageService = inject(DotMessageService);
+            const messageService = inject(DotMessageService);
+            const configService = inject(DotcmsConfigService);
+            const storage = inject(DotLocalstorageService);
+            const logger = inject(LoggerService);
+            let language = 'default';
+            try {
+                const cachedLanguage = storage.getItem<string>('dotMessagesKeys-lang');
+                if (
+                    typeof cachedLanguage === 'string' &&
+                    /^[a-zA-Z][a-zA-Z0-9_-]*$/.test(cachedLanguage)
+                ) {
+                    language = cachedLanguage;
+                }
+            } catch (error) {
+                logger.warn('Unable to read cached translation locale; using default.', error);
+            }
 
-            return firstValueFrom(dotMessageService.init());
+            return firstValueFrom(
+                configService.getConfig().pipe(
+                    take(1),
+                    catchError((error) => {
+                        logger.warn(
+                            'Unable to load configuration; fetching uncached translations.',
+                            error
+                        );
+
+                        return of(null);
+                    }),
+                    switchMap((config) =>
+                        messageService.init({
+                            language,
+                            languageBundleVersion: config?.languageBundleVersion
+                        })
+                    )
+                )
+            );
         })
     ]
 })

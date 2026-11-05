@@ -40,6 +40,28 @@ public class LanguageBundleVersionTest {
                 LanguageBundleVersion.compute("a", "b:c", 1L));
     }
 
+    @Test
+    public void missingVersionAndRevisionAreHandledDeterministically() {
+        assertEquals(LanguageBundleVersion.compute("", "", 0L),
+                LanguageBundleVersion.compute(null, null, 0L));
+        assertEquals(LanguageBundleVersion.compute("26.01", "", 1L),
+                LanguageBundleVersion.compute("26.01", null, 1L));
+    }
+
+    @Test
+    public void incompleteDevelopmentBuildMetadataDoesNotFail() {
+        try (MockedStatic<ReleaseInfo> release = mockStatic(ReleaseInfo.class)) {
+            release.when(ReleaseInfo::getBuildDate).thenThrow(new NumberFormatException("Missing timestamp"));
+            assertEquals(LanguageBundleVersion.compute(null, null, 0L), LanguageBundleVersion.fromReleaseInfo());
+        }
+    }
+
+    @Test
+    public void installedBuildVersionIsReused() {
+        assertEquals(LanguageBundleVersion.get(), LanguageBundleVersion.get());
+        assertTrue(LanguageBundleVersion.get().matches("[0-9a-f]{64}"));
+    }
+
     /** The release timestamp is used directly, never its timezone-dependent display string. */
     @Test
     public void currentVersionUsesReleaseBuildEpoch() {
@@ -49,8 +71,7 @@ public class LanguageBundleVersionTest {
             release.when(ReleaseInfo::getBuildDate).thenReturn(new Date(1700000000000L));
 
             final String expected = LanguageBundleVersion.compute("26.01", "abc123", 1700000000000L);
-            assertEquals(expected, LanguageBundleVersion.get());
-            assertEquals(expected, LanguageBundleVersion.get());
+            assertEquals(expected, LanguageBundleVersion.fromReleaseInfo());
             release.verify(ReleaseInfo::getBuildDateString, never());
         }
     }

@@ -1,9 +1,10 @@
-import { of } from 'rxjs';
+import { concat, of } from 'rxjs';
 
-import { Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterOutlet } from '@angular/router';
 
-import { catchError, map, take } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 
 import {
     DEFAULT_COLORS,
@@ -11,7 +12,7 @@ import {
     DotNavLogoService,
     DotUiColorsService
 } from '@dotcms/data-access';
-import { ConfigParams, DotcmsConfigService, DotUiColors } from '@dotcms/dotcms-js';
+import { DotcmsConfigService } from '@dotcms/dotcms-js';
 import { DotLicense } from '@dotcms/dotcms-models';
 
 import { DotAlertConfirmComponent } from './view/components/_common/dot-alert-confirm/dot-alert-confirm';
@@ -26,60 +27,40 @@ import { DotAlertConfirmComponent } from './view/components/_common/dot-alert-co
 export class AppComponent implements OnInit {
     private dotCmsConfigService = inject(DotcmsConfigService);
     private dotUiColors = inject(DotUiColorsService);
-
     private dotNavLogoService = inject(DotNavLogoService);
     private dotLicense = inject(DotLicenseService);
+    private destroyRef = inject(DestroyRef);
 
     ngOnInit() {
         this.dotCmsConfigService
             .getConfig()
             .pipe(
-                take(1),
-                map((config: ConfigParams) => {
-                    return {
-                        colors: config.colors,
-                        navBar: config.logos?.navBar,
-                        license: config.license
-                    };
-                }),
-                // Handle errors gracefully - use default colors if config fails to load
-                // This ensures the app works even if user is not authenticated or endpoint fails
                 catchError((error) => {
                     console.warn('Failed to load configuration, using defaults:', error);
-                    // Return default values that allow the app to continue functioning
-                    return of({
-                        colors: DEFAULT_COLORS,
-                        navBar: null,
-                        license: null
-                    });
-                })
+                    // Keep listening: a post-login retry can restore branding without a page refresh.
+                    return concat(of(null), this.dotCmsConfigService.getConfigUpdates());
+                }),
+                map((config) => ({
+                    colors: config?.colors ?? DEFAULT_COLORS,
+                    navBar: config?.logos?.navBar,
+                    license: config?.license
+                })),
+                takeUntilDestroyed(this.destroyRef)
             )
-            .subscribe(
-                ({
-                    colors,
-                    navBar,
-                    license
-                }: {
-                    colors: DotUiColors;
-                    navBar: string | null;
-                    license: DotLicense | null;
-                }) => {
-                    // AuthGuardService loads messages after authentication, before activating backend routes.
-                    if (navBar) {
-                        this.dotNavLogoService.setLogo(navBar);
-                    }
-
-                    // Always set colors (will use defaults if config failed)
-                    // This ensures PrimeNG theme is always initialized
-                    const htmlElement = document.querySelector('html') as HTMLElement;
-                    if (htmlElement) {
-                        this.dotUiColors.setColors(htmlElement, colors);
-                    }
-
-                    if (license) {
-                        this.dotLicense.setLicense(license);
-                    }
+            .subscribe(({ colors, navBar, license }) => {
+                // AuthGuardService loads messages after authentication, before activating backend routes.
+                if (navBar) {
+                    this.dotNavLogoService.setLogo(navBar);
                 }
-            );
+
+                const htmlElement = document.querySelector('html') as HTMLElement;
+                if (htmlElement) {
+                    this.dotUiColors.setColors(htmlElement, colors);
+                }
+
+                if (license) {
+                    this.dotLicense.setLicense(license as DotLicense);
+                }
+            });
     }
 }

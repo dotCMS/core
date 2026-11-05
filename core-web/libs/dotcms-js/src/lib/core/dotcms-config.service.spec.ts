@@ -61,6 +61,24 @@ describe('DotcmsConfigService', () => {
         http.verify();
     });
 
+    it('should keep passive update listeners alive across a failed load and later recovery', async () => {
+        const updates = vi.fn();
+        const error = vi.fn();
+        const subscription = service.getConfigUpdates().subscribe({ next: updates, error });
+        http.expectOne(CONFIG_URL).flush(null, { status: 500, statusText: 'Server Error' });
+        expect(updates).not.toHaveBeenCalled();
+        expect(error).not.toHaveBeenCalled();
+
+        const recovered = firstValueFrom(service.getConfig());
+        http.expectOne(CONFIG_URL).flush(configResponse(VERSION));
+        await recovered;
+        expect(updates).toHaveBeenCalledExactlyOnceWith(
+            expect.objectContaining({ languageBundleVersion: VERSION })
+        );
+        expect(error).not.toHaveBeenCalled();
+        subscription.unsubscribe();
+    });
+
     it('should propagate the initial HTTP error to getConfig subscribers', () => {
         const next = vi.fn();
         const error = vi.fn();

@@ -1,4 +1,5 @@
 import { TiptapBubbleMenuDirective } from 'ngx-tiptap';
+import { of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
 import { NgModule, inject, provideAppInitializer } from '@angular/core';
@@ -15,15 +16,18 @@ import { DynamicDialog } from 'primeng/dynamicdialog';
 import { InputText } from 'primeng/inputtext';
 import { Textarea } from 'primeng/textarea';
 
+import { catchError, switchMap, take } from 'rxjs/operators';
+
 import {
     DotContentSearchService,
     DotLanguagesService,
+    DotLocalstorageService,
     DotMessageService,
     DotPropertiesService,
     DotWorkflowActionsFireService,
     DotContentTypeService
 } from '@dotcms/data-access';
-import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
     DotAssetSearchComponent,
     DotFieldRequiredDirective,
@@ -49,10 +53,6 @@ import { AssetFormModule } from './extensions/asset-form/asset-form.module';
 import { ContentletBlockComponent } from './nodes';
 import { EditorDirective } from './shared';
 import { SharedModule } from './shared/shared.module';
-
-const initTranslations = (dotMessageService: DotMessageService) => {
-    return () => dotMessageService.init();
-};
 
 @NgModule({
     imports: [
@@ -100,8 +100,40 @@ const initTranslations = (dotMessageService: DotMessageService) => {
         DotContentTypeService,
         DotWorkflowActionsFireService,
         provideAppInitializer(() => {
-            const initializerFn = initTranslations(inject(DotMessageService));
-            return initializerFn();
+            const messageService = inject(DotMessageService);
+            const configService = inject(DotcmsConfigService);
+            const storage = inject(DotLocalstorageService);
+            const logger = inject(LoggerService);
+            let language = 'default';
+            try {
+                const cachedLanguage = storage.getItem<string>('dotMessagesKeys-lang');
+                if (
+                    typeof cachedLanguage === 'string' &&
+                    /^[a-zA-Z][a-zA-Z0-9_-]*$/.test(cachedLanguage)
+                ) {
+                    language = cachedLanguage;
+                }
+            } catch (error) {
+                logger.warn('Unable to read cached translation locale; using default.', error);
+            }
+
+            return configService.getConfig().pipe(
+                take(1),
+                catchError((error) => {
+                    logger.warn(
+                        'Unable to load configuration; fetching uncached translations.',
+                        error
+                    );
+
+                    return of(null);
+                }),
+                switchMap((config) =>
+                    messageService.init({
+                        language,
+                        languageBundleVersion: config?.languageBundleVersion
+                    })
+                )
+            );
         })
     ],
     exports: [
