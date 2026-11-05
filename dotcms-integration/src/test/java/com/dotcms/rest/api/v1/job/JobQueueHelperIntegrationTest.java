@@ -236,8 +236,12 @@ public class JobQueueHelperIntegrationTest  extends com.dotcms.Junit5WeldBaseTes
     }
 
     FormDataContentDisposition mockFormDataContentDisposition(){
+        return mockFormDataContentDisposition("test.txt");
+    }
+
+    FormDataContentDisposition mockFormDataContentDisposition(final String fileName){
         FormDataContentDisposition formDataContentDisposition = mock(FormDataContentDisposition.class);
-        when(formDataContentDisposition.getFileName()).thenReturn("test.txt");
+        when(formDataContentDisposition.getFileName()).thenReturn(fileName);
         return formDataContentDisposition;
     }
 
@@ -261,6 +265,33 @@ public class JobQueueHelperIntegrationTest  extends com.dotcms.Junit5WeldBaseTes
         jobQueueHelper.handleUploadIfPresent(jobParams,map,mockRequest());
         Assertions.assertTrue(map.containsKey("requestFingerPrint"));
         Assertions.assertTrue(map.containsKey("tempFileId"));
+    }
+
+    /**
+     * Test file upload with a refused name
+     * Given scenario: upload a file whose extension is on the block list, in either letter case
+     * Expected result: the refusal reaches the caller, naming the file, and no temp file id is
+     * recorded, so the resource answers 400 instead of creating a job with no file
+     * @throws IOException
+     */
+    @Test
+    void TestFileUploadWithListedExtensionAnyCaseIsRefused() throws IOException {
+
+        for (final String name : new String[] {"sample-1.jsp", "sample-2.JSP"}) {
+            final File tempFile = File.createTempFile("test", "test");
+            final JobParams jobParams = new JobParams();
+            jobParams.setJsonParams("{}");
+            jobParams.setParams(Map.of());
+            jobParams.setFileInputStream(new FileInputStream(tempFile));
+            jobParams.setContentDisposition(mockFormDataContentDisposition(name));
+
+            final Map<String, Object> map = new HashMap<>();
+            final IllegalArgumentException refusal = Assertions.assertThrows(
+                    IllegalArgumentException.class,
+                    () -> jobQueueHelper.handleUploadIfPresent(jobParams, map, mockRequest()));
+            Assertions.assertTrue(refusal.getMessage().contains(name), name);
+            assertFalse(map.containsKey("tempFileId"), name);
+        }
     }
 
 }

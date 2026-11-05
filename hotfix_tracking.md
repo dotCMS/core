@@ -116,3 +116,4 @@ Release-25.07.10 LTS
 110. https://github.com/dotCMS/private-issues/issues/1025 : PUT /api/v1/users stores a new password unhashed and skips the password policy #38288 #1025
 111. https://github.com/dotCMS/private-issues/issues/984 : Page content-tree and personas REST endpoints have no page-READ check (any authenticated session gets a page's structure #38248 #984
 112. https://github.com/dotCMS/private-issues/issues/887 : REST POST /v1/apps/import: Java deserialisation of an uploaded file with no class filter (7.2 High, administrator only) #38271 #887
+113. https://github.com/dotCMS/private-issues/issues/758 : [GLM AI Scanner] File extension case bypass: 'shell.JSP' passes blocklist on JSON/WebDAV paths → stored webshell publicl #38247 #758

@@ -126,6 +126,7 @@ import com.dotmarketing.portlets.structure.action.EditStructureActionSaveTest;
     com.liferay.portal.struts.PortletRequestProcessorAccessTest.class,
     com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPIImplTest.class,
     com.dotcms.cms.login.LoginTokenInvalidationTest.class,
+    com.dotmarketing.webdav.DotWebdavHelperTest.class,
     EditStructureActionSaveTest.class
 })
 public class MainSuite2a {
