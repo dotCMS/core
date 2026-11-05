@@ -241,7 +241,10 @@ describe('DotToolbarUserStore', () => {
         it('should not rebuild for a user who has logged out before recovery', () => {
             store.init();
             const items = state().items;
-            vi.spyOn(loginService, 'auth', 'get').mockReturnValue(null);
+            // The service can be unauthenticated at runtime despite its non-null getter type.
+            vi.spyOn(loginService, 'auth', 'get').mockReturnValue(
+                null as unknown as LoginService['auth']
+            );
             installBundle();
             TestBed.tick();
             expect(state().items).toBe(items);
@@ -252,7 +255,7 @@ describe('DotToolbarUserStore', () => {
             const auth = {
                 ...mockAuth,
                 isLoginAs: true,
-                loginAsUser: { ...mockAuth.loginAsUser, name: 'Current impersonated user' }
+                loginAsUser: { ...mockAuth.user, name: 'Current impersonated user' }
             };
             vi.spyOn(loginService, 'auth', 'get').mockReturnValue(auth);
             installBundle();
