@@ -44,8 +44,11 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 	 *
 	 * <p>The task is named by the {@code inode} request parameter, which any caller can set, so
 	 * the commands that change the task are allowed only for a {@link User} who may read the
-	 * contentlet that task belongs to. A refused caller is rolled back and sent to the error page
-	 * without the task being touched.</p>
+	 * contentlet that task belongs to — or edit it, for removing an attachment. A refused caller
+	 * is rolled back and sent to the error page without the task being touched.</p>
+	 *
+	 * <p>Only the commands that write to the task are checked here. {@code view} renders the
+	 * screen and is outside the scope of this check.</p>
 	 *
 	 * @param mapping the Struts mapping for this action
 	 * @param form    the {@link WorkflowTaskForm} bound to the request
@@ -92,7 +95,7 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 
 		final WorkflowTask requestedTask =
 				(WorkflowTask) req.getAttribute(WebKeys.WORKFLOW_TASK_EDIT);
-		if (isTaskWriteCommand(cmd) && !WorkflowTaskAccess.canAccess(requestedTask, user)) {
+		if (isTaskWriteCommand(cmd) && !isAllowedOnTask(cmd, requestedTask, user)) {
 			_handleException(new DotSecurityException(String.format(
 					"User '%s' is not allowed to run '%s' on this workflow task",
 					null != user ? user.getUserId() : "<none>", cmd)), req, false);
@@ -247,6 +250,26 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 		return com.dotmarketing.util.Constants.ADD_COMMENT.equals(cmd)
 				|| com.dotmarketing.util.Constants.ADD_FILE.equals(cmd)
 				|| com.dotmarketing.util.Constants.REMOVE_FILE.equals(cmd);
+	}
+
+	/**
+	 * Tells whether the caller may run the given write command on the given task.
+	 *
+	 * <p>Commenting and attaching ask for READ on the task's contentlet, which is what the screen
+	 * offers today and what the REST comments endpoint requires. Removing an attachment asks for
+	 * EDIT instead: it destroys work someone else put there, and no endpoint sets a lower bar for
+	 * it.</p>
+	 *
+	 * @param cmd  the command being run, already known to be a write command
+	 * @param task the {@link WorkflowTask} named by the request, possibly {@code null}
+	 * @param user the {@link User} making the request, possibly {@code null}
+	 * @return {@code true} when the command may go ahead
+	 */
+	private static boolean isAllowedOnTask(final String cmd, final WorkflowTask task,
+			final User user) {
+		return com.dotmarketing.util.Constants.REMOVE_FILE.equals(cmd)
+				? WorkflowTaskAccess.canEdit(task, user)
+				: WorkflowTaskAccess.canAccess(task, user);
 	}
 
 	private void _retrieveWorkflowTask(ActionRequest req, String webkey) throws Exception {

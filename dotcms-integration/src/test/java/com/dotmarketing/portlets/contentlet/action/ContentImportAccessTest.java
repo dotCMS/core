@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
@@ -14,6 +15,8 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
@@ -26,10 +29,12 @@ import org.junit.Test;
  * Integration tests for {@link ContentImportAccess}: a CSV import may be started only by a user who
  * is allowed to create content of the chosen Content Type.
  *
- * <p>Two ways in, because the import has two ways to succeed. A row that creates content needs
- * WRITE on the Content Type; a row that updates existing content needs add-children on the site,
- * which is what {@code ImportUtil.setSiteAndFolder} enforces per row. A user holding either one
- * can import something today and must keep being able to.</p>
+ * <p>Three ways in, because the import has three ways to succeed. A row that creates content needs
+ * WRITE on the Content Type. A row that updates existing content is authorized against the
+ * contentlet, which inherits from its folder and then its site, and
+ * {@code ImportUtil.setSiteAndFolder} separately requires add-children, asking the folder before
+ * the site. So add-children on the site is one way and add-children on a folder of it is another.
+ * A user holding any of the three can import something today and must keep being able to.</p>
  *
  * <p>Deliberately not keyed to a portlet id: custom content portlets exist, so that would lock
  * out legitimate users.</p>
@@ -51,6 +56,7 @@ public class ContentImportAccessTest {
     private static ContentType contentType;
     private static User importer;
     private static User siteOnlyUser;
+    private static User folderOnlyUser;
     private static User userWithoutAccess;
     private static User adminUser;
     private static final List<User> createdUsers = new ArrayList<>();
@@ -74,9 +80,26 @@ public class ContentImportAccessTest {
 
         importer = newBackendUser();
         siteOnlyUser = newBackendUser();
+        folderOnlyUser = newBackendUser();
         userWithoutAccess = newBackendUser();
         grantWrite(contentType, APILocator.getRoleAPI().getUserRole(importer).getId());
-        grantAddChildren(site, APILocator.getRoleAPI().getUserRole(siteOnlyUser).getId());
+        // READ as well as add-children: that is what a site-level grant looks like in the
+        // permissions UI, and without READ the user cannot see the site to import into it.
+        permissionAPI.save(new Permission(site.getPermissionId(),
+                        APILocator.getRoleAPI().getUserRole(siteOnlyUser).getId(),
+                        PermissionAPI.PERMISSION_READ
+                                | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, true),
+                site, APILocator.systemUser(), false);
+
+        // A section delegated the ordinary way: the user can see the site and add content inside
+        // one folder of it, and holds nothing on the site itself or on the Content Type.
+        final Folder delegatedFolder = new FolderDataGen().site(site).nextPersisted();
+        permissionAPI.save(new Permission(site.getPermissionId(),
+                        APILocator.getRoleAPI().getUserRole(folderOnlyUser).getId(),
+                        PermissionAPI.PERMISSION_READ, true),
+                site, APILocator.systemUser(), false);
+        grantAddChildren(delegatedFolder,
+                APILocator.getRoleAPI().getUserRole(folderOnlyUser).getId());
 
         assertTrue("The fixture needs a user who can create content of this type",
                 permissionAPI.doesUserHavePermission(contentType, PermissionAPI.PERMISSION_WRITE,
@@ -91,6 +114,16 @@ public class ContentImportAccessTest {
         assertTrue("The fixture needs a user who can add content to the site",
                 permissionAPI.doesUserHavePermission(site,
                         PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, siteOnlyUser, false));
+        assertFalse("The folder-only user must hold nothing on the type",
+                permissionAPI.doesUserHavePermission(contentType, PermissionAPI.PERMISSION_WRITE,
+                        folderOnlyUser, false));
+        assertFalse("The folder-only user must hold nothing on the site itself, or the test "
+                        + "proves nothing",
+                permissionAPI.doesUserHavePermission(site,
+                        PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, folderOnlyUser, false));
+        assertTrue("The folder-only user needs add-children on the delegated folder",
+                permissionAPI.doesUserHavePermission(delegatedFolder,
+                        PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, folderOnlyUser, false));
     }
 
     /**
@@ -153,13 +186,39 @@ public class ContentImportAccessTest {
     }
 
     /**
-     * Given a back-end user whose only permission is add-children on the site,
-     * When an import is checked with no site resolved,
-     * Then the user is refused: there is nothing left to authorize them against.
+     * Given a back-end user whose only permission is add-children on one folder of the site,
+     * When an import is checked,
+     * Then the user is allowed.
+     *
+     * <p>This is the delegation pattern the gate used to miss. A row that updates existing content
+     * is authorized against the contentlet, which inherits from its folder, and
+     * {@code ImportUtil.setSiteAndFolder} asks the folder before it asks the site. A user holding
+     * only a folder imports updates today and must keep being able to.</p>
      */
     @Test
-    public void canImportInto_siteOnlyUser_withoutSite_isRefused() {
-        assertFalse(ContentImportAccess.canImportInto(contentType, null, siteOnlyUser));
+    public void canImportInto_userWithAddChildrenOnFolderOnly_isAllowed() {
+        assertTrue(ContentImportAccess.canImportInto(contentType, site, folderOnlyUser));
+    }
+
+    /**
+     * Given a back-end user whose only permission is add-children on the site,
+     * When an import is checked with no site selected, as happens on "All Sites",
+     * Then the user is still allowed: the question becomes whether they may add content to any
+     * site they can reach, and they may.
+     */
+    @Test
+    public void canImportInto_siteOnlyUser_withoutSelectedSite_isAllowed() {
+        assertTrue(ContentImportAccess.canImportInto(contentType, null, siteOnlyUser));
+    }
+
+    /**
+     * Given a back-end user with no permission anywhere,
+     * When an import is checked with no site selected,
+     * Then the user is refused: there is nothing to authorize them against.
+     */
+    @Test
+    public void canImportInto_userWithNeitherPermission_withoutSelectedSite_isRefused() {
+        assertFalse(ContentImportAccess.canImportInto(contentType, null, userWithoutAccess));
     }
 
     /**
@@ -173,14 +232,14 @@ public class ContentImportAccessTest {
     }
 
     /**
-     * Given a null user, or neither a Content Type nor a site,
+     * Given a null user, or a user with nothing and neither a Content Type nor a site,
      * When an import is checked,
      * Then it is refused rather than throwing.
      */
     @Test
     public void canImportInto_nullArguments_areRefused() {
         assertFalse(ContentImportAccess.canImportInto(contentType, site, null));
-        assertFalse(ContentImportAccess.canImportInto(null, null, importer));
+        assertFalse(ContentImportAccess.canImportInto(null, null, userWithoutAccess));
     }
 
     /**
@@ -195,15 +254,16 @@ public class ContentImportAccessTest {
     }
 
     /**
-     * Grants add-children on the given site to the given role.
+     * Grants add-children on the given site or folder to the given role.
      *
-     * @param host   the {@link Host} to grant on
+     * @param target the {@link Permissionable} to grant on
      * @param roleId the id of the role receiving the grant
      */
-    private static void grantAddChildren(final Host host, final String roleId) throws Exception {
-        permissionAPI.save(new Permission(host.getPermissionId(), roleId,
-                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, true), host, APILocator.systemUser(),
-                false);
+    private static void grantAddChildren(final Permissionable target, final String roleId)
+            throws Exception {
+        permissionAPI.save(new Permission(target.getPermissionId(), roleId,
+                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, true), target,
+                APILocator.systemUser(), false);
     }
 
     /**

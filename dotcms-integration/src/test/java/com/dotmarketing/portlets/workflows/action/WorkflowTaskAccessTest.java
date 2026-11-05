@@ -30,10 +30,11 @@ import org.junit.Test;
  * Integration tests for {@link WorkflowTaskAccess}: a workflow task may be written to only by a
  * user who can read the contentlet that task belongs to.
  *
- * <p>The bar is READ, not EDIT, so that it matches what
+ * <p>Commenting and attaching ask for READ, so that they match what
  * {@code POST /api/v1/workflow/{contentletId}/comments} already requires, and so that a user who
  * can only read a contentlet keeps the ability to comment on its task, which is what the legacy
- * screen offers them today.</p>
+ * screen offers them today. Removing an attachment asks for EDIT instead — it destroys another
+ * user's work and there is no REST endpoint that sets a lower bar for it.</p>
  *
  * <p><b>What these tests do not cover.</b> They exercise the decision, not the wiring: nothing
  * here drives {@link EditWorkflowTaskAction#processAction}, so deleting the guard from that method
@@ -50,6 +51,7 @@ public class WorkflowTaskAccessTest {
     private static Contentlet content;
     private static Contentlet publishedContent;
     private static User reader;
+    private static User editor;
     private static User userWithoutAccess;
     private static User adminUser;
     private static final List<User> createdUsers = new ArrayList<>();
@@ -73,8 +75,13 @@ public class WorkflowTaskAccessTest {
         publishedContent = ContentletDataGen.publish(newContent(contentType, defaultLanguage));
 
         reader = newBackendUser();
+        editor = newBackendUser();
         userWithoutAccess = newBackendUser();
         grantRead(content, APILocator.getRoleAPI().getUserRole(reader).getId());
+        permissionAPI.save(new Permission(content.getPermissionId(),
+                        APILocator.getRoleAPI().getUserRole(editor).getId(),
+                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true),
+                content, APILocator.systemUser(), false);
         grantRead(publishedContent, APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
 
         assertNotNull("Persisting a contentlet is expected to create its workflow task",
@@ -88,6 +95,9 @@ public class WorkflowTaskAccessTest {
         assertFalse("The fixture needs a reader who cannot edit the content",
                 permissionAPI.doesUserHavePermission(content, PermissionAPI.PERMISSION_EDIT,
                         reader, false));
+        assertTrue("The fixture needs a user who can edit the content",
+                permissionAPI.doesUserHavePermission(content, PermissionAPI.PERMISSION_EDIT,
+                        editor, false));
     }
 
     /**
@@ -154,6 +164,45 @@ public class WorkflowTaskAccessTest {
         final WorkflowTask task = workflowAPI.findTaskByContentlet(publishedContent);
 
         assertFalse(WorkflowTaskAccess.canAccess(task, userWithoutAccess));
+    }
+
+    /**
+     * Given a back-end user granted READ on the contentlet but not EDIT,
+     * When the task is checked for the commands that destroy something,
+     * Then the user is refused: reading is enough to comment, not to remove another user's
+     * attachment.
+     */
+    @Test
+    public void canEdit_userWithReadOnly_isRefused() throws Exception {
+        final WorkflowTask task = workflowAPI.findTaskByContentlet(content);
+
+        assertTrue("The reader must still pass the READ bar", WorkflowTaskAccess.canAccess(task,
+                reader));
+        assertFalse(WorkflowTaskAccess.canEdit(task, reader));
+    }
+
+    /**
+     * Given a back-end user granted EDIT on the contentlet,
+     * When the task is checked for the commands that destroy something,
+     * Then the user is allowed.
+     */
+    @Test
+    public void canEdit_userWithEdit_isAllowed() throws Exception {
+        final WorkflowTask task = workflowAPI.findTaskByContentlet(content);
+
+        assertTrue(WorkflowTaskAccess.canEdit(task, editor));
+    }
+
+    /**
+     * Given a back-end user with no permission on the contentlet,
+     * When the task is checked for the commands that destroy something,
+     * Then the user is refused without the EDIT lookup ever being reached.
+     */
+    @Test
+    public void canEdit_userWithoutRead_isRefused() throws Exception {
+        final WorkflowTask task = workflowAPI.findTaskByContentlet(content);
+
+        assertFalse(WorkflowTaskAccess.canEdit(task, userWithoutAccess));
     }
 
     /**

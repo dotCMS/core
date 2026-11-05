@@ -171,6 +171,25 @@ public class EditWorkflowTaskActionTest {
 
     /**
      * Method to test: {@link EditWorkflowTaskAction#processAction}
+     * Given Scenario: A back-end user who holds READ on the contentlet but not EDIT posts
+     *   {@code cmd=remove_file}
+     * Expected Result: The request is forwarded to the error page. Reading is enough to comment
+     *   on a task, not to delete an attachment someone else put on it
+     */
+    @Test
+    public void processAction_removeFile_userWithReadOnly_isRefused() throws Exception {
+        final WorkflowTask task = workflowAPI.findTaskByContentlet(content);
+        final ActionRequestImpl request = taskRequest(reader,
+                com.dotmarketing.util.Constants.REMOVE_FILE, task.getId(), null);
+
+        new EditWorkflowTaskAction().processAction(null, null, null, request,
+                mock(ActionResponseImpl.class));
+
+        assertEquals(ERROR_FORWARD, request.getAttribute(WebKeys.PORTLET_STRUTS_FORWARD));
+    }
+
+    /**
+     * Method to test: {@link EditWorkflowTaskAction#processAction}
      * Given Scenario: A back-end user who holds READ on the contentlet, and nothing more, posts
      *   {@code cmd=add_comment}
      * Expected Result: The comment is stored and the screen comes back normally — the guard asks

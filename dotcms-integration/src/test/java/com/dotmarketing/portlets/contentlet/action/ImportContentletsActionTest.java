@@ -58,7 +58,7 @@ import org.junit.Test;
  */
 public class ImportContentletsActionTest {
 
-    private static final String MARKUP_IN_NAME = "<script>alert('x')</script>";
+    private static final String MARKUP_IN_NAME = "<b>Bold</b> & \"quoted\"";
 
     private static PermissionAPI permissionAPI;
     private static Host site;
@@ -164,9 +164,8 @@ public class ImportContentletsActionTest {
     /**
      * Method to test: {@link ImportContentletsAction#processAction}
      * Given Scenario: The refused Content Type's name carries markup
-     * Expected Result: The sentence left for the screen carries the name encoded, not as markup.
-     *   The screen writes this sentence into a JavaScript string literal and then assigns it to
-     *   innerHTML, so an unencoded name would run
+     * Expected Result: The sentence left for the screen carries the name HTML-encoded. The screen
+     *   renders this sentence as markup, so the name has to arrive already encoded
      */
     @Test
     public void processAction_publish_refusalMessage_encodesTheContentTypeName() throws Exception {
@@ -178,9 +177,9 @@ public class ImportContentletsActionTest {
         final Object message = SessionMessages.get(request, ImportContentletsAction.ERROR);
         assertNotNull("The refusal must leave a message on the screen", message);
         assertFalse("The Content Type's name must not reach the screen as markup",
-                message.toString().contains("<script>"));
+                message.toString().contains("<b>"));
         assertTrue("The name is expected HTML-encoded instead",
-                message.toString().contains("&lt;script&gt;"));
+                message.toString().contains("&lt;b&gt;"));
     }
 
     /**

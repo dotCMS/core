@@ -115,10 +115,10 @@ public class ImportContentletsAction extends DotPortletAction {
 				UploadPortletRequest uploadReq = PortalUtil.getUploadPortletRequest(req);
 
 				
-				// The upload is only copied into the shared asset store once the request is known
-				// to be one we are going to act on, so a rejected request leaves nothing there.
-				// The portal has already parsed the multipart body into this node's own
-				// java.io.tmpdir before the action runs; that copy is not ours to prevent.
+				// The upload is only copied to the path the import reads from once the request is
+				// known to be one we are going to act on. Earlier layers have already spilled the
+				// body to disk by now - see _copyToAssetTempPath - so this is about not adding a
+				// copy that outlives the request, not about a rejected request touching no disk.
 				File file = uploadReq.getFile("file");
 
 				final ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
@@ -482,9 +482,11 @@ public class ImportContentletsAction extends DotPortletAction {
 			return true;
 		}
 		if (null == contentType) {
+			// _getUser returns null when the user cannot be read at all, which is itself a
+			// refusal, so the id has to be taken carefully here.
 			SecurityLogger.logInfo(ImportContentletsAction.class, String.format(
 					"Refusing an import for user '%s': Content Type '%s' could not be read",
-					user.getUserId(), contentTypeInode));
+					null != user ? user.getUserId() : "<none>", contentTypeInode));
 		}
 		SessionMessages.add(req, ERROR, _importAccessMessage(contentType, user));
 		return false;
@@ -566,11 +568,10 @@ public class ImportContentletsAction extends DotPortletAction {
 	 * returns it unchanged when there is no matching key, so an already-translated sentence
 	 * reaches the screen as it is.</p>
 	 *
-	 * <p>That screen is an HTML sink: {@code messages_inc.jsp} writes the sentence into a
-	 * JavaScript string literal and {@code showDotCMSSystemMessage} assigns it to
-	 * {@code innerHTML}, so the type's name is HTML-encoded before it goes in. When the type
-	 * could not be read there is no name to give and the generic sentence is used; the inode that
-	 * was asked for comes straight from the request and is never echoed back.</p>
+	 * <p>The screen renders the sentence as markup, so the type's name is HTML-encoded before it
+	 * goes in. When the type could not be read there is no name to give and the generic sentence
+	 * is used; the inode that was asked for comes straight from the request and is never put into
+	 * the message, only into the log.</p>
 	 *
 	 * @param contentType the {@link ContentType} the import was for, or {@code null} when it
 	 *                    could not be read
@@ -593,26 +594,29 @@ public class ImportContentletsAction extends DotPortletAction {
 	 * Copies the uploaded file into the shared asset temp path and returns the copy, which is what
 	 * the rest of the import reads from.
 	 *
-	 * <p>Called only once the request has passed every check, so a request that is going to be
-	 * rejected never writes to shared storage. The portal has already parsed the multipart body
-	 * into the node's own {@code java.io.tmpdir} by the time this action runs, so that is the
-	 * claim: nothing of a rejected request reaches the shared store.</p>
+	 * <p>Called only once the request has passed every check, so this copy — the long-lived one,
+	 * the one the publish step reads back out of the session — is never made for a request that is
+	 * going to be rejected. That is the whole claim, and it is worth being precise about what it
+	 * is not: {@code MultiPartSecurityRequestWrapper} has already written the raw request body
+	 * into this same shared path when the body is larger than {@code MULTI_PART_CACHE_IF_LARGER}
+	 * or carries no {@code Content-Length}, before any action runs, and the portal has parsed the
+	 * body into the node's own {@code java.io.tmpdir} besides. Neither is ours to prevent here;
+	 * both are swept by {@code BinaryCleanupJob}.</p>
 	 *
 	 * <p>The name is generated rather than taken from the upload. The upload parser names files
 	 * {@code upload_<counter>.<ext>} from a per-JVM counter, and the asset temp path is shared
 	 * between nodes, so two nodes can arrive at the same name; copying over it would replace one
-	 * user's pending CSV with another's between preview and publish. The sanitized original name
-	 * is kept as the suffix so the file is still recognizable on disk and keeps its extension.</p>
+	 * user's pending CSV with another's between preview and publish. The sanitized upload name is
+	 * kept as the suffix so the file can still be tied back to a request on disk.</p>
 	 *
 	 * @param uploaded the file as the upload request parsed it
 	 * @return the copy inside the asset temp path
 	 * @throws IOException if the file cannot be copied
 	 */
 	private File _copyToAssetTempPath(final File uploaded) throws IOException {
-		final String sanitizedName = FileUtil.sanitizeFileName(uploaded.getName());
-		final String suffix = UtilMethods.isSet(sanitizedName) ? "-" + sanitizedName : ".csv";
 		final java.nio.file.Path destination = Files.createTempFile(
-				Paths.get(ConfigUtils.getAssetTempPath()), "import-", suffix);
+				Paths.get(ConfigUtils.getAssetTempPath()), "import-",
+				"-" + FileUtil.sanitizeFileName(uploaded.getName()));
 		Files.copy(uploaded.toPath(), destination,
 				java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 		return destination.toFile();
