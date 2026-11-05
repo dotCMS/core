@@ -162,6 +162,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  handlebars: 4.7.10
+
 importers:
 
   .:
@@ -352,8 +355,8 @@ packages:
   getpass@0.1.7:
     resolution: {integrity: sha512-0fzj9JxOLfJ+XGLhR8ze3unN0KZCgZwiSSDz168VERjK8Wl8kVSdcu2kspd4s4wtAa1y/qrVRiAA0WclVsu0ng==, tarball: https://registry.npmjs.org/getpass/-/getpass-0.1.7.tgz}
 
-  handlebars@4.7.8:
-    resolution: {integrity: sha512-vafaFqs8MZkRrSX7sFVUdo3ap/eNiLnb4IakshzvP56X5Nr1iGKAIqdX6tMlm6HcNRIkr6AxO5jFEoJzzpT8aQ==, tarball: https://registry.npmjs.org/handlebars/-/handlebars-4.7.8.tgz}
+  handlebars@4.7.10:
+    resolution: {integrity: sha512-P5VJMVM7qgBn6vjXMw8WG9uVI+ncf2pi72j4de4yz5ZULLj2RGqLYaKOYGsgyrViQ0tePOVlN1tDCCXXtFqXKg==, tarball: https://registry.npmjs.org/handlebars/-/handlebars-4.7.10.tgz}
     engines: {node: '>=0.4.7'}
     hasBin: true
 
@@ -815,7 +818,7 @@ snapshots:
     dependencies:
       assert-plus: 1.0.0
 
-  handlebars@4.7.8:
+  handlebars@4.7.10:
     dependencies:
       minimist: 1.2.8
       neo-async: 2.6.2
@@ -995,7 +998,7 @@ snapshots:
       '@postman/tough-cookie': 4.1.3-postman.1
       async: 3.2.5
       aws4: 1.12.0
-      handlebars: 4.7.8
+      handlebars: 4.7.10
       httpntlm: 1.8.13
       jose: 4.14.4
       js-sha512: 0.9.0
