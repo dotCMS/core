@@ -6,7 +6,6 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -14,15 +13,12 @@ import javax.servlet.http.HttpServletRequest;
 import com.liferay.portal.model.User;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * The SQL ViewTool ({@code $sql}) allows any dotCMS user with proper permissions to run SQL statements from frontend
@@ -41,13 +37,8 @@ import java.util.regex.Pattern;
  */
 public class SQLResultsViewTool implements ViewTool {
 
-    private static final UserAPI userAPI = APILocator.getUserAPI();
-    private static final RoleAPI roleAPI = APILocator.getRoleAPI();
-    Context ctx;
     ArrayList<HashMap<String, String>> errorResults;
-    private InternalContextAdapterImpl ica;
 
-    private static final boolean RESPECT_FRONT_END_ROLES = Boolean.TRUE;
     private static final String HAS_DOT_CONNECT_SQL_ERROR = "hasDotConnectSQLError";
     private static final String DOT_CONNECT_SQL_ERROR = "dotConnectSQLError";
     private static final String DEFAULT_DATASOURCE = "default";
@@ -66,7 +57,6 @@ public class SQLResultsViewTool implements ViewTool {
      */
     public void init(final Object obj) {
         final ViewContext context = (ViewContext) obj;
-        this.ctx = context.getVelocityContext();
         this.request = context.getRequest();
         this.errorResults = new ArrayList<>();
     }

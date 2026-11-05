@@ -12,7 +12,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
@@ -25,7 +24,6 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -44,8 +42,6 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	private static final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 	private static final UserAPI userAPI = APILocator.getUserAPI();
 	private BrowserAPI browser = APILocator.getBrowserAPI();
-    Context ctx;
-	private InternalContextAdapterImpl ica;
 
 	/** The request the tool was initialised with; it carries the author of the rendered code. */
 	private HttpServletRequest request;
@@ -53,7 +49,6 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	public void init(Object obj) {
 
                 ViewContext context = (ViewContext) obj;
-		ctx = context.getVelocityContext();
 		this.request = context.getRequest();
 
 	}

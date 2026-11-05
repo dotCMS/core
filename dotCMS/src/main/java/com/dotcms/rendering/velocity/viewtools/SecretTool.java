@@ -1,7 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
-import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppConfig;
 import com.dotmarketing.beans.Host;
@@ -12,9 +11,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
-import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -28,7 +25,6 @@ import java.util.Optional;
  */
 public class SecretTool implements ViewTool {
 
-	private Context context;
 	private HttpServletRequest request;
 
 	@Override
@@ -37,11 +33,9 @@ public class SecretTool implements ViewTool {
 		if (null != initData && initData instanceof ViewContext) {
 			final ViewContext context = (ViewContext) initData;
 			this.request = context.getRequest();
-			this.context = context.getVelocityContext();
 		} else {
 
 			this.request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-			this.context = VelocityUtil.getInstance().getContext(request, HttpServletResponseThreadLocal.INSTANCE.getResponse());
 		}
 	}
 

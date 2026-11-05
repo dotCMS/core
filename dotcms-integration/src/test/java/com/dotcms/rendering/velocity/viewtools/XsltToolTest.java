@@ -264,12 +264,17 @@ public class XsltToolTest extends IntegrationTestBase {
     /**
      * Borrowing the inode of content that a Scripting Developer saved does not buy the role.
      *
-     * <p>This is the forgery the gate cannot see today. {@code #parse} lets a template author
-     * push any string as the current template name, so pointing it at content somebody with the
-     * role once saved makes {@code canUserEvaluate()} check that other user and admit the
-     * caller. What decides must be the author the renderer reports in
+     * <p>This is the forgery the gate could not see. {@code #parse} lets a template author push
+     * any string as the current template name, so pointing it at content somebody with the role
+     * once saved made {@code canUserEvaluate()} check that other user and admit the caller. What
+     * decides is the author the renderer reports in
      * {@link RestrictedViewToolAccess#RENDERING_AUTHOR_ID}: a template reaches {@code $request}
      * and can write that attribute, but only a renderer can make an announcement that counts.
+     *
+     * <p>The resource name is stubbed rather than produced by a real {@code #parse}, and the
+     * tool no longer reads it at all, so this case is a regression guard: it fails the day
+     * something starts consulting that name again, and it does not by itself prove what a live
+     * {@code #parse} would do.
      *
      * <p>Red before the fix: the tool transforms, because it believes the resource name.
      */

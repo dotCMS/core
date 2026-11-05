@@ -9,7 +9,6 @@ import com.dotcms.rendering.velocity.viewtools.cache.XSLTransformationCache;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -50,7 +49,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -97,8 +95,6 @@ public class XsltTool implements ViewTool {
 	private HttpServletRequest request;
 	private HostWebAPI hostWebAPI; 
 	protected Host host;
-	Context ctx;
-	private InternalContextAdapterImpl ica;
 	protected User user = null;
 	protected User backuser = null;
 	protected boolean respectFrontendRoles = false;
@@ -110,7 +106,6 @@ public class XsltTool implements ViewTool {
 		ViewContext context = (ViewContext) obj;
 		
 		this.request = context.getRequest();
-		ctx = context.getVelocityContext();		
 		try {
 			host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
 		} catch (PortalException e1) {

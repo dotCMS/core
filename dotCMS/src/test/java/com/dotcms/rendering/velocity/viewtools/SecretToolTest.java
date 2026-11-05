@@ -365,12 +365,6 @@ public class SecretToolTest {
     }
 
     /**
-     * Re-initialises the tool with a real Velocity context whose current template name is the
-     * given one, as Velocity sets it while rendering.
-     *
-     * @param templateName name to push onto the context's template name stack
-     */
-    /**
      * Announces a rendering author on the mocked request the way a renderer does, and stubs the
      * request to hand that announcement back. The announcement is an opaque value only
      * {@link RestrictedViewToolAccess} creates, so it cannot be built here by hand.
