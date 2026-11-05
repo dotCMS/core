@@ -94,10 +94,16 @@ public class AjaxDirectorServletIntegrationTest {
         final String previousForceSsl = Config.getStringProperty("FORCE_SSL_ON_RESP_API", null);
         final String previousPrincipal = PrincipalThreadLocal.getName();
         final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        final String password = UUID.randomUUID().toString();
-        final User user = new UserDataGen().password(password)
-                .roles(APILocator.getRoleAPI().loadCMSAdminRole()).nextPersisted();
+        final String password = "Ajax-" + UUID.randomUUID() + "A1!";
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadCMSAdminRole(),
+                        APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
         urlLoginUsers.add(user);
+        APILocator.getUserAPI().updatePassword(user, password, APILocator.systemUser(), false);
+        assertTrue("Fixture must be a real back-end user", user.isBackendUser());
+        assertTrue("Fixture password must be stored through the password API",
+                APILocator.getLoginServiceAPI().passwordMatch(password,
+                        APILocator.getUserAPI().loadUserById(user.getUserId())));
         final String username = Company.AUTH_TYPE_EA.equals(CompanyUtils.getDefaultCompany().getAuthType())
                 ? user.getEmailAddress() : user.getUserId();
         try {
