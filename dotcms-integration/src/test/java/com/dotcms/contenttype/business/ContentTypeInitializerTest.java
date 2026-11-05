@@ -27,6 +27,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
+import com.dotmarketing.util.DateUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.nio.charset.StandardCharsets;
@@ -254,6 +255,61 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
                 ContentletDataGen.destroy(favorite);
             }
             UserDataGen.remove(owner);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentTypeInitializer#init()}
+     * Given Scenario: The favorite page content type already has both CMS Owner rows, so the
+     * favorites' own rows are not reset, plus a READ row for CMS Anonymous its contentlets inherit.
+     * A favorite on the System Host is indexed while that row is there, so an anonymous search
+     * finds it.
+     * ExpectedResult: The repair still queues the favorite for reindex, so once the queue drains
+     * an anonymous search no longer finds it.
+     */
+    @Test
+    public void test_init_reindexes_favorites_when_removing_rows_of_other_roles() throws Exception {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME);
+        permissionAPI.removePermissions(contentType);
+        permissionAPI.assignPermissions(List.of(
+                new Permission(contentType.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true),
+                new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
+                        cmsOwner.getId(), OWNER_BITS, true),
+                new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
+                        APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                        PermissionAPI.PERMISSION_READ, true)),
+                contentType, APILocator.systemUser(), false);
+
+        final Contentlet favorite = new ContentletDataGen(contentType).host(APILocator.systemHost())
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                .nextPersistedAndPublish();
+        try {
+
+            final User anonymous = APILocator.getUserAPI().getAnonymousUser();
+            final String query = "+contentType:" + ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME
+                    + " +identifier:" + favorite.getIdentifier();
+            Assert.assertEquals("Before the repair the favorite must be indexed as anonymously readable",
+                    1, APILocator.getContentletAPI().search(query, 10, 0, null, anonymous, true).size());
+
+            new ContentTypeInitializer().init();
+
+            final long deadline = System.currentTimeMillis() + 60_000;
+            while (!APILocator.getContentletAPI().search(query, 10, 0, null, anonymous, true).isEmpty()
+                    && System.currentTimeMillis() < deadline) {
+                DateUtil.sleep(1000);
+            }
+            Assert.assertTrue("After the repair an anonymous search must not find the favorite; reindex queue holds "
+                            + APILocator.getReindexQueueAPI().recordsInQueue() + " record(s): "
+                            + describePermissions(favorite, "favorite"),
+                    APILocator.getContentletAPI().search(query, 10, 0, null, anonymous, true).isEmpty());
+        } finally {
+
+            ContentletDataGen.destroy(favorite);
         }
     }
 

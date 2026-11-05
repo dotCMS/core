@@ -154,8 +154,10 @@ public class ContentTypeInitializer implements DotInitializer {
      * role has a row on the type, the type's permissions are replaced with those two rows. When the
      * row the contentlets inherit was missing, which is the state before this repair first ran, the
      * favorites' own rows are also reset so they inherit them, in the same transaction; later
-     * repairs leave rows added to individual favorites alone. Each repair is logged. Runs on every
-     * start, so it also repairs an existing install. Turned off with
+     * repairs leave rows added to individual favorites alone. Every repair queues the type's
+     * favorites for reindex. If any step of the repair fails, the whole repair rolls back,
+     * including the type's rows, the error is logged and the next start tries again. Each repair
+     * is logged. Runs on every start, so it also repairs an existing install. Turned off with
      * {@code DO_DEFAULT_PAGE_PERMISSIONS=false}. The check and the repair run in one transaction
      * that first takes a database lock, so nodes starting together take turns: a node that finds
      * another node repairing waits for it to commit or roll back, then checks the rows it left and
@@ -209,11 +211,7 @@ public class ContentTypeInitializer implements DotInitializer {
     private String repairDefaultPermissions(final ContentType savedContentType)
             throws DotDataException, DotSecurityException {
 
-        // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- static SQL, the only runtime
-        // value is bound via addParam
-        new DotConnect().setSQL("SELECT pg_advisory_xact_lock(hashtext(?))")
-                .addParam(FAVORITE_PAGE_PERMISSIONS_LOCK)
-                .loadObjectResults();
+        this.acquireRepairLock();
         APILocator.getPermissionAPI().removePermissionableFromCache(savedContentType.getPermissionId());
 
         // Add CMS Owner Permissions
@@ -238,8 +236,11 @@ public class ContentTypeInitializer implements DotInitializer {
         newSetOfPermissions.add(new Permission(savedContentType.getPermissionId(), backendRole.getId(), permissionType, true));
         // this is the inheritance permission
         newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), savedContentType.getPermissionId(),  backendRole.getId(), permissionType, true));
-        // same transaction as the check, so a failed reset leaves the type rows unchanged
-        // and the next start repairs it again
+        // same transaction as the check: if anything below fails, the type rows roll back too
+        // and the next start repairs it again. Committing the type rows on their own would make
+        // contentletsInherit true, so a failed favorites reset would never be retried.
+        // removePermissions also queues every favorite of the type for reindex, so the index
+        // picks up the new rows whether or not resetFavorites is set.
         APILocator.getPermissionAPI().removePermissions(savedContentType);
         APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, savedContentType, APILocator.systemUser(), false);
         // reset here rather than through ResetPermissionsJob, which needs a logged-in
@@ -251,6 +252,25 @@ public class ContentTypeInitializer implements DotInitializer {
                 ? "Favorite pages: reset the content type permissions to CMS Owner only and removed the own permissions of "
                         + favoritesWithOwnRows + " favorite(s)"
                 : "Favorite pages: reset the content type permissions to CMS Owner only; favorites kept their own permissions";
+    }
+
+    /**
+     * Takes the database lock that makes nodes starting together run the favorite permission
+     * check and repair one at a time. It is a Postgres transaction-level advisory lock, so it is
+     * released when the calling transaction commits or rolls back, or when the holder's
+     * connection closes. There is no timeout on purpose: a node waits for another node's repair
+     * to end and then checks the rows it left, rather than giving up and leaving them unchecked
+     * until the next start if that repair rolls back.
+     *
+     * @throws DotDataException if the lock cannot be taken
+     */
+    private void acquireRepairLock() throws DotDataException {
+
+        // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- static SQL, the only runtime
+        // value is bound via addParam
+        new DotConnect().setSQL("SELECT pg_advisory_xact_lock(hashtext(?))")
+                .addParam(FAVORITE_PAGE_PERMISSIONS_LOCK)
+                .loadObjectResults();
     }
 
     /**
