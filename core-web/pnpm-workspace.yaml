@@ -13,6 +13,16 @@ overrides:
     '@vue/shared': 3.5.29
     http-cache-semantics: 4.1.1
     pdfjs-dist: 4.2.67
+    # Leftover pulled in by @nxext/stencil -> @nx/storybook 21 after storybook was removed
+    # in #36443; pinned to clear a critical alert (dotCMS/core#38455). Remove this override
+    # together with @nxext/stencil.
+    storybook: 9.1.21
+    # @angular/build, @angular-devkit/build-angular and ng-packagr 22.1.x pin piscina to
+    # exactly 5.2.0 (critical prototype-pollution RCE, GHSA-67c8-pqhq-4rmx). 22.2.x pins
+    # 5.3.2, but moving the tooling to 22.2 needs the framework on 22.2 as well, because
+    # analogjs picks its Angular API from @angular/compiler-cli's version. Remove this
+    # override when Angular moves to 22.2.
+    piscina: 5.3.2
 # The `stylus: github:stylus/stylus#0.59.0` override that lived here under pnpm 10 was
 # dropped: stylus is an optional peer of the css loaders and is never installed (it
 # appears in pnpm-lock.yaml only as an optional peerDependency, with no resolution), so
@@ -91,6 +101,7 @@ trustPolicyExclude:
     - 'undici-types@6.21.0' # 2024-11-13; 6.13.0 through 6.16.x (Apr-May 2024) were attested
     - 'detect-port@1.6.1' # 2024-05-08; 1.6.0 was attested the same day
     - 'chokidar@4.0.3' # 2024-12-18; 3.6.0 attested since 2024-02-06
+    - 'storybook@9.1.21' # 2026-10-12; 10.x attested since 2026-06-02 (10.4.2), same GitHub Actions trusted-publisher config (oidcConfigId 79413afc...) but no attestation
     # strongest signal here: over a thousand earlier versions attested, these two are not
     - '@modern-js/node-bundle-require@2.68.2' # 2025-07-11
     - '@modern-js/utils@2.68.2' # 2025-07-11
