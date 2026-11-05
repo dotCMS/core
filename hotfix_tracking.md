@@ -101,3 +101,4 @@ Release-25.07.10 LTS
 95. https://github.com/dotCMS/private-issues/issues/875 : Workflow fire with individualPermissions removes a contentlet's permissions without EDIT_PERMISSIONS #38244 #875
 96. https://github.com/dotCMS/private-issues/issues/839 : Ubaid Raza F1: Rule-engine authorization fail-open + session-attribute injection → cookieless admin authentica #38224 #839
 97. https://github.com/dotCMS/private-issues/issues/840 : Ubaid Raza F2: SiteSearchAjaxAction inherits CMS-Maintenance index-management methods behind the weaker site-s #38180 #840
+98. https://github.com/dotCMS/private-issues/issues/985 : WorkflowHelper.getContentletByIdentifier resolves content without a READ check (swallows DotSecurityException, #38269 #985

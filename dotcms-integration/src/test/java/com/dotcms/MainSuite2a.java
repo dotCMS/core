@@ -116,7 +116,8 @@ import com.dotcms.rest.api.v1.sites.ruleengine.RuleResourcesAccessIntegrationTes
     RulesAPIImplParentChecksIntegrationTest.class,
     RuleResourcesAccessIntegrationTest.class,
     RuleRefusedActionsIntegrationTest.class,
-    com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionIntegrationTest.class
+    com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionIntegrationTest.class,
+    com.dotcms.rest.api.v1.workflow.WorkflowResourceCommentsReadAccessTest.class
 })
 public class MainSuite2a {
 

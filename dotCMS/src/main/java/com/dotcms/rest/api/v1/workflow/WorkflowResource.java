@@ -60,6 +60,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
@@ -5638,10 +5639,9 @@ public class WorkflowResource {
         final Optional<Contentlet> currentContentlet =  languageId <= 0?
                 this.workflowHelper.getContentletByIdentifier(contentletIdentifier, mode, initDataObject.getUser(),
                         ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId()):
-                this.contentletAPI.findContentletByIdentifierOrFallback
-                        (contentletIdentifier, mode.showLive, languageId, initDataObject.getUser(), mode.respectAnonPerms);
+                findInLanguage(contentletIdentifier, languageId, user, mode);
 
-        if (currentContentlet.isPresent()) {
+        if (currentContentlet.isPresent() && canRead(currentContentlet.get(), user)) {
 
             final WorkflowTask currentWorkflowTask = this.workflowAPI.findTaskByContentlet(currentContentlet.get());
             final List<WorkflowTimelineItem> workflowComments = this.workflowAPI.getCommentsAndChangeHistory(currentWorkflowTask);
@@ -5652,6 +5652,48 @@ public class WorkflowResource {
         }
 
         throw new DoesNotExistException("Contentlet with identifier " + contentletIdentifier + " does not exist.");
+    }
+
+    /**
+     * Tells whether the user can read the contentlet a workflow history or comment request refers
+     * to. A contentlet the user cannot read is answered the same way as an unknown identifier.
+     * <p>
+     * These endpoints serve back-end users only, so front-end and anonymous roles are not taken
+     * into account, whatever page mode the request asks for. That makes this check stricter than
+     * the lookup that resolved the contentlet, which follows the page mode.
+     *
+     * @param contentlet the {@link Contentlet} the request resolved to
+     * @param user       the {@link User} making the request
+     * @return {@code true} when the user has READ on the contentlet
+     * @throws DotDataException if the permissions cannot be loaded
+     */
+    private boolean canRead(final Contentlet contentlet, final User user) throws DotDataException {
+        return this.permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
+                user, false);
+    }
+
+    /**
+     * Finds the version of a contentlet in the given language, falling back to the default
+     * language when the content type allows it. A contentlet the user is not allowed to read is
+     * reported as not found, the same as an unknown identifier.
+     *
+     * @param identifier the contentlet identifier
+     * @param languageId the language to look in
+     * @param user       the {@link User} making the request
+     * @param mode       the {@link PageMode} of the request, which decides live or working version
+     * @return the {@link Contentlet}, or empty when it does not exist or the user cannot read it
+     */
+    private Optional<Contentlet> findInLanguage(final String identifier, final long languageId,
+            final User user, final PageMode mode) {
+        try {
+            return this.contentletAPI.findContentletByIdentifierOrFallback(identifier, mode.showLive,
+                    languageId, user, mode.respectAnonPerms);
+        } catch (final DotContentletStateException e) {
+            if (e.getCause() instanceof DotSecurityException) {
+                return Optional.empty();
+            }
+            throw e;
+        }
     }
 
     private WorkflowTimelineItemView toWorkflowTimelineItemView(final WorkflowTimelineItem wfTimeLine) {
@@ -5744,9 +5786,8 @@ public class WorkflowResource {
         final Optional<Contentlet> currentContentlet =  languageId <= 0?
                 this.workflowHelper.getContentletByIdentifier(contentletId, mode, initDataObject.getUser(),
                         ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId()):
-                this.contentletAPI.findContentletByIdentifierOrFallback
-                        (contentletId, mode.showLive, languageId, initDataObject.getUser(), mode.respectAnonPerms);
-        if (currentContentlet.isPresent()) {
+                findInLanguage(contentletId, languageId, user, mode);
+        if (currentContentlet.isPresent() && canRead(currentContentlet.get(), user)) {
 
             final WorkflowTask task = this.workflowAPI.findTaskByContentlet(currentContentlet.get());
             final WorkflowComment taskComment = new WorkflowComment();
