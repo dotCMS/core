@@ -121,7 +121,8 @@ import com.dotcms.rest.api.v1.content.ContentRelationshipsResourceIntegrationTes
     com.dotcms.rest.api.v1.workflow.WorkflowResourceCommentsReadAccessTest.class,
     ContentRelationshipsResourceIntegrationTest.class,
     com.dotmarketing.portal.struts.StrutsPathAccessTest.class,
-    com.liferay.portal.struts.PortletRequestProcessorAccessTest.class
+    com.liferay.portal.struts.PortletRequestProcessorAccessTest.class,
+    com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPIImplTest.class
 })
 public class MainSuite2a {
 

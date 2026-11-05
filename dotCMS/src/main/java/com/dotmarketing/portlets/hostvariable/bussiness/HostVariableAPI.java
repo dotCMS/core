@@ -18,10 +18,23 @@ public interface HostVariableAPI {
 	
 	List<HostVariable > getVariablesForHost(String hostId,User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException; 
 	
+	/**
+	 * Saves a Site Variable on the Site it names ({@link HostVariable#getHostId()}). The user needs EDIT permission on
+	 * that Site. Without an id the variable is created; with an id it must already be one of that Site's variables.
+	 *
+	 * @param object               The variable to save.
+	 * @param user                 The user performing the save operation.
+	 * @param respectFrontendRoles A flag indicating whether or not to respect frontend roles.
+	 * @throws DotDataException     The id is not one of the Site's variables, or the data layer failed.
+	 * @throws DotSecurityException The user cannot edit the Site.
+	 */
 	void save( HostVariable object, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 
 	/**
-	 * Saves a list of site variables for a specific site.
+	 * Saves a list of site variables for a specific site. Each variable is matched to an existing variable of the site
+	 * by id, then by key; a key match updates that variable and ignores the incoming id. A variable without a match is
+	 * created on the site, and is refused if it carries an id that is not one of the site's variables. Existing
+	 * variables of the site that are not in the list are deleted.
 	 *
 	 * @param siteVariables        The list of site variables to be saved.
 	 * @param siteId               The ID of the site where the variables are being saved.
