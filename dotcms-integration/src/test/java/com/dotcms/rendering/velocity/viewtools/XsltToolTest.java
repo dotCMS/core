@@ -4,6 +4,9 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -31,6 +34,8 @@ import graphql.Assert;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import org.apache.commons.io.FileUtils;
 import javax.servlet.http.HttpServletRequest;
@@ -162,19 +167,18 @@ public class XsltToolTest extends IntegrationTestBase {
         when(velocityContext.getCurrentTemplateName())
                 .thenReturn(String.format(LIVE_CONTAINER_TEMPLATE_NAME, fileAssetShown.getInode()));
 
-        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletRequest request = requestWithAttributes();
         final ViewContext viewContext = mock(ViewContext.class);
         final HttpSession session = mock(HttpSession.class);
 
         final User user = APILocator.systemUser();
         when(viewContext.getVelocityContext()).thenReturn(velocityContext);
         when(viewContext.getRequest()).thenReturn(request);
-        when(request.getAttribute(WebKeys.USER)).thenReturn(user);
-        when(request.getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST)).thenReturn(site);
+        request.setAttribute(WebKeys.USER, user);
+        request.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, site);
         // What a render reports about the code it is about to run. A case that wants to say
-        // something else about the author overrides this stub.
-        when(request.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID))
-                .thenReturn(author.getUserId());
+        // something else about the author announces it again.
+        RestrictedViewToolAccess.announceRenderingAuthor(request, author.getUserId());
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(WebKeys.USER_ID)).thenReturn(user.getUserId());
         when(session.getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST)).thenReturn(site);
@@ -264,7 +268,8 @@ public class XsltToolTest extends IntegrationTestBase {
      * push any string as the current template name, so pointing it at content somebody with the
      * role once saved makes {@code canUserEvaluate()} check that other user and admit the
      * caller. What decides must be the author the renderer reports in
-     * {@link RestrictedViewToolAccess#RENDERING_AUTHOR_ID}, which no template can write.
+     * {@link RestrictedViewToolAccess#RENDERING_AUTHOR_ID}: a template reaches {@code $request}
+     * and can write that attribute, but only a renderer can make an announcement that counts.
      *
      * <p>Red before the fix: the tool transforms, because it believes the resource name.
      */
@@ -283,8 +288,8 @@ public class XsltToolTest extends IntegrationTestBase {
         ContentletDataGen.publish(borrowed);
 
         // The render says who wrote the code: somebody without the role.
-        when(fixture.request.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID))
-                .thenReturn(withoutTheRole.getUserId());
+        RestrictedViewToolAccess.announceRenderingAuthor(fixture.request,
+                withoutTheRole.getUserId());
         // The code says otherwise, by naming content that a Scripting Developer saved.
         when(fixture.velocityContext.getCurrentTemplateName())
                 .thenReturn("/" + borrowed.getInode() + "_");
@@ -297,11 +302,28 @@ public class XsltToolTest extends IntegrationTestBase {
             // Nothing came out, and this says why: because of who the render named as the
             // author, not because the tool is refusing everyone. Without this the case would
             // also pass while the tool is broken for every caller, which is today's state.
-            when(fixture.request.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID))
-                    .thenReturn(withTheRole.getUserId());
+            RestrictedViewToolAccess.announceRenderingAuthor(fixture.request,
+                    withTheRole.getUserId());
             XSLTransformationCache.clearCache();
             assertTheToolIsWillingToTransform(tool, fixture);
         });
+    }
+
+    /**
+     * The tool reads the announced author off the request, and the renderers write it there, so
+     * a mock that drops {@code setAttribute} would make every case here meaningless.
+     *
+     * @return a request whose attributes behave like a real one
+     */
+    private static HttpServletRequest requestWithAttributes() {
+        final Map<String, Object> attributes = new HashMap<>();
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute(anyString())).thenAnswer(call -> attributes.get(call.getArgument(0)));
+        doAnswer(call -> attributes.put(call.getArgument(0), call.getArgument(1)))
+                .when(request).setAttribute(anyString(), any());
+        doAnswer(call -> attributes.remove(call.getArgument(0)))
+                .when(request).removeAttribute(anyString());
+        return request;
     }
 
     /**
