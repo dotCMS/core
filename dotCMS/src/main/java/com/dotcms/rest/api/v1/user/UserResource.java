@@ -772,7 +772,8 @@ public class UserResource implements Serializable {
 		final List<String> roleKeys = UtilMethods.isSet(createUserForm.getRoles())?
 				createUserForm.getRoles():list(Role.DOTCMS_FRONT_END_USER);
 
-		this.userAPI.save(user, modUser, false);
+		// validatePassword=true: applies the password policy and stores the password hashed
+		this.userAPI.save(user, modUser, true, false);
 		Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 				createUserForm.getEmail() + "' has been created.");
 
@@ -1130,8 +1131,12 @@ public class UserResource implements Serializable {
 			userToSave.setAdditionalInfo(updateUserForm.getAdditionalInfo());
 		}
 
-		// Password has changed, so it has to be validated
-		userToSave.setPassword(new String(updateUserForm.getPassword()));
+		if (UtilMethods.isSet(updateUserForm.getPassword())) {
+
+			// Password has changed, so it has to be validated (and stored hashed)
+			userToSave.setPassword(new String(updateUserForm.getPassword()));
+			validatePassword = true;
+		}
 
 		if (APILocator.getPermissionAPI().doesUserHavePermission
 				(APILocator.getUserProxyAPI().getUserProxy(userToSave, modUser, false),
@@ -1142,12 +1147,9 @@ public class UserResource implements Serializable {
 			this.roleAPI.checkUserRolesChange(modUser, userToSave,
 					this.rolesToAdd(updateUserForm, userToSave), List.of());
 
+			// with validatePassword=true, save also invalidates the login tokens issued before the change
 			this.userAPI.save(userToSave, modUser, validatePassword,
 					!WebAPILocator.getUserWebAPI().isLoggedToBackend(request));
-			if (UtilMethods.isSet(updateUserForm.getPassword())) {
-				// login tokens issued before the password change stop working
-				userToSave.setRememberMeToken(this.userAPI.invalidateLoginTokens(userToSave.getUserId()));
-			}
 			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' has been updated.");
 

@@ -41,6 +41,7 @@ import org.junit.runners.Suite;
         ImportContentletsActionSmokeTest.class,
         TreeFactoryTest.class,
     com.dotmarketing.portlets.user.ajax.UserAjaxHasUserRolesIntegrationTest.class,
+    com.dotcms.rest.api.v1.user.UserResourcePasswordIntegrationTest.class,
         com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class,
     com.dotcms.rendering.js.FileJavascriptReaderTest.class,
     com.dotcms.rest.api.v1.container.ContainerResourceContentReadAccessTest.class
