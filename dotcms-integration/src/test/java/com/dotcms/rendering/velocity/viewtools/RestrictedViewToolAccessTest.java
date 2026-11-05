@@ -2,10 +2,12 @@ package com.dotcms.rendering.velocity.viewtools;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
@@ -18,6 +20,7 @@ import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.transform.strategy.RenderFieldStrategy;
@@ -62,6 +65,7 @@ public class RestrictedViewToolAccessTest {
     private static final List<User> users = new ArrayList<>();
     private static final List<Role> roles = new ArrayList<>();
     private static final List<ContentType> contentTypes = new ArrayList<>();
+    private static final List<Container> containers = new ArrayList<>();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -80,6 +84,7 @@ public class RestrictedViewToolAccessTest {
         contentTypes.forEach(contentType -> ContentTypeDataGen.remove(contentType, true));
         users.forEach(user -> UserDataGen.remove(user, true));
         roles.forEach(role -> RoleDataGen.remove(role, true));
+        containers.forEach(ContainerDataGen::remove);
     }
 
     private static User user(final User user) {
@@ -112,6 +117,59 @@ public class RestrictedViewToolAccessTest {
         contentlet.setInode(UUIDGenerator.generateUuid());
         contentlet.setModUser(author.getUserId());
         return contentlet;
+    }
+
+    /**
+     * Method to test: {@link RenderFieldStrategy#renderFieldValue}
+     * When: a content field's Velocity runs
+     * Should: find on the request the user that last modified that content, and leave nothing
+     * behind once the render is over.
+     *
+     * <p>The restricted view tools read that value to decide whether they may run, so the whole
+     * control rests on this strategy putting it there. The field's own code reads it back, which
+     * is the only way to see what was on the request while that code ran.
+     */
+    @Test
+    public void renderFieldValue_announcesTheContentAuthorAndThenClearsIt() {
+        final User author = user(new UserDataGen().nextPersisted());
+        final HttpServletRequest request = request(null);
+
+        final String rendered = String.valueOf(RenderFieldStrategy.renderFieldValue(request,
+                new MockHttpResponse().response(),
+                "$request.getAttribute('" + RestrictedViewToolAccess.RENDERING_AUTHOR_ID + "')",
+                notPersistedContent(author), "code"));
+
+        assertTrue("The field's code did not see its author on the request, so the view tools "
+                + "cannot either. Rendered: " + rendered, rendered.contains(author.getUserId()));
+        assertNull("The announcement outlived the render, so the next thing rendered on this "
+                        + "request would be judged on the wrong author",
+                request.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID));
+    }
+
+    /**
+     * Method to test: {@link RestrictedViewToolAccess#authorOfRenderedResource(String)}
+     * When: the renderer is about to run a container's own Velocity
+     * Should: answer with the user that last saved that container, and with nothing at all when
+     * the path names something that does not resolve.
+     *
+     * <p>This is what {@code DotDirective} announces while a container or template renders, so a
+     * wrong answer here would judge that code on the wrong author.
+     */
+    @Test
+    public void authorOfRenderedResource_resolvesTheContainerAuthor() {
+        // The API records the saving user as the modifier, and saving a container needs
+        // permissions, so the admin stands in as the author here. Which user it is does not
+        // matter: what is under test is that the author is read off the container the path
+        // resolves to, not that this particular user may use the tools.
+        final Container container = new ContainerDataGen().owner(admin).modUser(admin)
+                .nextPersisted();
+        containers.add(container);
+
+        assertEquals(admin.getUserId(), RestrictedViewToolAccess.authorOfRenderedResource(
+                "/WORKING/" + container.getIdentifier() + "/1.container"));
+        assertNull("A path that resolves to nothing must not name an author",
+                RestrictedViewToolAccess.authorOfRenderedResource(
+                        "/WORKING/" + UUIDGenerator.generateUuid() + "/1.container"));
     }
 
     /**

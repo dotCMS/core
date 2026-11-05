@@ -12,12 +12,15 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rendering.velocity.viewtools.cache.XSLTransformationCache;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
@@ -56,6 +59,12 @@ public class XsltToolTest extends IntegrationTestBase {
     /** Mirrors the stylesheet's {@code CATALOG/CD} structure, so a real transformation comes out. */
     private static final String FIRST_TITLE_IN_THE_CATALOG = "EmpireBurlesque";
 
+    /**
+     * The shape Velocity reports for a container on a live page: mode, identifier, extension, and
+     * no underscore anywhere. {@code /EDIT_MODE/{id}/{id}.fields} is the editing counterpart.
+     */
+    private static final String LIVE_CONTAINER_TEMPLATE_NAME = "/LIVE/%s/1.container";
+
     /** Calls a Java method from XSLT, which the tool's engine refuses. */
     private static final String STYLESHEET_THAT_FAILS =
             "<?xml version=\"1.0\"?>"
@@ -82,13 +91,20 @@ public class XsltToolTest extends IntegrationTestBase {
      */
     private static final class Fixture {
         final ViewContext viewContext;
+        final VelocityContext velocityContext;
+        final HttpServletRequest request;
+        final Folder folder;
         final String xslPath;
         final String failingXslPath;
         final String xmlPath;
 
-        Fixture(final ViewContext viewContext, final String xslPath, final String failingXslPath,
-                final String xmlPath) {
+        Fixture(final ViewContext viewContext, final VelocityContext velocityContext,
+                final HttpServletRequest request, final Folder folder, final String xslPath,
+                final String failingXslPath, final String xmlPath) {
             this.viewContext = viewContext;
+            this.velocityContext = velocityContext;
+            this.request = request;
+            this.folder = folder;
             this.xslPath = xslPath;
             this.failingXslPath = failingXslPath;
             this.xmlPath = xmlPath;
@@ -114,29 +130,37 @@ public class XsltToolTest extends IntegrationTestBase {
         final Host site = new SiteDataGen().nextPersisted();
         final Folder folder = new FolderDataGen().name("test").site(site).nextPersisted();
 
+        // Content saved by the system user is deliberately refused: it does not say who wrote the
+        // code. So the fixture needs a real author, and one that holds the role.
+        final User author = new UserDataGen().roles(scriptingDeveloperRole()).nextPersisted();
+
         final File xslFile = File.createTempFile("demo-stylesheet", ".xsl");
         copyResource("xml/demo-stylesheet.xsl", xslFile);
-        final Contentlet stylesheetAsset = new FileAssetDataGen(folder, xslFile).nextPersisted();
+        final Contentlet stylesheetAsset = new FileAssetDataGen(folder, xslFile).user(author).nextPersisted();
         ContentletDataGen.publish(stylesheetAsset);
 
         final File failingXslFile = File.createTempFile("refused-stylesheet", ".xsl");
         Files.write(failingXslFile.toPath(), STYLESHEET_THAT_FAILS.getBytes(StandardCharsets.UTF_8));
-        final Contentlet failingAsset = new FileAssetDataGen(folder, failingXslFile).nextPersisted();
+        final Contentlet failingAsset = new FileAssetDataGen(folder, failingXslFile).user(author).nextPersisted();
         ContentletDataGen.publish(failingAsset);
 
         // The XML lives in dotCMS, which is how the tool is meant to be used.
         final File xmlFile = File.createTempFile("cd_catalog", ".xml");
         copyResource("xml/test.xml", xmlFile);
-        final Contentlet xmlAsset = new FileAssetDataGen(folder, xmlFile).host(site).nextPersisted();
+        final Contentlet xmlAsset = new FileAssetDataGen(folder, xmlFile).host(site).user(author).nextPersisted();
         ContentletDataGen.publish(xmlAsset);
 
         final File vtl = File.createTempFile("testing-file", ".vtl");
         FileUtil.write(vtl, "$xslttool.transform($xmlPath, $xsltPath, 30)");
-        final Contentlet fileAssetShown = new FileAssetDataGen(folder, vtl).host(site).nextPersisted();
+        final Contentlet fileAssetShown = new FileAssetDataGen(folder, vtl).host(site).user(author).nextPersisted();
         ContentletDataGen.publish(fileAssetShown);
 
         final VelocityContext velocityContext = mock(VelocityContext.class);
-        when(velocityContext.getCurrentTemplateName()).thenReturn("/"+fileAssetShown.getInode()+"_");
+        // What Velocity reports while a container renders. Until now this fixture handed the tool
+        // "/{inode}_", which is the one shape canUserEvaluate()'s parse accepts and a shape dotCMS
+        // never produces, so every case in this class was green over a path that does not exist.
+        when(velocityContext.getCurrentTemplateName())
+                .thenReturn(String.format(LIVE_CONTAINER_TEMPLATE_NAME, fileAssetShown.getInode()));
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final ViewContext viewContext = mock(ViewContext.class);
@@ -147,11 +171,15 @@ public class XsltToolTest extends IntegrationTestBase {
         when(viewContext.getRequest()).thenReturn(request);
         when(request.getAttribute(WebKeys.USER)).thenReturn(user);
         when(request.getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST)).thenReturn(site);
+        // What a render reports about the code it is about to run. A case that wants to say
+        // something else about the author overrides this stub.
+        when(request.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID))
+                .thenReturn(author.getUserId());
         when(request.getSession(false)).thenReturn(session);
         when(session.getAttribute(WebKeys.USER_ID)).thenReturn(user.getUserId());
         when(session.getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST)).thenReturn(site);
 
-        return new Fixture(viewContext,
+        return new Fixture(viewContext, velocityContext, request, folder,
                 String.format("/%s/%s", folder.getName(), xslFile.getName()),
                 String.format("/%s/%s", folder.getName(), failingXslFile.getName()),
                 String.format("/%s/%s", folder.getName(), xmlFile.getName()));
@@ -227,6 +255,97 @@ public class XsltToolTest extends IntegrationTestBase {
             assertTrue("The catalog was not transformed, got: " + transform,
                     transform.contains(FIRST_TITLE_IN_THE_CATALOG));
         });
+    }
+
+    /**
+     * Borrowing the inode of content that a Scripting Developer saved does not buy the role.
+     *
+     * <p>This is the forgery the gate cannot see today. {@code #parse} lets a template author
+     * push any string as the current template name, so pointing it at content somebody with the
+     * role once saved makes {@code canUserEvaluate()} check that other user and admit the
+     * caller. What decides must be the author the renderer reports in
+     * {@link RestrictedViewToolAccess#RENDERING_AUTHOR_ID}, which no template can write.
+     *
+     * <p>Red before the fix: the tool transforms, because it believes the resource name.
+     */
+    @Test
+    public void transform_refusesWhenTheRenderingAuthorLacksTheRole() throws Exception {
+
+        final Fixture fixture = publishAssets();
+        final Role scriptingDeveloper = scriptingDeveloperRole();
+        final User withTheRole = new UserDataGen().roles(scriptingDeveloper).nextPersisted();
+        final User withoutTheRole = new UserDataGen().nextPersisted();
+
+        final File borrowedFile = File.createTempFile("saved-by-a-scripting-developer", ".vtl");
+        FileUtil.write(borrowedFile, "$xslttool");
+        final Contentlet borrowed = new FileAssetDataGen(fixture.folder, borrowedFile)
+                .user(withTheRole).nextPersisted();
+        ContentletDataGen.publish(borrowed);
+
+        // The render says who wrote the code: somebody without the role.
+        when(fixture.request.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID))
+                .thenReturn(withoutTheRole.getUserId());
+        // The code says otherwise, by naming content that a Scripting Developer saved.
+        when(fixture.velocityContext.getCurrentTemplateName())
+                .thenReturn("/" + borrowed.getInode() + "_");
+
+        withScriptingOn(fixture, tool -> {
+            final String transform = tool.transform(fixture.xmlPath, fixture.xslPath, 30);
+            assertTrue("The caller borrowed an inode and was admitted, got: " + transform,
+                    transform == null || !transform.contains(FIRST_TITLE_IN_THE_CATALOG));
+
+            // Nothing came out, and this says why: because of who the render named as the
+            // author, not because the tool is refusing everyone. Without this the case would
+            // also pass while the tool is broken for every caller, which is today's state.
+            when(fixture.request.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID))
+                    .thenReturn(withTheRole.getUserId());
+            XSLTransformationCache.clearCache();
+            assertTheToolIsWillingToTransform(tool, fixture);
+        });
+    }
+
+    /**
+     * @return the Scripting Developer role, created when the starter data does not carry it
+     */
+    private static Role scriptingDeveloperRole() throws Exception {
+        final Role role = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
+        return null != role ? role
+                : new RoleDataGen().key(Role.SCRIPTING_DEVELOPER).name(Role.SCRIPTING_DEVELOPER)
+                        .nextPersisted();
+    }
+
+    /**
+     * The tool must not refuse a caller because of the shape of the Velocity resource name.
+     *
+     * <p>Whether the code that calls this tool may run is decided by whoever renders it, which
+     * knows what content it is rendering; the tool is given to that render or withheld from it.
+     * The resource name is not evidence of anything: {@code #parse} pushes whatever string the
+     * template author wrote, so a tool that reads it is asking the caller to vouch for itself.
+     *
+     * <p>Red before the fix for both reasons at once: under a live container name the parse in
+     * {@code canUserEvaluate()} throws, and under the editing name it slices out the literal
+     * {@code "EDIT"} and finds no content.
+     */
+    @Test
+    public void transform_doesNotDependOnTheVelocityResourceName() throws Exception {
+
+        final Fixture fixture = publishAssets();
+
+        for (final String resourceName : new String[]{
+                String.format(LIVE_CONTAINER_TEMPLATE_NAME, "18e993c043b6e28174a5a06b84f80191"),
+                "/EDIT_MODE/18e993c043b6e28174a5a06b84f80191/1.container",
+                "/PREVIEW_MODE/18e993c043b6e28174a5a06b84f80191/1.container",
+                "VelocityUtil:parseVelocity"}) {
+
+            when(fixture.velocityContext.getCurrentTemplateName()).thenReturn(resourceName);
+
+            withScriptingOn(fixture, tool -> {
+                final String transform = tool.transform(fixture.xmlPath, fixture.xslPath, 30);
+                assertNotNull("Refused under resource name " + resourceName, transform);
+                assertTrue("The catalog was not transformed under resource name " + resourceName
+                        + ", got: " + transform, transform.contains(FIRST_TITLE_IN_THE_CATALOG));
+            });
+        }
     }
 
     /**
