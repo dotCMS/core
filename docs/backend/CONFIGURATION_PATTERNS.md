@@ -138,6 +138,10 @@ designated JSON/body login endpoints are unchanged. Legacy configuration forms a
 POST form authenticate their explicitly body-bound credentials separately from URL parameters,
 while retaining the existing Basic policy, SSL, lockout and portlet permission checks.
 
+The bundled property is commented out intentionally: the Java getter supplies the false default.
+This lets a single `true` in `dotcms-config-cluster.properties` opt in without merging with a shipped
+false into the ambiguous value `false,true`. Multiple explicit values still fail closed.
+
 Migrate clients to an `Authorization: Bearer` header or the designated login endpoint. For temporary
 legacy compatibility, set `ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS=true` (environment variable:
 `DOT_ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS=true`). This opt-in remains subordinate to

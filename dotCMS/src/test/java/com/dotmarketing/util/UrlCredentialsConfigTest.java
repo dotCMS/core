@@ -3,6 +3,8 @@ package com.dotmarketing.util;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -11,6 +13,8 @@ import com.dotcms.auth.BasicAuthentication;
 import com.dotcms.config.SystemTableConfigSource;
 import com.dotcms.featureflag.FeatureFlagName;
 import java.lang.reflect.Field;
+import java.io.InputStream;
+import java.util.Properties;
 import java.util.Set;
 import org.junit.After;
 import org.junit.Before;
@@ -77,6 +81,22 @@ public class UrlCredentialsConfigTest extends UnitTestBase {
             assertEquals("Environment value: " + value, Boolean.parseBoolean(value.trim()),
                     BasicAuthentication.allowUrlCredentials());
         }
+    }
+
+    /** A cluster-file-only true must not merge with a shipped false into an ambiguous list. */
+    @Test
+    public void singleFileOptInDoesNotConflictWithTheShippedDefault() throws Exception {
+        final Properties bundled = new Properties();
+        try (InputStream input = Config.class.getResourceAsStream("/dotmarketing-config.properties")) {
+            assertNotNull(input);
+            bundled.load(input);
+        }
+        assertNull("The default belongs in the strict getter, not an additional file value",
+                bundled.getProperty(KEY));
+        Config.props.clearProperty(KEY);
+        assertFalse(BasicAuthentication.allowUrlCredentials());
+        Config.props.addProperty(KEY, "true");
+        assertTrue(BasicAuthentication.allowUrlCredentials());
     }
 
     /** The default applies only to an absent value, never to an explicit empty or false value. */
