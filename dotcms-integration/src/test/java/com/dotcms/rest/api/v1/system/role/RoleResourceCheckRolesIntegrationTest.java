@@ -10,6 +10,7 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -114,7 +115,7 @@ public class RoleResourceCheckRolesIntegrationTest {
     @SuppressWarnings("unchecked")
     private static Object checkRolesValue(final Response response) {
         final Map<String, Object> entity =
-                ((ResponseEntityRoleOperationView) response.getEntity()).getEntity();
+                ((ResponseEntityView<Map<String, Object>>) response.getEntity()).getEntity();
         return entity.get("checkRoles");
     }
 

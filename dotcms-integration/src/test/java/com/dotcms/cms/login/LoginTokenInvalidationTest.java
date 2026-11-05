@@ -244,7 +244,7 @@ public class LoginTokenInvalidationTest {
                 new MockHttpRequestIntegrationTest("localhost", "/api/v1/users").request());
         request.setHeader("Authorization",
                 "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
-        final Response response = new UserResource().update(request, mock(HttpServletResponse.class),
+        final Response response = new UserResource().udpate(request, mock(HttpServletResponse.class),
                 new UserForm.Builder()
                         .userId(user.getUserId())
                         .firstName(user.getFirstName())

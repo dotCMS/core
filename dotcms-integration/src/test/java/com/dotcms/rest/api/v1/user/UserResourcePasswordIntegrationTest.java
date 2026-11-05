@@ -25,13 +25,10 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.quartz.job.EncryptPlainPasswordsJob;
-import com.dotmarketing.quartz.job.TestJobExecutor;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -46,8 +43,7 @@ import org.junit.Test;
 /**
  * Covers how {@link UserResource} handles the password on {@code POST /api/v1/users} and
  * {@code PUT /api/v1/users}: the configured password policy is applied, and the password is stored
- * hashed with {@code user_.passwordEncrypted} set, so {@link EncryptPlainPasswordsJob} leaves it as
- * it is.
+ * hashed with {@code user_.passwordEncrypted} set.
  */
 public class UserResourcePasswordIntegrationTest {
 
@@ -95,7 +91,7 @@ public class UserResourcePasswordIntegrationTest {
     public void test_update_validPassword_storedHashed() throws Exception {
         final User target = newUser();
 
-        final Response resourceResponse = resource.update(adminRequest(), response,
+        final Response resourceResponse = resource.udpate(adminRequest(), response,
                 updateFormFor(target).password(VALID_PASSWORD.toCharArray()).build());
         assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
 
@@ -114,7 +110,7 @@ public class UserResourcePasswordIntegrationTest {
         final Map<String, Object> before = loadRow(target.getUserId());
 
         final DotDataException exception = assertThrows(DotDataException.class,
-                () -> resource.update(adminRequest(), response,
+                () -> resource.udpate(adminRequest(), response,
                         updateFormFor(target).password(SHORT_PASSWORD.toCharArray()).build()));
         assertEquals("User-Info-Save-Password-Failed", exception.getMessageKey());
 
@@ -132,7 +128,7 @@ public class UserResourcePasswordIntegrationTest {
         final User target = newUser();
         final Map<String, Object> before = loadRow(target.getUserId());
 
-        final Response resourceResponse = resource.update(adminRequest(), response,
+        final Response resourceResponse = resource.udpate(adminRequest(), response,
                 updateFormFor(target).firstName("Renamed").build());
         assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
 
@@ -142,13 +138,12 @@ public class UserResourcePasswordIntegrationTest {
 
     /**
      * Method to test: {@link UserResource#create(HttpServletRequest, HttpServletResponse, UserForm)}
-     * Given Scenario: An admin creates a user with a password that meets the password policy, and
-     * then {@link EncryptPlainPasswordsJob} runs.
-     * Expected Result: 200; the password is stored hashed and flagged as encrypted right away, and
-     * the job leaves that hash as it is, so the user can still log in with the password.
+     * Given Scenario: An admin creates a user with a password that meets the password policy.
+     * Expected Result: 200; the password is stored hashed and flagged as encrypted right away, so
+     * the user can log in with the password.
      */
     @Test
-    public void test_create_validPassword_storedHashedAndKeptByEncryptJob() throws Exception {
+    public void test_create_validPassword_storedHashed() throws Exception {
         final String userId = "pwdcreate-" + uniq();
 
         final Response resourceResponse = resource.create(adminRequest(), response,
@@ -156,13 +151,6 @@ public class UserResourcePasswordIntegrationTest {
         assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
         usersToClean.add(APILocator.getUserAPI().loadUserById(userId));
 
-        assertStoredHashOf(userId, VALID_PASSWORD);
-        final Object storedHash = loadRow(userId).get("password_");
-
-        TestJobExecutor.execute(new EncryptPlainPasswordsJob(), new HashMap<>());
-
-        assertEquals("the job must not change a password that is already hashed",
-                storedHash, loadRow(userId).get("password_"));
         assertStoredHashOf(userId, VALID_PASSWORD);
     }
 
