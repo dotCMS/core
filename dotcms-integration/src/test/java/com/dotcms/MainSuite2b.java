@@ -48,7 +48,6 @@ import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.csspreproc.CSSPreProcessServletIT;
 import com.dotcms.dotpubsub.RedisPubSubImplTest;
-import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.bundler.URLMapBundlerTest;
 import com.dotcms.enterprise.publishing.remote.StaticPushPublishBundleGeneratorTest;
@@ -278,7 +277,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplMappingTimeoutIT.class,
         com.dotmarketing.common.reindex.ReindexAPITest.class,
         CleanUpFieldReferencesJobTest.class,
-        EMAWebInterceptorTest.class,
 
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
@@ -595,6 +593,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.languagesmanager.action.EditLanguageKeysActionTest.class,
         UserServiceFactoryTest.class,
         com.dotmarketing.portlets.contentlet.action.EditContentletActionRetrieveTest.class,
+        com.dotmarketing.quartz.job.ContentImportThreadTest.class,
+        com.dotmarketing.portlets.scheduler.action.EditSchedulerActionTest.class,
 })
 
 public class MainSuite2b {

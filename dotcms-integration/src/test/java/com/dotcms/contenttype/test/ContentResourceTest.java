@@ -1,5 +1,8 @@
 package com.dotcms.contenttype.test;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
@@ -19,10 +22,14 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ContentResource;
 import com.dotcms.rest.RESTParams;
+import com.dotcms.rest.JsonObjectView;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.SearchForm;
+import com.dotcms.rest.SearchView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.*;
@@ -55,7 +62,6 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
-import java.util.Base64;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -105,6 +111,9 @@ import static org.mockito.Mockito.when;
 @ApplicationScoped
 @RunWith(DataProviderWeldRunner.class)
 public class ContentResourceTest extends IntegrationTestBase {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     final static String REQUIRED_NUMERIC_FIELD_NAME = "numeric";
     final static String NON_REQUIRED_IMAGE_FIELD_NAME = "image";
@@ -1407,21 +1416,21 @@ public class ContentResourceTest extends IntegrationTestBase {
             final String params = "id/" + content.getIdentifier();
 
             final JSONObject anonymousView = new JSONObject(contentResource.canLockContent(
-                    lockStatusRequest(null, null), mock(HttpServletResponse.class), params)
+                    lockStatusRequest(null), mock(HttpServletResponse.class), params)
                     .getEntity().toString());
             assertTrue(anonymousView.getBoolean("locked"));
             assertFalse(anonymousView.has("lockedBy"));
             assertFalse(anonymousView.has("lockedByName"));
 
             final JSONObject frontendView = new JSONObject(contentResource.canLockContent(
-                    lockStatusRequest(frontendCaller.getEmailAddress(), password),
+                    lockStatusRequest(frontendCaller),
                     mock(HttpServletResponse.class), params).getEntity().toString());
             assertTrue(frontendView.getBoolean("locked"));
             assertFalse(frontendView.has("lockedBy"));
             assertFalse(frontendView.has("lockedByName"));
 
             final JSONObject backendView = new JSONObject(contentResource.canLockContent(
-                    lockStatusRequest(backendCaller.getEmailAddress(), password),
+                    lockStatusRequest(backendCaller),
                     mock(HttpServletResponse.class), params).getEntity().toString());
             assertTrue(backendView.getBoolean("locked"));
             assertEquals(owner.getUserId(), backendView.getString("lockedBy"));
@@ -1443,20 +1452,31 @@ public class ContentResourceTest extends IntegrationTestBase {
     }
 
     /**
-     * Builds a request with Basic credentials for the given user, or with no credentials when
-     * {@code email} is null.
+     * Builds a request that authenticates as the given user with a Bearer API token, or with no
+     * credentials for the anonymous caller. Username/password Basic is disabled by default.
+     *
+     * @param user the fixture user to authenticate as, or null for the anonymous caller
+     * @return the request
      */
-    private static HttpServletRequest lockStatusRequest(final String email, final String password) {
+    private HttpServletRequest lockStatusRequest(final User user) {
         final MockHeaderRequest request = new MockHeaderRequest(new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/")
                         .request()).request()).request());
-        if (email != null) {
-            request.setHeader("Authorization", "Basic " + Base64.getEncoder()
-                    .encodeToString((email + ":" + password).getBytes()));
+        if (user != null) {
+            request.setHeader("Authorization", TOKEN_UTILS.bearerHeader(user));
         }
         return request;
     }
 
+
+    /**
+     * Builds a request that authenticates with a Bearer API token: the admin token when no user is
+     * supplied, the given user's token otherwise, and no credential for the anonymous user.
+     *
+     * @param jsonPayload the request body, or null
+     * @param user the fixture user to authenticate as, or null for the admin
+     * @return the request
+     */
     private HttpServletRequest createHttpRequest(final String jsonPayload, final User user) throws Exception{
 
         MockHeaderRequest request = new MockHeaderRequest(
@@ -1467,10 +1487,10 @@ public class ContentResourceTest extends IntegrationTestBase {
         );
 
         if (user == null){
-            request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString(("admin@dotcms.com:admin").getBytes()));
+            request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
 
         } else if (!user.equals(userAPI.getAnonymousUser())){
-            request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString((user.getEmailAddress() + ":" + user.getPassword()).getBytes()));
+            request.setHeader("Authorization", TOKEN_UTILS.bearerHeader(user));
         }
 
         if (jsonPayload != null) {
@@ -2232,6 +2252,222 @@ public class ContentResourceTest extends IntegrationTestBase {
             clearFieldFilter();
             deleteContentTypes(List.of(indexedUnfiltered.contentType, indexedFiltered.contentType));
         }
+    }
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: one live item on the default variant and one on a named variant, both readable by the
+     * anonymous role, fetched through the Lucene path by an anonymous caller — once without mentioning a
+     * variant, which is how that endpoint is normally called, and once naming the variant in the query text,
+     * which is the one way the query reaching the index can carry a variant today.
+     * Expected result: the anonymous caller only ever gets the item on the default variant; naming the variant
+     * changes nothing. The controls run first, so a failure here is about the scope and not about a fixture
+     * that never held: an administrator reaching the named variant, and the anonymous caller still getting
+     * the item on the default one, are both asserted before the behaviour under test.
+     */
+    @Test
+    public void test_getContentByQuery_anonymousUser_isScopedToTheDefaultVariant() throws Exception {
+        final VariantContentFixture fixture = createVariantContentFixture();
+        try {
+            final User anonymous = userAPI.getAnonymousUser();
+            final String named = fixture.onNamedVariant.getIdentifier();
+            final String namedClause = "+identifier:" + named + " +variant:" + fixture.variant.name();
+
+            assertEquals("fixture problem: a back-end caller does not reach the named variant, so there "
+                            + "is nothing here for an anonymous caller to reach either", 1,
+                    countByQuery(TestUserUtils.getAdminUser(), namedClause));
+            assertEquals("the item on the default variant must still be returned", 1,
+                    countByQuery(anonymous, "+identifier:" + fixture.onDefaultVariant.getIdentifier()));
+
+            assertEquals("the Lucene endpoint names no variant, so it must resolve on the default one",
+                    0, countByQuery(anonymous, "+identifier:" + named));
+            assertEquals("a caller without back-end access must not be able to choose the variant its "
+                            + "query resolves on", 0, countByQuery(anonymous, namedClause));
+
+            // The item that is live on both axes shows the other half of the behaviour: naming the
+            // variant does not empty the answer, it moves it to the default variant.
+            assertEquals("a caller that named a variant must still be answered, on the default "
+                            + "variant", 1,
+                    countByQuery(anonymous, "+identifier:" + fixture.onBothVariants.getIdentifier()
+                            + " +variant:" + fixture.variant.name()));
+        } finally {
+            deleteContentTypes(List.of(fixture.contentType));
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentResource#search(HttpServletRequest, HttpServletResponse, boolean, SearchForm)}
+     * Given scenario: the same two items, reached through the endpoint that already defaults the variant, by
+     * an anonymous caller whose query names the variant — which is what turns that default off.
+     * Expected result: the named variant is not returned, while a back-end caller still gets it.
+     */
+    @Test
+    public void test_search_anonymousUserNamingTheVariant_isScopedToTheDefaultVariant() throws Exception {
+        final VariantContentFixture fixture = createVariantContentFixture();
+        try {
+            final SearchForm namingTheVariant = new SearchForm.Builder()
+                    .query("+identifier:" + fixture.onNamedVariant.getIdentifier() + " +variant:"
+                            + fixture.variant.name()).build();
+
+            assertEquals("fixture problem: a back-end caller does not reach the named variant through "
+                            + "this endpoint, so an anonymous caller could not either", 1,
+                    searchHitCount(new ContentResource().search(
+                            createHttpRequest(null, TestUserUtils.getAdminUser()),
+                            mock(HttpServletResponse.class), false, namingTheVariant)));
+
+            assertEquals("naming the variant must not take the default scope off this endpoint", 0,
+                    searchHitCount(new ContentResource().search(
+                            createHttpRequest(null, userAPI.getAnonymousUser()),
+                            mock(HttpServletResponse.class), false, namingTheVariant)));
+        } finally {
+            deleteContentTypes(List.of(fixture.contentType));
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentResource#search(HttpServletRequest, HttpServletResponse, boolean, SearchForm)}
+     * Given scenario: the item that is live on both the default variant and the named one, asked for by an
+     * anonymous caller whose query names the variant.
+     * Expected result: the caller is answered with the version on the default variant, not with an empty
+     * result. Contradicting the caller's variant term would be enough to keep the named version away — and the
+     * search layer does exactly that on every path — but it would also take the content away from a front end
+     * that forwards the variant name it was routed with. Dropping the term answers the question that was
+     * actually asked, on the default variant.
+     */
+    @Test
+    public void test_search_anonymousUserNamingTheVariant_answersWithTheDefaultVersion() throws Exception {
+        final VariantContentFixture fixture = createVariantContentFixture();
+        try {
+            final SearchForm namingTheVariant = new SearchForm.Builder()
+                    .query("+identifier:" + fixture.onBothVariants.getIdentifier() + " +variant:"
+                            + fixture.variant.name()).build();
+
+            final List<String> inodes = searchInodes(new ContentResource().search(
+                    createHttpRequest(null, userAPI.getAnonymousUser()),
+                    mock(HttpServletResponse.class), false, namingTheVariant));
+
+            assertEquals("a caller that named a variant must still be answered, on the default variant",
+                    List.of(fixture.onBothVariants.getInode()), inodes);
+            assertFalse("the version stored on the named variant must not be the one answered with",
+                    inodes.contains(fixture.onBothVariantsNamedVersion.getInode()));
+        } finally {
+            deleteContentTypes(List.of(fixture.contentType));
+        }
+    }
+
+    /**
+     * One content type holding three live items — one on the default variant, one on a named variant, and one
+     * that is live on both at once — all readable by the anonymous role, so the only thing separating them in
+     * a query is the variant.
+     */
+    private static final class VariantContentFixture {
+        private final ContentType contentType;
+        private final Variant variant;
+        private final Contentlet onDefaultVariant;
+        private final Contentlet onNamedVariant;
+        private final Contentlet onBothVariants;
+        private final Contentlet onBothVariantsNamedVersion;
+
+        private VariantContentFixture(final ContentType contentType, final Variant variant,
+                final Contentlet onDefaultVariant, final Contentlet onNamedVariant,
+                final Contentlet onBothVariants, final Contentlet onBothVariantsNamedVersion) {
+            this.contentType = contentType;
+            this.variant = variant;
+            this.onDefaultVariant = onDefaultVariant;
+            this.onNamedVariant = onNamedVariant;
+            this.onBothVariants = onBothVariants;
+            this.onBothVariantsNamedVersion = onBothVariantsNamedVersion;
+        }
+    }
+
+    /**
+     * Creates the three live items and lets the anonymous role read the type and all of them.
+     *
+     * @return the created content
+     * @throws Exception if the content cannot be created
+     */
+    private VariantContentFixture createVariantContentFixture() throws Exception {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final ContentType contentType = createSampleContentType(false);
+        final Role anonymousRole = roleAPI.loadCMSAnonymousRole();
+        final ContentletDataGen dataGen = new ContentletDataGen(contentType.id())
+                .languageId(languageAPI.getDefaultLanguage().getId()).setPolicy(IndexPolicy.WAIT_FOR);
+        final Contentlet onDefaultVariant = dataGen.nextPersisted();
+        final Contentlet onNamedVariant = ContentletDataGen.createNewVersion(dataGen.nextPersisted(),
+                variant, null);
+        // A third item is live on both axes at once. Without it a scoped query and an emptied one
+        // look the same, because the other two items have nothing live on the default variant to
+        // answer with.
+        final Contentlet onBothVariants = dataGen.nextPersisted();
+        final Contentlet onBothVariantsNamedVersion = ContentletDataGen.createNewVersion(
+                onBothVariants, variant, null);
+
+        for (final Contentlet contentlet : List.of(onDefaultVariant, onNamedVariant,
+                onBothVariants, onBothVariantsNamedVersion)) {
+            ContentletDataGen.publish(contentlet);
+        }
+        // Keyed by identifier, so the two versions of the third item are granted once
+        for (final Contentlet contentlet : List.of(onDefaultVariant, onNamedVariant,
+                onBothVariants)) {
+            permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                            contentlet.getPermissionId(), anonymousRole.getId(),
+                            PermissionAPI.PERMISSION_READ, true), contentlet, user, false);
+        }
+        permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                        contentType.getPermissionId(), anonymousRole.getId(),
+                        PermissionAPI.PERMISSION_READ, true), contentType, user, false);
+        return new VariantContentFixture(contentType, variant, onDefaultVariant, onNamedVariant,
+                onBothVariants, onBothVariantsNamedVersion);
+    }
+
+    /**
+     * Counts what GET /api/content/query returns for the given user and Lucene query.
+     *
+     * @param caller the user running the query
+     * @param query the Lucene query to run
+     * @return the number of contentlets returned
+     * @throws Exception if the call fails
+     */
+    private int countByQuery(final User caller, final String query) throws Exception {
+        final Response endpointResponse = new ContentResource().getContent(createHttpRequest(null, caller),
+                mock(HttpServletResponse.class), "/query/" + query);
+        assertEquals(String.valueOf(endpointResponse.getEntity()), Status.OK.getStatusCode(),
+                endpointResponse.getStatus());
+        return new JSONObject(endpointResponse.getEntity().toString()).getJSONArray("contentlets").length();
+    }
+
+    /**
+     * Reads how many contentlets a POST /api/content/_search response carried. The contentlets are read off
+     * the view rather than off serialized JSON, because {@link JsonObjectView} serializes through its own
+     * serializer and the round trip does not reproduce the shape the endpoint writes.
+     *
+     * @param response the endpoint response
+     * @return the number of contentlets returned
+     */
+    private int searchHitCount(final Response response) {
+        assertEquals(String.valueOf(response.getEntity()), Status.OK.getStatusCode(), response.getStatus());
+        final SearchView searchView = (SearchView) ((ResponseEntityView<?>) response.getEntity()).getEntity();
+        final JSONArray contentlets = searchView.getJsonObjectView().getJsonObject()
+                .optJSONArray("contentlets");
+        return contentlets == null ? 0 : contentlets.length();
+    }
+
+    /**
+     * Reads the inode of every contentlet a POST /api/content/_search response carried, so the version that
+     * answered can be told apart from its sibling on another variant.
+     *
+     * @param response the endpoint response
+     * @return the inodes returned, in the order the endpoint wrote them
+     */
+    private List<String> searchInodes(final Response response) {
+        assertEquals(String.valueOf(response.getEntity()), Status.OK.getStatusCode(), response.getStatus());
+        final SearchView searchView = (SearchView) ((ResponseEntityView<?>) response.getEntity()).getEntity();
+        final JSONArray contentlets = searchView.getJsonObjectView().getJsonObject()
+                .optJSONArray("contentlets");
+        final List<String> inodes = new ArrayList<>();
+        for (int index = 0; contentlets != null && index < contentlets.length(); index++) {
+            inodes.add(contentlets.getJSONObject(index).getString("inode"));
+        }
+        return inodes;
     }
 
     /**

@@ -153,10 +153,6 @@ export function withEditor() {
                 return store.viewMode() === UVE_MODE.EDIT;
             });
 
-            const $isEmaLegacyScriptInjectionEnabled = computed(
-                () => store.flags()?.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION === true
-            );
-
             /**
              * The selected contentlet as the edit panel shows it: the page-asset version when the
              * page holds it, which is the latest saved one, otherwise the selection's own payload.
@@ -217,7 +213,6 @@ export function withEditor() {
                 editorCanEditLayout,
                 editorCanEditStyles,
                 editorEnableInlineEdit,
-                $isEmaLegacyScriptInjectionEnabled,
                 editorHasAccessToEditMode,
                 $editorContentletEditData,
                 editorCanEditSelectedContentlet,

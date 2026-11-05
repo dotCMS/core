@@ -6,11 +6,15 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
@@ -23,13 +27,16 @@ import com.liferay.portal.model.User;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 import org.mockito.MockedStatic;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
+import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.Optional;
 
@@ -333,19 +340,99 @@ public class PageScannerResourceTest {
     }
 
     // -----------------------------------------------------------------------
+    // Service URL check — runs before any token is created
+    // -----------------------------------------------------------------------
+
+    /**
+     * Method to test: {@link PageScannerResource#a11yCheck}
+     * Given scenario: The App's {@code apiUrl} is a plain {@code http} URL.
+     * Expected result: 503 PAGE_SCANNER_NOT_CONFIGURED, the same answer as an unconfigured
+     *   App; no token is created and nothing is sent.
+     */
+    @Test
+    void a11yCheck_refusedApiUrl_returns503WithoutTokenOrRequest() throws Exception {
+        configureSecrets("http://203.0.113.10");
+        configureTokenGeneration();
+        configureHttpClient(200, "{}");
+
+        final Response resp = resource.a11yCheck(request, response,
+                new PageScanCheckForm.Builder().url("https://example.com").build());
+
+        assertEquals(Response.Status.SERVICE_UNAVAILABLE.getStatusCode(), resp.getStatus());
+        assertEquals("PAGE_SCANNER_NOT_CONFIGURED", errorCode(resp));
+        verify(apiTokenAPI, never())
+                .persistApiToken(anyString(), any(), anyString(), anyString(), anyString());
+        verify(httpClient, never()).send(any(), any());
+    }
+
+    /**
+     * Method to test: {@link PageScannerResource#geoCheck}
+     * Given scenario: The App's {@code apiUrl} is a plain {@code http} URL.
+     * Expected result: same as the a11y endpoint — 503, no token, nothing sent.
+     */
+    @Test
+    void geoCheck_refusedApiUrl_returns503WithoutTokenOrRequest() throws Exception {
+        configureSecrets("http://203.0.113.10");
+        configureTokenGeneration();
+        configureHttpClient(200, "{}");
+
+        final Response resp = resource.geoCheck(request, response,
+                new PageScanCheckForm.Builder().url("https://example.com").build());
+
+        assertEquals(Response.Status.SERVICE_UNAVAILABLE.getStatusCode(), resp.getStatus());
+        assertEquals("PAGE_SCANNER_NOT_CONFIGURED", errorCode(resp));
+        verify(apiTokenAPI, never())
+                .persistApiToken(anyString(), any(), anyString(), anyString(), anyString());
+        verify(httpClient, never()).send(any(), any());
+    }
+
+    /**
+     * Method to test: {@link PageScannerResource#a11yCheck}
+     * Given scenario: The App's {@code apiUrl} is an accepted https URL with a trailing slash.
+     * Expected result: the request goes to that base URL plus the check path.
+     */
+    @Test
+    void a11yCheck_acceptedApiUrl_sendsToTheConfiguredBase() throws Exception {
+        configureSecrets("https://203.0.113.10/");
+        configureTokenGeneration();
+        configureHttpClient(200, "{}");
+
+        resource.a11yCheck(request, response,
+                new PageScanCheckForm.Builder().url("https://example.com").build());
+
+        final ArgumentCaptor<HttpRequest> sent = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(httpClient).send(sent.capture(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any());
+        assertEquals(URI.create("https://203.0.113.10/v1/a11y/check"), sent.getValue().uri());
+    }
+
+    // -----------------------------------------------------------------------
     // Private helpers
     // -----------------------------------------------------------------------
 
-    /** Stubs appsAPI to return a fully-populated {@link AppSecrets}. */
+    /**
+     * Stubs appsAPI to return a fully-populated {@link AppSecrets}. The service URL is a
+     * public address literal, so the URL check needs no name lookup.
+     */
     private void configureValidSecrets() throws Exception {
+        configureSecrets("https://203.0.113.10");
+    }
+
+    /** Stubs appsAPI to return the given {@code apiUrl} and an auth token. */
+    private void configureSecrets(final String apiUrl) throws Exception {
         final AppSecrets secrets = AppSecrets.builder()
                 .withKey(PageScannerResource.APP_KEY)
-                .withSecret("apiUrl", "https://scanner.example.com")
+                .withSecret("apiUrl", apiUrl)
                 .withHiddenSecret("apiAuthToken", "super-secret-token")
                 .build();
 
         when(appsAPI.getSecrets(anyString(), anyBoolean(), any(Host.class), any(User.class)))
                 .thenReturn(Optional.of(secrets));
+    }
+
+    /** Reads the error code of an error response built by the resource. */
+    private static String errorCode(final Response resp) {
+        return ((ErrorEntity) ((ResponseEntityView<?>) resp.getEntity()).getEntity()).getErrorCode();
     }
 
     /** Stubs apiTokenAPI so {@link PageScannerResource#generateShortLivedToken} succeeds. */

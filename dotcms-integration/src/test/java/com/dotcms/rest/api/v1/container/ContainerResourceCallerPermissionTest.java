@@ -16,6 +16,7 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -26,6 +27,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.SecurityException;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -46,9 +48,11 @@ import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
 import io.vavr.control.Try;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +68,7 @@ import javax.ws.rs.core.Response;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
@@ -72,6 +77,9 @@ import org.junit.Test;
  * find or create the widget a form is placed on a page with.
  */
 public class ContainerResourceCallerPermissionTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static final String PASSWORD = "admin";
     /** The key prefix ContainerResource locks a form's widget creation on. */
@@ -308,6 +316,10 @@ public class ContainerResourceCallerPermissionTest {
      * Given: a form with no widget yet
      * When: several requests ask for its widget to be created at the same time
      * Should: create a single widget and return it to all of them
+     * <p>
+     * The requests carry an API token rather than a password: login lockout refuses password logins
+     * from one address beyond {@code auth.max.failures.limit} in flight at once, which is not what
+     * this test is about.
      */
     @Test
     public void test_createForm_concurrentRequests_createOneWidget() throws Exception {
@@ -316,13 +328,16 @@ public class ContainerResourceCallerPermissionTest {
         final int requests = 6;
         final CountDownLatch start = new CountDownLatch(1);
         final ExecutorService pool = Executors.newFixedThreadPool(requests);
+        final ApiToken apiToken = APILocator.getApiTokenAPI().persistApiToken(adminUser.getUserId(),
+                Date.from(Instant.now().plus(Duration.ofHours(1))), adminUser.getUserId(), "127.0.0.1");
+        final String bearer = "Bearer " + APILocator.getApiTokenAPI().getJWT(apiToken, adminUser);
         try {
             final List<Future<String>> results = new ArrayList<>();
             for (int i = 0; i < requests; i++) {
                 results.add(pool.submit(() -> {
                     start.await();
                     return widgetIdentifier(resource.createContainerFormByQueryParam(
-                            request(adminUser), response, containerId, form.id()));
+                            request(bearer), response, containerId, form.id()));
                 }));
             }
             start.countDown();
@@ -335,6 +350,7 @@ public class ContainerResourceCallerPermissionTest {
             assertEquals("a single widget should be created", 1, widgetsFor(form.id()).size());
         } finally {
             pool.shutdownNow();
+            APILocator.getApiTokenAPI().deleteToken(apiToken, APILocator.systemUser());
         }
     }
 
@@ -763,14 +779,29 @@ public class ContainerResourceCallerPermissionTest {
         }
     }
 
+    /**
+     * Builds a request carrying an API JWT owned by the given user.
+     *
+     * @param user the user the request authenticates as
+     * @return the request
+     */
     private static HttpServletRequest request(final User user) {
+        return request(TOKEN_UTILS.bearerHeader(user));
+    }
+
+    /**
+     * Builds a request that carries the given {@code Authorization} header.
+     *
+     * @param authorization the value of the {@code Authorization} header
+     * @return the request
+     */
+    private static HttpServletRequest request(final String authorization) {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
                         new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
                                 .request())
                         .request());
-        request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode((user.getEmailAddress() + ":" + PASSWORD).getBytes())));
+        request.setHeader("Authorization", authorization);
         return request;
     }
 

@@ -5967,6 +5967,8 @@ paths:
           description: Unauthorized - User not authenticated
         "403":
           description: Forbidden - User lacks required permissions
+        "404":
+          description: Not found - The content type does not exist
         "500":
           description: Internal server error
       summary: Retrieves a paginated list of Containers
@@ -14379,7 +14381,7 @@ paths:
   /v1/page/render/{uri}:
     get:
       description: |-
-        Returns the metadata of an HTML Page including its rendered HTML code and container content in JSON format based on the specified URI. If the URI maps to a Vanity URL, a 200 Forward returns the actual rendered page, while a 301/302 redirect returns an empty page JSON with Vanity URL properties. Supports Time Machine via the publishDate parameter (ISO 8601 format). For EMA (Enterprise Marketing Automation) requests, this may delegate to the JSON endpoint when the rendered attribute is not required.
+        Returns the metadata of an HTML Page including its rendered HTML code and container content in JSON format based on the specified URI. If the URI maps to a Vanity URL, a 200 Forward returns the actual rendered page, while a 301/302 redirect returns an empty page JSON with Vanity URL properties. Supports Time Machine via the publishDate parameter (ISO 8601 format).
 
         The URI must be a plain page path (no embedded host). To render a page on a NON-default site, pass the `host_id` query parameter (backend users only); without it the current/default site is used. The `//host/uri` path form is NOT supported.
       operationId: getPageRenderByUri
@@ -15185,7 +15187,7 @@ paths:
         "404":
           content:
             application/json: {}
-          description: User not found
+          description: User or individual role not found
       summary: Get user permissions
       tags:
       - Permissions

@@ -18,6 +18,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -222,7 +223,11 @@ public class LanguageAPITest {
 		assertEquals(translatedMap.get(BAD_KEY), BAD_KEY);
 
 		// We should check content based keys - languagevariables - before .properties files
-		assertEquals(CONTENTLET_KEY + "works", translatedMap.get(CONTENTLET_KEY));
+		if (!(CONTENTLET_KEY + "works").equals(translatedMap.get(CONTENTLET_KEY))) {
+			// Only on failure: report where the key was lost instead of just the two values.
+			Assert.fail(describeContentletKeyLookup(language, con, CONTENTLET_KEY, translatedMap)
+					+ " expected value=" + CONTENTLET_KEY + "works");
+		}
 
 		// then we should check properties files based on the locale
 		assertEquals(PROPERTYFILE_KEY + "works", translatedMap.get(PROPERTYFILE_KEY));
@@ -234,6 +239,54 @@ public class LanguageAPITest {
 	}
   }
 
+
+	/**
+	 * Builds the failure message for the content-based key assertion in
+	 * {@link #getStringsAsMap_returnMap()}. It is only called once that assertion is about to fail.
+	 * The flake returns the key itself instead of its value, and several causes give that same
+	 * result: the language not resolving, the live version missing from the database, the live
+	 * document missing from the search index, or a search error that the key/value lookup swallows.
+	 * The message reports the state for each of them.
+	 *
+	 * @param language the language the contentlet was created in
+	 * @param contentlet the language variable contentlet that holds the key
+	 * @param key the language variable key being looked up
+	 * @param translatedMap the map returned by {@code getStringsAsMap}
+	 * @return a description of the database and search index state for the key
+	 */
+	private static String describeContentletKeyLookup(final Language language,
+			final Contentlet contentlet, final String key, final Map<String, String> translatedMap) {
+		final StringBuilder sb = new StringBuilder("Language variable '").append(key)
+				.append("' was not resolved. map value=").append(translatedMap.get(key))
+				.append(", language id=").append(language.getId())
+				.append(" (").append(language.getLanguageCode()).append("-")
+				.append(language.getCountryCode()).append(")");
+		try {
+			final Locale locale = language.asLocale();
+			final Language resolved = APILocator.getLanguageAPI()
+					.getLanguage(locale.getLanguage(), locale.getCountry());
+			sb.append(", language resolved from locale=")
+					.append(null == resolved ? "null" : resolved.getId());
+			sb.append(", contentlet identifier=").append(contentlet.getIdentifier())
+					.append(", inode=").append(contentlet.getInode())
+					.append(", index policy=").append(contentlet.getIndexPolicy());
+			sb.append(", version info=").append(new DotConnect().setSQL(
+					"SELECT working_inode, live_inode, deleted FROM contentlet_version_info "
+							+ "WHERE identifier=? AND lang=?")
+					.addParam(contentlet.getIdentifier()).addParam(language.getId())
+					.loadObjectResults());
+			final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+			sb.append(", live documents in index=").append(contentletAPI.search(
+					"+identifier:" + contentlet.getIdentifier() + " +languageId:" + language.getId()
+							+ " +live:true", 0, -1, "", APILocator.systemUser(), false).size());
+			sb.append(", working documents in index=").append(contentletAPI.search(
+					"+identifier:" + contentlet.getIdentifier() + " +languageId:" + language.getId()
+							+ " +working:true", 0, -1, "", APILocator.systemUser(), false).size());
+		} catch (Exception e) {
+			sb.append(", while collecting this state: ").append(e);
+		}
+		return sb.toString();
+	}
 
 	/**
 	 * This is basically the same test as above but with the localization enhancements enabled
