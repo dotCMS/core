@@ -1,0 +1,963 @@
+{
+	"info": {
+		"_postman_id": "3f6c9a52-7b1e-4d0a-9c35-2e8f1a7d4b61",
+		"name": "Workflow Fire Permission List",
+		"description": "Firing a workflow action with an individual permission list as a user who may not edit permissions.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "A changed permission list from a user who may not edit permissions answers 403 and leaves the rows unchanged",
+			"item": [
+				{
+					"name": "Create site",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"const suffix = pm.variables.replaceIn('{{$guid}}').replace(/-/g, '').substring(0, 12);",
+									"pm.collectionVariables.set('suffix', suffix);",
+									"pm.collectionVariables.set('editorEmail', 'editor' + suffix + '@dotcms.com');",
+									"pm.collectionVariables.set('editorPassword', 'Editor-Pw-' + suffix + '-Aa1!');"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Site is created\", function () {",
+									"    pm.expect(pm.response.json().entity.identifier).to.be.a(\"string\").and.not.empty;",
+									"});",
+									"pm.collectionVariables.set(\"siteId\", pm.response.json().entity.identifier);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\"siteName\": \"permission-list-{{suffix}}.dotcms.com\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create a role that is not on the contentlet",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Role is created\", function () {",
+									"    pm.expect(pm.response.json().entity.id).to.be.a(\"string\").and.not.empty;",
+									"});",
+									"pm.collectionVariables.set(\"extraRoleId\", pm.response.json().entity.id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/roles",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roles"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\"roleName\": \"Extra role {{suffix}}\", \"roleKey\": \"extra-role-{{suffix}}\", \"canEditUsers\": false, \"canEditPermissions\": true, \"canEditLayouts\": false, \"description\": \"Role added by the permission list\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create the editor back-end user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"User is created with a role\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.userID).to.be.a(\"string\").and.not.empty;",
+									"    pm.expect(entity.roleId).to.be.a(\"string\").and.not.empty;",
+									"});",
+									"pm.collectionVariables.set(\"editorUserId\", pm.response.json().entity.userID);",
+									"pm.collectionVariables.set(\"editorRoleId\", pm.response.json().entity.roleId);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\"firstName\": \"Editor\", \"lastName\": \"{{suffix}}\", \"email\": \"{{editorEmail}}\", \"password\": \"{{editorPassword}}\", \"active\": true, \"roles\": [\"DOTCMS_BACK_END_USER\"]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Editor may read the site and its content types",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/permissions/{{siteId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"permissions",
+								"{{siteId}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\"permissions\": [{\"roleId\": \"{{editorRoleId}}\", \"individual\": [\"READ\"], \"inheritable\": {\"CONTENT_TYPE\": [\"READ\"]}}]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create the content type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const type = pm.response.json().entity[0];",
+									"pm.test(\"Content type is created\", function () {",
+									"    pm.expect(type.id).to.be.a(\"string\").and.not.empty;",
+									"});",
+									"pm.collectionVariables.set(\"contentTypeId\", type.id);",
+									"pm.collectionVariables.set(\"contentTypeVariable\", type.variable);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n  \"name\": \"PermissionList{{suffix}}\",\n  \"variable\": \"PermissionList{{suffix}}\",\n  \"host\": \"{{siteId}}\",\n  \"workflow\": [\n    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n  ],\n  \"fields\": [\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n      \"dataType\": \"TEXT\",\n      \"name\": \"title\",\n      \"variable\": \"title\",\n      \"required\": true,\n      \"indexed\": true,\n      \"searchable\": true\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n      \"dataType\": \"SYSTEM\",\n      \"name\": \"Site or Folder\",\n      \"variable\": \"hostFolder\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create the contentlet with Save as admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Contentlet is created\", function () {",
+									"    pm.expect(pm.response.json().entity.identifier).to.be.a(\"string\").and.not.empty;",
+									"});",
+									"pm.collectionVariables.set(\"contentletId\", pm.response.json().entity.identifier);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/ceca71a0-deee-4999-bd47-b01baa1bcfc8/fire?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"ceca71a0-deee-4999-bd47-b01baa1bcfc8",
+								"fire"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\"contentlet\": {\"contentType\": \"{{contentTypeVariable}}\", \"title\": \"Permission list test\", \"hostFolder\": \"{{siteId}}\"}}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Give the contentlet its own rows: READ and WRITE for the editor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/permissions/{{contentletId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"permissions",
+								"{{contentletId}}"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\"permissions\": [{\"roleId\": \"{{editorRoleId}}\", \"individual\": [\"READ\", \"WRITE\"]}]}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Read the contentlet permission rows before the editor acts",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const asRows = (rows) => rows",
+									"    .map(r => ({ roleId: r.roleId, permission: r.permission, type: r.type }))",
+									"    .sort((a, b) => (a.roleId + ':' + a.permission + ':' + a.type).localeCompare(b.roleId + ':' + b.permission + ':' + b.type));",
+									"const rows = asRows(pm.response.json().entity);",
+									"pm.test(\"The editor is on the contentlet\", function () {",
+									"    pm.expect(rows.map(r => r.roleId)).to.include(pm.collectionVariables.get(\"editorRoleId\"));",
+									"});",
+									"pm.collectionVariables.set(\"rowsBefore\", JSON.stringify(rows));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/permissions/_bycontent?contentletId={{contentletId}}&type=ALL",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"permissions",
+								"_bycontent"
+							],
+							"query": [
+								{
+									"key": "contentletId",
+									"value": "{{contentletId}}"
+								},
+								{
+									"key": "type",
+									"value": "ALL"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Editor saves the contentlet without a permission list",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/ceca71a0-deee-4999-bd47-b01baa1bcfc8/fire?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"ceca71a0-deee-4999-bd47-b01baa1bcfc8",
+								"fire"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\"contentlet\": {\"identifier\": \"{{contentletId}}\", \"languageId\": 1, \"title\": \"Saved by the editor\"}}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{editorEmail}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{editorPassword}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					}
+				},
+				{
+					"name": "The save without a list keeps the permission rows",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const asRows = (rows) => rows",
+									"    .map(r => ({ roleId: r.roleId, permission: r.permission, type: r.type }))",
+									"    .sort((a, b) => (a.roleId + ':' + a.permission + ':' + a.type).localeCompare(b.roleId + ':' + b.permission + ':' + b.type));",
+									"const rows = asRows(pm.response.json().entity);",
+									"pm.test(\"Rows are unchanged\", function () {",
+									"    pm.expect(rows).to.eql(JSON.parse(pm.collectionVariables.get(\"rowsBefore\")));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/permissions/_bycontent?contentletId={{contentletId}}&type=ALL",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"permissions",
+								"_bycontent"
+							],
+							"query": [
+								{
+									"key": "contentletId",
+									"value": "{{contentletId}}"
+								},
+								{
+									"key": "type",
+									"value": "ALL"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Editor saves with a permission list that adds a role and gets 403",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 403\", function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/ceca71a0-deee-4999-bd47-b01baa1bcfc8/fire?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"ceca71a0-deee-4999-bd47-b01baa1bcfc8",
+								"fire"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentlet\": {\n    \"identifier\": \"{{contentletId}}\",\n    \"languageId\": 1,\n    \"title\": \"Saved with a permission list\"\n  },\n  \"individualPermissions\": {\n    \"READ\": [\n      \"{{editorRoleId}}\",\n      \"{{extraRoleId}}\"\n    ],\n    \"WRITE\": [\n      \"{{editorRoleId}}\"\n    ]\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "{{editorEmail}}",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "{{editorPassword}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": [],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					}
+				},
+				{
+					"name": "The refused save leaves the permission rows as they were",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const asRows = (rows) => rows",
+									"    .map(r => ({ roleId: r.roleId, permission: r.permission, type: r.type }))",
+									"    .sort((a, b) => (a.roleId + ':' + a.permission + ':' + a.type).localeCompare(b.roleId + ':' + b.permission + ':' + b.type));",
+									"const rows = asRows(pm.response.json().entity);",
+									"pm.test(\"Rows are unchanged\", function () {",
+									"    pm.expect(rows).to.eql(JSON.parse(pm.collectionVariables.get(\"rowsBefore\")));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/permissions/_bycontent?contentletId={{contentletId}}&type=ALL",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"permissions",
+								"_bycontent"
+							],
+							"query": [
+								{
+									"key": "contentletId",
+									"value": "{{contentletId}}"
+								},
+								{
+									"key": "type",
+									"value": "ALL"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cleanup: delete the editor user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/{{editorUserId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"{{editorUserId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cleanup: delete the extra role",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/roles/{{extraRoleId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roles",
+								"{{extraRoleId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cleanup: archive the site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/{{siteId}}/_archive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"{{siteId}}",
+								"_archive"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Cleanup: delete the site, which removes its content type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/site/{{siteId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"site",
+								"{{siteId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "The content type went with the site",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"{{contentTypeId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"if (!pm.environment.get('jwt')) {",
+					"    const serverURL = pm.environment.get('serverURL');",
+					"    const username = pm.environment.get('user');",
+					"    const password = pm.environment.get('password');",
+					"    const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"    pm.sendRequest({",
+					"        url: `${serverURL}/api/v1/apitoken`,",
+					"        method: 'POST',",
+					"        header: {",
+					"            'accept': '*/*',",
+					"            'content-type': 'application/json',",
+					"            'Authorization': `Basic ${basicAuth}`",
+					"        },",
+					"        body: {",
+					"            mode: 'raw',",
+					"            raw: JSON.stringify({",
+					"                'expirationSeconds': 7200,",
+					"                'userId': 'dotcms.org.1',",
+					"                'network': '0.0.0.0/0',",
+					"                'claims': {'label': 'postman-tests'}",
+					"            })",
+					"        }",
+					"    }, function (err, response) {",
+					"        if (err) {",
+					"            console.log('Error generating JWT:', err);",
+					"        } else {",
+					"            pm.environment.set('jwt', response.json().entity.jwt);",
+					"        }",
+					"    });",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "suffix",
+			"value": ""
+		},
+		{
+			"key": "editorEmail",
+			"value": ""
+		},
+		{
+			"key": "editorPassword",
+			"value": ""
+		},
+		{
+			"key": "siteId",
+			"value": ""
+		},
+		{
+			"key": "extraRoleId",
+			"value": ""
+		},
+		{
+			"key": "editorUserId",
+			"value": ""
+		},
+		{
+			"key": "editorRoleId",
+			"value": ""
+		},
+		{
+			"key": "contentTypeId",
+			"value": ""
+		},
+		{
+			"key": "contentTypeVariable",
+			"value": ""
+		},
+		{
+			"key": "contentletId",
+			"value": ""
+		},
+		{
+			"key": "rowsBefore",
+			"value": ""
+		}
+	]
+}

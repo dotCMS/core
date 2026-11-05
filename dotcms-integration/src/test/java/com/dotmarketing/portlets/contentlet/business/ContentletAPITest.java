@@ -83,6 +83,7 @@ import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -193,6 +194,7 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.awaitility.Awaitility;
+import org.awaitility.core.ConditionTimeoutException;
 import com.dotcms.content.index.domain.ContentSearchResponse;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
@@ -3278,6 +3280,12 @@ public class ContentletAPITest extends ContentletBaseTest {
         APILocator.getStructureAPI().delete(testStructure, user);
     }
 
+    /**
+     * Method to test: {@link ContentletAPI#delete(Contentlet, User, boolean)}
+     * Given scenario: unarchived content deleted with the "don't validate me" flag set
+     * Expected result: the content is deleted and can no longer be found by inode. If it is still
+     * visible after the wait, the failure reports the cache, database and reindex queue state.
+     */
     @Test
     public void delete_GivenUnarchivedContentAndDontValidateMeInTrue_ShouldDeleteSuccessfully()
             throws Exception {
@@ -3290,16 +3298,51 @@ public class ContentletAPITest extends ContentletBaseTest {
             newContentlet.setStringProperty(Contentlet.DONT_VALIDATE_ME, "anarchy");
             contentletAPI.delete(newContentlet, user, false);
             
-            // Wait for the contentlet to be deleted asynchronously
-            Awaitility.await().atMost(10, TimeUnit.SECONDS).until(() -> {
-                final Contentlet foundContentlet = contentletAPI.find(newContentlet.getInode(), user, false);
-                return !UtilMethods.isSet(foundContentlet) || !UtilMethods.isSet(foundContentlet.getInode());
-            });
+            try {
+                Awaitility.await().atMost(10, TimeUnit.SECONDS).until(() -> {
+                    final Contentlet foundContentlet = contentletAPI.find(newContentlet.getInode(), user, false);
+                    return !UtilMethods.isSet(foundContentlet) || !UtilMethods.isSet(foundContentlet.getInode());
+                });
+            } catch (final ConditionTimeoutException e) {
+                throw new AssertionError(describeStateOfUndeletedContentlet(newContentlet), e);
+            }
 
             AssetUtil.assertDeleted(newContentlet.getInode(), newContentlet.getIdentifier(),
                     "contentlet");
         } finally {
             APILocator.getStructureAPI().delete(testStructure, user);
+        }
+    }
+
+    /**
+     * Describes where a contentlet that {@code contentletAPI.delete} was expected to remove is
+     * still visible, so a failed wait names the cause instead of just timing out. It reports
+     * the contentlet cache entry, the {@code contentlet} row read straight from the database,
+     * the version info row and the number of records waiting in the reindex queue. A cache entry
+     * that is present while the row is gone means the entry was loaded again after the delete
+     * evicted it; a row that is still present means the delete did not remove it. Only called
+     * when the wait has already timed out.
+     *
+     * @param contentlet The contentlet that was deleted.
+     * @return A one-line description of the contentlet's state in the cache and the database.
+     */
+    private String describeStateOfUndeletedContentlet(final Contentlet contentlet) {
+        final String inode = contentlet.getInode();
+        try {
+            final Contentlet cached = CacheLocator.getContentletCache().get(inode);
+            final boolean rowInDb = FactoryLocator.getContentletFactory().findInDb(inode).isPresent();
+            final boolean versionInfoInDb = APILocator.getVersionableAPI()
+                    .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId(),
+                            contentlet.getVariantId()).isPresent();
+            return String.format(
+                    "Contentlet %s (identifier %s) was still returned by find() 10 seconds after delete(). "
+                            + "contentlet cache entry present: %s, contentlet row in DB: %s, "
+                            + "version info row in DB: %s, records in reindex queue: %d",
+                    inode, contentlet.getIdentifier(), null != cached, rowInDb, versionInfoInDb,
+                    APILocator.getReindexQueueAPI().recordsInQueue());
+        } catch (final Exception e) {
+            return String.format("Contentlet %s was still returned by find() 10 seconds after delete(); "
+                    + "could not read its cache and database state: %s", inode, e);
         }
     }
 

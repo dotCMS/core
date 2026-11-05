@@ -5431,4 +5431,57 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link ESContentletAPIImpl#addPermissionsToQuery(StringBuffer, User, java.util.List, boolean)}
+     * via {@link com.dotcms.content.index.SearchAPI#search(String, boolean, User, boolean)}
+     * Given scenario: one live item on the default variant and one on a named variant, both readable by the
+     * anonymous role, reached through the raw search path. That path injects the clauses this method appends
+     * straight into a query_string without passing them through query translation, so a clause whose term does
+     * not match the case the index holds matches nothing at all.
+     * Expected result: the anonymous caller gets the item on the default variant and not the one on the named
+     * variant. The positive assertion runs first: it is the one that fails when the clause matches nothing.
+     */
+    @Test
+    public void test_rawSearch_anonymousUser_isScopedToTheDefaultVariant() throws Exception {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Host site = new SiteDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().host(site).nextPersisted();
+        final ContentletDataGen dataGen = new ContentletDataGen(contentType.id()).host(site)
+                .setPolicy(IndexPolicy.WAIT_FOR);
+        final Contentlet onDefaultVariant = dataGen.nextPersisted();
+        final Contentlet onNamedVariant = ContentletDataGen.createNewVersion(dataGen.nextPersisted(),
+                variant, null);
+
+        final Role anonymousRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                        contentType.getPermissionId(), anonymousRole.getId(),
+                        PermissionAPI.PERMISSION_READ, true), contentType, APILocator.systemUser(), false);
+        for (final Contentlet contentlet : List.of(onDefaultVariant, onNamedVariant)) {
+            ContentletDataGen.publish(contentlet);
+            permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                            contentlet.getPermissionId(), anonymousRole.getId(),
+                            PermissionAPI.PERMISSION_READ, true), contentlet, APILocator.systemUser(), false);
+        }
+
+        final User anonymous = APILocator.getUserAPI().getAnonymousUser();
+
+        assertEquals("the item on the default variant must be returned through the raw search path", 1,
+                rawSearchCount(onDefaultVariant.getIdentifier(), anonymous));
+        assertEquals("the item on the named variant must not be returned through the raw search path", 0,
+                rawSearchCount(onNamedVariant.getIdentifier(), anonymous));
+    }
+
+    /**
+     * Runs a raw JSON query for one identifier and counts what the caller gets back.
+     *
+     * @param identifier the identifier to ask for
+     * @param caller the {@link User} the query is run for
+     * @return how many contentlets were returned
+     * @throws Exception if the search fails
+     */
+    private int rawSearchCount(final String identifier, final User caller) throws Exception {
+        final String query = "{\"query\":{\"query_string\":{\"query\":\"+identifier:" + identifier + "\"}}}";
+        return APILocator.getSearchAPI().search(query, true, caller, true).getContentlets().size();
+    }
 }

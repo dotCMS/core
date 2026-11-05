@@ -170,7 +170,6 @@ core/
 │       └── dotcms-models/      # TypeScript interfaces
 ├── dotcms-integration/           # Integration tests
 ├── dotcms-postman/               # Postman API tests
-├── test-karate/                  # Karate API tests
 ├── e2e/                          # E2E tests (Playwright)
 ├── bom/                          # Bill of Materials
 │   └── application/pom.xml      # ⚠️ DEPENDENCY VERSIONS GO HERE
@@ -541,7 +540,6 @@ Cannot resolve in-project dependency: com.dotcms:dotcms-core-web:war:1.0.0-SNAPS
 # Tests are skipped by default. Add explicit flags:
 -Dcoreit.test.skip=false   # For integration tests
 -Dpostman.test.skip=false  # For Postman tests
--Dkarate.test.skip=false   # For Karate tests
 
 # Example:
 ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false
