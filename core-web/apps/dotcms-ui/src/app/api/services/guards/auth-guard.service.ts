@@ -1,7 +1,12 @@
 import { Observable, of } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
-import { ActivatedRouteSnapshot, CanActivate, RouterStateSnapshot } from '@angular/router';
+import {
+    ActivatedRouteSnapshot,
+    CanActivate,
+    CanActivateChild,
+    RouterStateSnapshot
+} from '@angular/router';
 
 import { catchError, map, switchMap, take } from 'rxjs/operators';
 
@@ -12,12 +17,19 @@ import { DotcmsConfigService, LoggerService, LoginService } from '@dotcms/dotcms
  * Route Guard that checks if a User is logged in.
  */
 @Injectable()
-export class AuthGuardService implements CanActivate {
+export class AuthGuardService implements CanActivate, CanActivateChild {
     private dotRouterService = inject(DotRouterService);
     private loginService = inject(LoginService);
     private configService = inject(DotcmsConfigService);
     private messageService = inject(DotMessageService);
     private logger = inject(LoggerService);
+
+    canActivateChild(
+        route: ActivatedRouteSnapshot,
+        state: RouterStateSnapshot
+    ): Observable<boolean> {
+        return this.canActivate(route, state);
+    }
 
     canActivate(_route: ActivatedRouteSnapshot, state: RouterStateSnapshot): Observable<boolean> {
         return this.loginService.isLogin$.pipe(
@@ -43,7 +55,10 @@ export class AuthGuardService implements CanActivate {
                     }),
                     switchMap((config) =>
                         this.messageService.init({
-                            language: this.loginService.currentUserLanguageId || 'default',
+                            language:
+                                this.loginService.auth?.loginAsUser?.languageId ||
+                                this.loginService.currentUserLanguageId ||
+                                'default',
                             languageBundleVersion: config?.languageBundleVersion
                         })
                     ),

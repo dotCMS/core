@@ -12,7 +12,11 @@ import { AuthGuardService } from './auth-guard.service';
 describe('AuthGuardService', () => {
     let guard: AuthGuardService;
     let router: { goToLogin: ReturnType<typeof vi.fn>; storedRedirectUrl: string };
-    let login: { isLogin$: Observable<boolean>; currentUserLanguageId: string };
+    let login: {
+        isLogin$: Observable<boolean>;
+        currentUserLanguageId: string;
+        auth?: { loginAsUser?: { languageId?: string } };
+    };
     let config: { getConfig: ReturnType<typeof vi.fn> };
     let messages: { init: ReturnType<typeof vi.fn> };
     let logger: { warn: ReturnType<typeof vi.fn>; error: ReturnType<typeof vi.fn> };
@@ -66,6 +70,28 @@ describe('AuthGuardService', () => {
         loaded.next();
         loaded.complete();
         expect(activated).toHaveBeenCalledWith(true);
+    });
+
+    it('should use the impersonated user locale ahead of the principal locale', async () => {
+        login.auth = { loginAsUser: { languageId: 'es_ES' } };
+        await firstValueFrom(guard.canActivate(route, state));
+        expect(messages.init).toHaveBeenCalledWith({
+            language: 'es_ES',
+            languageBundleVersion: 'build-hash'
+        });
+    });
+
+    it('should retry initialization on child navigation after a failed parent load', async () => {
+        messages.init.mockReturnValueOnce(throwError(() => new Error('Temporary failure')));
+        expect(await firstValueFrom(guard.canActivate(route, state))).toBe(true);
+        expect(await firstValueFrom(guard.canActivateChild(route, state))).toBe(true);
+        expect(messages.init).toHaveBeenCalledTimes(2);
+    });
+
+    it('should reject unauthenticated child navigation before loading translations', async () => {
+        login.isLogin$ = of(false);
+        expect(await firstValueFrom(guard.canActivateChild(route, state))).toBe(false);
+        expect(messages.init).not.toHaveBeenCalled();
     });
 
     it('should use the default locale when the authenticated user has none', async () => {

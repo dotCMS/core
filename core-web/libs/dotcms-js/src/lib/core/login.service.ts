@@ -224,7 +224,7 @@ export class LoginService {
                         user: response.entity
                     };
 
-                    this.setAuth(auth);
+                    this.setAuth(auth, language);
 
                     return response.entity;
                 })
@@ -285,13 +285,13 @@ export class LoginService {
      * Set logged_auth and update auth Observable
      *
      * @param {Auth} auth
+     * @param {string} language Session locale explicitly selected on successful login
      * @memberof LoginService
      */
-    setAuth(auth: Auth): void {
+    setAuth(auth: Auth, language?: string): void {
         this._auth = this.getFullAuth(auth);
+        this.currentUserLanguageId = language || auth.user.languageId;
         this._auth$.next(this.getFullAuth(auth));
-
-        this.currentUserLanguageId = auth.user.languageId;
 
         // When not logged user we need to fire the observable chain
         if (!auth.user) {

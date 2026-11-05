@@ -1,9 +1,9 @@
-import { Observable, of, ReplaySubject } from 'rxjs';
+import { Observable, of, ReplaySubject, throwError } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 
-import { finalize, map, share, take, tap } from 'rxjs/operators';
+import { catchError, finalize, map, share, take, tap } from 'rxjs/operators';
 
 import { formatMessage } from '@dotcms/utils';
 
@@ -145,6 +145,21 @@ export class DotMessageService {
                     this.versionMismatch.set(null);
                 }),
                 map(() => void 0),
+                catchError((error) => {
+                    // A stale, complete bundle is a fallback, not proof the requested version loaded.
+                    if (
+                        !this.isMessageMap(this.messageMap) &&
+                        lang === cachedLang &&
+                        this.isMessageMap(messages)
+                    ) {
+                        this.messageMap = messages;
+                        if (this.isVersion(cachedVersion)) {
+                            this.installedVersion.set(cachedVersion);
+                        }
+                    }
+
+                    return throwError(() => error);
+                }),
                 finalize(() => this.inFlight.delete(requestKey)),
                 // Retain errors as well as success for late subscribers to the eager request.
                 // A new init() retries; subscribing to the old result must not start another GET.

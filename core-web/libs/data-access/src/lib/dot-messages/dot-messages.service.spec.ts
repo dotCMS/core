@@ -387,6 +387,63 @@ describe('DotMessageService', () => {
             http.expectNone(DEFAULT_URL);
         });
 
+        it.each([NEXT_VERSION, undefined])(
+            'should restore a same-language warm cache on fetch failure (expected %s)',
+            async (expectedVersion) => {
+                seedCache();
+                const loaded = firstValueFrom(
+                    service.init({ languageBundleVersion: expectedVersion })
+                );
+                const failed = expect(loaded).rejects.toMatchObject({ status: 500 });
+                http.expectOne(DEFAULT_URL).flush(null, {
+                    status: 500,
+                    statusText: 'Server Error'
+                });
+                await failed;
+                expect(service.get('dot.common.cancel')).toBe('Cancel');
+                expect(service.loadedBundleVersion()).toBe(VERSION);
+                expect(storage.getItem(VERSION_LOCALSTORAGE_KEY)).toBe(VERSION);
+
+                const retry = firstValueFrom(
+                    service.init({ languageBundleVersion: expectedVersion })
+                );
+                http.expectOne(DEFAULT_URL).flush({
+                    entity: messages,
+                    languageBundleVersion: NEXT_VERSION
+                });
+                await retry;
+                expect(service.loadedBundleVersion()).toBe(NEXT_VERSION);
+            }
+        );
+
+        it.each([createMessages(100), null])(
+            'should not restore an incomplete warm cache (case %#)',
+            async (cached) => {
+                seedCache(cached);
+                const failed = expect(
+                    firstValueFrom(service.init({ languageBundleVersion: NEXT_VERSION }))
+                ).rejects.toMatchObject({ status: 500 });
+                http.expectOne(DEFAULT_URL).flush(null, {
+                    status: 500,
+                    statusText: 'Server Error'
+                });
+                await failed;
+                expect(service.get('dot.common.cancel')).toBe('dot.common.cancel');
+                expect(service.loadedBundleVersion()).toBeNull();
+            }
+        );
+
+        it('should not restore a warm cache from a different language', async () => {
+            seedCache(messages, 'es_ES');
+            const failed = expect(
+                firstValueFrom(service.init({ languageBundleVersion: NEXT_VERSION }))
+            ).rejects.toMatchObject({ status: 500 });
+            http.expectOne(DEFAULT_URL).flush(null, { status: 500, statusText: 'Server Error' });
+            await failed;
+            expect(service.get('dot.common.cancel')).toBe('dot.common.cancel');
+            expect(service.loadedBundleVersion()).toBeNull();
+        });
+
         it('should preserve valid messages on network failure and retry on a new init', async () => {
             seedCache();
             await firstValueFrom(service.init({ languageBundleVersion: VERSION }));
