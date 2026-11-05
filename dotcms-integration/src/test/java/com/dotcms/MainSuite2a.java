@@ -51,6 +51,7 @@ import org.junit.runners.Suite.SuiteClasses;
 import com.dotcms.enterprise.rules.RulesAPIImplParentChecksIntegrationTest;
 import com.dotcms.rest.api.v1.sites.ruleengine.RuleRefusedActionsIntegrationTest;
 import com.dotcms.rest.api.v1.sites.ruleengine.RuleResourcesAccessIntegrationTest;
+import com.dotcms.rest.api.v1.content.ContentRelationshipsResourceIntegrationTest;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
@@ -117,7 +118,8 @@ import com.dotcms.rest.api.v1.sites.ruleengine.RuleResourcesAccessIntegrationTes
     RuleResourcesAccessIntegrationTest.class,
     RuleRefusedActionsIntegrationTest.class,
     com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionIntegrationTest.class,
-    com.dotcms.rest.api.v1.workflow.WorkflowResourceCommentsReadAccessTest.class
+    com.dotcms.rest.api.v1.workflow.WorkflowResourceCommentsReadAccessTest.class,
+    ContentRelationshipsResourceIntegrationTest.class
 })
 public class MainSuite2a {
 

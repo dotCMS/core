@@ -100,21 +100,19 @@ public class ContentRelationshipsResource {
         try {
             final List<Contentlet> cons = this.contentRelationshipsHelper.getRelatedContent
                     (request, user, paramsMap);
-            final String relatedContents = this.contentRelationshipsHelper.contentsAsJson(cons);
+            final String relatedContents = this.contentRelationshipsHelper.contentsAsJson(cons, user);
             final Response.ResponseBuilder builder = Response.ok(relatedContents, MediaType
                     .APPLICATION_JSON);
 
             res = builder.build();
-        } catch (JSONException e) {
-            final String errorMsg = "An error occurred when generating the JSON response (" + e
-                    .getMessage() + ")";
+        } catch (final JSONException e) {
             Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
-        } catch (DotDataException e) {
-            final String errorMsg = "An error occurred when accessing the content information ("
-                    + e.getMessage() + ")";
+            res = ExceptionMapperUtil.createResponse(null,
+                    "An error occurred when generating the JSON response");
+        } catch (final DotDataException e) {
             Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
+            res = ExceptionMapperUtil.createResponse(null,
+                    "An error occurred when accessing the content information");
         }
         return res;
     }
