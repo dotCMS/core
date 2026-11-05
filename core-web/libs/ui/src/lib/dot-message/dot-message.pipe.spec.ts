@@ -32,10 +32,13 @@ describe('DotMessagePipe', () => {
             `
         })
         class PersistentLabel {
-            args = ['Costa Rica', 'Panama'];
+            args: string | string[] = ['Costa Rica', 'Panama'];
         }
 
-        const setup = (initialVersion: string | null = null) => {
+        const setup = (
+            initialVersion: string | null = null,
+            args: string | string[] = ['Costa Rica', 'Panama']
+        ) => {
             const loadedBundleVersion = signal(initialVersion);
             const loadedBundleLanguage = signal<string | null>(initialVersion ? 'default' : null);
             let translation = initialVersion ? 'Old label' : 'apps.best';
@@ -52,6 +55,7 @@ describe('DotMessagePipe', () => {
                 ]
             });
             const fixture = TestBed.createComponent(PersistentLabel);
+            fixture.componentInstance.args = args;
             fixture.detectChanges();
             return {
                 fixture,
@@ -97,6 +101,30 @@ describe('DotMessagePipe', () => {
             install('v1', 'Old label', 'default');
             expect(label()).toBe('Old label');
             expect(get).toHaveBeenCalledTimes(3);
+        });
+
+        it('should preserve string spreading and cache repeated template checks', () => {
+            const { fixture, install, label, get } = setup('v1', '12');
+            install('v2', 'Bundle count {0} {1}');
+            expect(label()).toBe('Bundle count 1 2');
+            get.mockClear();
+            fixture.componentRef.changeDetectorRef.detectChanges();
+            fixture.componentRef.changeDetectorRef.detectChanges();
+            expect(label()).toBe('Bundle count 1 2');
+            expect(get).not.toHaveBeenCalled();
+        });
+
+        it('should invalidate changed string arguments and support string/array transitions', () => {
+            const { install, get } = setup('v1');
+            install('v2', 'Values {0} {1}');
+            const pipe = TestBed.runInInjectionContext(() => new DotMessagePipe());
+            expect(pipe.transform('apps.best', '12')).toBe('Values 1 2');
+            expect(pipe.transform('apps.best', '12')).toBe('Values 1 2');
+            expect(pipe.transform('apps.best', '34')).toBe('Values 3 4');
+            expect(pipe.transform('apps.best', ['whole', 'value'])).toBe('Values whole value');
+            expect(pipe.transform('apps.best', '😀x')).toBe('Values 😀 x');
+            pipe.transform('apps.best', '');
+            expect(get).toHaveBeenLastCalledWith('apps.best');
         });
 
         it('should cache unchanged inputs but detect changed argument values', () => {

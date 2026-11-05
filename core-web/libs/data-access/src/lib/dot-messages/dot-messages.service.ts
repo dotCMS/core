@@ -70,6 +70,7 @@ export class DotMessageService {
 
     /**
      * Retrieves the value associated with the specified key from the message map.
+     * Tracks the installed bundle so reactive consumers update after recovery or a locale change.
      *
      * @param {string} key - The key used to retrieve the value from the message map.
      * @param {...string} args - Optional arguments to be passed to the value, if it is a format string.
@@ -77,6 +78,9 @@ export class DotMessageService {
      *                    the key itself will be returned.
      */
     get(key: string, ...args: string[]): string {
+        this.loadedBundleVersion();
+        this.loadedBundleLanguage();
+
         return this.messageMap[key]
             ? args.length
                 ? formatMessage(this.messageMap[key], args)

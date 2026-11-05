@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 
 import { HttpClient, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { effect } from '@angular/core';
+import { computed, effect } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { DotMessageService } from './dot-messages.service';
@@ -817,6 +817,95 @@ describe('DotMessageService', () => {
             expect(service.bundleVersionMismatch()).toBeNull();
             expect(service.loadedBundleVersion()).toBe(NEXT_VERSION);
             http.expectNone(DEFAULT_URL);
+        });
+    });
+
+    describe('reactive get', () => {
+        it('should invalidate a computed after a cold failure recovers, including formatted messages', () => {
+            const translate = vi.fn(() =>
+                service.get('dot.common.accept', service.get('dot.common.cancel'))
+            );
+            const label = computed(translate);
+            expect(label()).toBe('dot.common.accept');
+
+            service.init({ languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush(null, { status: 500, statusText: 'Server Error' });
+            expect(label()).toBe('dot.common.accept');
+            expect(translate).toHaveBeenCalledOnce();
+
+            service.init({ languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush({ entity: messages, languageBundleVersion: VERSION });
+            expect(label()).toBe('Accept Cancel');
+            expect(translate).toHaveBeenCalledTimes(2);
+        });
+
+        it('should invalidate a computed when a stale bundle recovers with a new version', () => {
+            seedCache();
+            service.init({ languageBundleVersion: NEXT_VERSION });
+            http.expectOne(DEFAULT_URL).flush(null, { status: 500, statusText: 'Server Error' });
+            const label = computed(() => service.get('dot.common.cancel'));
+            expect(label()).toBe('Cancel');
+
+            service.init({ languageBundleVersion: NEXT_VERSION });
+            http.expectOne(DEFAULT_URL).flush({
+                entity: { ...messages, 'dot.common.cancel': 'Updated cancel' },
+                languageBundleVersion: NEXT_VERSION
+            });
+            expect(label()).toBe('Updated cancel');
+        });
+
+        it.each(['network', 'cache', 'fallback'])(
+            'should invalidate a computed on a same-version locale switch via %s',
+            (source) => {
+                seedCache();
+                service.init({ languageBundleVersion: VERSION });
+                const label = computed(() => service.get('dot.common.cancel'));
+                expect(label()).toBe('Cancel');
+                const spanish = { ...messages, 'dot.common.cancel': 'Cancelar' };
+                if (source !== 'network') {
+                    seedCache(spanish, 'es_ES');
+                }
+
+                service.init({
+                    language: 'es_ES',
+                    languageBundleVersion: source === 'fallback' ? NEXT_VERSION : VERSION
+                });
+                if (source === 'network') {
+                    http.expectOne('/api/v2/languages/es_ES/keys').flush({
+                        entity: spanish,
+                        languageBundleVersion: VERSION
+                    });
+                } else if (source === 'fallback') {
+                    http.expectOne('/api/v2/languages/es_ES/keys').flush(null, {
+                        status: 500,
+                        statusText: 'Server Error'
+                    });
+                }
+
+                expect(service.loadedBundleVersion()).toBe(VERSION);
+                expect(label()).toBe('Cancelar');
+            }
+        );
+
+        it('should rerun a get-only effect once per install without refetching or cycling', () => {
+            const translated = vi.fn();
+            TestBed.runInInjectionContext(() =>
+                effect(() => translated(service.get('dot.common.cancel')))
+            );
+            TestBed.tick();
+            expect(translated).toHaveBeenCalledExactlyOnceWith('dot.common.cancel');
+
+            service.init({ languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush({ entity: messages, languageBundleVersion: VERSION });
+            TestBed.tick();
+            expect(translated).toHaveBeenLastCalledWith('Cancel');
+            expect(translated).toHaveBeenCalledTimes(2);
+
+            service.init({ languageBundleVersion: VERSION });
+            TestBed.tick();
+            TestBed.tick();
+            http.expectNone(DEFAULT_URL);
+            expect(translated).toHaveBeenCalledTimes(2);
         });
     });
 
