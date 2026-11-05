@@ -99,7 +99,6 @@ jobs:
       cli: ${{ inputs.run-all-tests || false }}
       frontend: ${{ inputs.run-all-tests || false }}
       postman: ${{ inputs.run-all-tests || false }}
-      karate: ${{ inputs.run-all-tests || false }}
       integration: ${{ inputs.run-all-tests || false }}
       e2e: false
 
@@ -170,7 +169,7 @@ jobs:
     # Same always()/!failure()/!cancelled() idiom as sibling jobs (build-cli, deployment).
     # A prior version of this gate required needs.test.result == 'success', but on an
     # ordinary push cicd_3-trunk.yml never wires any per-suite flag (jvm_unit_test, cli,
-    # frontend, postman, karate) into the reusable test phase — only run-all-tests, which
+    # frontend, postman) into the reusable test phase — only run-all-tests, which
     # is only ever true on a manual workflow_dispatch. So the test matrix is always empty
     # (0 configurations) on a regular push, `test` always resolves to "skipped", and that
     # stricter gate meant this job silently never ran on ordinary merges — defeating its
