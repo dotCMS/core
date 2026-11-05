@@ -10,7 +10,7 @@ export class DotRelativeDatePipe implements PipeTransform {
     private readonly dotFormatDateService = inject(DotFormatDateService);
     private readonly dotMessageService = inject(DotMessageService);
 
-    private cached: {
+    private cached?: {
         date: string | number;
         format: string;
         timeStampAfter: number;
