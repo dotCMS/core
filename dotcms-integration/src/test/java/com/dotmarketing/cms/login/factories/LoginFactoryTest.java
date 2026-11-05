@@ -140,6 +140,22 @@ public class LoginFactoryTest extends IntegrationTestBase {
     }
 
     /**
+     * Given: a user with no stored password, either null or empty.
+     * When:  a password, or an empty one, is typed.
+     * Then:  the password does not match, and the check fails cleanly instead of throwing.
+     */
+    @Test
+    public void test_passwordMatch_missingStoredPassword_neverMatches() throws Exception {
+        final User nullUser = userWithStoredPassword(null);
+        assertFalse(LoginFactory.passwordMatch(PASSWORD, nullUser));
+        assertFalse(LoginFactory.passwordMatch("", nullUser));
+
+        final User emptyUser = userWithStoredPassword("");
+        assertFalse(LoginFactory.passwordMatch(PASSWORD, emptyUser));
+        assertFalse(LoginFactory.passwordMatch("", emptyUser));
+    }
+
+    /**
      * Given: a password stored as a secure hash.
      * When:  the stored hash itself is typed as the password.
      * Then:  it does not match, while the real password still does.

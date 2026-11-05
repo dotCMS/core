@@ -123,6 +123,7 @@ public class CASAuthUtils {
 			liferayUser.setActive(true);
 			liferayUser.setCompanyId(companyId);
 			liferayUser.setPassword(PasswordFactoryProxy.generateRandomHash());
+			liferayUser.setPasswordEncrypted(true);
 			liferayUser.setCreateDate(new java.util.Date());
 			
 			userAPI.save(liferayUser,APILocator.getUserAPI().getSystemUser(),false);

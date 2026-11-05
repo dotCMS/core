@@ -58,6 +58,7 @@ public class DotCustomLoginPostAction extends Action {
 				Role r = com.dotmarketing.business.APILocator.getRoleAPI().loadRoleByKey(LDAPImpl.LDAP_USER_ROLE);
 				if(com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user, r)){
 					user.setPassword(PasswordFactoryProxy.generateRandomHash());
+					user.setPasswordEncrypted(true);
 					APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 				}
 			}
