@@ -209,7 +209,7 @@ public class ESSearchProxyTest extends IntegrationTestBase {
                     APILocator.systemUser(), false);
         } catch (final Exception e) {
             Logger.warn(ESSearchProxyTest.class,
-                    "Unable to delete test user " + testUser.getUserId() + ": " + e.getMessage());
+                    "Unable to delete test user " + testUser.getUserId(), e);
         }
     }
 
