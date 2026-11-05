@@ -40,16 +40,30 @@ public final class RestrictedViewToolAccess {
     public static final String RESTRICTED_TOOLS_PROPERTY = "VELOCITY_FIELD_RENDER_RESTRICTED_VIEWTOOLS";
 
     /**
-     * Request attribute carrying the ID of the user that last modified the content whose code is
-     * being rendered.
+     * Request attribute carrying the user that last modified the content whose code is being
+     * rendered.
      *
      * <p>It is set by whoever renders that code, which is the only party that knows what content
      * it is. A view tool must take the author from here and never from the Velocity resource
      * name: {@code #parse} pushes the template author's own literal argument as the current
      * template name, so a tool that reads that name is asking the caller to vouch for itself.
-     * Velocity templates cannot write request attributes, so this value is not theirs to choose.
+     *
+     * <p>Templates do reach {@code $request} and can call {@code setAttribute} on it, so the
+     * value stored here is a private wrapper type only this class creates: anything else found
+     * under this attribute is not an announcement and never counts. Compare
+     * {@link ScriptingFileAttribute}, which guards the file-based scripting endpoints the same
+     * way.
      */
     public static final String RENDERING_AUTHOR_ID = "DOT_RENDERING_AUTHOR_ID";
+
+    /**
+     * The announcement itself. Private so that only {@link #announceRenderingAuthor} can make
+     * one; a {@code String} a template pushes under {@link #RENDERING_AUTHOR_ID} is ignored.
+     *
+     * @param userId ID of the user that last modified the content being rendered, {@code null}
+     *               when the renderer knows the content but not its author
+     */
+    private record RenderingAuthor(String userId) { }
 
     /**
      * Kept in alphabetical order. Besides the tools that work outside of the viewer's
@@ -139,7 +153,7 @@ public final class RestrictedViewToolAccess {
             return null;
         }
         final Object previous = request.getAttribute(RENDERING_AUTHOR_ID);
-        request.setAttribute(RENDERING_AUTHOR_ID, authorId);
+        request.setAttribute(RENDERING_AUTHOR_ID, new RenderingAuthor(authorId));
         return previous;
     }
 
@@ -171,6 +185,13 @@ public final class RestrictedViewToolAccess {
      * against. A request whose author is missing is denied, because an unknown author is not
      * evidence of anything.
      *
+     * <p>When no renderer announced anything, the file-based scripting endpoints
+     * ({@code /api/vtl}, {@code /api/js}) are asked instead: they bind the script file's editor
+     * through {@link ScriptingFileAttribute}, which answers the same question for code that is
+     * run straight from a file rather than rendered from a content item. An explicit
+     * announcement always wins over that, so a container parsed from inside such a file is
+     * judged by the container's own author.
+     *
      * @param request the request the tool was initialised with
      *
      * @return {@code true} when the render named an author who has access
@@ -179,15 +200,18 @@ public final class RestrictedViewToolAccess {
         if (null == request) {
             return false;
         }
-        final Object authorId = request.getAttribute(RENDERING_AUTHOR_ID);
-        if (!(authorId instanceof String) || !UtilMethods.isSet((String) authorId)) {
+        final Object announced = request.getAttribute(RENDERING_AUTHOR_ID);
+        final String authorId = announced instanceof RenderingAuthor renderingAuthor
+                ? renderingAuthor.userId()
+                : ScriptingFileAttribute.get(request);
+        if (!UtilMethods.isSet(authorId)) {
             Logger.warn(RestrictedViewToolAccess.class,
                     "A view tool was called while no author was announced for the code being "
                             + "rendered, so it is refused. This is what a render path that does "
                             + "not announce its author looks like.");
             return false;
         }
-        final boolean allowed = userIdHasAccess((String) authorId);
+        final boolean allowed = userIdHasAccess(authorId);
         if (!allowed) {
             Logger.warn(RestrictedViewToolAccess.class, String.format(
                     "A view tool was refused: the code being rendered was last saved by user "

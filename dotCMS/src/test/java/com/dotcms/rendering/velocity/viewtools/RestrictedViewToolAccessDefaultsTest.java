@@ -2,6 +2,8 @@ package com.dotcms.rendering.velocity.viewtools;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -100,17 +102,54 @@ public class RestrictedViewToolAccessDefaultsTest {
         final HttpServletRequest request = requestWithAttributes();
 
         final Object noneBefore = RestrictedViewToolAccess.announceRenderingAuthor(request, "outer-author");
-        assertEquals("outer-author", request.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID));
+        final Object outerAnnouncement = request.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID);
+        assertNotNull(outerAnnouncement, "The outer render announced an author");
 
         final Object outer = RestrictedViewToolAccess.announceRenderingAuthor(request, "inner-author");
-        assertEquals("inner-author", request.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID));
+        assertNotEquals(outerAnnouncement,
+                request.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID),
+                "While the inner code runs, the inner author is what a tool reads");
 
         RestrictedViewToolAccess.restoreRenderingAuthor(request, outer);
-        assertEquals("outer-author", request.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID));
+        assertEquals(outerAnnouncement,
+                request.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID),
+                "Once the inner render is done, the outer author is back");
 
         RestrictedViewToolAccess.restoreRenderingAuthor(request, noneBefore);
         assertNull(request.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID),
                 "Nothing was announced before the outer render, so nothing may be left behind");
+    }
+
+    /**
+     * Method to test: {@link RestrictedViewToolAccess#announceRenderingAuthor(HttpServletRequest, String)}
+     * When: an announcement is made
+     * Should: not store the plain user ID. A Velocity template reaches {@code $request} and can
+     * call {@code setAttribute} on it, so an announcement a template could reproduce would let
+     * the very code being gated name the user it is checked against.
+     */
+    @Test
+    public void announceRenderingAuthor_doesNotStoreTheBareUserId() {
+        final HttpServletRequest request = requestWithAttributes();
+
+        RestrictedViewToolAccess.announceRenderingAuthor(request, "an-author");
+
+        assertNotEquals("an-author",
+                request.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID),
+                "A template writing this attribute must not be able to forge an announcement");
+    }
+
+    /**
+     * Method to test: {@link RestrictedViewToolAccess#renderingAuthorHasAccess(HttpServletRequest)}
+     * When: the code being rendered writes the ID of a privileged user into the attribute itself,
+     * which {@code $request.setAttribute(...)} lets any template do
+     * Should: refuse, because that value was not put there by a renderer
+     */
+    @Test
+    public void renderingAuthorHasAccess_authorWrittenByTheTemplate_isDenied() {
+        final HttpServletRequest request = requestWithAttributes();
+        request.setAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID, UserAPI.SYSTEM_USER_ID);
+
+        assertFalse(RestrictedViewToolAccess.renderingAuthorHasAccess(request));
     }
 
     /**
