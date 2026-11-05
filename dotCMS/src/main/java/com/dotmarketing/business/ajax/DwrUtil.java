@@ -64,6 +64,31 @@ public class DwrUtil {
     }
 
     /**
+     * Rejects a caller who may not see which users hold a role: it takes an administrator, or a
+     * user with both the Roles and the Users portlets, the rule in
+     * {@link com.dotmarketing.business.RoleAPI#canReadRoleMembership(User)} that the REST listings
+     * apply as well.
+     *
+     * @param loggedInUser the user making the DWR call
+     * @throws DotSecurityException when there is no user or the user lacks the privilege
+     * @throws DotDataException     if the user's portlet access cannot be resolved
+     */
+    public static void validateRoleMembershipPermissions(final User loggedInUser)
+            throws DotSecurityException, DotDataException {
+
+        if (null == loggedInUser) {
+            throw new DotSecurityException("A logged in User is required to list the users of a Role");
+        }
+        if (!APILocator.getRoleAPI().canReadRoleMembership(loggedInUser)) {
+            final String errorMessage = String.format(
+                    "User [%s] does not have permissions to list the users of a Role",
+                    loggedInUser.getUserId());
+            SecurityLogger.logInfo(DwrUtil.class, errorMessage);
+            throw new DotSecurityException(errorMessage);
+        }
+    }
+
+    /**
      * Validates if the logged in user has the required permissions to access the given portlet
      *
      * @param portletId Portlet to validate

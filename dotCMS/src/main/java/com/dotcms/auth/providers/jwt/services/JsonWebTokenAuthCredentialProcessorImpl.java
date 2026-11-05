@@ -7,7 +7,6 @@ import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -118,12 +117,12 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
         return user;
     } // processAuthCredentialsFromJWT.
 
+    /** Resolves the request's JWT and stores its authenticated identity only on this request. */
     @Override
     public Optional<JWToken> processJWTAuthHeader(final HttpServletRequest request) {
 
         // Extract authentication credentials
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
-        Logger.info(JsonWebTokenAuthCredentialProcessorImpl.class, String.format("Authentication header: %s", authentication));
         final Optional<JWToken> jwToken = internalProcessAuthHeaderFromJWT(authentication, request.getRemoteAddr(), false);
         final User user = jwToken.isPresent()  && jwToken.get().getActiveUser().isPresent() ?
                 jwToken.get().getActiveUser().get() : null;

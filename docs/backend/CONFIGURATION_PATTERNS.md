@@ -54,10 +54,74 @@ The `Config` class automatically transforms properties:
 - `experiments.enabled` → `DOT_EXPERIMENTS_ENABLED`
 - `health.detailed.authentication.required` → `DOT_HEALTH_DETAILED_AUTHENTICATION_REQUIRED`
 
+## Feature Flags
+
+A feature flag is a boolean property that switches a whole behavior on or off. It follows the
+same `Config` rules as any other property, plus three of its own:
+
+- **The name is a constant in `FeatureFlagName`** (`com.dotcms.featureflag.FeatureFlagName`), never a
+  string literal at the call site. The constant and its value are the same upper-case,
+  underscore-separated name with the `FEATURE_FLAG_` prefix, e.g.
+  `FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION`. The `DOT_` environment variable form is automatic:
+  `DOT_FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION`.
+- **The default is stated in the constant's Javadoc**, together with what the flag turns on or off
+  and what is left untouched. The default lives at the read site
+  (`Config.getBooleanProperty(FeatureFlagName.X, true)`), so the Javadoc is the only place a reader
+  can learn it without finding every caller. Say whether it is an opt-in (off by default) or a
+  kill switch (on by default).
+- **Read it once per request, not per loop iteration.** Cache it in a `Lazy` or a field when the
+  same code path reads it repeatedly.
+
+```java
+// FeatureFlagName.java
+/**
+ * Kill switch for X. On by default: ... Off: ... Pages are not affected either way.
+ */
+String FEATURE_FLAG_X = "FEATURE_FLAG_X";
+
+// Call site
+if (Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_X, true)) { ... }
+```
+
+Only add the property to `dotmarketing-config.properties` when the default must be visible there
+(for example when a frontend reader treats an absent property as enabled); otherwise the Javadoc
+and the read site are enough.
+
 ## Config Class Resolution Order
 1. **Environment variables** (with `DOT_` prefix)
 2. **System table** (database)
 3. **Properties files** (all files are loaded)
+
+## Anonymous Content API Access — Upgrade Note
+
+`CONTENT_APIS_ALLOW_ANONYMOUS` defaults to `NONE` in both the bundled configuration and
+when the property is absent. Anonymous requests to APIs governed by this setting require
+authentication; authenticated requests remain subject to their existing permissions.
+This includes content REST APIs, GraphQL, and custom `/api/vtl/*` endpoints that use the
+same access checks. Unrelated public/bootstrap endpoints are unchanged.
+
+**Breaking default change:** installations relying on the previous implicit `READ` default
+must authenticate their API clients or explicitly opt in before upgrading. To retain public
+API reads, set `CONTENT_APIS_ALLOW_ANONYMOUS=READ` in your configuration override, or
+`DOT_CONTENT_APIS_ALLOW_ANONYMOUS=READ` in the deployment environment. Anonymous content
+submission requires an explicit `WRITE` opt-in. Existing explicit `NONE`, `READ`, and `WRITE`
+overrides are preserved, and enabling anonymous access does not bypass content permissions.
+Values are case-insensitive (`none`, `read`, and `write` are accepted); use the documented
+uppercase property/environment variable names. Review headless clients and custom VTL
+endpoints when preparing an upgrade. Servers providing public content feeds, including an
+announcements feed, must explicitly opt into `READ`; instances merely consuming a remote
+public feed do not need to enable anonymous access themselves.
+
+**Rollback note:** these are compiled-in defaults, not stored settings, so rolling the binary
+back to a previous release silently restores the older, more permissive behavior (implicit
+anonymous `READ` on content APIs, and re-enabled Basic/DOTAUTH **password** credentials) without
+any operator action. An installation that must keep the hardened posture across a rollback
+should pin `DOT_CONTENT_APIS_ALLOW_ANONYMOUS=NONE` in the deployment environment instead of
+relying on the in-binary default. A previous binary without the `ALLOW_BASIC_AUTH` policy
+ignores `DOT_ALLOW_BASIC_AUTH`, so that override cannot preserve either `NONE` or `JWT_TOKEN`
+across rollback. Block password-based Basic/DOTAUTH and legacy credential access at an upstream
+gateway, or use a binary that supports the policy. Call the default-change and this rollback
+limitation out in the release notes.
 
 ## Configuration Documentation Pattern
 When adding new properties, include:

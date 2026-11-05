@@ -200,8 +200,15 @@ public abstract class Publisher implements IPublisher {
     /**
      * This method verifies if a given file should be process it in order to be add it to a site search index or not.
      *
-     * @param assetFile
-     * @return
+     * <p>When the config carries a start date (an incremental run), files last modified before it
+     * are skipped. The comparison is done at one-second precision: bundlers stamp a file with the
+     * asset's version timestamp truncated to the whole second, while the start date is the previous
+     * run's fire time and keeps its milliseconds, so comparing exact milliseconds would skip an
+     * asset changed in the same second as the previous run, after it fired, in every later run.
+     * Reprocessing a file stamped earlier in that same second is harmless.</p>
+     *
+     * @param assetFile the bundle file to check
+     * @return {@code true} if the file must be processed
      * @throws IOException
      * @throws DotPublishingException
      */
@@ -209,7 +216,7 @@ public abstract class Publisher implements IPublisher {
 
         if ( assetFile.isDirectory() ) {
             return false;
-        } else if ( config.getStartDate() != null && assetFile.lastModified() < config.getStartDate().getTime() ) {
+        } else if ( config.getStartDate() != null && assetFile.lastModified() < startOfSecond( config.getStartDate().getTime() ) ) {
             return false;
         } else if (!doesPathContainLanguageId(assetFile)) {
             return false;
@@ -248,6 +255,16 @@ public abstract class Publisher implements IPublisher {
         }
 
         return true;
+    }
+
+    /**
+     * Truncates the given epoch milliseconds to the start of its second.
+     *
+     * @param epochMillis a time in epoch milliseconds
+     * @return the same time with the milliseconds dropped
+     */
+    private static long startOfSecond(final long epochMillis) {
+        return epochMillis - Math.floorMod(epochMillis, 1000L);
     }
 
     private boolean doesPathContainLanguageId(File assetFile) {

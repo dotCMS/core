@@ -3,8 +3,10 @@ package com.dotcms.rest.api.v1.temp;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.security.multipart.IllegalFileExtensionsValidator;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.PathContainmentUtil;
 import com.dotcms.util.SecurityUtils;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.business.APILocator;
@@ -38,6 +40,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -72,17 +75,47 @@ public class TempFileAPI {
   private static final String WHO_CAN_USE_TEMP_FILE = "whoCanUse.tmp";
   private static final String TEMP_RESOURCE_BY_URL_ADMIN_ONLY="TEMP_RESOURCE_BY_URL_ADMIN_ONLY";
   private static final Lazy<Boolean> allowAccessToPrivateSubnets = Lazy.of(()->Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
+  private static final IllegalFileExtensionsValidator fileExtensionValidator = new IllegalFileExtensionsValidator();
   
 
   /**
-   * Returns an empty TempFile of a unique id and file handle that can be used to write and access a
-   * temp file. The request will be used to create a fingerprint that will be written to the "allowList" and can
-   * be used to retreive the temp resource in other requests
-   * 
-   * @param incomingFileName
-   * @param request
-   * @return
-   * @throws DotSecurityException
+   * Refuses a temp file location that does not resolve strictly inside the temp upload directory.
+   * The comparison is made on canonical paths, so {@code ..} segments and symbolic links are
+   * resolved, and it runs before anything is created on disk. With {@link #createEmptyTempFile}
+   * keeping only the file name part of what it receives, this guard is a second line of defence
+   * rather than the first one; it is kept so the location rule holds whatever the name handling
+   * above it does.
+   *
+   * @param tmpRoot   the temp upload directory
+   * @param candidate the file about to be created
+   * @throws DotRuntimeException if the candidate falls outside the temp upload directory
+   */
+  static void requireInsideTempUploadDir(final File tmpRoot, final File candidate) {
+
+    if (!PathContainmentUtil.isContainedIn(tmpRoot, candidate)) {
+      SecurityLogger.logInfo(TempFileAPI.class, () -> "Attempted file upload outside of temp folder: " + candidate.getPath());
+      throw new DotRuntimeException("Attempted file upload outside of temp folder");
+    }
+  }
+
+  /**
+   * Returns an empty temp file, with a unique id, that the caller can write to and later look up by
+   * that id. The request is used to build the allow list (user, session and request fingerprint)
+   * stored next to the file, which decides who can read the temp resource in later requests.
+   * <p>
+   * Only the file name part of {@code incomingFileName} is used: any directory part is dropped, so
+   * the file always lands in its own folder under the temp upload directory. The location is
+   * checked on canonical paths before anything is created on disk. A name whose extension is on
+   * the upload block list is refused before anything is created, and the check runs on the
+   * sanitised name so the client's spelling cannot sidestep it.
+   *
+   * @param incomingFileName the name the file was uploaded with, as received from the client
+   * @param request          the current request, used for the allow list
+   * @return the new {@link DotTempFile}, pointing at a file that does not exist yet
+   * @throws DotSecurityException     if the request is not allowed to create temp files
+   * @throws IllegalArgumentException if the name's extension is on the block list
+   * @throws DotRuntimeException      if the name is missing, the file would fall outside the temp
+   *                              upload directory, or its folder cannot be created
    */
   public DotTempFile createEmptyTempFile(final String incomingFileName,final HttpServletRequest request) throws DotSecurityException {
     final String anon = Try.of(() -> APILocator.getUserAPI().getAnonymousUser().getUserId()).getOrElse("anonymous");
@@ -109,21 +142,21 @@ public class TempFileAPI {
     if (incomingFileName == null) {
       throw new DotRuntimeException("Unable to create temp file without a name");
     }
+    // Keep the file name only: callers pass the client's name through, and it may carry a path
+    final String fileName = FileUtil.sanitizeFileName(incomingFileName);
+    // Every temp file can become an asset, so the extension block list applies here, whichever
+    // API the name arrived through (multipart, JSON content, URL fetch, import, bulk upload)
+    fileExtensionValidator.validate(fileName);
     final String tempFileId = TEMP_RESOURCE_PREFIX + UUIDGenerator.shorty();
-    
-    final String tempFileUri = File.separator + tempFileId + File.separator + incomingFileName;
-    final File tempFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + tempFileUri);
-    final File tempFolder = tempFile.getParentFile();
+
+    final File tmpRoot = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary());
+    final File tempFolder = new File(tmpRoot, tempFileId);
+    final File tempFile = new File(tempFolder, fileName);
+
+    requireInsideTempUploadDir(tmpRoot, tempFile);
 
     if (!tempFolder.mkdirs()) {
       throw new DotRuntimeException("Unable to create temp directory:" + tempFolder);
-    }
-
-    final String absFilePath = FileUtil.getAbsolutlePath(tempFile.getPath());
-    final String absTmpPath = FileUtil.getAbsolutlePath(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary());
-    if (!absFilePath.startsWith(absTmpPath)) {
-      SecurityLogger.logInfo(this.getClass(), () -> "Attempted file upload outside of temp folder: " + absFilePath);
-      throw new DotRuntimeException("Invalid file upload");
     }
     createTempPermissionFile(tempFolder, allowList);
     SecurityLogger.logInfo(this.getClass(),"Temp File Created with id: " + tempFileId + ", uploaded by userId: " + user.getUserId());
@@ -227,9 +260,9 @@ public class TempFileAPI {
       if (user == null || tempFilesByUrlAdminOnly && !user.isAdmin()) {
         throw new DotRuntimeException("Only Admin Users can import files by URL via the Temp API.");
       }
-      // If url requested is on a private subnet, block by default
-      if(IPUtils.isIpPrivateSubnet(url.getHost()) && !Optional.ofNullable(allowAccessToPrivateSubnets.get()).orElse(false)) {
-        throw new DotRuntimeException(String.format("Failed to download file by URL: %s as it is in a private subnet", url));
+      if (!isAllowedRemoteUrl(url)) {
+        throw new DotRuntimeException(String.format(
+                "Failed to download file by URL: the host %s is not an allowed target", url.getHost()));
       }
       final String fileName = resolveFileName(incomingFileName, url);
       final DotTempFile dotTempFile = createEmptyTempFile(fileName, request);
@@ -254,17 +287,51 @@ public class TempFileAPI {
   }
 
   /**
-   * This method receives a URL and checks if starts with http or https,
-   * and also makes a request to the URL and if returns 200 the URL is valid,
-   * if returns any other response will be false
-   * @param url
+   * Tells whether the server may fetch a URL a caller supplied. The URL must use http or https
+   * and must not point at a loopback, link-local, private or otherwise internal address, unless
+   * {@code ALLOW_ACCESS_TO_PRIVATE_SUBNETS} opens those ranges. The host name is resolved for
+   * the check, so {@code localhost} and names that resolve to internal addresses are refused as
+   * well. No request is made to the URL.
+   *
+   * @param url the URL the caller asked the server to fetch
+   * @return {@code true} when the server may contact the URL
+   */
+  public boolean isAllowedRemoteUrl(final URL url) {
+
+    if (null == url) {
+      return false;
+    }
+    final String protocol = url.getProtocol();
+    if (!"http".equalsIgnoreCase(protocol) && !"https".equalsIgnoreCase(protocol)) {
+      Logger.error(this, "URL does not starts with http or https");
+      return false;
+    }
+    if (IPUtils.isIpPrivateSubnet(url.getHost()) && !allowAccessToPrivateSubnets.get()) {
+      SecurityLogger.logInfo(this.getClass(), "Refused to fetch a URL whose host '" + url.getHost()
+              + "' resolves to a private or internal address");
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * This method receives a URL and checks that it starts with http or https and that the server
+   * may contact it (see {@link #isAllowedRemoteUrl(URL)}). Only then it makes a request to the
+   * URL: the URL is valid when that request returns 200, and invalid on any other response.
+   *
+   * @param url the URL to validate
    * @return boolean if the url is valid or not
    */
   public boolean validUrl(final String url) {
 
-    if(!(url.toLowerCase().startsWith("http://") ||
-            url.toLowerCase().startsWith("https://"))){
-      Logger.error(this, "URL does not starts with http or https");
+    final URL parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch (MalformedURLException e) {
+      Logger.error(this, "Invalid URL: " + e.getMessage());
+      return false;
+    }
+    if (!isAllowedRemoteUrl(parsedUrl)) {
       return false;
     }
       String done;

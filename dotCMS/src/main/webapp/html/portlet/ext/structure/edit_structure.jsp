@@ -1,4 +1,4 @@
-<%@page import="com.dotcms.contenttype.model.field.DataTypes"%>
+<%@ page import="com.liferay.util.Xss" %><%@page import="com.dotcms.contenttype.model.field.DataTypes"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
 <%@ page import="java.util.ArrayList"%>
 <%@ page import="com.dotcms.repackage.javax.portlet.WindowState"%>
@@ -210,23 +210,10 @@
     }
     function deleteStructure() {
         if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "message.structure.delete.structure.and.content")) %>')) {
-            StructureAjax.checkDependencies(structureInode, handleDepResponse);
+            checkContainersThenDelete(structureInode);
         }
     }
-    function handleDepResponse(data) {
-        if(data['size'] != 0) {
-            var resultTableStr = '<table class="listingTable"><thead><tr><th><%=LanguageUtil.get(pageContext, "TITLE")%></th><th><%=LanguageUtil.get(pageContext, "IDENTIFIER")%></th><th><%=LanguageUtil.get(pageContext, "INODE")%></th></tr></thead><tbody>';
-            var containers = data['containers'];
-            for(var i = 0; i < data['size'] ; i++){
-                resultTableStr = resultTableStr + "<tr><td>" + containers[i]['title'] + "</td><td>" + containers[i]['identifier'] + "</td><td>" + containers[i]['inode'] + "</td></tr>";
-            }
-            resultTableStr = resultTableStr + '</tbody></table>';
-            dojo.byId("depDiv").innerHTML = "<br />" + resultTableStr;
-            dijit.byId("dependenciesDialog").show();
-        } else {
-            processDelete();
-        }
-    }
+<%@ include file="/html/portlet/ext/structure/container_dependencies_js_inc.jsp" %>
     function processDelete() {
         var r = Math.floor(Math.random() * 1000000000);
         var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
@@ -682,7 +669,7 @@
 												}
 
 											%>
-											<option value="<%=scheme.getId()%>" <%=selected%> ><%=scheme.getName() %></option>
+											<option value="<%=scheme.getId()%>" <%=selected%> ><%=Xss.encodeForHTML(scheme.getName())%></option>
 											<%} %>
 										</select>
 										<%}else{ %>

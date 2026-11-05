@@ -397,6 +397,30 @@ public interface TagAPI {
 	public void deleteTagInodesByInode(String inode) throws DotDataException;
 
 	/**
+	 * Checks if a user can remove all the Tags of a given inode.
+	 * <p>The inode must belong to a contentlet the user has EDIT permission on. Admin and system
+	 * users can always remove them. For any other inode (one that isn't a contentlet), only admin
+	 * and system users can remove its Tags.</p>
+	 *
+	 * @param user  the user to check permissions for
+	 * @param inode inode whose Tags would be removed
+	 * @return true if the user can remove the Tags, false otherwise
+	 * @throws DotDataException if there's a data access error
+	 */
+	public boolean canDeleteTagInodesByInode(User user, String inode) throws DotDataException;
+
+	/**
+	 * Removes all the Tags of a given inode after checking the user can do it, using the same
+	 * rules as {@link #canDeleteTagInodesByInode(User, String)}.
+	 *
+	 * @param user  the user requesting the removal (used for permission checks)
+	 * @param inode inode whose Tags will be removed
+	 * @return true if the Tags were removed, false if the user doesn't have permission
+	 * @throws DotDataException if there's a data access error
+	 */
+	public boolean deleteTagInodesByInode(User user, String inode) throws DotDataException;
+
+	/**
 	 * Deletes TagInodes references by tag id
 	 *
 	 * @param tagId tag reference to delete

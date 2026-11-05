@@ -38,3 +38,12 @@ export function linkHrefValidator(control: AbstractControl): ValidationErrors | 
 
     return isValidLinkHref(value) ? null : { invalidUrl: true };
 }
+
+/**
+ * True when the text is nothing but an http(s) URL to an image file, optionally with a query
+ * string. Mirrors the legacy block-editor's `isImageURL`: pasting such a URL inserts an image
+ * node instead of the text (#38165).
+ */
+export function isImageUrl(value: string): boolean {
+    return /^https?:\/\/\S+\.(jpe?g|png|webp|avif|gif|svg)(\?\S*)?$/i.test(value.trim());
+}

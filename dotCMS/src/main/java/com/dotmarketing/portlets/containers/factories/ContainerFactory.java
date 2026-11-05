@@ -15,6 +15,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.containers.business.ContainerSortBy;
 import com.dotmarketing.util.Logger;
 
 import java.util.LinkedList;
@@ -98,6 +99,8 @@ public class ContainerFactory {
 		Container newContainer = new Container();
 
 		newContainer.copy(currentContainer);
+		// A value stored before it was validated must not be carried over to the copy
+		ContainerSortBy.resetIfUnsupported(newContainer);
        	newContainer.setFriendlyName(currentContainer.getFriendlyName()
 				+ " (COPY) ");
        	newContainer.setTitle(currentContainer.getTitle() + " (COPY) ");

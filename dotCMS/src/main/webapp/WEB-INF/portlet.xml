@@ -2,17 +2,6 @@
 <portlet-app>
     <!-- Struts Portlets -->
     <portlet>
-        <portlet-name>categories-legacy</portlet-name>
-        <display-name>Categories Legacy</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-        <init-param>
-            <name>view-action</name>
-            <value>/ext/categories/view_categories</value>
-        </init-param>
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-    </portlet>
-
-    <portlet>
         <portlet-name>site-browser</portlet-name>
         <display-name>CMS Browser</display-name>
         <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
@@ -30,17 +19,6 @@
         <init-param>
             <name>view-action</name>
             <value>/ext/contentlet/view_contentlets</value>
-        </init-param>
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-    </portlet>
-
-    <portlet>
-        <portlet-name>containers-legacy</portlet-name>
-        <display-name>Container Manager (Legacy)</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-        <init-param>
-            <name>view-action</name>
-            <value>/ext/containers/view_containers</value>
         </init-param>
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
     </portlet>
@@ -242,21 +220,6 @@
     </portlet>
 
     <portlet>
-        <portlet-name>query-tool-legacy</portlet-name>
-        <display-name>Query Tool (Legacy)</display-name>
-        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
-        <init-param>
-            <name>view-jsp</name>
-            <value>/jsp/lucene/lucene_search.jsp</value>
-        </init-param>
-        <init-param>
-            <name>useWEBINFDIR</name>
-            <value>true</value>
-        </init-param>
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-    </portlet>
-
-    <portlet>
         <portlet-name>site-search</portlet-name>
         <display-name>Site Search Manager</display-name>
         <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
@@ -356,12 +319,6 @@
             <name>view-path</name>
             <value>/es-search</value>
         </init-param>
-    </portlet>
-
-    <portlet>
-        <portlet-name>es-search-legacy</portlet-name>
-        <display-name>ES Search Legacy</display-name>
-        <portlet-class>com.dotcms.rest.elasticsearch.ESContentResourcePortlet</portlet-class>
     </portlet>
 
     <!-- REST JSP Portlets -->
@@ -569,6 +526,13 @@
         <display-name>Roles (Beta)</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
         <portlet-url>/roles-beta</portlet-url>
+    </portlet>
+
+    <portlet>
+        <portlet-name>tools-beta</portlet-name>
+        <display-name>Tools (Beta)</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/tools-beta</portlet-url>
     </portlet>
 
     <portlet>

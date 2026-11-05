@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.content;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -50,7 +53,6 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -65,6 +67,9 @@ import org.junit.Test;
  * Integration tests for {@link ContentResource} (v1 endpoint: /api/v1/content).
  */
 public class ContentResourceIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static User systemUser;
 
@@ -978,8 +983,7 @@ public class ContentResourceIntegrationTest {
                 ).request()
         );
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString(
-                        (email + ":" + password).getBytes()));
+                TOKEN_UTILS.bearerHeaderForEmail(email));
         return request;
     }
 
@@ -1069,6 +1073,82 @@ public class ContentResourceIntegrationTest {
     }
 
     /**
+     * Method to test: {@link ContentResource#canLockContent}
+     * <p>
+     * Given scenario: a published contentlet readable by anonymous visitors, a front-end user
+     * and a back-end user, locked by another back-end user.
+     * <p>
+     * Expected result: anonymous and front-end callers get the lock state without the lock
+     * owner; the back-end caller gets the owner's id and the owner's full name as a String.
+     */
+    @Test
+    public void test_canLockContent_lockOwnerOnlyForBackendCallers() throws Exception {
+        final Language english = APILocator.getLanguageAPI().getDefaultLanguage();
+        final String password = "TestPass" + System.currentTimeMillis() + "!";
+        User owner = null;
+        User backendCaller = null;
+        User frontendCaller = null;
+        Structure structure = null;
+        Contentlet content = null;
+        try {
+            owner = new UserDataGen().firstName("Lock").lastName("Owner")
+                    .roles(TestUserUtils.getBackendRole()).nextPersisted();
+            backendCaller = new UserDataGen().password(password)
+                    .roles(TestUserUtils.getBackendRole()).nextPersisted();
+            frontendCaller = new UserDataGen().password(password)
+                    .roles(TestUserUtils.getFrontendRole()).nextPersisted();
+            structure = new StructureDataGen().nextPersisted();
+            content = ContentletDataGen.publish(new ContentletDataGen(structure.getInode())
+                    .languageId(english.getId()).nextPersisted());
+            final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+            permissionAPI.save(new Permission(content.getPermissionId(),
+                    APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                    PermissionAPI.PERMISSION_READ, true), content, systemUser, false);
+            permissionAPI.save(new Permission(content.getPermissionId(),
+                    APILocator.getRoleAPI().getUserRole(backendCaller).getId(),
+                    PermissionAPI.PERMISSION_READ, true), content, systemUser, false);
+            permissionAPI.save(new Permission(content.getPermissionId(),
+                    APILocator.getRoleAPI().getUserRole(frontendCaller).getId(),
+                    PermissionAPI.PERMISSION_READ, true), content, systemUser, false);
+            APILocator.getVersionableAPI().setLocked(content, true, owner);
+
+            final Map<String, Object> anonymousView = new ContentResource().canLockContent(
+                    createAnonymousRequest(), mock(HttpServletResponse.class),
+                    content.getIdentifier(), "-1").getEntity();
+            assertEquals(Boolean.TRUE, anonymousView.get("locked"));
+            assertFalse(anonymousView.containsKey("lockedBy"));
+            assertFalse(anonymousView.containsKey("lockedByName"));
+
+            final Map<String, Object> frontendView = new ContentResource().canLockContent(
+                    createRequestForUser(frontendCaller.getEmailAddress(), password),
+                    mock(HttpServletResponse.class), content.getIdentifier(), "-1").getEntity();
+            assertEquals(Boolean.TRUE, frontendView.get("locked"));
+            assertFalse(frontendView.containsKey("lockedBy"));
+            assertFalse(frontendView.containsKey("lockedByName"));
+
+            final Map<String, Object> backendView = new ContentResource().canLockContent(
+                    createRequestForUser(backendCaller.getEmailAddress(), password),
+                    mock(HttpServletResponse.class), content.getIdentifier(), "-1").getEntity();
+            assertEquals(Boolean.TRUE, backendView.get("locked"));
+            assertEquals(owner.getUserId(), backendView.get("lockedBy"));
+            assertEquals(owner.getFullName(), backendView.get("lockedByName"));
+        } finally {
+            if (content != null) {
+                APILocator.getVersionableAPI().setLocked(content, false, APILocator.systemUser());
+                ContentletDataGen.destroy(content, true);
+            }
+            if (structure != null) {
+                StructureDataGen.remove(structure);
+            }
+            for (final User user : new User[]{owner, backendCaller, frontendCaller}) {
+                if (user != null) {
+                    UserDataGen.remove(user, true);
+                }
+            }
+        }
+    }
+
+    /**
      * Creates an unauthenticated (anonymous) HttpServletRequest with no user or auth header.
      */
     private static HttpServletRequest createAnonymousRequest() {
@@ -1091,8 +1171,7 @@ public class ContentResourceIntegrationTest {
                 ).request()
         );
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString(
-                        "admin@dotcms.com:admin".getBytes()));
+                TOKEN_UTILS.adminBearerHeader());
         return request;
     }
 }

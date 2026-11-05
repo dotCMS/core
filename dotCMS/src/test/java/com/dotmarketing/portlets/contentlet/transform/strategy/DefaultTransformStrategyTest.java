@@ -15,6 +15,7 @@ import static org.mockito.Mockito.verify;
 import com.dotcms.api.APIProvider;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Identifier;
@@ -398,6 +399,21 @@ public class DefaultTransformStrategyTest {
 
         assertTrue("A Content Type declaring 'hostName' must be reported as a collision",
                 DefaultTransformStrategy.declaresField(hostLikeType, HOST_NAME));
+    }
+
+    /**
+     * A Host/Folder selector stores the site assignment separately, not a field value that could
+     * collide with the derived hostname. The guard added for #37584 must not suppress that name.
+     */
+    @Test
+    public void declaresField_whenHostFolderUsesHostName_returnsFalse() {
+        final Field hostFolder = Mockito.mock(HostFolderField.class);
+        Mockito.when(hostFolder.variable()).thenReturn(HOST_NAME);
+        final ContentType contentType = Mockito.mock(ContentType.class);
+        Mockito.when(contentType.fields()).thenReturn(List.of(hostFolder));
+
+        assertFalse("A Host/Folder selector must not suppress the derived Site name",
+                DefaultTransformStrategy.declaresField(contentType, HOST_NAME));
     }
 
     /**

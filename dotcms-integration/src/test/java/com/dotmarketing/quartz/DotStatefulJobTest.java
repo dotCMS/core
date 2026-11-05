@@ -7,9 +7,9 @@ import static com.dotmarketing.quartz.DotStatefulJob.getTriggerGroupName;
 
 import static java.util.Objects.requireNonNull;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.util.IntegrationTestInitService;
@@ -20,6 +20,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalTime;
 import java.util.Calendar;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -27,6 +28,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.quartz.JobDetail;
@@ -99,9 +101,25 @@ public class DotStatefulJobTest extends IntegrationTestBase {
             final MyStatefulJob myStatefulJob = iterator.next();
             iterator.forEachRemaining(job -> {
                 //They should never overlap.
-                assertFalse(myStatefulJob.getTimeRange().overlaps(job.getTimeRange()));
+                if (myStatefulJob.getTimeRange().overlaps(job.getTimeRange())) {
+                    fail(String.format("Stateful job executions overlapped: %s and %s. All executions by start time:%n%s",
+                            myStatefulJob.describe(), job.describe(), describeExecutions()));
+                }
             });
         }
+    }
+
+    /**
+     * Lists every finished execution, ordered by start time, for the failure message of the
+     * overlap assertion.
+     *
+     * @return one line per execution with its worker thread, start and end
+     */
+    private String describeExecutions() {
+        return MyStatefulJob.finishedJobs.stream()
+                .sorted(Comparator.comparing(job -> job.getTimeRange().from()))
+                .map(MyStatefulJob::describe)
+                .collect(Collectors.joining(System.lineSeparator()));
     }
 
     /**
@@ -137,6 +155,13 @@ public class DotStatefulJobTest extends IntegrationTestBase {
             requireNonNull(to, "to must not be null");
             this.from = from;
             this.to = to;
+        }
+
+        /**
+         * @return the instant this range starts
+         */
+        LocalTime from() {
+            return from;
         }
 
         boolean overlaps(final LocalTimeRange other) {

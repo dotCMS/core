@@ -19,16 +19,11 @@
                   "name": "set USE_JWT_TOKEN_IN_PUSH_PUBLISH to false",
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -60,7 +55,7 @@
                       "script": {
                         "exec": [
                           "",
-                          "environmentName = 'environment-' + new Date().getMilliseconds();",
+                          "environmentName = 'environment-' + Date.now();",
                           "pm.collectionVariables.set(\"environmentName\", environmentName);",
                           ""
                         ],
@@ -84,16 +79,11 @@
                   ],
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -148,7 +138,7 @@
                       "listen": "prerequest",
                       "script": {
                         "exec": [
-                          "endpointName = 'endpoint-' + new Date().getMilliseconds();",
+                          "endpointName = 'endpoint-' + Date.now();",
                           "pm.collectionVariables.set(\"endpointName\", endpointName);",
                           ""
                         ],
@@ -172,16 +162,11 @@
                   ],
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -252,7 +237,7 @@
                       "listen": "prerequest",
                       "script": {
                         "exec": [
-                          "receiverName = 'receiverName-' + new Date().getMilliseconds();",
+                          "receiverName = 'receiverName-' + Date.now();",
                           "pm.collectionVariables.set(\"receiverName\", receiverName);",
                           ""
                         ],
@@ -273,16 +258,11 @@
                   ],
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -360,16 +340,11 @@
                   ],
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -394,16 +369,11 @@
                   "name": "set USE_JWT_TOKEN_IN_PUSH_PUBLISH to true",
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -450,16 +420,11 @@
                   ],
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -468,7 +433,7 @@
                     "header": [],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 1,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
+                      "raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 3600,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -492,16 +457,11 @@
                   "name": "set USE_JWT_TOKEN_IN_PUSH_PUBLISH to false",
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -533,7 +493,7 @@
                       "script": {
                         "exec": [
                           "",
-                          "environmentName = 'environment-' + new Date().getMilliseconds();",
+                          "environmentName = 'environment-' + Date.now();",
                           "pm.collectionVariables.set(\"environmentName\", environmentName);",
                           ""
                         ],
@@ -557,16 +517,11 @@
                   ],
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -621,7 +576,7 @@
                       "listen": "prerequest",
                       "script": {
                         "exec": [
-                          "endpointName = 'endpoint-' + new Date().getMilliseconds();",
+                          "endpointName = 'endpoint-' + Date.now();",
                           "pm.collectionVariables.set(\"endpointName\", endpointName);",
                           ""
                         ],
@@ -645,16 +600,11 @@
                   ],
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -738,16 +688,11 @@
                   ],
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -772,16 +717,11 @@
                   "name": "set USE_JWT_TOKEN_IN_PUSH_PUBLISH to true",
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -838,16 +778,11 @@
                   ],
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -879,7 +814,7 @@
                       "script": {
                         "exec": [
                           "",
-                          "environmentName = 'environment-' + new Date().getMilliseconds();",
+                          "environmentName = 'environment-' + Date.now();",
                           "pm.collectionVariables.set(\"environmentName\", environmentName);",
                           ""
                         ],
@@ -903,16 +838,11 @@
                   ],
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -967,7 +897,7 @@
                       "listen": "prerequest",
                       "script": {
                         "exec": [
-                          "endpointName = 'endpoint-' + new Date().getMilliseconds();",
+                          "endpointName = 'endpoint-' + Date.now();",
                           "pm.collectionVariables.set(\"endpointName\", endpointName);",
                           ""
                         ],
@@ -991,16 +921,11 @@
                   ],
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -1132,8 +1057,9 @@
                           "    pm.expect(jsonData.entity.jwt).to.not.eq(undefined);",
                           "    pm.collectionVariables.set(\"token\", jsonData.entity.jwt);",
                           "",
-                          "    console.log('token', jsonData.entity.jwt);",
-                          "    eval(pm.collectionVariables.get(\"wait\"))(2);",
+                          "    // Keep token values out of Newman logs.",
+                          "    // The token lives 5 s, because issuing it can take over a second under load; wait 6 s (the argument is in ms) so the 401 check below sees it expired.",
+                          "    eval(pm.collectionVariables.get(\"wait\"))(6000);",
                           "});"
                         ],
                         "type": "text/javascript"
@@ -1142,16 +1068,11 @@
                   ],
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -1160,7 +1081,7 @@
                     "header": [],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 1,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
+                      "raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 5,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -1183,7 +1104,7 @@
                       "script": {
                         "exec": [
                           "",
-                          "environmentName = 'environment-' + new Date().getMilliseconds();",
+                          "environmentName = 'environment-' + Date.now();",
                           "pm.collectionVariables.set(\"environmentName\", environmentName);",
                           ""
                         ],
@@ -1207,16 +1128,11 @@
                   ],
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -1271,7 +1187,7 @@
                       "listen": "prerequest",
                       "script": {
                         "exec": [
-                          "endpointName = 'endpoint-' + new Date().getMilliseconds();",
+                          "endpointName = 'endpoint-' + Date.now();",
                           "pm.collectionVariables.set(\"endpointName\", endpointName);",
                           ""
                         ],
@@ -1295,16 +1211,11 @@
                   ],
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -1431,7 +1342,7 @@
                       "script": {
                         "exec": [
                           "",
-                          "environmentName = 'environment-' + new Date().getMilliseconds();",
+                          "environmentName = 'environment-' + Date.now();",
                           "pm.collectionVariables.set(\"environmentName\", environmentName);",
                           ""
                         ],
@@ -1455,16 +1366,11 @@
                   ],
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -1519,7 +1425,7 @@
                       "listen": "prerequest",
                       "script": {
                         "exec": [
-                          "endpointName = 'endpoint-' + new Date().getMilliseconds();",
+                          "endpointName = 'endpoint-' + Date.now();",
                           "pm.collectionVariables.set(\"endpointName\", endpointName);",
                           ""
                         ],
@@ -1543,16 +1449,11 @@
                   ],
                   "request": {
                     "auth": {
-                      "type": "basic",
-                      "basic": [
+                      "type": "bearer",
+                      "bearer": [
                         {
-                          "key": "password",
-                          "value": "admin",
-                          "type": "string"
-                        },
-                        {
-                          "key": "username",
-                          "value": "admin@dotcms.com",
+                          "key": "token",
+                          "value": "{{jwt}}",
                           "type": "string"
                         }
                       ]
@@ -1636,8 +1537,17 @@
                     "header": [],
                     "url": {
                       "raw": "{{serverURL}}/api/v1/logout",
-                      "host": ["{{serverURL}}"],
-                      "path": ["api", "v1", "logout"]
+                      "host": [
+                        "{{serverURL}}"
+                      ],
+                      "path": [
+                        "api",
+                        "v1",
+                        "logout"
+                      ]
+                    },
+                    "auth": {
+                      "type": "noauth"
                     }
                   },
                   "response": []

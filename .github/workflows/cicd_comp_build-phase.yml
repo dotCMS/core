@@ -76,6 +76,13 @@ on:
         required: false
         type: boolean
         default: false
+      # Default true: release, nightly, LTS and sweep callers keep cleaning up.
+      # Only the PR, merge-queue and trunk callers pass false (#38203).
+      cleanup-runner:
+        description: 'Free runner disk space (cleanup-runner action) before the build'
+        required: false
+        type: boolean
+        default: true
     secrets:
       # Remote build cache (S3). Absent secrets simply disable the cache, so any
       # caller that does not pass these -- every release workflow -- builds from
@@ -113,11 +120,13 @@ jobs:
       artifact-suffix: ${{ steps.maven-build.outputs.artifact-suffix }}
     steps:
       # Checkout code based on whether a specific ref is provided
+      # Same depth rule as the ref checkout below (see its comment): full
+      # history only when the PR-only steps need it.
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: inputs.ref == ''
         with:
-          fetch-depth: 0
+          fetch-depth: ${{ inputs.run-pr-checks && '0' || '1' }}
       # The ref path builds a tag/branch snapshot; buildnumber-maven-plugin
       # (scmRevision) only reads HEAD, which works on a shallow clone, so we
       # avoid the full fetch (~2k+ branches, ~1.1 GB pack, ~19-20 min).
@@ -182,9 +191,8 @@ jobs:
           # which made the PR effective pom differ from trunk's for that module.
           maven-args: "clean install ${{ env.VALIDATE_PROFILE }} -Dprod=true -DskipTests=true"
           generate-artifacts: true
-          require-main: ${{ inputs.version == '1.0.0-SNAPSHOT' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          cleanup-runner: true
+          cleanup-runner: ${{ inputs.cleanup-runner }}
           version: ${{ inputs.version }}
           generate-docker: ${{ inputs.generate-docker }}
           generate-test-image: ${{ inputs.generate-test-image }}
@@ -225,6 +233,15 @@ jobs:
             echo "::error::$version was not installed into the Maven repository; refusing to deploy images for a release that cannot publish its artifacts"
             ls -1 "$HOME/.m2/repository/com/dotcms/dotcms-core/" 2>/dev/null || true
             exit 1
+          fi
+          # Historical tags keep their standalone SAML pin; only integrated source
+          # lineages produce a bundle matching the core release version.
+          if [[ -f independent-projects/core-plugins/saml-plugin/pom.xml ]]; then
+            dir="$HOME/.m2/repository/com/dotcms/samlbundle/com.dotcms.samlbundle/$version"
+            if [[ ! -f "$dir/com.dotcms.samlbundle-$version.pom" || ! -f "$dir/com.dotcms.samlbundle-$version.jar" ]]; then
+              echo "::error::SAML $version was not installed; refusing to deploy images with an incomplete release"
+              exit 1
+            fi
           fi
           echo "Release coordinates present: $version"
 

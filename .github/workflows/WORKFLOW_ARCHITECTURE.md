@@ -304,7 +304,6 @@ flowchart TD
         Test --> Frontend[Frontend Tests]
         Test --> Integration[Integration Tests<br/>6 Suites]
         Test --> Postman[Postman Tests<br/>11 Collections]
-        Test --> Karate[Karate Tests]
         Test --> CLI[CLI Tests]
     end
     
@@ -407,7 +406,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    Start[Test Phase] --> Matrix[setup-matrix Job<br/>Parse test-matrix.yml]
+    Start[Test Matrix workflow<br/>runs alongside the build] --> Matrix[setup-matrix Job<br/>Parse test-matrix.yml]
     
     Matrix --> Generate{Generate<br/>Test<br/>Combinations}
     
@@ -418,7 +417,6 @@ flowchart LR
     Check -->|CLI| CLI[CLI Tests<br/>1 suite]
     Check -->|Integration| IT[Integration Tests<br/>6 suites]
     Check -->|Postman| PM[Postman Tests<br/>11 collections]
-    Check -->|Karate| KT[Karate Tests<br/>1 suite]
     Check -->|E2E| E2E[E2E Tests<br/>3 Playwright shards]
     
     subgraph "Integration Suites"
@@ -572,6 +570,7 @@ if: needs.initialize.outputs.found_artifacts == 'false'
 ```yaml
 # Tests are conditionally run based on file changes detected in initialize
 # The filters output is a JSON object - use fromJSON() to access individual values
+# These inputs go to the caller's test-matrix job (cicd_comp_test-matrix.yml), not to the test phase
 with:
   jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
   integration: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
@@ -590,10 +589,14 @@ on:
 
 ### 5. Matrix Generation Pattern
 ```yaml
-# Dynamic test matrix from external YAML config
-- uses: mikefarah/yq@v4.47.1
+# Dynamic test matrix from external YAML config, built by cicd_comp_test-matrix.yml.
+# Each caller runs it as a `test-matrix` job beside the build; the caller's `test` job
+# needs both and passes the matrix to cicd_comp_test-phase.yml.
+- uses: actions/checkout@<sha> # sparse checkout of .github/test-matrix.yml only
   with:
-    cmd: yq -o=json .github/test-matrix.yml
+    sparse-checkout: .github/test-matrix.yml
+    sparse-checkout-cone-mode: false
+- run: yq -o=json .github/test-matrix.yml > config.json   # yq preinstalled on the runner
 ```
 
 ## Key Actions
@@ -635,7 +638,7 @@ on:
 
 ### test-matrix.yml
 Centralized test configuration defining all test suites:
-- Test types (jvm, integration, postman, karate, cli, frontend, e2e)
+- Test types (jvm, integration, postman, cli, frontend, e2e)
 - Default settings (timeouts, Maven options)
 - Suite-specific configurations
 - Conditional execution logic
@@ -692,7 +695,7 @@ Slack channel and user mappings for notifications
    - Verify path filters matched correctly
 
 2. **Verify Test Matrix Generation**
-   - Check setup-matrix job logs
+   - Check the `<Caller> Test Matrix / Setup Test Matrix` job logs (`cicd_comp_test-matrix.yml`)
    - Ensure test-matrix.yml is valid YAML
    - Verify condition inputs are correct
 
@@ -828,7 +831,16 @@ Our CI/CD process extensively uses caching and artifacts to optimize performance
 - **GraalVM Native Images**: CLI native build caches
 
 ### Artifact Sharing
-- **maven-repo**: Complete Maven repository shared between jobs
+- **maven-repo**: The version directories the build installed into `~/.m2/repository` (any version; told from
+  downloads by an empty repository id in `_remote.repositories`), without third-party jars or downloaded
+  `com.dotcms` releases such as the SAML plugin's pinned `dotcms-core:26.03.27-01`
+  - Third-party dependencies come from the `<os>-mavencore-v2-<pom hash>` cache, which jobs restore
+    before downloading this artifact; the build job saves it (never a release build)
+  - Exception: Postman and E2E (`needs_maven_deps: false` in `test-matrix.yml`) restore neither the
+    cache nor this artifact, because their modules depend on no dotCMS module. They restore a small
+    `<os>-mavenplugins-v1-<pom hash>` cache of the plugins they run instead, which the first of them to
+    miss saves
+  - The release phase restores the dependency cache after publishing, only for the Javadoc build
   - Enables artifact reuse from merge queue in trunk workflow
   - Allows skipping rebuild if commit already built and tested
   - Retention: 2-90 days depending on artifact type

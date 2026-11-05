@@ -61,6 +61,13 @@ public class CompletionsToolTest {
     private static final String PROBE_TITLE = AiTest.PROBE_MARKUP + " title";
     /** Dedicated index for the probe rows so they can never appear in another test's summarize prompt. */
     private static final String PROBE_INDEX = "escape-probe";
+    /**
+     * Keys whose value is stamped per call, so two calls made moments apart can legitimately differ:
+     * {@code timeToEmbeddings} is a duration, and {@code openAiResponse.created} is the wall-clock
+     * second {@code LangChain4jAIClient.toChatResponseJson} writes into the reply, not the stub's value.
+     * Only the value is skipped, the key must still be present on both sides.
+     */
+    private static final Set<String> PER_CALL_KEYS = Set.of("timeToEmbeddings", "created");
 
     private CompletionsTool completionsTool;
     private CompletionsTool unsafeCompletionsTool;
@@ -343,7 +350,7 @@ public class CompletionsToolTest {
                 .getJSONArray("matches").getJSONObject(0).getString("extractedText"));
 
         final JSONObject apiResult = APILocator.getDotAIAPI().getCompletionsAPI(appConfig).summarize(summarizeForm(text));
-        AiTest.assertEquivalentIgnoring(apiResult, unsafeResult, Set.of("timeToEmbeddings"));
+        AiTest.assertEquivalentIgnoring(apiResult, unsafeResult, PER_CALL_KEYS);
     }
 
     /**
@@ -363,7 +370,7 @@ public class CompletionsToolTest {
 
         assertResult(unsafeResult);
         assertResult(defaultResult);
-        AiTest.assertEscapedOnlyAt(unsafeResult, defaultResult, AiTest.searchShapedEscapedPaths(), Set.of("timeToEmbeddings"));
+        AiTest.assertEscapedOnlyAt(unsafeResult, defaultResult, AiTest.searchShapedEscapedPaths(), PER_CALL_KEYS);
     }
 
     /**
@@ -391,7 +398,7 @@ public class CompletionsToolTest {
      * Feature: Explicit opt-in for raw completions (#37153, AC-003 / AC-004)
      * Scenario: the three raw overloads on the unsafe construction
      * When each overload is called with escaping off
-     * Then the model text is the literal markup, raw(JSONObject) is byte-for-byte the CompletionsAPI result,
+     * Then the model text is the literal markup, raw(JSONObject) matches the CompletionsAPI result apart from the per-call timestamps,
      * and the default payload differs from it only by Encode.forHtml on string leaves
      */
     @Test
@@ -408,10 +415,10 @@ public class CompletionsToolTest {
         }
         final JSONObject apiResult = APILocator.getDotAIAPI().getCompletionsAPI(appConfig)
                 .raw(new JSONObject(prompt), UtilMethods.extractUserIdOrNull(user));
-        assertEquals(apiResult.toString(), fromJson.toString());
+        AiTest.assertEquivalentIgnoring(apiResult, fromJson, PER_CALL_KEYS);
 
         final JSONObject defaultFromJson = (JSONObject) completionsTool.raw(new JSONObject(prompt));
-        AiTest.assertEscapedOnlyAt(fromJson, defaultFromJson, path -> true);
+        AiTest.assertEscapedOnlyAt(fromJson, defaultFromJson, path -> true, PER_CALL_KEYS);
     }
 
     /**

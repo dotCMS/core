@@ -51,7 +51,7 @@ dotCMS/core is a mixed-age codebase and must be treated as one, not as greenfiel
 Test-Driven Development is mandatory. **No implementation code shall be written before:**
 
 1. **Tests are written** whenever possible — using the layer-appropriate type(s): unit,
-   Postman, integration, Karate, and/or e2e.
+   Postman, integration, and/or e2e.
 2. **Tests are validated and approved by the developer.** If a test type genuinely cannot be
    implemented, the developer must **explicitly say so and explain why** — silence is not
    consent, and "no tests" is never the default.

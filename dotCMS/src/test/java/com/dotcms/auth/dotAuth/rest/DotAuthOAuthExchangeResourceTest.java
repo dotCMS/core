@@ -1,12 +1,19 @@
 package com.dotcms.auth.dotAuth.rest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.auth.providers.oauth.OAuthAppConfig;
+import com.dotcms.auth.providers.oauth.OAuthHelper;
+import com.dotcms.auth.providers.oauth.OAuthSsrfGuard;
+import com.dotcms.auth.providers.oauth.provider.OIDCProvider;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotmarketing.business.DuplicateUserException;
 import com.dotcms.security.apps.Secret;
 import com.dotcms.security.apps.Type;
 import java.lang.reflect.Constructor;
@@ -19,6 +26,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
@@ -227,6 +235,45 @@ class DotAuthOAuthExchangeResourceTest {
                     req, mock(HttpServletResponse.class),
                     new OAuthExchangeForm("not-a-jwt", "nonce", 7));
             assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), resp.getStatus());
+        }
+    }
+
+    /**
+     * Regression for #37691: a duplicate user during JIT provisioning must return 409 with a
+     * message naming the cause, not a generic 500, and must not echo the email address.
+     */
+    @Test
+    void duplicateUserDuringProvisioning_returns409WithoutEmail() throws Exception {
+        final String issuer = "https://good-idp.example.com";
+        final OAuthAppConfig config = headlessConfig(Map.of(
+                "enabled", "true",
+                "providerType", "OIDC",
+                "trustedIdps", "[{\"enabled\":true,\"issuer\":\"" + issuer + "\",\"audience\":\"client-1\"}]"));
+        final Map<String, Object> claims = Map.of("iss", issuer, "sub", "subject-1", "email", "alice@example.com");
+
+        try (MockedStatic<OAuthAppConfig> appCfg = Mockito.mockStatic(OAuthAppConfig.class);
+             MockedStatic<OAuthSsrfGuard> ssrf = Mockito.mockStatic(OAuthSsrfGuard.class);
+             MockedConstruction<OIDCProvider> providers = Mockito.mockConstruction(OIDCProvider.class,
+                     (mock, ctx) -> when(mock.validateIdTokenAndExtractClaims(any(), any())).thenReturn(claims));
+             MockedConstruction<OAuthHelper> helpers = Mockito.mockConstruction(OAuthHelper.class,
+                     (mock, ctx) -> when(mock.resolveOrProvisionUser(any(), any(), any(), any(), any(), anyBoolean()))
+                             .thenThrow(new DuplicateUserException("User already exists with this email alice@example.com")))) {
+            appCfg.when(() -> OAuthAppConfig.exchangeConfig(any(HttpServletRequest.class)))
+                    .thenReturn(Optional.of(config));
+            ssrf.when(() -> OAuthSsrfGuard.validateUrl(any())).thenReturn(null);
+
+            // Built inside the construction mock so the resource's OAuthHelper field is the stub.
+            final DotAuthOAuthExchangeResource withStubbedHelper = new DotAuthOAuthExchangeResource();
+            final HttpServletRequest req = mock(HttpServletRequest.class);
+            when(req.getRemoteAddr()).thenReturn("127.0.0.1");
+
+            final Response resp = withStubbedHelper.exchange(
+                    req, mock(HttpServletResponse.class),
+                    new OAuthExchangeForm(jwtWithIssuer(issuer), "nonce", 7));
+
+            assertEquals(Response.Status.CONFLICT.getStatusCode(), resp.getStatus());
+            final String body = String.valueOf(((ResponseEntityView<?>) resp.getEntity()).getEntity());
+            assertFalse(body.contains("alice@example.com"), "The email must not reach the response");
         }
     }
 

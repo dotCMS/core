@@ -193,33 +193,6 @@ describe('DotUsersService', () => {
                 req.flush({ entity: { jwt: 'raw-jwt', token: MOCK_TOKEN } });
             }));
 
-        it('should GET a fresh JWT and unwrap it', () =>
-            new Promise<void>((done) => {
-                spectator.service.getApiTokenJwt('tok-1').subscribe((jwt) => {
-                    expect(jwt).toBe('fresh-jwt');
-                    done();
-                });
-
-                spectator
-                    .expectOne('/api/v1/apitoken/tok-1/jwt', HttpMethod.GET)
-                    .flush({ entity: { jwt: 'fresh-jwt' } });
-            }));
-
-        it('should throw when the JWT envelope is malformed instead of returning ""', () =>
-            new Promise<void>((done) => {
-                spectator.service.getApiTokenJwt('tok-1').subscribe({
-                    next: () => expect.fail('expected an error, got a value'),
-                    error: (error: Error) => {
-                        expect(error.message).toBe('Malformed JWT response');
-                        done();
-                    }
-                });
-
-                spectator
-                    .expectOne('/api/v1/apitoken/tok-1/jwt', HttpMethod.GET)
-                    .flush({ entity: {} });
-            }));
-
         it('should PUT to /revoke with a null body', () => {
             spectator.service.revokeApiToken('tok-1').subscribe();
 

@@ -1,5 +1,6 @@
 package com.dotcms.publisher.ajax;
 
+import com.dotcms.auth.BasicAuthentication;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -15,6 +16,8 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.receiver.BundleOrigin;
+import com.dotcms.publisher.receiver.BundlePluginAccess;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
@@ -62,6 +65,7 @@ import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.io.FileUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -137,7 +141,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
 								? map.get("passwd")
 									: null;
 
-				LoginFactory.doLogin(userName, password, false, request, response);
+				// Only the compatibility mode may exchange URI credentials for a session.
+				if (BasicAuthentication.mode() == BasicAuthentication.Mode.ALL) {
+					LoginFactory.doLogin(userName, password, false, request, response);
+				}
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
                 //Set the logged user in order to make it available from this action using the getUser() method
                 if ( user != null ) {
@@ -686,13 +693,23 @@ public class RemotePublishAjaxAction extends AjaxAction {
             String bundleFolder = bundleName.substring( 0, bundleName.indexOf( ".tar.gz" ) );
             String endpointId = getUser().getUserId();
             response.setContentType( "text/html; charset=utf-8" );
-            status = PublishAuditAPI.getInstance().updateAuditTable( endpointId, endpointId, bundleFolder );
 
             // Write file on FS
             FileUtil.writeToFile( bundle, bundlePath + bundleName );
 
+            if ( !BundlePluginAccess.canDeployPlugins(getUser())
+                    && BundlePluginAccess.carriesPlugins(new File(bundlePath + bundleName)) ) {
+                FileUtils.deleteQuietly(new File(bundlePath + bundleName));
+                Logger.warn(RemotePublishAjaxAction.class,
+                        "Bundle upload rejected: the user has no access to deploy plugins");
+                response.sendError(401);
+                return;
+            }
+
+            status = PublishAuditAPI.getInstance().updateAuditTable( endpointId, endpointId, bundleFolder );
+
             if ( !status.getStatus().equals( Status.PUBLISHING_BUNDLE ) ) {
-                PushPublisherJob.triggerPushPublisherJob(bundleName, status);
+                PushPublisherJob.triggerPushPublisherJob(bundleName, status, BundleOrigin.USER_UPLOAD, endpointId);
             }
 
             out.print( "<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'success'}</textarea></body></html>" );

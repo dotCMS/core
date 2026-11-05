@@ -62,6 +62,19 @@ public class ContentAnalyticsUtil {
     public static final String BEARER_TOKEN_KEY = "bearerToken";
 
     /**
+     * App-secret key under which the comma-separated list of extra query parameter names to keep
+     * in page URLs is stored. See {@link com.dotcms.rest.api.v1.analytics.event.UrlParamFilter}.
+     */
+    public static final String ALLOWED_URL_PARAMS_KEY = "allowedUrlParams";
+
+    /**
+     * App-secret key under which the site's choice to filter query parameters out of page URLs is
+     * stored. Filtering applies unless this is explicitly {@code false}. See
+     * {@link com.dotcms.rest.api.v1.analytics.event.UrlParamFilter}.
+     */
+    public static final String FILTER_URL_PARAMS_KEY = "filterUrlParams";
+
+    /**
      * Persists a user-defined event to the Content Analytics system. Several validation criteria
      * can be applied to the event payload before it is persisted. The
      * {@link com.dotcms.jitsu.validators.AnalyticsValidatorProcessor} allows developers to create

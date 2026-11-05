@@ -37,7 +37,6 @@
         "core-web/libs/sdk/vue",
         "examples",
         "core-web/apps/dotcms-ui/src/app/portlets/dot-edit-page/content",
-        "dotCMS/src/main/java/com/dotcms/ema",
         "dotCMS/src/main/java/com/dotcms/rest/api/v1/ema",
         "dotCMS/src/main/java/com/dotcms/rest/api/v1/drive",
         "dotCMS/src/main/java/com/dotcms/browser",

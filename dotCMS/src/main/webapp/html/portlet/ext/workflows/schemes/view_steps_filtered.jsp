@@ -1,4 +1,4 @@
-<%@page import="com.dotcms.contenttype.model.type.ContentType"%>
+<%@ page import="com.liferay.util.Xss" %><%@page import="com.dotcms.contenttype.model.type.ContentType"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.Role"%>
 <%@page import="com.dotmarketing.portlets.workflows.business.WorkflowAPI"%>
@@ -79,7 +79,7 @@
     <div class="list-item"  onmouseout="colorMeNot()">
         <div class="wfStepTitle">
             <div class="showPointer wfStepTitleDivs handle" onClick="stepAdmin.showStepEdit('<%=step.getId()%>')">
-                <span style="border-bottom:dotted 1px #fff;"><%=step.getName() %></span>
+                <span style="border-bottom:dotted 1px #fff;"><%=Xss.encodeForHTML(step.getName())%></span>
                 <span style="font-weight:normal;display:inline-block;">
 					<%=step.isResolved() ? "(" + LanguageUtil.get(pageContext, "resolved") + ")": "" %>
 				</span>
@@ -96,7 +96,7 @@
                 <div class="wf-action <%= isSeparator ? "showDefaultCursor" : "showPointer" %>"">
                     <div class="pull-right showPointer" onclick="actionAdmin.deleteActionForStep(this, <%=stepIndex%>)"><span class="deleteIcon"></span></div>
                     <div class="pull-left" <% if(!isSeparator) { %>onClick="actionAdmin.viewAction('<%=scheme.getId()%>', '<%=action.getId() %>');" <% } %>>
-                       <%=action.getName() %> <span style="color:#a6a6a6">&#8227; <%=(WorkflowAction.CURRENT_STEP.equals(action.getNextStep())) ?  WorkflowAction.CURRENT_STEP : wapi.findStep(action.getNextStep()).getName() %></span>
+                       <%=Xss.encodeForHTML(action.getName())%> <span style="color:#a6a6a6">&#8227; <%=(WorkflowAction.CURRENT_STEP.equals(action.getNextStep())) ?  WorkflowAction.CURRENT_STEP : Xss.encodeForHTML(wapi.findStep(action.getNextStep()).getName()) %></span>
                    </div>
                 </div>
             </div>

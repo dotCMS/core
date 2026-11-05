@@ -29,6 +29,9 @@ on:
       - '.github/actions/**'
       - '.github/actionlint.yaml'
       - '.github/filters.yaml'
+      - '.github/test-matrix.yml'
+      - 'independent-projects/core-plugins/**'
+      - 'osgi-base/**'
 
 permissions:
   contents: read

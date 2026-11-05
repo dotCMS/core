@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 import com.dotcms.jobs.business.error.ErrorDetail;
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobListView;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.job.JobState;
@@ -978,6 +979,59 @@ public class PostgresJobQueueIntegrationTest {
             new DotConnect().setSQL("delete from job").loadResult();
         } catch (DotDataException e) {
             Logger.error(this, "Error clearing jobs", e);
+        }
+    }
+
+    /**
+     * Method to test: getJobs with an owner in PostgresJobQueue
+     * Given Scenario: two users each have jobs on the same queue in every kind of state
+     * ExpectedResult: for every listing, narrowed to one user it holds exactly that user's jobs in
+     * the listing's states, for the queue and across queues, and paging and the total reflect
+     * them; without an owner it holds both users' jobs
+     */
+    @Test
+    void test_getJobs_narrowedToOwner() throws JobQueueException {
+
+        clearJobs();
+        final String queueName = "testQueue";
+        final List<JobState> states = List.of(JobState.PENDING, JobState.PENDING,
+                JobState.PENDING, JobState.SUCCESS, JobState.CANCELED, JobState.FAILED,
+                JobState.ABANDONED_PERMANENTLY);
+        final Map<String, Map<String, JobState>> jobsByOwner = new HashMap<>();
+        for (final String owner : List.of("owner-a", "owner-b")) {
+            final Map<String, JobState> jobs = new HashMap<>();
+            for (final JobState state : states) {
+                final String jobId = jobQueue.createJob(queueName, Map.of("userId", owner));
+                if (state != JobState.PENDING) {
+                    jobQueue.updateJobStatus(jobQueue.getJob(jobId).withState(state));
+                }
+                jobs.put(jobId, state);
+            }
+            jobsByOwner.put(owner, jobs);
+        }
+
+        for (final JobListView view : JobListView.values()) {
+            final Set<JobState> viewStates = view == JobListView.ALL
+                    ? Set.of(JobState.values()) : Set.of(view.states());
+            final Set<String> expected = jobsByOwner.get("owner-a").entrySet().stream()
+                    .filter(entry -> viewStates.contains(entry.getValue()))
+                    .map(Map.Entry::getKey).collect(Collectors.toSet());
+            final long everyOwner = jobsByOwner.values().stream()
+                    .flatMap(jobs -> jobs.values().stream()).filter(viewStates::contains).count();
+
+            for (final String queue : Arrays.asList(queueName, null)) {
+                final String label = view + " / " + queue;
+                final Set<String> listed = new HashSet<>();
+                for (int page = 1; page <= 4; page++) {
+                    final JobPaginatedResult result =
+                            jobQueue.getJobs(view, queue, "owner-a", page, 2);
+                    assertEquals(expected.size(), result.total(), label);
+                    result.jobs().forEach(job -> listed.add(job.id()));
+                }
+                assertEquals(expected, listed, label);
+                assertEquals(everyOwner, jobQueue.getJobs(view, queue, null, 1, 50).total(),
+                        label);
+            }
         }
     }
 

@@ -1,4 +1,5 @@
 import { expect, type Locator, type Page } from '@playwright/test';
+import { trackRunTrail, withRunTrail } from '@utils/run-trail';
 
 /**
  * How long to wait for anything a duplicate's job has to produce.
@@ -13,7 +14,9 @@ const OUTCOME_TIMEOUT = 60000;
  * and the places a finished duplicate has to show up.
  */
 export class FolderDuplicate {
-    constructor(private readonly page: Page) {}
+    constructor(private readonly page: Page) {
+        trackRunTrail(page);
+    }
 
     /** A listing row, found by its title. */
     row(title: string): Locator {
@@ -121,7 +124,9 @@ export class FolderDuplicate {
      * the failure only a real browser can see.
      */
     async expectDuplicateShown(duplicateName: string) {
-        await expect(this.row(duplicateName)).toBeVisible({ timeout: OUTCOME_TIMEOUT });
+        await withRunTrail(this.page, () =>
+            expect(this.row(duplicateName)).toBeVisible({ timeout: OUTCOME_TIMEOUT })
+        );
         await expect(
             this.page
                 .getByTestId('sidebar')

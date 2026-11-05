@@ -22,6 +22,7 @@ import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -37,6 +38,7 @@ import com.liferay.util.SystemProperties;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import com.sun.net.httpserver.HttpServer;
 import io.vavr.Tuple5;
 
 import java.io.ByteArrayOutputStream;
@@ -44,7 +46,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.RandomAccessFile;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.text.Normalizer;
@@ -53,6 +58,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
@@ -557,17 +563,72 @@ public class TempFileResourceTest {
         }
     }
 
+    /**
+     * A temp file can be created from a URL that answers 200 with a body. The file is served by an
+     * in-process HTTP server on the loopback interface, so the test does not depend on an
+     * external host being reachable. The remote-call guard refuses loopback targets, so it is
+     * switched off for this test only and switched back on afterwards.
+     */
     @Test
-    public void test_TempResource_uploadFileByURL_success() {
-        HttpServletRequest request = mockRequest();
-        final String fileName = "test.png";
-        final String url = "https://dotcms-storage.b-cdn.net/Bocas2.jpg";
+    public void test_TempResource_uploadFileByURL_success() throws Exception {
+        final byte[] body = "not really a picture, but a non-empty body".getBytes(StandardCharsets.UTF_8);
+        final HttpServer server = HttpServer.create(
+                new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0), 0);
+        server.createContext("/", exchange -> {
+            exchange.getResponseHeaders().add("Content-Type", "image/jpeg");
+            exchange.sendResponseHeaders(200, body.length);
+            try (OutputStream out = exchange.getResponseBody()) {
+                out.write(body);
+            }
+        });
+        server.start();
+        IPUtils.disabledIpPrivateSubnet(true);
+        try {
+            final String url = "http://127.0.0.1:" + server.getAddress().getPort() + "/Bocas2.jpg";
 
-        final RemoteUrlForm remoteUrlForm = new RemoteUrlForm(url, fileName, null);
+            final Response jsonResponse = resource.copyTempFromUrl(mockRequest(), response,
+                    new RemoteUrlForm(url, "test.png", null));
 
-        final Response jsonResponse = resource.copyTempFromUrl(request, response, remoteUrlForm);
+            assertEquals(Status.OK.getStatusCode(), jsonResponse.getStatus());
+        } finally {
+            IPUtils.disabledIpPrivateSubnet(false);
+            server.stop(0);
+        }
+    }
 
-        assertEquals(Status.OK.getStatusCode(), jsonResponse.getStatus());
+    /**
+     * A URL that points at the server's own loopback interface, by address or by name, is
+     * refused with a 400 before any request is made to it.
+     */
+    @Test
+    public void test_TempResource_uploadFileByURL_loopbackTarget_rejectedWithoutContact()
+            throws Exception {
+        final AtomicInteger hits = new AtomicInteger();
+        final HttpServer server = HttpServer.create(
+                new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0), 0);
+        server.createContext("/", exchange -> {
+            hits.incrementAndGet();
+            final byte[] body = "internal".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, body.length);
+            try (OutputStream out = exchange.getResponseBody()) {
+                out.write(body);
+            }
+        });
+        server.start();
+        try {
+            final int port = server.getAddress().getPort();
+            for (final String host : List.of("127.0.0.1", "localhost")) {
+                final String url = "http://" + host + ":" + port + "/internal.txt";
+                final Response jsonResponse = resource.copyTempFromUrl(mockRequest(), response,
+                        new RemoteUrlForm(url, "internal.txt", null));
+
+                assertEquals(url, Status.BAD_REQUEST.getStatusCode(), jsonResponse.getStatus());
+                assertEquals("the loopback server must never be contacted for " + url,
+                        0, hits.get());
+            }
+        } finally {
+            server.stop(0);
+        }
     }
 
     @Test

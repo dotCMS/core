@@ -402,7 +402,7 @@ public class ContentResource {
                                @Parameter(description = "Relationship depth to include (-1 for no relationships)") @DefaultValue("-1") @QueryParam("depth") final int depth
 
 
-    ) {
+    ) throws DotDataException, DotSecurityException {
 
         final User user =
                 new WebResource.InitBuilder(this.webResource)
@@ -464,7 +464,7 @@ public class ContentResource {
                                @Context final HttpServletResponse response,
                                @Parameter(description = "Content identifier", required = true)
                                @PathParam("identifier") final String identifier
-    ) throws DotDataException {
+    ) throws DotDataException, DotSecurityException {
 
         new WebResource.InitBuilder(this.webResource)
                         .requestAndResponse(request, response)
@@ -559,9 +559,11 @@ public class ContentResource {
      *         <ul>
      *             <li>"canLock": boolean indicating if the contentlet can be locked by the user.</li>
      *             <li>"locked": boolean indicating if the contentlet is currently locked.</li>
-     *             <li>"lockedBy": (optional) user ID of the user who locked the contentlet, if locked.</li>
      *             <li>"lockedOn": (optional) timestamp when the contentlet was locked, if locked.</li>
-     *             <li>"lockedByName": (optional) name of the user who locked the contentlet, if locked.</li>
+     *             <li>"lockedBy": (optional) user ID of the user who locked the contentlet, if locked;
+     *             back-end users only.</li>
+     *             <li>"lockedByName": (optional) full name of the user who locked the contentlet, if
+     *             locked; back-end users only.</li>
      *             <li>"inode": the inode of the contentlet.</li>
      *             <li>"id": the identifier of the contentlet.</li>
      *         </ul>
@@ -573,7 +575,9 @@ public class ContentResource {
     @Path("/_canlock/{inodeOrIdentifier}")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "canLockContent", summary = "Check if a contentlet can be locked",
-            description = "Checks if the contentlet specified by its inode or identifier can be locked by the current user.",
+            description = "Checks if the contentlet specified by its inode or identifier can be locked by the current user, " +
+                    "and whether it is locked. When locked, the response includes lockedOn; lockedBy (user id) and " +
+                    "lockedByName (full name) are included for back-end users only.",
             tags = {"Content"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully retrieved lock status",
@@ -615,16 +619,7 @@ public class ContentResource {
 
         resultMap.put("canLock", canLock);
         resultMap.put("locked", contentlet.isLocked());
-
-        final Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI()
-                .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
-
-        if (contentlet.isLocked() && cvi.isPresent()) {
-            resultMap.put("lockedBy", cvi.get().getLockedBy());
-            resultMap.put("lockedOn", cvi.get().getLockedOn());
-            resultMap.put("lockedByName", APILocator.getUserAPI().loadUserById(cvi.get().getLockedBy()));
-        }
-
+        resultMap.putAll(LockStatusFields.of(contentlet, user));
         resultMap.put("inode", contentlet.getInode());
         resultMap.put("id",    contentlet.getIdentifier());
 
@@ -826,7 +821,8 @@ public class ContentResource {
      * @param user the user
      * @return the contentlet object
      */
-    private Contentlet resolveContentletOrFallBack (final String inodeOrIdentifier, final PageMode mode, final long languageId, final User user) {
+    private Contentlet resolveContentletOrFallBack (final String inodeOrIdentifier, final PageMode mode, final long languageId, final User user)
+            throws DotSecurityException {
         return resolveContentletOrFallBack (inodeOrIdentifier, mode, languageId, user, VariantAPI.DEFAULT_VARIANT.name());
     }
     /**
@@ -840,7 +836,7 @@ public class ContentResource {
      * @return the contentlet object
      */
     private Contentlet resolveContentletOrFallBack (final String inodeOrIdentifier, final PageMode mode, final long languageId, final User user,
-                                                    final String variantName) {
+                                                    final String variantName) throws DotSecurityException {
         // This property is used to determine if we should map the contentlet to the default language
         final boolean mapToDefault = isDefaultContentToDefaultLanguageEnabled.get();
         // default language supplier, we only get the language id if we need it
@@ -869,13 +865,14 @@ public class ContentResource {
      * @param languageId the language id
      * @param user the user
      * @param variantName variant name
-     * @return the contentlet object
+     * @return the matching contentlet, or empty when it cannot be found
+     * @throws DotSecurityException a generic denial when the user cannot read the contentlet
      */
     private Optional<Contentlet> resolveContentlet (final String inodeOrIdentifier,
                                                     final PageMode mode,
                                                     final long languageId,
                                                     final User user,
-                                                    final String variantName) {
+                                                    final String variantName) throws DotSecurityException {
 
         final Optional<ShortyId> shortyId = APILocator.getShortyAPI().getShorty(inodeOrIdentifier);
 
@@ -895,7 +892,15 @@ public class ContentResource {
         }
 
         final String finalInode = testInode;
-        return Optional.ofNullable(Try.of(() -> contentletAPI.find(finalInode, user, mode.respectAnonPerms)).getOrNull());
+        try {
+            return Optional.ofNullable(contentletAPI.find(finalInode, user, mode.respectAnonPerms));
+        } catch (final DotSecurityException e) {
+            // Keep the 403 without exposing unreadable content metadata in the message or cause.
+            throw new DotSecurityException("Content read forbidden");
+        } catch (final Exception e) {
+            // Preserve the previous swallowing behavior for every other failure: a miss.
+            return Optional.empty();
+        }
     }
 
 

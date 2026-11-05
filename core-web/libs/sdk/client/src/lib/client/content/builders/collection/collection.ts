@@ -193,6 +193,12 @@ export class CollectionBuilder<T = unknown> extends BaseBuilder<T> {
      *
      * More information here: {@link https://www.dotcms.com/docs/latest/content-api-retrieval-and-querying#ParamsOptional}
      *
+     * Only reaches a non-default variant when the request carries a back-end user's token. An
+     * anonymous request, or one made with a front-end-only token, is answered with the default
+     * variant's version of the content whatever variant it names - the call neither fails nor
+     * comes back empty. Experiment variants of a page are unaffected: those are selected by the
+     * page rendering path, not by this builder.
+     *
      * @example
      * ```ts
      * const client = new DotCMSClient(config);

@@ -54,21 +54,21 @@ public abstract class HttpStatusCodeException extends WebApplicationException {
         }
     }
 
-    private static String getFormattedMessage(String message, String... messageArgs){
+    /**
+     * Applies the format arguments to the message. A message given without arguments is used
+     * as is: callers often build it from user-supplied text such as a URL, and a percent sign
+     * in that text must not be read as a format specifier.
+     *
+     * @param message     the message, optionally a format string
+     * @param messageArgs the format arguments, possibly none
+     * @return the message to put in the response
+     */
+    private static String getFormattedMessage(final String message, final String... messageArgs) {
 
-        String messageFormatted;
-
-        if (message == null){
-            messageFormatted =  null;
-        }else{
-            if (messageArgs == null){
-                messageFormatted = message;
-            }else{
-                messageFormatted = String.format(message, (Object[])messageArgs);
-            }
+        if (message == null || messageArgs == null || messageArgs.length == 0) {
+            return message;
         }
-
-        return messageFormatted;
+        return String.format(message, (Object[]) messageArgs);
     }
 
     private static Response toResponse(Response.Status status,

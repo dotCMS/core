@@ -63,6 +63,7 @@ export interface DotAuthConfigValues {
     buildRolesStrategy?: string;
     callbackUrl?: string;
     autoProvision?: boolean;
+    trustEmailWithoutVerifiedClaim?: boolean;
 }
 
 export type DotAuthSignatureValidation = 'none' | 'response' | 'assertion' | 'responseandassertion';
@@ -186,6 +187,12 @@ export interface DotAuthProvisioningConfig {
     defaultRoles: string[];
     roleBehavior: DotAuthRoleBehavior;
     groupMappings: DotAuthGroupMapping[];
+    /**
+     * OIDC only. Link a sign-in to an existing dotCMS user by email when the IdP sends no
+     * `email_verified` claim. Default false: a verified email always links, an absent claim
+     * links only with this on, and `email_verified=false` never links.
+     */
+    trustEmailWithoutVerifiedClaim?: boolean;
     /**
      * OIDC only. Pass unmapped IdP group names through as dotCMS role keys.
      * Default false (closed): only groups with an explicit groupMappings entry

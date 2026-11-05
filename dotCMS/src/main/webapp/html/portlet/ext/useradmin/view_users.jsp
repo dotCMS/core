@@ -1,5 +1,4 @@
 <%@page import="java.time.LocalDate"%>
-<%@page import="java.time.temporal.ChronoUnit"%>
 <%@page import="java.time.Instant"%>
 <%@page import="java.time.format.DateTimeFormatter"%>
 <%@ include file="/html/portlet/ext/useradmin/init.jsp" %>
@@ -72,7 +71,7 @@
 	}
 	#revealJwtDialog{
 	   width:400px;
-	   height:320px;
+	   height:380px;
 	}
 
 </style>
@@ -104,7 +103,8 @@
             <div style="padding:10px;margin:auto;width:80%;">
                 <label for="showAllUsers"><input type="radio" onclick="filterUsers(this)" dojoType="dijit.form.RadioButton" value="all" checked="true" name="showUsers" id="showAllUsers"> <%= LanguageUtil.get(pageContext, "All") %> </label>&nbsp; &nbsp;
                 <label for="showFrontEndUsers"><input type="radio" onclick="filterUsers(this)" dojoType="dijit.form.RadioButton" value="frontEnd" name="showUsers" id="showFrontEndUsers"> <%= LanguageUtil.get(pageContext, "user.list.filter.frontend") %> </label>&nbsp; &nbsp;
-                <label for="showBackEndUsers"><input type="radio" onclick="filterUsers(this)" dojoType="dijit.form.RadioButton" value="backEnd" name="showUsers" id="showBackEndUsers"> <%= LanguageUtil.get(pageContext, "user.list.filter.backend") %> </label>
+                <label for="showBackEndUsers"><input type="radio" onclick="filterUsers(this)" dojoType="dijit.form.RadioButton" value="backEnd" name="showUsers" id="showBackEndUsers"> <%= LanguageUtil.get(pageContext, "user.list.filter.backend") %> </label>&nbsp; &nbsp;
+                <label for="showCmsAdminUsers"><input type="radio" onclick="filterUsers(this)" dojoType="dijit.form.RadioButton" value="cmsAdmin" name="showUsers" id="showCmsAdminUsers"> <%= LanguageUtil.get(pageContext, "user.list.filter.cmsadmin") %> </label>
             </div>
          
          
@@ -469,7 +469,7 @@
 			</label></td>
 			<td><input dojoType="dijit.form.DateTextBox" type="text"
 				name="expiresDate" id="expiresDate"
-				value="<%=DateTimeFormatter.ofPattern("uuuu-MM-dd").format(LocalDate.now().plus(3, ChronoUnit.YEARS))%>"></td>
+				value="<%=DateTimeFormatter.ofPattern("uuuu-MM-dd").format(LocalDate.now().plusDays(364))%>"></td>
 		</tr>
 
 		<tr>
@@ -491,7 +491,9 @@
 	</div>
 </div>
 
-<div dojoType="dijit.Dialog" id="revealJwtDialog" title="API Token">
+<div dojoType="dijit.Dialog" id="revealJwtDialog" title="API Token" closable="false"
+	onHide="dojo.byId('revealTokenDiv').value='';">
+	<p><%=LanguageUtil.get(pageContext, "users.dialog.tokens.reveal.description")%></p>
 	<textarea class="tokenDivClass" id="revealTokenDiv"></textarea>
 	<div class="buttonRow">
 		<button dojoType="dijit.form.Button" type="button" class=""

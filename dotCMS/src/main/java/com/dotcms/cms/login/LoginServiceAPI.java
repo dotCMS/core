@@ -2,6 +2,7 @@ package com.dotcms.cms.login;
 
 import static com.dotcms.util.FunctionUtils.ifTrue;
 
+import com.dotcms.auth.LoginLockout;
 import com.dotmarketing.util.Config;
 import io.vavr.Lazy;
 import java.io.Serializable;
@@ -32,6 +33,13 @@ public interface LoginServiceAPI extends Serializable {
 
     // max expiration day allowed for a json web token
     public static final String JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS = "json.web.token.max.allowed.expiration.days";
+
+    /**
+     * Value used for {@link #JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS} when the property is not
+     * set anywhere. Every reader of the property must fall back to this same number, so that the
+     * current and the deprecated token endpoints cap new tokens at the same lifetime.
+     */
+    public static final int JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS_DEFAULT = 365;
 
     public final static Lazy<Integer> JWT_TOKEN_MAX_AGE_DAYS = Lazy.of(() -> Config.getIntProperty(
             JSON_WEB_TOKEN_DAYS_MAX_AGE,
@@ -211,11 +219,13 @@ public interface LoginServiceAPI extends Serializable {
 	 *            MUST be loaded from db with all the information because we are
 	 *            going to save this object if rehash process required
 	 * @return If passwords match, returns {@code true}. Otherwise, returns
-	 *         {@code false}.
+	 *         {@code false}. While login lockout applies to the request's address or the account, returns
+	 *         {@code false} for any password; a wrong password counts toward the lockout (see
+	 *         {@link LoginLockout}).
 	 */
     default boolean passwordMatch(final String password, final User user) {
 
-        return LoginFactory.passwordMatch(password, user);
+        return LoginLockout.getInstance().passwordMatch(password, user);
     }
 
     /**
