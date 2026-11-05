@@ -566,6 +566,8 @@ public class ContentImportThread implements Job{
 	@SuppressWarnings("unchecked")
 	private void importLine(String[] line, Structure structure, boolean preview, User user, int lineNumber) throws DotRuntimeException {
 
+		// Content the key field lookup locked for this line, released once the line is done
+		final List<Contentlet> lockedByImport = new ArrayList<>();
 		try {
 			//Building a values HashMap based on the headers/columns position
 			HashMap<Integer, Object> values = new HashMap<>();
@@ -712,7 +714,7 @@ public class ContentImportThread implements Job{
 						choosenKeyField.append(", "+field.getFieldName());
 					}
 				}
-				contentlets = conAPI.checkoutWithQuery(buffy.toString(), user, Constants.DONT_RESPECT_FRONT_END_ROLES);
+				contentlets = checkoutMatches(buffy.toString(), user, lockedByImport);
 			}
 
 
@@ -744,79 +746,109 @@ public class ContentImportThread implements Job{
 
 			for (Contentlet cont : contentlets)
 			{
-				try {
-					//Fill the new contentlet with the data
-					for (Integer column : headers.keySet()) {
-						Field field = headers.get(column);
-						Object value = values.get(column);
-						// Tag values are related to the content by checkin, once the content is saved
-						conAPI.setContentletProperty(cont, field, value);
-					}
+				//Fill the new contentlet with the data
+				for (Integer column : headers.keySet()) {
+					Field field = headers.get(column);
+					Object value = values.get(column);
+					// Tag values are related to the content by checkin, once the content is saved
+					conAPI.setContentletProperty(cont, field, value);
+				}
 
-					//Check the new contentlet with the validator
-					try
+				//Check the new contentlet with the validator
+				try
+				{
+					conAPI.validateContentlet(cont,new ArrayList<>(categories));
+				}
+				catch(DotContentletValidationException ex)
+				{
+					StringBuffer sb = new StringBuffer("Line #" + lineNumber + " contains errors\n");
+					HashMap<String,List<Field>> errors = (HashMap<String,List<Field>>) ex.getNotValidFields();
+					Set<String> keys = errors.keySet();
+					for(String key : keys)
 					{
-						conAPI.validateContentlet(cont,new ArrayList<>(categories));
-					}
-					catch(DotContentletValidationException ex)
-					{
-						StringBuffer sb = new StringBuffer("Line #" + lineNumber + " contains errors\n");
-						HashMap<String,List<Field>> errors = (HashMap<String,List<Field>>) ex.getNotValidFields();
-						Set<String> keys = errors.keySet();
-						for(String key : keys)
+						sb.append(key + ": ");
+						List<Field> fields = errors.get(key);
+						for(Field field : fields)
 						{
-							sb.append(key + ": ");
-							List<Field> fields = errors.get(key);
-							for(Field field : fields)
-							{
-								sb.append(field.getFieldName() + ",");
-							}
-							sb.append("\n");
+							sb.append(field.getFieldName() + ",");
 						}
-						throw new DotRuntimeException(sb.toString());
+						sb.append("\n");
 					}
+					throw new DotRuntimeException(sb.toString());
+				}
 
-					//If not preview save the contentlet
-					if (!preview)
-					{
-						conAPI.checkin(cont, new ArrayList<>(categories), new ArrayList<>(), user, false);
-						APILocator.getVersionableAPI().setWorking(cont);
-						// The content is published only for a user who can publish it; otherwise it stays as a working version
-						if (APILocator.getPermissionAPI().doesUserHavePermission(cont, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-							APILocator.getVersionableAPI().setLive(cont);
-						} else {
-							myOutput.println("Line #" + lineNumber + ": saved as a working version, the user cannot publish it.");
-						}
-					}
-
-					if (isNew)
-						contentCreated++;
-					else
-						if (conditionValues.equals("") || !keyContentUpdated.contains(conditionValues)) {
-							contentUpdated++;
-							contentUpdatedDuplicated++;
-							keyContentUpdated.add(conditionValues);
-						}else{
-							contentUpdatedDuplicated++;
-						}
-				} finally {
-					if (!isNew && !preview) {
-						releaseLock(cont, user);
+				//If not preview save the contentlet
+				if (!preview)
+				{
+					conAPI.checkin(cont, new ArrayList<>(categories), new ArrayList<>(), user, false);
+					APILocator.getVersionableAPI().setWorking(cont);
+					// The content is published only for a user who can publish it; otherwise it stays as a working version
+					if (APILocator.getPermissionAPI().doesUserHavePermission(cont, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+						APILocator.getVersionableAPI().setLive(cont);
+					} else {
+						myOutput.println("Line #" + lineNumber + ": saved as a working version, the user cannot publish it.");
 					}
 				}
+
+				if (isNew)
+					contentCreated++;
+				else
+					if (conditionValues.equals("") || !keyContentUpdated.contains(conditionValues)) {
+						contentUpdated++;
+						contentUpdatedDuplicated++;
+						keyContentUpdated.add(conditionValues);
+					}else{
+						contentUpdatedDuplicated++;
+					}
 			}
 
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
 			throw new DotRuntimeException(e.getMessage(),e);
+		} finally {
+			lockedByImport.forEach(contentlet -> releaseLock(contentlet, user));
 		}
 
 	}
 
 	/**
-	 * Releases the lock the key field lookup took on an existing content, so the next run, or a
-	 * different user saving the job later, can update it again. A failure is only logged, so it
-	 * does not hide the result of the line.
+	 * Checks out the content matching the key fields of a line, as the user the import runs as.
+	 * Content that was not locked before is added to {@code lockedByImport}, so only the locks
+	 * taken here are released afterwards and a lock the user already held is kept. When a match
+	 * cannot be checked out, the locks already taken are released before the error is thrown.
+	 *
+	 * @param query          the query for the content matching the key fields
+	 * @param user           the user the import runs as
+	 * @param lockedByImport receives the content locked by this lookup
+	 * @return the checked out content
+	 * @throws DotDataException     if the content cannot be read or locked
+	 * @throws DotSecurityException if the user cannot read or lock a match
+	 */
+	private List<Contentlet> checkoutMatches(final String query, final User user,
+			final List<Contentlet> lockedByImport) throws DotDataException, DotSecurityException {
+		final List<Contentlet> checkedOut = new ArrayList<>();
+		try {
+			for (final Contentlet match : conAPI.search(query, 0, -1, "", user, Constants.DONT_RESPECT_FRONT_END_ROLES)) {
+				final boolean alreadyLocked = APILocator.getVersionableAPI().getLockedBy(match).isPresent();
+				final Contentlet contentlet = conAPI.checkout(match.getInode(), user, Constants.DONT_RESPECT_FRONT_END_ROLES);
+				checkedOut.add(contentlet);
+				if (!alreadyLocked) {
+					lockedByImport.add(contentlet);
+				}
+			}
+		} catch (final DotDataException | DotSecurityException | RuntimeException e) {
+			lockedByImport.forEach(contentlet -> releaseLock(contentlet, user));
+			lockedByImport.clear();
+			throw e;
+		}
+		return checkedOut;
+	}
+
+	/**
+	 * Releases a lock the key field lookup took on an existing content, so the next run, or a
+	 * different user saving the job later, can update it again. A saved content is already
+	 * unlocked by checkin, so this only matters when the line fails. A failure is only logged, so
+	 * it does not hide the result of the line.
 	 *
 	 * @param contentlet the content the import checked out
 	 * @param user       the user the import runs as

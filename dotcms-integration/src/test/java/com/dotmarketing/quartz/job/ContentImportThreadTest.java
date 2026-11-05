@@ -33,6 +33,7 @@ import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import org.junit.BeforeClass;
@@ -233,19 +234,13 @@ public class ContentImportThreadTest extends IntegrationTestBase {
      */
     @Test
     public void test_execute_updateByKeyField_lineWithErrors_shouldReleaseTheLock() throws Exception {
-        final ContentType contentType = new ContentTypeDataGen()
-                .host(new SiteDataGen().nextPersisted())
-                .field(new FieldDataGen().type(TextField.class).name("title").velocityVarName("title").indexed(true).next())
-                .field(new FieldDataGen().type(TextField.class).name("summary").velocityVarName("summary").required(true).next())
-                .nextPersisted();
+        final ContentType contentType = newContentTypeWithRequiredSummary();
         final int permissions = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE
                 | PermissionAPI.PERMISSION_PUBLISH;
         final User firstUser = newUserWithPermissions(contentType, permissions);
         final User secondUser = newUserWithPermissions(contentType, permissions);
         final String title = "imported-" + UUID.randomUUID();
-        final Host site = APILocator.getHostAPI().find(contentType.host(), systemUser, false);
-        new ContentletDataGen(contentType).host(site).setProperty("title", title).setProperty("summary", "original")
-                .nextPersisted();
+        newContentWithSummary(contentType, title);
         final String keyFieldId = fieldId(contentType, "title");
 
         runImport(contentType, "title,summary\n" + title + ",\n", keyFieldId, firstUser.getUserId());
@@ -259,6 +254,64 @@ public class ContentImportThreadTest extends IntegrationTestBase {
         assertEquals(1, imported.size());
         assertEquals(secondUser.getUserId(), imported.get(0).getModUser());
         assertEquals("updated", imported.get(0).getStringProperty("summary"));
+    }
+
+    /**
+     * Method to test: {@link ContentImportThread#execute(JobExecutionContext)}
+     * Given: a key field that matches two contents and a line that fails validation
+     * Expected: neither content is left locked
+     */
+    @Test
+    public void test_execute_updateByKeyField_severalMatches_lineWithErrors_shouldReleaseEveryLock() throws Exception {
+        final ContentType contentType = newContentTypeWithRequiredSummary();
+        final User user = newUserWithPermissions(contentType,
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH);
+        final String title = "imported-" + UUID.randomUUID();
+        newContentWithSummary(contentType, title);
+        newContentWithSummary(contentType, title);
+
+        runImport(contentType, "title,summary\n" + title + ",\n", fieldId(contentType, "title"), user.getUserId());
+
+        final List<Contentlet> matches = findByTitle(contentType, title);
+        assertEquals(2, matches.size());
+        for (final Contentlet match : matches) {
+            assertFalse(APILocator.getVersionableAPI().isLocked(match));
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentImportThread#execute(JobExecutionContext)}
+     * Given: content the saving user had already locked, and a line for it that fails validation
+     * Expected: the user keeps the lock
+     */
+    @Test
+    public void test_execute_updateByKeyField_lockedByTheSameUser_shouldKeepTheLock() throws Exception {
+        final ContentType contentType = newContentTypeWithRequiredSummary();
+        final User user = newUserWithPermissions(contentType,
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH);
+        final String title = "imported-" + UUID.randomUUID();
+        final Contentlet existing = newContentWithSummary(contentType, title);
+        APILocator.getContentletAPI().lock(existing, user, false);
+
+        runImport(contentType, "title,summary\n" + title + ",\n", fieldId(contentType, "title"), user.getUserId());
+
+        final List<Contentlet> matches = findByTitle(contentType, title);
+        assertEquals(1, matches.size());
+        assertEquals(Optional.of(user.getUserId()), APILocator.getVersionableAPI().getLockedBy(matches.get(0)));
+    }
+
+    private static ContentType newContentTypeWithRequiredSummary() {
+        return new ContentTypeDataGen()
+                .host(new SiteDataGen().nextPersisted())
+                .field(new FieldDataGen().type(TextField.class).name("title").velocityVarName("title").indexed(true).next())
+                .field(new FieldDataGen().type(TextField.class).name("summary").velocityVarName("summary").required(true).next())
+                .nextPersisted();
+    }
+
+    private static Contentlet newContentWithSummary(final ContentType contentType, final String title) throws Exception {
+        final Host site = APILocator.getHostAPI().find(contentType.host(), systemUser, false);
+        return new ContentletDataGen(contentType).host(site).setProperty("title", title)
+                .setProperty("summary", "original").nextPersisted();
     }
 
     private static ContentType newContentType() {
