@@ -7,6 +7,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -247,16 +248,22 @@ public class DotCMSMacroWebAPI implements ViewTool {
 				null, null, categoriesList, true, false, 0, limit, userAPI.getSystemUser(), false);
 	}
 
+	/**
+	 * Lists the files of a folder of the web application. Paths that leave the web application
+	 * root or point to {@code WEB-INF} / {@code META-INF} return an empty list.
+	 *
+	 * @param folder Folder path relative to the web application root, e.g. {@code /html/images}.
+	 *
+	 * @return One map per file with its name, size, link and modification date.
+	 */
 	public List getFileSystemFolder(String folder) {
 		List list = new ArrayList();
-		/*
-		if(session.getAttribute(WebKeys.CMS_USER) == null){
+		folder = UtilMethods.cleanFileSystemPathURI(folder);
+		if (folder == null) {
 			return list;
 		}
-		*/
-		folder = UtilMethods.cleanFileSystemPathURI(folder);
-		java.io.File file = new java.io.File(FileUtil.getRealPath(folder));
-		if (!file.exists() || !file.isDirectory()) {
+		final java.io.File file = resolveWebAppFolder(folder);
+		if (file == null || !file.exists() || !file.isDirectory()) {
 			return list;
 		}
 		String[] files = file.list(new SystemFileNameFilter());
@@ -286,6 +293,28 @@ public class DotCMSMacroWebAPI implements ViewTool {
 
 	}
 
+	/**
+	 * Resolves a folder path against the web application root, returning {@code null} if the
+	 * canonical location is outside of it or inside {@code WEB-INF} / {@code META-INF}.
+	 */
+	static java.io.File resolveWebAppFolder(final String folder) {
+		try {
+			final java.nio.file.Path root = java.nio.file.Paths.get(FileUtil.getRealPath("/"))
+					.toFile().getCanonicalFile().toPath();
+			final java.nio.file.Path target = java.nio.file.Paths.get(FileUtil.getRealPath(folder))
+					.toFile().getCanonicalFile().toPath();
+			if (!target.startsWith(root) || target.startsWith(root.resolve("WEB-INF"))
+					|| target.startsWith(root.resolve("META-INF"))) {
+				Logger.debug(DotCMSMacroWebAPI.class, "Folder outside of the allowed location: " + folder);
+				return null;
+			}
+			return target.toFile();
+		} catch (final Exception e) {
+			Logger.debug(DotCMSMacroWebAPI.class, "Unable to resolve folder " + folder + ": " + e.getMessage());
+			return null;
+		}
+	}
+
 	private class SystemFileNameFilter implements FilenameFilter {
 
 		public boolean accept(java.io.File directory, String fileName) {
@@ -307,16 +336,33 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	}
 
 	   /**
+	    * Runs a SQL query on a data source. The data source must be {@code "default"} or a name in the local naming
+	    * context; queries on the dotCMS database, under any name, need {@code ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB}.
+	    *
+	    * @param dataSource the data source name
+	    * @param sql        the query
+	    * @param startRow   the first row to return
+	    * @param maxRow     the maximum number of rows to return
+	    * @return the rows, or an error row
 	    * @deprecated Use the {@link SQLResultsViewTool} instead, the {@link SQLResultsViewTool} view tool is mapped to the <strong>sql</strong> key.
 	    */
+	   @Deprecated
 	   public ArrayList<HashMap<String, String>> getSQLResults(String dataSource, String sql, int startRow, int maxRow) {
-		   
+
 		   ArrayList<HashMap<String, String>> errorResults = new ArrayList<>();
-		   
+
 		   if(!canUserEvaluate()){
 	            HashMap<String, String> map = new HashMap<>();
 	            map.put("hasDotConnectSQLError", "true");
 	            map.put("dotConnectSQLError", "External scripting is disabled in your dotcms instance.");
+	            errorResults.add(map);
+	            return errorResults;
+		   }
+		   else if (!DbConnectionFactory.isLocalJndiName(dataSource)) {
+	            Logger.warn(this, "getSQLResults macro was called with an invalid data source name");
+	            HashMap<String, String> map = new HashMap<>();
+	            map.put("hasDotConnectSQLError", "true");
+	            map.put("dotConnectSQLError", "getSQLResults macro was called with an invalid data source name");
 	            errorResults.add(map);
 	            return errorResults;
 		   }
@@ -360,21 +406,44 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		            if (maxRow > 0) {
 		                dc.setMaxRows(maxRow);
 		            }
-		            if (dataSource.equals("default")) {
-		            	if(!Config.getBooleanProperty("ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB", false)){
-		            		Logger.error(this,"getSQLResults macro is trying to execute queries using the default connection pool. ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false");
-				            HashMap<String, String> map = new HashMap<>();
-				            map.put("hasDotConnectSQLError", "true");
-				            map.put("dotConnectSQLError", "getSQLResults macro is trying to execute queries using the default connection pool. ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false");
-				            errorResults.add(map);
-				            return new ArrayList<>();
-		            	}
-		            	else{
-		            		return dc.getResults();
-		            	}
-		            } else {
-		                return dc.getResults(dataSource);
+		            if (!SQLResultsViewTool.DEFAULT_DATASOURCE.equals(dataSource)) {
+		                try {
+		                    DbConnectionFactory.getDataSource(dataSource);
+		                } catch (final Exception e) {
+		                    Logger.warn(this, "getSQLResults macro could not resolve its data source");
+		                    HashMap<String, String> map = new HashMap<>();
+		                    map.put("hasDotConnectSQLError", "true");
+		                    map.put("dotConnectSQLError", "getSQLResults macro was called with an invalid data source name");
+		                    errorResults.add(map);
+		                    return errorResults;
+		                }
 		            }
+		            // The data source only needs to be checked when queries on the dotCMS database are not allowed.
+		            if (!Config.getBooleanProperty(SQLResultsViewTool.ALLOW_DOTCMS_DB_ACCESS, false)) {
+		                final boolean dotcmsDatabase;
+		                try {
+		                    dotcmsDatabase = SQLResultsViewTool.isDotcmsDatabase(dataSource);
+		                } catch (final Exception e) {
+		                    Logger.warn(this, "getSQLResults macro could not resolve its data source");
+		                    HashMap<String, String> map = new HashMap<>();
+		                    map.put("hasDotConnectSQLError", "true");
+		                    map.put("dotConnectSQLError", "getSQLResults macro was called with an invalid data source name");
+		                    errorResults.add(map);
+		                    return errorResults;
+		                }
+		                if (dotcmsDatabase) {
+		                    Logger.error(this,"getSQLResults macro is trying to execute queries using the default connection pool. ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false");
+		                    HashMap<String, String> map = new HashMap<>();
+		                    map.put("hasDotConnectSQLError", "true");
+		                    map.put("dotConnectSQLError", "getSQLResults macro is trying to execute queries using the default connection pool. ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false");
+		                    errorResults.add(map);
+		                    return errorResults;
+		                }
+		            }
+		            // Only "default" names the internal pool; any other name is queried through the data source it names.
+		            return SQLResultsViewTool.DEFAULT_DATASOURCE.equals(dataSource)
+		                    ? dc.getResults()
+		                    : dc.getResults(dataSource);
 		        } catch (Exception e) {
 		            HashMap<String, String> map = new HashMap<>();
 		            map.put("hasDotConnectSQLError", "true");

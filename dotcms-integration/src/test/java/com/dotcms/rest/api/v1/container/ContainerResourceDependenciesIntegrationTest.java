@@ -20,6 +20,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.SecurityException;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -32,7 +33,6 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
 import io.vavr.control.Try;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +43,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
@@ -51,6 +52,9 @@ import org.junit.Test;
  * runs before deleting a container.
  */
 public class ContainerResourceDependenciesIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static final String PASSWORD = "admin";
 
@@ -463,7 +467,7 @@ public class ContainerResourceDependenciesIntegrationTest {
                         .request());
         if (null != userEmail) {
             request.setHeader("Authorization",
-                    "Basic " + new String(Base64.encode((userEmail + ":" + PASSWORD).getBytes())));
+                    TOKEN_UTILS.bearerHeaderForEmail(userEmail));
         }
         return request;
     }

@@ -79,9 +79,9 @@ jobs:
       contents: read
       packages: write
 
-  # Publish Test Image - for PRs labeled "PR: docker image", promote the
-  # docker-image artifact this build just produced to dotcms/dotcms-test, in
-  # parallel with the tests below. Label-gated and internal-branch only (fork PRs
+  # Publish Test Image - for PRs labeled "PR: docker image", build multi-arch
+  # images from this build's docker-build-context and push to dotcms/dotcms-test,
+  # in parallel with the tests below. Label-gated and internal-branch only (fork PRs
   # have no DOCKER_* secrets). Skipped automatically when build did not run.
   publish-test-image:
     name: Publish Test Image
@@ -115,14 +115,13 @@ jobs:
     with:
       skip-runner-cleanup: true
       jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
-      # The long suites (integration, postman, karate, cli, e2e) only run when the PR's own base is
+      # The long suites (integration, postman, cli, e2e) only run when the PR's own base is
       # main/master. A PR in a GitHub native stack passes the trigger's branches filter because
       # github.base_ref reports the stack's trunk (main), while github.event.pull_request.base.ref
       # holds the real parent branch. Those layers get build + unit + frontend tests only; the
       # merge queue runs the full suite once the stack lands on main.
       integration: ${{ contains(fromJSON('["main","master"]'), github.event.pull_request.base.ref) && fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       postman: ${{ contains(fromJSON('["main","master"]'), github.event.pull_request.base.ref) && fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
-      karate: ${{ contains(fromJSON('["main","master"]'), github.event.pull_request.base.ref) && fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       frontend: ${{ fromJSON(needs.initialize.outputs.filters).frontend == 'true' }}
       cli: ${{ contains(fromJSON('["main","master"]'), github.event.pull_request.base.ref) && (fromJSON(needs.initialize.outputs.filters).cli == 'true' || fromJSON(needs.initialize.outputs.filters).backend == 'true') }}
       e2e: ${{ contains(fromJSON('["main","master"]'), github.event.pull_request.base.ref) && fromJSON(needs.initialize.outputs.filters).build == 'true' }}

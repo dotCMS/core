@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.content;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -50,7 +53,6 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -65,6 +67,9 @@ import org.junit.Test;
  * Integration tests for {@link ContentResource} (v1 endpoint: /api/v1/content).
  */
 public class ContentResourceIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static User systemUser;
 
@@ -978,8 +983,7 @@ public class ContentResourceIntegrationTest {
                 ).request()
         );
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString(
-                        (email + ":" + password).getBytes()));
+                TOKEN_UTILS.bearerHeaderForEmail(email));
         return request;
     }
 
@@ -1167,8 +1171,7 @@ public class ContentResourceIntegrationTest {
                 ).request()
         );
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString(
-                        "admin@dotcms.com:admin".getBytes()));
+                TOKEN_UTILS.adminBearerHeader());
         return request;
     }
 }

@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.portlet;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.LayoutDataGen;
@@ -26,7 +29,6 @@ import com.dotmarketing.util.PortletID;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -58,6 +60,9 @@ import static org.junit.Assert.fail;
  * @author hassandotcms
  */
 public class PortletResourceIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static final String TOOLS_BETA = PortletID.TOOLS_BETA.toString();
     private static final String ROLES = PortletID.ROLES.toString();
@@ -99,7 +104,7 @@ public class PortletResourceIntegrationTest {
     private static HttpServletRequest adminRequest() {
         final MockHeaderRequest request = (MockHeaderRequest) baseRequest();
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                TOKEN_UTILS.adminBearerHeader());
         return request;
     }
 

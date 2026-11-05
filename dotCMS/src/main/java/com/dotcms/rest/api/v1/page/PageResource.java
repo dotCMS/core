@@ -38,16 +38,10 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.keyvalue.MultiKey;
 import org.glassfish.jersey.server.JSONP;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.index.domain.ContentSearchResults;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.ema.EMAConfigurationEntry;
-import com.dotcms.ema.EMAConfigurations;
-import com.dotcms.ema.EMAWebInterceptor;
-import com.dotcms.ema.resolver.EMAConfigStrategy;
-import com.dotcms.ema.resolver.EMAConfigStrategyResolver;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityBooleanView;
 import com.dotcms.rest.ResponseEntityMapView;
@@ -63,7 +57,6 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.ConversionUtils;
-import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.TimeMachineUtil;
 import com.dotcms.util.pagination.ContentTypesPaginator;
@@ -468,9 +461,7 @@ public class PageResource {
             description = "Returns the metadata of an HTML Page including its rendered HTML code and container content "
                     + "in JSON format based on the specified URI. If the URI maps to a Vanity URL, a 200 Forward returns "
                     + "the actual rendered page, while a 301/302 redirect returns an empty page JSON with Vanity URL properties. "
-                    + "Supports Time Machine via the publishDate parameter (ISO 8601 format). "
-                    + "For EMA (Enterprise Marketing Automation) requests, this may delegate to the JSON endpoint when "
-                    + "the rendered attribute is not required.\n\n"
+                    + "Supports Time Machine via the publishDate parameter (ISO 8601 format).\n\n"
                     + "The URI must be a plain page path (no embedded host). To render a page on a NON-default site, "
                     + "pass the `host_id` query parameter (backend users only); without it the current/default site "
                     + "is used. The `//host/uri` path form is NOT supported."
@@ -507,15 +498,6 @@ public class PageResource {
             @Parameter(description = "Time Machine date in ISO 8601 format to view page as it was at a specific point in time")
             @QueryParam(PUBLISH_DATE) final String timeMachineDateAsISO8601
     ) throws DotSecurityException, DotDataException {
-        if (Boolean.TRUE.equals(HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.EMA_REQUEST_ATTR, false))
-                && !this.includeRenderedAttrFromEMA(originalRequest, uri)) {
-            final String depth = HttpRequestDataUtil.getAttribute(originalRequest, EMAWebInterceptor.DEPTH_PARAM, null);
-            if (UtilMethods.isSet(depth)) {
-                HttpServletRequestThreadLocal.INSTANCE.getRequest().setAttribute(WebKeys.HTMLPAGE_DEPTH, depth);
-            }
-            return this.loadJson(originalRequest, response, uri, hostId, modeParam, personaId, languageId
-                    , deviceInode, timeMachineDateAsISO8601);
-        }
         Logger.debug(this, () -> String.format(
                 "Rendering page: uri -> %s , mode -> %s , language -> %s , persona -> %s , device_inode -> %s , timeMachineDate -> %s",
                 uri, modeParam, languageId, personaId, deviceInode, timeMachineDateAsISO8601));
@@ -1579,39 +1561,10 @@ public class PageResource {
     }
 
     /**
-     * Checks whether the {@code rendered} attribute in the JSON data must be posted to the EMA service or not.
-     * <p>
-     * When dotCMS executes a POST to the EMA Service, it is sending the {@code page.rendered} property as part of the
-     * JSON payload. This is not required, and dotCMS should not do it. However, if the user needs it anyway, it can be
-     * re-added to the response via UI in the {@code Configuration Data} JSON field in the EMA APP configuration
-     * portlet.
-     * </p>
-     *
-     * @param request The current instance of the {@link HttpServletRequest} object.
-     * @param uri     The URI to the HTML Page that will be sent to the EMA Service.
-     * @return If the {@code rendered} attribute must be added to the JSON data, return {@code true}. Otherwise, return {@code false}.
-     */
-    private boolean includeRenderedAttrFromEMA(final HttpServletRequest request, final String uri) {
-        Host currentSite = null;
-        try {
-            currentSite = WebAPILocator.getHostWebAPI().getCurrentHost(request);
-            final Optional<EMAConfigStrategy> configStrategy = new EMAConfigStrategyResolver().get(currentSite);
-            final Optional<EMAConfigurations> emaConfig = configStrategy.flatMap(EMAConfigStrategy::resolveConfig);
-            final Optional<EMAConfigurationEntry> config = emaConfig.isPresent()
-                                                                   ? emaConfig.get().byUrl(uri)
-                                                                   : Optional.empty();
-            return config.isPresent() && config.get().isIncludeRendered();
-        } catch (final DotDataException | DotSecurityException | SystemException | PortalException e) {
-            final String siteName = null != currentSite ? currentSite.getHostname() : "N/A";
-            Logger.debug(this, String.format("An error occurred when checking the 'rendered' attribute in site '%s' " +
-                                                     "for URI '%s': %s", siteName, uri, e.getMessage()));
-        }
-        return false;
-    }
-
-    /**
      * Copy the contentlet sent over the CopyContentletForm
      * The contentlet should be part of the multitree on the page sent in the form, also the content should exists to be copied.
+     * In the returned copy, Story Block references to contentlets the user cannot read keep only
+     * the keys that identify them.
      * @param request {@link HttpServletRequest}
      * @param response {@link HttpServletResponse}
      * @param copyContentletForm {@link CopyContentletForm}
@@ -1659,7 +1612,11 @@ public class PageResource {
         final User user               = initData.getUser();
         final Language language       = WebAPILocator.getLanguageWebAPI().getLanguage(request); // todo: not sure if this should be received on the form.
         final Contentlet copiedContentlet = this.pageResourceHelper.copyContentlet(copyContentletForm, user, pageMode, language);
-        final Map<String, Object> entity = (Map<String, Object>)new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
+        // The copy holds the Story Block references as stored; the caller only gets the ones they
+        // can read
+        final Contentlet readerCopy = (Contentlet) APILocator.getStoryBlockAPI()
+                .limitReferencesToReader(new Contentlet(copiedContentlet), user, pageMode.respectAnonPerms).getValue();
+        final Map<String, Object> entity = (Map<String, Object>)new DotTransformerBuilder().defaultOptions().content(readerCopy).build()
                 .toMaps().stream().findFirst().orElse(Collections.emptyMap());
         return new ResponseEntityView<>(entity);
     }
