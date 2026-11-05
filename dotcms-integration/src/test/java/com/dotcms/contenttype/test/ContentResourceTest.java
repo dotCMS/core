@@ -1,5 +1,8 @@
 package com.dotcms.contenttype.test;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
@@ -59,7 +62,6 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
-import java.util.Base64;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -110,6 +112,9 @@ import static org.mockito.Mockito.when;
 @RunWith(DataProviderWeldRunner.class)
 public class ContentResourceTest extends IntegrationTestBase {
 
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
+
     final static String REQUIRED_NUMERIC_FIELD_NAME = "numeric";
     final static String NON_REQUIRED_IMAGE_FIELD_NAME = "image";
 
@@ -118,15 +123,6 @@ public class ContentResourceTest extends IntegrationTestBase {
     private static final String IDENTIFIER = "identifier";
     private static final String JSON_RESPONSE = "json";
     private static final String XML_RESPONSE = "xml";
-    private static final String ADMIN_EMAIL = "admin@dotcms.com";
-    private static final String ADMIN_PASSWORD = "admin";
-
-    /**
-     * Clear-text password the users created by this test sign in with. Their stored password is
-     * a hash, so Basic credentials have to be built from the clear text kept here rather than
-     * from {@link User#getPassword()}.
-     */
-    private static final String TEST_USER_PASSWORD = "testPassword";
 
     private static FieldAPI fieldAPI;
     private static LanguageAPI languageAPI;
@@ -557,7 +553,7 @@ public class ContentResourceTest extends IntegrationTestBase {
                 createdLimitedUser =
                     new UserDataGen().firstName("name").lastName("lastName").companyId(company.getCompanyId())
                         .emailAddress("email" + System.currentTimeMillis() + "@dotcms.com").skinId(UUIDGenerator.generateUuid())
-                        .password(TEST_USER_PASSWORD).roles(newRole, TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+                        .password("password" + System.currentTimeMillis()).roles(newRole, TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
 
                 //set individual permissions to the child
                 permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -1420,21 +1416,21 @@ public class ContentResourceTest extends IntegrationTestBase {
             final String params = "id/" + content.getIdentifier();
 
             final JSONObject anonymousView = new JSONObject(contentResource.canLockContent(
-                    lockStatusRequest(null, null), mock(HttpServletResponse.class), params)
+                    lockStatusRequest(null), mock(HttpServletResponse.class), params)
                     .getEntity().toString());
             assertTrue(anonymousView.getBoolean("locked"));
             assertFalse(anonymousView.has("lockedBy"));
             assertFalse(anonymousView.has("lockedByName"));
 
             final JSONObject frontendView = new JSONObject(contentResource.canLockContent(
-                    lockStatusRequest(frontendCaller.getEmailAddress(), password),
+                    lockStatusRequest(frontendCaller),
                     mock(HttpServletResponse.class), params).getEntity().toString());
             assertTrue(frontendView.getBoolean("locked"));
             assertFalse(frontendView.has("lockedBy"));
             assertFalse(frontendView.has("lockedByName"));
 
             final JSONObject backendView = new JSONObject(contentResource.canLockContent(
-                    lockStatusRequest(backendCaller.getEmailAddress(), password),
+                    lockStatusRequest(backendCaller),
                     mock(HttpServletResponse.class), params).getEntity().toString());
             assertTrue(backendView.getBoolean("locked"));
             assertEquals(owner.getUserId(), backendView.getString("lockedBy"));
@@ -1456,44 +1452,31 @@ public class ContentResourceTest extends IntegrationTestBase {
     }
 
     /**
-     * Builds a request with Basic credentials for the given user, or with no credentials when
-     * {@code email} is null.
+     * Builds a request that authenticates as the given user with a Bearer API token, or with no
+     * credentials for the anonymous caller. Username/password Basic is disabled by default.
+     *
+     * @param user the fixture user to authenticate as, or null for the anonymous caller
+     * @return the request
      */
-    private static HttpServletRequest lockStatusRequest(final String email, final String password) {
+    private HttpServletRequest lockStatusRequest(final User user) {
         final MockHeaderRequest request = new MockHeaderRequest(new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/")
                         .request()).request()).request());
-        if (email != null) {
-            request.setHeader("Authorization", "Basic " + Base64.getEncoder()
-                    .encodeToString((email + ":" + password).getBytes()));
+        if (user != null) {
+            request.setHeader("Authorization", TOKEN_UTILS.bearerHeader(user));
         }
         return request;
     }
 
-    /**
-     * Sets a Basic {@code Authorization} header for the given credentials.
-     *
-     * @param request  the request to set the header on
-     * @param email    the email address to authenticate with
-     * @param password the clear-text password to authenticate with
-     */
-    private static void setBasicCredentials(final MockHeaderRequest request, final String email,
-            final String password) {
-        request.setHeader("Authorization", "Basic " + Base64.getEncoder()
-                .encodeToString((email + ":" + password).getBytes()));
-    }
 
     /**
-     * Returns the clear-text password of a user this test can sign in as. {@code user.getPassword()}
-     * holds a hash and cannot be replayed as a credential.
+     * Builds a request that authenticates with a Bearer API token: the admin token when no user is
+     * supplied, the given user's token otherwise, and no credential for the anonymous user.
      *
-     * @param user the user to authenticate as
-     * @return the password that user was created with
+     * @param jsonPayload the request body, or null
+     * @param user the fixture user to authenticate as, or null for the admin
+     * @return the request
      */
-    private static String clearPasswordOf(final User user) {
-        return ADMIN_EMAIL.equals(user.getEmailAddress()) ? ADMIN_PASSWORD : TEST_USER_PASSWORD;
-    }
-
     private HttpServletRequest createHttpRequest(final String jsonPayload, final User user) throws Exception{
 
         MockHeaderRequest request = new MockHeaderRequest(
@@ -1504,10 +1487,10 @@ public class ContentResourceTest extends IntegrationTestBase {
         );
 
         if (user == null){
-            setBasicCredentials(request, ADMIN_EMAIL, ADMIN_PASSWORD);
+            request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
 
         } else if (!user.equals(userAPI.getAnonymousUser())){
-            setBasicCredentials(request, user.getEmailAddress(), clearPasswordOf(user));
+            request.setHeader("Authorization", TOKEN_UTILS.bearerHeader(user));
         }
 
         if (jsonPayload != null) {
@@ -2017,7 +2000,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         return new UserDataGen().active(true)
                 .emailAddress("filter" + System.nanoTime() + "@dotcms.com")
                 .skinId(UUIDGenerator.generateUuid())
-                .password(TEST_USER_PASSWORD).roles(role).nextPersisted();
+                .password("password" + System.currentTimeMillis()).roles(role).nextPersisted();
     }
 
     /**
@@ -2244,7 +2227,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         final User author = new UserDataGen().id("catchalluser" + System.nanoTime()).active(true)
                 .emailAddress("catchall" + System.nanoTime() + "@dotcms.com")
                 .skinId(UUIDGenerator.generateUuid())
-                .password(TEST_USER_PASSWORD).roles(roleAPI.loadCMSAdminRole()).nextPersisted();
+                .password("password" + System.currentTimeMillis()).roles(roleAPI.loadCMSAdminRole()).nextPersisted();
         final String userId = author.getUserId().toLowerCase();
         final String prefix = userId.substring(0, userId.length() - 1) + "*";
 

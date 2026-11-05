@@ -4,6 +4,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDRE
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.BasicAuthentication;
 import com.dotcms.auth.LoginLockout;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
@@ -172,16 +173,20 @@ public class DotWebdavHelper {
 	}
 
 	/**
-	 * Checks the credentials a WebDAV client sent and returns the matching user. When a
-	 * pre-authenticator is configured through {@code auth.pipeline.pre} it runs first and must
-	 * accept the login; any other answer denies access. The password is then checked against
-	 * the one stored in dotCMS, or accepted as an API token.
+	 * Checks the credentials a WebDAV client sent and returns the matching user, under the shared
+	 * Basic authentication policy ({@code ALLOW_BASIC_AUTH}). In token-only mode the credential must
+	 * be an API token and neither the pre-authenticator nor the stored password is consulted. When
+	 * passwords are allowed and a pre-authenticator is configured through {@code auth.pipeline.pre},
+	 * it runs first and must accept the login; any other answer denies access. The password is then
+	 * checked against the one stored in dotCMS, or accepted as an API token.
 	 *
 	 * @param username the login sent by the client: an email address or a user id, depending on
 	 *                 the company's authentication type
 	 * @param passwd   the password or API token sent by the client
 	 * @return the authenticated {@link User}
-	 * @throws DotSecurityException if the credentials are not accepted
+	 * @throws DotSecurityException if credentials are disabled or not accepted
+	 * @throws NoSuchUserException if the named user does not exist
+	 * @throws DotDataException if the user lookup fails
 	 */
 	public User authorizePrincipal(final String username, final String passwd) throws DotSecurityException, NoSuchUserException, DotDataException {
 
@@ -197,11 +202,24 @@ public class DotWebdavHelper {
 	 * @param preAuthenticator fully qualified class name of the pre-authenticator, or
 	 *                         {@code null}/empty when none is configured
 	 * @return the authenticated {@link User}
-	 * @throws DotSecurityException if the credentials are not accepted
+	 * @throws DotSecurityException if credentials are disabled or not accepted
+	 * @throws NoSuchUserException if the named user does not exist
+	 * @throws DotDataException if the user lookup fails
 	 */
 	@VisibleForTesting
 	User authorizePrincipal(final String username, final String passwd, final String preAuthenticator)
 			throws DotSecurityException, NoSuchUserException, DotDataException {
+
+		final BasicAuthentication.Mode mode = BasicAuthentication.mode();
+		if (mode == BasicAuthentication.Mode.NONE) {
+			throw new DotSecurityException("Basic authentication is disabled");
+		}
+		if (mode == BasicAuthentication.Mode.JWT_TOKEN) {
+			final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+			final String ipAddress = request != null ? request.getRemoteAddr() : null;
+			return BasicAuthentication.authenticateApiToken(username, passwd, ipAddress)
+					.orElseThrow(() -> new DotSecurityException("Invalid API token credentials"));
+		}
 
 		final Company company         = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
 		final boolean useEmailAsLogin = !company.getAuthType().equals(Company.AUTH_TYPE_ID);

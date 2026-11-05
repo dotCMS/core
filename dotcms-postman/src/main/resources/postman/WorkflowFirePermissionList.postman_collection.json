@@ -140,7 +140,21 @@
 									"    pm.expect(entity.roleId).to.be.a(\"string\").and.not.empty;",
 									"});",
 									"pm.collectionVariables.set(\"editorUserId\", pm.response.json().entity.userID);",
-									"pm.collectionVariables.set(\"editorRoleId\", pm.response.json().entity.roleId);"
+									"pm.collectionVariables.set(\"editorRoleId\", pm.response.json().entity.roleId);",
+									"pm.sendRequest({",
+									"    url: pm.environment.get('serverURL') + '/api/v1/apitoken',",
+									"    method: 'POST',",
+									"    header: { Authorization: 'Bearer ' + pm.environment.get('jwt'), 'Content-Type': 'application/json' },",
+									"    body: { mode: 'raw', raw: JSON.stringify({",
+									"        userId: pm.collectionVariables.get('editorUserId'),",
+									"        expirationSeconds: 3600, network: '0.0.0.0/0',",
+									"        claims: { label: 'postman-permission-fixture' } }) }",
+									"}, function (err, response) {",
+									"    if (err || response.code !== 200) throw new Error('Fixture API token issuance failed');",
+									"    const token = response.json().entity.jwt;",
+									"    if (typeof token !== 'string' || !token.trim()) throw new Error('Missing fixture API token');",
+									"    pm.collectionVariables.set('editorJwt', token);",
+									"});"
 								]
 							}
 						}
@@ -491,16 +505,11 @@
 							}
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "{{editorEmail}}",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "{{editorPassword}}",
+									"key": "token",
+									"value": "{{editorJwt}}",
 									"type": "string"
 								}
 							]
@@ -615,16 +624,11 @@
 							}
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "{{editorEmail}}",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "{{editorPassword}}",
+									"key": "token",
+									"value": "{{editorJwt}}",
 									"type": "string"
 								}
 							]
@@ -872,34 +876,7 @@
 				"type": "text/javascript",
 				"exec": [
 					"if (!pm.environment.get('jwt')) {",
-					"    const serverURL = pm.environment.get('serverURL');",
-					"    const username = pm.environment.get('user');",
-					"    const password = pm.environment.get('password');",
-					"    const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
-					"    pm.sendRequest({",
-					"        url: `${serverURL}/api/v1/apitoken`,",
-					"        method: 'POST',",
-					"        header: {",
-					"            'accept': '*/*',",
-					"            'content-type': 'application/json',",
-					"            'Authorization': `Basic ${basicAuth}`",
-					"        },",
-					"        body: {",
-					"            mode: 'raw',",
-					"            raw: JSON.stringify({",
-					"                'expirationSeconds': 7200,",
-					"                'userId': 'dotcms.org.1',",
-					"                'network': '0.0.0.0/0',",
-					"                'claims': {'label': 'postman-tests'}",
-					"            })",
-					"        }",
-					"    }, function (err, response) {",
-					"        if (err) {",
-					"            console.log('Error generating JWT:', err);",
-					"        } else {",
-					"            pm.environment.set('jwt', response.json().entity.jwt);",
-					"        }",
-					"    });",
+					"    throw new Error('Set environment jwt to a pre-issued dotCMS API token, or use the Node runner.');",
 					"}"
 				]
 			}
@@ -957,6 +934,10 @@
 		},
 		{
 			"key": "rowsBefore",
+			"value": ""
+		},
+		{
+			"key": "editorJwt",
 			"value": ""
 		}
 	]
