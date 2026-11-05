@@ -76,7 +76,6 @@ const mockContentType: DotCMSContentType = {
     defaultType: false,
     fixed: false,
     folder: 'SYSTEM_FOLDER',
-    host: null,
     owner: '123',
     system: false
 };
@@ -244,7 +243,7 @@ describe('DotContentTypesPortletComponent', () => {
     it('should have remove, push publish, Copy and Add to bundle actions to the list item', () => {
         spectator.detectChanges();
 
-        expect(spectator.component.rowActions.map((action) => action.menuItem.label)).toEqual([
+        expect(spectator.component.rowActions.map((action) => action.menuItem['label'])).toEqual([
             'Push Publish',
             'Add to bundle',
             'Add to Menu',
@@ -276,7 +275,7 @@ describe('DotContentTypesPortletComponent', () => {
         vi.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
         spectator.detectChanges();
 
-        expect(spectator.component.rowActions.map((action) => action.menuItem.label)).toEqual([
+        expect(spectator.component.rowActions.map((action) => action.menuItem['label'])).toEqual([
             'Add to bundle',
             'Add to Menu',
             'Copy',
@@ -290,7 +289,7 @@ describe('DotContentTypesPortletComponent', () => {
 
         expect(spectator.query('p-dialog')).toBeNull();
 
-        spectator.component.rowActions[0].menuItem.command(mockContentType);
+        spectator.component.rowActions[0].menuItem.command!(mockContentType);
         spectator.detectChanges();
         expect(spectator.query('p-dialog')).toBeDefined();
         expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
@@ -303,7 +302,7 @@ describe('DotContentTypesPortletComponent', () => {
         renderListing();
         expect(spectator.component.addToBundleIdentifier).not.toBeDefined();
 
-        spectator.component.rowActions[ADD_TO_BUNDLE_MENU_ITEM_INDEX].menuItem.command(
+        spectator.component.rowActions[ADD_TO_BUNDLE_MENU_ITEM_INDEX].menuItem.command!(
             mockContentType
         );
 
@@ -314,7 +313,7 @@ describe('DotContentTypesPortletComponent', () => {
         renderListing();
         expect(spectator.component.addToMenuContentType).not.toBeDefined();
 
-        spectator.component.rowActions[ADD_TO_MENU_INDEX].menuItem.command(mockContentType);
+        spectator.component.rowActions[ADD_TO_MENU_INDEX].menuItem.command!(mockContentType);
 
         expect(spectator.component.addToMenuContentType).toEqual(mockContentType);
     }));
@@ -322,19 +321,19 @@ describe('DotContentTypesPortletComponent', () => {
     it('should populate the actionHeaderOptions based on a call to dotContentTypeService', () => {
         spectator.detectChanges();
         expect(dotContentTypeService.getAllContentTypes).toHaveBeenCalled();
-        expect(spectator.component.actionHeaderOptions.primary.model.length).toEqual(3);
+        expect(spectator.component.actionHeaderOptions.primary!.model!.length).toEqual(3);
     });
 
     it('should not set primary command in the header options', () => {
         spectator.detectChanges();
-        expect(spectator.component.actionHeaderOptions.primary.command).toBe(undefined);
+        expect(spectator.component.actionHeaderOptions.primary!.command).toBe(undefined);
     });
 
     it('should emit changes in base types selector', fakeAsync(() => {
         renderListing();
         const baseTypesSelector = spectator.query(DotBaseTypeSelectorComponent);
         vi.spyOn(spectator.component, 'changeBaseTypeSelector');
-        baseTypesSelector.selected.emit('test');
+        baseTypesSelector!.selected.emit('test');
 
         expect(spectator.component.changeBaseTypeSelector).toHaveBeenCalledWith('test');
         expect(spectator.component.changeBaseTypeSelector).toHaveBeenCalledTimes(1);
@@ -362,7 +361,7 @@ describe('DotContentTypesPortletComponent', () => {
         vi.mocked(spectator.inject(DotContainersService).getByContentType).mockReturnValue(
             of({ containers: [], total: 0 })
         );
-        spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
+        spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
 
         spectator.detectChanges();
 
@@ -374,7 +373,7 @@ describe('DotContentTypesPortletComponent', () => {
     it('should show remove option', () => {
         spectator.detectChanges();
 
-        const shouldShow = spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].shouldShow({
+        const shouldShow = spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].shouldShow!({
             fixed: false,
             defaultType: false
         });
@@ -384,7 +383,7 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should not show remove option if content type is defaultType', () => {
         spectator.detectChanges();
-        const shouldShow = spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].shouldShow({
+        const shouldShow = spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].shouldShow!({
             fixed: false,
             defaultType: true
         });
@@ -393,7 +392,7 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should not show Add To Menu option if content type is HOST', () => {
         spectator.detectChanges();
-        const shouldShow = spectator.component.rowActions[ADD_TO_MENU_INDEX].shouldShow({
+        const shouldShow = spectator.component.rowActions[ADD_TO_MENU_INDEX].shouldShow!({
             variable: 'Host'
         });
         expect(shouldShow).toBeFalsy();
@@ -401,7 +400,7 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should show Add to Menu option', () => {
         spectator.detectChanges();
-        expect(spectator.component.rowActions[ADD_TO_MENU_INDEX].menuItem.label).toBe(
+        expect(spectator.component.rowActions[ADD_TO_MENU_INDEX].menuItem['label']).toBe(
             'Add to Menu'
         );
     });
@@ -421,11 +420,11 @@ describe('DotContentTypesPortletComponent', () => {
         it('should set filterBy params', fakeAsync(() => {
             renderListing();
             expect(spectator.component.filterBy).toBe('Form');
-            expect(spectator.component.$listing().paginatorService.extraParams.get('type')).toBe(
+            expect(spectator.component.$listing()!.paginatorService.extraParams.get('type')).toBe(
                 'Form'
             );
-            expect(spectator.component.actionHeaderOptions.primary.model).toBe(null);
-            expect(spectator.component.actionHeaderOptions.primary.command).toBeDefined();
+            expect(spectator.component.actionHeaderOptions.primary!.model).toBe(null);
+            expect(spectator.component.actionHeaderOptions.primary!.command).toBeDefined();
         }));
     });
 
