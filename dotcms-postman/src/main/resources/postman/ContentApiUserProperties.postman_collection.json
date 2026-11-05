@@ -2,10 +2,75 @@
   "info": {
     "_postman_id": "efc25317-0ce6-49b6-b539-4524f169486a",
     "name": "ContentApiUserProperties",
-    "description": "Content API responses to anonymous callers send user properties (owner, modUser, publishUser, lockedBy and their names) as <redacted>, including those of content embedded in a Story Block; searches on them are refused, key/value field values are kept, and administrators still get them. The content type and content are created and deleted by this collection.",
+    "description": "Content API responses to anonymous callers send user properties (owner, modUser, publishUser, lockedBy and their names) as <redacted>, including those of content embedded in a Story Block; searches on them are refused, key/value field values are kept, and administrators still get them. The content type and content are created and deleted by this collection. Anonymous content reads (CONTENT_APIS_ALLOW_ANONYMOUS=READ) are turned on for the run and the previous value is restored at the end.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
+    {
+      "name": "Setup - allow anonymous content reads - 200",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Anonymous content API access is off by default; keep the current value so cleanup can restore it.",
+              "pm.sendRequest({",
+              "    url: pm.environment.get('serverURL') + '/api/v1/system-table/CONTENT_APIS_ALLOW_ANONYMOUS',",
+              "    method: 'GET',",
+              "    header: {Authorization: 'Bearer ' + pm.environment.get('jwt')}",
+              "}, (error, response) => {",
+              "    pm.test('Current value read', () => {",
+              "        pm.expect(error).to.not.exist;",
+              "        pm.expect(response.code).to.be.oneOf([200, 404]);",
+              "    });",
+              "    pm.collectionVariables.set('previousAnonymousAccess',",
+              "        JSON.stringify(response && response.code === 200 ? response.json().entity : null));",
+              "});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/system-table",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "system-table"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"key\": \"CONTENT_APIS_ALLOW_ANONYMOUS\",\n  \"value\": \"READ\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
     {
       "name": "Setup - create content type - 200",
       "event": [
@@ -2110,6 +2175,72 @@
         }
       },
       "response": []
+    },
+    {
+      "name": "Cleanup - restore anonymous content access - 200",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const key = 'CONTENT_APIS_ALLOW_ANONYMOUS';",
+              "const previous = JSON.parse(pm.collectionVariables.get('previousAnonymousAccess') || 'null');",
+              "pm.sendRequest({",
+              "    url: pm.environment.get('serverURL') + '/api/v1/system-table' + (previous === null ? '/' + key : ''),",
+              "    method: previous === null ? 'DELETE' : 'POST',",
+              "    header: {Authorization: 'Bearer ' + pm.environment.get('jwt'), 'Content-Type': 'application/json'},",
+              "    body: {mode: 'raw', raw: JSON.stringify({key: key, value: previous})}",
+              "}, (error, response) => {",
+              "    pm.test('Previous value restored', () => {",
+              "        pm.expect(error).to.not.exist;",
+              "        pm.expect(response.code).to.equal(200);",
+              "    });",
+              "});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const previous = JSON.parse(pm.collectionVariables.get('previousAnonymousAccess') || 'null');",
+              "pm.test('Setting is back to its previous value', () => {",
+              "    if (previous === null) {",
+              "        pm.response.to.have.status(404);",
+              "    } else {",
+              "        pm.response.to.have.status(200);",
+              "        pm.expect(pm.response.json().entity).to.eql(previous);",
+              "    }",
+              "});",
+              "pm.collectionVariables.unset('previousAnonymousAccess');"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/system-table/CONTENT_APIS_ALLOW_ANONYMOUS",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "system-table",
+            "CONTENT_APIS_ALLOW_ANONYMOUS"
+          ]
+        }
+      },
+      "response": []
     }
   ],
   "auth": {
@@ -2176,7 +2307,7 @@
     },
     {
       "key": "feToken",
-      "value": ""
+      "value": "assigned-during-setup"
     },
     {
       "key": "templateId",
@@ -2184,6 +2315,10 @@
     },
     {
       "key": "pageId",
+      "value": ""
+    },
+    {
+      "key": "previousAnonymousAccess",
       "value": ""
     }
   ]
