@@ -1,4 +1,5 @@
 import { mockProvider } from '@openng/spectator/vitest';
+import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -39,13 +40,13 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
 import { DotPortletDetailComponent } from './dot-portlet-detail.component';
 
 import { DotCustomEventHandlerService } from '../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotMenuService } from '../../api/services/dot-menu.service';
 import { MockDotUiColorsService } from '../../test/dot-test-bed';
 import { DotDownloadBundleDialogComponent } from '../../view/components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
 import { IframeOverlayService } from '../../view/components/_common/iframe/service/iframe-overlay.service';
@@ -60,7 +61,13 @@ describe('DotPortletDetailComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             providers: [
-                DotMenuService,
+                {
+                    provide: GlobalStore,
+                    useValue: {
+                        ensureLoaded: () => of(undefined),
+                        layoutIdForPortlet: () => '123'
+                    }
+                },
                 { provide: LoginService, useClass: LoginServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },

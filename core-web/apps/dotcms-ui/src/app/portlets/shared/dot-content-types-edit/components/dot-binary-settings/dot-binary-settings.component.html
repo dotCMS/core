@@ -19,7 +19,7 @@
     <div formGroupName="systemOptions" class="flex flex-col gap-2">
         @for (option of systemOptions; track option.key) {
             <div
-                class="flex items-center gap-2 justify-between border border-gray-200 rounded-md p-2">
+                class="flex items-center justify-between gap-2 rounded-md border border-gray-200 p-2">
                 <p [innerHTML]="option.message | dm"></p>
                 <p-toggleswitch [formControlName]="option.key" data-testId="setting-switch" />
             </div>

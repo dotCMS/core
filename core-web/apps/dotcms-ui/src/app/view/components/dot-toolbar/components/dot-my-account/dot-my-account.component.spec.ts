@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -17,11 +17,11 @@ import {
     DotRouterService
 } from '@dotcms/data-access';
 import { Auth, DotcmsConfigService, LoginService, User } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotMyAccountComponent } from './dot-my-account.component';
 
 import { DotAccountService } from '../../../../../api/services/dot-account-service';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 
 describe('DotMyAccountComponent', () => {
     let spectator: Spectator<DotMyAccountComponent>;
@@ -50,8 +50,9 @@ describe('DotMyAccountComponent', () => {
             mockProvider(DotMessageService, {
                 get: (key) => key
             }),
-            mockProvider(DotMenuService, {
-                isPortletInMenu: () => of(true)
+            mockProvider(GlobalStore, {
+                ensureLoaded: () => of(undefined),
+                hasPortlet: vi.fn().mockReturnValue(true)
             }),
             mockProvider(LoginService, {
                 auth$: of(mockAuth),
@@ -78,6 +79,46 @@ describe('DotMyAccountComponent', () => {
     beforeEach(() => {
         spectator = createComponent();
         component = spectator.component;
+    });
+
+    describe('Getting started checkbox initial state', () => {
+        // The checkbox is always rendered; it starts checked only when the `starter` portlet is in the
+        // user's menu (issue #38078). The answer comes from the one menu snapshot in the store.
+        it('starts checked when the starter portlet is in the menu', () => {
+            const store = spectator.inject(GlobalStore);
+            vi.spyOn(store, 'hasPortlet').mockReturnValue(true);
+
+            spectator.component.ngOnInit();
+
+            expect(store.hasPortlet).toHaveBeenCalledWith('starter');
+            expect(spectator.component.showStarter()).toBe(true);
+        });
+
+        it('starts unchecked when the starter portlet is not in the menu', () => {
+            const store = spectator.inject(GlobalStore);
+            vi.spyOn(store, 'hasPortlet').mockReturnValue(false);
+
+            spectator.component.ngOnInit();
+
+            expect(spectator.component.showStarter()).toBe(false);
+        });
+
+        it('waits for the menu to be ready before it decides', () => {
+            const store = spectator.inject(GlobalStore);
+            const ready = new Subject<void>();
+            vi.spyOn(store, 'ensureLoaded').mockReturnValue(ready.asObservable());
+            vi.spyOn(store, 'hasPortlet').mockReturnValue(true);
+            spectator.component.showStarter.set(false);
+
+            spectator.component.ngOnInit();
+
+            expect(spectator.component.showStarter()).toBe(false);
+
+            ready.next();
+            ready.complete();
+
+            expect(spectator.component.showStarter()).toBe(true);
+        });
     });
 
     describe('Dialog Visibility', () => {

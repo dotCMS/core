@@ -39,7 +39,6 @@ import {
 import { DotAddContentletComponent } from './dot-add-contentlet.component';
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
 import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
@@ -67,7 +66,6 @@ describe('DotAddContentletComponent', () => {
                 provideHttpClient(),
                 provideHttpClientTesting(),
                 DotContentletEditorService,
-                DotMenuService,
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock

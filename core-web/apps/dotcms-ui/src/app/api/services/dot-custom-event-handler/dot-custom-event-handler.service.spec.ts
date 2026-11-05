@@ -53,7 +53,6 @@ import { DotCustomEventHandlerService } from './dot-custom-event-handler.service
 import { MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotDownloadBundleDialogService } from '../dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotMenuService } from '../dot-menu.service';
 
 describe('DotCustomEventHandlerService', () => {
     let service: DotCustomEventHandlerService;
@@ -80,7 +79,6 @@ describe('DotCustomEventHandlerService', () => {
             providers: [
                 DotCustomEventHandlerService,
                 DotLoadingIndicatorService,
-                DotMenuService,
                 DotPushPublishDialogService,
                 DotWorkflowEventHandlerService,
                 DotRouterService,

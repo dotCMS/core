@@ -27,7 +27,6 @@ import {
 
 import { DotToolbarUserStore } from './dot-toolbar-user.store';
 
-import { DotMenuService } from '../../../../../../api/services/dot-menu.service';
 import { LOCATION_TOKEN } from '../../../../../../providers';
 import { DotNavigationService } from '../../../../dot-navigation/services/dot-navigation.service';
 
@@ -47,7 +46,6 @@ describe('DotToolbarUserStore', () => {
             DotNavigationService,
             DotEventsService,
             DotIframeService,
-            DotMenuService,
             DotcmsConfigService,
             StringUtils,
             DotRouterService,

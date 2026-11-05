@@ -1,22 +1,23 @@
 import { type } from '@ngrx/signals';
 import { entityConfig } from '@ngrx/signals/entities';
 
-import { MenuItemEntity, MenuSlice } from '@dotcms/dotcms-models';
+import { getMenuItemKey, MenuItemEntity, MenuSlice } from '@dotcms/dotcms-models';
 
 /**
  * Entity configuration for menu items.
- * Uses a composite key of item ID + parent menu ID as the unique identifier.
- * This allows the same menu item to appear in multiple parent menu groups.
+ * The id is the portlet id plus the FULL layout id, so the same portlet can appear in several
+ * layouts and two layouts that share the first 4 characters of their id never collapse into one
+ * item. The 4-character `mId` is kept on the entity as `shortLayoutId` for URL lookups.
  */
 export const menuConfig = entityConfig({
     entity: type<MenuItemEntity>(),
     collection: 'menuItems',
-    selectId: (item: MenuItemEntity) => `${item.id}__${item.parentMenuId.substring(0, 4)}`
-    // Only the first 4 characters of parentMenuId are used to generate the composite key.
-    // This is done because parentMenuId can be quite long (UUID format)
+    selectId: (item: MenuItemEntity) => getMenuItemKey(item)
 });
 
 export const initialMenuSlice: MenuSlice = {
+    status: 'idle',
+    activeKey: null,
     isNavigationCollapsed: true,
     openParentMenuId: null
 };

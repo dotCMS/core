@@ -1,17 +1,17 @@
 <ul
     [dragulaModel]="$fieldTypes()"
-    class="list-none p-0 m-0 mb-6 overflow-auto"
+    class="m-0 mb-6 list-none overflow-auto p-0"
     dragula="fields-bag"
     data-drag-type="source">
     @for (fieldType of $fieldTypes(); track fieldType.clazz; let i = $index) {
         <li
             [attr.data-testid]="fieldType.clazz"
             [attr.data-clazz]="fieldType.clazz"
-            class="flex items-center cursor-move leading-5 py-3 px-1.75 transition-colors duration-200 hover:bg-gray-100 group"
+            class="group flex cursor-move items-center px-1.75 py-3 leading-5 transition-colors duration-200 hover:bg-gray-100"
             [class.border-b]="i === 1"
             [class.border-gray-300]="i === 1">
             <i
-                class="material-symbols-outlined text-gray-700 mr-3 text-2xl transition-colors duration-200 group-hover:text-black">
+                class="material-symbols-outlined mr-3 text-2xl text-gray-700 transition-colors duration-200 group-hover:text-black">
                 {{ fieldIcons[fieldType.clazz] }}
             </i>
             <span role="listitem">{{ fieldType.name }}</span>

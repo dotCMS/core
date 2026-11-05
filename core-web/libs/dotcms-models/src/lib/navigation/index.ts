@@ -5,3 +5,4 @@ export * from './navigate-to-options.model';
 export * from './menu-entity.model';
 export * from './menu-group.model';
 export * from './menu.slice.model';
+export * from './menu-status.model';

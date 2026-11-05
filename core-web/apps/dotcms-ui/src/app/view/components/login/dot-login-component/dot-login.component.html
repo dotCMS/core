@@ -1,7 +1,7 @@
 @if (loginInfo$ | async; as loginInfo) {
     <form class="form" [formGroup]="loginForm">
         <section class="pb-4">
-            <header class="flex justify-between items-center mb-2">
+            <header class="mb-2 flex items-center justify-between">
                 <img [src]="loginInfo.entity.logo" alt="DotCMS - Hybrid CMS" class="h-6" />
                 <p-select
                     (onChange)="onLanguageChange($event.value)"
@@ -64,7 +64,7 @@
                 "
                 [field]="loginForm.get('password')" />
         </div>
-        <div class="flex justify-between items-center">
+        <div class="flex items-center justify-between">
             <div class="form-checkbox">
                 <p-checkbox
                     [inputId]="'rememberMe'"
@@ -96,7 +96,7 @@
                     data-testId="submitButton"></button>
             }
         </div>
-        <footer class="text-sm text-gray-500 flex flex-col gap-1 pt-4">
+        <footer class="flex flex-col gap-1 pt-4 text-sm text-gray-500">
             <p>
                 <span data-testId="server">
                     {{ loginInfo.i18nMessagesMap['Server'] }}: {{ loginInfo.entity.serverId }}

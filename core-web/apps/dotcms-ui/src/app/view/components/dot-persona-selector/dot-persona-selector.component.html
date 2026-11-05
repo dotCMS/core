@@ -1,4 +1,4 @@
-<div class="h-full flex">
+<div class="flex h-full">
     <dot-searchable-dropdown
         (display)="iframeOverlayService.show()"
         (filterChange)="handleFilterChange($event)"
@@ -11,7 +11,7 @@
         [disabled]="disabled"
         [rows]="paginationPerPage"
         [totalRecords]="paginationService.totalRecords"
-        class="h-full flex-auto flex"
+        class="flex h-full flex-auto"
         #searchableDropdown
         labelPropertyName="name"
         width="448px">

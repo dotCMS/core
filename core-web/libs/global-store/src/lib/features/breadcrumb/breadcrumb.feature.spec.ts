@@ -1355,6 +1355,121 @@ describe('withBreadcrumbs Feature', () => {
             });
         });
 
+        /**
+         * The highlight follows an editor route to its portlet (`/containers/edit/1` keeps Containers
+         * lit), but the trail does not: an editor adds its own crumb, and only the exact link of a
+         * menu item is a place the trail can rebuild from.
+         */
+        describe('editor routes under a menu item', () => {
+            const menuEntry = (id: string, label: string, menuLink: string): MenuItemEntity =>
+                ({
+                    id,
+                    label,
+                    labelParent: 'Site',
+                    menuLink,
+                    url: menuLink,
+                    angular: true,
+                    active: false,
+                    ajax: false,
+                    parentMenuId: 'site-parent',
+                    parentMenuLabel: 'Site',
+                    parentMenuIcon: 'pi pi-globe'
+                }) as MenuItemEntity;
+
+            beforeEach(() => {
+                menuItemsSignal.update((items) => [
+                    ...items,
+                    menuEntry('containers', 'Containers', '/containers'),
+                    menuEntry('templates', 'Templates', '/templates')
+                ]);
+                TestBed.flushEffects();
+            });
+
+            it('keeps the crumb an editor added instead of replacing it with the portlet crumb', () => {
+                storeWithRouter.setBreadcrumbs([
+                    { label: 'Site', disabled: true },
+                    { label: 'Containers', url: '/dotAdmin/#/containers' },
+                    { label: 'My container' }
+                ]);
+                const before = storeWithRouter.breadcrumbs();
+
+                routerMock.triggerNavigationEnd('/containers/edit/123');
+                TestBed.flushEffects();
+
+                expect(storeWithRouter.breadcrumbs()).toEqual(before);
+            });
+
+            it('leaves /templates/edit/:id to its own handler, which links back to /templates', () => {
+                routerMock.triggerNavigationEnd('/templates/edit/abc-123');
+                TestBed.flushEffects();
+
+                const last = storeWithRouter.breadcrumbs().at(-1);
+                expect(last.label).toBe('Templates');
+                expect(last.url).toBe('/dotAdmin/#/templates');
+            });
+        });
+
+        /**
+         * Two layouts can hold the same portlet under the same four-character `mId`. The highlight
+         * and the title break the tie with the group that is open, so the trail has to as well.
+         */
+        describe('layouts that share a short id', () => {
+            const twin = (parentMenuId: string, parentMenuLabel: string): MenuItemEntity =>
+                ({
+                    id: 'pages',
+                    label: 'Pages',
+                    labelParent: parentMenuLabel,
+                    menuLink: '/pages',
+                    url: '/pages',
+                    angular: true,
+                    active: false,
+                    ajax: false,
+                    parentMenuId,
+                    parentMenuLabel,
+                    parentMenuIcon: 'pi pi-file'
+                }) as MenuItemEntity;
+
+            const storeWith = (openParentMenuId: string | null) => {
+                TestBed.resetTestingModule();
+                const items = signal<MenuItemEntity[]>([
+                    twin('abcd1111', 'First layout'),
+                    twin('abcd2222', 'Second layout')
+                ]);
+                const Store = signalStore(
+                    withState({}),
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    (withBreadcrumbs as any)(items, signal(openParentMenuId))
+                );
+                TestBed.configureTestingModule({
+                    providers: [{ provide: Router, useValue: routerMock }, Store]
+                });
+                const store = TestBed.inject(Store);
+                TestBed.flushEffects();
+
+                return store;
+            };
+
+            it('names the layout whose group is open', () => {
+                const store = storeWith('abcd2222');
+
+                routerMock.triggerNavigationEnd('/pages?mId=abcd');
+                TestBed.flushEffects();
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                expect((store as any).breadcrumbs()[1].label).toBe('Second layout');
+            });
+
+            it('names the first layout in menu order when no group is open', () => {
+                const store = storeWith(null);
+
+                routerMock.triggerNavigationEnd('/pages?mId=abcd');
+                TestBed.flushEffects();
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                expect((store as any).breadcrumbs()[1].label).toBe('First layout');
+            });
+        });
+
         it('should preserve analytics tab crumb appended before menuItems loaded (reload fix)', () => {
             // Simulate child component appending analytics tab crumb before menu loads
             storeWithRouter.appendCrumb({ label: 'Conversions', id: 'analytics-conversions' });

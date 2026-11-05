@@ -2,6 +2,7 @@ import {
     EnvironmentProviders,
     inject,
     InjectionToken,
+    Injector,
     Provider,
     provideAppInitializer
 } from '@angular/core';
@@ -49,14 +50,15 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import { GlobalStore } from '@dotcms/store';
+import { DotMenuItem } from '@dotcms/dotcms-models';
+import { DOT_MENU_ROUTES_REGISTRAR, GlobalStore } from '@dotcms/store';
 
 import { DotAccountService } from './api/services/dot-account-service';
 import { DotAppLifecycleEffect } from './api/services/dot-app-lifecycle/dot-app-lifecycle.effect';
 import { DotDownloadBundleDialogService } from './api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotMenuService } from './api/services/dot-menu.service';
 import { DotParseHtmlService } from './api/services/dot-parse-html/dot-parse-html.service';
 import { DotReportIssueService } from './api/services/dot-report-issue.service';
+import { DynamicRouteService } from './api/services/dynamic-route.service';
 import { AuthGuardService } from './api/services/guards/auth-guard.service';
 import { ContentletGuardService } from './api/services/guards/contentlet-guard.service';
 import { DefaultGuardService } from './api/services/guards/default-guard.service';
@@ -94,7 +96,6 @@ const PROVIDERS: (Provider | EnvironmentProviders)[] = [
     DotHttpErrorManagerService,
     DotIframeService,
     DotLicenseService,
-    DotMenuService,
     DotMessageDisplayService,
     DotMessageService,
     DotParseHtmlService,
@@ -145,6 +146,18 @@ const PROVIDERS: (Provider | EnvironmentProviders)[] = [
         useClass: DotTitleStrategy
     },
     GlobalStore,
+    {
+        // The menu feature calls this after every successful load, before it reports `ready`.
+        // The route service is looked up on first use so creating the store never builds it early.
+        provide: DOT_MENU_ROUTES_REGISTRAR,
+        useFactory: () => {
+            const injector = inject(Injector);
+
+            return (items: DotMenuItem[]): void => {
+                injector.get(DynamicRouteService).registerRoutesFromMenuItems(items);
+            };
+        }
+    },
     DotSystemConfigService,
     DotAppLifecycleEffect,
     provideAppInitializer(() => void inject(DotAppLifecycleEffect))

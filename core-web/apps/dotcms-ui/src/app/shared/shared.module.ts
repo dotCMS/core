@@ -14,7 +14,6 @@ import {
 } from '@dotcms/dotcms-js';
 
 import { DotNavigationComponent } from '../view/components/dot-navigation/dot-navigation.component';
-import { DotNavigationService } from '../view/components/dot-navigation/services/dot-navigation.service';
 
 @NgModule({
     declarations: [],
@@ -33,7 +32,6 @@ export class SharedModule {
                 ApiRoot,
                 BrowserUtil,
                 DotEventsService,
-                DotNavigationService,
                 DotcmsConfigService,
                 LoggerService,
                 LoginService,

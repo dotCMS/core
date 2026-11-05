@@ -3,8 +3,9 @@ import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -12,7 +13,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotCurrentUserService, DotSystemConfigService } from '@dotcms/data-access';
-import { MenuGroup } from '@dotcms/dotcms-models';
+import { DotMenu, MenuGroup } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotCurrentUserServiceMock } from '@dotcms/utils-testing';
 
@@ -81,6 +82,12 @@ class TestHostComponent {
     menu: MenuGroup = { ...defaultMenu };
     collapsed = false;
 }
+
+/** Puts a menu in the store the way the app does: one request, answered by the backend. */
+const seedMenu = (store: InstanceType<typeof GlobalStore>, menus: DotMenu[]) => {
+    store.reload();
+    TestBed.inject(HttpTestingController).expectOne('/api/v1/menu').flush({ entity: menus });
+};
 
 describe('DotNavItemComponent', () => {
     let spectator: Spectator<TestHostComponent>;
@@ -152,7 +159,7 @@ describe('DotNavItemComponent', () => {
         host.collapsed = false;
         component = spectator.query(DotNavItemComponent);
         globalStore = spectator.inject(GlobalStore);
-        globalStore.loadMenu([menuForStore]);
+        seedMenu(globalStore, [menuForStore]);
         spectator.detectChanges();
 
         navItemEl = spectator.query(byTestId('nav-item')) as HTMLElement;
@@ -255,7 +262,7 @@ describe('DotNavItemComponent', () => {
             host.collapsed = true;
             component = spectator.query(DotNavItemComponent);
             globalStore = spectator.inject(GlobalStore);
-            globalStore.loadMenu([menuForStore]);
+            seedMenu(globalStore, [menuForStore]);
             spectator.detectChanges();
             navItemEl = spectator.query(byTestId('nav-item')) as HTMLElement;
             const subNav = spectator.debugElement.query(By.css('dot-sub-nav'))
@@ -282,7 +289,7 @@ describe('DotNavItemComponent', () => {
             host.collapsed = true;
             component = spectator.query(DotNavItemComponent);
             globalStore = spectator.inject(GlobalStore);
-            globalStore.loadMenu([menuForStore]);
+            seedMenu(globalStore, [menuForStore]);
             spectator.detectChanges();
             navItemEl = spectator.query(byTestId('nav-item')) as HTMLElement;
             const subNav = spectator.debugElement.query(By.css('dot-sub-nav'));
@@ -317,7 +324,7 @@ describe('DotNavItemComponent', () => {
             host.collapsed = true;
             component = spectator.query(DotNavItemComponent);
             globalStore = spectator.inject(GlobalStore);
-            globalStore.loadMenu([menuForStore]);
+            seedMenu(globalStore, [menuForStore]);
             spectator.detectChanges();
             const navItemHost = spectator.query('dot-nav-item') as HTMLElement;
             navItemHost?.dispatchEvent(new MouseEvent('mouseleave', { bubbles: true }));
@@ -351,7 +358,7 @@ describe('DotNavItemComponent', () => {
             host.collapsed = true;
             component = spectator.query(DotNavItemComponent);
             globalStore = spectator.inject(GlobalStore);
-            globalStore.loadMenu([menuForStore]);
+            seedMenu(globalStore, [menuForStore]);
             spectator.detectChanges();
             subNavDe = spectator.debugElement.query(By.css('dot-sub-nav'));
         });
