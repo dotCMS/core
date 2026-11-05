@@ -99,3 +99,4 @@ Release-25.07.10 LTS
 93. https://github.com/dotCMS/private-issues/issues/711 : dotAI embeddings endpoint evaluates attacker-controlled Velocity as system user (SSTI) → credential theft #38115 #711
 94. https://github.com/dotCMS/private-issues/issues/897 : REST /v1/system/request-draining-test: test resource shipped enabled, any authenticated user can pin servlet t #38255 #897
 95. https://github.com/dotCMS/private-issues/issues/875 : Workflow fire with individualPermissions removes a contentlet's permissions without EDIT_PERMISSIONS #38244 #875
+96. https://github.com/dotCMS/private-issues/issues/839 : Ubaid Raza F1: Rule-engine authorization fail-open + session-attribute injection → cookieless admin authentica #38224 #839

@@ -48,6 +48,9 @@ import com.liferay.portal.language.LanguageUtilTest;
 import org.apache.felix.framework.OSGIUtilTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
+import com.dotcms.enterprise.rules.RulesAPIImplParentChecksIntegrationTest;
+import com.dotcms.rest.api.v1.sites.ruleengine.RuleRefusedActionsIntegrationTest;
+import com.dotcms.rest.api.v1.sites.ruleengine.RuleResourcesAccessIntegrationTest;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
@@ -109,7 +112,10 @@ import org.junit.runners.Suite.SuiteClasses;
     com.dotcms.security.multipart.MultiPartRequestSecurityWebInterceptorTest.class,
     com.dotcms.rest.api.v1.temp.TempFileNamingTest.class,
     com.dotcms.enterprise.publishing.remote.handler.UserHandlerTest.class,
-    com.dotcms.content.elasticsearch.business.ContentletPermissionReplacementIntegrationTest.class
+    com.dotcms.content.elasticsearch.business.ContentletPermissionReplacementIntegrationTest.class,
+    RulesAPIImplParentChecksIntegrationTest.class,
+    RuleResourcesAccessIntegrationTest.class,
+    RuleRefusedActionsIntegrationTest.class
 })
 public class MainSuite2a {
 
