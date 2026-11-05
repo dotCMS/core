@@ -103,3 +103,4 @@ Release-25.07.10 LTS
 97. https://github.com/dotCMS/private-issues/issues/840 : Ubaid Raza F2: SiteSearchAjaxAction inherits CMS-Maintenance index-management methods behind the weaker site-s #38180 #840
 98. https://github.com/dotCMS/private-issues/issues/985 : WorkflowHelper.getContentletByIdentifier resolves content without a READ check (swallows DotSecurityException, #38269 #985
 99. https://github.com/dotCMS/private-issues/issues/880 : Redis cache and pub/sub codec (DotObjectCodec, RedisProvider): unfiltered Java deserialization gives code exec #38359 #880
+100. https://github.com/dotCMS/private-issues/issues/734 : Missing permission check, container content render by identifier (ContainerResource) — working content without #38321 #734

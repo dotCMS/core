@@ -12,6 +12,8 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.rest.api.FailedResultView;
+import com.dotcms.rest.api.v1.page.PageResource;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.DotPreconditions;
@@ -38,6 +40,8 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerView;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.dotmarketing.util.SecurityUtils;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -74,6 +78,7 @@ import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -241,16 +246,22 @@ public class ContainerResource implements Serializable {
     }
 
     /**
-     * Generates the HTML for a container with a particular contentlet
+     * Renders a contentlet inside a container and returns the resulting HTML.
+     * <p>
+     * The contentlet can be given by inode or by identifier. Either way it is rendered only when
+     * the calling {@link User} can read it; otherwise the request answers 403 with a generic
+     * message. By identifier, the version checked is the one the container renders: the request's
+     * language and variant, with the same fallbacks, in the working version for back-end users in
+     * edit mode and the live version otherwise (404 when there is none). By inode, that exact
+     * version is checked.
      *
-     * @param req
-     * @param res
-     * @param containerId
-     * @param contentletId
-     * @param pageInode
-     * @return Response
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param req          the current request
+     * @param res          the current response
+     * @param containerId  the container's identifier, or its path for file-based containers
+     * @param contentletId the contentlet's inode or identifier
+     * @param pageInode    optional inode of the page to use as rendering context
+     * @return a {@link ResponseEntityView} holding the rendered HTML under {@code render}
+     * @throws DotDataException if the contentlet or container cannot be loaded
      */
     @GET
     @JSONP
@@ -269,7 +280,11 @@ public class ContainerResource implements Serializable {
         final User user               = initData.getUser();
         final PageMode mode           = PageMode.EDIT_MODE;
 
+        // Rendering reads the mode back from the request: EDIT_MODE for back-end users unless the
+        // request asks for another one, LIVE for anyone else. The inode route keeps checking the
+        // given inode with the EDIT_MODE flags, as before.
         PageMode.setPageMode(req, PageMode.EDIT_MODE);
+        final PageMode servedMode = PageMode.get(req);
 
         final ShortyId contentShorty = this.shortyAPI
             .getShorty(contentletId)
@@ -281,8 +296,11 @@ public class ContainerResource implements Serializable {
 
             final Contentlet contentlet =
                     (contentShorty.type == ShortType.IDENTIFIER) ?
-                            this.contentletAPI.findContentletByIdentifierAnyLanguageAnyVariant(contentShorty.longId):
+                            this.findReadableContentletByIdentifier(req, contentShorty.longId, servedMode, user):
                             this.contentletAPI.find(contentShorty.longId, user, mode.respectAnonPerms);
+            if (null == contentlet) {
+                throw new ResourceNotFoundException("Can't find contentlet:" + SecurityUtils.sanitizeForLogging(contentletId));
+            }
 
             final String html = this.getHTML(req, res, containerId, user, contentlet, pageInode);
 
@@ -290,8 +308,95 @@ public class ContainerResource implements Serializable {
 
             return Response.ok(new ResponseEntityView(response)).build();
         } catch (DotSecurityException e) {
-            throw new ForbiddenException(e);
+            throw new ForbiddenException(e, "The user does not have the permissions required for this request");
         }
+    }
+
+    /**
+     * Finds the version of a contentlet that the container renders, by identifier, checking that
+     * the given user can read it.
+     * <p>
+     * The version is resolved as rendering resolves it: the request's language and current variant,
+     * falling back to the DEFAULT variant and to the default language. Archived content is not
+     * served. In edit mode the working version is checked; otherwise the live one. Permissions
+     * granted to front-end roles, including CMS Anonymous, count towards READ; the permission API
+     * only applies CMS Anonymous to live versions, so it never opens a working version.
+     * <p>
+     * While a Time Machine date is set, the container can render the working version of content
+     * scheduled to be published by that date, so a user served live content must be able to read
+     * the working version too: the one rendering resolves in preview mode, for the language served.
+     *
+     * @param request    the current request, which carries the language, variant and Time Machine date
+     * @param identifier the contentlet's identifier
+     * @param mode       the {@link PageMode} the container renders in
+     * @param user       the {@link User} making the request
+     * @return the readable {@link Contentlet}
+     * @throws DotDataException          if the contentlet cannot be loaded
+     * @throws DotSecurityException      if the user cannot read the contentlet
+     * @throws ResourceNotFoundException if there is no version to serve
+     */
+    private Contentlet findReadableContentletByIdentifier(final HttpServletRequest request,
+                                                          final String identifier,
+                                                          final PageMode mode,
+                                                          final User user)
+            throws DotDataException, DotSecurityException {
+
+        final long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+        // Resolved as the system user so that a denial below answers 403, not the 404 the
+        // fallback turns it into; when the user can read the content, the version is the same.
+        final ContentletVersionInfo served = WebAPILocator.getVariantWebAPI()
+                .getContentletVersionInfoByFallback(languageId, identifier, mode, APILocator.systemUser());
+        final String inode = mode.showLive ? served.getLiveInode() : served.getWorkingInode();
+        final Contentlet contentlet = served.isDeleted() || !UtilMethods.isSet(inode)
+                ? null
+                : this.contentletAPI.find(inode, user, true);
+        if (null == contentlet) {
+            throw new ResourceNotFoundException("Can't find contentlet:" + SecurityUtils.sanitizeForLogging(identifier));
+        }
+        if (mode.showLive && isTimeMachineOn(request)) {
+            // Time Machine can make the container render the working version instead of the live
+            // one, and rendering resolves that version again, in preview mode
+            final ContentletVersionInfo working = WebAPILocator.getVariantWebAPI()
+                    .getContentletVersionInfoByFallback(served.getLang(), identifier,
+                            PageMode.PREVIEW_MODE, APILocator.systemUser());
+            if (!inode.equals(working.getWorkingInode())) {
+                this.checkReadPermission(working.getWorkingInode(), user);
+            }
+        }
+        return contentlet;
+    }
+
+    /**
+     * Checks that the given user can read the given version of a contentlet.
+     * <p>
+     * {@link ContentletAPI#find(String, User, boolean)} <em>is</em> the check: it answers a denial by
+     * throwing {@link DotSecurityException}, so the contentlet it loads is deliberately discarded
+     * here. Front-end roles count towards READ, as they do for the version the caller is served.
+     * A version that no longer exists is not an error: there is nothing to render and nothing to check.
+     *
+     * @param inode the inode of the version to check
+     * @param user  the {@link User} making the request
+     * @throws DotDataException     if the contentlet cannot be loaded
+     * @throws DotSecurityException if the user cannot read that version
+     */
+    private void checkReadPermission(final String inode, final User user)
+            throws DotDataException, DotSecurityException {
+        this.contentletAPI.find(inode, user, true);
+    }
+
+    /**
+     * Tells whether a Time Machine date is set on the request or the session, as the page API does
+     * when a page is requested with a future publish date.
+     *
+     * @param request the current request
+     * @return {@code true} when a Time Machine date is set
+     */
+    private static boolean isTimeMachineOn(final HttpServletRequest request) {
+        if (null != request.getAttribute(PageResource.TM_DATE)) {
+            return true;
+        }
+        final HttpSession session = request.getSession(false);
+        return null != session && null != session.getAttribute(PageResource.TM_DATE);
     }
 
     /**
@@ -447,6 +552,9 @@ public class ContainerResource implements Serializable {
 
         if (UtilMethods.isSet(pageInode)) {
             loadPageContext(user, pageInode, mode, context);
+            // The page's own content lists would win over the one below; only the requested
+            // contentlet is rendered.
+            removeContentLists(context, container.getIdentifier());
         } else {
             context.put("dotPageContent", Boolean.TRUE);
         }
@@ -458,6 +566,23 @@ public class ContainerResource implements Serializable {
 
         final VelocityResourceKey key = new VelocityResourceKey(container, Container.LEGACY_RELATION_TYPE, mode);
         return velocityUtil.merge(key.path, context);
+    }
+
+    /**
+     * Removes from the context the content lists that a page defines for the given container, so
+     * the container renders only the list this resource puts in the context.
+     *
+     * @param context     the Velocity context the page was merged into
+     * @param containerId the identifier of the container being rendered
+     */
+    private static void removeContentLists(final org.apache.velocity.context.Context context,
+                                           final String containerId) {
+        final String prefix = "contentletList" + containerId;
+        for (final Object key : context.getKeys()) {
+            if (key.toString().startsWith(prefix)) {
+                context.remove(key);
+            }
+        }
     }
 
     private void loadPageContext(User user, String pageInode, PageMode mode,
