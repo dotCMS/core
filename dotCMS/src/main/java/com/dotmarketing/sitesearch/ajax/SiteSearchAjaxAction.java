@@ -1,5 +1,6 @@
 package com.dotmarketing.sitesearch.ajax;
 
+import com.dotcms.auth.BasicAuthentication;
 import com.dotcms.content.index.IndexTimestamp;
 import java.io.IOException;
 import java.net.URLDecoder;
@@ -73,9 +74,12 @@ public class SiteSearchAjaxAction extends AjaxAction {
 		try {
 			// Check permissions if the user has access to the Site Search portlet
 			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("site-search", user)) {
-				String userName = map.get("u");
-				String password = map.get("p");
-				LoginFactory.doLogin(userName, password, false, request, response);
+				// Only the compatibility mode may exchange URI credentials for a session.
+				if (BasicAuthentication.mode() == BasicAuthentication.Mode.ALL) {
+					String userName = map.get("u");
+					String password = map.get("p");
+					LoginFactory.doLogin(userName, password, false, request, response);
+				}
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
 				if(user==null) {
 				    setUser(request);

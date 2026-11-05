@@ -7,6 +7,41 @@
 	},
 	"item": [
 		{
+			"name": "JWT_TOKEN rejects a user password on REST",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"header": [],
+				"url": "{{serverURL}}/api/v1/site/currentSite"
+			},
+			"response": []
+		},
+		{
 			"name": "Test WebDav conection",
 			"item": [
 				{
@@ -43,7 +78,17 @@
 								"currentSite"
 							]
 						},
-						"description": "### Get Current Site\n\nThis endpoint makes an HTTP GET request to retrieve information about the current site.\n\n#### Request Body\n\nThis request does not require a request body.\n\n#### Response\n\n- Status: 200\n    \n- Content-Type: application/json\n    \n\n##### Response Body\n\nThe response contains information about the current site in JSON format, including various attributes such as aliases, archived status, category ID, content type ID, default status, host, language ID, title, and more."
+						"description": "### Get Current Site\n\nThis endpoint makes an HTTP GET request to retrieve information about the current site.\n\n#### Request Body\n\nThis request does not require a request body.\n\n#### Response\n\n- Status: 200\n    \n- Content-Type: application/json\n    \n\n##### Response Body\n\nThe response contains information about the current site in JSON format, including various attributes such as aliases, archived status, category ID, content type ID, default status, host, language ID, title, and more.",
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						}
 					},
 					"response": []
 				},
@@ -63,7 +108,7 @@
 									"// Validate the XML response",
 									"pm.test(\"Validate the XML response\", function () {",
 									"    var responseXML = xml2Json(pm.response.text());",
-									"    var expectedHrefValue = \"/webdav/live/1/demo.dotcms.com/\";",
+									"    var expectedHrefValue = pm.variables.replaceIn(\"/webdav/live/1/{{hostName}}/\");",
 									"    var hrefValue = responseXML['d:multistatus']['d:response'][0]['d:href'];",
 									"    pm.expect(hrefValue).to.eql(expectedHrefValue);",
 									"});"
@@ -227,13 +272,7 @@
 					],
 					"request": {
 						"method": "PUT",
-						"header": [
-							{
-								"key": "Authorization",
-								"value": "Bearer {{jwt}}",
-								"type": "text"
-							}
-						],
+						"header": [],
 						"body": {
 							"mode": "raw",
 							"raw": "This is a test file uploaded via WebDAV API using Postman.\n",
@@ -1243,7 +1282,7 @@
 		"basic": [
 			{
 				"key": "password",
-				"value": "admin",
+				"value": "{{jwt}}",
 				"type": "string"
 			},
 			{
