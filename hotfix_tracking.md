@@ -95,3 +95,4 @@ Release-25.07.10 LTS
 89. https://github.com/dotCMS/private-issues/issues/888 : Struts PublishContainersAction and PublishLinksAction: any back-end user publishes any container or menu link  #38362 #888
 90. https://github.com/dotCMS/private-issues/issues/877 : legacy-custom-field.jsp: contentlet field values break out of an inline script, stored XSS in the edit screen  #38301 #877
 91. https://github.com/dotCMS/private-issues/issues/992 : MultiPartRequestSecurityWebInterceptor: case-sensitive content-type check lets a capitalised Multipart/Form-Da #38214 #992
+92. https://github.com/dotCMS/private-issues/issues/750 : [GLM AI Scanner] Contributor-level authentication takeover via UserHandler user import in push-publish bundles #38253 #750
