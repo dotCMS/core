@@ -3,7 +3,9 @@ package v2.languages;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.*;
 
+import com.dotcms.company.CompanyAPI;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
+import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -11,14 +13,19 @@ import com.dotcms.rest.api.v2.languages.LanguageForm;
 import com.dotcms.rest.api.v2.languages.LanguageView;
 import com.dotcms.rest.api.v2.languages.LanguagesResource;
 import com.dotcms.util.CollectionsUtils;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PortletID;
+import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -32,11 +39,103 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+import org.mockito.MockedStatic;
 
 /**
  * @test LanguageResource
  */
 public class LanguagesResourceTest {
+
+    @Test
+    public void test_defaultMessages_allowAnonymousWhenContentApisAreClosed() throws Exception {
+        assertPublicMessages("default");
+    }
+
+    @Test
+    public void test_localizedMessages_allowAnonymousWhenContentApisAreClosed() throws Exception {
+        assertPublicMessages("en_US");
+    }
+
+    private void assertPublicMessages(final String language) throws Exception {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final LanguageAPI languageAPI = mock(LanguageAPI.class);
+        final LanguageVariableAPI languageVariableAPI = mock(LanguageVariableAPI.class);
+        final CompanyAPI companyAPI = mock(CompanyAPI.class);
+        final Company company = mock(Company.class);
+        final User anonymous = mock(User.class);
+        when(anonymous.isAnonymousUser()).thenReturn(true);
+        when(company.getLocale()).thenReturn(Locale.US);
+        when(companyAPI.getDefaultCompany()).thenReturn(company);
+
+        // Keep real request initialization/authorization; only identity resolution is stubbed.
+        final WebResource webResource = mock(WebResource.class, CALLS_REAL_METHODS);
+        doReturn(anonymous).when(webResource).getCurrentUser(eq(request), eq(response), anyMap(),
+                any(AnonymousAccess.class), any(WebResource.AuthCheckOptions[].class));
+
+        try (MockedStatic<Config> config = mockStatic(Config.class);
+             MockedStatic<APILocator> locator = mockStatic(APILocator.class);
+             MockedStatic<LanguageUtil> messages = mockStatic(LanguageUtil.class)) {
+            config.when(() -> Config.getStringProperty(
+                    AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "NONE")).thenReturn("NONE");
+            locator.when(APILocator::getCompanyAPI).thenReturn(companyAPI);
+            messages.when(LanguageUtil::getAvailableLocales).thenReturn(new Locale[]{Locale.US});
+            messages.when(() -> LanguageUtil.getAllMessagesByLocale(Locale.US))
+                    .thenReturn(Map.of("login", "Log in"));
+
+            assertEquals(AnonymousAccess.NONE, AnonymousAccess.systemSetting());
+            final LanguagesResource resource = new LanguagesResource(
+                    languageAPI, languageVariableAPI, webResource);
+            final Response result = resource.getAllMessages(request, response, language);
+            assertEquals(200, result.getStatus());
+            assertEquals("Log in", ((Map<?, ?>) ((ResponseEntityView<?>) result.getEntity())
+                    .getEntity()).get("login"));
+
+            // The exemption belongs to this route, not WebResource or the global policy.
+            Assert.assertThrows(com.dotcms.rest.exception.SecurityException.class,
+                    () -> new WebResource.InitBuilder(webResource)
+                            .requestAndResponse(request, response)
+                            .requiredAnonAccess(AnonymousAccess.READ).init());
+            Assert.assertThrows(com.dotcms.rest.exception.SecurityException.class,
+                    () -> resource.deleteLanguage(request, response, "1"));
+            verify(languageAPI, never()).deleteLanguage(any(Language.class));
+        }
+    }
+
+    @Test
+    public void test_messages_stillRequireSslWhenConfigured() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final WebResource webResource = mock(WebResource.class, CALLS_REAL_METHODS);
+        final LanguagesResource resource = new LanguagesResource(mock(LanguageAPI.class),
+                mock(LanguageVariableAPI.class), webResource);
+
+        try (MockedStatic<Config> config = mockStatic(Config.class)) {
+            config.when(() -> Config.getBooleanProperty("FORCE_SSL_ON_RESP_API", false))
+                    .thenReturn(true);
+            final com.dotcms.rest.exception.SecurityException denied = Assert.assertThrows(
+                    com.dotcms.rest.exception.SecurityException.class,
+                    () -> resource.getAllMessages(request, response, "default"));
+            assertEquals(Response.Status.FORBIDDEN.getStatusCode(), denied.getResponse().getStatus());
+        }
+    }
+
+    @Test
+    public void test_messages_doNotSuppressAuthenticationFailures() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final WebResource webResource = mock(WebResource.class);
+        final com.dotcms.rest.exception.SecurityException denied =
+                new com.dotcms.rest.exception.SecurityException("Invalid credentials",
+                        Response.Status.UNAUTHORIZED);
+        when(webResource.init(any(WebResource.InitBuilder.class))).thenThrow(denied);
+        final LanguagesResource resource = new LanguagesResource(mock(LanguageAPI.class),
+                mock(LanguageVariableAPI.class), webResource);
+
+        Assert.assertSame(denied, Assert.assertThrows(
+                com.dotcms.rest.exception.SecurityException.class,
+                () -> resource.getAllMessages(request, response, "default")));
+    }
 
     @Test
     public void list() throws DotSecurityException, DotDataException {

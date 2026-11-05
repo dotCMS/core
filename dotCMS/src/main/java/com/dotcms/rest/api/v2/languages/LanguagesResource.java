@@ -5,7 +5,6 @@ import com.dotcms.languagevariable.business.LanguageVariable;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.rendering.velocity.viewtools.util.ConversionUtils;
 import com.google.common.annotations.VisibleForTesting;
-import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.MessageEntity;
 import com.dotcms.rest.ResponseEntityView;
@@ -457,8 +456,10 @@ public class LanguagesResource {
             @Context final HttpServletResponse response,
             @PathParam("language") final String language) throws DotDataException {
 
-        final InitDataObject initData = new WebResource.InitBuilder(request, response)
-                .requiredAnonAccess(AnonymousAccess.READ)
+        // The login screen needs message bundles before a user can authenticate.
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .authCheckOptions(WebResource.AuthCheckOptions.SKIP_CHECK_ANONYMOUS_PERMISSIONS)
                 .rejectWhenNoUser(false).init();
 
         final User user = initData.getUser();
