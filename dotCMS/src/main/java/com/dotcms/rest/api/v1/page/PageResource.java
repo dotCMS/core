@@ -86,6 +86,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.StalePageSaveException;
+import com.dotmarketing.factories.PageTreeReadFilter;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.exception.ExceptionUtil;
@@ -1357,7 +1358,8 @@ public class PageResource {
 
     /**
      * Returns the tree associated to the page. The caller must be a back-end user with READ
-     * permission on the page.
+     * permission on the page. Only rows whose contentlet the caller can read are returned; see
+     * {@link PageTreeReadFilter}.
      *
      * @param request  the current request
      * @param response the current response
@@ -1371,10 +1373,12 @@ public class PageResource {
             summary = "Get the multi-tree content structure of a page",
             description = "Returns the multi-tree data associated with a page, which represents the mapping "
                     + "between containers, contentlets, and their positions on the page. Each entry includes "
-                    + "the page ID, container ID, contentlet ID, relation type, tree order, personalization, and variant ID."
+                    + "the page ID, container ID, contentlet ID, relation type, tree order, personalization, and variant ID. "
+                    + "Only entries whose contentlet the user can read are returned; entries whose contentlet "
+                    + "cannot be loaded are returned to CMS administrators only."
     )
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Content tree retrieved successfully",
+            @ApiResponse(responseCode = "200", description = "Content tree retrieved successfully, limited to the entries the user can read",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityMulitreeView.class))),
             @ApiResponse(responseCode = "401", description = "Authentication required, or the user is not a back-end user"),
@@ -1396,7 +1400,8 @@ public class PageResource {
 
         Logger.debug(this, ()-> "Getting multitree per page: " + pageId);
 
-        final List<MultiTree> multiTrees = APILocator.getMultiTreeAPI().getMultiTrees(pageId);
+        final List<MultiTree> multiTrees = new PageTreeReadFilter(user).filter(
+                APILocator.getMultiTreeAPI().getMultiTrees(pageId));
 
         final List<MulitreeView> mulitreeViews = null != multiTrees? multiTrees.stream().map(multiTree ->
                 new MulitreeView(multiTree.getHtmlPage(), multiTree.getContainer(),
@@ -1424,7 +1429,7 @@ public class PageResource {
             summary = "Get personalized personas for a page",
             description = "Returns a paginated list of personas with a flag indicating whether each persona has been "
                     + "customized (personalized) on the specified page. Useful for identifying which personas have "
-                    + "page-specific content variations."
+                    + "page-specific content variations. Only content the user can read counts towards the flag."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Personas with personalization flags retrieved successfully",

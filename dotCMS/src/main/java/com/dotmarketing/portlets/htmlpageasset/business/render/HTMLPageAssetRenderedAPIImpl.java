@@ -24,6 +24,7 @@ import com.dotmarketing.cms.urlmap.UrlMapContextBuilder;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.PageTreeReadFilter;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -292,13 +293,27 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         }
     }
 
+    /**
+     * Builds the view-as status of the page for the request. The page counts as personalized for
+     * the current persona only when the user can read some of the content placed for that persona,
+     * with front-end roles counting as they do when the page is rendered in that mode (see
+     * {@link PageTreeReadFilter}).
+     *
+     * @param request  the current request, holding the visitor and its persona
+     * @param pageMode the mode the page is rendered in
+     * @param htmlpage the page
+     * @param user     the user the page is rendered for
+     * @return the visitor, language, device, mode, personalization and variant of the request
+     * @throws DotDataException if the page tree or the permissions of its content cannot be loaded
+     */
     @Override
     public ViewAsPageStatus getViewAsStatus(final HttpServletRequest request,
             final PageMode pageMode, final HTMLPageAsset htmlpage, final User user)
             throws DotDataException {
         final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
-        final Set<String> pagePersonalizationSet  = APILocator.getMultiTreeAPI()
-                .getPersonalizationsForPage(htmlpage, currentVariantId);
+        final Set<String> pagePersonalizationSet = new PageTreeReadFilter(user, pageMode.respectAnonPerms).readablePersonalizations(
+                Try.of(() -> APILocator.getMultiTreeAPI().getPageMultiTrees(htmlpage, currentVariantId, false))
+                        .getOrElseThrow(e -> new DotRuntimeException(e)));
         final IPersona persona     = this.getCurrentPersona(request);
         final boolean personalized = this.isPersonalized(persona, pagePersonalizationSet);
         final Contentlet device = APILocator.getDeviceAPI().getCurrentDevice(request, user)

@@ -14675,7 +14675,9 @@ paths:
       description: "Returns the multi-tree data associated with a page, which represents\
         \ the mapping between containers, contentlets, and their positions on the\
         \ page. Each entry includes the page ID, container ID, contentlet ID, relation\
-        \ type, tree order, personalization, and variant ID."
+        \ type, tree order, personalization, and variant ID. Only entries whose contentlet\
+        \ the user can read are returned; entries whose contentlet cannot be loaded\
+        \ are returned to CMS administrators only."
       operationId: getPageContentTree
       parameters:
       - description: Identifier of the HTML Page
@@ -14690,7 +14692,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityMulitreeView"
-          description: Content tree retrieved successfully
+          description: "Content tree retrieved successfully, limited to the entries\
+            \ the user can read"
         "401":
           description: "Authentication required, or the user is not a back-end user"
         "404":
@@ -14778,7 +14781,8 @@ paths:
     get:
       description: Returns a paginated list of personas with a flag indicating whether
         each persona has been customized (personalized) on the specified page. Useful
-        for identifying which personas have page-specific content variations.
+        for identifying which personas have page-specific content variations. Only
+        content the user can read counts towards the flag.
       operationId: getPersonalizedPersonasOnPage
       parameters:
       - description: Filter text to narrow persona results

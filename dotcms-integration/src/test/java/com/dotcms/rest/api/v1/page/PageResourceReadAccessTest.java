@@ -11,12 +11,14 @@ import static org.mockito.Mockito.when;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.PermissionUtilTest;
+import com.dotcms.datagen.PersonaDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -25,20 +27,26 @@ import com.dotcms.rest.api.v1.personalization.PersonalizationPersonaPageView;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.pagination.OrderDirection;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import org.junit.AfterClass;
@@ -47,7 +55,7 @@ import org.junit.Test;
 
 /**
  * Integration tests for the page READ requirement on the page content tree and page personas
- * endpoints of {@link PageResource}.
+ * endpoints of {@link PageResource}, and for the personalized flag of the page view-as status.
  */
 public class PageResourceReadAccessTest {
 
@@ -57,6 +65,15 @@ public class PageResourceReadAccessTest {
     private static HTMLPageAsset archivedPage;
     private static HTMLPageAsset anonymousReadablePage;
     private static Contentlet content;
+    private static HTMLPageAsset mixedPage;
+    private static Contentlet unreadableContent;
+    private static Contentlet anonymousOnlyContent;
+    private static Contentlet archivedContent;
+    private static String missingContentId;
+    private static HTMLPageAsset personaPage;
+    private static Persona personaWithReadableContent;
+    private static Persona personaWithoutReadableContent;
+    private static Persona personaWithPublicContent;
     private static User userWithoutAccess;
     private static User reader;
     private static User frontEndUser;
@@ -79,6 +96,7 @@ public class PageResourceReadAccessTest {
         userWithoutAccess = newBackendUser();
         reader = newBackendUser();
         PageRenderTestUtil.grantPageReadOnSite(site, reader);
+        grantRead(content, reader);
 
         final PageRenderTestUtil.PageRenderTest published = PageRenderTestUtil.createPage(1, site, true);
         publishedPage = published.getPage();
@@ -98,6 +116,67 @@ public class PageResourceReadAccessTest {
 
         frontEndUser = new UserDataGen().roles(APILocator.getRoleAPI().loadFrontEndUserRole()).nextPersisted();
         createdUsers.add(frontEndUser);
+
+        prepareMixedPage(webPageContent);
+        preparePersonaPage();
+    }
+
+    /**
+     * Builds a page personalized for three personas: one holds content the reader can read, one
+     * only content the reader has no READ on, and one only content readable through the anonymous
+     * role.
+     */
+    private static void preparePersonaPage() throws Exception {
+        final PageRenderTestUtil.PageRenderTest personalized = PageRenderTestUtil.createPage(1, site, true);
+        personaPage = personalized.getPage();
+        final String containerId = personalized.getFirstContainer().getIdentifier();
+
+        personaWithReadableContent = newPersona("readable");
+        personaWithoutReadableContent = newPersona("unreadable");
+        personaWithPublicContent = newPersona("public");
+
+        saveRow(personaPage, containerId, content.getIdentifier(), 0, personaTag(personaWithReadableContent),
+                VariantAPI.DEFAULT_VARIANT.name());
+        saveRow(personaPage, containerId, unreadableContent.getIdentifier(), 1,
+                personaTag(personaWithoutReadableContent), VariantAPI.DEFAULT_VARIANT.name());
+        saveRow(personaPage, containerId, anonymousOnlyContent.getIdentifier(), 2,
+                personaTag(personaWithPublicContent), VariantAPI.DEFAULT_VARIANT.name());
+    }
+
+    /**
+     * Builds a page whose tree holds content the reader can read and content the reader cannot
+     * read, each in its own row.
+     */
+    private static void prepareMixedPage(final ContentType webPageContent) throws Exception {
+        final PageRenderTestUtil.PageRenderTest mixed = PageRenderTestUtil.createPage(1, site, true);
+        mixedPage = mixed.getPage();
+        final String containerId = mixed.getFirstContainer().getIdentifier();
+
+        unreadableContent = newContent(webPageContent);
+        anonymousOnlyContent = newContent(webPageContent);
+        breakInheritance(anonymousOnlyContent);
+        PermissionUtilTest.addAnonymousUser(anonymousOnlyContent);
+        ContentletDataGen.publish(anonymousOnlyContent);
+
+        archivedContent = newContent(webPageContent);
+        grantRead(archivedContent, reader);
+        APILocator.getContentletAPI().archive(archivedContent, APILocator.systemUser(), false);
+
+        missingContentId = UUIDGenerator.generateUuid();
+
+        int order = 0;
+        saveRow(mixedPage, containerId, content.getIdentifier(), order++, MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                VariantAPI.DEFAULT_VARIANT.name());
+        saveRow(mixedPage, containerId, unreadableContent.getIdentifier(), order++,
+                MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name());
+        saveRow(mixedPage, containerId, unreadableContent.getIdentifier(), order++, "dot:somepersona",
+                VariantAPI.DEFAULT_VARIANT.name());
+        saveRow(mixedPage, containerId, anonymousOnlyContent.getIdentifier(), order++,
+                MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name());
+        saveRow(mixedPage, containerId, archivedContent.getIdentifier(), order++,
+                MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name());
+        saveRow(mixedPage, containerId, missingContentId, order,
+                MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name());
     }
 
     @AfterClass
@@ -288,6 +367,137 @@ public class PageResourceReadAccessTest {
                 site.getIdentifier(), publishedPage.getIdentifier(), false));
     }
 
+    /**
+     * Given a page holding content the reader has READ on and content the reader has no READ on,
+     * the latter placed twice (default and persona-specific rows),
+     * When the reader requests the page content tree,
+     * Then only rows for content the reader can read are returned.
+     */
+    @Test
+    public void contentTree_omitsRowsForContentWithoutRead() throws Exception {
+        final List<String> contentIds = mixedTreeContentIds(reader);
+
+        assertTrue("Readable content should be listed", contentIds.contains(content.getIdentifier()));
+        assertFalse("Content without READ for the user should not be listed",
+                contentIds.contains(unreadableContent.getIdentifier()));
+    }
+
+    /**
+     * Given a tree row whose content identifier matches no content,
+     * When a non-admin reader requests the page content tree,
+     * Then that row is not returned.
+     */
+    @Test
+    public void contentTree_omitsRowsWithoutLoadableContent_forNonAdmin() throws Exception {
+        assertFalse("A row whose content cannot be loaded should not be listed",
+                mixedTreeContentIds(reader).contains(missingContentId));
+    }
+
+    /**
+     * Given the same page,
+     * When a CMS administrator requests the page content tree,
+     * Then every row is returned, including rows whose content cannot be loaded.
+     */
+    @Test
+    public void contentTree_returnsEveryRow_forAdmin() throws Exception {
+        final List<String> contentIds = mixedTreeContentIds(TestUserUtils.getAdminUser());
+
+        assertEquals(APILocator.getMultiTreeAPI().getMultiTrees(mixedPage.getIdentifier()).size(),
+                contentIds.size());
+        assertTrue(contentIds.contains(unreadableContent.getIdentifier()));
+        assertTrue(contentIds.contains(missingContentId));
+    }
+
+    /**
+     * Given content readable only through the anonymous role,
+     * When a back-end reader without permission of their own requests the page content tree,
+     * Then that row is not returned: front-end roles do not count, as for the page itself.
+     */
+    @Test
+    public void contentTree_omitsRowsReadableOnlyThroughAnonymousRole() throws Exception {
+        assertTrue("Precondition: the anonymous role can read the content",
+                APILocator.getPermissionAPI().doesUserHavePermission(anonymousOnlyContent,
+                        PermissionAPI.PERMISSION_READ, APILocator.getUserAPI().getAnonymousUser(), true));
+
+        assertFalse(mixedTreeContentIds(reader).contains(anonymousOnlyContent.getIdentifier()));
+    }
+
+    /**
+     * Given archived content the reader can read,
+     * When the reader requests the page content tree,
+     * Then its row is returned.
+     */
+    @Test
+    public void contentTree_keepsRowsForArchivedContentWithRead() throws Exception {
+        assertTrue(mixedTreeContentIds(reader).contains(archivedContent.getIdentifier()));
+    }
+
+
+    /**
+     * Given a page personalized for one persona with content the reader can read, and for another
+     * persona with content the reader has no READ on,
+     * When the reader requests the page personas,
+     * Then only the first persona is flagged as personalized.
+     */
+    @Test
+    public void personasOnPage_flagsOnlyPersonasWithReadableContent() throws Exception {
+        final Response response = requestPersonas(resourceFor(reader), personaPage.getIdentifier());
+
+        assertEquals(Boolean.TRUE, personalizedFlag(response, personaWithReadableContent));
+        assertEquals(Boolean.FALSE, personalizedFlag(response, personaWithoutReadableContent));
+    }
+
+    /**
+     * Given the same page,
+     * When a CMS administrator requests the page personas,
+     * Then both personas are flagged as personalized.
+     */
+    @Test
+    public void personasOnPage_flagsEveryPersonalizedPersona_forAdmin() throws Exception {
+        final Response response = requestPersonas(resourceFor(TestUserUtils.getAdminUser()),
+                personaPage.getIdentifier());
+
+        assertEquals(Boolean.TRUE, personalizedFlag(response, personaWithReadableContent));
+        assertEquals(Boolean.TRUE, personalizedFlag(response, personaWithoutReadableContent));
+    }
+
+    /**
+     * Given the same page,
+     * When the reader renders it as each persona,
+     * Then the view-as status is personalized only for the persona with content the reader can read.
+     */
+    @Test
+    public void viewAsStatus_personalizedOnlyForPersonaWithReadableContent() throws Exception {
+        assertTrue(viewAsPersonalized(reader, personaWithReadableContent, PageMode.PREVIEW_MODE));
+        assertFalse("Content without READ for the user should not mark the persona as personalized",
+                viewAsPersonalized(reader, personaWithoutReadableContent, PageMode.PREVIEW_MODE));
+    }
+
+    /**
+     * Given the same page,
+     * When a CMS administrator renders it as each persona,
+     * Then the view-as status is personalized for both.
+     */
+    @Test
+    public void viewAsStatus_personalizedForEveryPersona_forAdmin() throws Exception {
+        final User admin = TestUserUtils.getAdminUser();
+
+        assertTrue(viewAsPersonalized(admin, personaWithReadableContent, PageMode.PREVIEW_MODE));
+        assertTrue(viewAsPersonalized(admin, personaWithoutReadableContent, PageMode.PREVIEW_MODE));
+    }
+
+    /**
+     * Given the same page, also personalized for a persona whose content only the anonymous role
+     * can read,
+     * When it is rendered in LIVE mode for the anonymous user as that persona,
+     * Then the view-as status is personalized, since front-end roles count in that mode.
+     */
+    @Test
+    public void viewAsStatus_countsFrontEndRolesInLiveMode() throws Exception {
+        assertTrue(viewAsPersonalized(APILocator.getUserAPI().getAnonymousUser(), personaWithPublicContent,
+                PageMode.LIVE));
+    }
+
     private static Response requestPersonas(final PageResource resource, final String pageId) throws Exception {
         return requestPersonas(resource, pageId, false);
     }
@@ -356,6 +566,76 @@ public class PageResourceReadAccessTest {
     private static void addTreeRow(final HTMLPageAsset page, final String containerId) throws Exception {
         APILocator.getMultiTreeAPI().saveMultiTree(new MultiTree(page.getIdentifier(), containerId,
                 content.getIdentifier(), UUIDGenerator.generateUuid(), 1));
+    }
+
+    private static List<String> mixedTreeContentIds(final User user) throws Exception {
+        return resourceFor(user).getContentTree(mockRequest(), new EmptyHttpResponse(), mixedPage.getIdentifier())
+                .getEntity().stream().map(MulitreeView::getContentId).collect(Collectors.toList());
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Object personalizedFlag(final Response response, final Persona persona) {
+        final List<PersonalizationPersonaPageView> personas =
+                (List<PersonalizationPersonaPageView>) ((ResponseEntityView<?>) response.getEntity()).getEntity();
+        return personas.stream()
+                .filter(view -> persona.getIdentifier().equals(view.getPersona().get("identifier")))
+                .findFirst()
+                .map(view -> view.getPersona().get("personalized"))
+                .orElseThrow(() -> new AssertionError("The persona should be listed"));
+    }
+
+    private static boolean viewAsPersonalized(final User user, final Persona persona, final PageMode mode)
+            throws Exception {
+        final HttpServletRequest request = new MockSessionRequest(new MockAttributeRequest(
+                new MockHttpRequestIntegrationTest("localhost", "/").request()).request()).request();
+        final Visitor visitor = new Visitor();
+        visitor.setPersona(persona);
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.VISITOR, visitor);
+        return APILocator.getHTMLPageAssetRenderedAPI()
+                .getViewAsStatus(request, mode, personaPage, user).isPersonalized();
+    }
+
+    private static Persona newPersona(final String name) throws Exception {
+        final Persona persona = new PersonaDataGen()
+                .host(site)
+                .keyTag(name + System.currentTimeMillis())
+                .nextPersisted();
+        grantRead(persona, reader);
+        ContentletDataGen.publish(persona);
+        return persona;
+    }
+
+    private static String personaTag(final Persona persona) {
+        return Persona.DOT_PERSONA_PREFIX_SCHEME + ":" + persona.getKeyTag();
+    }
+
+    private static Contentlet newContent(final ContentType contentType) {
+        return new ContentletDataGen(contentType.id())
+                .languageId(1)
+                .host(site)
+                .setProperty("title", "content")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .nextPersisted();
+    }
+
+    private static void grantRead(final Contentlet contentlet, final User user) throws Exception {
+        breakInheritance(contentlet);
+        PermissionUtilTest.addPermission(contentlet, user, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ);
+    }
+
+    private static void breakInheritance(final Contentlet contentlet) throws Exception {
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        if (permissionAPI.isInheritingPermissions(contentlet)) {
+            permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(contentlet), contentlet,
+                    APILocator.systemUser());
+        }
+    }
+
+    private static void saveRow(final HTMLPageAsset page, final String containerId, final String contentId,
+            final int order, final String personalization, final String variantName) throws Exception {
+        APILocator.getMultiTreeAPI().saveMultiTree(new MultiTree(page.getIdentifier(), containerId, contentId,
+                UUIDGenerator.generateUuid(), order, personalization, variantName, null));
     }
 
     private static User newBackendUser() throws Exception {
