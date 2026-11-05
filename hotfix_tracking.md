@@ -92,3 +92,4 @@ Release-25.07.10 LTS
 86. https://github.com/dotCMS/private-issues/issues/735 : Missing authorization, push-publishing endpoint reads (EndpointResource) #38286 #735
 87. https://github.com/dotCMS/private-issues/issues/733 : Stored XSS, template title htmlTitle (TemplateResource / TemplateHelper) #38146 #733
 88. https://github.com/dotCMS/private-issues/issues/703 : SSTI: file-convention endpoints /api/vtl/{folder} & /api/js/{folder} skip the Scripting Developer role check #38350 #703
+89. https://github.com/dotCMS/private-issues/issues/888 : Struts PublishContainersAction and PublishLinksAction: any back-end user publishes any container or menu link  #38362 #888

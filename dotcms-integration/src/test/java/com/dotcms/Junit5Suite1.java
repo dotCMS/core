@@ -18,7 +18,10 @@ import org.junit.platform.suite.api.Suite;
         JobQueueHelperIntegrationTest.class,
         ImportContentletsProcessorIntegrationTest.class,
         ContentImportResourceIntegrationTest.class,
-        JobProcessorDiscoveryTest.class
+        JobProcessorDiscoveryTest.class,
+    com.dotmarketing.factories.PublishAssetPermissionIT.class,
+    com.dotmarketing.portlets.links.action.PublishLinksActionIT.class,
+    com.dotmarketing.portal.struts.PublishWebAssetActionIT.class
 })
 public class Junit5Suite1 {
 
