@@ -1023,6 +1023,17 @@ public  class WebResource {
             return this;
         }
 
+        /**
+         * Returns the role keys the caller must hold for this request to be accepted, such as the
+         * back-end user role added by {@link #requiredBackendUser(boolean)}.
+         *
+         * @return a read-only view of the required role keys
+         */
+        @VisibleForTesting
+        public Set<String> getRequiredRoles() {
+            return java.util.Collections.unmodifiableSet(requiredRolesSet);
+        }
+
         public InitBuilder requireLicense(final boolean requireLicense){
             this.requireLicense = requireLicense;
             return this;

@@ -114,3 +114,4 @@ Release-25.07.10 LTS
 108. https://github.com/dotCMS/private-issues/issues/688 : Cross-user role disclosure (broken object-level authorization) #38311 #688
 109. https://github.com/dotCMS/private-issues/issues/960 : 2026 Pentest (Federal Home Loan Bank of Dallas): M5 Session remains valid after logout (session replay) #38265 #960
 110. https://github.com/dotCMS/private-issues/issues/1025 : PUT /api/v1/users stores a new password unhashed and skips the password policy #38288 #1025
+111. https://github.com/dotCMS/private-issues/issues/984 : Page content-tree and personas REST endpoints have no page-READ check (any authenticated session gets a page's structure #38248 #984
