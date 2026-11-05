@@ -142,8 +142,8 @@ class ClusterLogCollectorPeerRequestTest {
     }
 
     /**
-     * Saves the global state the tests change and sets short timeouts with no scheme, port or
-     * certificate verification configured.
+     * Saves the global state the tests change and sets short timeouts with no scheme or port
+     * configured.
      */
     @BeforeEach
     void setUp() throws Exception {
@@ -279,6 +279,46 @@ class ClusterLogCollectorPeerRequestTest {
         assertEquals(9443, ClusterLogCollector.resolvePeerPort("http", 1234, notes),
                 "Configured HTTP peer port");
         assertTrue(notes.isEmpty(), "A valid port should add no note: " + notes);
+    }
+
+    /**
+     * Port values at the ends of the valid range, or with surrounding spaces, are used as given
+     * and add no note.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"1", "65535", " 9443 "})
+    void resolvePeerPort_validValue_isUsedWithoutNote(final String portValue) {
+        Config.setProperty(PORT_KEY, portValue);
+
+        assertEquals(Integer.parseInt(portValue.trim()),
+                ClusterLogCollector.resolvePeerPort("https", 1234, notes), "Configured peer port");
+        assertTrue(notes.isEmpty(), "A valid port should add no note: " + notes);
+    }
+
+    /**
+     * Under HTTPS, a port value outside the valid range gives dotCMS's default HTTPS port, and the
+     * note names the setting, the configured value and the port used.
+     */
+    @Test
+    void resolvePeerPort_https_valueAboveRange_usesDefaultAndAddsNote() {
+        Config.setProperty(PORT_KEY, "65536");
+
+        assertEquals(8443, ClusterLogCollector.resolvePeerPort("https", 1234, notes), "Default HTTPS peer port");
+        assertEquals(1, notes.size(), "Expected one note: " + notes);
+        assertTrue(notes.get(0).contains(PORT_KEY), "Note should name " + PORT_KEY + ": " + notes);
+        assertTrue(notes.get(0).contains("65536"), "Note should give the configured value: " + notes);
+        assertTrue(notes.get(0).contains("8443"), "Note should give the port used: " + notes);
+    }
+
+    /**
+     * An empty port value counts as not set: the default port is used and no note is added.
+     */
+    @Test
+    void resolvePeerPort_emptyValue_usesDefaultWithoutNote() {
+        Config.setProperty(PORT_KEY, "");
+
+        assertEquals(8443, ClusterLogCollector.resolvePeerPort("https", 1234, notes), "Default HTTPS peer port");
+        assertTrue(notes.isEmpty(), "An empty value should add no note: " + notes);
     }
 
     /**
@@ -421,6 +461,7 @@ class ClusterLogCollectorPeerRequestTest {
         assertTrue(zip.containsKey(ERRORS_ENTRY), "Expected " + ERRORS_ENTRY + " in " + zip.keySet());
         final String errors = zip.get(ERRORS_ENTRY);
         assertTrue(errors.contains("connect timed out"), "Error entry should give the reason: " + errors);
+        assertTrue(errors.contains(PORT_KEY), "Error entry should name " + PORT_KEY + ": " + errors);
         assertTrue(errors.contains(SCHEME_KEY), "Error entry should name " + SCHEME_KEY + ": " + errors);
     }
 

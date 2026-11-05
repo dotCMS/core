@@ -265,20 +265,21 @@ public class ClusterLogCollector {
 
         Logger.info(this, "Requesting log from peer server " + peer.serverId + ": " + url);
 
-        final HttpRequest request;
+        final HttpRequest.Builder requestBuilder;
         try {
-            request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
-                    .timeout(Duration.ofSeconds(readTimeout))
-                    .header("Authorization", "Bearer " + jwt)
-                    .GET()
-                    .build();
+            requestBuilder = HttpRequest.newBuilder().uri(URI.create(url));
         } catch (final IllegalArgumentException e) {
             Logger.warn(this, "Cannot build the request for peer server " + peer.serverId
-                    + ": " + e.getMessage());
+                    + " (" + url + "): " + e.getMessage());
             return CompletableFuture.completedFuture(
                     PeerResponse.failure("invalid peer address", false));
         }
+
+        final HttpRequest request = requestBuilder
+                .timeout(Duration.ofSeconds(readTimeout))
+                .header("Authorization", "Bearer " + jwt)
+                .GET()
+                .build();
 
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
                 .thenApply(resp -> {
