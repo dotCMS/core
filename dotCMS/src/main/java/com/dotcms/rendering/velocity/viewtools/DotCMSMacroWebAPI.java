@@ -406,26 +406,27 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		            if (maxRow > 0) {
 		                dc.setMaxRows(maxRow);
 		            }
-		            final boolean dotcmsDatabase;
-		            try {
-		                dotcmsDatabase = SQLResultsViewTool.isDotcmsDatabase(dataSource);
-		            } catch (final Exception e) {
-		                Logger.warn(this, "getSQLResults macro could not resolve its data source");
-		                HashMap<String, String> map = new HashMap<>();
-		                map.put("hasDotConnectSQLError", "true");
-		                map.put("dotConnectSQLError", "getSQLResults macro was called with an invalid data source name");
-		                errorResults.add(map);
-		                return errorResults;
-		            }
-		            if (dotcmsDatabase) {
-		            	if(!Config.getBooleanProperty(SQLResultsViewTool.ALLOW_DOTCMS_DB_ACCESS, false)){
-		            		Logger.error(this,"getSQLResults macro is trying to execute queries using the default connection pool. ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false");
-				            HashMap<String, String> map = new HashMap<>();
-				            map.put("hasDotConnectSQLError", "true");
-				            map.put("dotConnectSQLError", "getSQLResults macro is trying to execute queries using the default connection pool. ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false");
-				            errorResults.add(map);
-				            return new ArrayList<>();
-		            	}
+		            // The data source only needs to be checked when queries on the dotCMS database are not allowed.
+		            if (!Config.getBooleanProperty(SQLResultsViewTool.ALLOW_DOTCMS_DB_ACCESS, false)) {
+		                final boolean dotcmsDatabase;
+		                try {
+		                    dotcmsDatabase = SQLResultsViewTool.isDotcmsDatabase(dataSource);
+		                } catch (final Exception e) {
+		                    Logger.warn(this, "getSQLResults macro could not resolve its data source");
+		                    HashMap<String, String> map = new HashMap<>();
+		                    map.put("hasDotConnectSQLError", "true");
+		                    map.put("dotConnectSQLError", "getSQLResults macro was called with an invalid data source name");
+		                    errorResults.add(map);
+		                    return errorResults;
+		                }
+		                if (dotcmsDatabase) {
+		                    Logger.error(this,"getSQLResults macro is trying to execute queries using the default connection pool. ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false");
+		                    HashMap<String, String> map = new HashMap<>();
+		                    map.put("hasDotConnectSQLError", "true");
+		                    map.put("dotConnectSQLError", "getSQLResults macro is trying to execute queries using the default connection pool. ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false");
+		                    errorResults.add(map);
+		                    return errorResults;
+		                }
 		            }
 		            // Only "default" names the internal pool; any other name is queried through the data source it names.
 		            return SQLResultsViewTool.DEFAULT_DATASOURCE.equals(dataSource)

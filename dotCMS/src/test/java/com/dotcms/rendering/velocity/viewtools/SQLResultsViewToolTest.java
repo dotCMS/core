@@ -226,6 +226,20 @@ class SQLResultsViewToolTest {
     }
 
     @Test
+    void dataSourceIsNotCheckedWhenDotcmsDbAccessIsOn() throws Exception {
+        givenDotcmsDbAccess(true);
+        final DataSource down = unavailableDataSource();
+        jndi.when(() -> JNDIUtil.lookup(any(), eq("jdbc/down"))).thenReturn(down);
+
+        final List<HashMap<String, String>> result = tool.getSQLResults("jdbc/down", SQL, 0, 10);
+
+        assertFalse(firstError(result).contains(INVALID_DATA_SOURCE),
+                "With access to the dotCMS database allowed, the query must be attempted");
+        dbFactory.verify(() -> DbConnectionFactory.isDefaultDatabase(anyString()), never());
+        dbFactory.verify(() -> DbConnectionFactory.getConnection("jdbc/down"));
+    }
+
+    @Test
     void defaultNameUsesInternalConnectionWhenDotcmsDbAccessIsOn() throws SQLException {
         givenDotcmsDbAccess(true);
 

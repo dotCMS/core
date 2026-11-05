@@ -1,6 +1,8 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -139,6 +141,30 @@ class DotCMSMacroWebAPISQLResultsTest {
         assertEquals("getSQLResults macro was called with an invalid data source name",
                 result.get(0).get("dotConnectSQLError"));
         dbFactory.verify(() -> DbConnectionFactory.getConnection(anyString()), never());
+    }
+
+    @Test
+    void poolNameRefusalReturnsAnErrorRow() {
+        final List<HashMap<String, String>> result = macro.getSQLResults(POOL_NAME, SQL, 0, 10);
+
+        assertEquals(1, result.size(), "Expected one error row but got " + result);
+        assertEquals("true", result.get(0).get("hasDotConnectSQLError"));
+        assertTrue(result.get(0).get("dotConnectSQLError").contains(DOTCMS_DB_FLAG + " is set to false"));
+    }
+
+    @Test
+    void dataSourceIsNotCheckedWhenDotcmsDbAccessIsOn() throws SQLException {
+        config.when(() -> Config.getBooleanProperty(eq(DOTCMS_DB_FLAG), any(Boolean.class))).thenReturn(true);
+        final DataSource down = SQLResultsViewToolTest.unavailableDataSource();
+        jndi.when(() -> JNDIUtil.lookup(any(), eq("jdbc/down"))).thenReturn(down);
+
+        final List<HashMap<String, String>> result = macro.getSQLResults("jdbc/down", SQL, 0, 10);
+
+        assertFalse(String.valueOf(result.isEmpty() ? "" : result.get(0).get("dotConnectSQLError"))
+                        .contains("invalid data source name"),
+                "With access to the dotCMS database allowed, the query must be attempted");
+        dbFactory.verify(() -> DbConnectionFactory.isDefaultDatabase(anyString()), never());
+        dbFactory.verify(() -> DbConnectionFactory.getConnection("jdbc/down"));
     }
 
     @Test

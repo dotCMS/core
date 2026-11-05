@@ -141,18 +141,21 @@ public class SQLResultsViewTool implements ViewTool {
                 return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "Failed to call the SQLResultsViewTool" +
                         ". User failed to execute SQL queries.")));
             }
-            final boolean dotcmsDatabase;
-            try {
-                dotcmsDatabase = isDotcmsDatabase(dataSource);
-            } catch (final Exception e) {
-                return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "Failed to call the " +
-                        "SQLResultsViewTool. Invalid Data Source.")), "The data source could not be resolved: " +
-                        e.getClass().getSimpleName());
-            }
-            if (dotcmsDatabase && !Config.getBooleanProperty(ALLOW_DOTCMS_DB_ACCESS, false)) {
-                return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool failed to " +
-                        "execute query on default connection pool because ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB " +
-                        "is set to false.")), "ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false.");
+            // The data source only needs to be checked when queries on the dotCMS database are not allowed.
+            if (!Config.getBooleanProperty(ALLOW_DOTCMS_DB_ACCESS, false)) {
+                final boolean dotcmsDatabase;
+                try {
+                    dotcmsDatabase = isDotcmsDatabase(dataSource);
+                } catch (final Exception e) {
+                    return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "Failed to call the " +
+                            "SQLResultsViewTool. Invalid Data Source.")), "The data source could not be resolved: " +
+                            e.getClass().getSimpleName());
+                }
+                if (dotcmsDatabase) {
+                    return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool failed to " +
+                            "execute query on default connection pool because ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB " +
+                            "is set to false.")), "ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false.");
+                }
             }
             if (!isSQLValid(sql, contentlet)) {
                 return this.errorResults;
