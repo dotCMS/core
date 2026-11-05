@@ -60,11 +60,11 @@ public class BasicAuthenticationTest {
         try {
             sourceField.set(null, source);
             Config.enableSystemTableConfigSource = true;
-            for (final String value : new String[]{"true", "TRUE", "false", "invalid", "true,",
+            for (final String value : new String[]{"true", "TRUE", " true ", "false", "invalid", "true,",
                     "true,,", "true,false", ",true", ""}) {
                 when(source.getValue(FeatureFlagName.ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS))
                         .thenReturn(value);
-                assertEquals("System-table value: " + value, Boolean.parseBoolean(value),
+                assertEquals("System-table value: " + value, Boolean.parseBoolean(value.trim()),
                         BasicAuthentication.allowUrlCredentials());
             }
         } finally {

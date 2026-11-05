@@ -127,7 +127,11 @@ limitation out in the release notes.
 
 `ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS` defaults to `false`, including when the setting is
 absent. Username/password authentication through legacy URL path or query parameters is ignored;
-this also applies to API JWTs passed as the password. Without another valid authentication source,
+this also applies to API JWTs passed as the password. The opt-in uses
+`Config.getStrictBooleanProperty`: only an unambiguous `true` enables it. An invalid, empty or
+multi-valued setting at the winning environment, system-table or property-file source stays
+disabled rather than falling back to a lower-priority `true`. Other configuration getters retain
+their existing behavior. Without another valid authentication source,
 protected endpoints return their existing unauthorized response. Public endpoints retain their
 existing anonymous-access rules. Authorization headers, DOTAUTH headers, existing sessions and
 designated JSON/body login endpoints are unchanged.

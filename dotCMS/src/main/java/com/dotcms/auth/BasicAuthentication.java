@@ -9,7 +9,6 @@ import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import java.util.Locale;
 import java.util.Optional;
-import org.apache.commons.configuration.ConversionException;
 
 /** Shared policy for username/credential transports, independent of browser and Bearer login. */
 public final class BasicAuthentication {
@@ -42,12 +41,7 @@ public final class BasicAuthentication {
      * @return true only when URL credentials are enabled by configuration
      */
     public static boolean allowUrlCredentials() {
-        try {
-            // The scalar getter does not normalize comma-delimited system-table strings.
-            return Config.getBooleanProperty(FeatureFlagName.ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS, false);
-        } catch (ConversionException e) {
-            return false;
-        }
+        return Config.getStrictBooleanProperty(FeatureFlagName.ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS, false);
     }
 
     /**
