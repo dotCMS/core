@@ -5,6 +5,7 @@
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.liferay.util.Xss"%>
 <%@page import="com.dotmarketing.util.InodeUtils"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotmarketing.business.IdentifierFactory"%>
@@ -587,7 +588,7 @@
 	    function <%= relationJsName %>_addContentlet(structureInode) {
 
 	    	var myNode = (currentContentletInode==null || currentContentletInode=='') ? workingContentletInode : currentContentletInode;
-	    	var relationshipReturnValue = { inode: myNode, title: "<%=UtilMethods.escapeDoubleQuotes(contentTitle)%>" };
+	    	var relationshipReturnValue = { inode: myNode, title: "<%=Xss.encodeForJavaScript(contentTitle)%>" };
 	    	localStorage.setItem("dotcms.relationships.relationshipReturnValue",  JSON.stringify(relationshipReturnValue));
 	    	
 			var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
@@ -754,7 +755,7 @@
 			}
 			
             var myNode = (currentContentletInode==null || currentContentletInode=='') ? workingContentletInode : currentContentletInode;
-            var relationshipReturnValue = { inode: myNode, title: "<%=UtilMethods.escapeDoubleQuotes(contentTitle)%>" };
+            var relationshipReturnValue = { inode: myNode, title: "<%=Xss.encodeForJavaScript(contentTitle)%>" };
             localStorage.setItem("dotcms.relationships.relationshipReturnValue",  JSON.stringify(relationshipReturnValue));
             
 			var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";

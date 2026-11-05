@@ -43,6 +43,7 @@
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 <%@ page import="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" %>
 <%@ page import="com.dotmarketing.util.ConfigUtils" %>
+<%@ page import="com.liferay.util.Xss" %>
 
 
 <%
@@ -837,14 +838,14 @@
                         try {
                             fieldData = {
                                 ...(<%=jsonField%>),
-                                hint: '<%=hint%>',
+                                hint: '<%=Xss.encodeForJavaScript(hint)%>',
                                 variable,
                                 fieldVariables: <%=fieldVariablesContent%>
                             }
                         } catch (error) {
                             fieldData = {
                                  ...(<%=jsonField%>),
-                                 hint: '<%=hint%>',
+                                 hint: '<%=Xss.encodeForJavaScript(hint)%>',
                                  variable
                             }
                             console.warn('Error parsing the field variables', error);
@@ -1616,11 +1617,11 @@
 
             // Escape chars and set value to hidden input
             var dotKeyValueHiddenIput = document.getElementById('<%=field.getVelocityVarName()%>');
-            dotKeyValueHiddenIput.value = formatToJsonData(escapeQuoteAndBackSlash("<%=keyValueDataRaw%>"));
+            dotKeyValueHiddenIput.value = formatToJsonData(escapeQuoteAndBackSlash("<%=Xss.encodeForJavaScript(keyValueDataRaw.toString())%>"));
 
             var dotKeyValue = document.querySelector('#<%=field.getVelocityVarName()%>KeyValue');
             dotKeyValue.uniqueKeys = "true";
-            dotKeyValue.value = "<%=dotKeyValueDataRaw.toString()%>";
+            dotKeyValue.value = "<%=Xss.encodeForJavaScript(dotKeyValueDataRaw.toString())%>";
             dotKeyValue.disabled = '<%=field.isReadOnly()%>';
             dotKeyValue.whiteList = '<%=whiteListKeyValues%>';
             dotKeyValue.formKeyLabel = '<%= LanguageUtil.get(pageContext, "Key") %>'

@@ -748,4 +748,100 @@ public class UtilMethodsTest extends UnitTestBase {
 			assertNull("Should reject: " + path, UtilMethods.cleanFileSystemPathURI(path));
 		}
 	}
+
+	/**
+	 * Method to test: {@link UtilMethods#javaScriptify(String)}
+	 * When: the value is null or empty
+	 * Should: return an empty string
+	 */
+	@Test
+	public void javaScriptify_returnsEmptyForNull() {
+		assertEquals("", UtilMethods.javaScriptify(null));
+		assertEquals("", UtilMethods.javaScriptify(""));
+	}
+
+	/**
+	 * Method to test: {@link UtilMethods#javaScriptify(String)}
+	 * When: the value holds only letters, digits, spaces and ordinary punctuation
+	 * Should: return it unchanged
+	 */
+	@Test
+	public void javaScriptify_keepsPlainText() {
+		final String plain = "Hello World 123, (brackets) and [more] - ok.";
+		assertEquals(plain, UtilMethods.javaScriptify(plain));
+	}
+
+	/**
+	 * Method to test: {@link UtilMethods#javaScriptify(String)}
+	 * When: the value contains single quotes
+	 * Should: prefix each one with a backslash
+	 */
+	@Test
+	public void javaScriptify_prefixesSingleQuotes() {
+		assertEquals("it\\'s", UtilMethods.javaScriptify("it's"));
+	}
+
+	/**
+	 * Method to test: {@link UtilMethods#javaScriptify(String)}
+	 * When: the value contains double quotes
+	 * Should: prefix each one with a backslash
+	 */
+	@Test
+	public void javaScriptify_prefixesDoubleQuotes() {
+		assertEquals("say \\\"hi\\\"", UtilMethods.javaScriptify("say \"hi\""));
+	}
+
+	/**
+	 * Method to test: {@link UtilMethods#javaScriptify(String)}
+	 * When: the value contains backslashes
+	 * Should: double each one, so the literal keeps the same text
+	 */
+	@Test
+	public void javaScriptify_doublesBackslashes() {
+		assertEquals("a\\\\b", UtilMethods.javaScriptify("a\\b"));
+		assertEquals("end\\\\", UtilMethods.javaScriptify("end\\"));
+	}
+
+	/**
+	 * Method to test: {@link UtilMethods#javaScriptify(String)}
+	 * When: a backslash is followed by a quote
+	 * Should: double the backslash first and then prefix the quote, so neither undoes the other
+	 */
+	@Test
+	public void javaScriptify_doublesBackslashBeforeQuote() {
+		assertEquals("\\\\\\'", UtilMethods.javaScriptify("\\'"));
+		assertEquals("\\\\\\\"", UtilMethods.javaScriptify("\\\""));
+	}
+
+	/**
+	 * Method to test: {@link UtilMethods#javaScriptify(String)}
+	 * When: the value contains carriage returns or line feeds
+	 * Should: write them as the two-character sequences a literal accepts
+	 */
+	@Test
+	public void javaScriptify_writesLineBreaksAsSequences() {
+		assertEquals("one\\r\\ntwo", UtilMethods.javaScriptify("one\r\ntwo"));
+	}
+
+	/**
+	 * Method to test: {@link UtilMethods#javaScriptify(String)}
+	 * When: the value contains a closing tag, or a slash on its own
+	 * Should: write the slash of the closing tag with a backslash and leave any other slash alone
+	 */
+	@Test
+	public void javaScriptify_prefixesSlashOfClosingTags() {
+		assertEquals("<\\/p>", UtilMethods.javaScriptify("</p>"));
+		assertEquals("a/b", UtilMethods.javaScriptify("a/b"));
+		assertEquals("x - y & z", UtilMethods.javaScriptify("x - y & z"));
+	}
+
+	/**
+	 * Method to test: {@link UtilMethods#javaScriptify(String)}
+	 * When: the value mixes single and double quotes in ordinary text
+	 * Should: prefix each quote and keep the rest of the text intact
+	 */
+	@Test
+	public void javaScriptify_prefixesMixedQuotes() {
+		assertEquals("It\\'s a \\\"quoted\\\" word", UtilMethods.javaScriptify("It's a \"quoted\" word"));
+	}
 }

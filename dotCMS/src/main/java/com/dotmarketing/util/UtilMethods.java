@@ -1385,13 +1385,28 @@ public class UtilMethods {
         }
     }
 
-    public static String javaScriptify(String x) {
+    /**
+     * Prepares a value to be written between the quotes of a JavaScript string literal inside a
+     * script block, so the literal evaluates to the same text.
+     * <p>
+     * Backslashes are doubled first, then single and double quotes, carriage returns and line
+     * feeds get their two-character sequences, and the sequence {@code </} is written as
+     * {@code <\/} so the script element is not closed by the value. Every other character,
+     * including {@code -}, {@code &} and a slash on its own, is returned as is.
+     *
+     * @param x the value to write into the literal; {@code null} yields an empty string
+     * @return the value with the characters above prefixed or doubled as described
+     */
+    public static String javaScriptify(final String x) {
         if (x == null) {
             return "";
-        } else {
-            x = x.replaceAll("'", "\\\\'" ).replaceAll("\r", "\\\\r").replaceAll("\n", "\\\\n").replaceAll("\"", "\\\\\"");
-            return x;
         }
+        return x.replace("\\", "\\\\")
+                .replace("'", "\\'")
+                .replace("\"", "\\\"")
+                .replace("\r", "\\r")
+                .replace("\n", "\\n")
+                .replace("</", "<\\/");
     }
 
 
