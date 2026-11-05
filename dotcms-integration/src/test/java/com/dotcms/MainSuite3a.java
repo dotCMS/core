@@ -132,11 +132,13 @@ import org.junit.runners.Suite;
         PublisherQueueJobTest.class,
         ContentToStringUtilTest.class,
         CacheResourceIntegrationTest.class,
+    com.dotmarketing.portlets.contentlet.action.ImportContentletsActionTest.class,
         InodeExistenceCheckIntegrationTest.class,
         SecretsStoreWipeRegressionTest.class,
         SecretsStoreConcurrentWriteRaceTest.class,
     com.dotcms.rest.api.v1.system.role.RoleResourceCheckRolesIntegrationTest.class,
         RoleResourceIntegrationTest.class,
+    com.dotmarketing.portlets.workflows.action.EditWorkflowTaskActionTest.class,
         FileAssetContainerPermissionInheritanceTest.class,
 
         // System event delivery in a cluster (issue #36827). The migration runs first so the

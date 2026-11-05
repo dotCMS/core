@@ -36,10 +36,13 @@ import org.junit.Test;
  *
  * <p><b>What these tests do not cover.</b> They exercise the decision, not the wiring: nothing
  * here drives {@link ImportContentletsAction#processAction}, so deleting the two
- * {@code _checkImportAccess} call sites would leave every test below passing. The same goes for
- * the ordering fix — that the upload is copied only at the two {@code _generatePreview} call
- * sites, after every rejection path — and for the publish branch reading the Content Type from
- * the session form rather than the request form. Those are covered by manual QA, not here.</p>
+ * {@code _checkImportAccess} call sites would leave every test below passing.
+ * {@link ImportContentletsActionTest} is the other half — it drives the action on the
+ * {@code publish} command and covers the gate being asked at all, the Content Type coming from
+ * the session form rather than the request form, and the refusal message being encoded. What
+ * neither class reaches is the ordering fix on {@code preview}, that the upload is copied only at
+ * the two {@code _generatePreview} call sites and below every rejection path: that one needs a
+ * real multipart request and is left to manual QA.</p>
  */
 public class ContentImportAccessTest {
 

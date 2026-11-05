@@ -37,12 +37,10 @@ import org.junit.Test;
  *
  * <p><b>What these tests do not cover.</b> They exercise the decision, not the wiring: nothing
  * here drives {@link EditWorkflowTaskAction#processAction}, so deleting the guard from that method
- * would leave every test below passing. Driving it means building a Liferay portlet
- * {@code ActionRequest} with a session, a bound form and the {@code WebKeys} attributes, which is
- * not worth the fragility here. The guard's placement — above the {@code add_comment},
- * {@code add_file} and {@code remove_file} branches and below {@code view} — and the command set
- * in {@code isTaskWriteCommand} are therefore covered by manual QA, not by this class. Anyone
- * moving that guard should not expect these tests to catch them.</p>
+ * would leave every test below passing. {@link EditWorkflowTaskActionTest} is the other half — it
+ * drives the action itself and covers the guard's placement, above the {@code add_comment},
+ * {@code add_file} and {@code remove_file} branches and below {@code view}, and the command set in
+ * {@code isTaskWriteCommand}. Anyone moving that guard will be caught there, not here.</p>
  */
 public class WorkflowTaskAccessTest {
 
