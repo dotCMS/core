@@ -11,10 +11,14 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.WeakHashMap;
 import javax.naming.Binding;
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -42,6 +46,9 @@ public class DbConnectionFactory {
     private static final String LOCAL_ENV_PREFIX = "java:comp/env/";
     private static final String DOTCMS_DATA_SQL = "select exists (select 1 from pg_catalog.pg_class"
             + " where relname = 'dot_cluster' and relkind in ('r', 'p'))";
+    /** Answers of {@link #holdsDotcmsData(DataSource)}, per data source instance; entries go with their data source. */
+    private static final Map<DataSource, Boolean> DOTCMS_DATA_ANSWERS =
+            Collections.synchronizedMap(new WeakHashMap<>());
 
 
     private static DataSource defaultDataSource = null;
@@ -277,23 +284,88 @@ public class DbConnectionFactory {
      * Tells whether a data source connects to a database that holds dotCMS data, i.e. one with the
      * dotCMS cluster table in any schema. The check reads the system catalog only, so it needs no
      * privilege on dotCMS tables and gives the same answer whatever host, port, proxy or user the
-     * data source connects through. A data source that cannot connect, or whose database cannot run
-     * the check, is not recognised.
+     * data source connects through.
+     * <ul>
+     *     <li>A data source that cannot open a connection is not recognised.</li>
+     *     <li>A PostgreSQL database that cannot run the check is recognised, so the answer errs on the
+     *     side of the dotCMS database. Other engines, which cannot hold dotCMS data, are not.</li>
+     * </ul>
+     * Only answers read from the catalog are kept, per data source instance; a failed connection or
+     * check is not kept, so the data source is checked again next time.
      *
      * @param candidate the data source to check
-     * @return {@code true} if the database behind {@code candidate} holds dotCMS data
+     * @return {@code true} if the database behind {@code candidate} holds, or may hold, dotCMS data
      */
     static boolean holdsDotcmsData(final DataSource candidate) {
         if (candidate == null) {
             return false;
         }
-        try (final Connection connection = candidate.getConnection();
-                final Statement statement = connection.createStatement();
+        final Boolean known = DOTCMS_DATA_ANSWERS.get(candidate);
+        if (known != null) {
+            return known;
+        }
+        final Connection connection;
+        try {
+            connection = candidate.getConnection();
+        } catch (final Exception e) {
+            Logger.debug(DbConnectionFactory.class,
+                    () -> "Could not connect to a data source to check it: " + e.getClass().getSimpleName());
+            return false;
+        }
+        Optional<Boolean> catalogAnswer = Optional.empty();
+        boolean answer;
+        try {
+            catalogAnswer = runDotcmsDataCheck(connection);
+            answer = catalogAnswer.orElseGet(() -> isPostgres(connection));
+        } finally {
+            closeQuietly(connection);
+        }
+        catalogAnswer.ifPresent(value -> DOTCMS_DATA_ANSWERS.put(candidate, value));
+        return answer;
+    }
+
+    /**
+     * Runs the dotCMS data check on an open connection.
+     *
+     * @param connection an open connection to the data source being checked
+     * @return the catalog's answer, or empty if the check could not run
+     */
+    private static Optional<Boolean> runDotcmsDataCheck(final Connection connection) {
+        try (final Statement statement = connection.createStatement();
                 final ResultSet result = statement.executeQuery(DOTCMS_DATA_SQL)) {
-            return result.next() && result.getBoolean(1);
+            return Optional.of(result.next() && result.getBoolean(1));
         } catch (final Exception e) {
             Logger.debug(DbConnectionFactory.class,
                     () -> "Could not check the database of a data source: " + e.getClass().getSimpleName());
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Closes a connection used for a check, ignoring any failure.
+     *
+     * @param connection the connection to close
+     */
+    private static void closeQuietly(final Connection connection) {
+        try {
+            connection.close();
+        } catch (final Exception e) {
+            Logger.debug(DbConnectionFactory.class,
+                    () -> "Could not close the connection used to check a data source: " + e.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * Tells whether a connection reports PostgreSQL as its database product.
+     *
+     * @param connection an open connection
+     * @return {@code true} for PostgreSQL; {@code false} for other products or if it cannot tell
+     */
+    private static boolean isPostgres(final Connection connection) {
+        try {
+            final String product = connection.getMetaData().getDatabaseProductName();
+            return product != null && product.toLowerCase(Locale.ROOT).contains("postgres");
+        } catch (final Exception e) {
             return false;
         }
     }

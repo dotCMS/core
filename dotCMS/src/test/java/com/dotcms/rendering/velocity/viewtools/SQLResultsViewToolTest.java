@@ -16,6 +16,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
@@ -33,6 +34,7 @@ import javax.sql.DataSource;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -64,6 +66,15 @@ class SQLResultsViewToolTest {
     private Object previousPool;
     private Contentlet author;
     private SQLResultsViewTool tool;
+
+    /**
+     * Loads, with the real APILocator, the classes these tests reach that keep an API in a static field. Loaded for the
+     * first time while APILocator is mocked, they would keep a null API for every later test in the same JVM.
+     */
+    @BeforeAll
+    static void loadClassesWithStaticApis() throws ClassNotFoundException {
+        Class.forName(SQLUtil.class.getName());
+    }
 
     @BeforeEach
     void setUp() throws Exception {
