@@ -350,6 +350,36 @@ public  class WebResource {
     }
 
     /**
+     * Initializes a protected endpoint with credentials explicitly supplied by form-body bindings.
+     * Body values are not URL parameters, but still obey the Basic policy, SSL, lockout and portlet
+     * checks. An independently authenticated request retains precedence over the supplied values.
+     *
+     * @param username form-body login name
+     * @param password form-body password or API JWT
+     * @param request incoming request
+     * @param response outgoing response
+     * @param requiredPortlet optional portlet permission requirement
+     * @return initialized {@link InitDataObject}, without retaining the credentials in its parameter map
+     * @throws SecurityException when SSL, authentication or portlet access is refused
+     */
+    InitDataObject initWithFormCredentials(final String username, final String password,
+            final HttpServletRequest request, final HttpServletResponse response,
+            final String requiredPortlet) {
+        checkForceSSL(request);
+        if (PortalUtil.getUser(request) == null
+                && (StringUtils.isNotEmpty(username) || StringUtils.isNotEmpty(password))) {
+            final User user = authenticateUser(username, password, request, response, userAPI);
+            if (user == null) {
+                throw new SecurityException("Invalid credentials", Response.Status.UNAUTHORIZED);
+            }
+            request.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+            request.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
+            PrincipalThreadLocal.setName(user.getUserId());
+        }
+        return initWithMap(new HashMap<>(), request, response, AnonymousAccess.NONE, requiredPortlet);
+    }
+
+    /**
      * @param builder {@link InitBuilder}
      * @return an {@link InitDataObject} with the resulting <code>Map</code>
      * @throws SecurityException if authentication fails

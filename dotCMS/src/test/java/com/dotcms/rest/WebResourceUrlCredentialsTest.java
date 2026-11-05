@@ -2,6 +2,8 @@ package com.dotcms.rest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -13,9 +15,11 @@ import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.cms.login.LoginServiceAPI;
+import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.util.CompanyUtils;
@@ -58,9 +62,11 @@ public class WebResourceUrlCredentialsTest extends UnitTestBase {
     private MockedStatic<DotAuthSessionCredentialProcessorImpl> sessions;
     private final LoginServiceAPI login = mock(LoginServiceAPI.class);
     private final ApiTokenAPI tokens = mock(ApiTokenAPI.class);
+    private final LayoutAPI layoutAPI = mock(LayoutAPI.class);
     private final UserWebAPI userWebAPI = mock(UserWebAPI.class);
     private final JsonWebTokenAuthCredentialProcessor bearer = mock(JsonWebTokenAuthCredentialProcessor.class);
-    private final HttpServletRequest request = mock(HttpServletRequest.class);
+    private final HttpServletRequest request =
+            new MockAttributeRequest(mock(HttpServletRequest.class)).request();
     private final HttpServletResponse response = mock(HttpServletResponse.class);
     private final User owner = mock(User.class);
     private WebResource resource;
@@ -117,6 +123,7 @@ public class WebResourceUrlCredentialsTest extends UnitTestBase {
         apis.when(APILocator::getUserAPI).thenReturn(userAPI);
         final ApiProvider provider = mock(ApiProvider.class);
         when(provider.userAPI()).thenReturn(userAPI);
+        when(provider.layoutAPI()).thenReturn(layoutAPI);
         when(provider.userWebAPI()).thenReturn(userWebAPI);
         resource = new WebResource(provider, bearer);
     }
@@ -181,6 +188,36 @@ public class WebResourceUrlCredentialsTest extends UnitTestBase {
         verifyNoInteractions(login, tokens);
     }
 
+    /** Explicit form-body credentials retain their Basic policy independently of the URL opt-in. */
+    @Test
+    public void formBodyCredentialsAreIndependentOfTheUrlOptIn() {
+        for (final String credential : new String[]{PASSWORD, JWT}) {
+            request.removeAttribute(com.liferay.portal.util.WebKeys.USER);
+            request.removeAttribute(com.liferay.portal.util.WebKeys.USER_ID);
+            if (!"NONE".equals(mode) && (JWT.equals(credential) || "ALL".equals(mode))) {
+                final InitDataObject initialized = resource.initWithFormCredentials(USERNAME, credential,
+                        request, response, null);
+                assertEquals(owner, initialized.getUser());
+                assertTrue(initialized.getParamsMap().isEmpty());
+            } else {
+                final SecurityException denied = assertThrows(SecurityException.class,
+                        () -> resource.initWithFormCredentials(USERNAME, credential, request, response, null));
+                assertEquals(401, denied.getResponse().getStatus());
+            }
+        }
+    }
+
+    /** Body credentials cannot bypass the endpoint's existing portlet permission requirement. */
+    @Test
+    public void formBodyCredentialsStillRequirePortletPermission() throws Exception {
+        final SecurityException denied = assertThrows(SecurityException.class,
+                () -> resource.initWithFormCredentials(USERNAME, JWT, request, response, "configuration"));
+        assertEquals(401, denied.getResponse().getStatus());
+        if (!"NONE".equals(mode)) {
+            verify(layoutAPI).doesUserHaveAccessToPortlet("configuration", owner);
+        }
+    }
+
     /** The parsed-map entry point must enforce SSL even before looking for an existing user. */
     @Test
     public void parsedMapInitializationStillRequiresSsl() {
@@ -191,6 +228,9 @@ public class WebResourceUrlCredentialsTest extends UnitTestBase {
                     () -> resource.initWithMap(Collections.emptyMap(), request, response,
                             AnonymousAccess.NONE, null));
             assertEquals(403, denied.getResponse().getStatus());
+            final SecurityException formDenied = assertThrows(SecurityException.class,
+                    () -> resource.initWithFormCredentials(USERNAME, PASSWORD, request, response, null));
+            assertEquals(403, formDenied.getResponse().getStatus());
             verifyNoInteractions(login, tokens, userWebAPI);
         } finally {
             Config.setProperty("FORCE_SSL_ON_RESP_API", previous);

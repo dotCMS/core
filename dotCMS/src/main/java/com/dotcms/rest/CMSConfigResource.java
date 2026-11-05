@@ -91,7 +91,8 @@ public class CMSConfigResource {
             @FormParam("city") final String loginLogo,
             @FormParam("state") String navLogo) throws IOException, JSONException {
 
-        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true, PortletID.CONFIGURATION.toString() );
+        InitDataObject initData = webResource.initWithFormCredentials(user, password, request, response,
+                PortletID.CONFIGURATION.toString());
 
         //Nav Logo Feature is not for Community level license
         if(LicenseUtil.getLevel() == LicenseLevel.COMMUNITY.level && UtilMethods.isSet(navLogo)){
@@ -188,7 +189,8 @@ public class CMSConfigResource {
                                             @FormParam ("languageId") String languageId,
                                             @FormParam ("timeZoneId") String timeZoneId ) throws IOException, JSONException {
 
-        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true, PortletID.CONFIGURATION.toString() );
+        InitDataObject initData = webResource.initWithFormCredentials(user, password, request, response,
+                PortletID.CONFIGURATION.toString());
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "languageId", languageId );
@@ -254,7 +256,8 @@ public class CMSConfigResource {
                                               @FormParam ("user") String user, @FormParam ("password") String password,
                                               @FormParam ("authType") String authType ) throws IOException, JSONException {
 
-        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true, PortletID.CONFIGURATION.toString() );
+        InitDataObject initData = webResource.initWithFormCredentials(user, password, request, response,
+                PortletID.CONFIGURATION.toString());
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "authType", authType );
@@ -324,7 +327,8 @@ public class CMSConfigResource {
                                       @FormDataParam ("logoFile") File logoFile,
                                       @FormDataParam ("logoFile") FormDataContentDisposition logoDetail ) throws IOException, JSONException {
 
-        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true , PortletID.CONFIGURATION.toString());
+        InitDataObject initData = webResource.initWithFormCredentials(user, password, request, response,
+                PortletID.CONFIGURATION.toString());
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );
@@ -385,7 +389,8 @@ public class CMSConfigResource {
                                         @FormParam ("type") String type,
                                         @FormParam ("callback") String callback ) throws JSONException, IOException {
 
-        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true, PortletID.CONFIGURATION.toString() );
+        InitDataObject initData = webResource.initWithFormCredentials(user, password, request, response,
+                PortletID.CONFIGURATION.toString());
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "environment", environment );
@@ -467,7 +472,8 @@ public class CMSConfigResource {
                                      @FormParam ("type") String type,
                                      @FormParam ("callback") String callback ) throws JSONException, IOException {
 
-        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true , PortletID.CONFIGURATION.toString());
+        InitDataObject initData = webResource.initWithFormCredentials(user, password, request, response,
+                PortletID.CONFIGURATION.toString());
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "endPoint", endPoint );

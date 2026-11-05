@@ -134,7 +134,9 @@ disabled rather than falling back to a lower-priority `true`. Other configuratio
 their existing behavior. Without another valid authentication source,
 protected endpoints return their existing unauthorized response. Public endpoints retain their
 existing anonymous-access rules. Authorization headers, DOTAUTH headers, existing sessions and
-designated JSON/body login endpoints are unchanged.
+designated JSON/body login endpoints are unchanged. Legacy configuration forms and the example
+POST form authenticate their explicitly body-bound credentials separately from URL parameters,
+while retaining the existing Basic policy, SSL, lockout and portlet permission checks.
 
 Migrate clients to an `Authorization: Bearer` header or the designated login endpoint. For temporary
 legacy compatibility, set `ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS=true` (environment variable:
