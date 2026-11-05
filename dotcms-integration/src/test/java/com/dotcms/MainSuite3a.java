@@ -41,6 +41,7 @@ import org.junit.runners.Suite;
         ImportContentletsActionSmokeTest.class,
         TreeFactoryTest.class,
         com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class,
+    com.dotcms.rendering.js.FileJavascriptReaderTest.class
 })
 public class MainSuite3a {
 }
