@@ -180,8 +180,8 @@ export class DotcmsConfigService {
                         paginatorLinks: res.config[DOTCMS_PAGINATOR_LINKS],
                         paginatorRows: res.config[DOTCMS_PAGINATOR_ROWS],
                         releaseInfo: {
-                            buildDate: res.config.releaseInfo?.buildDate,
-                            version: res.config.releaseInfo?.version
+                            buildDate: res.config.releaseInfo?.buildDate ?? '',
+                            version: res.config.releaseInfo?.version ?? ''
                         },
                         websocket: {
                             websocketReconnectTime:

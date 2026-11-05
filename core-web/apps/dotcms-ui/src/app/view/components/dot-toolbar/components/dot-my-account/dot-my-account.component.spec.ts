@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -75,12 +75,63 @@ describe('DotMyAccountComponent', () => {
         ]
     });
 
-    beforeEach(() => {
+    function initializeComponent(): void {
         spectator = createComponent();
         component = spectator.component;
+    }
+
+    describe('Configuration recovery', () => {
+        let configUpdates$: Subject<{ emailRegex: string }>;
+        let getConfigUpdates: ReturnType<typeof vi.fn>;
+
+        beforeEach(() => {
+            configUpdates$ = new Subject();
+            getConfigUpdates = vi.fn(() => configUpdates$.asObservable());
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: DotcmsConfigService,
+                        useValue: {
+                            getConfig: vi.fn(() =>
+                                throwError(() => new Error('Config unavailable'))
+                            ),
+                            getConfigUpdates
+                        }
+                    }
+                ]
+            });
+            component = spectator.component;
+        });
+
+        it('should install email validation when configuration arrives after an initial failure', () => {
+            const emailControl = component.form.get('email');
+            emailControl.setValue('invalid-email');
+            expect(emailControl.valid).toBe(true);
+            expect(getConfigUpdates).toHaveBeenCalledOnce();
+
+            configUpdates$.next({ emailRegex: '^[^@]+@dotcms\\.com$' });
+
+            expect(component.emailRegex).toBe('^[^@]+@dotcms\\.com$');
+            expect(emailControl.hasError('pattern')).toBe(true);
+            emailControl.setValue('admin@dotcms.com');
+            expect(emailControl.valid).toBe(true);
+            emailControl.setValue('');
+            expect(emailControl.hasError('required')).toBe(true);
+        });
+
+        it('should unsubscribe from recovery updates when destroyed', () => {
+            expect(configUpdates$.observed).toBe(true);
+
+            spectator.fixture.destroy();
+            configUpdates$.next({ emailRegex: 'recovered-pattern' });
+
+            expect(configUpdates$.observed).toBe(false);
+            expect(component.emailRegex).toBe('');
+        });
     });
 
     describe('Dialog Visibility', () => {
+        beforeEach(initializeComponent);
         it('should be hidden by default', () => {
             // Check that the dialog has visible=false
             expect(component.visible()).toBe(false);
@@ -119,6 +170,7 @@ describe('DotMyAccountComponent', () => {
     });
 
     describe('Form Fields', () => {
+        beforeEach(initializeComponent);
         beforeEach(() => {
             component.visible.set(true);
             spectator.detectChanges();
@@ -200,6 +252,7 @@ describe('DotMyAccountComponent', () => {
     });
 
     describe('Password Change', () => {
+        beforeEach(initializeComponent);
         beforeEach(() => {
             component.visible.set(true);
             spectator.detectChanges();
@@ -276,6 +329,7 @@ describe('DotMyAccountComponent', () => {
     });
 
     describe('Starter Checkbox', () => {
+        beforeEach(initializeComponent);
         beforeEach(() => {
             component.visible.set(true);
             spectator.detectChanges();
@@ -315,6 +369,7 @@ describe('DotMyAccountComponent', () => {
     });
 
     describe('Form Submission', () => {
+        beforeEach(initializeComponent);
         beforeEach(() => {
             component.visible.set(true);
             spectator.detectChanges();

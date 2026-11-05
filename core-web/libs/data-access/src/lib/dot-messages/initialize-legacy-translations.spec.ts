@@ -1,7 +1,7 @@
 import { firstValueFrom, of, Subject, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { DotcmsConfigService, LoggerService } from '@dotcms/dotcms-js';
+import type { Auth, LoginService, DotcmsConfigService, LoggerService } from '@dotcms/dotcms-js';
 
 import { initializeLegacyTranslations } from './initialize-legacy-translations';
 
@@ -22,9 +22,15 @@ describe('initializeLegacyTranslations', () => {
     let storage: Pick<DotLocalstorageService, 'getItem'>;
     let logger: Pick<LoggerService, 'warn'>;
 
-    const initialize = () => initializeLegacyTranslations(messages, configuration, storage, logger);
+    let login: Pick<LoginService, 'loadAuth' | 'currentUserLanguageId'>;
+    const initialize = () =>
+        initializeLegacyTranslations(messages, configuration, storage, logger, login);
 
     beforeEach(() => {
+        login = {
+            loadAuth: vi.fn().mockReturnValue(of({ sessionLanguageId: 'es_ES' } as Auth)),
+            currentUserLanguageId: 'en_US'
+        };
         messages = { init: vi.fn().mockReturnValue(of(void 0)) };
         configuration = { getConfig: vi.fn().mockReturnValue(of(config('server-hash'))) };
         storage = { getItem: vi.fn().mockReturnValue('es_ES') };
@@ -34,11 +40,11 @@ describe('initializeLegacyTranslations', () => {
     it.each(['es_ES', 'en-US', 'default', 'a1_2-3'])(
         'uses the selected locale %s and server bundle version',
         async (language) => {
-            vi.mocked(storage.getItem).mockReturnValue(language);
+            vi.mocked(login.loadAuth).mockReturnValue(of({ sessionLanguageId: language } as Auth));
 
             await expect(firstValueFrom(initialize())).resolves.toBeUndefined();
 
-            expect(storage.getItem).toHaveBeenCalledExactlyOnceWith('dotMessagesKeys-lang');
+            expect(storage.getItem).not.toHaveBeenCalled();
             expect(messages.init).toHaveBeenCalledExactlyOnceWith({
                 language,
                 languageBundleVersion: 'server-hash'
@@ -48,20 +54,20 @@ describe('initializeLegacyTranslations', () => {
     );
 
     it.each([null, undefined, '', '../es', 'en US', '1en', '_en', 'en/US', 42, {}])(
-        'uses the default locale for invalid or missing storage value %j',
+        'ignores invalid or missing shared storage value %j',
         async (language) => {
             vi.mocked(storage.getItem).mockReturnValue(language);
 
             await firstValueFrom(initialize());
 
             expect(messages.init).toHaveBeenCalledExactlyOnceWith({
-                language: 'default',
+                language: 'es_ES',
                 languageBundleVersion: 'server-hash'
             });
         }
     );
 
-    it('continues with the default locale when storage is blocked', async () => {
+    it('does not read storage even when it is blocked', async () => {
         const error = new Error('Storage blocked');
         vi.mocked(storage.getItem).mockImplementation(() => {
             throw error;
@@ -70,10 +76,56 @@ describe('initializeLegacyTranslations', () => {
         await expect(firstValueFrom(initialize())).resolves.toBeUndefined();
 
         expect(messages.init).toHaveBeenCalledWith({
-            language: 'default',
+            language: 'es_ES',
             languageBundleVersion: 'server-hash'
         });
-        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('locale'), error);
+        expect(storage.getItem).not.toHaveBeenCalled();
+        expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    it('uses the fresh session locale even when another tab cached a different valid locale', async () => {
+        vi.mocked(storage.getItem).mockReturnValue('fr_FR');
+        await firstValueFrom(initialize());
+        expect(messages.init).toHaveBeenCalledExactlyOnceWith({
+            language: 'es_ES',
+            languageBundleVersion: 'server-hash'
+        });
+        expect(storage.getItem).not.toHaveBeenCalled();
+    });
+
+    it('prefers the impersonated user locale over the original session locale', async () => {
+        vi.mocked(login.loadAuth).mockReturnValue(
+            of({
+                sessionLanguageId: 'es_ES',
+                loginAsUser: { languageId: 'de_DE' }
+            } as Auth)
+        );
+
+        await firstValueFrom(initialize());
+
+        expect(messages.init).toHaveBeenCalledExactlyOnceWith({
+            language: 'de_DE',
+            languageBundleVersion: 'server-hash'
+        });
+    });
+
+    it('continues bootstrap without reusing cached translations when auth fails', async () => {
+        vi.mocked(login.loadAuth).mockReturnValue(throwError(() => new Error('Auth failed')));
+        await expect(firstValueFrom(initialize())).resolves.toBeUndefined();
+        expect(messages.init).not.toHaveBeenCalled();
+        expect(logger.warn).toHaveBeenCalledOnce();
+    });
+
+    it('waits for fresh auth before initializing translations', () => {
+        const auth$ = new Subject<Auth>();
+        vi.mocked(login.loadAuth).mockReturnValue(auth$);
+        initialize().subscribe();
+        expect(messages.init).not.toHaveBeenCalled();
+        auth$.next({ sessionLanguageId: 'de_DE' } as Auth);
+        expect(messages.init).toHaveBeenCalledExactlyOnceWith({
+            language: 'de_DE',
+            languageBundleVersion: 'server-hash'
+        });
     });
 
     it('waits for delayed configuration and translation completion', () => {

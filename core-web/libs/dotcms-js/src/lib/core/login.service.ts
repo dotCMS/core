@@ -36,6 +36,10 @@ export class LoginService {
     private dotcmsEventsService = inject(DotcmsEventsService);
 
     currentUserLanguageId = '';
+    get sessionLanguageId(): string {
+        return this.auth?.sessionLanguageId || this.currentUserLanguageId;
+    }
+
     private country = '';
     private lang = '';
     private urls: Record<string, string>;
@@ -114,15 +118,22 @@ export class LoginService {
      * @memberof LoginService
      */
     loadAuth(): Observable<Auth> {
-        return this.http.get<DotCMSResponse<Auth>>(this.urls.getAuth).pipe(
-            map((response) => response.entity),
-            tap((auth: Auth) => {
-                if (auth.user) {
-                    this.setAuth(auth);
-                }
-            }),
-            map((auth: Auth) => this.getFullAuth(auth))
-        );
+        return this.http
+            .get<DotCMSResponse<Auth> & { sessionLanguageId?: string }>(this.urls.getAuth)
+            .pipe(
+                map((response) => ({
+                    ...response.entity,
+                    ...(response.sessionLanguageId
+                        ? { sessionLanguageId: response.sessionLanguageId }
+                        : {})
+                })),
+                tap((auth: Auth) => {
+                    if (auth.user) {
+                        this.setAuth(auth);
+                    }
+                }),
+                map((auth: Auth) => this.getFullAuth(auth))
+            );
     }
 
     /**
@@ -290,7 +301,8 @@ export class LoginService {
      */
     setAuth(auth: Auth, language?: string): void {
         this._auth = this.getFullAuth(auth);
-        this.currentUserLanguageId = language || auth.user.languageId;
+        this.currentUserLanguageId =
+            language || auth.sessionLanguageId || auth.user?.languageId || '';
         this._auth$.next(this.getFullAuth(auth));
 
         // When not logged user we need to fire the observable chain
@@ -373,6 +385,7 @@ export interface User {
 
 export interface Auth {
     user: User;
-    loginAsUser: User;
+    loginAsUser: User | null;
     isLoginAs?: boolean;
+    sessionLanguageId?: string;
 }

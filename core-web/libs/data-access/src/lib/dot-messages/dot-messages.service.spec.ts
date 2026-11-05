@@ -334,9 +334,8 @@ describe('DotMessageService', () => {
             });
             await Promise.all([first, second]);
 
-            // The completed request must be gone: invalidating storage forces a new GET.
-            storage.removeItem(MESSAGES_LOCALSTORAGE_KEY);
-            const third$ = service.init(params);
+            // The completed request must be gone: a different version forces a new GET.
+            const third$ = service.init({ ...params, languageBundleVersion: NEXT_VERSION });
             expect(third$).not.toBe(first$);
             http.expectOne('/api/v2/languages/en_US/keys').flush({
                 entity: messages,
@@ -508,6 +507,121 @@ describe('DotMessageService', () => {
             await loaded;
             expect(service.get('dot.common.cancel')).toBe('Cancel');
             expect(service.loadedBundleVersion()).toBe(VERSION);
+        });
+
+        it.each(['blocked', 'quota'])(
+            'should reuse installed messages when storage is %s',
+            async (failure) => {
+                const read = vi.spyOn(storage, 'getItem');
+                if (failure === 'blocked') {
+                    read.mockImplementation(() => {
+                        throw new DOMException('Storage blocked', 'SecurityError');
+                    });
+                }
+                vi.spyOn(storage, 'setItem').mockImplementation(() => {
+                    throw new DOMException('Storage unavailable', 'QuotaExceededError');
+                });
+                service.init({ languageBundleVersion: VERSION });
+                http.expectOne(DEFAULT_URL).flush({
+                    entity: messages,
+                    languageBundleVersion: VERSION
+                });
+                read.mockClear();
+
+                await firstValueFrom(service.init({ languageBundleVersion: VERSION }));
+                await firstValueFrom(service.init({ languageBundleVersion: VERSION }));
+
+                http.expectNone(DEFAULT_URL);
+                expect(read).not.toHaveBeenCalled();
+                expect(service.get('dot.common.cancel')).toBe('Cancel');
+                expect(service.loadedBundleVersion()).toBe(VERSION);
+                expect(service.bundleVersionMismatch()).toBeNull();
+            }
+        );
+
+        it('should reuse a storage-installed bundle before accessing storage again', async () => {
+            seedCache();
+            await firstValueFrom(service.init({ languageBundleVersion: VERSION }));
+            const read = vi.spyOn(storage, 'getItem').mockImplementation(() => {
+                throw new Error('Storage must not be read');
+            });
+
+            await firstValueFrom(service.init({ languageBundleVersion: VERSION }));
+
+            expect(read).not.toHaveBeenCalled();
+            http.expectNone(DEFAULT_URL);
+        });
+
+        it('should retain the installed version on blocked-storage failure and clear mismatch on a memory match', async () => {
+            vi.spyOn(storage, 'getItem').mockImplementation(() => {
+                throw new Error('Storage blocked');
+            });
+            service.init({ languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush({ entity: messages, languageBundleVersion: VERSION });
+
+            const failed = expect(
+                firstValueFrom(service.init({ languageBundleVersion: NEXT_VERSION }))
+            ).rejects.toMatchObject({ status: 500 });
+            expect(service.bundleVersionMismatch()).toEqual({
+                language: DEFAULT_LANG,
+                cachedVersion: VERSION,
+                serverVersion: NEXT_VERSION
+            });
+            http.expectOne(DEFAULT_URL).flush(null, { status: 500, statusText: 'Server Error' });
+            await failed;
+            expect(service.loadedBundleVersion()).toBe(VERSION);
+            expect(service.get('dot.common.cancel')).toBe('Cancel');
+
+            await firstValueFrom(service.init({ languageBundleVersion: VERSION }));
+            http.expectNone(DEFAULT_URL);
+            expect(service.bundleVersionMismatch()).toBeNull();
+        });
+
+        it('should not reuse another locale with the same installed version', async () => {
+            service.init({ languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush({ entity: messages, languageBundleVersion: VERSION });
+            service.init({ language: 'es_ES', languageBundleVersion: VERSION });
+            expect(service.bundleVersionMismatch()).toBeNull();
+            http.expectOne('/api/v2/languages/es_ES/keys').flush({
+                entity: { ...messages, 'dot.common.cancel': 'Cancelar' },
+                languageBundleVersion: VERSION
+            });
+            await firstValueFrom(
+                service.init({ language: 'es_ES', languageBundleVersion: VERSION })
+            );
+            http.expectNone('/api/v2/languages/es_ES/keys');
+            expect(service.get('dot.common.cancel')).toBe('Cancelar');
+
+            service.init({ languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush({ entity: messages, languageBundleVersion: VERSION });
+            expect(service.get('dot.common.cancel')).toBe('Cancel');
+        });
+
+        it('should track the actual version and locale of a stale fallback', async () => {
+            seedCache(messages, 'es_ES');
+            const failed = expect(
+                firstValueFrom(
+                    service.init({
+                        language: 'es_ES',
+                        languageBundleVersion: NEXT_VERSION
+                    })
+                )
+            ).rejects.toMatchObject({ status: 500 });
+            http.expectOne('/api/v2/languages/es_ES/keys').flush(null, {
+                status: 500,
+                statusText: 'Server Error'
+            });
+            await failed;
+            expect(service.loadedBundleVersion()).toBe(VERSION);
+            expect(service.bundleVersionMismatch()?.serverVersion).toBe(NEXT_VERSION);
+            clearCache();
+            await firstValueFrom(
+                service.init({ language: 'es_ES', languageBundleVersion: VERSION })
+            );
+            http.expectNone('/api/v2/languages/es_ES/keys');
+            expect(service.bundleVersionMismatch()).toBeNull();
+            service.init({ languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush({ entity: messages, languageBundleVersion: VERSION });
         });
 
         it('should not resubscribe to a synchronous failure after the eager subscription', async () => {

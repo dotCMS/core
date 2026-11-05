@@ -21,7 +21,7 @@ const loginParams = (language?: string): DotLoginParams => ({
     login: user.emailAddress,
     password: '',
     rememberMe: false,
-    language,
+    language: language ?? '',
     backEndLogin: true
 });
 
@@ -122,6 +122,20 @@ describe('LoginService locale', () => {
         expect(service.auth).toEqual({ user, loginAsUser, isLoginAs: true });
         expect(locales).toEqual(['en_US']);
         subscription.unsubscribe();
+    });
+
+    it('restores the server session locale on refresh before notifying subscribers', async () => {
+        const updates = vi.fn(() => expect(service.currentUserLanguageId).toBe('es_ES'));
+        service.auth$.subscribe(updates);
+        const loaded = firstValueFrom(service.loadAuth());
+        http.expectOne('/api/v1/authentication/logInUser').flush({
+            entity: { user, loginAsUser: null },
+            sessionLanguageId: 'es_ES'
+        });
+        await loaded;
+        expect(updates).toHaveBeenCalledOnce();
+        expect(service.auth.sessionLanguageId).toBe('es_ES');
+        expect(service.auth.user.languageId).toBe('en_US');
     });
 
     it('does not replace current auth when an auth load has no user', async () => {

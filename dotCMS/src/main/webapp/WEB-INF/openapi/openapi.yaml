@@ -4684,7 +4684,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityMapMapView"
+                $ref: "#/components/schemas/ResponseEntitySessionUsersView"
           description: User data successfully collected
         "400":
           description: Bad request
@@ -36259,33 +36259,6 @@ components:
           type: array
           items:
             type: string
-    ResponseEntityMapMapView:
-      type: object
-      properties:
-        entity:
-          type: object
-          additionalProperties:
-            type: object
-            additionalProperties:
-              type: object
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
     ResponseEntityMapStringObjectView:
       type: object
       properties:
@@ -37212,6 +37185,38 @@ components:
           type: array
           items:
             type: string
+    ResponseEntitySessionUsersView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+        sessionLanguageId:
+          type: string
+          description: "Effective admin session locale, or null when no session locale\
+            \ is set"
+          readOnly: true
     ResponseEntitySetStringView:
       type: object
       properties:

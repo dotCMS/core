@@ -29,7 +29,7 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
-import { map, take, takeUntil } from 'rxjs/operators';
+import { catchError, map, take, takeUntil } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
@@ -132,7 +132,10 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
         // Get regex for email validation
         this.dotcmsConfigService
             .getConfig()
-            .pipe(takeUntil(this.destroy$))
+            .pipe(
+                catchError(() => this.dotcmsConfigService.getConfigUpdates()),
+                takeUntil(this.destroy$)
+            )
             .subscribe((res) => {
                 this.emailRegex = res.emailRegex;
                 // Update email validator with regex
