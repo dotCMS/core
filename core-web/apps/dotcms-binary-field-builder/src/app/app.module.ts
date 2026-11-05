@@ -1,5 +1,4 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { firstValueFrom, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import {
@@ -14,10 +13,9 @@ import { createCustomElement } from '@angular/elements';
 import { BrowserModule } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
-import { catchError, switchMap, take } from 'rxjs/operators';
-
 import {
     DotLocalstorageService,
+    initializeLegacyTranslations,
     DotMessageService,
     DotUploadService,
     DotWorkflowActionsFireService
@@ -52,44 +50,14 @@ const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [
         DotUploadService,
         DotWorkflowActionsFireService,
         provideDotCMSTheme(),
-        provideAppInitializer(() => {
-            const messageService = inject(DotMessageService);
-            const configService = inject(DotcmsConfigService);
-            const storage = inject(DotLocalstorageService);
-            const logger = inject(LoggerService);
-            let language = 'default';
-            try {
-                const cachedLanguage = storage.getItem<string>('dotMessagesKeys-lang');
-                if (
-                    typeof cachedLanguage === 'string' &&
-                    /^[a-zA-Z][a-zA-Z0-9_-]*$/.test(cachedLanguage)
-                ) {
-                    language = cachedLanguage;
-                }
-            } catch (error) {
-                logger.warn('Unable to read cached translation locale; using default.', error);
-            }
-
-            return firstValueFrom(
-                configService.getConfig().pipe(
-                    take(1),
-                    catchError((error) => {
-                        logger.warn(
-                            'Unable to load configuration; fetching uncached translations.',
-                            error
-                        );
-
-                        return of(null);
-                    }),
-                    switchMap((config) =>
-                        messageService.init({
-                            language,
-                            languageBundleVersion: config?.languageBundleVersion
-                        })
-                    )
-                )
-            );
-        })
+        provideAppInitializer(() =>
+            initializeLegacyTranslations(
+                inject(DotMessageService),
+                inject(DotcmsConfigService),
+                inject(DotLocalstorageService),
+                inject(LoggerService)
+            )
+        )
     ]
 })
 export class AppModule implements DoBootstrap {
