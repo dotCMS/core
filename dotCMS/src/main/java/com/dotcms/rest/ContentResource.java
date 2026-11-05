@@ -195,7 +195,9 @@ public class ContentResource {
             if (rememberQuery) {
                 request.getSession().setAttribute(WebKeys.EXECUTED_LUCENE_QUERY, query);
             }
-        String realQuery = query.contains("variant:") ? query : query + " +variant:default";
+        // The clause goes before the caller's query: after it, a query ending in an
+        // unbalanced escape would consume the space that separates the two.
+        String realQuery = query.contains("variant:") ? query : "+variant:default " + query;
         realQuery = processQuery(realQuery);
         final SearchView searchView = this.contentHelper.pullContent(request, response, realQuery,
                 userForPull, pageMode, offset, limit, sort, tmDate, render, user, depth,

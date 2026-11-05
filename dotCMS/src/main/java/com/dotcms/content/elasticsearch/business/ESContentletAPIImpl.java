@@ -1523,9 +1523,46 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return search;
     }
 
+    /**
+     * Keeps the query from escaping the separator that precedes the clauses appended by
+     * {@link #addPermissionsToQuery(StringBuffer, User, List, boolean)}. A run of backslashes at
+     * the end of the query is an escape sequence only when its length is odd, so in that case one
+     * more backslash is appended; the run then stands for a literal backslash and the separator
+     * survives. A query that does not end in an unbalanced escape is left alone.
+     *
+     * @param buffy the query being built, modified in place when it ends in an unbalanced escape
+     */
+    @VisibleForTesting
+    static void balanceTrailingEscape(final StringBuffer buffy) {
+        int trailing = 0;
+        for (int i = buffy.length() - 1; i >= 0 && buffy.charAt(i) == '\\'; i--) {
+            trailing++;
+        }
+        if (trailing % 2 != 0) {
+            buffy.append('\\');
+        }
+    }
+
+    /**
+     * Appends to the given query the clauses that keep a caller from seeing content they cannot
+     * read: the owner clause, one clause per role the caller holds and, for callers who are not
+     * back-end users, the clause that limits the results to live content. The clauses are appended
+     * as text, so the query is first balanced to make sure it cannot escape the separator that
+     * precedes them.
+     *
+     * @param buffy the query being built, modified in place
+     * @param user the {@link User} the query is run for, or {@code null} for an anonymous caller
+     * @param roles the {@link Role}s held by that user; empty for an anonymous caller
+     * @param respectFrontendRoles whether the anonymous and logged-in-site roles grant read as well
+     */
     @Override
-    public void addPermissionsToQuery(StringBuffer buffy, User user, List<Role> roles,
-            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+    public void addPermissionsToQuery(final StringBuffer buffy, final User user,
+            final List<Role> roles, final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+        // Every clause appended below is separated from the query by a single space, which a
+        // query ending in an unbalanced escape would consume, so balance the escape first.
+        balanceTrailingEscape(buffy);
+
         if (user != null) {
             buffy.append(" +((+owner:" + user.getUserId() + " +ownerCanRead:true) ");
         } else {
@@ -1574,7 +1611,10 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 isAdmin = true;
             }
         }
+        // Normalize the query for every caller, administrators included, so that it keeps the same
+        // meaning whatever the caller's roles are.
         final StringBuffer buffy = new StringBuffer(luceneQuery);
+        balanceTrailingEscape(buffy);
 
         // Permissions in the query
         if (!isAdmin) {
@@ -10079,6 +10119,23 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return findContentRelationships(contentlet);
     }
 
+    /**
+     * Counts the documents in the index that match the given query, restricted by the roles the
+     * caller holds. The clauses are appended as text, so the query is normalized first for every
+     * caller, administrators included.
+     * <p>
+     * Only {@link #addPermissionsToQuery(StringBuffer, User, List, boolean)} is applied here, so
+     * the count is not narrowed by category read permissions the way
+     * {@link #applyPermissionsToQuery(String, User, boolean)} narrows a search, and it can come
+     * out higher than the number of results the same query returns.
+     *
+     * @param luceneQuery the query written by the caller
+     * @param user the {@link User} the count is run for, or {@code null} for an anonymous caller
+     * @param respectFrontendRoles whether the anonymous and logged-in-site roles grant read as well
+     * @return how many documents match the query and are granted to one of the caller's roles
+     * @throws DotDataException if the count cannot be read from the index
+     * @throws DotSecurityException if no user is given and front-end roles are not respected
+     */
     @Override
     public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
@@ -10096,7 +10153,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 isAdmin = true;
             }
         }
-        StringBuffer buffy = new StringBuffer(luceneQuery);
+        final StringBuffer buffy = new StringBuffer(luceneQuery);
+        balanceTrailingEscape(buffy);
 
         // Permissions in the query
         if (!isAdmin) {

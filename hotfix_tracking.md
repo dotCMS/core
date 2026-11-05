@@ -121,3 +121,4 @@ Release-25.07.10 LTS
 115. https://github.com/dotCMS/private-issues/issues/906 : REST caches, Redis and JVM info: gated by the Maintenance portlet only, while sibling maintenance endpoints require CMS  #38316 #906
 116. https://github.com/dotCMS/private-issues/issues/876 : Velocity $session.setAttribute + REST /api/v1/users/logoutas: any back-end Velocity author becomes CMS Administrator (8. #38110 #876
 117. https://github.com/dotCMS/private-issues/issues/850 : [GLM AI Scanner] Struts layer follow-up to #841: maintenance search-and-replace IDOR (instance-wide rewrite) + un gated  #38158 #850
+118. https://github.com/dotCMS/private-issues/issues/885 : Content search APIs (/api/content/_search, /api/v1/content/_search): a trailing backslash in the Lucene query makes the  #38285 #885

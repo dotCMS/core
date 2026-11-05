@@ -109,7 +109,9 @@ public class EmbeddingsResource {
                 // searchIndex(String luceneQuery, int limit, int offset, String sortBy, User user, boolean respectFrontendRoles)
                 final List<ContentletSearch> searchResults = contentletAPI
                         .searchIndex(
-                                embeddingsForm.query + " +live:true",
+                                // Prepended, not appended: a query ending in an unbalanced
+                                // escape would consume the space before the clause.
+                                "+live:true " + embeddingsForm.query,
                                 embeddingsForm.limit,
                                 newOffset,
                                 AiKeys.MODDATE,
