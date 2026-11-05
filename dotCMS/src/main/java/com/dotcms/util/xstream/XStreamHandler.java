@@ -296,9 +296,10 @@ public class XStreamHandler {
 
     /**
      * The package patterns a bundle's types are checked against. Holds the lists only — the
-     * matching itself is XStream's, through {@code allowTypesByWildcard} and
-     * {@code denyTypesByWildcard}, so there is one implementation of the wildcard rules rather
-     * than a second one here that could answer differently.
+     * matching itself is XStream's, through {@code allowTypesByWildcard} for the first list and
+     * a {@code WildcardTypePermission} wrapped in a {@code NoPermission} for the second, so
+     * there is one implementation of the wildcard rules rather than a second one here that
+     * could answer differently.
      */
     public static class TrustedListMatcher {
 
