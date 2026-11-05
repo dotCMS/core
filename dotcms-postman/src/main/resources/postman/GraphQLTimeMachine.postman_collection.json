@@ -1,0 +1,3737 @@
+{
+	"info": {
+		"_postman_id": "5f0d6a2e-3c1b-4f7e-9a51-6d2b8c0e4f71",
+		"name": "GraphQLTimeMachine",
+		"description": "Time Machine (future publish date) behaviour of the Page API and the GraphQL page query.\n\nSetup builds a page whose contentlets have versions published now, versions scheduled ten days ahead, a version scheduled inside the five-minute grace window, a working-only version and a banner whose image changes between versions, plus URL-mapped content (one item unpublished). The Time Machine folder requests the page with no date, the current date, a grace-window date and a future date, and checks which versions the page, the rendered HTML, the banner image servlet and GraphQL return. Cleanup removes everything it created.\n\nThe requests run in order and share one session: the /dA/ banner checks rely on the Time Machine date the page request before them stored in the session.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Setup",
+			"item": [
+				{
+					"name": "Init run and check whether /application exists",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// One suffix per run keeps the page URL, content types and URL map pattern unique,",
+									"// so the collection can run twice in a row or next to other collections.",
+									"pm.collectionVariables.set(\"ftmSuffix\", String(Date.now()).slice(-7) + Math.floor(Math.random() * 1000));"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// A missing folder comes back with a null path. The banner folder below creates /application and",
+									"// /application/containers on an empty site; cleanup removes the highest folder this run created.",
+									"const existed = pm.response.json().entity.path === \"/application/\";",
+									"pm.collectionVariables.set(\"folderToDelete\", existed ? \"/application/containers\" : \"/application\");"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/sitename/default/uri/application",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"sitename",
+								"default",
+								"uri",
+								"application"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Check whether /application/containers exists",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"if (pm.response.json().entity.path === \"/application/containers/\") {",
+									"    pm.collectionVariables.set(\"folderToDelete\", \"/application/containers/ftm-\" + pm.collectionVariables.get(\"ftmSuffix\"));",
+									"}",
+									"console.log(\"folder to delete at cleanup:\", pm.collectionVariables.get(\"folderToDelete\"));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/sitename/default/uri/application/containers",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"sitename",
+								"default",
+								"uri",
+								"application",
+								"containers"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create banner folder",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"bannerFolderId\", pm.response.json().entity[0].identifier);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/createfolders/default",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"createfolders",
+								"default"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "[\"/application/containers/ftm-{{ftmSuffix}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload banner.vtl",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});",
+									"",
+									"pm.test(\"File was stored\", function () {",
+									"    pm.expect(pm.response.json().entity.identifier).to.be.a('string').and.not.empty;",
+									"});",
+									"pm.collectionVariables.set(\"bannerVtlId\", pm.response.json().entity.identifier);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"contentType": "text/plain",
+									"src": "resources/GraphQLTimeMachine/banner.vtl"
+								},
+								{
+									"key": "json",
+									"type": "text",
+									"contentType": "application/json",
+									"value": "{\"contentlet\": {\"contentType\": \"FileAsset\", \"title\": \"banner.vtl\", \"fileName\": \"banner.vtl\", \"hostFolder\": \"{{bannerFolderId}}\"}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload draft.png image",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});",
+									"",
+									"pm.test(\"File was stored\", function () {",
+									"    pm.expect(pm.response.json().entity.identifier).to.be.a('string').and.not.empty;",
+									"});",
+									"pm.collectionVariables.set(\"imageOneId\", pm.response.json().entity.identifier);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"contentType": "image/png",
+									"src": "resources/GraphQLTimeMachine/draft.png"
+								},
+								{
+									"key": "json",
+									"type": "text",
+									"contentType": "application/json",
+									"value": "{\"contentlet\": {\"contentType\": \"Image\", \"title\": \"draft.png\", \"hostFolder\": \"{{bannerFolderId}}\"}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Upload java-image.png image",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});",
+									"",
+									"pm.test(\"File was stored\", function () {",
+									"    pm.expect(pm.response.json().entity.identifier).to.be.a('string').and.not.empty;",
+									"});",
+									"pm.collectionVariables.set(\"imageTwoId\", pm.response.json().entity.identifier);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"contentType": "image/png",
+									"src": "resources/GraphQLTimeMachine/java-image.png"
+								},
+								{
+									"key": "json",
+									"type": "text",
+									"contentType": "application/json",
+									"value": "{\"contentlet\": {\"contentType\": \"Image\", \"title\": \"java-image.png\", \"hostFolder\": \"{{bannerFolderId}}\"}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create content type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const entity = pm.response.json().entity[0];",
+									"pm.test(\"Content type was created with the requested variable\", function () {",
+									"    pm.expect(entity.id).to.be.a('string').and.not.empty;",
+									"    pm.expect(entity.variable).to.eql(JSON.parse(pm.request.body.raw).variable);",
+									"});",
+									"pm.collectionVariables.set(\"contentTypeId\", entity.id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"baseType\": \"CONTENT\",\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n  \"defaultType\": false,\n  \"fixed\": false,\n  \"folder\": \"SYSTEM_FOLDER\",\n  \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n  \"multilingualable\": false,\n  \"name\": \"FtmContentType{{ftmSuffix}}\",\n  \"variable\": \"FtmContentType{{ftmSuffix}}\",\n  \"publishDateVar\": \"publishDate\",\n  \"expireDateVar\": \"expiresOn\",\n  \"system\": false,\n  \"versionable\": true,\n  \"workflow\": [\n    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n  ],\n  \"fields\": [\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n      \"dataType\": \"TEXT\",\n      \"name\": \"title\",\n      \"variable\": \"title\",\n      \"sortOrder\": 2,\n      \"required\": true,\n      \"indexed\": true,\n      \"searchable\": true,\n      \"listed\": false\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableDateTimeField\",\n      \"dataType\": \"DATE\",\n      \"name\": \"publishDate\",\n      \"variable\": \"publishDate\",\n      \"sortOrder\": 3,\n      \"indexed\": true\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableDateTimeField\",\n      \"dataType\": \"DATE\",\n      \"name\": \"expiresOn\",\n      \"variable\": \"expiresOn\",\n      \"sortOrder\": 4,\n      \"indexed\": true\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTagField\",\n      \"dataType\": \"SYSTEM\",\n      \"name\": \"tags\",\n      \"variable\": \"tags\",\n      \"sortOrder\": 5,\n      \"indexed\": true\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n      \"dataType\": \"SYSTEM\",\n      \"name\": \"Site or Folder\",\n      \"variable\": \"hostFolder\",\n      \"sortOrder\": 6,\n      \"indexed\": true,\n      \"required\": false\n    }\n  ],\n  \"icon\": \"adjust\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create banner content type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const entity = pm.response.json().entity[0];",
+									"pm.test(\"Content type was created with the requested variable\", function () {",
+									"    pm.expect(entity.id).to.be.a('string').and.not.empty;",
+									"    pm.expect(entity.variable).to.eql(JSON.parse(pm.request.body.raw).variable);",
+									"});",
+									"pm.collectionVariables.set(\"bannerContentTypeId\", entity.id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"baseType\": \"CONTENT\",\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n  \"defaultType\": false,\n  \"fixed\": false,\n  \"folder\": \"SYSTEM_FOLDER\",\n  \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n  \"multilingualable\": false,\n  \"name\": \"FtmBanner{{ftmSuffix}}\",\n  \"variable\": \"FtmBanner{{ftmSuffix}}\",\n  \"publishDateVar\": \"publishDate\",\n  \"expireDateVar\": \"expiredDate\",\n  \"system\": false,\n  \"versionable\": true,\n  \"workflow\": [\n    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n  ],\n  \"fields\": [\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n      \"dataType\": \"SYSTEM\",\n      \"name\": \"Site or Folder\",\n      \"variable\": \"hostFolder\",\n      \"sortOrder\": 2,\n      \"indexed\": true,\n      \"required\": true\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n      \"dataType\": \"TEXT\",\n      \"name\": \"Title\",\n      \"variable\": \"title\",\n      \"sortOrder\": 3,\n      \"required\": true,\n      \"indexed\": true,\n      \"searchable\": true,\n      \"listed\": true\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n      \"dataType\": \"TEXT\",\n      \"name\": \"Caption\",\n      \"variable\": \"caption\",\n      \"sortOrder\": 8,\n      \"required\": false,\n      \"indexed\": true,\n      \"searchable\": false,\n      \"listed\": true\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n      \"dataType\": \"TEXT\",\n      \"name\": \"Button Text\",\n      \"variable\": \"buttonText\",\n      \"sortOrder\": 9,\n      \"required\": false,\n      \"indexed\": false,\n      \"searchable\": false,\n      \"listed\": false\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n      \"dataType\": \"TEXT\",\n      \"name\": \"Link\",\n      \"variable\": \"link\",\n      \"sortOrder\": 10,\n      \"required\": false,\n      \"indexed\": false,\n      \"searchable\": false,\n      \"listed\": false\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTagField\",\n      \"dataType\": \"SYSTEM\",\n      \"name\": \"tags\",\n      \"variable\": \"tags\",\n      \"sortOrder\": 12,\n      \"indexed\": true\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableImageField\",\n      \"dataType\": \"TEXT\",\n      \"name\": \"Image\",\n      \"variable\": \"image\",\n      \"sortOrder\": 14\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableDateTimeField\",\n      \"dataType\": \"DATE\",\n      \"name\": \"publish date\",\n      \"variable\": \"publishDate\",\n      \"sortOrder\": 15,\n      \"indexed\": true\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableDateTimeField\",\n      \"dataType\": \"DATE\",\n      \"name\": \"expired date\",\n      \"variable\": \"expiredDate\",\n      \"sortOrder\": 16,\n      \"indexed\": true\n    }\n  ],\n  \"icon\": \"image_aspect_ratio\",\n  \"description\": \"Hero image used on homepage and landing pages\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create container",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"containerId\", pm.response.json().entity.identifier);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"FtmContainer{{ftmSuffix}}\",\n  \"friendlyName\": \"My test container.\",\n  \"maxContentlets\": 10,\n  \"notes\": \"Notes\",\n  \"containerStructures\": [\n    {\n      \"structureId\": \"{{contentTypeId}}\",\n      \"code\": \"<div class=\\\"contentlet-title\\\">$!{dotContentMap.title}</div>\"\n    },\n    {\n      \"structureId\": \"{{bannerContentTypeId}}\",\n      \"code\": \"#dotParse(\\\"//default/application/containers/ftm-{{ftmSuffix}}/banner.vtl\\\")\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create template",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"templateId\", pm.response.json().entity.identifier);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"title\": \"FtmTemplate{{ftmSuffix}}\",\n  \"theme\": \"13f88067-1e25-4e30-bc64-7e8f42ad542f\",\n  \"friendlyName\": \"Test Template.\",\n  \"layout\": {\n    \"body\": {\n      \"rows\": [\n        {\n          \"styleClass\": \"\",\n          \"columns\": [\n            {\n              \"styleClass\": \"\",\n              \"leftOffset\": 1,\n              \"width\": 100,\n              \"containers\": [\n                {\n                  \"identifier\": \"{{containerId}}\"\n                }\n              ]\n            }\n          ]\n        },\n        {\n          \"styleClass\": \"\",\n          \"columns\": [\n            {\n              \"styleClass\": \"\",\n              \"leftOffset\": 1,\n              \"width\": 100,\n              \"containers\": [\n                {\n                  \"identifier\": \"{{containerId}}\"\n                }\n              ]\n            }\n          ]\n        }\n      ]\n    },\n    \"header\": true,\n    \"footer\": true,\n    \"sidebar\": {\n      \"location\": \"\",\n      \"containers\": [],\n      \"width\": \"small\"\n    }\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Publish template",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_publish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_publish"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateId}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create content one",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});",
+									"",
+									"const result = pm.response.json().entity.results[0];",
+									"const identifier = Object.keys(result)[0];",
+									"pm.collectionVariables.set(\"contentOneId\", identifier);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentlets\": [\n    {\n      \"contentType\": \"{{contentTypeId}}\",\n      \"title\": \"test 1\",\n      \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create content two",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});",
+									"",
+									"const result = pm.response.json().entity.results[0];",
+									"const identifier = Object.keys(result)[0];",
+									"pm.collectionVariables.set(\"contentTwoId\", identifier);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentlets\": [\n    {\n      \"contentType\": \"{{contentTypeId}}\",\n      \"title\": \"test 2\",\n      \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create content three",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});",
+									"",
+									"const result = pm.response.json().entity.results[0];",
+									"const identifier = Object.keys(result)[0];",
+									"pm.collectionVariables.set(\"contentThreeId\", identifier);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentlets\": [\n    {\n      \"contentType\": \"{{contentTypeId}}\",\n      \"title\": \"test 3\",\n      \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create banner one",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});",
+									"",
+									"const result = pm.response.json().entity.results[0];",
+									"const identifier = Object.keys(result)[0];",
+									"pm.collectionVariables.set(\"bannerContentOneId\", identifier);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentlets\": [\n    {\n      \"contentType\": \"{{bannerContentTypeId}}\",\n      \"title\": \"banner 1\",\n      \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n      \"image\": \"{{imageOneId}}\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create content one v2 published in the future",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Same dates as the Karate setup: now, now + 10 days, and now + 4 minutes. The last one is inside the",
+									"// Time Machine grace window (FTM_GRACE_WINDOW_LIMIT, 5 minutes), where a requested date is ignored.",
+									"const now = Date.now();",
+									"pm.collectionVariables.set(\"currentDate\", new Date(now).toISOString());",
+									"pm.collectionVariables.set(\"futureDate\", new Date(now + 10 * 24 * 60 * 60 * 1000).toISOString());",
+									"pm.collectionVariables.set(\"graceWindowDate\", new Date(now + 4 * 60 * 1000).toISOString());"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{contentOneId}}&indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "{{contentOneId}}"
+								},
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentlets\": [\n    {\n      \"contentType\": \"{{contentTypeId}}\",\n      \"title\": \"test 1 v2 (This ver will be publshed in the future)\",\n      \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n      \"publishDate\": \"{{futureDate}}\",\n      \"identifier\": \"{{contentOneId}}\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create content two v2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{contentTwoId}}&indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "{{contentTwoId}}"
+								},
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentlets\": [\n    {\n      \"contentType\": \"{{contentTypeId}}\",\n      \"title\": \"test 2 v2\",\n      \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n      \"identifier\": \"{{contentTwoId}}\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create content three v2 published inside the grace window",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{contentThreeId}}&indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "{{contentThreeId}}"
+								},
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentlets\": [\n    {\n      \"contentType\": \"{{contentTypeId}}\",\n      \"title\": \"test 3 v2\",\n      \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n      \"publishDate\": \"{{graceWindowDate}}\",\n      \"identifier\": \"{{contentThreeId}}\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create banner one v2 published in the future",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{bannerContentOneId}}&indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "{{bannerContentOneId}}"
+								},
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentlets\": [\n    {\n      \"contentType\": \"{{bannerContentTypeId}}\",\n      \"title\": \"banner 1 v2\",\n      \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n      \"publishDate\": \"{{futureDate}}\",\n      \"identifier\": \"{{bannerContentOneId}}\",\n      \"image\": \"{{imageTwoId}}\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create working-only content with a future publish date",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});",
+									"",
+									"const result = pm.response.json().entity.results[0];",
+									"const identifier = Object.keys(result)[0];",
+									"pm.collectionVariables.set(\"nonPublishedContentId\", identifier);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/NEW?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"NEW"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentlets\": [\n    {\n      \"contentType\": \"{{contentTypeId}}\",\n      \"title\": \"Working version Only! with publish date\",\n      \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n      \"publishDate\": \"{{futureDate}}\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create page",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.collectionVariables.set(\"pageUrl\", \"ftm-test-page\" + pm.collectionVariables.get(\"ftmSuffix\"));"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});",
+									"",
+									"const result = pm.response.json().entity.results[0];",
+									"const identifier = Object.keys(result)[0];",
+									"pm.collectionVariables.set(\"pageId\", identifier);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentlet\": {\n    \"title\": \"Future Time Machine Test page\",\n    \"url\": \"{{pageUrl}}\",\n    \"languageId\": 1,\n    \"stInode\": \"c541abb1-69b3-4bc5-8430-5e09e5239cc8\",\n    \"template\": \"{{templateId}}\",\n    \"friendlyName\": \"Future Time Machine Test page\",\n    \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"cachettl\": 0,\n    \"sortOrder\": 0\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add content to page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the response\", function () {",
+									"    pm.expect(pm.response.json().errors || []).to.eql([]);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/{{pageId}}/content",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"{{pageId}}",
+								"content"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "[\n  {\"contentletsId\": [\"{{bannerContentOneId}}\"], \"identifier\": \"{{containerId}}\", \"uuid\": \"1\"},\n  {\"contentletsId\": [\"{{contentOneId}}\", \"{{contentTwoId}}\", \"{{contentThreeId}}\", \"{{nonPublishedContentId}}\"],\n   \"identifier\": \"{{containerId}}\", \"uuid\": \"1\"}\n]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create URL map content type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const entity = pm.response.json().entity[0];",
+									"pm.test(\"Content type was created with the requested variable\", function () {",
+									"    pm.expect(entity.id).to.be.a('string').and.not.empty;",
+									"    pm.expect(entity.variable).to.eql(JSON.parse(pm.request.body.raw).variable);",
+									"});",
+									"pm.collectionVariables.set(\"urlMapContentTypeId\", entity.id);"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"baseType\": \"CONTENT\",\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n  \"defaultType\": false,\n  \"fixed\": false,\n  \"folder\": \"SYSTEM_FOLDER\",\n  \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n  \"multilingualable\": false,\n  \"name\": \"FtmUrlMap{{ftmSuffix}}\",\n  \"variable\": \"FtmUrlMap{{ftmSuffix}}\",\n  \"publishDateVar\": \"publishDate\",\n  \"expireDateVar\": \"expiredDate\",\n  \"system\": false,\n  \"versionable\": true,\n  \"workflow\": [\n    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n  ],\n  \"fields\": [\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n      \"dataType\": \"TEXT\",\n      \"name\": \"title\",\n      \"variable\": \"title\",\n      \"sortOrder\": 2,\n      \"required\": true,\n      \"indexed\": true,\n      \"searchable\": true,\n      \"listed\": false\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n      \"dataType\": \"TEXT\",\n      \"name\": \"URL Title\",\n      \"variable\": \"urlTitle\",\n      \"sortOrder\": 3,\n      \"required\": true,\n      \"indexed\": true,\n      \"searchable\": true,\n      \"listed\": false\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableDateTimeField\",\n      \"dataType\": \"DATE\",\n      \"name\": \"publish date\",\n      \"variable\": \"publishDate\",\n      \"sortOrder\": 4,\n      \"indexed\": true\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableDateTimeField\",\n      \"dataType\": \"DATE\",\n      \"name\": \"expired date\",\n      \"variable\": \"expiredDate\",\n      \"sortOrder\": 5,\n      \"indexed\": true\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n      \"dataType\": \"SYSTEM\",\n      \"name\": \"Site or Folder\",\n      \"variable\": \"hostFolder\",\n      \"sortOrder\": 6,\n      \"indexed\": true,\n      \"required\": false\n    }\n  ],\n  \"icon\": \"event_note\",\n  \"detailPage\": \"{{pageId}}\",\n  \"urlMapPattern\": \"/ftm-articles{{ftmSuffix}}/{urlTitle}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create URL map content one",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});",
+									"",
+									"const result = pm.response.json().entity.results[0];",
+									"const identifier = Object.keys(result)[0];",
+									"pm.collectionVariables.set(\"urlMapContentOneId\", identifier);",
+									"pm.test(\"Contentlet has a URL map\", function () {",
+									"    pm.expect(result[identifier].urlMap).to.be.a('string').and.not.empty;",
+									"});",
+									"pm.collectionVariables.set(\"urlMapContentOneUrl\", result[identifier].urlMap.replace(/^\\/+/, ''));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentlets\": [\n    {\n      \"contentType\": \"{{urlMapContentTypeId}}\",\n      \"title\": \"url-content-map-test-1-v1\",\n      \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n      \"urlTitle\": \"url-content-map-test-1\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create URL map content one v2 published in the future",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?identifier={{urlMapContentOneId}}&indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "{{urlMapContentOneId}}"
+								},
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentlets\": [\n    {\n      \"contentType\": \"{{urlMapContentTypeId}}\",\n      \"title\": \"url-content-map-test-1-v2\",\n      \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n      \"publishDate\": \"{{futureDate}}\",\n      \"identifier\": \"{{urlMapContentOneId}}\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create URL map content two",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});",
+									"",
+									"const result = pm.response.json().entity.results[0];",
+									"const identifier = Object.keys(result)[0];",
+									"pm.collectionVariables.set(\"urlMapContentTwoId\", identifier);",
+									"pm.collectionVariables.set(\"urlMapContentTwoInode\", result[identifier].inode);",
+									"pm.test(\"Contentlet has a URL map\", function () {",
+									"    pm.expect(result[identifier].urlMap).to.be.a('string').and.not.empty;",
+									"});",
+									"pm.collectionVariables.set(\"urlUnpublishedContentMap\", result[identifier].urlMap.replace(/^\\/+/, ''));"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"contentlets\": [\n    {\n      \"contentType\": \"{{urlMapContentTypeId}}\",\n      \"title\": \"url-content-map-piece\",\n      \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n      \"urlTitle\": \"url-content-map-piece-two\"\n    }\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unpublish URL map content two",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the response\", function () {",
+									"    pm.expect(pm.response.json().errors || []).to.eql([]);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/fire",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"fire"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"actionName\": \"Unpublish\",\n  \"contentlet\": {\n    \"identifier\": \"{{urlMapContentTwoId}}\",\n    \"inode\": \"{{urlMapContentTwoInode}}\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Time Machine",
+			"item": [
+				{
+					"name": "Start a fresh session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Log in for the live banner preview",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Session login succeeds', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Session login sets JSESSIONID for the image preview', function () {",
+									"    const cookies = pm.response.headers.filter(h => h.key.toLowerCase() === 'set-cookie').map(h => h.value).join(';');",
+									"    pm.expect(cookies).to.include('JSESSIONID=');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"userId\": \"admin@dotcms.com\", \"password\": \"admin\", \"backEndLogin\": true}"
+						},
+						"url": "{{serverURL}}/api/v1/authentication",
+						"description": "The banner image servlet reads the time-machine date from a browser session. Establish that session explicitly with JSON login; Bearer authentication deliberately does not create one."
+					},
+					"response": []
+				},
+				{
+					"name": "No publish date shows the live versions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Same as the Karate extractContentlets helper: every contentlet in every container of the page.",
+									"const entity = pm.response.json().entity;",
+									"const titles = [];",
+									"Object.values(entity.containers).forEach(container => {",
+									"    Object.values(container.contentlets || {}).forEach(list => list.forEach(c => titles.push(c.title)));",
+									"});",
+									"const rendered = entity.page.rendered;",
+									"console.log('titles:', titles);",
+									"",
+									"const present = [\"test 1\", \"test 2 v2\", \"banner 1\"];",
+									"const absent = [\"test 1 v2 (This ver will be publshed in the future)\", \"Working version Only! with publish date\", \"banner 1 v2\"];",
+									"const renderedAbsent = [\"test 1 v2 (This ver will be publshed in the future)\", \"Working version Only! with publish date\", \"banner 1 v2\"];",
+									"pm.test(\"Page contentlets include the versions visible at this date\", function () {",
+									"    present.forEach(title => pm.expect(titles, title).to.include(title));",
+									"});",
+									"pm.test(\"Page contentlets exclude the versions not visible at this date\", function () {",
+									"    absent.forEach(title => pm.expect(titles, title).to.not.include(title));",
+									"});",
+									"pm.test(\"Rendered page includes the versions visible at this date\", function () {",
+									"    present.forEach(title => pm.expect(rendered, title).to.include(title));",
+									"});",
+									"if (renderedAbsent.length) {",
+									"    pm.test(\"Rendered page excludes the versions not visible at this date\", function () {",
+									"        renderedAbsent.forEach(title => pm.expect(rendered, title).to.not.include(title));",
+									"    });",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=LIVE",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"{{pageUrl}}"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
+								{
+									"key": "language_id",
+									"value": "1"
+								},
+								{
+									"key": "mode",
+									"value": "LIVE"
+								}
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "No publish date serves the live banner image",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Banner serves draft.png\", function () {",
+									"    pm.expect(pm.response.headers.get('Content-Type')).to.include('image/png');",
+									"    pm.expect(pm.response.headers.get('Content-Length')).to.eql('18137');",
+									"    const disposition = pm.response.headers.get('Content-Disposition');",
+									"    pm.expect(disposition).to.include('inline');",
+									"    pm.expect(disposition).to.include('filename=\"draft.png\"');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/dA/{{bannerContentOneId}}/image",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dA",
+								"{{bannerContentOneId}}",
+								"image"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"description": "Same session as the page request before it (newman keeps the JSESSIONID cookie). The image servlet follows the session's time-machine date, so it serves the banner version that the previous page request selected."
+					},
+					"response": []
+				},
+				{
+					"name": "Start a fresh session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Log in for the current-date banner preview",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Session login succeeds', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Session login sets JSESSIONID for the image preview', function () {",
+									"    const cookies = pm.response.headers.filter(h => h.key.toLowerCase() === 'set-cookie').map(h => h.value).join(';');",
+									"    pm.expect(cookies).to.include('JSESSIONID=');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"userId\": \"admin@dotcms.com\", \"password\": \"admin\", \"backEndLogin\": true}"
+						},
+						"url": "{{serverURL}}/api/v1/authentication",
+						"description": "The banner image servlet reads the time-machine date from a browser session. Establish that session explicitly with JSON login; Bearer authentication deliberately does not create one."
+					},
+					"response": []
+				},
+				{
+					"name": "Current publish date shows the live versions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Same as the Karate extractContentlets helper: every contentlet in every container of the page.",
+									"const entity = pm.response.json().entity;",
+									"const titles = [];",
+									"Object.values(entity.containers).forEach(container => {",
+									"    Object.values(container.contentlets || {}).forEach(list => list.forEach(c => titles.push(c.title)));",
+									"});",
+									"const rendered = entity.page.rendered;",
+									"console.log('titles:', titles);",
+									"",
+									"const present = [\"test 1\", \"test 2 v2\", \"banner 1\"];",
+									"const absent = [\"test 1 v2 (This ver will be publshed in the future)\", \"Working version Only! with publish date\", \"banner 1 v2\"];",
+									"const renderedAbsent = [\"test 1 v2 (This ver will be publshed in the future)\", \"Working version Only! with publish date\", \"banner 1 v2\"];",
+									"pm.test(\"Page contentlets include the versions visible at this date\", function () {",
+									"    present.forEach(title => pm.expect(titles, title).to.include(title));",
+									"});",
+									"pm.test(\"Page contentlets exclude the versions not visible at this date\", function () {",
+									"    absent.forEach(title => pm.expect(titles, title).to.not.include(title));",
+									"});",
+									"pm.test(\"Rendered page includes the versions visible at this date\", function () {",
+									"    present.forEach(title => pm.expect(rendered, title).to.include(title));",
+									"});",
+									"if (renderedAbsent.length) {",
+									"    pm.test(\"Rendered page excludes the versions not visible at this date\", function () {",
+									"        renderedAbsent.forEach(title => pm.expect(rendered, title).to.not.include(title));",
+									"    });",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=LIVE&publishDate={{currentDate}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"{{pageUrl}}"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
+								{
+									"key": "language_id",
+									"value": "1"
+								},
+								{
+									"key": "mode",
+									"value": "LIVE"
+								},
+								{
+									"key": "publishDate",
+									"value": "{{currentDate}}"
+								}
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Current publish date serves the live banner image",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Banner serves draft.png\", function () {",
+									"    pm.expect(pm.response.headers.get('Content-Type')).to.include('image/png');",
+									"    pm.expect(pm.response.headers.get('Content-Length')).to.eql('18137');",
+									"    const disposition = pm.response.headers.get('Content-Disposition');",
+									"    pm.expect(disposition).to.include('inline');",
+									"    pm.expect(disposition).to.include('filename=\"draft.png\"');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/dA/{{bannerContentOneId}}/image",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dA",
+								"{{bannerContentOneId}}",
+								"image"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"description": "Same session as the page request before it (newman keeps the JSESSIONID cookie). The image servlet follows the session's time-machine date, so it serves the banner version that the previous page request selected."
+					},
+					"response": []
+				},
+				{
+					"name": "Start a fresh session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Publish date inside the grace window does not show future content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Grace-window date has not passed yet (otherwise content three v2 may already be live)\", function () {",
+									"    pm.expect(Date.parse(pm.collectionVariables.get(\"graceWindowDate\"))).to.be.above(Date.now());",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Same as the Karate extractContentlets helper: every contentlet in every container of the page.",
+									"const entity = pm.response.json().entity;",
+									"const titles = [];",
+									"Object.values(entity.containers).forEach(container => {",
+									"    Object.values(container.contentlets || {}).forEach(list => list.forEach(c => titles.push(c.title)));",
+									"});",
+									"const rendered = entity.page.rendered;",
+									"console.log('titles:', titles);",
+									"",
+									"const present = [\"test 3\"];",
+									"const absent = [\"test 3 v2\"];",
+									"const renderedAbsent = [\"test 3 v2\"];",
+									"pm.test(\"Page contentlets include the versions visible at this date\", function () {",
+									"    present.forEach(title => pm.expect(titles, title).to.include(title));",
+									"});",
+									"pm.test(\"Page contentlets exclude the versions not visible at this date\", function () {",
+									"    absent.forEach(title => pm.expect(titles, title).to.not.include(title));",
+									"});",
+									"pm.test(\"Rendered page includes the versions visible at this date\", function () {",
+									"    present.forEach(title => pm.expect(rendered, title).to.include(title));",
+									"});",
+									"if (renderedAbsent.length) {",
+									"    pm.test(\"Rendered page excludes the versions not visible at this date\", function () {",
+									"        renderedAbsent.forEach(title => pm.expect(rendered, title).to.not.include(title));",
+									"    });",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=LIVE&publishDate={{graceWindowDate}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"{{pageUrl}}"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
+								{
+									"key": "language_id",
+									"value": "1"
+								},
+								{
+									"key": "mode",
+									"value": "LIVE"
+								},
+								{
+									"key": "publishDate",
+									"value": "{{graceWindowDate}}"
+								}
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start a fresh session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Log in for the future banner preview",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Session login succeeds', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Session login sets JSESSIONID for the image preview', function () {",
+									"    const cookies = pm.response.headers.filter(h => h.key.toLowerCase() === 'set-cookie').map(h => h.value).join(';');",
+									"    pm.expect(cookies).to.include('JSESSIONID=');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"userId\": \"admin@dotcms.com\", \"password\": \"admin\", \"backEndLogin\": true}"
+						},
+						"url": "{{serverURL}}/api/v1/authentication",
+						"description": "The banner image servlet reads the time-machine date from a browser session. Establish that session explicitly with JSON login; Bearer authentication deliberately does not create one."
+					},
+					"response": []
+				},
+				{
+					"name": "Future publish date shows the future versions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"// Same as the Karate extractContentlets helper: every contentlet in every container of the page.",
+									"const entity = pm.response.json().entity;",
+									"const titles = [];",
+									"Object.values(entity.containers).forEach(container => {",
+									"    Object.values(container.contentlets || {}).forEach(list => list.forEach(c => titles.push(c.title)));",
+									"});",
+									"const rendered = entity.page.rendered;",
+									"console.log('titles:', titles);",
+									"",
+									"const present = [\"test 1 v2 (This ver will be publshed in the future)\", \"test 2 v2\", \"Working version Only! with publish date\", \"banner 1 v2\"];",
+									"const absent = [\"test 1\", \"banner 1\"];",
+									"const renderedAbsent = [];",
+									"pm.test(\"Page contentlets include the versions visible at this date\", function () {",
+									"    present.forEach(title => pm.expect(titles, title).to.include(title));",
+									"});",
+									"pm.test(\"Page contentlets exclude the versions not visible at this date\", function () {",
+									"    absent.forEach(title => pm.expect(titles, title).to.not.include(title));",
+									"});",
+									"pm.test(\"Rendered page includes the versions visible at this date\", function () {",
+									"    present.forEach(title => pm.expect(rendered, title).to.include(title));",
+									"});",
+									"if (renderedAbsent.length) {",
+									"    pm.test(\"Rendered page excludes the versions not visible at this date\", function () {",
+									"        renderedAbsent.forEach(title => pm.expect(rendered, title).to.not.include(title));",
+									"    });",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=LIVE&publishDate={{futureDate}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"{{pageUrl}}"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
+								{
+									"key": "language_id",
+									"value": "1"
+								},
+								{
+									"key": "mode",
+									"value": "LIVE"
+								},
+								{
+									"key": "publishDate",
+									"value": "{{futureDate}}"
+								}
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Future publish date serves the future banner image",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Banner serves java-image.png\", function () {",
+									"    pm.expect(pm.response.headers.get('Content-Type')).to.include('image/png');",
+									"    pm.expect(pm.response.headers.get('Content-Length')).to.eql('46239');",
+									"    const disposition = pm.response.headers.get('Content-Disposition');",
+									"    pm.expect(disposition).to.include('inline');",
+									"    pm.expect(disposition).to.include('filename=\"java-image.png\"');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/dA/{{bannerContentOneId}}/image",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dA",
+								"{{bannerContentOneId}}",
+								"image"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"description": "Same session as the page request before it (newman keeps the JSESSIONID cookie). The image servlet follows the session's time-machine date, so it serves the banner version that the previous page request selected."
+					},
+					"response": []
+				},
+				{
+					"name": "Start a fresh session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "URL map with current publish date shows the live version",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const entity = pm.response.json().entity;",
+									"pm.test(\"urlContentMap title is the live version\", function () {",
+									"    pm.expect(entity.urlContentMap.title).to.include(\"url-content-map-test-1-v1\");",
+									"});",
+									"pm.test(\"Rendered page includes the live version\", function () {",
+									"    pm.expect(entity.page.rendered).to.include(\"url-content-map-test-1-v1\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/{{urlMapContentOneUrl}}?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=LIVE&publishDate={{currentDate}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"{{urlMapContentOneUrl}}"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
+								{
+									"key": "language_id",
+									"value": "1"
+								},
+								{
+									"key": "mode",
+									"value": "LIVE"
+								},
+								{
+									"key": "publishDate",
+									"value": "{{currentDate}}"
+								}
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start a fresh session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "URL map with future publish date shows the future version",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const entity = pm.response.json().entity;",
+									"pm.test(\"urlContentMap title is the future version\", function () {",
+									"    pm.expect(entity.urlContentMap.title).to.include(\"url-content-map-test-1-v2\");",
+									"});",
+									"pm.test(\"Rendered page includes the future version\", function () {",
+									"    pm.expect(entity.page.rendered).to.include(\"url-content-map-test-1-v2\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/{{urlMapContentOneUrl}}?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=LIVE&publishDate={{futureDate}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"{{urlMapContentOneUrl}}"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
+								{
+									"key": "language_id",
+									"value": "1"
+								},
+								{
+									"key": "mode",
+									"value": "LIVE"
+								},
+								{
+									"key": "publishDate",
+									"value": "{{futureDate}}"
+								}
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start a fresh session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GraphQL page without publish date shows the live versions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const titles = [];",
+									"pm.response.json().data.page.containers.forEach(container =>",
+									"    container.containerContentlets.forEach(cc => cc.contentlets.forEach(c => titles.push(c.title))));",
+									"console.log('titles:', titles);",
+									"",
+									"pm.test(\"Contentlets include the live versions\", function () {",
+									"    pm.expect(titles).to.include(\"test 1\");",
+									"    pm.expect(titles).to.include(\"test 2 v2\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{ page(url: \"/{{pageUrl}}\" site: \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\") { containers { containerContentlets { contentlets { title } } } } }",
+								"variables": ""
+							}
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start a fresh session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GraphQL page with future publish date shows the future version",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"const titles = [];",
+									"pm.response.json().data.page.containers.forEach(container =>",
+									"    container.containerContentlets.forEach(cc => cc.contentlets.forEach(c => titles.push(c.title))));",
+									"console.log('titles:', titles);",
+									"",
+									"pm.test(\"Contentlets include the future version\", function () {",
+									"    pm.expect(titles).to.include(\"test 1 v2 (This ver will be publshed in the future)\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{ page(url: \"/{{pageUrl}}\" site: \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\" publishDate: \"{{futureDate}}\") { containers { containerContentlets { contentlets { title } } } } }",
+								"variables": ""
+							}
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start a fresh session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unpublished URL map in LIVE mode without publish date returns 404",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/page/render/{{urlUnpublishedContentMap}}?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=LIVE",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"page",
+								"render",
+								"{{urlUnpublishedContentMap}}"
+							],
+							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
+								{
+									"key": "language_id",
+									"value": "1"
+								},
+								{
+									"key": "mode",
+									"value": "LIVE"
+								}
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start a fresh session",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GraphQL page for an unpublished URL map returns no page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"The only GraphQL error is the page not being found\", function () {",
+									"    // dotCMS answers a missing page with data.page null plus this one error, so any other error is a failure.",
+									"    const errors = pm.response.json().errors;",
+									"    pm.expect(errors).to.be.an('array').with.lengthOf(1);",
+									"    pm.expect(errors[0].message).to.include('Page not found');",
+									"});",
+									"",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"page is null\", function () {",
+									"    pm.expect(pm.response.json().data.page).to.be.null;",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						},
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "{ page(url: \"/{{urlUnpublishedContentMap}}\" site: \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\") { containers { containerContentlets { contentlets { title } } } } }",
+								"variables": ""
+							}
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Cleanup",
+			"item": [
+				{
+					"name": "Delete URL map content type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/{{urlMapContentTypeId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"{{urlMapContentTypeId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Destroy page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/DESTROY?identifier={{pageId}}&indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"DESTROY"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "{{pageId}}"
+								},
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unpublish template",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Template operation succeeded\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.fails).to.eql([]);",
+									"    pm.expect(entity.successCount).to.eql(1);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_unpublish",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_unpublish"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateId}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Archive template",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Template operation succeeded\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.fails).to.eql([]);",
+									"    pm.expect(entity.successCount).to.eql(1);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_archive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_archive"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateId}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete template",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Template operation succeeded\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity.fails).to.eql([]);",
+									"    pm.expect(entity.successCount).to.eql(1);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{templateId}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete container",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Container was deleted\", function () {",
+									"    pm.expect(pm.response.json().entity).to.eql(true);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers?containerId={{containerId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers"
+							],
+							"query": [
+								{
+									"key": "containerId",
+									"value": "{{containerId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete content type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"{{contentTypeId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete banner content type",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/{{bannerContentTypeId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"{{bannerContentTypeId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Destroy draft.png image",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/DESTROY?identifier={{imageOneId}}&indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"DESTROY"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "{{imageOneId}}"
+								},
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Destroy java-image.png image",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/DESTROY?identifier={{imageTwoId}}&indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"DESTROY"
+							],
+							"query": [
+								{
+									"key": "identifier",
+									"value": "{{imageTwoId}}"
+								},
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete banner folder (and /application when this run created it)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"No errors in the results\", function () {",
+									"    const results = (pm.response.json().entity || {}).results || [];",
+									"    const errors = [];",
+									"    results.forEach(result => Object.keys(result).forEach(key => {",
+									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+									"    }));",
+									"    pm.expect(errors).to.eql([]);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/folder/default",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"folder",
+								"default"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{folderToDelete}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"if (!pm.environment.get('jwt')) {",
+					"    throw new Error('Set environment jwt to a pre-issued dotCMS API token, or use the Node runner.');",
+					"}"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "ftmSuffix",
+			"value": ""
+		},
+		{
+			"key": "folderToDelete",
+			"value": ""
+		},
+		{
+			"key": "currentDate",
+			"value": ""
+		},
+		{
+			"key": "futureDate",
+			"value": ""
+		},
+		{
+			"key": "graceWindowDate",
+			"value": ""
+		},
+		{
+			"key": "bannerFolderId",
+			"value": ""
+		},
+		{
+			"key": "bannerVtlId",
+			"value": ""
+		},
+		{
+			"key": "imageOneId",
+			"value": ""
+		},
+		{
+			"key": "imageTwoId",
+			"value": ""
+		},
+		{
+			"key": "contentTypeId",
+			"value": ""
+		},
+		{
+			"key": "bannerContentTypeId",
+			"value": ""
+		},
+		{
+			"key": "containerId",
+			"value": ""
+		},
+		{
+			"key": "templateId",
+			"value": ""
+		},
+		{
+			"key": "contentOneId",
+			"value": ""
+		},
+		{
+			"key": "contentTwoId",
+			"value": ""
+		},
+		{
+			"key": "contentThreeId",
+			"value": ""
+		},
+		{
+			"key": "bannerContentOneId",
+			"value": ""
+		},
+		{
+			"key": "nonPublishedContentId",
+			"value": ""
+		},
+		{
+			"key": "pageUrl",
+			"value": ""
+		},
+		{
+			"key": "pageId",
+			"value": ""
+		},
+		{
+			"key": "urlMapContentTypeId",
+			"value": ""
+		},
+		{
+			"key": "urlMapContentOneId",
+			"value": ""
+		},
+		{
+			"key": "urlMapContentOneUrl",
+			"value": ""
+		},
+		{
+			"key": "urlMapContentTwoId",
+			"value": ""
+		},
+		{
+			"key": "urlMapContentTwoInode",
+			"value": ""
+		},
+		{
+			"key": "urlUnpublishedContentMap",
+			"value": ""
+		}
+	]
+}

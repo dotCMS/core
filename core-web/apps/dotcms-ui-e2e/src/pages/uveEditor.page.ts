@@ -1,4 +1,4 @@
-import { Locator, Page } from '@playwright/test';
+import { expect, Locator, Page } from '@playwright/test';
 
 /** No persona — the default the editor itself applies when the address does not name one. */
 const NO_PERSONA_ID = 'modes.persona.no.persona';
@@ -80,10 +80,20 @@ export class UveEditorPage {
     /**
      * Adds a form to a container the way an editor does: the container's add menu, then the form
      * in the form selector.
+     *
+     * The add button appears when the editor sees the pointer enter the container. Right after the
+     * canvas re-renders (a first form was just placed) that hover can arrive before the editor
+     * reacts to it, and hovering again with a pointer that has not moved sends nothing. The pointer
+     * is therefore moved off the canvas and back until the button shows.
      */
     async addForm(containerIndex: number, formName: string) {
-        await this.container(containerIndex).hover();
-        await this.page.getByRole('button', { name: 'Add content' }).click();
+        const addContent = this.page.getByRole('button', { name: 'Add content' });
+        await expect(async () => {
+            await this.page.mouse.move(0, 0);
+            await this.container(containerIndex).hover();
+            await expect(addContent).toBeVisible({ timeout: 2000 });
+        }).toPass({ timeout: 20000 });
+        await addContent.click();
         await this.page.getByRole('menuitem', { name: 'Form' }).click();
         await this.page
             .getByRole('row', { name: formName })

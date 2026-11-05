@@ -1113,15 +1113,15 @@ has "$TEST_PHASE" 'needs-maven-repo: \$\{\{ matrix\.needs_maven_deps == true \}\
 OFF_TYPES="$(yq '[.test_types | to_entries | .[] | select(.value.defaults.needs_maven_deps == false) | .key] | sort | join(",")' "$TEST_MATRIX")"
 SUITE_OVERRIDES="$(yq '[.test_types[] | (.suites // [])[] | select(has("needs_maven_deps"))] | length' "$TEST_MATRIX")"
 if [[ "$(yq '.defaults.needs_maven_deps' "$TEST_MATRIX")" == "true" \
-   && "$OFF_TYPES" == "e2e,karate,postman" && "$SUITE_OVERRIDES" == "0" ]]; then
-  ok "exactly Postman, Karate and E2E skip the dependency cache and the maven-repo artifact"
+   && "$OFF_TYPES" == "e2e,postman" && "$SUITE_OVERRIDES" == "0" ]]; then
+  ok "exactly Postman and E2E skip the dependency cache and the maven-repo artifact"
 else
-  bad "exactly Postman, Karate and E2E skip the dependency cache and the maven-repo artifact" \
-    "types with needs_maven_deps: false = '$OFF_TYPES' (want e2e,karate,postman); suite-level overrides = $SUITE_OVERRIDES (want 0)"
+  bad "exactly Postman and E2E skip the dependency cache and the maven-repo artifact" \
+    "types with needs_maven_deps: false = '$OFF_TYPES' (want e2e,postman); suite-level overrides = $SUITE_OVERRIDES (want 0)"
 fi
 # needs_node restores the Node binary (60 MB) and core-web's pnpm store (495 MB). Only the
 # suites that run Node get them: Postman (newman), E2E (Playwright) and the frontend unit
-# tests. Karate, the integration suites, JVM and CLI run none, and the war carries core-web.
+# tests. The integration suites, JVM and CLI run none, and the war carries core-web.
 NODE_TYPES="$(yq '[.test_types | to_entries | .[] | select(.value.defaults.needs_node == true) | .key] | sort | join(",")' "$TEST_MATRIX")"
 NODE_OVERRIDES="$(yq '[.test_types[] | (.suites // [])[] | select(has("needs_node"))] | length' "$TEST_MATRIX")"
 if [[ "$(yq '.defaults.needs_node // false' "$TEST_MATRIX")" == "false" \

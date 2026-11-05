@@ -763,3 +763,95 @@ test('protected page APIs carry an effective resolved Bearer except explicit ano
   assert.equal(violations.length, 0,
     `Protected page API requests need an effective Bearer:\n${violations.map(label).join('\n')}`);
 });
+
+// Main's Karate-to-Postman migration must retain the fixture users, not silently use admin.
+for (const [file, actor, creation, count] of [
+  ['MaintenanceToolsAccess', 'maintenance', 'Create the user who holds the Maintenance portlet', 9],
+  ['MaintenanceToolsAccess', 'backend', 'Create a back-end user without the role', 9],
+  ['MaintenanceToolsAccess', 'frontend', 'Create a front-end user', 9],
+  ['WorkflowFirePermissionList', 'editor', 'Create the editor back-end user', 2],
+]) test(`${file} provisions and uses the ${actor}'s API JWT without elevating the caller`, () => {
+  const collectionFile = `${file}.postman_collection.json`;
+  const fixture = requests.find((r) => r.file === collectionFile && r.node.name === creation);
+  assert.ok(fixture, 'Keep actor creation');
+  const code = fixture.node.event.filter((e) => e.listen === 'test').map(eventCode).join('\n');
+  for (const [error, status, entity, fails] of [
+    [null, 200, { jwt: 'synthetic.actor.jwt' }, false],
+    [new Error('connection failed'), 200, {}, true],
+    [null, 403, {}, true],
+    [null, 200, { token: 'legacy-login-token' }, true],
+    [null, 200, { jwt: '  ' }, true],
+  ]) {
+    const values = new Map();
+    let calls = 0;
+    const run = () => vm.runInNewContext(code, { pm: {
+      test() {}, response: { json: () => ({ entity: { userID: 'fixture-user', roleId: 'fixture-role' } }) },
+      collectionVariables: { get: (key) => values.get(key), set: (key, value) => values.set(key, value) },
+      environment: { get: (key) => ({ serverURL: 'http://dotcms.invalid', jwt: 'synthetic.admin.jwt' })[key] },
+      sendRequest(request, callback) {
+        calls++;
+        assert.equal(request.url, 'http://dotcms.invalid/api/v1/apitoken');
+        assert.equal(request.method, 'POST');
+        assert.equal(request.header.Authorization, 'Bearer synthetic.admin.jwt');
+        assert.equal(JSON.parse(request.body.raw).userId, 'fixture-user');
+        assert.equal(JSON.parse(request.body.raw).expirationSeconds, 3600);
+        callback(error, { code: status, json: () => ({ entity }) });
+      },
+    } });
+    if (fails) {
+      assert.throws(run, /Fixture API token issuance failed|Missing fixture API token/);
+      assert.equal(values.get(`${actor}Jwt`), undefined, 'Never fall back to the admin token');
+    } else {
+      run();
+      assert.equal(values.get(`${actor}Jwt`), 'synthetic.actor.jwt');
+    }
+    assert.equal(calls, 1);
+  }
+  const authenticated = requests.filter((r) => r.file === collectionFile &&
+    value(r.auth, 'token') === `{{${actor}Jwt}}`);
+  assert.equal(authenticated.length, count, 'Preserve every actor-specific request');
+  if (actor === 'editor') assert.ok(authenticated.some((r) =>
+    r.node.event.some((e) => /status\(403\)/.test(eventCode(e)))), 'Keep the permission denial assertion');
+});
+
+test('management port denials accept generic HTML or plain 404, never health data', () => {
+  const denials = requests.filter((r) => r.file === 'ManagementEndpoints.postman_collection.json' &&
+    r.node.event?.some((e) => eventCode(e).includes('generic not-found response')));
+  assert.equal(denials.length, 7, 'Keep all management path denial checks');
+  for (const request of denials) {
+    const code = request.node.event.filter((e) => e.listen === 'test').map(eventCode).join('\n');
+    for (const [body, passes] of [
+      ['404', true], ['<html>dotCMS: Page not found (404 error)</html>', true],
+      ['alive', false], ['ready', false], ['{"status":"UP"}', false],
+    ]) {
+      const run = () => vm.runInNewContext(code, { pm: {
+        test: (name, callback) => callback(),
+        response: { text: () => body, to: { have: { status: (code) => assert.equal(code, 404) } } },
+        expect: (actual) => ({ to: { eql: (expected) => assert.equal(actual, expected) } }),
+      } });
+      if (passes) run(); else assert.throws(run, /AssertionError/);
+    }
+  }
+});
+
+test('time-machine banner previews explicitly create only their required browser sessions', () => {
+  const collection = JSON.parse(readFileSync(path.join(root, 'GraphQLTimeMachine.postman_collection.json'), 'utf8'));
+  const items = collection.item.find((i) => i.name === 'Time Machine').item;
+  const logins = items.filter((i) => i.name.startsWith('Log in for the '));
+  assert.equal(logins.length, 3);
+  for (const login of logins) {
+    const index = items.indexOf(login);
+    assert.equal(items[index - 1].request.url.raw, '{{serverURL}}/api/v1/logout');
+    assert.equal(login.request.method, 'POST');
+    assert.equal(login.request.auth.type, 'noauth');
+    assert.equal(login.request.url, '{{serverURL}}/api/v1/authentication');
+    assert.deepEqual(JSON.parse(login.request.body.raw), {
+      userId: 'admin@dotcms.com', password: 'admin', backEndLogin: true,
+    });
+    assert.match(login.event.map(eventCode).join('\n'), /JSESSIONID=/);
+    assert.match(items[index + 1].request.url.raw, /\/api\/v1\/page\/render\//);
+    assert.match(items[index + 2].request.url.raw, /\/dA\/.*\/image$/);
+    assert.equal(items[index + 2].request.auth.type, 'noauth', 'The image follows the explicit preview session');
+    assert.match(items[index + 2].event.map(eventCode).join('\n'), /Content-Length/);
+  }
+});

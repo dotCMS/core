@@ -109,7 +109,8 @@ credential-equivalent to Bearer, and a Basic-only client such as WebDAV works ou
 with username + API JWT as its password. Administrators can change it at runtime through
 `POST /api/v1/system-table`, for example with `{"key":"ALLOW_BASIC_AUTH","value":"NONE"}`.
 System-table changes require no restart and apply to subsequent authentication attempts;
-existing sessions are not revoked.
+existing sessions are not revoked. GraphQL authenticates before cache lookup, so cached responses
+cannot bypass a changed authentication or anonymous-access policy.
 
 Normal configuration precedence still applies: an explicit `DOT_ALLOW_BASIC_AUTH` environment
 override wins over the system table. Changing the process environment requires restarting the
@@ -199,7 +200,7 @@ There is no `REST_API_REJECT_WITH_NO_USER` setting. An endpoint that must never 
 
 **Velocity Secrets in scripting endpoints:** Velocity Secrets (`$dotsecrets`) can be read from the file-based `/api/vtl` and `/api/js` endpoints, including by anonymous callers, when the user who last edited the endpoint's script file (for example `get.vtl` or `get.js`) has the Scripting Developer role. This matches how secrets work in page content. If the file's last editor doesn't have that role, the requesting user must have it instead, so anonymous calls can't read secrets. Code posted to the `/dynamic` endpoints comes from the caller, so there only the requesting user's role counts, and setting `secrets.scripting.enabled=false` still turns secrets off everywhere.
 
-For `/api/js`, the captured editor of the entry file (`get.js`, `post.js`, and so on) is what counts, including for any modules it imports. Each imported file module must also have been last saved by a Scripting Developer or CMS Administrator before its source can run. A module last saved by another user is refused, even when a developer-authored entry file imports it. The editor ID is captured when the endpoint file is loaded; changing an in-memory Contentlet cannot change that authority.
+For `/api/js`, the captured editor of the entry file (`get.js`, `post.js`, and so on) is what counts, including for any modules it imports. Each imported file module must also have been last saved by a Scripting Developer or CMS Administrator before its source can run. A module last saved by another user is refused, even when a developer-authored entry file imports it. The editor ID and file's site ID are captured when the endpoint file is loaded; changing an in-memory Contentlet cannot change that authority or secret scope. Site-scoped secret reads (`get` and `getCharArray`) in file-based VTL and JavaScript use that captured site, not caller-supplied `host` or `host_id` parameters. Missing file-site provenance is refused; ordinary page and workflow secret resolution is unchanged.
 
 **Warning:** never evaluate request input (Velocity `#evaluate`, JavaScript `eval`) in an endpoint whose file was last edited by a Scripting Developer. Code evaluated on the fly has no file of its own, so it runs with the editor's access to secrets, and an anonymous caller could send `$dotsecrets.get('anyKey')` and get the value back.
 

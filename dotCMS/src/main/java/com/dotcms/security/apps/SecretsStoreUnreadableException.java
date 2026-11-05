@@ -10,8 +10,9 @@ import com.dotmarketing.exception.DotRuntimeException;
  * Exists so callers can recognise <em>this</em> condition specifically rather than catching
  * {@link DotRuntimeException}, which is dotCMS's general-purpose unchecked wrapper: database blips,
  * cache failures and plenty else surface as one. Two callers on request paths must degrade rather
- * than propagate, because raising there returns a 500 for every {@code /api/*} request
- * ({@code AppsAPIImpl.filterSitesForAppKey}, reached from {@code EMAWebInterceptor}) or escapes onto
+ * than propagate, because raising there returns a 500 to the request that reached it
+ * ({@code AppsAPIImpl.filterSitesForAppKey}, reached from the Apps listing and the SAML
+ * configuration check) or escapes onto
  * the analytics collection path ({@code SiteAuthValidator}). Catching the broad type there would
  * have silently degraded unrelated infrastructure failures into "no secrets configured" too; this
  * type keeps that narrow.

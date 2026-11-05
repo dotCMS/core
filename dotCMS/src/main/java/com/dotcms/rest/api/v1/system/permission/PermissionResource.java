@@ -367,6 +367,7 @@ public class PermissionResource {
     /**
      * Gets permissions for a user's individual role, organized by assets (hosts and folders).
      * Returns user information, their individual role ID, and a paginated list of permission assets.
+     * Does not create a personal role or change the user's role membership.
      *
      * @param request HTTP servlet request
      * @param response HTTP servlet response
@@ -394,7 +395,7 @@ public class PermissionResource {
                     description = "Forbidden - non-admin user attempted to view another user's permissions",
                     content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "404",
-                    description = "User not found",
+                    description = "User or individual role not found",
                     content = @Content(mediaType = "application/json"))
     })
     @GET
@@ -431,9 +432,11 @@ public class PermissionResource {
         final User systemUser = userAPI.getSystemUser();
         final User targetUser = loadUserByIdOrEmail(userId, systemUser);
 
-        // The user's individual role is keyed by the user id, not by a role id: loadRoleById
-        // only resolved it through the warm role-key cache index and NPE'd on a cold cache.
-        final Role userRole = roleAPI.getUserRole(targetUser);
+        // Read by key: getUserRole would create roles and restore revoked membership on this GET.
+        final Role userRole = roleAPI.loadRoleByKey(targetUser.getUserId());
+        if (userRole == null) {
+            throw new com.dotcms.rest.exception.NotFoundException("User role not found");
+        }
 
         // Build user info (needed in function closure)
         final UserInfoView userInfo = UserInfoView.builder()

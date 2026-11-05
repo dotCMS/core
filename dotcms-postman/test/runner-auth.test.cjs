@@ -23,6 +23,7 @@ async function runRunner({ login, token, failAt, abortAt, collectionError, newma
   let timerId = 0;
   const argv = {
     _: [emptyGroup ? 'default' : 'probe'], serverUrl: 'http://dotcms.invalid', deferFailureExit,
+    managementUrl: 'http://management.invalid:18090',
     postmanTestsDir: '/virtual/collections', configFilePath: '/virtual/config.json',
     postmanTestsResultsDir: '/virtual/results',
   };
@@ -118,6 +119,7 @@ test('JSON login -> isolated JSESSIONID -> API JWT -> Bearer-only Newman environ
   const config = result.newmanRuns[0];
   assert.deepEqual(JSON.parse(JSON.stringify(config.envVar)), [
     { key: 'serverURL', value: 'http://dotcms.invalid' }, { key: 'jwt', value: jwt },
+    { key: 'managementURL', value: 'http://management.invalid:18090' },
   ]);
   assert.ok(!JSON.stringify(config).includes(session), 'No bootstrap session in Newman configuration');
   assert.ok(!JSON.stringify(config).includes('synthetic-login-token'));
