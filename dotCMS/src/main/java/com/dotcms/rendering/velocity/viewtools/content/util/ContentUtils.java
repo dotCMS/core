@@ -1024,6 +1024,11 @@ public class ContentUtils {
 	 * Copies a contentlet into a new instance: its property map, its own set of null properties,
 	 * and the state kept outside the map (variant, index policies). The given contentlet,
 	 * including its map, is not modified.
+	 * <p>
+	 * The copy is shallow: values in the map (lists, maps, metadata) are shared with the given
+	 * contentlet, so callers may replace entries of the copy but must not modify those values in
+	 * place. The set of null properties is the exception, because {@link Contentlet} updates it in
+	 * place, so the copy gets its own.
 	 *
 	 * @param contentlet  The contentlet to copy.
 	 * @param newInstance Creates the instance that receives the copy.

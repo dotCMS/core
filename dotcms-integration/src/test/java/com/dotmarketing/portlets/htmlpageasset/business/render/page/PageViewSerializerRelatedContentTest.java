@@ -205,4 +205,49 @@ public class PageViewSerializerRelatedContentTest {
             TemplateDataGen.remove(template);
         }
     }
+
+    /**
+     * Method to test: getObjectMap
+     * Given Scenario: the request asks for related content with a depth the API does not accept
+     * ({@code 7}), so loading the page's related content fails
+     * ExpectedResult: the page map is still returned, without related content, as is already the
+     * case for URL-mapped content
+     */
+    @Test
+    public void getObjectMap_whenRelatedContentCannotBeLoaded_returnsThePageWithoutIt() throws Exception {
+
+        final Host site = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().site(site).nextPersisted();
+        final HTMLPageAsset savedPage = new HTMLPageDataGen(site, template).nextPersisted();
+
+        final HttpServletRequest oldRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        final HttpServletResponse oldResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+        try {
+            final HttpServletRequest request = new MockAttributeRequest(
+                    new MockHttpRequestIntegrationTest("localhost", "/").request()).request();
+            request.setAttribute(com.liferay.portal.util.WebKeys.USER, APILocator.systemUser());
+            request.setAttribute(WebKeys.HTMLPAGE_DEPTH, "7");
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(new MockHttpResponse().response());
+
+            final PageView pageView = new PageView.Builder()
+                    .site(site)
+                    .template(template)
+                    .containers(Collections.emptyList())
+                    .page(savedPage)
+                    .viewAs(new ViewAsPageStatus.Builder().build())
+                    .build();
+
+            final Map<String, Object> pageViewMap = new PageViewSerializer().getObjectMap(pageView);
+
+            final Map<?, ?> pageMap = Map.class.cast(pageViewMap.get("page"));
+            assertNotNull("the page map must be returned", pageMap);
+            assertEquals(savedPage.getIdentifier(), pageMap.get("identifier"));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(oldRequest);
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(oldResponse);
+            ContentletDataGen.remove(savedPage);
+            TemplateDataGen.remove(template);
+        }
+    }
 }

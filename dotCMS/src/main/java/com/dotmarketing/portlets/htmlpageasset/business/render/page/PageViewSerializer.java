@@ -143,7 +143,9 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
 
     /**
      * Generates the map of the HTML Page, with the related content the current request asks for.
-     * The page object held by the {@link PageView} is left unchanged.
+     * The page object held by the {@link PageView} is left unchanged. If the related content
+     * cannot be loaded, the error is logged and the page is returned without it, as for the
+     * URL-mapped content.
      *
      * @param pageView The {@link PageView} whose page is serialized.
      *
@@ -151,7 +153,9 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
      */
     private Map<Object, Object> asPageMap(final PageView pageView)  {
 
-        final HTMLPageAsset page = withRelationships(pageView.getPage(), HTMLPageAsset::new);
+        final HTMLPageAsset page = Try.of(() -> withRelationships(pageView.getPage(), HTMLPageAsset::new))
+                .onFailure(e -> Logger.error(PageViewSerializer.class, e.getMessage(), e))
+                .getOrElse(pageView.getPage());
 
         final Map<Object, Object> pageMap = this.asMap(page);
 
