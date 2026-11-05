@@ -956,7 +956,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 				if (!contentletFind.getVariantId().equals(variantNameFormData)) {
 					contentletFormData.put("contentletInode", StringPool.BLANK);
-					creatingNewVersion(inodeStr, contentletFormData, contentlet);
+					creatingNewVersion(inodeStr, contentletFormData, contentlet, user);
 				}
 			} else{
 				throw new NotFoundInDbException("contentlet with that inode does not exist");
@@ -965,7 +965,7 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 
 			/*In case of multi-language first ocurrence new contentlet*/
 			String sibblingInode = (String) contentletFormData.get("sibbling");
-			creatingNewVersion(sibblingInode, contentletFormData, contentlet);
+			creatingNewVersion(sibblingInode, contentletFormData, contentlet, user);
 		}
 
 		//if(perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false));
@@ -996,13 +996,25 @@ public class ContentletWebAPIImpl implements ContentletWebAPI {
 		contentletFormData.put(WebKeys.VERSIONS_INODE_EDIT, contentlet);
 	}
 
-	private void creatingNewVersion(final String inode, final Map<String, Object> contentletFormData, final Contentlet contentlet)
-			throws DotDataException, DotSecurityException {
+	/**
+	 * Prepares a new version of an existing contentlet, such as a translation or a variant, by
+	 * copying the source contentlet's identifier, content type, language and variant onto the
+	 * given contentlet. The source is loaded with the requesting user, so it must be readable.
+	 *
+	 * @param inode              inode of the source contentlet
+	 * @param contentletFormData form data with the target language and variant
+	 * @param contentlet         contentlet that receives the values
+	 * @param user               user making the request
+	 * @throws DotDataException     if the source contentlet cannot be loaded
+	 * @throws DotSecurityException if the user cannot read the source contentlet
+	 */
+	private void creatingNewVersion(final String inode, final Map<String, Object> contentletFormData,
+			final Contentlet contentlet, final User user) throws DotDataException, DotSecurityException {
 
 
 		if(InodeUtils.isSet(inode) && !inode.equals("0")){
 
-			Contentlet sibblingContentlet = conAPI.find(inode,APILocator.getUserAPI().getSystemUser(), false);
+			Contentlet sibblingContentlet = conAPI.find(inode, user, false);
 
 			Logger.debug(UtilHTML.class, "getLanguagesIcons :: Sibbling Contentlet = "+ sibblingContentlet.getInode());
 

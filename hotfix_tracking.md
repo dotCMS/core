@@ -108,3 +108,4 @@ Release-25.07.10 LTS
 102. https://github.com/dotCMS/private-issues/issues/893 : DWR ContentletAjax.saveContent: copies any File Asset's binary into the caller's content through a system-user #38310 #893
 103. https://github.com/dotCMS/private-issues/issues/955 : 2026 Pentest (Federal Home Loan Bank of Dallas): H1 Stored XSS in content titles and template titles, runs in  #38155 #955
 104. https://github.com/dotCMS/private-issues/issues/841 : Ubaid Raza F3: Portlet authorization check in the Struts/portlet layer is commented out (7.1 High) #38181 #841
+105. https://github.com/dotCMS/private-issues/issues/894 : Struts EditContentletAction: sibling contentlet is loaded as the system user and its READ check is an empty if #38261 #894

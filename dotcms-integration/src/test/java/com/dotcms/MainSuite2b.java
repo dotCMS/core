@@ -508,7 +508,8 @@ import com.dotcms.ai.rest.EmbeddingsResourceAuthTest;
         com.dotmarketing.portlets.languagesmanager.ajax.LanguageAjaxIntegrationTest.class,
         com.dotmarketing.business.ajax.RoleAjaxLayoutsIntegrationTest.class,
         com.dotmarketing.portlets.languagesmanager.action.EditLanguageKeysActionTest.class,
-    EmbeddingsResourceAuthTest.class
+    EmbeddingsResourceAuthTest.class,
+    com.dotmarketing.portlets.contentlet.action.EditContentletActionRetrieveTest.class
 })
 
 public class MainSuite2b {
