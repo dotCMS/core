@@ -19,7 +19,13 @@ const VERSION = 'a'.repeat(64);
 const NEXT_VERSION = '1' + 'b'.repeat(63);
 const DEFAULT_URL = '/api/v2/languages/default/keys';
 
+const createMessages = (count: number): Record<string, string> =>
+    Object.fromEntries(
+        Array.from({ length: count }, (_, index) => [`key.${index}`, `Message ${index}`])
+    );
+
 const messages = {
+    ...createMessages(101),
     'dot.common.cancel': 'Cancel',
     'dot.common.accept': 'Accept {0}'
 };
@@ -117,6 +123,65 @@ describe('DotMessageService', () => {
             expect(storage.getItem(VERSION_LOCALSTORAGE_KEY)).toBe(NEXT_VERSION);
         });
 
+        it('should reuse a matching cache containing exactly 101 translations', async () => {
+            seedCache(createMessages(101));
+            await firstValueFrom(service.init({ languageBundleVersion: VERSION }));
+            http.expectNone(DEFAULT_URL);
+            expect(service.get('key.100')).toBe('Message 100');
+        });
+
+        it.each([1, 100])(
+            'should reject a %i-key response without advancing the version',
+            async (count) => {
+                seedCache();
+                await firstValueFrom(service.init({ languageBundleVersion: VERSION }));
+                const loaded = firstValueFrom(
+                    service.init({ languageBundleVersion: NEXT_VERSION })
+                );
+                const rejected = expect(loaded).rejects.toThrow('more than 100 translation keys');
+                http.expectOne(DEFAULT_URL).flush({
+                    entity: createMessages(count),
+                    languageBundleVersion: NEXT_VERSION
+                });
+                await rejected;
+                expect(storage.getItem(VERSION_LOCALSTORAGE_KEY)).toBe(VERSION);
+                expect(service.loadedBundleVersion()).toBe(VERSION);
+                expect(service.get('dot.common.cancel')).toBe('Cancel');
+            }
+        );
+
+        it('should not count version metadata toward the minimum number of translations', async () => {
+            const loaded = firstValueFrom(service.init({ languageBundleVersion: VERSION }));
+            const rejected = expect(loaded).rejects.toThrow('more than 100 translation keys');
+            http.expectOne(DEFAULT_URL).flush({
+                entity: {
+                    ...createMessages(100),
+                    version: VERSION,
+                    languageBundleVersion: VERSION
+                },
+                languageBundleVersion: VERSION
+            });
+            await rejected;
+            expect(storage.getItem(VERSION_LOCALSTORAGE_KEY)).toBeNull();
+            expect(service.loadedBundleVersion()).toBeNull();
+        });
+
+        it('should accept 101 translations and persist the version last', async () => {
+            const persist = vi.spyOn(storage, 'setItem');
+            const loaded = firstValueFrom(service.init({ languageBundleVersion: VERSION }));
+            http.expectOne(DEFAULT_URL).flush({
+                entity: createMessages(101),
+                languageBundleVersion: VERSION
+            });
+            await loaded;
+            expect(persist).toHaveBeenLastCalledWith(
+                VERSION_LOCALSTORAGE_KEY,
+                JSON.stringify(VERSION)
+            );
+            expect(service.loadedBundleVersion()).toBe(VERSION);
+            expect(service.get('key.100')).toBe('Message 100');
+        });
+
         it('should fetch when the locale changes despite an equal hash', async () => {
             seedCache();
             const loaded = firstValueFrom(
@@ -124,7 +189,7 @@ describe('DotMessageService', () => {
             );
 
             http.expectOne('/api/v2/languages/es_ES/keys').flush({
-                entity: { 'dot.common.cancel': 'Cancelar' },
+                entity: { ...messages, 'dot.common.cancel': 'Cancelar' },
                 languageBundleVersion: VERSION
             });
             await loaded;
@@ -174,21 +239,26 @@ describe('DotMessageService', () => {
             '{invalid-json',
             42,
             { 'dot.common.cancel': null },
-            { 'dot.common.cancel': 'Cancel', invalid: 42 },
+            { ...messages, invalid: 42 },
+            createMessages(1),
+            createMessages(100),
             { version: VERSION },
             { languageBundleVersion: VERSION },
             { version: VERSION, languageBundleVersion: VERSION }
-        ])('should fetch for an empty, malformed or metadata-only cache: %j', async (cached) => {
-            seedCache(cached);
-            const loaded = firstValueFrom(service.init({ languageBundleVersion: VERSION }));
+        ])(
+            'should fetch for an undersized, malformed or metadata-only cache (case %#)',
+            async (cached) => {
+                seedCache(cached);
+                const loaded = firstValueFrom(service.init({ languageBundleVersion: VERSION }));
 
-            http.expectOne(DEFAULT_URL).flush({
-                entity: messages,
-                languageBundleVersion: VERSION
-            });
-            await loaded;
-            expect(service.get('dot.common.cancel')).toBe('Cancel');
-        });
+                http.expectOne(DEFAULT_URL).flush({
+                    entity: messages,
+                    languageBundleVersion: VERSION
+                });
+                await loaded;
+                expect(service.get('dot.common.cancel')).toBe('Cancel');
+            }
+        );
 
         it('should fetch when the cached message map is missing', async () => {
             seedCache();
@@ -337,7 +407,7 @@ describe('DotMessageService', () => {
             const retry$ = service.init({ languageBundleVersion: NEXT_VERSION });
             expect(retry$).not.toBe(load$);
             http.expectOne(DEFAULT_URL).flush({
-                entity: { 'dot.common.cancel': 'Updated cancel' },
+                entity: { ...messages, 'dot.common.cancel': 'Updated cancel' },
                 languageBundleVersion: NEXT_VERSION
             });
             await firstValueFrom(retry$);
@@ -359,7 +429,7 @@ describe('DotMessageService', () => {
                     service.init({ languageBundleVersion: NEXT_VERSION })
                 );
                 http.expectOne(DEFAULT_URL).flush({
-                    entity: { 'dot.common.cancel': 'Updated cancel' },
+                    entity: { ...messages, 'dot.common.cancel': 'Updated cancel' },
                     languageBundleVersion: NEXT_VERSION
                 });
                 await loaded;
@@ -414,7 +484,7 @@ describe('DotMessageService', () => {
             { entity: {}, languageBundleVersion: NEXT_VERSION },
             { entity: [], languageBundleVersion: NEXT_VERSION },
             { entity: 'not a map', languageBundleVersion: NEXT_VERSION },
-            { entity: { key: 123 }, languageBundleVersion: NEXT_VERSION },
+            { entity: { ...messages, invalid: 123 }, languageBundleVersion: NEXT_VERSION },
             { entity: { version: NEXT_VERSION }, languageBundleVersion: NEXT_VERSION },
             { entity: messages },
             { entity: messages, languageBundleVersion: null },
@@ -422,7 +492,7 @@ describe('DotMessageService', () => {
             { entity: messages, languageBundleVersion: '   ' },
             { entity: messages, languageBundleVersion: 123 }
         ])(
-            'should reject an invalid response without replacing a valid cache: %j',
+            'should reject an invalid response without replacing a valid cache (case %#)',
             async (response) => {
                 seedCache();
                 await firstValueFrom(service.init({ languageBundleVersion: VERSION }));
@@ -471,7 +541,7 @@ describe('DotMessageService', () => {
             });
             expect(service.loadedBundleVersion()).toBe(VERSION);
             http.expectOne(DEFAULT_URL).flush({
-                entity: { 'dot.common.cancel': 'Updated cancel' },
+                entity: { ...messages, 'dot.common.cancel': 'Updated cancel' },
                 languageBundleVersion: NEXT_VERSION
             });
             expect(service.loadedBundleVersion()).toBe(NEXT_VERSION);

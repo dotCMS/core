@@ -26,6 +26,8 @@ const DEFAULT_LANG = 'default';
 const LANGUAGE_LOCALSTORAGE_KEY = 'dotMessagesKeys-lang';
 const MESSAGES_LOCALSTORAGE_KEY = 'dotMessagesKeys';
 const VERSION_LOCALSTORAGE_KEY = 'dotMessagesKeys-version';
+// Full bundles contain thousands of translations; small maps indicate a partial/bootstrap response.
+const MINIMUM_TRANSLATION_KEYS = 100;
 
 @Injectable({
     providedIn: 'root'
@@ -133,7 +135,7 @@ export class DotMessageService {
                         !this.isVersion(response?.languageBundleVersion)
                     ) {
                         throw new Error(
-                            'Invalid language bundle: messages and version are required.'
+                            'Invalid language bundle: more than 100 translation keys and a version are required.'
                         );
                     }
 
@@ -199,7 +201,8 @@ export class DotMessageService {
         const entries = Object.entries(value);
 
         return (
-            entries.some(([key]) => key !== 'version' && key !== 'languageBundleVersion') &&
+            entries.filter(([key]) => key !== 'version' && key !== 'languageBundleVersion').length >
+                MINIMUM_TRANSLATION_KEYS &&
             entries.every(([, translation]) => typeof translation === 'string')
         );
     }
