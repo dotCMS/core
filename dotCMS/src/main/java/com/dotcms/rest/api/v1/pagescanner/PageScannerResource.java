@@ -125,6 +125,19 @@ public class PageScannerResource {
     // Private helpers
     // -------------------------------------------------------------------------
 
+    /**
+     * Runs one check against the Page Scanner service: authenticates the backend user, reads the
+     * service URL and auth token from the App, refuses a service URL that
+     * {@link PageScannerServiceUrl#validate(String)} does not accept, then creates the short-lived
+     * token and forwards the request. A missing or refused configuration answers 503
+     * {@code PAGE_SCANNER_NOT_CONFIGURED} before any token is created.
+     *
+     * @param request   the HTTP servlet request
+     * @param response  the HTTP servlet response
+     * @param body      the page to check
+     * @param checkType which check to run
+     * @return the upstream response, or the error response described above
+     */
     private Response proxyCheck(
             final HttpServletRequest request,
             final HttpServletResponse response,
@@ -151,9 +164,7 @@ public class PageScannerResource {
         if (appSecretsOpt.isEmpty()) {
             Logger.warn(PageScannerResource.class,
                     "Page Scanner App is not configured in the Apps portlet.");
-            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-                    .entity(new ResponseEntityView<>(new ErrorEntity("PAGE_SCANNER_NOT_CONFIGURED", NOT_CONFIGURED_MSG)))
-                    .build();
+            return notConfigured();
         }
 
         final Map<String, Secret> secrets = appSecretsOpt.get().getSecrets();
@@ -165,9 +176,12 @@ public class PageScannerResource {
         if (!UtilMethods.isSet(apiUrl) || !UtilMethods.isSet(apiAuthToken)) {
             Logger.warn(PageScannerResource.class,
                     "Page Scanner App is missing required configuration: apiUrl and apiAuthToken must be set.");
-            return Response.status(Response.Status.SERVICE_UNAVAILABLE)
-                    .entity(new ResponseEntityView<>(new ErrorEntity("PAGE_SCANNER_NOT_CONFIGURED", NOT_CONFIGURED_MSG)))
-                    .build();
+            return notConfigured();
+        }
+
+        final Optional<String> serviceUrl = PageScannerServiceUrl.validate(apiUrl);
+        if (serviceUrl.isEmpty()) {
+            return notConfigured();
         }
 
         final User user = initData.getUser();
@@ -188,7 +202,7 @@ public class PageScannerResource {
         final String upstreamPayload = buildPayload(pageUrl, shortLivedToken);
 
         // Build the upstream URL
-        final String upstreamUrl = buildUpstreamUrl(apiUrl, checkType);
+        final String upstreamUrl = buildUpstreamUrl(serviceUrl.get(), checkType);
 
         Logger.debug(PageScannerResource.class,
                 "Forwarding " + checkType.pathSegment() + " check to: " + upstreamUrl);
@@ -220,9 +234,28 @@ public class PageScannerResource {
         return "{\"url\":\"" + safeUrl + "\",\"shortLivedToken\":\"" + safeToken + "\"}";
     }
 
-    private String buildUpstreamUrl(final String apiUrl, final CheckType checkType) {
-        final String base = apiUrl.endsWith("/") ? apiUrl.substring(0, apiUrl.length() - 1) : apiUrl;
-        return base + "/" + UPSTREAM_API_VERSION + "/" + checkType.pathSegment() + "/check";
+    /**
+     * Builds the URL of one check on the Page Scanner service.
+     *
+     * @param serviceUrl the base URL accepted by {@link PageScannerServiceUrl#validate(String)},
+     *                   which carries no trailing slash
+     * @param checkType  which check to run
+     * @return the base URL followed by the versioned check path
+     */
+    private String buildUpstreamUrl(final String serviceUrl, final CheckType checkType) {
+        return serviceUrl + "/" + UPSTREAM_API_VERSION + "/" + checkType.pathSegment() + "/check";
+    }
+
+    /**
+     * The answer given when the App is missing, incomplete or its service URL is refused, so the
+     * editor shows its "not configured" state.
+     *
+     * @return a 503 {@code PAGE_SCANNER_NOT_CONFIGURED} response
+     */
+    private static Response notConfigured() {
+        return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                .entity(new ResponseEntityView<>(new ErrorEntity("PAGE_SCANNER_NOT_CONFIGURED", NOT_CONFIGURED_MSG)))
+                .build();
     }
 
     private Response forwardRequest(
