@@ -95,7 +95,7 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 		if (isTaskWriteCommand(cmd) && !WorkflowTaskAccess.canAccess(requestedTask, user)) {
 			_handleException(new DotSecurityException(String.format(
 					"User '%s' is not allowed to run '%s' on this workflow task",
-					user.getUserId(), cmd)), req, false);
+					null != user ? user.getUserId() : "<none>", cmd)), req, false);
 			return;
 		}
 

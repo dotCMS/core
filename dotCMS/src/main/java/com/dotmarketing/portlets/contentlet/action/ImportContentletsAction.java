@@ -27,6 +27,7 @@ import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.*;
 import com.liferay.portal.language.LanguageUtil;
+import com.liferay.util.Xss;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PortalUtil;
@@ -115,7 +116,9 @@ public class ImportContentletsAction extends DotPortletAction {
 
 				
 				// The upload is only copied into the shared asset store once the request is known
-				// to be one we are going to act on: a rejected request leaves nothing behind.
+				// to be one we are going to act on, so a rejected request leaves nothing there.
+				// The portal has already parsed the multipart body into this node's own
+				// java.io.tmpdir before the action runs; that copy is not ours to prevent.
 				File file = uploadReq.getFile("file");
 
 				final ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
@@ -202,7 +205,6 @@ public class ImportContentletsAction extends DotPortletAction {
 				return;
 			}
 		} else if (com.dotmarketing.util.Constants.PUBLISH.equals(cmd)) {
-			AdminLogger.log(ImportContentletsAction.class, "processAction", "Importing Contentlets", user);
 			Long importIdComplete=(Long)session.getAttribute("importId");
 			String subcmd = req.getParameter("subcmd");
 			 if(subcmd != null && subcmd.equals("importContentletsResults")){
@@ -212,6 +214,10 @@ public class ImportContentletsAction extends DotPortletAction {
 			} else if (!_checkImportAccess(req, _structureToImport(session, form), user)) {
 				setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
 			} else {
+				// Logged here, below the access check, so the admin trail records imports that
+				// actually started rather than every attempt to reach this screen.
+				AdminLogger.log(ImportContentletsAction.class, "processAction",
+						"Importing Contentlets", user);
 				final ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 				final HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 				final HttpSession httpSession = httpReq.getSession();
@@ -458,8 +464,10 @@ public class ImportContentletsAction extends DotPortletAction {
 	 *
 	 * <p>The type is named in the message on purpose: the user picked it from the screen, so
 	 * telling them which one they are missing access to is the difference between a message they
-	 * can act on and one that only says no. The same bar is applied before the preview and before
-	 * the import itself, so a user cannot pass the first screen and be refused on the second.</p>
+	 * can act on and one that only says no. When the type could not be read there is no name to
+	 * give and the message is the generic one. The same bar is applied before the preview and
+	 * before the import itself, so a user cannot pass the first screen and be refused on the
+	 * second.</p>
 	 *
 	 * @param req               the Struts wrapper for the HTTP request, where the message is left
 	 * @param contentTypeInode  the inode of the Content Type the import will run against
@@ -478,7 +486,7 @@ public class ImportContentletsAction extends DotPortletAction {
 					"Refusing an import for user '%s': Content Type '%s' could not be read",
 					user.getUserId(), contentTypeInode));
 		}
-		SessionMessages.add(req, ERROR, _importAccessMessage(contentType, contentTypeInode, user));
+		SessionMessages.add(req, ERROR, _importAccessMessage(contentType, user));
 		return false;
 	}
 
@@ -493,8 +501,11 @@ public class ImportContentletsAction extends DotPortletAction {
 		try {
 			return APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeInode);
 		} catch (final Exception e) {
-			Logger.warn(this, String.format("Content Type '%s' could not be read for an import",
-					contentTypeInode), e);
+			// A miss here is an ordinary outcome: the caller turns it into a refusal, and the
+			// refusal itself is what the SecurityLogger records. Debug, and without the trace, so
+			// a crafted inode cannot fill the log.
+			Logger.debug(this, () -> String.format(
+					"Content Type could not be read for an import: %s", e.getMessage()));
 			return null;
 		}
 	}
@@ -555,21 +566,26 @@ public class ImportContentletsAction extends DotPortletAction {
 	 * returns it unchanged when there is no matching key, so an already-translated sentence
 	 * reaches the screen as it is.</p>
 	 *
-	 * @param contentType      the {@link ContentType} the import was for, or {@code null} when it
-	 *                         could not be read
-	 * @param contentTypeInode the inode that was asked for, used when the type cannot be named
-	 * @param user             the {@link User} whose locale the message is built in
+	 * <p>That screen is an HTML sink: {@code messages_inc.jsp} writes the sentence into a
+	 * JavaScript string literal and {@code showDotCMSSystemMessage} assigns it to
+	 * {@code innerHTML}, so the type's name is HTML-encoded before it goes in. When the type
+	 * could not be read there is no name to give and the generic sentence is used; the inode that
+	 * was asked for comes straight from the request and is never echoed back.</p>
+	 *
+	 * @param contentType the {@link ContentType} the import was for, or {@code null} when it
+	 *                    could not be read
+	 * @param user        the {@link User} whose locale the message is built in
 	 * @return the message to show
 	 */
-	private String _importAccessMessage(final ContentType contentType,
-			final String contentTypeInode, final User user) {
-		final String typeName = null != contentType ? contentType.name() : contentTypeInode;
+	private String _importAccessMessage(final ContentType contentType, final User user) {
 		try {
-			return LanguageUtil.get(user, "message.import.contentlet.no-permission-on-type",
-					typeName);
+			return null != contentType
+					? LanguageUtil.get(user, "message.import.contentlet.no-permission-on-type",
+							Xss.encodeForHTML(contentType.name()))
+					: LanguageUtil.get(user, "message.import.contentlet.no-permission");
 		} catch (final Exception e) {
 			Logger.warn(this, "Could not build the import permission message", e);
-			return "You do not have permission to import content of type \"" + typeName + "\".";
+			return "You do not have permission to import content of the selected Content Type.";
 		}
 	}
 
@@ -578,15 +594,25 @@ public class ImportContentletsAction extends DotPortletAction {
 	 * the rest of the import reads from.
 	 *
 	 * <p>Called only once the request has passed every check, so a request that is going to be
-	 * rejected never writes to shared storage.</p>
+	 * rejected never writes to shared storage. The portal has already parsed the multipart body
+	 * into the node's own {@code java.io.tmpdir} by the time this action runs, so that is the
+	 * claim: nothing of a rejected request reaches the shared store.</p>
+	 *
+	 * <p>The name is generated rather than taken from the upload. The upload parser names files
+	 * {@code upload_<counter>.<ext>} from a per-JVM counter, and the asset temp path is shared
+	 * between nodes, so two nodes can arrive at the same name; copying over it would replace one
+	 * user's pending CSV with another's between preview and publish. The sanitized original name
+	 * is kept as the suffix so the file is still recognizable on disk and keeps its extension.</p>
 	 *
 	 * @param uploaded the file as the upload request parsed it
 	 * @return the copy inside the asset temp path
 	 * @throws IOException if the file cannot be copied
 	 */
 	private File _copyToAssetTempPath(final File uploaded) throws IOException {
-		final java.nio.file.Path destination = Paths.get(ConfigUtils.getAssetTempPath()
-				+ java.io.File.separator + FileUtil.sanitizeFileName(uploaded.getName()));
+		final String sanitizedName = FileUtil.sanitizeFileName(uploaded.getName());
+		final String suffix = UtilMethods.isSet(sanitizedName) ? "-" + sanitizedName : ".csv";
+		final java.nio.file.Path destination = Files.createTempFile(
+				Paths.get(ConfigUtils.getAssetTempPath()), "import-", suffix);
 		Files.copy(uploaded.toPath(), destination,
 				java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 		return destination.toFile();
