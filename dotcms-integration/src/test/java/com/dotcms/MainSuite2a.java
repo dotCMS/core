@@ -119,7 +119,9 @@ import com.dotcms.rest.api.v1.content.ContentRelationshipsResourceIntegrationTes
     RuleRefusedActionsIntegrationTest.class,
     com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionIntegrationTest.class,
     com.dotcms.rest.api.v1.workflow.WorkflowResourceCommentsReadAccessTest.class,
-    ContentRelationshipsResourceIntegrationTest.class
+    ContentRelationshipsResourceIntegrationTest.class,
+    com.dotmarketing.portal.struts.StrutsPathAccessTest.class,
+    com.liferay.portal.struts.PortletRequestProcessorAccessTest.class
 })
 public class MainSuite2a {
 
