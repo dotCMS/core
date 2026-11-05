@@ -363,16 +363,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "Postman-Pass-2026!",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "mylimiteduser@dotcms.com",
+							"key": "token",
+							"value": "{{limitedUserJwt}}",
 							"type": "string"
 						}
 					]
@@ -630,16 +625,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "Postman-Pass-2026!",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "mylimiteduser@dotcms.com",
+							"key": "token",
+							"value": "{{limitedUserJwt}}",
 							"type": "string"
 						}
 					]
