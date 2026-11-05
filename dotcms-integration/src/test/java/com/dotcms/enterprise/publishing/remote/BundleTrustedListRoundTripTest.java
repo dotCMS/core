@@ -4,7 +4,10 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.publishing.remote.bundler.UserBundler;
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
 import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LinkDataGen;
 import com.dotcms.datagen.RelationshipDataGen;
@@ -41,6 +44,7 @@ import com.dotmarketing.portlets.rules.RuleDataGen;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -65,6 +69,10 @@ import org.junit.Test;
  * it, which only ever covers the types somebody thought of. This one asserts over whatever the
  * bundlers produced, so a type that reaches a bundle through a field nobody listed still has to
  * come back.</p>
+ *
+ * <p>Both publishers are covered, because they do not share a bundler list. The dynamic push
+ * writes the asset itself into each document; the static publisher wraps three of its assets
+ * first, and those wrapper reads happen nowhere else.</p>
  */
 public class BundleTrustedListRoundTripTest extends IntegrationTestBase {
 
@@ -81,6 +89,14 @@ public class BundleTrustedListRoundTripTest extends IntegrationTestBase {
             ".host.xml", ".template.xml", ".folder.xml", ".container.xml", ".link.xml",
             ".rule.xml", ".relationship.xml", ".user.xml");
 
+    /**
+     * The kinds a static bundle has to contain. These three are the reason this path is tested
+     * separately: they are the only documents read back as a wrapper rather than as the asset
+     * itself, and no bundler of the dynamic push writes any of them.
+     */
+    private static final Set<String> EXPECTED_STATIC_DOCUMENT_KINDS = Set.of(
+            ".fileAsset.xml", ".html.xml", ".dotUrlMap.xml");
+
     private static User systemUser;
     private static Host site;
     private static Folder folder;
@@ -92,6 +108,9 @@ public class BundleTrustedListRoundTripTest extends IntegrationTestBase {
     private static Rule rule;
     private static Relationship relationship;
     private static User pushedUser;
+    private static Contentlet fileAsset;
+    private static HTMLPageAsset livePage;
+    private static Contentlet urlMappedNews;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -132,6 +151,34 @@ public class BundleTrustedListRoundTripTest extends IntegrationTestBase {
         //one entry the trusted list carries for that package. Its bundler runs only when a user
         //is pushed on purpose, so nothing else in this fixture would reach it.
         pushedUser = new UserDataGen().nextPersisted();
+
+        //The static publisher reads live versions only, so everything below is published. Each
+        //one is here for one of the three wrapper documents: the file asset, the page, and a
+        //content type with a URL map pattern, which is what makes the URL map bundler run.
+        fileAsset = ContentletDataGen.publish(
+                new FileAssetDataGen(folder, newTestFile()).nextPersisted());
+        livePage = new HTMLPageDataGen(folder, template).nextPersisted();
+        ContentletDataGen.publish(livePage);
+
+        final ContentType urlMappedType = TestDataUtils.getNewsLikeContentType(
+                "TrustedListUrlMapped" + System.currentTimeMillis(), site,
+                livePage.getIdentifier(), "/trusted-list-round-trip/{urlTitle}");
+        urlMappedNews = ContentletDataGen.publish(TestDataUtils.getNewsContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(), urlMappedType.id(),
+                site));
+    }
+
+    /**
+     * A small file on disk for the file asset to carry. Its contents do not matter; what the
+     * round trip exercises is the document the bundler writes about it.
+     *
+     * @return a temporary file, removed when the JVM exits
+     */
+    private static File newTestFile() throws Exception {
+        final File file = File.createTempFile("trusted-list-round-trip", ".txt");
+        file.deleteOnExit();
+        Files.write(file.toPath(), "trusted list round trip".getBytes(StandardCharsets.UTF_8));
+        return file;
     }
 
     @AfterClass
@@ -152,11 +199,40 @@ public class BundleTrustedListRoundTripTest extends IntegrationTestBase {
      */
     @Test
     public void testGeneratedBundle_everyDocumentShouldReadBack() throws Exception {
-        final File bundleRoot = generateBundle(Arrays.asList(page.getIdentifier(),
-                news.getIdentifier(), link.getIdentifier(), container.getIdentifier(),
-                template.getIdentifier(), folder.getIdentifier(),
-                UserBundler.USER_PREFIX + pushedUser.getUserId()));
+        final File bundleRoot = generateBundle(new PushPublisher(),
+                Arrays.asList(page.getIdentifier(), news.getIdentifier(), link.getIdentifier(),
+                        container.getIdentifier(), template.getIdentifier(),
+                        folder.getIdentifier(),
+                        UserBundler.USER_PREFIX + pushedUser.getUserId()));
 
+        assertEveryDocumentReadsBack(bundleRoot, EXPECTED_DOCUMENT_KINDS);
+    }
+
+    /**
+     * The same round trip over a static bundle, which is a separate set of bundlers reached by
+     * a separate publisher. Three of its documents hold a wrapper around the asset rather than
+     * the asset itself — the file asset, the page and the URL-mapped contentlet — and no
+     * bundler of the dynamic push writes any of them, so nothing above covers those reads.
+     */
+    @Test
+    public void testGeneratedStaticBundle_everyDocumentShouldReadBack() throws Exception {
+        final File bundleRoot = generateBundle(new StaticPublisher(),
+                Arrays.asList(livePage.getIdentifier(), fileAsset.getIdentifier(),
+                        urlMappedNews.getIdentifier(), folder.getIdentifier()));
+
+        assertEveryDocumentReadsBack(bundleRoot, EXPECTED_STATIC_DOCUMENT_KINDS);
+    }
+
+    /**
+     * Reads every document under the given directory with the serializer a receiver uses, and
+     * fails naming the documents that did not come back.
+     *
+     * @param bundleRoot the directory the bundlers wrote into
+     * @param expectedKinds file suffixes that have to be present, so a bundler that stops
+     *        emitting its kind of document cannot quietly shrink what is covered
+     */
+    private static void assertEveryDocumentReadsBack(final File bundleRoot,
+            final Set<String> expectedKinds) throws Exception {
         final List<Path> documents;
         try (Stream<Path> walk = Files.walk(bundleRoot.toPath())) {
             documents = walk.filter(Files::isRegularFile)
@@ -170,9 +246,7 @@ public class BundleTrustedListRoundTripTest extends IntegrationTestBase {
                 + documents.stream().map(path -> bundleRoot.toPath().relativize(path).toString())
                         .collect(Collectors.joining("\n  ", "\n  ", "")));
 
-        //Named on purpose rather than left implicit: a bundler that stops emitting its kind of
-        //document would otherwise quietly shrink what this test covers while still passing.
-        final List<String> missingKinds = EXPECTED_DOCUMENT_KINDS.stream()
+        final List<String> missingKinds = expectedKinds.stream()
                 .filter(suffix -> documents.stream()
                         .noneMatch(path -> path.toString().endsWith(suffix)))
                 .collect(Collectors.toList());
@@ -199,10 +273,13 @@ public class BundleTrustedListRoundTripTest extends IntegrationTestBase {
      * wrote into. Mirrors what {@code PublisherAPIImpl} does when it builds a bundle, minus the
      * packing and the audit bookkeeping, neither of which produces a document.
      *
+     * @param publisher the publisher whose bundlers to run, which is what decides the kinds of
+     *        document the bundle ends up holding
      * @param assetIds identifiers of the assets to put in the bundle
      * @return the directory holding the bundle's documents
      */
-    private static File generateBundle(final List<String> assetIds) throws Exception {
+    private static File generateBundle(final Publisher publisher, final List<String> assetIds)
+            throws Exception {
         final Bundle bundle = new Bundle("TrustedListRoundTrip" + System.currentTimeMillis(),
                 null, null, systemUser.getUserId(), false, FILTER_KEY);
         APILocator.getBundleAPI().saveBundle(bundle);
@@ -218,7 +295,6 @@ public class BundleTrustedListRoundTripTest extends IntegrationTestBase {
         config.setId(bundle.getId());
         config.setUser(systemUser);
 
-        final Publisher publisher = new PushPublisher();
         publisher.init(config);
 
         final File bundleRoot = BundlerUtil.getBundleRoot(config);
