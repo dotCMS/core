@@ -20,24 +20,29 @@ import com.dotcms.workflow.form.FireActionForm;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionCache;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import java.nio.charset.StandardCharsets;
+import com.dotcms.test.util.ApiTokenTestUtils;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import java.util.List;
@@ -48,6 +53,9 @@ import org.junit.runner.RunWith;
  * @author jsanca
  */
 public class ContentTypeInitializerTest extends IntegrationTestBase {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -145,8 +153,7 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
         permissionAPI.save(new Permission(contentType.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true),
                 contentType, APILocator.systemUser(), false);
 
-        final String password = "favorite-" + System.currentTimeMillis();
-        final User owner = new UserDataGen().active(true).password(password)
+        final User owner = new UserDataGen().active(true)
                 .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
         final User otherBackEndUser = new UserDataGen().active(true)
                 .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
@@ -156,7 +163,7 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
         final List<Contentlet> favorites = new ArrayList<>();
         try {
 
-            final Contentlet savedBefore = saveFavoriteAs(owner, password);
+            final Contentlet savedBefore = saveFavoriteAs(owner);
             favorites.add(savedBefore);
             Assert.assertTrue("In the starter state a favorite inherits anonymous READ from the System Host,"
                             + " which is the state the initializer has to repair",
@@ -165,7 +172,7 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
             // The check above cached its answer; the initializer must drop it when it repairs.
             new ContentTypeInitializer().init();
 
-            final Contentlet savedAfter = saveFavoriteAs(owner, password);
+            final Contentlet savedAfter = saveFavoriteAs(owner);
             favorites.add(savedAfter);
             for (final Contentlet favorite : favorites) {
 
@@ -239,13 +246,12 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
                 permissionAPI.getInheritablePermissions(contentType, true).stream()
                         .noneMatch(permission -> anonymousRoleId.equals(permission.getRoleId())));
 
-        final String password = "favorite-" + System.currentTimeMillis();
-        final User owner = new UserDataGen().active(true).password(password)
+        final User owner = new UserDataGen().active(true)
                 .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
         Contentlet favorite = null;
         try {
 
-            favorite = saveFavoriteAs(owner, password);
+            favorite = saveFavoriteAs(owner);
             Assert.assertFalse("A favorite must not be readable anonymously",
                     permissionAPI.doesUserHavePermission(favorite, PermissionAPI.PERMISSION_READ,
                             APILocator.getUserAPI().getAnonymousUser(), true));
@@ -299,6 +305,80 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
             new ContentTypeInitializer().init();
 
             final long deadline = System.currentTimeMillis() + 60_000;
+            while (!APILocator.getContentletAPI().search(query, 10, 0, null, anonymous, true).isEmpty()
+                    && System.currentTimeMillis() < deadline) {
+                DateUtil.sleep(1000);
+            }
+            Assert.assertTrue("After the repair an anonymous search must not find the favorite; reindex queue holds "
+                            + APILocator.getReindexQueueAPI().recordsInQueue() + " record(s): "
+                            + describePermissions(favorite, "favorite"),
+                    APILocator.getContentletAPI().search(query, 10, 0, null, anonymous, true).isEmpty());
+        } finally {
+
+            ContentletDataGen.destroy(favorite);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentTypeInitializer#init()}
+     * Given Scenario: As in the test above, a favorite is indexed while the type passes a CMS
+     * Anonymous READ row to its contentlets. The reindex thread is held while the repair runs, and
+     * right after it the favorite's old permissions are put back in the permission cache, as a
+     * lookup that read them before the repair committed and cached them after the cache was
+     * cleared would. The reindex then runs and indexes those old permissions.
+     * ExpectedResult: The repair clears the cache and queues the favorites for reindex again a
+     * short time later, so an anonymous search stops finding the favorite.
+     */
+    @Test
+    public void test_init_reindexes_favorites_again_after_old_permissions_are_cached() throws Exception {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME);
+        permissionAPI.removePermissions(contentType);
+        permissionAPI.assignPermissions(List.of(
+                new Permission(contentType.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true),
+                new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
+                        cmsOwner.getId(), OWNER_BITS, true),
+                new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
+                        APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                        PermissionAPI.PERMISSION_READ, true)),
+                contentType, APILocator.systemUser(), false);
+
+        final Contentlet favorite = new ContentletDataGen(contentType).host(APILocator.systemHost())
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                .nextPersistedAndPublish();
+        try {
+
+            final User anonymous = APILocator.getUserAPI().getAnonymousUser();
+            final String query = "+contentType:" + ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME
+                    + " +identifier:" + favorite.getIdentifier();
+            Assert.assertEquals("Before the repair the favorite must be indexed as anonymously readable",
+                    1, APILocator.getContentletAPI().search(query, 10, 0, null, anonymous, true).size());
+            permissionAPI.getPermissions(favorite);
+            final Method getCached = PermissionCache.class.getDeclaredMethod("getPermissionsFromCache", String.class);
+            final Method putCached = PermissionCache.class.getDeclaredMethod("addToPermissionCache", String.class, List.class);
+            getCached.setAccessible(true);
+            putCached.setAccessible(true);
+            final Object oldPermissions = getCached.invoke(CacheLocator.getPermissionCache(), favorite.getPermissionId());
+            Assert.assertNotNull("Reading the favorite's permissions must cache them", oldPermissions);
+
+            Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", true);
+            ReindexThread.pause();
+            try {
+
+                new ContentTypeInitializer().init();
+                // the cache put is not public API, so a lookup's late put is made through reflection
+                putCached.invoke(CacheLocator.getPermissionCache(), favorite.getPermissionId(), oldPermissions);
+            } finally {
+
+                ReindexThread.unpause();
+                Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false);
+            }
+
+            final long deadline = System.currentTimeMillis() + 90_000;
             while (!APILocator.getContentletAPI().search(query, 10, 0, null, anonymous, true).isEmpty()
                     && System.currentTimeMillis() < deadline) {
                 DateUtil.sleep(1000);
@@ -465,17 +545,16 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
 
     /**
      * Publishes a new favorite page through {@link WorkflowResource#fireActionDefaultSinglePart}
-     * with Basic authentication for the given user and the fields the Favorite Page dialog sends,
-     * without a permission list, and returns the saved contentlet.
+     * with an API token for the given user and the fields the Favorite Page dialog sends, without
+     * a permission list, and returns the saved contentlet.
      */
     @SuppressWarnings("unchecked")
-    private static Contentlet saveFavoriteAs(final User user, final String password) throws Exception {
+    private static Contentlet saveFavoriteAs(final User user) throws Exception {
 
         final MockHeaderRequest request = new MockHeaderRequest(new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
                         .request()).request());
-        request.setHeader("Authorization", "Basic " + Base64.getEncoder()
-                .encodeToString((user.getEmailAddress() + ":" + password).getBytes(StandardCharsets.UTF_8)));
+        request.setHeader("Authorization", TOKEN_UTILS.bearerHeader(user));
         final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
         try {

@@ -162,8 +162,9 @@ public class ContentTypeInitializer implements DotInitializer {
      * that first takes a database lock, so nodes starting together take turns: a node that finds
      * another node repairing waits for it to commit or roll back, then checks the rows it left and
      * repairs them itself if they are still wrong. Once a repair commits, the permission cache is
-     * cleared, and cleared again a short time later so that rows a lookup read before the commit
-     * and cached after the first clear do not stay cached.
+     * cleared and the favorites are queued for reindex again, and both are done once more a short
+     * time later, so that rows a lookup read before the commit and cached after the first clear
+     * neither stay cached nor stay in the index.
      *
      * @param savedContentType the favorite page content type
      */
@@ -176,17 +177,16 @@ public class ContentTypeInitializer implements DotInitializer {
                 final String repair = LocalTransaction.wrapReturn(() -> this.repairDefaultPermissions(savedContentType));
                 if (null != repair) {
                     // the repair evicts cached rows before it commits, so a read on this or
-                    // another node can cache the old rows again until then; flush both
-                    // permission cache groups, the rows and the read decisions, now that the
-                    // new rows are committed
-                    CacheLocator.getPermissionCache().clearCache();
+                    // another node can cache the old rows again until then; flush them now that
+                    // the new rows are committed, and reindex from what is read after the flush
+                    this.clearPermissionCacheAndReindex(savedContentType);
                     // a lookup that read the old rows before the commit caches them with a plain
-                    // put once its query returns, which can land after the clear above; clear
-                    // again once such lookups have finished
+                    // put once its query returns, which can land after the clear above, and a
+                    // reindex in between indexes them; do both again once such lookups are done
                     // prune: time-bounded, a lookup stalled longer than the delay can still cache
                     // the old rows; fence the cache put itself if that is ever seen
                     DotConcurrentFactory.getScheduledThreadPoolExecutor().schedule(
-                            () -> CacheLocator.getPermissionCache().clearCache(),
+                            () -> this.clearPermissionCacheAndReindex(savedContentType),
                             PERMISSION_CACHE_RECLEAR_SECONDS, TimeUnit.SECONDS);
                     Logger.info(this, repair);
                 }
@@ -194,6 +194,27 @@ public class ContentTypeInitializer implements DotInitializer {
 
                 Logger.error(this, "Favorite pages: " + e.getMessage(), e);
             }
+        }
+    }
+
+    /**
+     * Clears both permission cache groups, the rows and the read decisions, then queues every
+     * favorite for reindex, so each index document is rebuilt from permissions read after the
+     * clear. The repair already queues them inside its transaction, but that reindex can run
+     * before the cache is cleared and index the old permissions. Failures are logged, since this
+     * also runs on a scheduler thread where they would otherwise be lost.
+     *
+     * @param contentType the favorite page content type
+     */
+    private void clearPermissionCacheAndReindex(final ContentType contentType) {
+
+        CacheLocator.getPermissionCache().clearCache();
+        try {
+
+            APILocator.getReindexQueueAPI().addStructureReindexEntries(contentType);
+        } catch (final Throwable e) {
+
+            Logger.error(this, "Favorite pages: could not queue the favorites for reindex: " + e.getMessage(), e);
         }
     }
 
@@ -240,7 +261,8 @@ public class ContentTypeInitializer implements DotInitializer {
         // and the next start repairs it again. Committing the type rows on their own would make
         // contentletsInherit true, so a failed favorites reset would never be retried.
         // removePermissions also queues every favorite of the type for reindex, so the index
-        // picks up the new rows whether or not resetFavorites is set.
+        // picks up the new rows whether or not resetFavorites is set; the caller queues them
+        // again after it clears the permission cache, in case this reindex reads cached old rows.
         APILocator.getPermissionAPI().removePermissions(savedContentType);
         APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, savedContentType, APILocator.systemUser(), false);
         // reset here rather than through ResetPermissionsJob, which needs a logged-in
