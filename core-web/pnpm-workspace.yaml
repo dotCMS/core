@@ -17,6 +17,12 @@ overrides:
     # in #36443; pinned to clear a critical alert (dotCMS/core#38455). Remove this override
     # together with @nxext/stencil.
     storybook: 9.1.21
+    # @angular/build, @angular-devkit/build-angular and ng-packagr 22.1.x pin piscina to
+    # exactly 5.2.0 (critical prototype-pollution RCE, GHSA-67c8-pqhq-4rmx). 22.2.x pins
+    # 5.3.2, but moving the tooling to 22.2 needs the framework on 22.2 as well, because
+    # analogjs picks its Angular API from @angular/compiler-cli's version. Remove this
+    # override when Angular moves to 22.2.
+    piscina: 5.3.2
 # The `stylus: github:stylus/stylus#0.59.0` override that lived here under pnpm 10 was
 # dropped: stylus is an optional peer of the css loaders and is never installed (it
 # appears in pnpm-lock.yaml only as an optional peerDependency, with no resolution), so
