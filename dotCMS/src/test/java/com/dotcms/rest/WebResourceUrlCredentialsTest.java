@@ -181,6 +181,22 @@ public class WebResourceUrlCredentialsTest extends UnitTestBase {
         verifyNoInteractions(login, tokens);
     }
 
+    /** The parsed-map entry point must enforce SSL even before looking for an existing user. */
+    @Test
+    public void parsedMapInitializationStillRequiresSsl() {
+        final String previous = Config.getStringProperty("FORCE_SSL_ON_RESP_API", null);
+        try {
+            Config.setProperty("FORCE_SSL_ON_RESP_API", true);
+            final SecurityException denied = assertThrows(SecurityException.class,
+                    () -> resource.initWithMap(Collections.emptyMap(), request, response,
+                            AnonymousAccess.NONE, null));
+            assertEquals(403, denied.getResponse().getStatus());
+            verifyNoInteractions(login, tokens, userWebAPI);
+        } finally {
+            Config.setProperty("FORCE_SSL_ON_RESP_API", previous);
+        }
+    }
+
     /** Verifies the authenticated identity or the existing strict anonymous-access denial. */
     private void assertAuthentication(final Map<String, String> params, final boolean allowed) {
         if (allowed) {

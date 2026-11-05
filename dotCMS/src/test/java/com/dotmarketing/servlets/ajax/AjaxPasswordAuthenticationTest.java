@@ -1,6 +1,10 @@
 package com.dotmarketing.servlets.ajax;
 
+import static org.junit.Assert.assertSame;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
@@ -14,6 +18,11 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.publisher.ajax.RemotePublishAjaxAction;
+import com.dotcms.rest.AnonymousAccess;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.WebResource;
+import com.dotcms.rest.exception.SecurityException;
+import javax.ws.rs.core.Response;
 import com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction;
 import com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction;
 import com.dotmarketing.business.APILocator;
@@ -42,7 +51,7 @@ import org.mockito.MockedStatic;
  * {@code user/passwd} URI parameters, and the existing 401 denial must remain. Only {@code ALL}
  * keeps the legacy fallback, and only when URL credentials are explicitly enabled.
  *
- * <p>Limitation: {@link AjaxAction#setUser(HttpServletRequest)} is stubbed, so these tests prove
+ * <p>Limitation: the service fallback tests stub {@link AjaxAction#setUser(HttpServletRequest)}, so they prove
  * that the submitted credentials never reach the password login factory; they do not exercise the
  * WebResource Basic/JWT path that runs afterwards.</p>
  */
@@ -113,6 +122,42 @@ public class AjaxPasswordAuthenticationTest extends UnitTestBase {
         for (final Class<? extends AjaxAction> actionType : allActionTypes()) {
             assertPasswordFallbackUsed(actionType, parsedCredentials("query", "u", "p"), null);
             assertPasswordFallbackUsed(actionType, parsedCredentials("path", "u", "p"), null);
+        }
+    }
+
+    /** Legacy aliases must reach shared authentication before strict anonymous initialization rejects them. */
+    @Test
+    public void initializationAuthenticatesPathAndQueryAliasesBeforeTheStrictUserCheck() throws Exception {
+        Config.setProperty("ALLOW_BASIC_AUTH", "ALL");
+        for (final String[] keys : new String[][]{{"u", "p"}, {"user", "passwd"}}) {
+            for (final String transport : new String[]{"query", "path"}) {
+                final Map<String, String> params = credentials(keys[0], keys[1]);
+                final HttpServletRequest request = mockRequest();
+                final HttpServletResponse response = mock(HttpServletResponse.class);
+                final String path = "/DotAjaxDirector/example.Action/cmd/action"
+                        + ("path".equals(transport) ? "/" + keys[0] + "/" + params.get(keys[0])
+                                + "/" + keys[1] + "/" + params.get(keys[1]) : "");
+                when(request.getRequestURI()).thenReturn(path);
+                when(request.getParameterNames()).thenReturn(java.util.Collections.enumeration(
+                        "query".equals(transport) ? params.keySet() : java.util.Collections.emptySet()));
+                params.forEach((key, value) -> when(request.getParameter(key)).thenReturn(value));
+                final WebResource webResource = mock(WebResource.class);
+                final InitDataObject authenticated = new InitDataObject();
+                final User user = mockUser();
+                authenticated.setUser(user);
+                when(webResource.init(path, true, request, true, null))
+                        .thenThrow(new SecurityException("Invalid User", Response.Status.UNAUTHORIZED));
+                when(webResource.initWithMap(any(), any(), any(), any(), any())).thenReturn(authenticated);
+                final AjaxAction action = mock(AjaxAction.class, CALLS_REAL_METHODS);
+                action.setWebResource(webResource);
+
+                action.init(request, response);
+
+                assertSame(user, action.getUser());
+                verify(webResource).initWithMap(argThat(map -> params.get(keys[0]).equals(map.get("user"))
+                        && params.get(keys[1]).equals(map.get("password"))), eq(request), eq(response),
+                        eq(AnonymousAccess.NONE), isNull());
+            }
         }
     }
 

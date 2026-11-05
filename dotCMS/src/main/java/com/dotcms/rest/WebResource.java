@@ -311,12 +311,24 @@ public  class WebResource {
         return initWithMap(new HashMap<>(Map.of("userid", userId, "pwd", password)), request, response, access, requiredPortlet);
     }
 
-    private InitDataObject initWithMap(final Map<String, String> paramsMap,
+    /**
+     * Initializes a request with an already-parsed parameter map while enforcing SSL and authentication.
+     *
+     * @param paramsMap parsed request parameters, including any explicitly enabled URL credentials
+     * @param request incoming request
+     * @param response outgoing response
+     * @param access anonymous-access policy
+     * @param requiredPortlet optional portlet permission requirement
+     * @return initialized {@link InitDataObject} with the request identity and parameters
+     * @throws SecurityException when SSL, authentication or portlet access is refused
+     */
+    public InitDataObject initWithMap(final Map<String, String> paramsMap,
                                        final HttpServletRequest request,
                                        final HttpServletResponse response,
                                        final AnonymousAccess access,
                                        final String requiredPortlet) throws SecurityException {
 
+        checkForceSSL(request);
         final InitDataObject initData = new InitDataObject();
         final User user = getCurrentUser(request, response, paramsMap, access);
 

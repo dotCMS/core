@@ -141,7 +141,9 @@ legacy compatibility, set `ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS=true` (environm
 `DOT_ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS=true`). This opt-in remains subordinate to
 `ALLOW_BASIC_AUTH`: `NONE` still rejects credentials, `JWT_TOKEN` permits API JWTs only, and `ALL`
 also permits passwords. Legacy Ajax password/session fallbacks require both this opt-in and `ALL`;
-their existing permission and lockout checks are unchanged. Their merged path/query/form parameter
+their existing permission and lockout checks are unchanged. Ajax aliases are authenticated before
+strict servlet initialization can reject the request; existing back-office path restrictions still
+apply, and this setting does not allow-list any additional Ajax paths. Their merged path/query/form parameter
 maps share the same gate; this does not disable the designated body-based login endpoints.
 
 **Secrets in URLs remain unsafe:** accepting or rejecting a request does not redact the incoming
