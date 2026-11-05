@@ -4,9 +4,11 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Table;
 import com.liferay.portal.model.User;
@@ -19,8 +21,9 @@ import java.util.Set;
 
 /**
  * Decides which contentlets placed on a page's tree a user can read. A contentlet is looked up by
- * identifier in any language, working and archived versions included, and READ is checked without
- * front-end roles by default, the same way the page REST endpoints check the page. Each contentlet is checked once per
+ * identifier in any language, working and archived versions included, in the default variant or,
+ * when it only exists in another one, in that variant. READ is checked without front-end roles by
+ * default, the same way the page REST endpoints check the page. Each contentlet is checked once per
  * instance, however many tree rows place it. CMS administrators can read every row, including rows
  * whose contentlet cannot be loaded, and no lookup is made for them.
  */
@@ -28,6 +31,7 @@ public class PageTreeReadFilter {
 
     private final User user;
     private final boolean respectFrontendRoles;
+    private final boolean anonymousFallback;
     private final Map<String, Boolean> readableByContentId = new HashMap<>();
 
     /**
@@ -46,8 +50,28 @@ public class PageTreeReadFilter {
      *                             rendered ({@code PageMode#respectAnonPerms})
      */
     public PageTreeReadFilter(final User user, final boolean respectFrontendRoles) {
+        this(user, respectFrontendRoles, false);
+    }
+
+    private PageTreeReadFilter(final User user, final boolean respectFrontendRoles,
+            final boolean anonymousFallback) {
         this.user = user;
         this.respectFrontendRoles = respectFrontendRoles;
+        this.anonymousFallback = anonymousFallback;
+    }
+
+    /**
+     * Builds a filter that follows what a page render shows the user in the given mode: READ with
+     * the mode's front-end roles setting, and, in edit and preview mode, also content the
+     * anonymous user can read, which the render falls back to there.
+     *
+     * @param user the user the page is rendered for
+     * @param mode the mode the page is rendered in
+     * @return the filter for that render
+     */
+    public static PageTreeReadFilter forRender(final User user, final PageMode mode) {
+        return new PageTreeReadFilter(user, mode.respectAnonPerms,
+                mode == PageMode.EDIT_MODE || mode == PageMode.PREVIEW_MODE);
     }
 
     /**
@@ -116,21 +140,62 @@ public class PageTreeReadFilter {
         return personalizations;
     }
 
+    /**
+     * Tells whether the user can read at least one contentlet placed on the page for the given
+     * personalization.
+     *
+     * @param pageContents    the page's tree, as returned by {@code MultiTreeAPI#getPageMultiTrees}
+     * @param personalization the personalization tag, e.g. {@code dot:persona:<keyTag>}
+     * @return {@code true} if some row of that personalization holds content the user can read
+     * @throws DotDataException if the permissions of a contentlet cannot be loaded
+     */
+    public boolean hasReadableContent(final Table<String, String, Set<PersonalizedContentlet>> pageContents,
+            final String personalization) throws DotDataException {
+
+        for (final Set<PersonalizedContentlet> contentlets : pageContents.values()) {
+            for (final PersonalizedContentlet contentlet : contentlets) {
+                if (personalization.equals(contentlet.getPersonalization())
+                        && canRead(contentlet.getContentletId())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     private boolean isAdmin() {
         return null != user && user.isAdmin();
     }
 
     private boolean loadAndCheck(final String contentId) throws DotDataException {
 
-        final Contentlet contentlet;
-        try {
-            contentlet = UtilMethods.isSet(contentId) ?
-                    APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentId, true) : null;
-        } catch (final DotContentletStateException e) {
-            Logger.debug(this, () -> "Tree row content could not be loaded: " + e.getMessage());
+        if (!UtilMethods.isSet(contentId)) {
             return false;
         }
-        return null != contentlet && APILocator.getPermissionAPI().doesUserHavePermission(
-                contentlet, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles);
+
+        final Contentlet contentlet;
+        try {
+            contentlet = load(contentId);
+        } catch (final DotContentletStateException e) {
+            Logger.warn(this, "Contentlet " + contentId + " placed on a page could not be loaded; "
+                    + "it is treated as not readable", e);
+            return false;
+        }
+        if (null == contentlet) {
+            return false;
+        }
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        return permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user,
+                respectFrontendRoles)
+                || (anonymousFallback && permissionAPI.doesUserHavePermission(contentlet,
+                        PermissionAPI.PERMISSION_READ, APILocator.getUserAPI().getAnonymousUser(), true));
+    }
+
+    private Contentlet load(final String contentId) throws DotDataException {
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        final Contentlet contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(contentId, true);
+        return null != contentlet ? contentlet : contentletAPI.findContentletByIdentifierAnyLanguageAnyVariant(contentId);
     }
 }

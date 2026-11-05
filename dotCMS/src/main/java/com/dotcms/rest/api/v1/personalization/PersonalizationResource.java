@@ -32,6 +32,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -83,9 +84,20 @@ public class PersonalizationResource {
     }
 
 
+    /**
+     * Personalizes a page for a persona by copying the page's default content to it. A page that
+     * already has content for the persona is left as it is.
+     *
+     * @param request                        the current request
+     * @param response                       the current response
+     * @param personalizationPersonaPageForm the page and the persona tag
+     * @return the copied tree rows, or an empty list when the page already had content for the persona
+     * @throws DotDataException     if the page, the persona or the tree cannot be loaded
+     * @throws DotSecurityException if the persona cannot be read by the user
+     */
     @Operation(
         summary = "Personalize page containers",
-        description = "Copies the current content associated to page containers with default personalization and creates a new set with the specified persona personalization. Requires edit permission on the page."
+        description = "Copies the current content associated to page containers with default personalization and creates a new set with the specified persona personalization. If the page already has content for that persona, nothing is copied and an empty list is returned. Requires edit permission on the page."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
@@ -148,6 +160,14 @@ public class PersonalizationResource {
         final String newPersonalization = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON +
                 personalizationPersonaPageForm.getPersonaTag();
         final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+
+        if (UtilMethods.isSet(this.multiTreeAPI.getMultiTreesByPersonalizedPage(pageId, newPersonalization,
+                currentVariantId))) {
+            Logger.debug(this, () -> "Page " + pageId + " is already personalized for " + newPersonalization
+                    + "; its content is left as it is");
+            final List<MultiTree> noCopiedRows = List.of();
+            return Response.ok(new ResponseEntityView<>(noCopiedRows)).build();
+        }
 
         return Response.ok(new ResponseEntityView<>(
                         this.multiTreeAPI.copyPersonalizationForPage(

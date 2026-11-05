@@ -306,7 +306,8 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
      * @param htmlpage the page
      * @param user     the user the page is rendered for
      * @return the visitor, language, device, mode, personalization and variant of the request
-     * @throws DotDataException if the page tree or the permissions of its content cannot be loaded
+     * @throws DotDataException    if the permissions of the page's content cannot be loaded
+     * @throws DotRuntimeException if the page tree cannot be loaded
      */
     @Override
     public ViewAsPageStatus getViewAsStatus(final HttpServletRequest request,
