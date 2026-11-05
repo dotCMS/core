@@ -383,18 +383,57 @@ public class StructureFactory {
 	}
 
 	//### CREATE AND UPDATE
+
+	/**
+	 * Saves the structure for internal callers, such as jobs, push publishing and upgrade tasks,
+	 * without checking any user's permissions. The saved inode is set on the structure.
+	 *
+	 * @param structure the {@link Structure} to create or update
+	 * @throws DotHibernateException if the structure cannot be saved
+	 */
 	public static void saveStructure(Structure structure) throws DotHibernateException{
-        boolean isNew = !UtilMethods.isSet(structure.getInode());
 		try {
-			ContentType type = new StructureTransformer(structure).from();
-			type = typeAPI.save(type);
-			structure.setInode(type.inode());
-		} catch (DotStateException | DotDataException | DotSecurityException e) {
+			save(structure, typeAPI);
+		} catch (final DotSecurityException e) {
 			throw new DotHibernateException(e.getMessage(),e);
 		}
+	}
 
+	/**
+	 * Saves the structure with the permissions of the given user: every save needs permission to add
+	 * children and to edit content type permissions on the site or folder the structure is saved on,
+	 * and updating an existing content type also needs EDIT_PERMISSIONS on it. The saved inode is set
+	 * on the structure.
+	 *
+	 * @param structure the {@link Structure} to create or update
+	 * @param user      the {@link User} saving it
+	 * @throws DotHibernateException if the structure cannot be saved
+	 * @throws DotSecurityException  if the user is not allowed to save it
+	 */
+	public static void saveStructure(final Structure structure, final User user)
+			throws DotHibernateException, DotSecurityException {
+		save(structure, APILocator.getContentTypeAPI(user));
+	}
 
-
+	/**
+	 * Saves the structure through the given content type API, sets the saved inode on it and
+	 * notifies the save.
+	 *
+	 * @param structure      the {@link Structure} to create or update
+	 * @param contentTypeAPI the {@link ContentTypeAPI} to save it with, which decides whose
+	 *                       permissions are checked
+	 * @throws DotHibernateException if the structure cannot be saved
+	 * @throws DotSecurityException  if the API's user is not allowed to save it
+	 */
+	private static void save(final Structure structure, final ContentTypeAPI contentTypeAPI)
+			throws DotHibernateException, DotSecurityException {
+		final boolean isNew = !UtilMethods.isSet(structure.getInode());
+		try {
+			final ContentType type = contentTypeAPI.save(new StructureTransformer(structure).from());
+			structure.setInode(type.inode());
+		} catch (final DotStateException | DotDataException e) {
+			throw new DotHibernateException(e.getMessage(),e);
+		}
 		pushSaveUpdateEvent(structure, isNew);
 	}
 

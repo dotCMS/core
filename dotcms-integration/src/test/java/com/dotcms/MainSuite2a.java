@@ -52,6 +52,7 @@ import com.dotcms.enterprise.rules.RulesAPIImplParentChecksIntegrationTest;
 import com.dotcms.rest.api.v1.sites.ruleengine.RuleRefusedActionsIntegrationTest;
 import com.dotcms.rest.api.v1.sites.ruleengine.RuleResourcesAccessIntegrationTest;
 import com.dotcms.rest.api.v1.content.ContentRelationshipsResourceIntegrationTest;
+import com.dotmarketing.portlets.structure.action.EditStructureActionSaveTest;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
@@ -122,7 +123,8 @@ import com.dotcms.rest.api.v1.content.ContentRelationshipsResourceIntegrationTes
     ContentRelationshipsResourceIntegrationTest.class,
     com.dotmarketing.portal.struts.StrutsPathAccessTest.class,
     com.liferay.portal.struts.PortletRequestProcessorAccessTest.class,
-    com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPIImplTest.class
+    com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPIImplTest.class,
+    EditStructureActionSaveTest.class
 })
 public class MainSuite2a {
 
