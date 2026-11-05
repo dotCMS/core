@@ -68,8 +68,8 @@ export class UveEditorPage {
     }
 
     /**
-     * A contentlet on the page, by its title. The system container renders each contentlet's title
-     * as its heading, which is what a traditional page built on `SYSTEM_CONTAINER` shows.
+     * A contentlet on the page, by its title. The side-panel specs' container (`createUvePage`),
+     * like the system container, renders each contentlet's title as its heading.
      */
     contentletHeading(title: string): Locator {
         return this.canvasFrame.getByRole('heading', { name: title, exact: true });
@@ -98,8 +98,8 @@ export class UveEditorPage {
      * Driven with the mouse rather than `dragTo`: the drop zones are drawn only once the editor is
      * dragging, so the target does not exist yet when a drag would have to name it. The pointer
      * first enters the page, which switches the editor to dragging, then moves onto the container's
-     * zone and drops. Chromium turns these mouse events into the HTML5 drag events the editor
-     * listens to.
+     * zone, away from the canvas's scroll zones, and drops. Chromium turns these mouse events into
+     * the HTML5 drag events the editor listens to.
      */
     async dragContentTypeToEmptyContainer(contentTypeName: string) {
         const palette = this.page.getByTestId('palette');
@@ -117,10 +117,50 @@ export class UveEditorPage {
         // `data-type` is the only thing that tells a container's zone from a contentlet's.
         const zone = this.page.getByTestId('dropzone').locator('[data-type="container"]').first();
         await expect(zone).toBeVisible({ timeout: 10000 });
-        const target = await centerOf(zone);
+        const target = await dropPointIn(zone, this.canvas);
         await this.page.mouse.move(target.x, target.y, { steps: 5 });
         await this.page.mouse.up();
     }
+}
+
+/**
+ * How close to the canvas's top or bottom edge a drag scrolls the page instead of hovering a drop
+ * zone: the editor's `IFRAME_SCROLL_ZONE`. While it scrolls it hides the zones, and the drag then
+ * leaves for the page underneath, so a drop there places nothing.
+ */
+const CANVAS_SCROLL_ZONE_PX = 100;
+
+/**
+ * A point in a drop zone the editor accepts a drop on: inside the zone and out of the canvas's
+ * scroll zones, as near the zone's centre as that allows. A container at the top of a page has its
+ * centre within the top scroll zone.
+ *
+ * @param zone - The drop zone
+ * @param canvas - The page's iframe
+ * @returns The point, on screen
+ */
+async function dropPointIn(zone: Locator, canvas: Locator): Promise<{ x: number; y: number }> {
+    const zoneBox = await zone.boundingBox();
+    const canvasBox = await canvas.boundingBox();
+
+    if (!zoneBox || !canvasBox) {
+        throw new Error('The drop zone or the canvas has no bounding box');
+    }
+
+    const margin = CANVAS_SCROLL_ZONE_PX + 10;
+    const top = Math.max(zoneBox.y + 1, canvasBox.y + margin);
+    const bottom = Math.min(
+        zoneBox.y + zoneBox.height - 1,
+        canvasBox.y + canvasBox.height - margin
+    );
+
+    if (top > bottom) {
+        throw new Error('The drop zone lies entirely within the canvas scroll zones');
+    }
+
+    const middle = zoneBox.y + zoneBox.height / 2;
+
+    return { x: zoneBox.x + zoneBox.width / 2, y: Math.min(Math.max(middle, top), bottom) };
 }
 
 /** The centre of an element on screen, for the mouse to move to. */
