@@ -34,7 +34,6 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -245,14 +244,6 @@ public class BinaryExporterServlet extends HttpServlet {
 
 			BinaryContentExporter.BinaryContentExporterData data = null;
 			File inputFile = null;
-			HttpSession session = req.getSession(false);
-			List<String> tempBinaryImageInodes = null;
-			if ( session != null && session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST ) != null ) {
-				tempBinaryImageInodes = (List<String>) session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST );
-			} else {
-				tempBinaryImageInodes = new ArrayList<>();
-			}
-			boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 
 			user = ServletUtils.getUserAndAuthenticateIfRequired(
 						this.webResource, req, resp);
@@ -264,20 +255,15 @@ public class BinaryExporterServlet extends HttpServlet {
 			if (isContent){
 				Contentlet content = null;
 				if(byInode) {
-
-					if (isTempBinaryImage)
-						content = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), mode.respectAnonPerms);
-					else {
-						try {
-							content = contentAPI.find(
-									assetInode, user, ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
-							);
-						} catch(DotSecurityException e) {
-							if (!mode.respectAnonPerms) {
-								content = getContentletLiveVersion(assetInode, user, lang);
-							} else {
-								throw e;
-							}
+					try {
+						content = contentAPI.find(
+								assetInode, user, ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
+						);
+					} catch(DotSecurityException e) {
+						if (!mode.respectAnonPerms) {
+							content = getContentletLiveVersion(assetInode, user, lang);
+						} else {
+							throw e;
 						}
 					}
 				} else {
@@ -340,8 +326,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				}
 
                 // If the user is NOT logged in the backend then we cannot show content that is NOT live.
-                // Temporal files should be allowed any time
-                if(!isTempBinaryImage && !WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
+                if(!WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
                     if (!APILocator.getVersionableAPI().hasLiveVersion(content) && mode.respectAnonPerms) {
 						Logger.debug(this, "Content '" + fieldVarName + "' with inode: " + content.getInode() + " is not published");
 						resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -362,10 +347,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					return;
 				}
 
-				if(isTempBinaryImage)
-					inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), APILocator.getUserAPI().getSystemUser());
-				else
-					inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), user);
+				inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), user);
 				if(inputFile == null){
 					Logger.debug(this,"Binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
 					resp.sendError(HttpServletResponse.SC_NOT_FOUND);
