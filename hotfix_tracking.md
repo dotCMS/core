@@ -112,3 +112,4 @@ Release-25.07.10 LTS
 106. https://github.com/dotCMS/private-issues/issues/905 : DWR HostVariableAjax.saveHostVariable: a user who can edit one Site can overwrite and re-parent a Site Variabl #38250 #905
 107. https://github.com/dotCMS/private-issues/issues/889 : Struts EditStructureAction: content types are saved with the system user, so READ on a type is enough to rewri #38270 #889
 108. https://github.com/dotCMS/private-issues/issues/688 : Cross-user role disclosure (broken object-level authorization) #38311 #688
+109. https://github.com/dotCMS/private-issues/issues/960 : 2026 Pentest (Federal Home Loan Bank of Dallas): M5 Session remains valid after logout (session replay) #38265 #960

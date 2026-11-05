@@ -1144,6 +1144,10 @@ public class UserResource implements Serializable {
 
 			this.userAPI.save(userToSave, modUser, validatePassword,
 					!WebAPILocator.getUserWebAPI().isLoggedToBackend(request));
+			if (UtilMethods.isSet(updateUserForm.getPassword())) {
+				// login tokens issued before the password change stop working
+				userToSave.setRememberMeToken(this.userAPI.invalidateLoginTokens(userToSave.getUserId()));
+			}
 			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' has been updated.");
 
