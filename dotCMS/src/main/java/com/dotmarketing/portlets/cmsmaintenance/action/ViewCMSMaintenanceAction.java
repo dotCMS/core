@@ -31,12 +31,15 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.Parameter;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.TrashUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.ZipUtil;
 import com.dotmarketing.util.starter.ExportStarterUtil;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
+import com.liferay.portal.model.User;
 import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
@@ -55,7 +58,9 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map;
 import java.util.zip.ZipOutputStream;
 
@@ -80,6 +85,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	String backupTempFilePath = ConfigUtils.getBackupPath()+File.separator+"temp";
 	private static String assetRealPath = null;
 	private static String assetPath = File.separator + "assets";
+	private static final String NOT_AUTHORIZED_MESSAGE = "message.cmsmaintenance.notauthorized";
 
 	private final ContentletAPI conAPI = APILocator.getContentletAPI();
 
@@ -129,7 +135,10 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		Structure structure = new Structure();
 
 		//Manage all the cache Task
-		if(cmd.equals("cache")){
+		if ("cache".equals(cmd) && !isAuthorizedAdmin(_getUser(req))) {
+			errorMessage = NOT_AUTHORIZED_MESSAGE;
+			logUnauthorizedMaintenance(_getUser(req), "cache");
+		} else if(cmd.equals("cache")){
 
 			String cacheName = ccf.getCacheName();
 			if (cacheName.equals(com.dotmarketing.util.WebKeys.Cache.CACHE_CONTENTS_INDEX))
@@ -205,6 +214,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			downloadRemainingRecordsAsCsv(response);
 		} //Manage all the search and replace Task
 		else if(cmd.equals("searchandreplace")){
+			final User replaceUser = _getUser(req);
+			if (!isAuthorizedAdmin(replaceUser)) {
+				errorMessage = NOT_AUTHORIZED_MESSAGE;
+				logUnauthorizedMaintenance(replaceUser, "searchandreplace");
+			} else {
 			Logger.info(this, "Running Search & Replace");
 			Map<String,String> result = searchAndReplace(ccf);
 			if(result.get("type") != null){
@@ -217,21 +231,34 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				_deleteFiles(com.dotmarketing.util.WebKeys.Cache.CACHE_WORKING_FILES);
 				_flush(com.dotmarketing.util.WebKeys.Cache.CACHE_ALL_CACHES);
 			}
+			}
 		}
 		//Not being used this is being called using ajax
 		else if(cmd.equals("fixAssetsInconsistencies")){
            // this one NOT
 		} else if(cmd.equals("deleteSystemJob")) {
-            _deleteScheduler(req);
+            final User maintenanceUser = _getUser(req);
+            if (isAuthorizedAdmin(maintenanceUser)) {
+                _deleteScheduler(req);
+            } else {
+                errorMessage = NOT_AUTHORIZED_MESSAGE;
+                logUnauthorizedMaintenance(maintenanceUser, "deleteSystemJob");
+            }
         }
 		//Not being used this is being called using ajax
 		else if(cmd.equals("dropoldassets")){
 
-			Logger.info(this, "Running Drop old Assets");
-			if(_dropAssetOldVersions(ccf) >= 0){
-				message = "message.cmsmaintenance.dropoldassets.sucessfully";
-			}else{
-				errorMessage = "message.cmsmaintenance.dropoldassets.failed";
+			final User maintenanceUser = _getUser(req);
+			if (!isAuthorizedAdmin(maintenanceUser)) {
+				errorMessage = NOT_AUTHORIZED_MESSAGE;
+				logUnauthorizedMaintenance(maintenanceUser, "dropoldassets");
+			} else {
+				Logger.info(this, "Running Drop old Assets");
+				if (_dropAssetOldVersions(ccf) >= 0) {
+					message = "message.cmsmaintenance.dropoldassets.sucessfully";
+				} else {
+					errorMessage = "message.cmsmaintenance.dropoldassets.failed";
+				}
 			}
 
 		}
@@ -443,6 +470,37 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			messageResult.put("message", message);
 		}
 		return messageResult;
+	}
+
+	/**
+	 * Tells whether the given session user is a CMS administrator, the authority required by the
+	 * destructive maintenance operations.
+	 *
+	 * @param sessionUser the user resolved from the session, may be {@code null}
+	 * @return {@code true} only when the user exists and holds the CMS administrator role
+	 */
+	@VisibleForTesting
+	static boolean isAuthorizedAdmin(final User sessionUser) {
+		try {
+			return sessionUser != null && APILocator.getUserAPI().isCMSAdmin(sessionUser);
+		} catch (DotDataException e) {
+			Logger.error(ViewCMSMaintenanceAction.class,
+					"Could not resolve administrator role: " + e.getMessage(), e);
+			return false;
+		}
+	}
+
+	/**
+	 * Records a rejected maintenance operation in the security log, naming the user, so the
+	 * refusal can be audited later.
+	 *
+	 * @param sessionUser the user that was rejected, may be {@code null}
+	 * @param operation   the maintenance operation that was refused
+	 */
+	private static void logUnauthorizedMaintenance(final User sessionUser, final String operation) {
+		SecurityLogger.logInfo(ViewCMSMaintenanceAction.class, String.format(
+				"User [%s] is not a CMS administrator; rejected maintenance operation: %s",
+				sessionUser != null ? sessionUser.getUserId() : "unknown", operation));
 	}
 
 

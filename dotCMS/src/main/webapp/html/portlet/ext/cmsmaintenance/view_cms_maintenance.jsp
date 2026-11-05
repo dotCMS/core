@@ -545,7 +545,7 @@ function doDeleteContentlets(){
 	  if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-delete-this-contentlet-s") %>")){
 		 	$("deleteContentletMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress-deleting-contentlets") %></b></font>';
 		 	$("deleteContentletButton").disabled = true;
-			CMSMaintenanceAjax.deleteContentletsFromIdList(document.getElementById('contentIdsList').value, document.getElementById('userId').value, doDeleteContentletsCallback);
+			CMSMaintenanceAjax.deleteContentletsFromIdList(document.getElementById('contentIdsList').value, doDeleteContentletsCallback);
 		}
 }
 
@@ -1321,7 +1321,6 @@ dd.leftdl {
 	<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
     <html:form styleId="cmsMaintenanceForm" method="POST" action="/ext/cmsmaintenance/view_cms_maintenance" enctype="multipart/form-data">
-        <input type="hidden" name="userId"  id="userId" value="<%=user.getUserId()%>">
         <input type="hidden" name="referer" value="<%=referer%>">
         <input type="hidden" name="cacheName" id="cacheName">
         <input type="hidden" name="systemJobName" id="systemJobName">
