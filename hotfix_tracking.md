@@ -97,3 +97,4 @@ Release-25.07.10 LTS
 91. https://github.com/dotCMS/private-issues/issues/992 : MultiPartRequestSecurityWebInterceptor: case-sensitive content-type check lets a capitalised Multipart/Form-Da #38214 #992
 92. https://github.com/dotCMS/private-issues/issues/750 : [GLM AI Scanner] Contributor-level authentication takeover via UserHandler user import in push-publish bundles #38253 #750
 93. https://github.com/dotCMS/private-issues/issues/711 : dotAI embeddings endpoint evaluates attacker-controlled Velocity as system user (SSTI) → credential theft #38115 #711
+94. https://github.com/dotCMS/private-issues/issues/897 : REST /v1/system/request-draining-test: test resource shipped enabled, any authenticated user can pin servlet t #38255 #897
