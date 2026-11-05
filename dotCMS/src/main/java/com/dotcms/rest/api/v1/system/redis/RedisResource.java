@@ -63,6 +63,7 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -81,6 +82,7 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -98,6 +100,7 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -117,6 +120,7 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -135,6 +139,7 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -154,6 +159,7 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -173,6 +179,7 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -191,6 +198,7 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -216,6 +224,7 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -243,6 +252,7 @@ public class RedisResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();

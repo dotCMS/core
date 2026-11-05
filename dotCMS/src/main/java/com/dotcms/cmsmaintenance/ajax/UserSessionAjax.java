@@ -50,8 +50,8 @@ public class UserSessionAjax {
         User user;
         try {
             user = com.liferay.portal.util.PortalUtil.getUser(req);
-            if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
-                throw new DotSecurityException("User does not have access to the CMS Maintenance Portlet");
+            if (user == null || !user.isAdmin() || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
+                throw new DotSecurityException("User is not a CMS Administrator with access to the CMS Maintenance Portlet");
             }
             return true;
         } catch (NoSuchUserException | DotDataException | DotSecurityException e) {

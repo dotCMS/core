@@ -56,6 +56,7 @@ public class JVMInfoResource implements Serializable {
 
         final InitDataObject initData = new WebResource.InitBuilder(request, response)
                         .requiredBackendUser(true)
+                        .requireAdmin(true)
                         .requestAndResponse(request, response)
                         .rejectWhenNoUser(true)
                         .requiredPortlet("maintenance")

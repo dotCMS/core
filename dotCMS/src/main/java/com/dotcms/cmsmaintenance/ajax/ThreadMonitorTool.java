@@ -37,8 +37,8 @@ public class ThreadMonitorTool{
         User user = null;
         try {
             user = com.liferay.portal.util.PortalUtil.getUser(req);
-            if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)){
-                throw new DotSecurityException("User does not have access to the CMS Maintance Portlet");
+            if(user == null || !user.isAdmin() || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)){
+                throw new DotSecurityException("User is not a CMS Administrator with access to the CMS Maintenance Portlet");
             }
             return true;
         } catch (Exception e) {
@@ -59,7 +59,7 @@ public class ThreadMonitorTool{
 
 		// Validate user has access to the CMS Maintenance Portlet
 		if (!validateUser()) {
-			throw new DotRuntimeException("User does not have access to the CMS Maintenance Portlet");
+			throw new DotRuntimeException("User is not a CMS Administrator with access to the CMS Maintenance Portlet");
 		}
 
         ThreadMXBean mxBean = ManagementFactory.getThreadMXBean();
