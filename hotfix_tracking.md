@@ -105,3 +105,4 @@ Release-25.07.10 LTS
 99. https://github.com/dotCMS/private-issues/issues/880 : Redis cache and pub/sub codec (DotObjectCodec, RedisProvider): unfiltered Java deserialization gives code exec #38359 #880
 100. https://github.com/dotCMS/private-issues/issues/734 : Missing permission check, container content render by identifier (ContainerResource) — working content without #38321 #734
 101. https://github.com/dotCMS/private-issues/issues/884 : REST /v1/contentrelationships: anonymous read of every related contentlet, loaded as the system user (7.5 High #38252 #884
+102. https://github.com/dotCMS/private-issues/issues/893 : DWR ContentletAjax.saveContent: copies any File Asset's binary into the caller's content through a system-user #38310 #893
