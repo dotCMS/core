@@ -1,5 +1,6 @@
 package com.dotcms.publisher.environment.ajax;
 
+import com.dotcms.auth.BasicAuthentication;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotmarketing.beans.Permission;
@@ -62,7 +63,10 @@ public class EnvironmentAjaxAction extends AjaxAction {
 
 
 
-				LoginFactory.doLogin(userName, password, false, request, response);
+				// Only the compatibility mode may exchange URI credentials for a session.
+				if (BasicAuthentication.mode() == BasicAuthentication.Mode.ALL) {
+					LoginFactory.doLogin(userName, password, false, request, response);
+				}
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
 				if(user==null) {
 				    setUser(request);

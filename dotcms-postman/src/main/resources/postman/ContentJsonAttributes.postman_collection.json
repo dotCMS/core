@@ -22,34 +22,7 @@
         "type": "text/javascript",
         "exec": [
           "if (!pm.environment.get('jwt')) {",
-          "    const serverURL = pm.environment.get('serverURL');",
-          "    const username = pm.environment.get('user');",
-          "    const password = pm.environment.get('password');",
-          "    const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
-          "    pm.sendRequest({",
-          "        url: `${serverURL}/api/v1/apitoken`,",
-          "        method: 'POST',",
-          "        header: {",
-          "            'accept': '*/*',",
-          "            'content-type': 'application/json',",
-          "            'Authorization': `Basic ${basicAuth}`",
-          "        },",
-          "        body: {",
-          "            mode: 'raw',",
-          "            raw: JSON.stringify({",
-          "                'expirationSeconds': 7200,",
-          "                'userId': 'dotcms.org.1',",
-          "                'network': '0.0.0.0/0',",
-          "                'claims': {'label': 'postman-tests'}",
-          "            })",
-          "        }",
-          "    }, function (err, response) {",
-          "        if (err) {",
-          "            console.log('Error generating JWT:', err);",
-          "        } else {",
-          "            pm.environment.set('jwt', response.json().entity.jwt);",
-          "        }",
-          "    });",
+          "    throw new Error('Set environment jwt to a pre-issued dotCMS API token, or use the Node runner.');",
           "}"
         ]
       }
@@ -565,7 +538,7 @@
                       "});",
                       "",
                       "pm.test('Anonymous write is rejected', function () {",
-                      "    pm.expect(pm.response.text()).to.include('CONTENT_APIS_ALLOW_ANONYMOUS permission exceeded');",
+                      "    pm.expect(pm.response.text()).to.include('CONTENT_APIS_ALLOW_ANONYMOUS permission denied');",
                       "});"
                     ]
                   }
@@ -1027,16 +1000,11 @@
               ]
             },
             "auth": {
-              "type": "basic",
-              "basic": [
+              "type": "bearer",
+              "bearer": [
                 {
-                  "key": "username",
-                  "value": "admin@dotcms.com",
-                  "type": "string"
-                },
-                {
-                  "key": "password",
-                  "value": "admin1",
+                  "key": "token",
+                  "value": "invalid-api-token",
                   "type": "string"
                 }
               ]
@@ -1181,7 +1149,7 @@
                   "});",
                   "",
                   "pm.test('Anonymous write is rejected', function () {",
-                  "    pm.expect(noCredentials.text).to.include('CONTENT_APIS_ALLOW_ANONYMOUS permission exceeded - system set to READ but WRITE was required');",
+                  "    pm.expect(noCredentials.text).to.include('CONTENT_APIS_ALLOW_ANONYMOUS permission denied');",
                   "});",
                   "",
                   "pm.test('Wrong credentials: status code is 401', function () {",
@@ -1189,7 +1157,7 @@
                   "});",
                   "",
                   "pm.test('Wrong credentials are rejected', function () {",
-                  "    pm.expect(wrongCredentials.text).to.include('Authentication credentials are required');",
+                  "    pm.expect(wrongCredentials.text).to.include('CONTENT_APIS_ALLOW_ANONYMOUS permission denied');",
                   "});",
                   "",
                   "pm.test('Status code is 200', function () {",

@@ -17,7 +17,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n\n    const entity = pm.response.json().entity;\n    pm.collectionVariables.set(\"hostname\", entity.hostname);\n    pm.collectionVariables.set(\"hostIdentifier\", entity.identifier);\n});"
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.collectionVariables.set(\"hostname\", entity.hostname);",
+                  "    pm.collectionVariables.set(\"hostIdentifier\", entity.identifier);",
+                  "});"
                 ]
               }
             }
@@ -48,7 +54,15 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test(\"Status code should be 200\", function () {\n    pm.response.to.have.status(200);\n});\n\nvar jsonData = pm.response.json();\npm.test(\"Test folder created\", function () {\n    pm.expect(jsonData.entity[0].name).to.eql('bulk-delete-test');\n});\npm.collectionVariables.set(\"folderPath\", \"//\" + pm.collectionVariables.get(\"hostname\") + \"/bulk-delete-test/\");"
+                  "pm.test(\"Status code should be 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Test folder created\", function () {",
+                  "    pm.expect(jsonData.entity[0].name).to.eql('bulk-delete-test');",
+                  "});",
+                  "pm.collectionVariables.set(\"folderPath\", \"//\" + pm.collectionVariables.get(\"hostname\") + \"/bulk-delete-test/\");"
                 ]
               }
             }
@@ -96,7 +110,15 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('202 Accepted', function () { pm.response.to.have.status(202); });\n\npm.test('Response carries jobId, statusUrl, submitted', function () {\n    const entity = pm.response.json().entity;\n\n    pm.expect(entity.jobId).to.be.a('string').and.not.empty;\n    pm.expect(entity.statusUrl).to.eql('/api/v1/jobs/' + entity.jobId + '/status');\n    pm.expect(entity.submitted).to.eql(1);\n});"
+              "pm.test('202 Accepted', function () { pm.response.to.have.status(202); });",
+              "",
+              "pm.test('Response carries jobId, statusUrl, submitted', function () {",
+              "    const entity = pm.response.json().entity;",
+              "",
+              "    pm.expect(entity.jobId).to.be.a('string').and.not.empty;",
+              "    pm.expect(entity.statusUrl).to.eql('/api/v1/jobs/' + entity.jobId + '/status');",
+              "    pm.expect(entity.submitted).to.eql(1);",
+              "});"
             ]
           }
         }
@@ -143,7 +165,14 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test('errorCode is EMPTY_SELECTION', function () {\n    const body = pm.response.json();\n    const error = body.errors && body.errors[0];\n    pm.expect(error.errorCode).to.eql('EMPTY_SELECTION');\n    pm.expect(error.fieldName).to.eql('assetPaths');\n});"
+              "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });",
+              "",
+              "pm.test('errorCode is EMPTY_SELECTION', function () {",
+              "    const body = pm.response.json();",
+              "    const error = body.errors && body.errors[0];",
+              "    pm.expect(error.errorCode).to.eql('EMPTY_SELECTION');",
+              "    pm.expect(error.fieldName).to.eql('assetPaths');",
+              "});"
             ]
           }
         }
@@ -228,7 +257,15 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test('errorCode is OVER_MAX_PATHS, distinct from EMPTY_SELECTION', function () {\n    const body = pm.response.json();\n    const error = body.errors && body.errors[0];\n    pm.expect(error.errorCode).to.eql('OVER_MAX_PATHS');\n    pm.expect(error.fieldName).to.eql('assetPaths');\n    pm.expect(error.message).to.include('50');\n});"
+              "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });",
+              "",
+              "pm.test('errorCode is OVER_MAX_PATHS, distinct from EMPTY_SELECTION', function () {",
+              "    const body = pm.response.json();",
+              "    const error = body.errors && body.errors[0];",
+              "    pm.expect(error.errorCode).to.eql('OVER_MAX_PATHS');",
+              "    pm.expect(error.fieldName).to.eql('assetPaths');",
+              "    pm.expect(error.message).to.include('50');",
+              "});"
             ]
           }
         }

@@ -4,11 +4,14 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppConfig;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.filters.CMSUrlUtil;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -30,6 +33,14 @@ import java.util.Optional;
  * @author jsanca
  */
 public class SecretTool implements ViewTool {
+
+	/**
+	 * Template name Velocity reports when nothing has been pushed, as in the {@code /api/js} context.
+	 * Velocity has no constant for it: {@code InternalContextBase.getCurrentTemplateName()} returns
+	 * this literal, so keep the two in step. The {@code /api/js} secrets tests in
+	 * {@code ScriptingAnonymousAccessIntegrationTest} fail if it changes.
+	 */
+	private static final String NO_TEMPLATE_NAME = "<undef>";
 
 	private Context context;
 	private HttpServletRequest request;
@@ -96,8 +107,9 @@ public class SecretTool implements ViewTool {
 	/**
 	 * Resolves the {@link DotVelocitySecretAppConfig} for the current execution context.
 	 * <p>
-	 * Uses {@code this.request}, which is snapshotted at {@link #init} time — before any VTL
-	 * executes — making it immune to {@code #set($host = ...)} mutations.
+	 * File-based scripting endpoints use the site captured with the scripting file, ignoring
+	 * caller-selected host parameters. Other contexts use {@code this.request}, snapshotted at
+	 * {@link #init} time, rather than mutable Velocity context variables.
 	 * <ul>
 	 *   <li><b>Velocity page rendering:</b> {@code init(ViewContext)} sets {@code this.request}
 	 *       from the real HTTP request, so host resolution matches the browser's site.</li>
@@ -113,6 +125,18 @@ public class SecretTool implements ViewTool {
 
 		if (null == this.request) {
 			return Optional.empty();
+		}
+		final String siteId = ScriptingFileAttribute.getSiteId(this.request);
+		if (siteId != null) {
+			try {
+				final Host site = APILocator.getHostAPI().find(siteId, APILocator.systemUser(), false);
+				if (site == null) {
+					throw new SecurityException("Scripting site not found");
+				}
+				return DotVelocitySecretAppConfig.config(site);
+			} catch (final DotDataException | DotSecurityException e) {
+				throw new SecurityException("Unable to resolve scripting site", e);
+			}
 		}
 		return DotVelocitySecretAppConfig.config(this.request);
 	}
@@ -172,8 +196,12 @@ public class SecretTool implements ViewTool {
     } // canUserEvaluate.
 
 	/**
-	 * Checks whether the User who last edited the Contentlet rendering the Secrets has the
-	 * specified dotCMS Role or not.
+	 * Checks whether the User who last edited the code rendering the Secrets has the specified
+	 * dotCMS Role or not. The code is identified by the current Velocity template name (pages,
+	 * containers, templates and parsed files). When there is no template name, as for the file run
+	 * by the {@code /api/vtl} and {@code /api/js} endpoints, the scripting file recorded through
+	 * {@link ScriptingFileAttribute#set(HttpServletRequest, Contentlet)} is used instead. Nested evaluations
+	 * such as {@code $render.eval} carry their own name and never inherit the file's editor.
 	 *
 	 * @param role The {@link Role} that will be checked.
 	 *
@@ -182,13 +210,17 @@ public class SecretTool implements ViewTool {
 	private boolean checkRoleFromLastModUser(final Role role) {
 		final InternalContextAdapterImpl internalContextAdapter = new InternalContextAdapterImpl(context);
 		final String resourcePath = internalContextAdapter.getCurrentTemplateName();
-		boolean hasRole = false;
-		if (UtilMethods.isSet(resourcePath)) {
+		Versionable versionable = null;
+		String modUserId = null;
+		if (!UtilMethods.isSet(resourcePath) || NO_TEMPLATE_NAME.equals(resourcePath)) {
+			// top-level code with no template name: only an editor captured by Java code counts
+			modUserId = ScriptingFileAttribute.get(this.request);
+		} else {
 			String contentletInode = StringPool.BLANK;
 			try {
 
 				contentletInode = CMSUrlUtil.getInstance().getInodeFromUrlPath(resourcePath);
-				Versionable versionable = APILocator.getContentletAPI().find(contentletInode, APILocator.systemUser(), true);
+				versionable = APILocator.getContentletAPI().find(contentletInode, APILocator.systemUser(), true);
 
 				if (null == versionable) {
 					versionable = APILocator.getContainerAPI().getLiveContainerById(contentletInode, APILocator.systemUser(), true);
@@ -197,11 +229,6 @@ public class SecretTool implements ViewTool {
 				if (null == versionable) {
 					versionable = APILocator.getTemplateAPI().findLiveTemplate(contentletInode, APILocator.systemUser(), true);
 				}
-
-				if (null != versionable) {
-					final User lastModifiedUser = APILocator.getUserAPI().loadUserById(versionable.getModUser(), APILocator.systemUser(), true);
-					hasRole = APILocator.getRoleAPI().doesUserHaveRole(lastModifiedUser, role);
-				}
 			} catch (final Exception e) {
 				Logger.warnAndDebug(SecretTool.class, String.format("Failed to find last " +
 						"modification user from Retrieved ID '%s' in URL Path '%s': %s",
@@ -209,7 +236,22 @@ public class SecretTool implements ViewTool {
 						ExceptionUtil.getErrorMessage(e)), e);
 			}
 		}
-		return hasRole;
+
+		if (null != versionable) {
+			modUserId = versionable.getModUser();
+		}
+		if (!UtilMethods.isSet(modUserId)) {
+			return false;
+		}
+		try {
+			final User lastModifiedUser = APILocator.getUserAPI().loadUserById(modUserId, APILocator.systemUser(), true);
+			return APILocator.getRoleAPI().doesUserHaveRole(lastModifiedUser, role);
+		} catch (final Exception e) {
+			Logger.warnAndDebug(SecretTool.class, String.format("Failed to check the last " +
+					"modification user '%s' of '%s': %s", modUserId, resourcePath,
+					ExceptionUtil.getErrorMessage(e)), e);
+			return false;
+		}
 	}
 
 }

@@ -26,6 +26,7 @@ import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.api.v1.workflow.WorkflowResource;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.workflow.form.FireActionForm;
 import com.dotmarketing.beans.Host;
@@ -54,9 +55,7 @@ import com.liferay.portal.util.WebKeys;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,6 +65,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
@@ -75,6 +75,9 @@ import org.junit.Test;
  * unchanged list leaves the permission rows as they are.
  */
 public class ContentletPermissionReplacementIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static final String PASSWORD = "pw" + uniqueSuffix();
 
@@ -853,16 +856,14 @@ public class ContentletPermissionReplacementIntegrationTest {
     }
 
     /**
-     * Builds a request carrying Basic authentication for the given user.
+     * Builds a request carrying an API JWT owned by the given {@link User}.
      */
     private static HttpServletRequest requestAs(final User user) {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(new MockAttributeRequest(
                         new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request());
-        final String credentials = user.getEmailAddress() + ":" + PASSWORD;
-        request.setHeader("Authorization", "Basic "
-                + Base64.getEncoder().encodeToString(credentials.getBytes(StandardCharsets.UTF_8)));
+        request.setHeader("Authorization", TOKEN_UTILS.bearerHeader(user));
         return request;
     }
 

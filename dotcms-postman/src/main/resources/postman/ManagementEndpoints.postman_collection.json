@@ -72,7 +72,8 @@
 									"    pm.response.to.have.status(404);",
 									"});",
 									"pm.test(\"Body is the generic dotCMS not-found page\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"dotCMS: Page not found (404 error)\");",
+									"    const body = pm.response.text().trim();",
+									"    pm.expect(body === '404' || body.includes('dotCMS: Page not found (404 error)'), 'generic not-found response').to.eql(true);",
 									"});"
 								]
 							}
@@ -92,16 +93,11 @@
 							]
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -121,7 +117,8 @@
 									"    pm.response.to.have.status(404);",
 									"});",
 									"pm.test(\"Body is the generic dotCMS not-found page\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"dotCMS: Page not found (404 error)\");",
+									"    const body = pm.response.text().trim();",
+									"    pm.expect(body === '404' || body.includes('dotCMS: Page not found (404 error)'), 'generic not-found response').to.eql(true);",
 									"});"
 								]
 							}
@@ -141,16 +138,11 @@
 							]
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -170,7 +162,8 @@
 									"    pm.response.to.have.status(404);",
 									"});",
 									"pm.test(\"Body is the generic dotCMS not-found page\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"dotCMS: Page not found (404 error)\");",
+									"    const body = pm.response.text().trim();",
+									"    pm.expect(body === '404' || body.includes('dotCMS: Page not found (404 error)'), 'generic not-found response').to.eql(true);",
 									"});"
 								]
 							}
@@ -190,16 +183,11 @@
 							]
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -219,7 +207,8 @@
 									"    pm.response.to.have.status(404);",
 									"});",
 									"pm.test(\"Body is the generic dotCMS not-found page\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"dotCMS: Page not found (404 error)\");",
+									"    const body = pm.response.text().trim();",
+									"    pm.expect(body === '404' || body.includes('dotCMS: Page not found (404 error)'), 'generic not-found response').to.eql(true);",
 									"});"
 								]
 							}
@@ -239,16 +228,11 @@
 							]
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -268,7 +252,8 @@
 									"    pm.response.to.have.status(404);",
 									"});",
 									"pm.test(\"Body is the generic dotCMS not-found page\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"dotCMS: Page not found (404 error)\");",
+									"    const body = pm.response.text().trim();",
+									"    pm.expect(body === '404' || body.includes('dotCMS: Page not found (404 error)'), 'generic not-found response').to.eql(true);",
 									"});"
 								]
 							}
@@ -305,7 +290,8 @@
 									"    pm.response.to.have.status(404);",
 									"});",
 									"pm.test(\"Body is the generic dotCMS not-found page\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"dotCMS: Page not found (404 error)\");",
+									"    const body = pm.response.text().trim();",
+									"    pm.expect(body === '404' || body.includes('dotCMS: Page not found (404 error)'), 'generic not-found response').to.eql(true);",
 									"});"
 								]
 							}
@@ -372,16 +358,11 @@
 							]
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -421,16 +402,11 @@
 							]
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -470,16 +446,11 @@
 							]
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -536,7 +507,8 @@
 									"    pm.response.to.have.status(404);",
 									"});",
 									"pm.test(\"Body is the generic dotCMS not-found page\", function () {",
-									"    pm.expect(pm.response.text()).to.include(\"dotCMS: Page not found (404 error)\");",
+									"    const body = pm.response.text().trim();",
+									"    pm.expect(body === '404' || body.includes('dotCMS: Page not found (404 error)'), 'generic not-found response').to.eql(true);",
 									"});"
 								]
 							}

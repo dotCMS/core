@@ -27,6 +27,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.SecurityException;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -47,7 +48,6 @@ import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
 import io.vavr.control.Try;
 import java.time.Duration;
 import java.time.Instant;
@@ -68,6 +68,7 @@ import javax.ws.rs.core.Response;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
@@ -76,6 +77,9 @@ import org.junit.Test;
  * find or create the widget a form is placed on a page with.
  */
 public class ContainerResourceCallerPermissionTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static final String PASSWORD = "admin";
     /** The key prefix ContainerResource locks a form's widget creation on. */
@@ -776,13 +780,13 @@ public class ContainerResourceCallerPermissionTest {
     }
 
     /**
-     * Builds a request that logs in as the given user with a password.
+     * Builds a request carrying an API JWT owned by the given user.
      *
      * @param user the user the request authenticates as
      * @return the request
      */
     private static HttpServletRequest request(final User user) {
-        return request("Basic " + new String(Base64.encode((user.getEmailAddress() + ":" + PASSWORD).getBytes())));
+        return request(TOKEN_UTILS.bearerHeader(user));
     }
 
     /**
