@@ -1,5 +1,5 @@
-import { expect, type Locator, Page, type Request, type Route } from '@playwright/test';
-import { type Contentlet } from '@requests/contentlets';
+import { expect, type Locator, Page, type Request } from '@playwright/test';
+import { type Contentlet, findWorkingContentlet, getContentlet } from '@requests/contentlets';
 import { clickAddNewContentFromList, goToContentList } from '@utils/contentListingNavigation';
 
 /**
@@ -74,16 +74,15 @@ export class NewEditContentFormPage {
 
     /**
      * Clicks the workflow action that persists the content (Save or Publish) and returns the
-     * contentlet it saved, read from the workflow fire response.
+     * contentlet it saved, read back from the server once the workflow fire answers.
      * Prefer "Save" when both Save and Publish are visible — the new command bar can show multiple
      * workflow buttons at once, so a single regex locator would match 2+ roles and break strict mode.
      *
-     * The response is the only place a new contentlet's id shows up: content created from the
-     * listing is edited in the side panel over it (#38303), and the address never changes.
-     *
-     * The fire goes out through `route.fetch()`, so its body is read in Node. Read from the
-     * browser it can already be gone, even inside a `waitForResponse` predicate: Chrome drops it
-     * and `json()` fails with `Protocol error (Network.getResponseBody)`.
+     * The fire goes through untouched and its response body is never read: read from the browser
+     * it can already be gone, even inside a `waitForResponse` predicate (`Protocol error
+     * (Network.getResponseBody)`), and intercepting the fire to read it in Node was the one thing
+     * the runs that stalled had in common. The saved contentlet is read back from the server
+     * instead (see {@link #savedContentlet}).
      */
     async save(): Promise<Contentlet> {
         const saveButton = this.root.getByRole('button', { name: 'Save' });
@@ -92,39 +91,63 @@ export class NewEditContentFormPage {
 
         await expect(actionButton).toBeVisible();
 
-        let entity: Contentlet | undefined;
-        const matchesFire = (url: URL) => url.pathname.startsWith('/api/v1/workflow/actions/');
-        const fire = async (route: Route) => {
-            if (!isWorkflowFire(route.request())) {
-                await route.fallback();
+        const answered = this.page.waitForResponse((response) =>
+            isWorkflowFire(response.request())
+        );
+        await actionButton.click();
+        const response = await answered;
 
-                return;
-            }
+        expect(response.status(), `the workflow fire answered ${response.status()}`).toBe(200);
 
-            const response = await route.fetch();
-            const body = await response.json().catch(() => null);
-            await route.fulfill({ response });
+        return this.#savedContentlet(response.request());
+    }
 
-            if (response.status() === 200) {
-                entity = body?.entity;
-            }
+    /**
+     * The contentlet a workflow fire saved, read back from the server: an edit by its identifier,
+     * which the request names (or its inode, from the URL, when it does not), a create by its
+     * content type, language and, when the form sent one, its title. The index may not have a
+     * create yet when the fire answers, so the search is retried.
+     *
+     * @param fire - The workflow fire request
+     * @returns The saved contentlet, in its working version
+     */
+    async #savedContentlet(fire: Request): Promise<Contentlet> {
+        const { searchParams } = new URL(fire.url());
+        const { contentlet = {} } = (fire.postDataJSON() ?? {}) as {
+            contentlet?: Record<string, unknown>;
         };
+        const inode = searchParams.get('inode');
+        const languageId = Number(contentlet['languageId']) || undefined;
+        let identifier =
+            (contentlet['identifier'] as string | undefined) ||
+            searchParams.get('identifier') ||
+            undefined;
 
-        await this.page.route(matchesFire, fire);
-
-        try {
-            await actionButton.click();
-            await expect
-                .poll(() => entity?.inode, {
-                    message: 'the workflow fire response carries no contentlet',
-                    timeout: 30000
-                })
-                .toBeTruthy();
-
-            return entity as Contentlet;
-        } finally {
-            await this.page.unroute(matchesFire, fire).catch(() => undefined);
+        if (!identifier && inode) {
+            identifier = (await getContentlet(this.page.request, inode)).identifier;
         }
+
+        const contentType = contentlet['contentType'] as string | undefined;
+        const title = typeof contentlet['title'] === 'string' ? contentlet['title'] : undefined;
+
+        expect(
+            identifier || contentType,
+            'the workflow fire names neither the content nor its type'
+        ).toBeTruthy();
+
+        const query = identifier ? { identifier, languageId } : { contentType, title, languageId };
+        let saved: Contentlet | undefined;
+
+        await expect
+            .poll(
+                async () =>
+                    (saved = (await findWorkingContentlet(this.page.request, query)) ?? undefined)
+                        ?.inode,
+                { message: 'the index has the saved contentlet', timeout: 30000 }
+            )
+            .toBeTruthy();
+
+        return saved as Contentlet;
     }
 
     /**
