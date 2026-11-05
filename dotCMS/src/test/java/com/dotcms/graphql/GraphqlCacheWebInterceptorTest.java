@@ -11,18 +11,22 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.filters.interceptor.Result;
 import com.dotcms.mock.request.DotCMSMockRequest;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.UserAPI;
+import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.WebKeys;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Optional;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
@@ -65,6 +69,35 @@ public class GraphqlCacheWebInterceptorTest {
             assertEquals("", output.toString());
             verify(cache, never()).get(anyString());
             verify(contexts.constructed().get(0)).build(request, response);
+        }
+    }
+
+    /** A remember-me-only request must reach AutoLoginFilter with its body untouched. */
+    @Test
+    public void rememberMeOnlyRequestBypassesCacheUntilAutoLogin() throws Exception {
+        final GraphQLCache cache = mock(GraphQLCache.class);
+        final LicenseManager license = mock(LicenseManager.class);
+        when(license.isEnterprise()).thenReturn(true);
+        final DotCMSMockRequest request = spy(new DotCMSMockRequest());
+        final String body = "{\"query\":\"{ content { title } }\"}";
+        request.setMethod("POST");
+        request.setContent(body);
+        when(request.getCookies()).thenReturn(new Cookie[] {
+                new Cookie(CookieKeys.REMEMBER_ME_COOKIE.get(), "synthetic-remember-me")});
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        try (MockedStatic<CacheLocator> caches = mockStatic(CacheLocator.class);
+             MockedStatic<LicenseManager> licenses = mockStatic(LicenseManager.class);
+             MockedConstruction<DotGraphQLContextBuilder> contexts = mockConstruction(
+                     DotGraphQLContextBuilder.class)) {
+            caches.when(CacheLocator::getGraphQLCache).thenReturn(cache);
+            licenses.when(LicenseManager::getInstance).thenReturn(license);
+
+            assertSame(Result.NEXT, new GraphqlCacheWebInterceptor().intercept(request, response));
+            assertTrue(contexts.constructed().isEmpty());
+            verify(cache, never()).get(anyString());
+            verify(request, never()).getReader();
+            assertEquals(body, request.getReader().readLine());
         }
     }
 
