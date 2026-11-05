@@ -73,6 +73,8 @@ class DotCMSMacroWebAPISQLResultsTest {
         when(dotcmsPool.getConnection()).thenThrow(new SQLException("unavailable in unit tests"));
         previousPool = SQLResultsViewToolTest.swapDotcmsPool(dotcmsPool);
         jndi.when(() -> JNDIUtil.lookup(any(), eq(POOL_NAME))).thenReturn(dotcmsPool);
+        // "default" is not a naming name: it is never bound.
+        jndi.when(() -> JNDIUtil.lookup(any(), eq("default"))).thenThrow(new NamingException("not bound"));
         config.when(() -> Config.getBooleanProperty(eq(DOTCMS_DB_FLAG), any(Boolean.class))).thenReturn(false);
 
         final ViewContext viewContext = mock(ViewContext.class);
@@ -165,6 +167,20 @@ class DotCMSMacroWebAPISQLResultsTest {
                 "With access to the dotCMS database allowed, the query must be attempted");
         dbFactory.verify(() -> DbConnectionFactory.isDefaultDatabase(anyString()), never());
         dbFactory.verify(() -> DbConnectionFactory.getConnection("jdbc/down"));
+    }
+
+    @Test
+    void unresolvableDataSourceReturnsFixedErrorWhenDotcmsDbAccessIsOn() {
+        config.when(() -> Config.getBooleanProperty(eq(DOTCMS_DB_FLAG), any(Boolean.class))).thenReturn(true);
+        jndi.when(() -> JNDIUtil.lookup(any(), eq("jdbc/missing")))
+                .thenThrow(new NamingException("Name [jdbc/missing] is not bound in this Context"));
+
+        final List<HashMap<String, String>> result = macro.getSQLResults("jdbc/missing", SQL, 0, 10);
+
+        assertEquals(1, result.size(), "Expected one error row but got " + result);
+        assertEquals("getSQLResults macro was called with an invalid data source name",
+                result.get(0).get("dotConnectSQLError"));
+        dbFactory.verify(() -> DbConnectionFactory.getConnection(anyString()), never());
     }
 
     @Test

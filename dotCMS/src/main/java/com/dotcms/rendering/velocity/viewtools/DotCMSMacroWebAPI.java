@@ -406,6 +406,18 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		            if (maxRow > 0) {
 		                dc.setMaxRows(maxRow);
 		            }
+		            if (!SQLResultsViewTool.DEFAULT_DATASOURCE.equals(dataSource)) {
+		                try {
+		                    DbConnectionFactory.getDataSource(dataSource);
+		                } catch (final Exception e) {
+		                    Logger.warn(this, "getSQLResults macro could not resolve its data source");
+		                    HashMap<String, String> map = new HashMap<>();
+		                    map.put("hasDotConnectSQLError", "true");
+		                    map.put("dotConnectSQLError", "getSQLResults macro was called with an invalid data source name");
+		                    errorResults.add(map);
+		                    return errorResults;
+		                }
+		            }
 		            // The data source only needs to be checked when queries on the dotCMS database are not allowed.
 		            if (!Config.getBooleanProperty(SQLResultsViewTool.ALLOW_DOTCMS_DB_ACCESS, false)) {
 		                final boolean dotcmsDatabase;

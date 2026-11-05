@@ -141,6 +141,15 @@ public class SQLResultsViewTool implements ViewTool {
                 return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "Failed to call the SQLResultsViewTool" +
                         ". User failed to execute SQL queries.")));
             }
+            if (!DEFAULT_DATASOURCE.equals(dataSource)) {
+                try {
+                    DbConnectionFactory.getDataSource(dataSource);
+                } catch (final Exception e) {
+                    return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "Failed to call the " +
+                            "SQLResultsViewTool. Invalid Data Source.")), "The data source could not be resolved: " +
+                            e.getClass().getSimpleName());
+                }
+            }
             // The data source only needs to be checked when queries on the dotCMS database are not allowed.
             if (!Config.getBooleanProperty(ALLOW_DOTCMS_DB_ACCESS, false)) {
                 final boolean dotcmsDatabase;

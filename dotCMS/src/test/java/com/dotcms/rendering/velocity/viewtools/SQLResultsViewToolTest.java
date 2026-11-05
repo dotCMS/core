@@ -91,6 +91,8 @@ class SQLResultsViewToolTest {
         jndi.when(() -> JNDIUtil.lookup(any(), eq(POOL_NAME))).thenReturn(dotcmsPool);
         jndi.when(() -> JNDIUtil.lookup(any(), eq("java:comp/env/" + POOL_NAME))).thenReturn(dotcmsPool);
         jndi.when(() -> JNDIUtil.lookup(any(), eq(EXTERNAL_NAME))).thenReturn(externalDb);
+        // "default" is not a naming name: it is never bound.
+        jndi.when(() -> JNDIUtil.lookup(any(), eq("default"))).thenThrow(new NamingException("not bound"));
         givenDotcmsDbAccess(false);
 
         author = mock(Contentlet.class);
@@ -237,6 +239,19 @@ class SQLResultsViewToolTest {
                 "With access to the dotCMS database allowed, the query must be attempted");
         dbFactory.verify(() -> DbConnectionFactory.isDefaultDatabase(anyString()), never());
         dbFactory.verify(() -> DbConnectionFactory.getConnection("jdbc/down"));
+    }
+
+    @Test
+    void unresolvableDataSourceReturnsFixedErrorWhenDotcmsDbAccessIsOn() {
+        givenDotcmsDbAccess(true);
+        jndi.when(() -> JNDIUtil.lookup(any(), eq("jdbc/missing")))
+                .thenThrow(new NamingException("Name [jdbc/missing] is not bound in this Context"));
+
+        final List<HashMap<String, String>> result = tool.getSQLResults("jdbc/missing", SQL, 0, 10);
+
+        assertSingleError(result, INVALID_DATA_SOURCE);
+        assertFalse(firstError(result).contains("jdbc/missing"), "The error must not repeat the supplied name");
+        dbFactory.verify(() -> DbConnectionFactory.getConnection(anyString()), never());
     }
 
     @Test
