@@ -89,3 +89,4 @@ Release-25.07.10 LTS
 83. https://github.com/dotCMS/private-issues/issues/1037 : chore(deps): upgrade Angular to 19.2 and Nx to 20 in core-web #1037
 84. https://github.com/dotCMS/private-issues/issues/1023 : chore(deps): bump jackson-databind to 2.18.12 (core) and 2.21.8 (Tika bundle) #38277 #1023
 85. https://github.com/dotCMS/private-issues/issues/886 : view_contentlet_popup_inc.jsp: escape contentlet title and WYSIWYG value in the content preview popup #38219 #886
+86. https://github.com/dotCMS/private-issues/issues/735 : Missing authorization, push-publishing endpoint reads (EndpointResource) #38286 #735
