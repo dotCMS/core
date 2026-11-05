@@ -14,6 +14,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
@@ -162,6 +165,69 @@ public class RestrictedViewToolAccessDefaultsTest {
     public void renderingAuthorHasAccess_noAuthorAnnounced_isDenied() {
         assertFalse(RestrictedViewToolAccess.renderingAuthorHasAccess(requestWithAttributes()));
         assertFalse(RestrictedViewToolAccess.renderingAuthorHasAccess(null));
+    }
+
+    /**
+     * Method to test: {@link RestrictedViewToolAccess#renderingAuthorHasAccess(HttpServletRequest)}
+     * When: the announced author is a CMS Administrator who was never given the Scripting
+     * Developer role
+     * Should: refuse. These tools run for whoever visits the page, so what unlocks them is the
+     * role that was granted on purpose for writing such code, not administrative power in
+     * general. Granting it to any administrator would let a secret be read by an anonymous
+     * visitor of a page an administrator happened to edit last.
+     */
+    @Test
+    public void renderingAuthorHasAccess_administratorWithoutTheScriptingRole_isDenied() throws Exception {
+        final HttpServletRequest request = requestWithAttributes();
+        RestrictedViewToolAccess.announceRenderingAuthor(request, "an-admin");
+
+        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class)) {
+            stubAuthor(apiLocator, "an-admin", true, false);
+            assertFalse(RestrictedViewToolAccess.renderingAuthorHasAccess(request));
+        }
+    }
+
+    /**
+     * Method to test: {@link RestrictedViewToolAccess#renderingAuthorHasAccess(HttpServletRequest)}
+     * When: the announced author holds the Scripting Developer role and nothing else
+     * Should: allow, which is what makes the refusal above a decision about the role rather than
+     * the tool being broken for everyone
+     */
+    @Test
+    public void renderingAuthorHasAccess_scriptingDeveloper_isAllowed() throws Exception {
+        final HttpServletRequest request = requestWithAttributes();
+        RestrictedViewToolAccess.announceRenderingAuthor(request, "a-scripter");
+
+        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class)) {
+            stubAuthor(apiLocator, "a-scripter", false, true);
+            assertTrue(RestrictedViewToolAccess.renderingAuthorHasAccess(request));
+        }
+    }
+
+    /**
+     * Stubs the APIs behind an announced author.
+     *
+     * @param apiLocator          the static mock to stub
+     * @param userId              ID the author was announced with
+     * @param administrator       whether that user is a CMS Administrator
+     * @param scriptingDeveloper  whether that user holds the Scripting Developer role
+     */
+    private static void stubAuthor(final MockedStatic<APILocator> apiLocator, final String userId,
+            final boolean administrator, final boolean scriptingDeveloper) throws Exception {
+        final User author = mock(User.class);
+        when(author.getUserId()).thenReturn(userId);
+        when(author.isAdmin()).thenReturn(administrator);
+
+        final UserAPI userAPI = mock(UserAPI.class);
+        when(userAPI.loadUserById(eq(userId), any(), any(Boolean.class))).thenReturn(author);
+
+        final Role scripting = mock(Role.class);
+        final RoleAPI roleAPI = mock(RoleAPI.class);
+        when(roleAPI.loadRoleByKey(Role.SCRIPTING_DEVELOPER)).thenReturn(scripting);
+        when(roleAPI.doesUserHaveRole(author, scripting)).thenReturn(scriptingDeveloper);
+
+        apiLocator.when(APILocator::getUserAPI).thenReturn(userAPI);
+        apiLocator.when(APILocator::getRoleAPI).thenReturn(roleAPI);
     }
 
     /**

@@ -211,14 +211,46 @@ public final class RestrictedViewToolAccess {
                             + "not announce its author looks like.");
             return false;
         }
-        final boolean allowed = userIdHasAccess(authorId);
+        final boolean allowed = isScriptingDeveloper(authorId);
         if (!allowed) {
             Logger.warn(RestrictedViewToolAccess.class, String.format(
                     "A view tool was refused: the code being rendered was last saved by user "
-                            + "'%s', who is neither a CMS Administrator nor a %s",
+                            + "'%s', who does not have the %s role",
                     authorId, Role.SCRIPTING_DEVELOPER));
         }
         return allowed;
+    }
+
+    /**
+     * Whether a user was given the {@link Role#SCRIPTING_DEVELOPER} role.
+     *
+     * <p>This is deliberately narrower than {@link #hasAccess(User)}: that one decides whether a
+     * tool is worth putting in the toolbox at all, while this one decides whether the tool runs,
+     * and the tools have always asked for this one role. Being a CMS Administrator does not
+     * stand in for it, because the code these tools run is served to whoever visits the page —
+     * admitting any administrator would let an anonymous visitor read a secret through a page an
+     * administrator merely happened to edit last.
+     *
+     * @param userId ID of the user to check, as the renderer announced it
+     *
+     * @return {@code true} when that user holds the role
+     */
+    private static boolean isScriptingDeveloper(final String userId) {
+        try {
+            final User author = APILocator.getUserAPI()
+                    .loadUserById(userId, APILocator.systemUser(), true);
+            if (null == author || author.isAnonymousUser()
+                    || UserAPI.SYSTEM_USER_ID.equals(author.getUserId())) {
+                return false;
+            }
+            final Role scripting = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
+            return null != scripting && APILocator.getRoleAPI().doesUserHaveRole(author, scripting);
+        } catch (final Exception e) {
+            Logger.debug(RestrictedViewToolAccess.class.getName(),
+                    () -> "Unable to check the " + Role.SCRIPTING_DEVELOPER + " role of user '"
+                            + userId + "': " + ExceptionUtil.getErrorMessage(e));
+            return false;
+        }
     }
 
     /**
