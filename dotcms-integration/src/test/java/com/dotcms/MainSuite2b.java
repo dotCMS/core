@@ -184,6 +184,7 @@ import org.apache.felix.framework.OSGIUtilTest;
 import org.apache.velocity.tools.view.tools.CookieToolTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
+import com.dotcms.ai.rest.EmbeddingsResourceAuthTest;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
@@ -506,7 +507,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.contentlet.ajax.ImportContentletAjaxIntegrationTest.class,
         com.dotmarketing.portlets.languagesmanager.ajax.LanguageAjaxIntegrationTest.class,
         com.dotmarketing.business.ajax.RoleAjaxLayoutsIntegrationTest.class,
-        com.dotmarketing.portlets.languagesmanager.action.EditLanguageKeysActionTest.class
+        com.dotmarketing.portlets.languagesmanager.action.EditLanguageKeysActionTest.class,
+    EmbeddingsResourceAuthTest.class
 })
 
 public class MainSuite2b {
