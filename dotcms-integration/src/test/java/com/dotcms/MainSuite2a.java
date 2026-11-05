@@ -105,7 +105,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.filters.FiltersTest.class,
         com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
         com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
-        JsModuleImportIntegrationTest.class
+        JsModuleImportIntegrationTest.class,
+    com.dotcms.security.multipart.MultiPartRequestSecurityWebInterceptorTest.class,
+    com.dotcms.rest.api.v1.temp.TempFileNamingTest.class
 })
 public class MainSuite2a {
 
