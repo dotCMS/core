@@ -190,7 +190,8 @@ public class SQLResultsViewTool implements ViewTool {
      *
      * @return {@code true} if a query on this name would run against the dotCMS database.
      *
-     * @throws com.dotmarketing.exception.DotRuntimeException If the name cannot be resolved.
+     * @throws com.dotmarketing.exception.DotRuntimeException If the name cannot be resolved, or the data source behind
+     *                                                         it cannot be checked.
      */
     static boolean isDotcmsDatabase(final String dataSource) {
         return DEFAULT_DATASOURCE.equals(dataSource)

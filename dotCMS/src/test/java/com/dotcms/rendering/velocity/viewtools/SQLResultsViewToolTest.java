@@ -85,7 +85,7 @@ class SQLResultsViewToolTest {
         dbFactory = mockStatic(DbConnectionFactory.class, CALLS_REAL_METHODS);
 
         dotcmsPool = unavailableDataSource();
-        externalDb = unavailableDataSource();
+        externalDb = externalDataSourceCheckedOnce();
         previousPool = swapDotcmsPool(dotcmsPool);
 
         jndi.when(() -> JNDIUtil.lookup(any(), eq(POOL_NAME))).thenReturn(dotcmsPool);
@@ -215,6 +215,17 @@ class SQLResultsViewToolTest {
     }
 
     @Test
+    void unreachableDataSourceIsRefusedWithoutQuerying() throws Exception {
+        final DataSource down = unavailableDataSource();
+        jndi.when(() -> JNDIUtil.lookup(any(), eq("jdbc/down"))).thenReturn(down);
+
+        final List<HashMap<String, String>> result = tool.getSQLResults("jdbc/down", SQL, 0, 10);
+
+        assertSingleError(result, INVALID_DATA_SOURCE);
+        dbFactory.verify(() -> DbConnectionFactory.getConnection(anyString()), never());
+    }
+
+    @Test
     void poolNameUsesInternalConnectionWhenDotcmsDbAccessIsOn() throws SQLException {
         givenDotcmsDbAccess(true);
 
@@ -242,6 +253,25 @@ class SQLResultsViewToolTest {
         when(connection.createStatement()).thenReturn(statement);
         final DataSource dataSource = mock(DataSource.class);
         when(dataSource.getConnection()).thenReturn(connection);
+        return dataSource;
+    }
+
+    /**
+     * A data source to a database without dotCMS data that opens one connection, used by the check,
+     * and is unavailable afterwards, so the query itself does not reach a database.
+     */
+    static DataSource externalDataSourceCheckedOnce() throws SQLException {
+        final ResultSet resultSet = mock(ResultSet.class);
+        when(resultSet.next()).thenReturn(true);
+        when(resultSet.getBoolean(1)).thenReturn(false);
+        final Statement statement = mock(Statement.class);
+        when(statement.executeQuery(anyString())).thenReturn(resultSet);
+        final Connection connection = mock(Connection.class);
+        when(connection.createStatement()).thenReturn(statement);
+        final DataSource dataSource = mock(DataSource.class);
+        when(dataSource.getConnection())
+                .thenReturn(connection)
+                .thenThrow(new SQLException("unavailable in unit tests"));
         return dataSource;
     }
 

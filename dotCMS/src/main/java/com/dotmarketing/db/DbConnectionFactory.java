@@ -223,7 +223,8 @@ public class DbConnectionFactory {
      * @param name a local naming name, see {@link #isLocalJndiName(String)}
      * @return {@code true} if a connection obtained through this name reaches the dotCMS database
      * @throws IllegalArgumentException if the name is not a local naming name
-     * @throws DotRuntimeException      if the name cannot be looked up
+     * @throws DotRuntimeException      if the name cannot be looked up, or the data source bound under
+     *                                  it cannot be checked
      */
     public static boolean isDefaultDatabase(final String name) {
         return isDefaultDataSourceName(name) || isDefaultDataSource(getDataSource(name));
@@ -236,6 +237,7 @@ public class DbConnectionFactory {
      *
      * @param candidate the data source to check
      * @return {@code true} if {@code candidate} reaches the dotCMS database
+     * @throws DotRuntimeException if {@code candidate} cannot be checked
      */
     public static boolean isDefaultDataSource(final DataSource candidate) {
         final DataSource pool = getDataSource();
@@ -286,15 +288,18 @@ public class DbConnectionFactory {
      * privilege on dotCMS tables and gives the same answer whatever host, port, proxy or user the
      * data source connects through.
      * <ul>
-     *     <li>A data source that cannot open a connection is not recognised.</li>
      *     <li>A PostgreSQL database that cannot run the check is recognised, so the answer errs on the
      *     side of the dotCMS database. Other engines, which cannot hold dotCMS data, are not.</li>
+     *     <li>When the data source cannot open a connection, or cannot run the check nor report its
+     *     database engine, there is no answer and an exception is thrown, so callers refuse it rather
+     *     than treat it as another database.</li>
      * </ul>
      * Only answers read from the catalog are kept, per data source instance; a failed connection or
      * check is not kept, so the data source is checked again next time.
      *
      * @param candidate the data source to check
      * @return {@code true} if the database behind {@code candidate} holds, or may hold, dotCMS data
+     * @throws DotRuntimeException if the data source cannot be checked
      */
     static boolean holdsDotcmsData(final DataSource candidate) {
         if (candidate == null) {
@@ -308,9 +313,8 @@ public class DbConnectionFactory {
         try {
             connection = candidate.getConnection();
         } catch (final Exception e) {
-            Logger.debug(DbConnectionFactory.class,
-                    () -> "Could not connect to a data source to check it: " + e.getClass().getSimpleName());
-            return false;
+            throw new DotRuntimeException("Could not connect to the data source to check it: "
+                    + e.getClass().getSimpleName(), e);
         }
         Optional<Boolean> catalogAnswer = Optional.empty();
         boolean answer;
@@ -359,14 +363,16 @@ public class DbConnectionFactory {
      * Tells whether a connection reports PostgreSQL as its database product.
      *
      * @param connection an open connection
-     * @return {@code true} for PostgreSQL; {@code false} for other products or if it cannot tell
+     * @return {@code true} for PostgreSQL, {@code false} for other products
+     * @throws DotRuntimeException if the connection cannot report its database product
      */
     private static boolean isPostgres(final Connection connection) {
         try {
             final String product = connection.getMetaData().getDatabaseProductName();
             return product != null && product.toLowerCase(Locale.ROOT).contains("postgres");
         } catch (final Exception e) {
-            return false;
+            throw new DotRuntimeException("Could not read the database engine of the data source: "
+                    + e.getClass().getSimpleName(), e);
         }
     }
 

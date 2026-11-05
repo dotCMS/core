@@ -129,6 +129,19 @@ class DotCMSMacroWebAPISQLResultsTest {
     }
 
     @Test
+    void unreachableDataSourceIsRefusedWithoutQuerying() throws SQLException {
+        final DataSource down = SQLResultsViewToolTest.unavailableDataSource();
+        jndi.when(() -> JNDIUtil.lookup(any(), eq("jdbc/down"))).thenReturn(down);
+
+        final List<HashMap<String, String>> result = macro.getSQLResults("jdbc/down", SQL, 0, 10);
+
+        assertEquals(1, result.size(), "Expected one error row but got " + result);
+        assertEquals("getSQLResults macro was called with an invalid data source name",
+                result.get(0).get("dotConnectSQLError"));
+        dbFactory.verify(() -> DbConnectionFactory.getConnection(anyString()), never());
+    }
+
+    @Test
     void poolNameUsesInternalConnectionWhenDotcmsDbAccessIsOn() {
         config.when(() -> Config.getBooleanProperty(eq(DOTCMS_DB_FLAG), any(Boolean.class))).thenReturn(true);
 
@@ -140,7 +153,7 @@ class DotCMSMacroWebAPISQLResultsTest {
 
     @Test
     void externalDataSourceIsQueriedWhenDotcmsDbAccessIsOff() throws SQLException {
-        final DataSource externalDb = SQLResultsViewToolTest.unavailableDataSource();
+        final DataSource externalDb = SQLResultsViewToolTest.externalDataSourceCheckedOnce();
         jndi.when(() -> JNDIUtil.lookup(any(), eq(EXTERNAL_NAME))).thenReturn(externalDb);
 
         macro.getSQLResults(EXTERNAL_NAME, SQL, 0, 10);

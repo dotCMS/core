@@ -15,6 +15,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotmarketing.exception.DotRuntimeException;
 import com.liferay.util.JNDIUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
@@ -197,11 +198,22 @@ class DbConnectionFactoryDataSourceNameTest {
     }
 
     @Test
-    void unreachableDatabaseIsNotRecognised() throws SQLException {
+    void unreachableDatabaseCannotBeChecked() throws SQLException {
         final DataSource unreachable = mock(DataSource.class);
         when(unreachable.getConnection()).thenThrow(new SQLException("unavailable"));
 
-        assertFalse(DbConnectionFactory.holdsDotcmsData(unreachable));
+        assertThrows(DotRuntimeException.class, () -> DbConnectionFactory.holdsDotcmsData(unreachable));
+    }
+
+    @Test
+    void databaseThatCannotRunTheCheckNorTellItsEngineCannotBeChecked() throws SQLException {
+        final DataSource unknown = dataSourceAnswering(true);
+        final Connection connection = unknown.getConnection();
+        when(connection.createStatement().executeQuery(anyString())).thenThrow(new SQLException("check failed"));
+        when(connection.getMetaData()).thenThrow(new SQLException("metadata unavailable"));
+
+        assertThrows(DotRuntimeException.class, () -> DbConnectionFactory.holdsDotcmsData(unknown));
+        verify(connection).close();
     }
 
     @Test
@@ -258,8 +270,8 @@ class DbConnectionFactoryDataSourceNameTest {
         final DataSource unreachable = mock(DataSource.class);
         when(unreachable.getConnection()).thenThrow(new SQLException("unavailable"));
 
-        DbConnectionFactory.holdsDotcmsData(unreachable);
-        DbConnectionFactory.holdsDotcmsData(unreachable);
+        assertThrows(DotRuntimeException.class, () -> DbConnectionFactory.holdsDotcmsData(unreachable));
+        assertThrows(DotRuntimeException.class, () -> DbConnectionFactory.holdsDotcmsData(unreachable));
 
         verify(unreachable, times(2)).getConnection();
     }
