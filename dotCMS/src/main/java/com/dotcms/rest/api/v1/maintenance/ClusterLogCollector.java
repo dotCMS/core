@@ -5,27 +5,20 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
 
-import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509ExtendedTrustManager;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -49,15 +42,16 @@ public class ClusterLogCollector {
     private static final String CONFIG_CONNECT_TIMEOUT_SECONDS = "CLUSTER_LOG_DOWNLOAD_CONNECT_TIMEOUT_SECONDS";
     private static final String CONFIG_SCHEME = "CLUSTER_LOG_DOWNLOAD_SCHEME";
     private static final String CONFIG_PORT = "CLUSTER_LOG_DOWNLOAD_PORT";
-    private static final String CONFIG_VERIFY_PEER_CERTS = "CLUSTER_LOG_DOWNLOAD_VERIFY_PEER_CERTS";
 
     private static final int DEFAULT_TIMEOUT_SECONDS = 300;
     private static final int DEFAULT_CONNECT_TIMEOUT_SECONDS = 10;
     private static final int DEFAULT_HTTPS_PORT = 8443;
+    private static final int MAX_PORT = 65535;
     private static final String HTTP_SCHEME = "http";
     private static final String HTTPS_SCHEME = "https";
     private static final String HTTPS_FAILURE_HINT = " (peers are reached over HTTPS on the port"
-            + " given by " + CONFIG_PORT + " — 8443 by default; set " + CONFIG_PORT + " to the port"
+            + " given by " + CONFIG_PORT + ", 8443 by default, and must present a certificate"
+            + " trusted by the JVM and valid for their address; set " + CONFIG_PORT + " to the port"
             + " each peer serves HTTPS on, or " + CONFIG_SCHEME + "=http to reach them over plain"
             + " HTTP instead)";
 
@@ -107,18 +101,17 @@ public class ClusterLogCollector {
      * </ul>
      *
      * <p>Peer requests go to the port given by {@code CLUSTER_LOG_DOWNLOAD_PORT}
-     * when set; otherwise to dotCMS's default secure port, 8443, under HTTPS, or
-     * to the local server's own port under plain HTTP.
+     * when it is set to a valid port; otherwise to dotCMS's default HTTPS port,
+     * 8443, under HTTPS, or to the local server's own port under plain HTTP. A
+     * value that is not a port from 1 to 65535 is logged, noted in
+     * {@code _errors.txt}, and the default port is used.
      *
-     * <p>Over HTTPS, each peer's certificate is accepted without verification:
-     * cluster nodes commonly run with self-signed certificates, and unverified
-     * TLS still encrypts the log content and the peer token in transit. Setting
-     * {@code CLUSTER_LOG_DOWNLOAD_VERIFY_PEER_CERTS} to {@code true} verifies
-     * every peer certificate and host name against the JVM's default trust
-     * store. The acceptance is scoped to this collector's client and touches no
-     * JVM-wide state. A peer request that fails is reported in
-     * {@code _errors.txt} with its reason and is not retried with another
-     * scheme.
+     * <p>Over HTTPS, each peer's certificate and host name are verified against
+     * the JVM's default trust store, so every peer must present a certificate
+     * trusted by the JVM and valid for the address it is reached at. A peer
+     * request that fails, or that cannot be built from the peer's address, is
+     * reported in {@code _errors.txt} with its reason and is not retried with
+     * another scheme.
      *
      * @return a {@link StreamingOutput} streaming the assembled ZIP
      */
@@ -130,10 +123,12 @@ public class ClusterLogCollector {
                 CONFIG_TIMEOUT_SECONDS, DEFAULT_TIMEOUT_SECONDS);
         final String scheme = resolveScheme();
         final boolean httpsScheme = HTTPS_SCHEME.equals(scheme);
-        final int peerPort = resolvePeerPort(scheme, localPort);
-        final boolean verifyPeerCerts = Config.getBooleanProperty(CONFIG_VERIFY_PEER_CERTS, false);
+        final List<String> errors = new ArrayList<>();
+        final int peerPort = resolvePeerPort(scheme, localPort, errors);
 
-        final HttpClient httpClient = buildHttpClient(connectTimeout, verifyPeerCerts);
+        final HttpClient httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(connectTimeout))
+                .build();
 
         // Fire off all peer requests in parallel
         final Map<String, CompletableFuture<PeerResponse>> futures = new LinkedHashMap<>();
@@ -146,7 +141,7 @@ public class ClusterLogCollector {
                 continue;
             }
 
-            final String url = scheme + "://" + host + ":" + peerPort
+            final String url = scheme + "://" + urlHost(host) + ":" + peerPort
                     + "/api/v1/maintenance/_downloadLog/" + fileName;
 
             futures.put(labelForServer(peer), fetchLog(httpClient, url, readTimeout, peer));
@@ -154,7 +149,6 @@ public class ClusterLogCollector {
 
         // Wait for all responses
         final Map<String, byte[]> peerLogs = new LinkedHashMap<>();
-        final List<String> errors = new ArrayList<>();
 
         for (final Map.Entry<String, CompletableFuture<PeerResponse>> entry : futures.entrySet()) {
             final String label = entry.getKey();
@@ -220,18 +214,34 @@ public class ClusterLogCollector {
 
     /**
      * Returns the port peer requests go to: the {@code CLUSTER_LOG_DOWNLOAD_PORT}
-     * configuration property when set, otherwise dotCMS's default secure port,
-     * 8443, under HTTPS — or the local server's own port under plain HTTP.
+     * configuration property when it is set to a port from 1 to 65535, otherwise
+     * dotCMS's default HTTPS port, 8443, under HTTPS, or the local server's own
+     * port under plain HTTP. A value that is set but is not such a port is logged
+     * and added to {@code notes}, and the default port is returned.
      *
      * @param scheme    the scheme of the peer requests, {@code http} or {@code https}
      * @param localPort the port the local server listens on
+     * @param notes     the lines written to {@code _errors.txt}; receives the note
+     *                  about an invalid configured value
      * @return the peer port
      */
-    static int resolvePeerPort(final String scheme, final int localPort) {
-        final int configuredPort = Config.getIntProperty(CONFIG_PORT, 0);
-        return configuredPort > 0
-                ? configuredPort
-                : HTTPS_SCHEME.equals(scheme) ? DEFAULT_HTTPS_PORT : localPort;
+    static int resolvePeerPort(final String scheme, final int localPort, final List<String> notes) {
+        final int defaultPort = HTTPS_SCHEME.equals(scheme) ? DEFAULT_HTTPS_PORT : localPort;
+        final String configured = Config.getStringProperty(CONFIG_PORT, null);
+        if (!UtilMethods.isSet(configured)) {
+            return defaultPort;
+        }
+
+        final Integer port = Try.of(() -> Integer.parseInt(configured.trim())).getOrNull();
+        if (port != null && port >= 1 && port <= MAX_PORT) {
+            return port;
+        }
+
+        final String note = CONFIG_PORT + " is set to '" + configured
+                + "', which is not a valid port; the default port " + defaultPort + " was used";
+        Logger.warn(ClusterLogCollector.class, note);
+        notes.add(note);
+        return defaultPort;
     }
 
     /**
@@ -239,7 +249,8 @@ public class ClusterLogCollector {
      * the body on success (HTTP 200); otherwise it holds a short reason: the HTTP
      * status the peer answered with, or the kind of I/O failure ({@code could not
      * connect}, {@code TLS handshake failed}, {@code connect timed out}, {@code timed
-     * out}, {@code connection failed}) whose details are logged at INFO.
+     * out}, {@code connection failed}) whose details are logged at INFO, or
+     * {@code invalid peer address} when no request can be built from the URL.
      *
      * @param client      the HTTP client shared by all peer requests
      * @param url         the peer's {@code _downloadLog} URL
@@ -254,12 +265,20 @@ public class ClusterLogCollector {
 
         Logger.info(this, "Requesting log from peer server " + peer.serverId + ": " + url);
 
-        final HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .timeout(Duration.ofSeconds(readTimeout))
-                .header("Authorization", "Bearer " + jwt)
-                .GET()
-                .build();
+        final HttpRequest request;
+        try {
+            request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .timeout(Duration.ofSeconds(readTimeout))
+                    .header("Authorization", "Bearer " + jwt)
+                    .GET()
+                    .build();
+        } catch (final IllegalArgumentException e) {
+            Logger.warn(this, "Cannot build the request for peer server " + peer.serverId
+                    + ": " + e.getMessage());
+            return CompletableFuture.completedFuture(
+                    PeerResponse.failure("invalid peer address", false));
+        }
 
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
                 .thenApply(resp -> {
@@ -290,94 +309,12 @@ public class ClusterLogCollector {
                         return PeerResponse.failure("timed out", false);
                     }
                     if (cause instanceof ConnectException) {
-                        // No connection was made, so the scheme makes no difference
-                        return PeerResponse.failure("could not connect", false);
+                        // Under HTTPS the peer may serve HTTPS on another port than the one used
+                        return PeerResponse.failure("could not connect", true);
                     }
                     return PeerResponse.failure("connection failed", true);
                 });
     }
-
-    /**
-     * Builds the {@link HttpClient} used for the peer requests. Unless
-     * {@code CLUSTER_LOG_DOWNLOAD_VERIFY_PEER_CERTS} is on, the client accepts
-     * every peer certificate, self-signed or issued for another host name
-     * included, so that cluster nodes with self-signed certificates can be
-     * reached over TLS. With verification on, the JVM's default trust store and
-     * host name check apply.
-     *
-     * @param connectTimeoutSeconds the connect timeout, in seconds
-     * @param verifyPeerCerts        whether peer certificates are verified
-     * @return the client
-     */
-    private static HttpClient buildHttpClient(final int connectTimeoutSeconds,
-                                              final boolean verifyPeerCerts) {
-        final HttpClient.Builder builder = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(connectTimeoutSeconds));
-
-        if (!verifyPeerCerts) {
-            try {
-                final SSLContext sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(null, new TrustManager[]{TRUST_ALL_MANAGER}, null);
-                builder.sslContext(sslContext);
-            } catch (final NoSuchAlgorithmException | KeyManagementException e) {
-                Logger.error(ClusterLogCollector.class, "Failed to create the SSL context that "
-                        + "accepts self-signed peer certificates; peer certificates will be "
-                        + "verified against the JVM trust store instead: " + e.getMessage(), e);
-            }
-        }
-
-        return builder.build();
-    }
-
-    /**
-     * Trusts every peer certificate and host name, so that cluster nodes with
-     * self-signed certificates can be reached over TLS. An
-     * {@link X509ExtendedTrustManager} is required: the JDK runs its host name
-     * check only through the extended methods, so a plain
-     * {@code X509TrustManager} would leave it on. Scoped to this collector's
-     * client alone, it changes no JVM-wide state.
-     */
-    private static final X509ExtendedTrustManager TRUST_ALL_MANAGER = new X509ExtendedTrustManager() {
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
-            // Trust all — cluster-internal
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] chain, final String authType) {
-            // Trust all — cluster-internal
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] chain, final String authType,
-                                       final Socket socket) {
-            // Trust all — cluster-internal
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] chain, final String authType,
-                                        final Socket socket) {
-            // Trust all — cluster-internal
-        }
-
-        @Override
-        public void checkClientTrusted(final X509Certificate[] chain, final String authType,
-                                       final SSLEngine engine) {
-            // Trust all — cluster-internal
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] chain, final String authType,
-                                        final SSLEngine engine) {
-            // Trust all — cluster-internal
-        }
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[0];
-        }
-    };
 
     /**
      * Result of one peer request: the log content, or a short reason why there is none.
@@ -408,9 +345,10 @@ public class ClusterLogCollector {
          * A failed request.
          *
          * @param reason      a short reason, written to {@code _errors.txt}
-         * @param possiblyTls {@code true} when the failure may come from TLS (a handshake
-         *                    error, a connect timeout, or a peer that does not speak TLS
-         *                    on the port), so the scheme setting hint applies under HTTPS
+         * @param possiblyTls {@code true} when the failure may come from the HTTPS setup (a
+         *                    handshake error, a refused connection or a connect timeout, or
+         *                    a peer that does not speak TLS on the port), so the port and
+         *                    scheme setting hint applies under HTTPS
          * @return the response
          */
         private static PeerResponse failure(final String reason, final boolean possiblyTls) {
@@ -431,6 +369,17 @@ public class ClusterLogCollector {
             return peer.host;
         }
         return peer.name;
+    }
+
+    /**
+     * Returns the host as written in a peer URL: an IPv6 address is enclosed in
+     * brackets, unless it already is; any other host is returned as it is.
+     *
+     * @param host the peer's address or host name
+     * @return the host part of the peer URL
+     */
+    static String urlHost(final String host) {
+        return host.contains(":") && !host.startsWith("[") ? "[" + host + "]" : host;
     }
 
     private String labelForServer(final Server server) {

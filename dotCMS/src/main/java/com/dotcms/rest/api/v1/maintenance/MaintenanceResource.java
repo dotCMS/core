@@ -267,9 +267,8 @@ public class MaintenanceResource implements Serializable {
      * <p>
      * The local server's log is always included. For every other alive server in
      * the cluster, this method creates a short-lived API token and calls the
-     * peer's {@code _downloadLog} endpoint over HTTPS — accepting the peer's
-     * certificate without verification unless
-     * {@code CLUSTER_LOG_DOWNLOAD_VERIFY_PEER_CERTS} is on — or over plain HTTP
+     * peer's {@code _downloadLog} endpoint over HTTPS — verifying the peer's
+     * certificate and host name against the JVM's default trust store — or over plain HTTP
      * when {@code CLUSTER_LOG_DOWNLOAD_SCHEME} is {@code http}, on the port
      * given by {@code CLUSTER_LOG_DOWNLOAD_PORT} (8443 by default for HTTPS),
      * using the Java native {@link java.net.http.HttpClient} (see
