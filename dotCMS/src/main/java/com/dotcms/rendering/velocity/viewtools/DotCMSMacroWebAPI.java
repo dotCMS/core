@@ -426,12 +426,11 @@ public class DotCMSMacroWebAPI implements ViewTool {
 				            errorResults.add(map);
 				            return new ArrayList<>();
 		            	}
-		            	else{
-		            		return dc.getResults();
-		            	}
-		            } else {
-		                return dc.getResults(dataSource);
 		            }
+		            // Only "default" names the internal pool; any other name is queried through the data source it names.
+		            return SQLResultsViewTool.DEFAULT_DATASOURCE.equals(dataSource)
+		                    ? dc.getResults()
+		                    : dc.getResults(dataSource);
 		        } catch (Exception e) {
 		            HashMap<String, String> map = new HashMap<>();
 		            map.put("hasDotConnectSQLError", "true");

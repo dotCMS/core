@@ -245,6 +245,18 @@ class DbConnectionFactoryDataSourceNameTest {
     }
 
     @Test
+    void otherEngineAnswerIsKept() throws SQLException {
+        final DataSource otherEngine = dataSourceAnswering(true, "MySQL");
+        when(otherEngine.getConnection().createStatement().executeQuery(anyString()))
+                .thenThrow(new SQLException("unsupported catalog"));
+
+        assertFalse(DbConnectionFactory.holdsDotcmsData(otherEngine));
+        assertFalse(DbConnectionFactory.holdsDotcmsData(otherEngine));
+
+        verify(otherEngine, times(2)).getConnection(); // once while stubbing above, then once for both checks
+    }
+
+    @Test
     void postgresAnswerFromAFailedCheckIsNotKept() throws SQLException {
         final DataSource postgres = dataSourceAnswering(false, "PostgreSQL");
         when(postgres.getConnection().createStatement().executeQuery(anyString()))

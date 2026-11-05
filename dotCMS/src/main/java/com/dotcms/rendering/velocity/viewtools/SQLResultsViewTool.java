@@ -106,8 +106,9 @@ public class SQLResultsViewTool implements ViewTool {
      * Executes the specified SQL query, based on the information specified by the user/developer.
      * <p>
      * The data source must be {@code "default"} or a name in the local naming context. Whatever name is used, a query
-     * against the dotCMS database runs only when {@code ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB} is enabled, and then
-     * always through the internal connection pool.
+     * against the dotCMS database runs only when {@code ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB} is enabled. The
+     * {@code "default"} name uses the internal connection pool; any other name is queried through the data source it
+     * names.
      *
      * @param dataSource    The database that the SQL query will run against.
      * @param sql           The SQL query.
@@ -172,7 +173,8 @@ public class SQLResultsViewTool implements ViewTool {
                     }
                 }
             }
-            if (dotcmsDatabase) {
+            // Only "default" names the internal pool; any other name is queried through the data source it names.
+            if (DEFAULT_DATASOURCE.equals(dataSource)) {
                 return dc.loadResults();
             }
             return dc.getResults(dataSource);

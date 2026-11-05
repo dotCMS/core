@@ -294,8 +294,9 @@ public class DbConnectionFactory {
      *     database engine, there is no answer and an exception is thrown, so callers refuse it rather
      *     than treat it as another database.</li>
      * </ul>
-     * Only answers read from the catalog are kept, per data source instance; a failed connection or
-     * check is not kept, so the data source is checked again next time.
+     * Answers read from the catalog, and the answer for an engine other than PostgreSQL, are kept per
+     * data source instance. A failed connection, or a PostgreSQL database that could not run the check,
+     * is not kept, so the data source is checked again next time.
      *
      * @param candidate the data source to check
      * @return {@code true} if the database behind {@code candidate} holds, or may hold, dotCMS data
@@ -324,7 +325,10 @@ public class DbConnectionFactory {
         } finally {
             closeQuietly(connection);
         }
-        catalogAnswer.ifPresent(value -> DOTCMS_DATA_ANSWERS.put(candidate, value));
+        if (catalogAnswer.isPresent() || !answer) {
+            // A catalog answer, or a database engine other than PostgreSQL: neither changes for this data source.
+            DOTCMS_DATA_ANSWERS.put(candidate, answer);
+        }
         return answer;
     }
 

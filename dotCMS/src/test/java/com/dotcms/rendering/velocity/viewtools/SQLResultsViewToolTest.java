@@ -226,14 +226,36 @@ class SQLResultsViewToolTest {
     }
 
     @Test
-    void poolNameUsesInternalConnectionWhenDotcmsDbAccessIsOn() throws SQLException {
+    void defaultNameUsesInternalConnectionWhenDotcmsDbAccessIsOn() throws SQLException {
         givenDotcmsDbAccess(true);
 
-        tool.getSQLResults(POOL_NAME, SQL, 0, 10);
+        tool.getSQLResults("default", SQL, 0, 10);
 
         dbFactory.verify(() -> DbConnectionFactory.getConnection(anyString()), never());
         dbFactory.verify(DbConnectionFactory::getConnection);
         verify(externalDb, never()).getConnection();
+    }
+
+    @Test
+    void poolNameIsQueriedThroughThatNameWhenDotcmsDbAccessIsOn() {
+        givenDotcmsDbAccess(true);
+
+        tool.getSQLResults(POOL_NAME, SQL, 0, 10);
+
+        dbFactory.verify(() -> DbConnectionFactory.getConnection(POOL_NAME));
+        dbFactory.verify(DbConnectionFactory::getConnection, never());
+    }
+
+    @Test
+    void separateDataSourceToDotcmsDatabaseIsQueriedThroughThatNameWhenDotcmsDbAccessIsOn() throws Exception {
+        givenDotcmsDbAccess(true);
+        final DataSource secondPool = dataSourceHoldingDotcmsData();
+        jndi.when(() -> JNDIUtil.lookup(any(), eq("jdbc/secondPool"))).thenReturn(secondPool);
+
+        tool.getSQLResults("jdbc/secondPool", SQL, 0, 10);
+
+        dbFactory.verify(() -> DbConnectionFactory.getConnection("jdbc/secondPool"));
+        dbFactory.verify(DbConnectionFactory::getConnection, never());
     }
 
     // ---- helpers ----

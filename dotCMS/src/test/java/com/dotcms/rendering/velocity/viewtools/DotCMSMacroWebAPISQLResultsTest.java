@@ -142,13 +142,23 @@ class DotCMSMacroWebAPISQLResultsTest {
     }
 
     @Test
-    void poolNameUsesInternalConnectionWhenDotcmsDbAccessIsOn() {
+    void defaultNameUsesInternalConnectionWhenDotcmsDbAccessIsOn() {
+        config.when(() -> Config.getBooleanProperty(eq(DOTCMS_DB_FLAG), any(Boolean.class))).thenReturn(true);
+
+        macro.getSQLResults("default", SQL, 0, 10);
+
+        dbFactory.verify(() -> DbConnectionFactory.getConnection(anyString()), never());
+        dbFactory.verify(DbConnectionFactory::getConnection);
+    }
+
+    @Test
+    void poolNameIsQueriedThroughThatNameWhenDotcmsDbAccessIsOn() {
         config.when(() -> Config.getBooleanProperty(eq(DOTCMS_DB_FLAG), any(Boolean.class))).thenReturn(true);
 
         macro.getSQLResults(POOL_NAME, SQL, 0, 10);
 
-        dbFactory.verify(() -> DbConnectionFactory.getConnection(anyString()), never());
-        dbFactory.verify(DbConnectionFactory::getConnection);
+        dbFactory.verify(() -> DbConnectionFactory.getConnection(POOL_NAME));
+        dbFactory.verify(DbConnectionFactory::getConnection, never());
     }
 
     @Test
