@@ -143,14 +143,14 @@ describe('DotToolbarUserStore', () => {
         let messages: DotMessageService;
         let http: HttpTestingController;
 
-        const installBundle = () => {
-            messages.init({ languageBundleVersion: version });
-            http.expectOne(url).flush({
+        const installBundle = (language = 'default', accountLabel = 'My account') => {
+            messages.init({ language, languageBundleVersion: version });
+            http.expectOne(`/api/v2/languages/${language}/keys`).flush({
                 entity: {
                     ...Object.fromEntries(
                         Array.from({ length: 101 }, (_, i) => [`key.${i}`, `Message ${i}`])
                     ),
-                    'my-account': 'My account',
+                    'my-account': accountLabel,
                     'login-as': 'Login as',
                     'report-an-issue': 'Report an issue',
                     Logout: 'Log out',
@@ -199,6 +199,29 @@ describe('DotToolbarUserStore', () => {
             messages.init({ languageBundleVersion: version });
             TestBed.tick();
             expect(state().items).toBe(items);
+        });
+
+        it('should rebuild menu labels on a same-version locale switch without an auth update', () => {
+            installBundle();
+            store.init();
+            store.showLoginAs(true);
+            TestBed.tick();
+            const initial = state();
+            expect(initial.items[2].label).toBe('My account');
+
+            installBundle('es_ES', 'Mi cuenta');
+            TestBed.tick();
+            expect(messages.loadedBundleVersion()).toBe(version);
+            expect(state().items[2].label).toBe('Mi cuenta');
+            expect(state().items).not.toBe(initial.items);
+            expect(state().userData).toEqual(initial.userData);
+            expect(state().showLoginAs).toBe(true);
+
+            const items = state().items;
+            messages.init({ language: 'es_ES', languageBundleVersion: version });
+            TestBed.tick();
+            expect(state().items).toBe(items);
+            http.expectNone('/api/v2/languages/es_ES/keys');
         });
 
         it('should not rebuild when auth initialization already used the installed bundle', () => {

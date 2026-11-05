@@ -37,7 +37,7 @@ export class DotMessageService {
     private readonly dotLocalstorageService = inject(DotLocalstorageService);
 
     private messageMap: Record<string, string> = {};
-    private installedLanguage: string | null = null;
+    private readonly installedLanguage = signal<string | null>(null);
     private readonly inFlight = new Map<string, Observable<void>>();
     private readonly versionMismatch = signal<LanguageBundleVersionMismatch | null>(null);
     private readonly installedVersion = signal<string | null>(null);
@@ -46,6 +46,8 @@ export class DotMessageService {
     readonly bundleVersionMismatch = this.versionMismatch.asReadonly();
     /** Changes only after a validated bundle is installed, from cache or a successful request. */
     readonly loadedBundleVersion = this.installedVersion.asReadonly();
+    /** Locale of the installed messages, including a stale cache fallback. */
+    readonly loadedBundleLanguage = this.installedLanguage.asReadonly();
 
     /**
      * Initializes the DotMessageService.
@@ -84,7 +86,7 @@ export class DotMessageService {
 
     private getAll(lang: string, expectedVersion: string | null): Observable<void> {
         const hasInstalledMessages =
-            this.installedLanguage === lang && this.isMessageMap(this.messageMap);
+            this.installedLanguage() === lang && this.isMessageMap(this.messageMap);
         if (
             expectedVersion &&
             hasInstalledMessages &&
@@ -140,7 +142,7 @@ export class DotMessageService {
             this.isMessageMap(messages)
         ) {
             this.messageMap = messages;
-            this.installedLanguage = lang;
+            this.installedLanguage.set(lang);
             this.installedVersion.set(expectedVersion);
 
             return of(void 0);
@@ -161,7 +163,7 @@ export class DotMessageService {
                     }
 
                     this.messageMap = response.entity;
-                    this.installedLanguage = lang;
+                    this.installedLanguage.set(lang);
                     this.cacheMessages(lang, response.entity, response.languageBundleVersion);
                     this.installedVersion.set(response.languageBundleVersion);
                     this.versionMismatch.set(null);
@@ -170,12 +172,13 @@ export class DotMessageService {
                 catchError((error) => {
                     // A stale, complete bundle is a fallback, not proof the requested version loaded.
                     if (
-                        (this.installedLanguage !== lang || !this.isMessageMap(this.messageMap)) &&
+                        (this.installedLanguage() !== lang ||
+                            !this.isMessageMap(this.messageMap)) &&
                         lang === cachedLang &&
                         this.isMessageMap(messages)
                     ) {
                         this.messageMap = messages;
-                        this.installedLanguage = lang;
+                        this.installedLanguage.set(lang);
                         this.installedVersion.set(
                             this.isVersion(cachedVersion) ? cachedVersion : null
                         );

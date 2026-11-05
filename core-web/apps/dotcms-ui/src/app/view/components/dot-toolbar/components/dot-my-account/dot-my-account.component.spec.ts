@@ -429,12 +429,38 @@ describe('DotMyAccountComponent', () => {
             // Verify setAuth was called with correct data
             expect(setAuthSpy).toHaveBeenCalledWith({
                 loginAsUser: null,
-                user: mockUser
+                user: mockUser,
+                sessionLanguageId: loginService.sessionLanguageId
             });
 
             // Verify form status was reset
             expect(component.formStatus()).not.toBe('saving');
         }));
+
+        it('should preserve the selected session locale when updating the user', () => {
+            const loginService = spectator.inject(LoginService);
+            const updatedUser = { ...mockUser, languageId: 'en_US' };
+            vi.spyOn(loginService, 'sessionLanguageId', 'get').mockReturnValue('es_ES');
+            vi.spyOn(spectator.inject(DotAccountService), 'updateUser').mockReturnValue(
+                of({ user: updatedUser, userID: updatedUser.userId, reauthenticate: false })
+            );
+            const setAuthSpy = vi.spyOn(loginService, 'setAuth');
+            component.form.patchValue({
+                userId: '1',
+                givenName: 'John',
+                surname: 'Doe',
+                email: 'john@doe.com',
+                currentPassword: 'currentPass'
+            });
+
+            component.save();
+
+            expect(setAuthSpy).toHaveBeenCalledExactlyOnceWith({
+                loginAsUser: null,
+                user: updatedUser,
+                sessionLanguageId: 'es_ES'
+            });
+        });
 
         it('should handle current password error', fakeAsync(() => {
             const accountService = spectator.inject(DotAccountService);

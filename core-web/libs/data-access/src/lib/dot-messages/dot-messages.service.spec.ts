@@ -691,6 +691,59 @@ describe('DotMessageService', () => {
     });
 
     describe('bundle version signals', () => {
+        it.each(['network', 'cache', 'fallback'])(
+            'should publish the installed locale on a same-version switch via %s',
+            (source) => {
+                expect(service.loadedBundleLanguage()).toBeNull();
+                seedCache();
+                service.init({ languageBundleVersion: VERSION });
+                expect(service.loadedBundleLanguage()).toBe(DEFAULT_LANG);
+                const spanish = { ...messages, 'dot.common.cancel': 'Cancelar' };
+                if (source !== 'network') {
+                    seedCache(spanish, 'es_ES');
+                }
+                service.init({
+                    language: 'es_ES',
+                    languageBundleVersion: source === 'fallback' ? NEXT_VERSION : VERSION
+                });
+                if (source !== 'cache') {
+                    expect(service.loadedBundleLanguage()).toBe(DEFAULT_LANG);
+                    const request = http.expectOne('/api/v2/languages/es_ES/keys');
+                    if (source === 'fallback') {
+                        request.flush(null, { status: 500, statusText: 'Server Error' });
+                    } else {
+                        request.flush({ entity: spanish, languageBundleVersion: VERSION });
+                    }
+                }
+                expect(service.loadedBundleVersion()).toBe(VERSION);
+                expect(service.loadedBundleLanguage()).toBe('es_ES');
+                expect(service.get('dot.common.cancel')).toBe('Cancelar');
+            }
+        );
+
+        it('should retain the installed locale on failure without a usable fallback', () => {
+            seedCache();
+            service.init({ languageBundleVersion: VERSION });
+            service.init({ language: 'es_ES', languageBundleVersion: VERSION });
+            http.expectOne('/api/v2/languages/es_ES/keys').flush(null, {
+                status: 500,
+                statusText: 'Server Error'
+            });
+            expect(service.loadedBundleLanguage()).toBe(DEFAULT_LANG);
+            expect(service.loadedBundleVersion()).toBe(VERSION);
+        });
+
+        it('should publish the locale of an unversioned stale fallback', () => {
+            seedCache(messages, 'es_ES');
+            storage.removeItem(VERSION_LOCALSTORAGE_KEY);
+            service.init({ language: 'es_ES', languageBundleVersion: VERSION });
+            http.expectOne('/api/v2/languages/es_ES/keys').flush(null, {
+                status: 500,
+                statusText: 'Server Error'
+            });
+            expect(service.loadedBundleLanguage()).toBe('es_ES');
+            expect(service.loadedBundleVersion()).toBeNull();
+        });
         it('should distinguish initial loading from a version mismatch', () => {
             expect(service.bundleVersionMismatch()).toBeNull();
             expect(service.loadedBundleVersion()).toBeNull();

@@ -43,6 +43,7 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
     readonly #FINAL_LOGOUT_URL = `${LOGOUT_URL}?r=${new Date().getTime()}`;
     // Undefined until init builds items; null means they were built before a bundle loaded.
     #itemsBundleVersion: string | null | undefined;
+    #itemsBundleLanguage: string | null | undefined;
 
     readonly vm$: Observable<DotToolbarUserState> = this.select((state) => state).pipe(
         filter((vm) => !!vm.userData.email)
@@ -53,16 +54,19 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
 
         effect(() => {
             const version = this.#dotMessageService.loadedBundleVersion();
+            const language = this.#dotMessageService.loadedBundleLanguage?.();
             untracked(() => {
                 const auth = this.#loginService.auth;
                 if (
-                    version &&
+                    (version || language) &&
                     this.#itemsBundleVersion !== undefined &&
-                    version !== this.#itemsBundleVersion &&
+                    (version !== this.#itemsBundleVersion ||
+                        language !== this.#itemsBundleLanguage) &&
                     auth?.user
                 ) {
                     this.patchState({ items: this.getItems(auth) });
                     this.#itemsBundleVersion = version;
+                    this.#itemsBundleLanguage = language;
                 }
             });
         });
@@ -90,6 +94,7 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
         this.#loginService.watchUser((auth: Auth) => {
             const userData = auth.loginAsUser || auth.user;
             this.#itemsBundleVersion = this.#dotMessageService.loadedBundleVersion();
+            this.#itemsBundleLanguage = this.#dotMessageService.loadedBundleLanguage?.();
 
             this.patchState({
                 items: this.getItems(auth),

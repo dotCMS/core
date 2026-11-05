@@ -267,7 +267,8 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
                     } else {
                         this.loginService.setAuth({
                             loginAsUser: null,
-                            user: response.user
+                            user: response.user,
+                            sessionLanguageId: this.loginService.sessionLanguageId
                         });
                     }
                 },
