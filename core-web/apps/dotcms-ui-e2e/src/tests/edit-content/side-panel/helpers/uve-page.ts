@@ -1,4 +1,5 @@
 import { type APIRequestContext } from '@playwright/test';
+import { createContainer, deleteContainer } from '@requests/containers';
 import {
     actionsPageWorkflow,
     addContentToPage,
@@ -6,9 +7,6 @@ import {
     type Page as PageContentlet
 } from '@requests/pages';
 import { createTemplate, deleteTemplate } from '@requests/templates';
-
-/** The container every content type can go in, rendering each contentlet's title as a heading. */
-const SYSTEM_CONTAINER = 'SYSTEM_CONTAINER';
 
 /** The one container instance on the template below. */
 const CONTAINER_UUID = '1';
@@ -23,24 +21,45 @@ const THEME = 'SYSTEM_FOLDER';
 export interface UvePage {
     page: PageContentlet;
     templateIdentifier: string;
+    containerIdentifier: string;
+}
+
+/** What {@link createUvePage} builds the page with. */
+export interface UvePageContent {
+    /** The content types the page's container accepts and renders. */
+    contentTypeIds: string[];
+    /** What to place in the container, in order; empty leaves it empty. */
+    contentletIdentifiers?: string[];
 }
 
 /**
- * Creates a page on a one-row, full-width template holding a single `SYSTEM_CONTAINER`, and places
- * the given contentlets in it, in order.
+ * Creates a page on a one-row, full-width template holding a single container of its own, which
+ * accepts the given content types and renders each contentlet's title as a heading, and places the
+ * given contentlets in it, in order.
+ *
+ * A container of its own, not `SYSTEM_CONTAINER`: the server caches the system container's
+ * rendered code, with its list of types, from its first render, and a type created after that is
+ * neither accepted at a drop nor rendered (its contentlets show as empty wrappers). The tests'
+ * types are always created after it.
  *
  * Full width on purpose: the UVE's contentlet toolbar lays its buttons out in a row only on
  * contentlets at least 600px wide, which `UveEditorPage.openFullEditor()` relies on.
  *
  * @param request - Playwright APIRequestContext
- * @param suffix - Makes the template title and page URL unique to the test
- * @param contentletIdentifiers - What to place in the container; empty leaves it empty
+ * @param suffix - Makes the container, template and page unique to the test
+ * @param content - The types the container accepts and the contentlets to place in it
  */
 export async function createUvePage(
     request: APIRequestContext,
     suffix: string,
-    contentletIdentifiers: string[] = []
+    { contentTypeIds, contentletIdentifiers = [] }: UvePageContent
 ): Promise<UvePage> {
+    const container = await createContainer(request, {
+        title: `e2e side-panel container ${suffix}`,
+        contentTypeIds
+    });
+    const containerIdentifier = container.identifier;
+
     const template = await createTemplate(request, {
         title: `anonymous_layout_${suffix}`,
         friendlyName: `e2e side-panel template ${suffix}`,
@@ -59,7 +78,7 @@ export async function createUvePage(
                         columns: [
                             {
                                 containers: [
-                                    { identifier: SYSTEM_CONTAINER, uuid: CONTAINER_UUID }
+                                    { identifier: containerIdentifier, uuid: CONTAINER_UUID }
                                 ],
                                 width: 12,
                                 leftOffset: 1
@@ -85,14 +104,14 @@ export async function createUvePage(
     if (contentletIdentifiers.length) {
         await addContentToPage(request, page.identifier, [
             {
-                identifier: SYSTEM_CONTAINER,
+                identifier: containerIdentifier,
                 uuid: CONTAINER_UUID,
                 contentletsId: contentletIdentifiers
             }
         ]);
     }
 
-    return { page, templateIdentifier: template.identifier };
+    return { page, templateIdentifier: template.identifier, containerIdentifier };
 }
 
 /**
@@ -104,8 +123,8 @@ export function uvePagePath(uvePage: UvePage): string {
 }
 
 /**
- * Removes a page made by {@link createUvePage} and its template. Best effort: teardown must not
- * turn a failing test into a second, misleading error.
+ * Removes a page made by {@link createUvePage}, its template and its container. Best effort:
+ * teardown must not turn a failing test into a second, misleading error.
  */
 export async function removeUvePage(request: APIRequestContext, uvePage: UvePage): Promise<void> {
     await actionsPageWorkflow(request, uvePage.page.inode, [
@@ -114,4 +133,6 @@ export async function removeUvePage(request: APIRequestContext, uvePage: UvePage
         'Destroy'
     ]).catch(() => undefined);
     await deleteTemplate(request, [uvePage.templateIdentifier]).catch(() => undefined);
+    // After the template that uses it.
+    await deleteContainer(request, uvePage.containerIdentifier);
 }

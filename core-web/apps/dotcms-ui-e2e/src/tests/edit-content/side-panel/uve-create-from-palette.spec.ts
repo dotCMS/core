@@ -11,6 +11,10 @@ import { createUvePage, removeUvePage, type UvePage, uvePagePath } from './helpe
  * form in the side panel; the first save adds the new contentlet to the container, and saving it
  * again only updates it. Before the move, a second save added it a second time or raised the
  * "Content Already Added" toast.
+ *
+ * The page's container is its own and accepts the test's type (`createUvePage`): the system
+ * container's cached list of types would refuse a type created after its first render, and the
+ * drop would open nothing.
  */
 
 // The palette and a container wide enough to drop on, side by side.
@@ -36,7 +40,7 @@ test.describe('UVE palette creates content in the side panel', () => {
             metadata: { CONTENT_EDITOR2_ENABLED: true }
         });
 
-        uvePage = await createUvePage(request, suffix);
+        uvePage = await createUvePage(request, suffix, { contentTypeIds: [contentType.id] });
         pagePath = uvePagePath(uvePage);
     });
 

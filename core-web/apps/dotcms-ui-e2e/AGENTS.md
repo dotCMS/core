@@ -54,7 +54,7 @@ Field-specific selectors and flows: copy `tests/.../helpers/` and nearest `*.spe
 
 **Always create test data through the REST API** — never via the UI during setup. Specs and fixtures import helpers from `src/requests/`; raw endpoint calls live there, not in test files.
 
-Modules: `bundles.ts`, `contentType.ts`, `contentlets.ts`, `sites.ts`, `folders.ts`, `pages.ts`, `templates.ts`, `schemas.ts`, `workflow.ts`, `workflowActions.ts`, `field-variables.ts`, `updateFeatureFlag.ts`.
+Modules: `bundles.ts`, `containers.ts`, `contentType.ts`, `contentlets.ts`, `sites.ts`, `folders.ts`, `pages.ts`, `templates.ts`, `schemas.ts`, `workflow.ts`, `workflowActions.ts`, `field-variables.ts`, `updateFeatureFlag.ts`.
 
 **Adding a new helper:**
 

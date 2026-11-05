@@ -37,6 +37,35 @@ function taskDetailFrame(page: Page): FrameLocator {
     return taskDialog(page).frameLocator('iframe[name="detailFrame"]');
 }
 
+/**
+ * Waits until Dojo's parse has made a widget of a legacy page's markup. Until then a click on it is
+ * lost: the parse rebuilds the widget from its markup, unchecked, and its handler is not bound yet.
+ * The widget's node carries `widgetid` from then on.
+ *
+ * @param frame - The legacy page
+ * @param id - The widget's id
+ */
+async function waitForDojoWidget(frame: FrameLocator, id: string): Promise<void> {
+    await expect(frame.locator(`[widgetid="${id}"]`), `the ${id} widget is ready`).toBeAttached({
+        timeout: 20000
+    });
+}
+
+/**
+ * Waits for the task detail's `load`. The app hears the detail's `ng-event`s (the "Edit Content"
+ * that opens the side panel) through a listener it adds on that load, while the detail's heading,
+ * and its menu once parsed, are there before it.
+ *
+ * @param page - The page with the task dialog open
+ */
+async function waitForTaskDetailLoad(page: Page): Promise<void> {
+    const iframe = await taskDialog(page).locator('iframe[name="detailFrame"]').elementHandle();
+    const frame = await iframe?.contentFrame();
+
+    expect(frame, 'the task dialog shows its detail').toBeTruthy();
+    await frame?.waitForLoadState('load');
+}
+
 test.describe('Workflow Tasks opens task content in the side panel over the task dialog', () => {
     let contentType: ContentType | null = null;
     let title: string;
@@ -82,20 +111,32 @@ test.describe('Workflow Tasks opens task content in the side panel over the task
 
         await page.goto(Portlet.WorkflowTasks);
 
-        // The task list's filters are Dojo widgets; each one clicked runs the list's search.
+        // The task list's filters are Dojo widgets; each one clicked runs the list's search. `check()`
+        // rather than `click()`: "All" is a radio whose handler toggles, so a second click would
+        // turn it off again, and both confirm the state they leave.
         const taskList = getLegacyFrame(page);
+        await waitForDojoWidget(taskList, 'showClosed');
         await taskList.locator('#keywords').fill(title);
-        await taskList.locator('#showClosed').click();
-        await taskList.locator('#showAllLink').click();
-        await taskList.locator('td', { hasText: title }).first().click();
+        await taskList.locator('#showClosed').check();
+        await taskList.locator('#showAllLink').check();
+        const taskRow = taskList.locator('td', { hasText: title }).first();
+        await expect(taskRow, 'the filtered task list shows the task').toBeVisible({
+            timeout: 20000
+        });
+        await taskRow.click();
 
         await expect(page).toHaveURL(new RegExp(`/dotAdmin/#/c/workflow/${taskId}`));
         await expect(taskDialog(page)).toBeVisible({ timeout: 20000 });
         await expect(detailTitle).toContainText(title, { timeout: 20000 });
+        await waitForTaskDetailLoad(page);
 
-        // "Edit Content" is in the detail's actions menu, a dijit DropDownButton.
+        // "Edit Content" is in the detail's actions menu, a dijit DropDownButton: chosen once the
+        // menu is open.
+        await waitForDojoWidget(detail, 'archiveDropDownButton');
         await detail.locator('#archiveDropDownButton').click();
-        await detail.getByRole('menuitem', { name: 'Edit Content' }).click();
+        const editContent = detail.getByRole('menuitem', { name: 'Edit Content' });
+        await expect(editContent, 'the actions menu is open').toBeVisible();
+        await editContent.click();
 
         await sidePanel.expectOpen();
         await sidePanel.expectOnTop('the side panel is not above the task dialog');

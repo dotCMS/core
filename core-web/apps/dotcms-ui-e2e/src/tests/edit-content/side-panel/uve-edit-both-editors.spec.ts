@@ -62,10 +62,10 @@ test.describe('UVE pencil opens content in the side panel', () => {
         // The legacy editor opens content read-only unless the user holds its lock.
         await lockContentlet(request, legacyEditorContent.identifier);
 
-        uvePage = await createUvePage(request, suffix, [
-            newEditorContent.identifier,
-            legacyEditorContent.identifier
-        ]);
+        uvePage = await createUvePage(request, suffix, {
+            contentTypeIds: [newEditorType.id, legacyEditorType.id],
+            contentletIdentifiers: [newEditorContent.identifier, legacyEditorContent.identifier]
+        });
         pagePath = uvePagePath(uvePage);
     });
 
