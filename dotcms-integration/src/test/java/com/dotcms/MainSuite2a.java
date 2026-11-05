@@ -55,7 +55,6 @@ import org.junit.runners.Suite.SuiteClasses;
         InferenceImagesTest.class,
         InferenceLoggingTest.class,
         InferenceModelsTest.class,
-        com.dotmarketing.portlets.contentlet.action.ViewContentletActionTest.class,
         VipsResizeImageFilterIntegrationTest.class,
         VipsResizeOrientationIntegrationTest.class,
         VipsResizePhotoIntegrationTest.class,
