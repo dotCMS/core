@@ -2,6 +2,7 @@ package com.dotcms.rendering.velocity.viewtools;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -11,6 +12,8 @@ import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -26,6 +29,8 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.transform.strategy.RenderFieldStrategy;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
+import com.liferay.util.FileUtil;
+import java.io.File;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
@@ -66,6 +71,7 @@ public class RestrictedViewToolAccessTest {
     private static final List<Role> roles = new ArrayList<>();
     private static final List<ContentType> contentTypes = new ArrayList<>();
     private static final List<Container> containers = new ArrayList<>();
+    private static final List<Contentlet> files = new ArrayList<>();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -85,6 +91,7 @@ public class RestrictedViewToolAccessTest {
         users.forEach(user -> UserDataGen.remove(user, true));
         roles.forEach(role -> RoleDataGen.remove(role, true));
         containers.forEach(ContainerDataGen::remove);
+        files.forEach(file -> ContentletDataGen.destroy(file));
     }
 
     private static User user(final User user) {
@@ -152,8 +159,8 @@ public class RestrictedViewToolAccessTest {
      * Should: answer with the user that last saved that container, and with nothing at all when
      * the path names something that does not resolve.
      *
-     * <p>This is what {@code DotDirective} announces while a container or template renders, so a
-     * wrong answer here would judge that code on the wrong author.
+     * <p>This is what {@code DotDirective} announces while a container renders, so a wrong
+     * answer here would judge that code on the wrong author.
      */
     @Test
     public void authorOfRenderedResource_resolvesTheContainerAuthor() {
@@ -170,6 +177,36 @@ public class RestrictedViewToolAccessTest {
         assertNull("A path that resolves to nothing must not name an author",
                 RestrictedViewToolAccess.authorOfRenderedResource(
                         "/WORKING/" + UUIDGenerator.generateUuid() + "/1.container"));
+    }
+
+    /**
+     * Method to test: {@link RestrictedViewToolAccess#authorOfRenderedResource(String)}
+     * When: the renderer is about to run the Velocity held in a file asset, which is what
+     * {@code #dotParse} does for themes, headers, footers and everything under
+     * {@code /application/vtl}
+     * Should: answer with the user that last saved that file.
+     *
+     * <p>{@code #dotParse} hands over the file's own location on disk rather than a
+     * mode-prefixed resource name, so without this every such include would run with no author
+     * and the restricted tools would refuse inside all of them.
+     */
+    @Test
+    public void authorOfRenderedResource_resolvesTheAuthorOfAParsedVtlFile() throws Exception {
+        final File vtl = File.createTempFile("render-field-strategy-include", ".vtl");
+        FileUtil.write(vtl, "nothing to render");
+        final Contentlet file = new FileAssetDataGen(new FolderDataGen().nextPersisted(), vtl)
+                .user(limitedUser).nextPersisted();
+        files.add(file);
+
+        final String onDisk = APILocator.getFileAssetAPI().fromContentlet(file)
+                .getFileAsset().getAbsolutePath();
+        // whoever the data generator recorded as the last editor: what is under test is that the
+        // author is read off the file the path resolves to, not which user that happens to be
+        final String lastEditor = APILocator.getContentletAPI()
+                .find(file.getInode(), APILocator.systemUser(), false).getModUser();
+
+        assertNotNull("The file must have a last editor for this case to mean anything", lastEditor);
+        assertEquals(lastEditor, RestrictedViewToolAccess.authorOfRenderedResource(onDisk));
     }
 
     /**

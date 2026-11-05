@@ -18,6 +18,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
@@ -228,6 +229,51 @@ public class RestrictedViewToolAccessDefaultsTest {
 
         apiLocator.when(APILocator::getUserAPI).thenReturn(userAPI);
         apiLocator.when(APILocator::getRoleAPI).thenReturn(roleAPI);
+    }
+
+    /**
+     * Method to test: {@link RestrictedViewToolAccess#renderingAuthorHasAccess(HttpServletRequest)}
+     * When: a script file is bound to the request, an announcement of nobody is in force -- what
+     * an evaluated string runs under -- and the evaluated code overwrites the announcement with
+     * a value of its own
+     * Should: refuse. Overwriting must not drop the check back to the script file's editor,
+     * which is the standing the announcement of nobody exists to withhold.
+     */
+    @Test
+    public void renderingAuthorHasAccess_announcementClobberedByTheTemplate_isDenied() throws Exception {
+        final HttpServletRequest request = requestWithAttributes();
+        final Contentlet scriptFile = mock(Contentlet.class);
+        when(scriptFile.getModUser()).thenReturn("the-file-editor");
+        when(scriptFile.getHost()).thenReturn("a-site");
+        ScriptingFileAttribute.set(request, scriptFile);
+        RestrictedViewToolAccess.announceRenderingAuthor(request, null);
+
+        request.setAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID, "the-file-editor");
+
+        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class)) {
+            stubAuthor(apiLocator, "the-file-editor", false, true);
+            assertFalse(RestrictedViewToolAccess.renderingAuthorHasAccess(request));
+        }
+    }
+
+    /**
+     * Method to test: {@link RestrictedViewToolAccess#renderingAuthorHasAccess(HttpServletRequest)}
+     * When: nothing was announced and a script file is bound to the request, which is how the
+     * file-based scripting endpoints run
+     * Should: use that file's editor, so those endpoints keep working
+     */
+    @Test
+    public void renderingAuthorHasAccess_noAnnouncement_usesTheScriptFileEditor() throws Exception {
+        final HttpServletRequest request = requestWithAttributes();
+        final Contentlet scriptFile = mock(Contentlet.class);
+        when(scriptFile.getModUser()).thenReturn("the-file-editor");
+        when(scriptFile.getHost()).thenReturn("a-site");
+        ScriptingFileAttribute.set(request, scriptFile);
+
+        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class)) {
+            stubAuthor(apiLocator, "the-file-editor", false, true);
+            assertTrue(RestrictedViewToolAccess.renderingAuthorHasAccess(request));
+        }
     }
 
     /**

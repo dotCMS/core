@@ -7,15 +7,18 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import javax.servlet.http.HttpServletRequest;
 import com.liferay.portal.model.User;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -124,11 +127,41 @@ public final class RestrictedViewToolAccess {
                         : APILocator.getTemplateAPI().findWorkingTemplate(key.id1, system, false);
                 return null != template ? template.getModUser() : null;
             }
-            return null;
         } catch (final Exception e) {
             Logger.debug(RestrictedViewToolAccess.class.getName(),
                     () -> "Unable to resolve the author of '" + velocityResourcePath + "': "
                             + ExceptionUtil.getErrorMessage(e));
+        }
+        return authorOfFileAsset(velocityResourcePath);
+    }
+
+    /**
+     * Resolves who last saved the file asset a resource path points at.
+     *
+     * <p>{@code #dotParse} hands the renderer the asset's own location on disk, such as
+     * {@code /data/shared/assets/c/e/ce83.../fileAsset/header.vtl}, which carries the file's
+     * inode but is not one of the mode-prefixed resource names. The VTL inside that file is
+     * code its editor wrote, so without this every {@code #dotParse}d file -- themes, headers,
+     * footers, anything under {@code /application/vtl} -- would run with no author at all.
+     *
+     * @param velocityResourcePath the resource path the renderer resolved
+     *
+     * @return the ID of the user that last saved that file, or {@code null} when the path holds
+     * no inode or nothing is stored under it
+     */
+    private static String authorOfFileAsset(final String velocityResourcePath) {
+        try {
+            final Optional<String> inode = UUIDUtil.findInode(velocityResourcePath);
+            if (inode.isEmpty()) {
+                return null;
+            }
+            final Contentlet file = APILocator.getContentletAPI()
+                    .find(inode.get(), APILocator.systemUser(), false);
+            return null != file ? file.getModUser() : null;
+        } catch (final Exception e) {
+            Logger.debug(RestrictedViewToolAccess.class.getName(),
+                    () -> "Unable to resolve the file asset author of '" + velocityResourcePath
+                            + "': " + ExceptionUtil.getErrorMessage(e));
             return null;
         }
     }
@@ -201,8 +234,17 @@ public final class RestrictedViewToolAccess {
             return false;
         }
         final Object announced = request.getAttribute(RENDERING_AUTHOR_ID);
-        final String authorId = announced instanceof RenderingAuthor renderingAuthor
-                ? renderingAuthor.userId()
+        if (null != announced && !(announced instanceof RenderingAuthor)) {
+            // only this class makes announcements, so somebody else wrote here: the code being
+            // rendered can, and overwriting must not send the decision anywhere else
+            Logger.warn(RestrictedViewToolAccess.class,
+                    "A view tool was refused: the announcement of the author was overwritten by "
+                            + "something that is not a renderer, so nothing on this request says "
+                            + "who wrote the code being run.");
+            return false;
+        }
+        final String authorId = null != announced
+                ? ((RenderingAuthor) announced).userId()
                 : ScriptingFileAttribute.get(request);
         if (!UtilMethods.isSet(authorId)) {
             Logger.warn(RestrictedViewToolAccess.class,
