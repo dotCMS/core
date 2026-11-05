@@ -762,7 +762,7 @@ public class UtilMethodsTest extends UnitTestBase {
 
 	/**
 	 * Method to test: {@link UtilMethods#javaScriptify(String)}
-	 * When: the value holds only letters, digits, spaces and ordinary punctuation
+	 * When: the value holds only letters, digits, spaces, ordinary punctuation and lone angle brackets
 	 * Should: return it unchanged
 	 */
 	@Test
