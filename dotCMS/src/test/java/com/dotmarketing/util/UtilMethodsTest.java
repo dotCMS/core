@@ -769,6 +769,7 @@ public class UtilMethodsTest extends UnitTestBase {
 	public void javaScriptify_keepsPlainText() {
 		final String plain = "Hello World 123, (brackets) and [more] - ok.";
 		assertEquals(plain, UtilMethods.javaScriptify(plain));
+		assertEquals("a < b > c", UtilMethods.javaScriptify("a < b > c"));
 	}
 
 	/**
