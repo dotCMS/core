@@ -295,9 +295,11 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     /**
      * Builds the view-as status of the page for the request. The page counts as personalized for
-     * the current persona only when the user can read some of the content placed for that persona,
-     * with front-end roles counting as they do when the page is rendered in that mode (see
-     * {@link PageTreeReadFilter}).
+     * the current persona only when the user can read some of the content placed for that persona
+     * (see {@link PageTreeReadFilter}). Front-end roles count only in the modes that respect them
+     * ({@link PageMode#respectAnonPerms}: LIVE and ADMIN_MODE), so in preview and edit mode
+     * content the user reads only through the anonymous role does not count, as on the page
+     * personas endpoint.
      *
      * @param request  the current request, holding the visitor and its persona
      * @param pageMode the mode the page is rendered in
