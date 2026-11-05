@@ -318,7 +318,7 @@
         "vite-tsconfig-paths": "5.1.4",
         "vitest": "4.1.12",
         "vue-tsc": "^2.2.8",
-        "webpack": "5.64.0",
+        "webpack": "5.112.0",
         "webpack-bundle-analyzer": "4.5.0",
         "y-prosemirror": "1.2.5",
         "y-protocols": "1.0.1",
