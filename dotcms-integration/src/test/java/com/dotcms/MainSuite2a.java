@@ -115,7 +115,8 @@ import com.dotcms.rest.api.v1.sites.ruleengine.RuleResourcesAccessIntegrationTes
     com.dotcms.content.elasticsearch.business.ContentletPermissionReplacementIntegrationTest.class,
     RulesAPIImplParentChecksIntegrationTest.class,
     RuleResourcesAccessIntegrationTest.class,
-    RuleRefusedActionsIntegrationTest.class
+    RuleRefusedActionsIntegrationTest.class,
+    com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionIntegrationTest.class
 })
 public class MainSuite2a {
 
