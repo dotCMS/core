@@ -5,6 +5,7 @@ import org.junit.ClassRule;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -23,6 +24,7 @@ import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -32,11 +34,14 @@ import com.dotcms.rest.ResponseEntityCountView;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -48,6 +53,7 @@ import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.servlets.ServletTestUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
@@ -1157,6 +1163,120 @@ public class ContentResourceIntegrationTest {
                         new MockHttpRequestIntegrationTest("localhost", "/").request()
                 ).request()
         ).request();
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent}
+     * Given scenario: a published item that also has a published version on a named variant, fetched by an
+     * anonymous caller that puts the variant name in the request.
+     * Expected result: the version on the default variant is the one returned. The control runs first: a
+     * back-end caller naming the same variant does reach the variant's version, so a failure below is about
+     * the scope and not about a fixture that never held.
+     */
+    @Test
+    public void test_getContent_anonymousUserNamingAVariant_resolvesOnTheDefaultVariant()
+            throws Exception {
+        final VariantFixture fixture = createVariantFixture();
+        try {
+            assertEquals("fixture problem: a back-end caller does not reach the version on the named "
+                            + "variant, so there is nothing here for an anonymous caller to reach",
+                    fixture.onNamedVariant.getInode(),
+                    inodeReturnedFor(createAuthenticatedRequest(),
+                            fixture.onDefaultVariant.getIdentifier(), fixture.variant.name()));
+
+            assertEquals("a caller without back-end access must not be able to choose the version the "
+                            + "endpoint resolves by naming a variant",
+                    fixture.onDefaultVariant.getInode(),
+                    inodeReturnedFor(createAnonymousRequest(),
+                            fixture.onDefaultVariant.getIdentifier(), fixture.variant.name()));
+        } finally {
+            ContentletDataGen.destroy(fixture.onDefaultVariant);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent}
+     * Given scenario: the same fixture, with the request naming the inode of the version that lives on the
+     * named variant. An inode names one exact version, so the endpoint resolves no variant of its own here.
+     * Expected result: the anonymous caller is answered as if that version did not exist, while a back-end
+     * caller still reaches it through the same call.
+     */
+    @Test
+    public void test_getContent_anonymousUserNamingAVariantInode_isAnsweredAsAMiss() throws Exception {
+        final VariantFixture fixture = createVariantFixture();
+        try {
+            assertEquals("fixture problem: a version is not reachable by inode at all, so refusing it "
+                            + "to another caller proves nothing", fixture.onNamedVariant.getInode(),
+                    inodeReturnedFor(createAuthenticatedRequest(), fixture.onNamedVariant.getInode(),
+                            VariantAPI.DEFAULT_VARIANT.name()));
+
+            assertThrows("a caller without back-end access must not reach a version on another variant "
+                            + "by naming its inode", DoesNotExistException.class,
+                    () -> inodeReturnedFor(createAnonymousRequest(), fixture.onNamedVariant.getInode(),
+                            VariantAPI.DEFAULT_VARIANT.name()));
+        } finally {
+            ContentletDataGen.destroy(fixture.onDefaultVariant);
+        }
+    }
+
+    /**
+     * One live item with a second live version on a named variant, readable by the anonymous role, so the
+     * only thing separating the two versions is the variant they live on.
+     */
+    private static final class VariantFixture {
+        private final Variant variant;
+        private final Contentlet onDefaultVariant;
+        private final Contentlet onNamedVariant;
+
+        private VariantFixture(final Variant variant, final Contentlet onDefaultVariant,
+                final Contentlet onNamedVariant) {
+            this.variant = variant;
+            this.onDefaultVariant = onDefaultVariant;
+            this.onNamedVariant = onNamedVariant;
+        }
+    }
+
+    /**
+     * Creates the two live versions and lets the anonymous role read them.
+     *
+     * @return the created fixture
+     * @throws Exception if the content cannot be created
+     */
+    private static VariantFixture createVariantFixture() throws Exception {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Contentlet onDefaultVariant = TestDataUtils.getGenericContentContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        ContentletDataGen.publish(onDefaultVariant);
+        final Contentlet onNamedVariant = ContentletDataGen.createNewVersion(onDefaultVariant,
+                variant, null);
+        ContentletDataGen.publish(onNamedVariant);
+        // Keyed by identifier, so the one grant covers both versions
+        ServletTestUtils.addAnonymousReadPermission(onDefaultVariant);
+        return new VariantFixture(variant, onDefaultVariant, onNamedVariant);
+    }
+
+    /**
+     * Asks the endpoint for a content item and returns the inode of the version it answered with.
+     *
+     * @param request the request carrying the caller's credentials, if any
+     * @param inodeOrIdentifier what the caller names the content item by
+     * @param variantName the variant the request names
+     * @return the inode of the version returned
+     * @throws DotDataException if the lookup fails
+     * @throws DotSecurityException if the caller cannot read the content item
+     */
+    private static String inodeReturnedFor(final HttpServletRequest request,
+            final String inodeOrIdentifier, final String variantName)
+            throws DotDataException, DotSecurityException {
+
+        final Response endpointResponse = new ContentResource().getContent(request,
+                mock(HttpServletResponse.class), inodeOrIdentifier, StringPool.BLANK, variantName, -1);
+        assertEquals(Status.OK.getStatusCode(), endpointResponse.getStatus());
+
+        @SuppressWarnings("unchecked")
+        final ResponseEntityView<Map<String, Object>> entityView =
+                (ResponseEntityView<Map<String, Object>>) endpointResponse.getEntity();
+        return String.valueOf(entityView.getEntity().get("inode"));
     }
 
     /**
