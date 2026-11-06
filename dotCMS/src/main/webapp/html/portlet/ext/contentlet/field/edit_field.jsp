@@ -41,7 +41,7 @@
 <%@ page import="com.dotcms.contenttype.model.field.JSONField" %>
 <%@ page import="org.apache.commons.lang.StringEscapeUtils" %>
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
-<%@ page import="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" %>
+<%@ page import="com.dotcms.rest.api.v1.DotObjectMapperProvider" %>
 <%@ page import="com.dotmarketing.util.ConfigUtils" %>
 <%@ page import="com.liferay.util.Xss" %>
 
@@ -55,8 +55,8 @@
     final com.dotcms.contenttype.model.field.Field newField = LegacyFieldTransformer.from(field);
 
     Object value = (Object) request.getAttribute("value");
-    ObjectMapper mapper = new ObjectMapper(); // Create an ObjectMapper instance
-    mapper.registerModule(new Jdk8Module());
+    // Its output is written inside script elements below, so it uses the mapper whose text can sit there
+    final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getScriptEmbeddableObjectMapper();
     String hint = UtilMethods.isSet(field.getHint()) ? field.getHint() : null;
     boolean isReadOnly = field.isReadOnly();
     String defaultValue = field.getDefaultValue() != null ? field
