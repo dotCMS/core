@@ -18,13 +18,21 @@ export const DOT_PANEL_URL_PARAM = {
     EDIT_CODE: 'editCode'
 } as const;
 
+/**
+ * Why a URL's panel params open nothing: they name more than one panel (`conflict`), or one of
+ * them has a shape it cannot take (`malformed`). Either way it is a link the author cannot have
+ * meant, and every surface treats both alike: it opens nothing, tells the author, and clears the
+ * params (`DotPanelUrlStateService.refuse`).
+ */
+export type DotPanelUrlRefusal = 'conflict' | 'malformed';
+
 /** What a URL asks to open when a surface loads. */
 export type DotPanelUrlIntent =
     | { kind: 'none' }
     | { kind: 'edit'; identifier: string; languageId?: number }
     | { kind: 'create'; contentType: string }
     | { kind: 'editCode'; inode: string }
-    | { kind: 'conflict' };
+    | { kind: 'refused'; reason: DotPanelUrlRefusal };
 
 /**
  * What `createContent` may name: a content type variable or id. Letters, digits, `_` and `-` only,
@@ -32,59 +40,78 @@ export type DotPanelUrlIntent =
  */
 const CONTENT_TYPE_REF_PATTERN = /^[A-Za-z0-9_-]+$/;
 
+/** A panel param present in the URL with a value of a shape it cannot take. */
+const MALFORMED = Symbol('malformed');
+
 /**
  * Reads what a URL asks to open, once, when a surface loads (#38303, FR-049).
  *
  * Values from the URL reach Lucene queries and REST paths, so only the shapes they can take are
- * accepted and anything else reads as absent: an identifier for `editContent`, a positive integer
- * for `editContentLang`, a content type variable or id for `createContent`, an inode (the same UUID
- * shape as an identifier) for `editCode`. The retired `editContent=new` create marker is not an
- * identifier, so an old link opens nothing rather than an empty form. A URL naming more than one
- * panel is a `conflict`: the surface opens nothing and clears the params.
+ * accepted: an identifier for `editContent`, a positive integer for `editContentLang`, a content
+ * type variable or id for `createContent`, an inode (the same UUID shape as an identifier) for
+ * `editCode`. A panel param of any other shape, or repeated, is `refused` as `malformed`, even
+ * beside a valid one, so the surface can tell the author rather than open nothing in silence; the
+ * value never goes further (T172). The retired `editContent=new` create marker is one: an old
+ * bookmark gets the error. A URL naming more than one panel is `refused` as a `conflict`. An empty
+ * value names nothing and reads as absent.
  *
  * @param queryParams The route's query params.
- * @returns The one panel the URL names, `none`, or `conflict`.
+ * @returns The one panel the URL names, `none`, or `refused` with the reason.
  */
 export function readPanelUrlIntent(queryParams: Record<string, unknown>): DotPanelUrlIntent {
-    const read = (key: string): string | undefined => {
+    /**
+     * A param's value as `accept` takes it; `undefined` when the URL does not carry it, or carries
+     * it empty; `MALFORMED` when it carries something `accept` turns down, or repeats it (an array).
+     */
+    const readParam = (
+        key: string,
+        accept: (value: string) => string | undefined
+    ): string | undefined | typeof MALFORMED => {
         const value = queryParams[key];
 
-        // A param repeated in the URL arrives as an array, which names nothing.
-        return typeof value === 'string' && value.length > 0 ? value : undefined;
+        if (value === undefined || value === null || value === '') {
+            return undefined;
+        }
+
+        return typeof value === 'string' ? (accept(value) ?? MALFORMED) : MALFORMED;
     };
 
     // Trimmed, as `isDotIdentifier` tests it: the value reaches a Lucene query.
-    const readUuid = (key: string): string | undefined => {
-        const value = read(key);
+    const uuid = (value: string) => (isDotIdentifier(value) ? value.trim() : undefined);
+    const contentTypeRef = (value: string) =>
+        CONTENT_TYPE_REF_PATTERN.test(value) ? value : undefined;
+    const positiveInteger = (value: string) => {
+        const number = Number(value);
 
-        return isDotIdentifier(value) ? value?.trim() : undefined;
+        return Number.isInteger(number) && number > 0 ? String(number) : undefined;
     };
 
-    const identifier = readUuid(DOT_PANEL_URL_PARAM.EDIT_CONTENT);
-    const createContent = read(DOT_PANEL_URL_PARAM.CREATE_CONTENT);
-    const contentType =
-        createContent && CONTENT_TYPE_REF_PATTERN.test(createContent) ? createContent : undefined;
-    const inode = readUuid(DOT_PANEL_URL_PARAM.EDIT_CODE);
+    const identifier = readParam(DOT_PANEL_URL_PARAM.EDIT_CONTENT, uuid);
+    const language = readParam(DOT_PANEL_URL_PARAM.EDIT_CONTENT_LANG, positiveInteger);
+    const contentType = readParam(DOT_PANEL_URL_PARAM.CREATE_CONTENT, contentTypeRef);
+    const inode = readParam(DOT_PANEL_URL_PARAM.EDIT_CODE, uuid);
 
-    if ([identifier, contentType, inode].filter(Boolean).length > 1) {
-        return { kind: 'conflict' };
+    if ([identifier, language, contentType, inode].includes(MALFORMED)) {
+        return { kind: 'refused', reason: 'malformed' };
     }
 
-    if (identifier) {
-        const languageId = Number(read(DOT_PANEL_URL_PARAM.EDIT_CONTENT_LANG));
+    if ([identifier, contentType, inode].filter(Boolean).length > 1) {
+        return { kind: 'refused', reason: 'conflict' };
+    }
 
+    if (typeof identifier === 'string') {
         return {
             kind: 'edit',
             identifier,
-            languageId: Number.isInteger(languageId) && languageId > 0 ? languageId : undefined
+            languageId: typeof language === 'string' ? Number(language) : undefined
         };
     }
 
-    if (contentType) {
+    if (typeof contentType === 'string') {
         return { kind: 'create', contentType };
     }
 
-    if (inode) {
+    if (typeof inode === 'string') {
         return { kind: 'editCode', inode };
     }
 
@@ -108,6 +135,8 @@ export function panelUrlIntentKey(intent: DotPanelUrlIntent): string {
             return `create:${intent.contentType}`;
         case 'editCode':
             return `editCode:${intent.inode}`;
+        case 'refused':
+            return `refused:${intent.reason}`;
         default:
             return intent.kind;
     }

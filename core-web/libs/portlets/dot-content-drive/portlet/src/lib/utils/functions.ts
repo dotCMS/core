@@ -1023,14 +1023,15 @@ export const uploadIndicatorKey = (count: number, options?: { backgrounded?: boo
 /**
  * Reads what a Content Drive URL asks to open when the portlet loads (#37759, FR-023).
  *
- * The panel params are read by `readPanelUrlIntent`, as every surface reads them (#38303, FR-049);
- * only the folder dialog params are Content Drive's own. One URL may name at most one side panel
- * or folder dialog. When it names more, Content Drive can't tell which one the author meant, so
- * the answer is `conflict` and the caller opens nothing. The retired `editContent=new` create
- * marker counts as absent, so old links open nothing rather than an empty form.
+ * The panel params are read by `readPanelUrlIntent`, as every surface reads them (#38303, FR-049),
+ * so a panel param of the wrong shape (the retired `editContent=new` create marker among them) is
+ * `refused` here as anywhere else; only the folder dialog params are Content Drive's own, and one
+ * of those of the wrong shape still reads as absent. One URL may name at most one side panel or
+ * folder dialog. When it names more, Content Drive can't tell which one the author meant, so the
+ * answer is `refused` as a `conflict` and the caller opens nothing and tells the author (T172).
  *
  * @param queryParams The route's query params.
- * @returns The single thing the URL asks to open, `none`, or `conflict`.
+ * @returns The single thing the URL asks to open, `none`, or `refused` with the reason.
  */
 export function resolveContentDriveUrlIntent(
     queryParams: Record<string, unknown>
@@ -1062,8 +1063,12 @@ export function resolveContentDriveUrlIntent(
         folderPermissions
     ];
 
-    if (panel.kind === 'conflict' || asked.filter(Boolean).length > 1) {
-        return { kind: 'conflict' };
+    if (panel.kind === 'refused') {
+        return panel;
+    }
+
+    if (asked.filter(Boolean).length > 1) {
+        return { kind: 'refused', reason: 'conflict' };
     }
 
     if (panel.kind !== 'none') {
