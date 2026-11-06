@@ -6,6 +6,7 @@ import {
     Injector,
     untracked
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -15,7 +16,7 @@ import { ToastModule } from 'primeng/toast';
 
 import { take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotContentChangeService, DotMessageService } from '@dotcms/data-access';
 import { PublishAuditStatus } from '@dotcms/dotcms-models';
 import {
     DotEditContentOpenerService,
@@ -93,6 +94,12 @@ export class DotPublishingQueueShellComponent {
             untracked(() => this.#syncDetail(bundleId));
         });
 
+        // Every save and delete in a side panel, at any depth, reloads the list: a panel opened
+        // over the list, or over one of the dialogs, or stacked from inside either (T174).
+        inject(DotContentChangeService)
+            .changes$.pipe(takeUntilDestroyed())
+            .subscribe(() => this.#store.refresh());
+
         this.#openFromUrl();
     }
 
@@ -116,17 +123,15 @@ export class DotPublishingQueueShellComponent {
     }
 
     /**
-     * Opens content in the side panel over the list, written to the URL; every save and the close
-     * reload the list.
+     * Opens content in the side panel over the list, written to the URL; the close reloads the
+     * list, and a save reloads it through the content change notification (T174).
      *
      * @param request What to open, without the portlet.
      */
     #openOverList(request: DotEditContentRequest): void {
-        const reload = () => this.#store.refresh();
-
         this.#opener.open(
             { ...request, portletId: 'publishing-queue' },
-            { injector: this.#injector, saved: reload, closed: reload, url: {} }
+            { injector: this.#injector, closed: () => this.#store.refresh(), url: {} }
         );
     }
 
