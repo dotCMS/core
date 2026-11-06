@@ -1,5 +1,5 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
-import { Subject } from 'rxjs';
+import { ReplaySubject, Subject } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
 import { Location, PopStateEvent } from '@angular/common';
@@ -15,7 +15,7 @@ import {
     Router
 } from '@angular/router';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotSidePanelRef } from '@dotcms/ui';
 
 import { DotPanelUrlStateService } from './dot-panel-url-state.service';
@@ -105,6 +105,28 @@ const guardedRef = (): { ref: DotSidePanelRef; requestClose: Mock } => {
     return { ref, requestClose };
 };
 
+/** The not-found dialog's header key, which the error manager reads from the messages. */
+const NOT_FOUND_HEADER = 'dot.common.http.error.404.header';
+
+/**
+ * The app's messages: keys until they arrive, as `DotMessageService.get` answers before its map is
+ * filled, and `ready$` replaying their arrival.
+ */
+const createMessagesDouble = () => {
+    const ready$ = new ReplaySubject<void>(1);
+    let loaded = false;
+
+    return {
+        ready$: ready$.asObservable(),
+        get: (key: string): string =>
+            loaded && key === NOT_FOUND_HEADER ? 'This URL does not exist' : key,
+        arrive: (): void => {
+            loaded = true;
+            ready$.next();
+        }
+    };
+};
+
 /**
  * The open side panel, in the surface's URL (#38303, FR-044 to FR-048). Written with
  * `Location.go` and `Location.replaceState` only: the legacy iframe reloads on every router query
@@ -114,23 +136,32 @@ describe('DotPanelUrlStateService', () => {
     let spectator: SpectatorService<DotPanelUrlStateService>;
     let location: ReturnType<typeof createLocationDouble>;
     let router: ReturnType<typeof createRouterDouble>;
+    let messages: ReturnType<typeof createMessagesDouble>;
 
     const createService = createServiceFactory({
         service: DotPanelUrlStateService,
         providers: [
             { provide: Location, useFactory: () => location },
             { provide: Router, useFactory: () => router },
+            { provide: DotMessageService, useFactory: () => messages },
             mockProvider(DotHttpErrorManagerService)
         ]
     });
 
     /**
      * Starts the service on a surface whose address bar holds `url`, in an app whose router has
-     * navigated unless told otherwise.
+     * navigated and whose messages have loaded unless told otherwise.
      */
-    const start = (url = SURFACE_URL, { routerNavigated = true } = {}): void => {
+    const start = (
+        url = SURFACE_URL,
+        { routerNavigated = true, messagesLoaded = true } = {}
+    ): void => {
         location = createLocationDouble(url);
         router = createRouterDouble(routerNavigated);
+        messages = createMessagesDouble();
+        if (messagesLoaded) {
+            messages.arrive();
+        }
         spectator = createService();
     };
 
@@ -628,6 +659,29 @@ describe('DotPanelUrlStateService', () => {
         expect(handle).toHaveBeenCalledTimes(1);
         expect((handle.mock.calls[0][0] as HttpErrorResponse).status).toBe(HttpStatusCode.NotFound);
         expect(location.go).not.toHaveBeenCalled();
+        expect(location.replaceState).toHaveBeenCalledTimes(1);
+        expect(lastWrite(location.replaceState).params).toEqual(SURFACE_PARAMS);
+    });
+
+    /**
+     * T175: a legacy portlet refuses its URL on init, before the app's messages have loaded, and
+     * the error manager builds the dialog's text when it is handed the error: it showed the raw
+     * keys, and they stayed. The refusal waits for the messages.
+     */
+    it('refuses a bad link before the messages load with the translated error, once they arrive', () => {
+        start(surfaceUrlWith({ editContent: 'wrong-identifier' }), { messagesLoaded: false });
+        const headers: string[] = [];
+        const handle = spectator.inject(DotHttpErrorManagerService).handle as Mock;
+        handle.mockImplementation(() => headers.push(messages.get(NOT_FOUND_HEADER)));
+
+        spectator.service.refuse();
+
+        expect(handle).not.toHaveBeenCalled();
+
+        messages.arrive();
+
+        expect(headers).toEqual(['This URL does not exist']);
+        expect((handle.mock.calls[0][0] as HttpErrorResponse).status).toBe(HttpStatusCode.NotFound);
         expect(location.replaceState).toHaveBeenCalledTimes(1);
         expect(lastWrite(location.replaceState).params).toEqual(SURFACE_PARAMS);
     });
