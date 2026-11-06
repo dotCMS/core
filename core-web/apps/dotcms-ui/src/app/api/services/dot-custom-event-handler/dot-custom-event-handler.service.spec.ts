@@ -531,13 +531,12 @@ describe('DotCustomEventHandlerService', () => {
                 expect(openOptions().injector === sidePanelHostInjector).toBe(true);
             });
 
-            it('should reload the portlet that asked on every save', async () => {
-                const reloadData = vi.spyOn(dotIframeService, 'reloadData');
+            // A save reloads the portlet through the content change notification, which the
+            // portlet listens to for as long as it is shown (T174): no handler of the panel's.
+            it('should leave the reload on a save to the content change notification', async () => {
                 await send(name, data);
 
-                openOptions().saved?.(createFakeContentlet({ inode: 'saved-inode' }));
-
-                expect(reloadData).toHaveBeenCalledWith(PORTLET_ID);
+                expect(openOptions().saved).toBeUndefined();
             });
 
             it('should reload the portlet that asked when the panel closes', async () => {
@@ -593,7 +592,8 @@ describe('DotCustomEventHandlerService', () => {
                 expect(openOptions().injector === sidePanelHostInjector).toBe(true);
             });
 
-            it('should reload the portlet on every save and when the panel closes', async () => {
+            // A save reloads the portlet through the content change notification (T174).
+            it('should reload the portlet when the panel closes, and leave a save to the notification', async () => {
                 const reloadData = vi.spyOn(dotIframeService, 'reloadData');
                 await openContent({
                     mode: 'new',
@@ -601,16 +601,17 @@ describe('DotCustomEventHandlerService', () => {
                     folderInode: 'folder-inode'
                 });
 
-                openOptions().saved?.(createFakeContentlet({ inode: 'saved-inode' }));
                 openOptions().closed?.();
 
-                expect(reloadData).toHaveBeenCalledTimes(2);
+                expect(openOptions().saved).toBeUndefined();
+                expect(reloadData).toHaveBeenCalledTimes(1);
                 expect(reloadData).toHaveBeenCalledWith(PORTLET_ID);
             });
 
-            // The Workflow Tasks detail views its task again once the task list behind it has
-            // reloaded (#38303, FR-025a).
-            it("should run the caller's saved and closed after reloading the portlet", async () => {
+            // The Workflow Tasks detail views its task again on every save, and once the task
+            // list behind it has reloaded on the close (#38303, FR-025a); the save's list reload is
+            // the notification's (T174).
+            it("should run the caller's saved as is, and its closed after reloading the portlet", async () => {
                 const reloadData = vi.spyOn(dotIframeService, 'reloadData');
                 const saved = vi.fn();
                 const closed = vi.fn();
@@ -631,13 +632,11 @@ describe('DotCustomEventHandlerService', () => {
 
                 openOptions().saved?.(contentlet);
                 expect(saved).toHaveBeenCalledWith(contentlet);
-                expect(reloadData.mock.invocationCallOrder[0]).toBeLessThan(
-                    saved.mock.invocationCallOrder[0]
-                );
+                expect(reloadData).not.toHaveBeenCalled();
 
                 openOptions().closed?.();
                 expect(closed).toHaveBeenCalledTimes(1);
-                expect(reloadData.mock.invocationCallOrder[1]).toBeLessThan(
+                expect(reloadData.mock.invocationCallOrder[0]).toBeLessThan(
                     closed.mock.invocationCallOrder[0]
                 );
             });

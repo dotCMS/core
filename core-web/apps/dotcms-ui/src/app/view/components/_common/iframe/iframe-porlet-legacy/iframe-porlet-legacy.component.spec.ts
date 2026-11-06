@@ -6,6 +6,7 @@ import { signal } from '@angular/core';
 import { ActivatedRoute, Navigation, Params, Router } from '@angular/router';
 
 import {
+    DotContentChangeService,
     DotContentTypeService,
     DotEventsSocket,
     DotIframeService,
@@ -93,6 +94,27 @@ describe('IframePortletLegacyComponent — the panel in the URL', () => {
 
     /** Lets the panel URL service, which the admin app loads on demand, be reached. */
     const settle = () => vi.dynamicImportSettled();
+
+    /**
+     * #38303, T174: every save and delete in a side panel, at any depth (a relationship's "New"
+     * inside the panel a row opened), reloads the portlet's list, for as long as the portlet is
+     * shown. The panel itself only reloads it on its close.
+     */
+    it.each([
+        ['a save', 'saved', 0],
+        ['a save in a stacked panel', 'saved', 1],
+        ['a delete', 'deleted', 0]
+    ] as const)('reloads the portlet on %s in any side panel', async (_label, kind, depth) => {
+        mount({ p_p_id: 'content' });
+        await settle();
+
+        spectator
+            .inject(DotContentChangeService)
+            .notify({ kind, contentlet: { inode: 'saved-inode' } as never, depth });
+
+        expect(spectator.inject(DotIframeService).reloadData).toHaveBeenCalledTimes(1);
+        expect(spectator.inject(DotIframeService).reloadData).toHaveBeenCalledWith('content');
+    });
 
     it('opens the version a URL names by identifier and language', async () => {
         mount({ editContent: IDENTIFIER, editContentLang: '2' });

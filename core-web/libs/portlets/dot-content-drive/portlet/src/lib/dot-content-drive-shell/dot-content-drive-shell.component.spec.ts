@@ -25,6 +25,7 @@ import { ZIndexUtils } from 'primeng/utils';
 import {
     AddToBundleService,
     DotAlertConfirmService,
+    DotContentChangeService,
     DotContentSearchService,
     DotContentTypeService,
     DotCurrentUserService,
@@ -5465,19 +5466,34 @@ describe('DotContentDriveShellComponent', () => {
          * the legacy editor sends no event of its own.
          */
         describe('panel events', () => {
-            // A create's first save names the saved content in the URL: the opener's (FR-025).
-            it('refreshes the list quietly on save and keeps the panel open', () => {
+            // A save refreshes the list through the content change notification, once, at any
+            // depth (T174), so the panel needs no handler of its own for it.
+            it('leaves the refresh on a save to the content change notification', () => {
                 const content = openOn(CREATE_REQUEST);
 
-                content.options.saved?.({
-                    identifier: 'id-9',
-                    languageId: 2,
-                    inode: 'inode-9'
-                } as DotCMSContentlet);
+                expect(content.options.saved).toBeUndefined();
+                expect(content.ref.isClosed).toBe(false);
+            });
 
+            /**
+             * #38303, T174: every save and delete in a side panel, at any depth (a relationship's
+             * "New" inside the panel Content Drive opened), refreshes the list quietly, for as long
+             * as the portlet lives.
+             */
+            it.each([
+                ['a save', 'saved', 0],
+                ['a save in a stacked panel', 'saved', 1],
+                ['a delete', 'deleted', 2]
+            ] as const)('refreshes the list quietly on %s in any panel', (_label, kind, depth) => {
+                spectator.inject(DotContentChangeService).notify({
+                    kind,
+                    contentlet: { identifier: 'id-9', inode: 'inode-9' } as DotCMSContentlet,
+                    depth
+                });
+
+                expect(store.reloadContentDrive).toHaveBeenCalledTimes(1);
                 expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
                 expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
-                expect(content.ref.isClosed).toBe(false);
             });
 
             it('clears the request, then refreshes the list quietly, when the panel closes itself', () => {

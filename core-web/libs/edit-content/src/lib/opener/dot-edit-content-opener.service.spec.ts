@@ -17,6 +17,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import {
     DotActionUrlService,
+    DotContentChange,
+    DotContentChangeService,
     DotContentletEditUrlService,
     DotContentletService,
     DotContentSearchService,
@@ -620,6 +622,117 @@ describe('DotEditContentOpenerService', () => {
             ref.close();
 
             expect(closed).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    /**
+     * Every panel the opener opens, at any depth and in either editor, announces its saves and
+     * deletes on `DotContentChangeService`, after its own handlers, so a listing surface refreshes
+     * on a save in a panel it did not open itself (#38303, T174).
+     */
+    describe('the content change notification', () => {
+        /** Every change announced from now on, in order. */
+        const announced = (): DotContentChange[] => {
+            const changes: DotContentChange[] = [];
+            spectator.inject(DotContentChangeService).changes$.subscribe((change) => changes.push(change));
+
+            return changes;
+        };
+
+        /** Stacks a panel over `parent`, as a relationship's "New" asks, and returns its config. */
+        const stackOver = async (parent: DotSidePanelConfig): Promise<DotSidePanelConfig> => {
+            parent.outputs?.['openContent']({
+                request: { mode: 'edit', inode: 'rel-1', contentType: 'Blog', title: 'Related' }
+            } as never);
+
+            return (await lastOpen()).config;
+        };
+
+        it("announces a save of a panel a surface opened, at depth 0, after the panel's own handler", async () => {
+            const order: string[] = [];
+            const changes = announced();
+            spectator
+                .inject(DotContentChangeService)
+                .changes$.subscribe(() => order.push('notification'));
+            spectator.service.open(EDIT_REQUEST, {
+                injector,
+                saved: () => order.push('handler')
+            });
+            const { config } = await lastOpen();
+            const contentlet = createFakeContentlet({ inode: 'abc2', identifier: 'id-1' });
+
+            config.outputs?.['saved'](contentlet as never);
+
+            expect(changes).toEqual([{ kind: 'saved', contentlet, depth: 0 }]);
+            expect(order).toEqual(['handler', 'notification']);
+        });
+
+        it('announces a save of a panel stacked from inside another, one level deeper', async () => {
+            spectator.service.open(EDIT_REQUEST, { injector });
+            const stacked = await stackOver((await lastOpen()).config);
+            const deeper = await stackOver(stacked);
+            const changes = announced();
+            const contentlet = createFakeContentlet({ inode: 'rel-2' });
+
+            stacked.outputs?.['saved'](contentlet as never);
+            deeper.outputs?.['saved'](contentlet as never);
+
+            expect(changes).toEqual([
+                { kind: 'saved', contentlet, depth: 1 },
+                { kind: 'saved', contentlet, depth: 2 }
+            ]);
+        });
+
+        it("announces a save in the legacy editor's panel", async () => {
+            const changes = announced();
+            spectator.service.open(CREATE_REQUEST, { injector });
+            const { config, component } = await lastOpen();
+            const contentlet = createFakeContentlet({ inode: 'new-banner' });
+
+            config.outputs?.['saved'](contentlet as never);
+
+            expect(component === loaded.legacy).toBe(true);
+            expect(changes).toEqual([{ kind: 'saved', contentlet, depth: 0 }]);
+        });
+
+        it('announces a delete with the content the panel had, after its own handler', async () => {
+            const deleted = vi.fn();
+            const changes = announced();
+            spectator.service.open(EDIT_REQUEST, { injector, deleted });
+            const { config } = await lastOpen();
+
+            config.outputs?.['deleted'](undefined as never);
+
+            expect(deleted).toHaveBeenCalledTimes(1);
+            expect(changes).toEqual([
+                {
+                    kind: 'deleted',
+                    contentlet: expect.objectContaining({ inode: 'abc', identifier: 'id-1' }),
+                    depth: 0
+                }
+            ]);
+        });
+
+        it('announces a delete with the content as it was last saved', async () => {
+            const changes = announced();
+            spectator.service.open(EDIT_REQUEST, { injector });
+            const { config } = await lastOpen();
+            const saved = createFakeContentlet({ inode: 'abc3', identifier: 'id-1' });
+
+            config.outputs?.['saved'](saved as never);
+            config.outputs?.['deleted'](undefined as never);
+
+            expect(changes[1]).toEqual({ kind: 'deleted', contentlet: saved, depth: 0 });
+        });
+
+        it('announces nothing for a panel that only closes', async () => {
+            const changes = announced();
+            const ref = spectator.service.open(EDIT_REQUEST, { injector });
+            await lastOpen();
+
+            ref.close();
+
+            expect(changes).toEqual([]);
         });
     });
 
