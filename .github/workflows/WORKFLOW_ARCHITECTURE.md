@@ -82,7 +82,7 @@ graph TB
         ATitle["🔧 Composite Actions"]
         A1["Core CI/CD:<br/>maven-job • setup-java<br/>prepare-runner • cleanup-runner"]
         A2["Deployment:<br/>deploy-docker • deploy-bunny-maven-s3<br/>deploy-cli-npm • deploy-javadoc"]
-        A3["Support:<br/>notify-slack • issue-fetcher<br/>issue-labeler • sbom-generator"]
+        A3["Support:<br/>notify-slack • sbom-generator"]
     end
 
     %% Configuration Layer
@@ -626,13 +626,6 @@ on:
 | Action | Purpose | Used By |
 |--------|---------|---------|
 | **notify-slack** | Slack notifications | Deployment, Reporting |
-
-### Issue Management Actions
-
-| Action | Purpose | Used By |
-|--------|---------|---------|
-| **issue-fetcher** | Fetch issue details | Issue linking workflows |
-| **issue-labeler** | Label management | Issue workflows |
 
 ## Configuration Files
 
