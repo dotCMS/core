@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.publishing;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -14,12 +15,16 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -531,6 +536,214 @@ public class BundleManagementResourceIntegrationTest {
     }
 
     // =========================================================================
+    // Bundle ownership: only the owner or a CMS Administrator changes a bundle
+    // =========================================================================
+
+    /**
+     * Given: a bundle owned by one back-end user, with two queued assets
+     * When: a different back-end user, who is not a CMS Administrator, removes both assets
+     * Then: 403 for the whole request, and both assets stay in the bundle
+     */
+    @Test
+    public void test_removeAssets_nonOwner_returns403AndKeepsAssets() throws Exception {
+        final User owner = newBackendUser();
+        final User otherUser = newBackendUser();
+        final Contentlet contentlet = createContentlet();
+        final Contentlet secondContentlet = createContentlet();
+        final Bundle bundle = createBundleWithAssets("remove-non-owner", owner,
+                List.of(contentlet.getIdentifier(), secondContentlet.getIdentifier()));
+
+        final RemoveAssetsFromBundleForm form = RemoveAssetsFromBundleForm.builder()
+                .assetIds(List.of(contentlet.getIdentifier(), secondContentlet.getIdentifier()))
+                .build();
+
+        try {
+            resource.removeAssetsFromBundle(
+                    mockAuthRequest(otherUser), mockResponse, bundle.getId(), form);
+            fail("A user who does not own the bundle must get 403");
+        } catch (final ForbiddenException e) {
+            // expected
+        }
+
+        final List<String> queued = queuedAssets(bundle.getId());
+        assertTrue(queued.contains(contentlet.getIdentifier()));
+        assertTrue(queued.contains(secondContentlet.getIdentifier()));
+    }
+
+    /**
+     * Given: a bundle owned by a back-end user who is not a CMS Administrator, with one queued asset
+     * When: the owner removes the asset
+     * Then: the asset is removed
+     */
+    @Test
+    public void test_removeAssets_byOwner_removesSuccessfully() throws Exception {
+        final User owner = newBackendUser();
+        final Contentlet contentlet = createContentlet();
+        final Bundle bundle = createBundleWithAssets(
+                "remove-owner", owner, List.of(contentlet.getIdentifier()));
+
+        final RemoveAssetsFromBundleForm form = RemoveAssetsFromBundleForm.builder()
+                .assetIds(List.of(contentlet.getIdentifier()))
+                .build();
+
+        final List<RemoveAssetResultView> results = resource.removeAssetsFromBundle(
+                mockAuthRequest(owner), mockResponse, bundle.getId(), form).getEntity();
+
+        assertEquals(1, results.size());
+        assertTrue("Asset removal should succeed", results.get(0).success());
+        assertFalse(queuedAssets(bundle.getId()).contains(contentlet.getIdentifier()));
+    }
+
+    /**
+     * Given: a bundle owned by a back-end user, with one queued asset
+     * When: a CMS Administrator who does not own the bundle removes the asset
+     * Then: the asset is removed
+     */
+    @Test
+    public void test_removeAssets_adminOnAnotherUsersBundle_removesSuccessfully() throws Exception {
+        final User owner = newBackendUser();
+        final Contentlet contentlet = createContentlet();
+        final Bundle bundle = createBundleWithAssets(
+                "remove-admin", owner, List.of(contentlet.getIdentifier()));
+
+        final RemoveAssetsFromBundleForm form = RemoveAssetsFromBundleForm.builder()
+                .assetIds(List.of(contentlet.getIdentifier()))
+                .build();
+
+        final List<RemoveAssetResultView> results = resource.removeAssetsFromBundle(
+                mockAuthRequest(adminUser), mockResponse, bundle.getId(), form).getEntity();
+
+        assertEquals(1, results.size());
+        assertTrue("Asset removal should succeed", results.get(0).success());
+        assertFalse(queuedAssets(bundle.getId()).contains(contentlet.getIdentifier()));
+    }
+
+    /**
+     * Given: a bundle owned by one back-end user that is being published
+     * When: a different back-end user, who is not a CMS Administrator, removes an asset
+     * Then: 403, not 409
+     */
+    @Test
+    public void test_removeAssets_nonOwnerOnInProgressBundle_returns403() throws Exception {
+        final User owner = newBackendUser();
+        final User otherUser = newBackendUser();
+        final Bundle bundle = createBundleWithStatus("remove-non-owner-in-progress", owner, Status.PUBLISHING_BUNDLE);
+
+        final RemoveAssetsFromBundleForm form = RemoveAssetsFromBundleForm.builder()
+                .assetIds(List.of("some-asset"))
+                .build();
+
+        try {
+            resource.removeAssetsFromBundle(
+                    mockAuthRequest(otherUser), mockResponse, bundle.getId(), form);
+            fail("A user who does not own the bundle must get 403");
+        } catch (final ForbiddenException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Given: a bundle owned by one back-end user
+     * When: a different back-end user, who is not a CMS Administrator, adds an asset to it by id
+     * Then: 403, and nothing is added
+     */
+    @Test
+    public void test_addAssets_nonOwnerBundleId_returns403AndAddsNothing() throws Exception {
+        final User owner = newBackendUser();
+        final User otherUser = newBackendUser();
+        final Bundle bundle = createBundle("add-non-owner", owner);
+        final Contentlet contentlet = createContentlet();
+
+        final AddAssetsToBundleForm form = new AddAssetsToBundleForm(
+                bundle.getId(), null, List.of(contentlet.getIdentifier()));
+
+        try {
+            resource.addAssetsToBundle(mockAuthRequest(otherUser), mockResponse, form);
+            fail("A user who does not own the bundle must get 403");
+        } catch (final ForbiddenException e) {
+            // expected
+        }
+
+        assertTrue(queuedAssets(bundle.getId()).isEmpty());
+    }
+
+    /**
+     * Given: a bundle owned by one back-end user
+     * When: a different back-end user, who is not a CMS Administrator, sends its id plus a bundle name
+     * Then: 403; no bundle is created under that name and nothing is added
+     */
+    @Test
+    public void test_addAssets_nonOwnerBundleIdWithName_returns403() throws Exception {
+        final User owner = newBackendUser();
+        final User otherUser = newBackendUser();
+        final Bundle bundle = createBundle("add-non-owner-named", owner);
+        final Contentlet contentlet = createContentlet();
+        final String bundleName = "add-non-owner-fallback-" + System.currentTimeMillis();
+
+        final AddAssetsToBundleForm form = new AddAssetsToBundleForm(
+                bundle.getId(), bundleName, List.of(contentlet.getIdentifier()));
+
+        try {
+            final AddAssetsToBundleView view = resource.addAssetsToBundle(
+                    mockAuthRequest(otherUser), mockResponse, form).getEntity();
+            createdBundleIds.add(view.bundleId());
+            fail("A user who does not own the bundle must get 403");
+        } catch (final ForbiddenException e) {
+            // expected
+        }
+
+        assertTrue(queuedAssets(bundle.getId()).isEmpty());
+        assertTrue(bundleAPI.getUnsendBundlesByName(otherUser.getUserId(), bundleName, 10, 0).isEmpty());
+    }
+
+    /**
+     * Given: a bundle owned by a back-end user who is not a CMS Administrator, and an asset the
+     * owner may publish
+     * When: the owner adds the asset to the bundle by id
+     * Then: the asset is added to the owner's bundle
+     */
+    @Test
+    public void test_addAssets_byOwnerBundleId_addsAsset() throws Exception {
+        final User owner = newBackendUser();
+        final Bundle bundle = createBundle("add-owner", owner);
+        final Contentlet contentlet = createContentlet();
+        grantPublish(contentlet, owner);
+
+        final AddAssetsToBundleForm form = new AddAssetsToBundleForm(
+                bundle.getId(), null, List.of(contentlet.getIdentifier()));
+
+        final AddAssetsToBundleView view = resource.addAssetsToBundle(
+                mockAuthRequest(owner), mockResponse, form).getEntity();
+
+        assertEquals(bundle.getId(), view.bundleId());
+        assertFalse("Should not create new bundle", view.created());
+        assertTrue("No asset should be refused: " + view.errors(), view.errors().isEmpty());
+        assertTrue(queuedAssets(bundle.getId()).contains(contentlet.getIdentifier()));
+    }
+
+    /**
+     * Given: a bundle owned by a back-end user
+     * When: a CMS Administrator who does not own the bundle adds an asset to it by id
+     * Then: the asset is added to that bundle
+     */
+    @Test
+    public void test_addAssets_adminOnAnotherUsersBundleId_addsAsset() throws Exception {
+        final User owner = newBackendUser();
+        final Bundle bundle = createBundle("add-admin", owner);
+        final Contentlet contentlet = createContentlet();
+
+        final AddAssetsToBundleForm form = new AddAssetsToBundleForm(
+                bundle.getId(), null, List.of(contentlet.getIdentifier()));
+
+        final AddAssetsToBundleView view = resource.addAssetsToBundle(
+                mockAuthRequest(adminUser), mockResponse, form).getEntity();
+
+        assertEquals(bundle.getId(), view.bundleId());
+        assertFalse("Should not create new bundle", view.created());
+        assertTrue(queuedAssets(bundle.getId()).contains(contentlet.getIdentifier()));
+    }
+
+    // =========================================================================
     // Helper Methods
     // =========================================================================
 
@@ -584,6 +797,57 @@ public class BundleManagementResourceIntegrationTest {
         publishAuditAPI.updatePublishAuditStatus(bundle.getId(), status, history);
 
         return bundle;
+    }
+
+    private void grantPublish(final Contentlet contentlet, final User user) throws Exception {
+        final Permission permission = new Permission(contentlet.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(user).getId(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT
+                        | PermissionAPI.PERMISSION_PUBLISH, true);
+        APILocator.getPermissionAPI().save(permission, contentlet, APILocator.systemUser(), false);
+    }
+
+    private User newBackendUser() throws DotDataException {
+        return new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+    }
+
+    private Bundle createBundle(final String name, final User owner) throws DotDataException {
+        final Bundle bundle = new Bundle(name, null, null, owner.getUserId());
+        bundleAPI.saveBundle(bundle);
+        createdBundleIds.add(bundle.getId());
+        return bundle;
+    }
+
+    private Bundle createBundleWithAssets(final String name, final User owner,
+            final List<String> assetIds) throws Exception {
+        final Bundle bundle = createBundle(name, owner);
+        publisherQueueAPI.saveBundleAssets(assetIds, bundle.getId(), adminUser);
+        return bundle;
+    }
+
+    private Bundle createBundleWithStatus(final String name, final User owner, final Status status)
+            throws Exception {
+        final Bundle bundle = createBundle(name, owner);
+
+        final PublishAuditStatus auditStatus = new PublishAuditStatus(bundle.getId());
+        auditStatus.setStatus(status);
+        auditStatus.setStatusUpdated(new Date());
+
+        final PublishAuditHistory history = new PublishAuditHistory();
+        auditStatus.setStatusPojo(history);
+
+        publishAuditAPI.insertPublishAuditStatus(auditStatus);
+        publishAuditAPI.updatePublishAuditStatus(bundle.getId(), status, history);
+
+        return bundle;
+    }
+
+    private List<String> queuedAssets(final String bundleId) throws Exception {
+        final List<String> assets = new ArrayList<>();
+        for (final PublishQueueElement element : publisherQueueAPI.getQueueElementsByBundleId(bundleId)) {
+            assets.add(element.getAsset());
+        }
+        return assets;
     }
 
 }

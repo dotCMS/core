@@ -8,6 +8,7 @@ import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 
 public interface BundleAPI {
@@ -170,12 +171,43 @@ public interface BundleAPI {
 
 	/**
 	 * deletes the Asset with the given assetId from the Bundle with the given bundleId and also
-	 * the {@link PublishAuditStatus} if it's the last asset of the bundle
+	 * the {@link PublishAuditStatus} if it's the last asset of the bundle. It performs no check on
+	 * who makes the change.
 	 *
 	 *
 	 * @throws	DotDataException	thrown when an error in the underlying data layer occurs
+	 * @deprecated use {@link #deleteAssetFromBundleAndAuditStatus(String, String, User)}, which
+	 * checks that the user may change the bundle
 	 */
+	@Deprecated
 	public void deleteAssetFromBundleAndAuditStatus(String assetId, String bundleId) throws DotDataException;
+
+	/**
+	 * Removes an asset from a bundle on behalf of a user, and deletes the bundle's
+	 * {@link PublishAuditStatus} when that was the bundle's last asset.
+	 * <p>Only a CMS Administrator or the owner of the bundle may change its contents
+	 * (see {@link #checkCanModifyBundle(Bundle, User)}).</p>
+	 *
+	 * @param assetId  identifier of the asset to remove
+	 * @param bundleId identifier of the bundle
+	 * @param user     the user making the change
+	 * @throws DotDataException     when the bundle does not exist or the data layer fails
+	 * @throws DotSecurityException when the user may not change the bundle
+	 */
+	void deleteAssetFromBundleAndAuditStatus(String assetId, String bundleId, User user)
+			throws DotDataException, DotSecurityException;
+
+	/**
+	 * Checks that a user may change a bundle: its contents, or the bundle itself. A CMS
+	 * Administrator may change any bundle; any other user only the bundles they own.
+	 *
+	 * @param bundle the bundle to change
+	 * @param user   the user making the change
+	 * @throws DotDataException     when the user's roles cannot be read
+	 * @throws DotSecurityException when the user is missing, or is neither a CMS Administrator nor
+	 *                              the owner of the bundle
+	 */
+	void checkCanModifyBundle(Bundle bundle, User user) throws DotDataException, DotSecurityException;
 
     /**
      * This takes a bundle and generates the tar.gzipped output file.  The resulting file will be placed under
