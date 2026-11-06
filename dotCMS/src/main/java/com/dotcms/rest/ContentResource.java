@@ -891,9 +891,12 @@ public class ContentResource {
                     contentlets.add(contentlet);
                 }
             } else if (inodePassed) {
+                // An inode names one exact version, so there is no variant to resolve: a caller
+                // that cannot name its own variant is answered as if the version did not exist.
                 final Contentlet contentlet = APILocator.getContentletAPI()
                         .find(inode, user, respectFrontendRoles);
-                if (contentlet != null){
+                if (contentlet != null && WebAPILocator.getVariantWebAPI()
+                        .canReadVariant(contentlet.getVariantId(), user)){
                     contentlets.add(contentlet);
                 }
             } else if (UtilMethods.isSet(related)){
