@@ -264,8 +264,8 @@ public class Parse extends InputBase
         // calls are judged on who wrote the code and not on the name this directive was given:
         // the name is the caller's to choose, but the code it resolves to is not.
         final HttpServletRequest dotRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        final Object dotPreviousAuthor = RestrictedViewToolAccess.announceRenderingAuthor(
-                dotRequest, RestrictedViewToolAccess.authorOfRenderedResource(arg));
+        final Object dotPreviousAuthor =
+                RestrictedViewToolAccess.announceRenderingAuthorOf(dotRequest, arg);
         try
         {
             preRender(context);

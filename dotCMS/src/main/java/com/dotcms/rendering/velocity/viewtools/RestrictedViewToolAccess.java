@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rendering.velocity.services.VTLLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotmarketing.business.APILocator;
@@ -15,11 +16,15 @@ import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import javax.servlet.http.HttpServletRequest;
 import com.liferay.portal.model.User;
+import io.vavr.Lazy;
+import java.io.File;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -60,19 +65,30 @@ public final class RestrictedViewToolAccess {
     public static final String RENDERING_AUTHOR_ID = "DOT_RENDERING_AUTHOR_ID";
 
     /**
-     * The announcement itself. Private so that only {@link #announceRenderingAuthor} can make
-     * one; a {@code String} a template pushes under {@link #RENDERING_AUTHOR_ID} is ignored.
+     * The announcement itself. Private so that only this class can make one; a {@code String} a
+     * template pushes under {@link #RENDERING_AUTHOR_ID} is ignored.
      *
-     * @param userId ID of the user that last modified the content being rendered, {@code null}
-     *               when the renderer knows the content but not its author
+     * <p>The author is held unresolved. Most renders never call a restricted tool, and working
+     * out who wrote a container or a template costs a lookup, so the question is only answered
+     * if something actually asks it; the answer is then kept for the rest of that render.
+     *
+     * @param userId ID of the user that last modified the content being rendered, resolving to
+     *               {@code null} when the renderer knows the content but not its author
      */
-    private record RenderingAuthor(String userId) { }
+    private record RenderingAuthor(Lazy<String> userId) { }
 
     /**
      * Kept in alphabetical order. Besides the tools that work outside of the viewer's
      * permissions, this covers every tool that used to decide for itself whether its caller may
      * run by reading the Velocity resource name, which the template author chooses.
      */
+    /**
+     * The refusals already reported once. A refused page refuses on every hit and the visitor
+     * decides how often it is hit, so each distinct reason is worth saying out loud once and
+     * then only at debug. Keyed by reason, so the set is bounded by the number of users.
+     */
+    private static final Set<String> REFUSALS_REPORTED = ConcurrentHashMap.newKeySet();
+
     private static final String[] DEFAULT_RESTRICTED_TOOLS =
             {"dotsecrets", "filetool", "macro", "mailer", "sql", "xslttool"};
 
@@ -144,14 +160,31 @@ public final class RestrictedViewToolAccess {
      * code its editor wrote, so without this every {@code #dotParse}d file -- themes, headers,
      * footers, anything under {@code /application/vtl} -- would run with no author at all.
      *
+     * <p>The inode is read from the path the loader resolves on disk and not from the path as
+     * it was written. The two differ: the text is the caller's to compose, and
+     * {@link VTLLoader} opens it by canonical path, so {@code ..} segments can leave the first
+     * inode in the text naming one file while another one is the file that runs. Asking the
+     * loader which file it would open is what ties the author to the code that will execute.
+     *
      * @param velocityResourcePath the resource path the renderer resolved
      *
      * @return the ID of the user that last saved that file, or {@code null} when the path holds
-     * no inode or nothing is stored under it
+     * no inode, resolves to nothing readable, or nothing is stored under the inode it resolves to
      */
     private static String authorOfFileAsset(final String velocityResourcePath) {
         try {
-            final Optional<String> inode = UUIDUtil.findInode(velocityResourcePath);
+            // cheap negative first: most resource names carry no inode at all, and this spares
+            // them the disk lookup below on the page-render path
+            if (UUIDUtil.findInode(velocityResourcePath).isEmpty()) {
+                return null;
+            }
+            final Optional<File> resolved =
+                    VTLLoader.instance().resolveServableFile(velocityResourcePath);
+            if (resolved.isEmpty()) {
+                return null;
+            }
+            final Optional<String> inode =
+                    UUIDUtil.findInode(resolved.get().getPath().replace('\\', '/'));
             if (inode.isEmpty()) {
                 return null;
             }
@@ -182,11 +215,43 @@ public final class RestrictedViewToolAccess {
      */
     public static Object announceRenderingAuthor(final HttpServletRequest request,
             final String authorId) {
+        return announce(request, Lazy.of(() -> authorId));
+    }
+
+    /**
+     * Records on the request that the code about to be rendered is the code a Velocity resource
+     * holds, without working out yet who wrote it.
+     *
+     * <p>This is the form the directives use. A page renders dozens of containers and parsed
+     * files and almost none of them call a restricted tool, so resolving every author up front
+     * would put a container, template or file lookup on the render path for an answer nobody
+     * reads. The resource is named here and {@link #authorOfRenderedResource(String)} is only
+     * run if a tool asks, once per render.
+     *
+     * @param request              the request the render is running under; {@code null} is ignored
+     * @param velocityResourcePath the resource path the renderer resolved
+     *
+     * @return whatever was recorded before, to restore afterwards
+     */
+    public static Object announceRenderingAuthorOf(final HttpServletRequest request,
+            final String velocityResourcePath) {
+        return announce(request, Lazy.of(() -> authorOfRenderedResource(velocityResourcePath)));
+    }
+
+    /**
+     * Writes the announcement and hands back the one it replaced.
+     *
+     * @param request the request the render is running under; {@code null} is ignored
+     * @param author  the author of the code about to run, resolved on demand
+     *
+     * @return whatever was recorded before, to restore afterwards
+     */
+    private static Object announce(final HttpServletRequest request, final Lazy<String> author) {
         if (null == request) {
             return null;
         }
         final Object previous = request.getAttribute(RENDERING_AUTHOR_ID);
-        request.setAttribute(RENDERING_AUTHOR_ID, new RenderingAuthor(authorId));
+        request.setAttribute(RENDERING_AUTHOR_ID, new RenderingAuthor(author));
         return previous;
     }
 
@@ -225,9 +290,11 @@ public final class RestrictedViewToolAccess {
      * announcement always wins over that, so a container parsed from inside such a file is
      * judged by the container's own author.
      *
-     * <p>An expected denial is logged at debug: a page whose author does not hold the role
-     * refuses on every hit, and a visitor decides how often that page is hit. Only an
-     * announcement that something other than a renderer wrote over is logged as a warning.
+     * <p>An expected denial is reported once as a warning and at debug from then on, per
+     * distinct reason: the refusal repeats on every hit of the same page and a visitor decides
+     * how often that page is hit, but an install that upgrades into a refusal should not have
+     * to turn debug on to find out. An announcement that something other than a renderer wrote
+     * over is always a warning, since that one is not routine.
      *
      * @param request the request the tool was initialised with
      *
@@ -248,18 +315,19 @@ public final class RestrictedViewToolAccess {
             return false;
         }
         final String authorId = null != announced
-                ? ((RenderingAuthor) announced).userId()
+                ? ((RenderingAuthor) announced).userId().get()
                 : ScriptingFileAttribute.get(request);
         if (!UtilMethods.isSet(authorId)) {
-            // Debug, not warn: a page whose author lacks the role refuses on every hit, and a
-            // visitor can repeat that hit as often as they like.
             if (null != announced) {
-                Logger.debug(RestrictedViewToolAccess.class, () ->
+                reportRefusal("announced-without-author", () ->
                         "A view tool was refused: the code being rendered was announced as having "
                                 + "no author of its own, which is what text built at render time "
-                                + "looks like.");
+                                + "looks like. #evaluate and $render.eval announce it, so the "
+                                + "view tools that decide by who wrote the code refuse inside "
+                                + "them whoever wrote the code around them; move that code into "
+                                + "a template, container or file of its own to keep it running.");
             } else {
-                Logger.debug(RestrictedViewToolAccess.class, () ->
+                reportRefusal("not-announced", () ->
                         "A view tool was called while no author was announced for the code being "
                                 + "rendered, so it is refused. This is what a render path that "
                                 + "does not announce its author looks like.");
@@ -268,12 +336,32 @@ public final class RestrictedViewToolAccess {
         }
         final boolean allowed = isScriptingDeveloper(authorId);
         if (!allowed) {
-            Logger.debug(RestrictedViewToolAccess.class, () -> String.format(
+            reportRefusal("author:" + authorId, () -> String.format(
                     "A view tool was refused: the code being rendered was last saved by user "
                             + "'%s', who does not have the %s role",
                     authorId, Role.SCRIPTING_DEVELOPER));
         }
         return allowed;
+    }
+
+    /**
+     * Reports an expected refusal: the first one of its kind as a warning, every later one at
+     * debug.
+     *
+     * <p>Both halves matter. A refusal that is only ever written at debug leaves an install
+     * that upgraded into it with nothing in the log to go on; a refusal written as a warning
+     * every time fills the log, because the page refuses on every hit and the visitor decides
+     * how often it is hit.
+     *
+     * @param reason  what distinguishes this refusal from another, so each is said once
+     * @param message the line to write, built only if it is going to be written
+     */
+    private static void reportRefusal(final String reason, final Supplier<String> message) {
+        if (REFUSALS_REPORTED.add(reason)) {
+            Logger.warn(RestrictedViewToolAccess.class, message.get());
+        } else {
+            Logger.debug(RestrictedViewToolAccess.class, message);
+        }
     }
 
     /**

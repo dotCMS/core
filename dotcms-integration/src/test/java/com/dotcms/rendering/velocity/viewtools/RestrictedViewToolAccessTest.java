@@ -31,6 +31,8 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.util.FileUtil;
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
@@ -207,6 +209,94 @@ public class RestrictedViewToolAccessTest {
 
         assertNotNull("The file must have a last editor for this case to mean anything", lastEditor);
         assertEquals(lastEditor, RestrictedViewToolAccess.authorOfRenderedResource(onDisk));
+    }
+
+    /**
+     * Method to test: {@link RestrictedViewToolAccess#authorOfRenderedResource(String)}
+     * When: the path names one file's folder and then walks out of it to a second file, which
+     * is what a {@code #parse} argument can be made to do, since the argument is written by
+     * whoever wrote the calling Velocity
+     * Should: answer with the author of the file that is actually read, not the one the text
+     * mentions first.
+     *
+     * <p>The loader opens the path by canonical location, so the {@code ..} segments decide
+     * which file runs. Reading the inode out of the text instead would let any author borrow
+     * the standing of a file they merely named.
+     */
+    @Test
+    public void authorOfRenderedResource_answersForTheFileTheParseArgumentResolvesTo()
+            throws Exception {
+        final File namedVtl = File.createTempFile("restricted-named", ".vtl");
+        FileUtil.write(namedVtl, "the file the path mentions first");
+        final Contentlet named = new FileAssetDataGen(new FolderDataGen().nextPersisted(), namedVtl)
+                .user(limitedUser).nextPersisted();
+        files.add(named);
+
+        final File reachedVtl = File.createTempFile("restricted-reached", ".vtl");
+        FileUtil.write(reachedVtl, "the file the path resolves to");
+        final Contentlet reached = new FileAssetDataGen(new FolderDataGen().nextPersisted(), reachedVtl)
+                .user(user(new UserDataGen().nextPersisted())).nextPersisted();
+        files.add(reached);
+
+        final Path namedOnDisk = Paths.get(APILocator.getFileAssetAPI().fromContentlet(named)
+                .getFileAsset().getAbsolutePath());
+        final Path reachedOnDisk = Paths.get(APILocator.getFileAssetAPI().fromContentlet(reached)
+                .getFileAsset().getAbsolutePath());
+        // starts inside the first file's folder, then climbs out of it and down to the second
+        final String crafted = namedOnDisk.getParent() + "/"
+                + namedOnDisk.getParent().relativize(reachedOnDisk);
+
+        final String namedAuthor = APILocator.getContentletAPI()
+                .find(named.getInode(), APILocator.systemUser(), false).getModUser();
+        final String reachedAuthor = APILocator.getContentletAPI()
+                .find(reached.getInode(), APILocator.systemUser(), false).getModUser();
+        assertNotNull("The reached file must have a last editor", reachedAuthor);
+        assertFalse("The two files must have different authors for this case to mean anything",
+                reachedAuthor.equals(namedAuthor));
+        assertTrue("The crafted path must mention the first file's inode before the second's",
+                crafted.indexOf(named.getInode()) < crafted.indexOf(reached.getInode()));
+
+        assertEquals(reachedAuthor, RestrictedViewToolAccess.authorOfRenderedResource(crafted));
+    }
+
+    /**
+     * Method to test: {@link RestrictedViewToolAccess#announceRenderingAuthorOf(HttpServletRequest, String)}
+     * When: a directive names the resource it is about to render instead of handing over an
+     * author it has already worked out
+     * Should: give the same verdict as naming the author directly -- denied for an author
+     * without the role, allowed for one who holds it.
+     *
+     * <p>Naming the resource is what keeps the author lookup off the render path of the pages
+     * that never call a restricted tool, so the verdict has to survive the change of form.
+     */
+    @Test
+    public void announceRenderingAuthorOf_decidesByTheAuthorOfThatResource() throws Exception {
+        final Role scripting = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
+        final User developer = user(new UserDataGen().roles(scripting).nextPersisted());
+
+        final Container byLimitedUser = new ContainerDataGen()
+                .owner(limitedUser).modUser(limitedUser).nextPersisted();
+        containers.add(byLimitedUser);
+        final Container byDeveloper = new ContainerDataGen()
+                .owner(developer).modUser(developer).nextPersisted();
+        containers.add(byDeveloper);
+
+        final HttpServletRequest request = request(admin);
+
+        RestrictedViewToolAccess.announceRenderingAuthorOf(request,
+                "/WORKING/" + byLimitedUser.getIdentifier() + "/1.container");
+        assertFalse("An author without the role must be refused",
+                RestrictedViewToolAccess.renderingAuthorHasAccess(request));
+
+        RestrictedViewToolAccess.announceRenderingAuthorOf(request,
+                "/WORKING/" + byDeveloper.getIdentifier() + "/1.container");
+        assertTrue("An author holding the role must be allowed",
+                RestrictedViewToolAccess.renderingAuthorHasAccess(request));
+
+        RestrictedViewToolAccess.announceRenderingAuthorOf(request,
+                "/WORKING/" + UUIDGenerator.generateUuid() + "/1.container");
+        assertFalse("A resource that resolves to nothing names no author, so it is refused",
+                RestrictedViewToolAccess.renderingAuthorHasAccess(request));
     }
 
     /**
