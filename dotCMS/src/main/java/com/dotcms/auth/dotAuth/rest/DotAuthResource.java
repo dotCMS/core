@@ -247,7 +247,15 @@ public class DotAuthResource {
                 final ProtocolConfig config = ownConfig.get();
                 ssoProtocol = config.protocol;
                 ssoConfigured = true;
-                ssoValues = config.values;
+                // Re-resolve the active protocol with System Host fallback so the response
+                // reflects the effective values the runtime actually sees (per-site keys
+                // override; System Host keys fill in any gaps). This lets administrators
+                // audit inherited settings — e.g. additionalAcsUrls — that a per-site row
+                // would otherwise hide, even though the runtime continues to honour them.
+                final ProtocolHandler activeHandler = handlers.get(config.protocol);
+                ssoValues = appsAPI.getSecrets(activeHandler.appKey(), true, host, user)
+                        .map(activeHandler::maskedValues)
+                        .orElse(config.values);
             }
 
             if (!ssoConfigured && !host.isSystemHost()) {

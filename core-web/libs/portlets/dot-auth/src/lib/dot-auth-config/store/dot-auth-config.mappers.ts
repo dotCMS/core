@@ -195,7 +195,9 @@ export function toPayload(config: DotAuthConfig, siteId: string): DotAuthConfigP
                 // Omit when unset: the backend replaces the whole secrets row on save, so an
                 // empty string would be STORED and shadow the host-name fallback downstream.
                 sPEndpointHostname: config.saml.spEndpointHostname || undefined,
-                additionalAcsUrls: config.saml.additionalAcsUrls.trim() || undefined,
+                // Always send (even when empty) so an admin clearing the list on a site
+                // overrides any System Host value — rather than silently inheriting it.
+                additionalAcsUrls: config.saml.additionalAcsUrls.trim(),
                 signRequests: String(config.saml.signRequests),
                 // Never 'none': with neither box checked both signatures are required.
                 signatureValidationType:
