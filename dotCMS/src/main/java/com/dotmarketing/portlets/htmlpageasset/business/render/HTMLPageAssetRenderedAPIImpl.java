@@ -24,6 +24,7 @@ import com.dotmarketing.cms.urlmap.UrlMapContextBuilder;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.factories.PageTreeReadFilter;
 import com.dotmarketing.filters.Constants;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -55,7 +56,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.Set;
 
 /**
  * Implementation class for the {@link HTMLPageAssetRenderedAPI}.
@@ -294,12 +294,12 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
     }
 
     /**
-     * Builds the view-as status of the page for the request. The page counts as personalized for
-     * the current persona only when the user can read some of the content placed for that persona
-     * (see {@link PageTreeReadFilter}). Front-end roles count only in the modes that respect them
-     * ({@link PageMode#respectAnonPerms}: LIVE and ADMIN_MODE), so in preview and edit mode
-     * content the user reads only through the anonymous role does not count, as on the page
-     * personas endpoint.
+     * Builds the view-as status of the page for the request. In edit and preview mode the page
+     * counts as personalized for the current persona only when the user can read some of the
+     * content placed for that persona (see {@link PageTreeReadFilter}), without front-end roles,
+     * so content the user reads only through the anonymous role does not count, as on the page
+     * personas endpoint. In the other modes the page renders only when the user can read all of
+     * its content, so it counts as personalized whenever it has rows for the persona.
      *
      * @param request  the current request, holding the visitor and its persona
      * @param pageMode the mode the page is rendered in
@@ -314,11 +314,9 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
             final PageMode pageMode, final HTMLPageAsset htmlpage, final User user)
             throws DotDataException {
         final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
-        final Set<String> pagePersonalizationSet = new PageTreeReadFilter(user, pageMode.respectAnonPerms).readablePersonalizations(
-                Try.of(() -> APILocator.getMultiTreeAPI().getPageMultiTrees(htmlpage, currentVariantId, false))
-                        .getOrElseThrow(e -> new DotRuntimeException(e)));
         final IPersona persona     = this.getCurrentPersona(request);
-        final boolean personalized = this.isPersonalized(persona, pagePersonalizationSet);
+        final boolean personalized = null != persona
+                && this.isPersonalized(persona, htmlpage, pageMode, user, currentVariantId);
         final Contentlet device = APILocator.getDeviceAPI().getCurrentDevice(request, user)
                 .orElse(null);
 
@@ -662,10 +660,31 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         return visitor.isPresent() && visitor.get().getPersona() != null ? visitor.get().getPersona() : null;
     }
 
-    private boolean isPersonalized (final IPersona persona, final Set<String> pagePersonalizationSet) {
+    /**
+     * Tells whether the page is personalized for the persona as the user sees it in the given mode
+     * (see {@link #getViewAsStatus}).
+     *
+     * @param persona     the current persona
+     * @param page        the page
+     * @param pageMode    the mode the page is rendered in
+     * @param user        the user the page is rendered for
+     * @param variantName the current variant
+     * @return {@code true} if the page shows the persona's own content
+     * @throws DotDataException    if the permissions of the persona's content cannot be loaded
+     * @throws DotRuntimeException if the page tree cannot be loaded
+     */
+    private boolean isPersonalized(final IPersona persona, final HTMLPageAsset page, final PageMode pageMode,
+            final User user, final String variantName) throws DotDataException {
 
-        return null != persona && pagePersonalizationSet.contains
-                (Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag());
+        final String personaTag = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + persona.getKeyTag();
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        if (!PageTreeReadFilter.appliesTo(pageMode)) {
+            return multiTreeAPI.getPersonalizationsForPage(page, variantName).contains(personaTag);
+        }
+        return new PageTreeReadFilter(user, pageMode.respectAnonPerms).hasReadableContent(
+                Try.of(() -> multiTreeAPI.getPageMultiTrees(page, variantName, false))
+                        .getOrElseThrow(e -> new DotRuntimeException(e)),
+                personaTag, variantName);
     }
 
     @Override

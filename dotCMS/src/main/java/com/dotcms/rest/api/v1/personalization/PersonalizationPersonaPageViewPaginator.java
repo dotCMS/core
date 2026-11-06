@@ -128,7 +128,7 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
       throws DotDataException, DotSecurityException {
 
     return new PageTreeReadFilter(user).readablePersonalizations(
-        this.multiTreeAPI.getPageMultiTrees(page, variantName, false));
+        this.multiTreeAPI.getPageMultiTrees(page, variantName, false), variantName);
   }
 
 }

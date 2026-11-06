@@ -15413,9 +15413,9 @@ paths:
     post:
       description: "Copies the current content associated to page containers with\
         \ default personalization and creates a new set with the specified persona\
-        \ personalization. If the page already has content for that persona, nothing\
-        \ is copied and an empty list is returned. Requires edit permission on the\
-        \ page."
+        \ personalization. Returns the copied rows whose content the user can read.\
+        \ If the page already has content for that persona, nothing is copied and\
+        \ an empty list is returned. Requires edit permission on the page."
       operationId: personalizePageContainers
       requestBody:
         content:

@@ -16,6 +16,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.PageTreeReadFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
@@ -91,13 +92,14 @@ public class PersonalizationResource {
      * @param request                        the current request
      * @param response                       the current response
      * @param personalizationPersonaPageForm the page and the persona tag
-     * @return the copied tree rows, or an empty list when the page already had content for the persona
+     * @return the copied tree rows whose content the user can read, or an empty list when the page
+     *         already had content for the persona
      * @throws DotDataException     if the page, the persona or the tree cannot be loaded
      * @throws DotSecurityException if the persona cannot be read by the user
      */
     @Operation(
         summary = "Personalize page containers",
-        description = "Copies the current content associated to page containers with default personalization and creates a new set with the specified persona personalization. If the page already has content for that persona, nothing is copied and an empty list is returned. Requires edit permission on the page."
+        description = "Copies the current content associated to page containers with default personalization and creates a new set with the specified persona personalization. Returns the copied rows whose content the user can read. If the page already has content for that persona, nothing is copied and an empty list is returned. Requires edit permission on the page."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
@@ -169,10 +171,9 @@ public class PersonalizationResource {
             return Response.ok(new ResponseEntityView<>(noCopiedRows)).build();
         }
 
-        return Response.ok(new ResponseEntityView<>(
-                        this.multiTreeAPI.copyPersonalizationForPage(
-                            personalizationPersonaPageForm.getPageId(), newPersonalization, currentVariantId)
-                        )).build();
+        final List<MultiTree> copiedRows = this.multiTreeAPI.copyPersonalizationForPage(
+                pageId, newPersonalization, currentVariantId);
+        return Response.ok(new ResponseEntityView<>(new PageTreeReadFilter(user).filter(copiedRows))).build();
     } // personalizePageContainers
 
     @Operation(

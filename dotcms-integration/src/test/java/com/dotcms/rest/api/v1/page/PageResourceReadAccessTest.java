@@ -10,11 +10,20 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.ImmutableCategoryField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FieldVariableDataGen;
 import com.dotcms.datagen.PermissionUtilTest;
 import com.dotcms.datagen.PersonaDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
@@ -41,7 +50,9 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.personas.model.Persona;
@@ -85,6 +96,10 @@ public class PageResourceReadAccessTest {
     private static Persona personaWithVariantContent;
     private static Contentlet defaultContent;
     private static Variant variant;
+    private static Persona personaWithRestrictedVariantVersion;
+    private static HTMLPageAsset livePage;
+    private static Persona personaWithNewerDraft;
+    private static Contentlet publishedContentWithNewerDraft;
     private static HTMLPageAsset editablePage;
     private static User userWithoutAccess;
     private static User reader;
@@ -132,6 +147,7 @@ public class PageResourceReadAccessTest {
         prepareMixedPage(webPageContent);
         preparePersonaPage(webPageContent);
         prepareEditablePage();
+        prepareLivePage(webPageContent);
     }
 
     /**
@@ -173,11 +189,96 @@ public class PageResourceReadAccessTest {
         grantRead(variantOnlyContent, reader);
         saveRow(personaPage, containerId, variantOnlyContent.getIdentifier(), 4,
                 personaTag(personaWithVariantContent), variant.name());
+
+        personaWithRestrictedVariantVersion = newPersona("restrictedvariant");
+        saveRow(personaPage, containerId, newContentWithRestrictedVariantVersion().getIdentifier(), 5,
+                personaTag(personaWithRestrictedVariantVersion), variant.name());
     }
 
     /**
-     * Builds a page the reader can edit, with default content and a row for the persona whose
-     * content the reader has no READ on.
+     * Builds content the reader can read in the default variant, whose version in the test variant
+     * is filed under a category the reader has no permission on.
+     */
+    private static Contentlet newContentWithRestrictedVariantVersion() throws Exception {
+        final String unique = String.valueOf(System.currentTimeMillis());
+        final Category topicsCategory = new CategoryDataGen()
+                .setCategoryName("topics" + unique)
+                .setKey("topics" + unique)
+                .setCategoryVelocityVarName("topics" + unique)
+                .nextPersisted();
+        final Category restrictedCategory = new CategoryDataGen()
+                .setCategoryName("restricted" + unique)
+                .setKey("restricted" + unique)
+                .setCategoryVelocityVarName("restricted" + unique)
+                .parent(topicsCategory)
+                .nextPersisted();
+        final ContentType categorizedType = new ContentTypeDataGen()
+                .host(site)
+                .fields(List.of(new FieldDataGen().type(ImmutableTextField.class).name("Title")
+                        .velocityVarName("title").next()))
+                .nextPersisted();
+        final Field categoryField = new FieldDataGen()
+                .type(ImmutableCategoryField.class)
+                .contentTypeId(categorizedType.id())
+                .name("topics")
+                .velocityVarName("topics")
+                .values(topicsCategory.getInode())
+                .nextPersisted();
+        new FieldVariableDataGen().key("secondaryPermissionCheck").value("true").field(categoryField)
+                .nextPersisted();
+
+        final Contentlet defaultVersion = new ContentletDataGen(categorizedType.id())
+                .languageId(1)
+                .host(site)
+                .setProperty("title", "uncategorized")
+                .nextPersisted();
+        grantRead(defaultVersion, reader);
+
+        final Contentlet checkout = APILocator.getContentletAPI()
+                .checkout(defaultVersion.getInode(), APILocator.systemUser(), false);
+        checkout.setVariantId(variant.name());
+        checkout.setProperty("title", "categorized");
+        checkout.setProperty(categoryField.variable(), restrictedCategory.getInode());
+        checkout.setIndexPolicy(IndexPolicy.FORCE);
+        final Contentlet variantVersion = APILocator.getContentletAPI()
+                .checkin(checkout, APILocator.systemUser(), false, List.of(restrictedCategory));
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        assertTrue("Precondition: the reader can read the default variant's version",
+                permissionAPI.doesUserHavePermission(defaultVersion, PermissionAPI.PERMISSION_READ, reader, false));
+        assertFalse("Precondition: the reader has no READ on the variant's version",
+                permissionAPI.doesUserHavePermission(variantVersion, PermissionAPI.PERMISSION_READ, reader, false));
+        return defaultVersion;
+    }
+
+    /**
+     * Builds a published page whose content the anonymous user can read: published default
+     * content, and, for a persona, published content that also has a newer, unpublished version.
+     */
+    private static void prepareLivePage(final ContentType webPageContent) throws Exception {
+        final PageRenderTestUtil.PageRenderTest live = PageRenderTestUtil.createPage(1, site, true);
+        livePage = live.getPage();
+        final String containerId = live.getFirstContainer().getIdentifier();
+        ContainerDataGen.publish(live.getFirstContainer());
+        TemplateDataGen.publish(live.getTemplate());
+
+        final Contentlet publicDefaultContent = newPublicContent(webPageContent);
+        publishedContentWithNewerDraft = newPublicContent(webPageContent);
+        final Contentlet draft = ContentletDataGen.checkout(publishedContentWithNewerDraft);
+        draft.setProperty("title", "newer draft");
+        ContentletDataGen.checkin(draft);
+
+        personaWithNewerDraft = newPersona("draft");
+        saveRow(livePage, containerId, publicDefaultContent.getIdentifier(), 0,
+                MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name());
+        saveRow(livePage, containerId, publishedContentWithNewerDraft.getIdentifier(), 1,
+                personaTag(personaWithNewerDraft), VariantAPI.DEFAULT_VARIANT.name());
+    }
+
+    /**
+     * Builds a page the reader can edit, with default content the reader can read and default
+     * content the reader has no READ on, and a row for the persona whose content the reader has no
+     * READ on.
      */
     private static void prepareEditablePage() throws Exception {
         final PageRenderTestUtil.PageRenderTest editable = PageRenderTestUtil.createPage(1, site, true);
@@ -189,6 +290,8 @@ public class PageResourceReadAccessTest {
 
         saveRow(editablePage, containerId, content.getIdentifier(), 0, MultiTree.DOT_PERSONALIZATION_DEFAULT,
                 VariantAPI.DEFAULT_VARIANT.name());
+        saveRow(editablePage, containerId, unreadableContent.getIdentifier(), 1,
+                MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name());
         saveRow(editablePage, containerId, unreadableContent.getIdentifier(), 0,
                 personaTag(personaWithoutReadableContent), VariantAPI.DEFAULT_VARIANT.name());
     }
@@ -232,6 +335,14 @@ public class PageResourceReadAccessTest {
     @AfterClass
     public static void cleanup() {
         createdUsers.forEach(user -> UserDataGen.remove(user, true));
+        if (variant != null) {
+            try {
+                APILocator.getVariantAPI().archive(variant.name());
+                APILocator.getVariantAPI().delete(variant.name());
+            } catch (final Exception e) {
+                Logger.warn(PageResourceReadAccessTest.class, "Could not remove test variant: " + e.getMessage());
+            }
+        }
         if (site != null) {
             try {
                 APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
@@ -546,8 +657,30 @@ public class PageResourceReadAccessTest {
     public void viewAsStatus_countsFrontEndRolesInLiveMode() throws Exception {
         assertTrue(viewAsPersonalized(APILocator.getUserAPI().getAnonymousUser(), personaWithPublicContent,
                 PageMode.LIVE));
-        assertFalse(viewAsPersonalized(APILocator.getUserAPI().getAnonymousUser(), personaWithoutReadableContent,
-                PageMode.LIVE));
+    }
+
+    /**
+     * Given a published page personalized for a persona with published content that also has a
+     * newer, unpublished version,
+     * When it is rendered in LIVE mode for the anonymous user as that persona,
+     * Then the view-as status is personalized.
+     */
+    @Test
+    public void viewAsStatus_countsPublishedContentWithNewerDraftInLiveMode() throws Exception {
+        assertTrue(viewAsPersonalized(APILocator.getUserAPI().getAnonymousUser(), personaWithNewerDraft,
+                PageMode.LIVE, null, livePage));
+    }
+
+    /**
+     * Given the same page, personalized in a variant with content the reader can read in the
+     * default variant but not in that variant,
+     * When the reader renders that variant as the persona,
+     * Then the view-as status is not personalized.
+     */
+    @Test
+    public void viewAsStatus_checksTheVersionInTheCurrentVariant() throws Exception {
+        assertFalse(viewAsPersonalized(reader, personaWithRestrictedVariantVersion, PageMode.PREVIEW_MODE,
+                variant.name()));
     }
 
     /**
@@ -637,6 +770,19 @@ public class PageResourceReadAccessTest {
     }
 
     /**
+     * Given a published page personalized for a persona with published content that also has a
+     * newer, unpublished version,
+     * When the anonymous user views it live as that persona,
+     * Then the page shows the persona's published content.
+     */
+    @Test
+    public void render_inLiveMode_asPersonaWithNewerDraft_showsPersonaContent() throws Exception {
+        assertEquals(List.of(publishedContentWithNewerDraft.getIdentifier()),
+                renderedContentIds(APILocator.getUserAPI().getAnonymousUser(), personaWithNewerDraft,
+                        PageMode.LIVE, livePage));
+    }
+
+    /**
      * Given a page the reader can edit, already personalized for a persona whose content the
      * reader has no READ on,
      * When the reader asks to personalize the page for that persona,
@@ -656,15 +802,21 @@ public class PageResourceReadAccessTest {
     /**
      * Given the same page, not personalized for another persona,
      * When the reader asks to personalize the page for that persona,
-     * Then the page's default content is copied for it.
+     * Then all of the page's default content is copied for it, and only the copied rows whose
+     * content the reader can read are returned.
      */
     @Test
+    @SuppressWarnings("unchecked")
     public void personalizePage_forPersonaWithoutRows_copiesDefaultContent() throws Exception {
         final Response response = personalize(personaWithReadableContent);
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        assertEquals(List.of(content.getIdentifier()),
+        assertEquals(List.of(content.getIdentifier(), unreadableContent.getIdentifier()),
                 personaRowContentIds(editablePage, personaWithReadableContent));
+        final List<MultiTree> returnedRows =
+                (List<MultiTree>) ((ResponseEntityView<?>) response.getEntity()).getEntity();
+        assertEquals(List.of(content.getIdentifier()),
+                returnedRows.stream().map(MultiTree::getContentlet).collect(Collectors.toList()));
     }
 
     private static Response requestPersonas(final PageResource resource, final String pageId) throws Exception {
@@ -760,12 +912,17 @@ public class PageResourceReadAccessTest {
 
     private static boolean viewAsPersonalized(final User user, final Persona persona, final PageMode mode,
             final String variantName) throws Exception {
+        return viewAsPersonalized(user, persona, mode, variantName, personaPage);
+    }
+
+    private static boolean viewAsPersonalized(final User user, final Persona persona, final PageMode mode,
+            final String variantName, final HTMLPageAsset page) throws Exception {
         final HttpServletRequest request = requestAsPersona(persona, variantName);
         final HttpServletRequest previous = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
         try {
             return APILocator.getHTMLPageAssetRenderedAPI()
-                    .getViewAsStatus(request, mode, personaPage, user).isPersonalized();
+                    .getViewAsStatus(request, mode, page, user).isPersonalized();
         } finally {
             HttpServletRequestThreadLocal.INSTANCE.setRequest(previous);
         }
@@ -773,10 +930,15 @@ public class PageResourceReadAccessTest {
 
     private static List<String> renderedContentIds(final User user, final Persona persona, final PageMode mode)
             throws Exception {
+        return renderedContentIds(user, persona, mode, personaPage);
+    }
+
+    private static List<String> renderedContentIds(final User user, final Persona persona, final PageMode mode,
+            final HTMLPageAsset page) throws Exception {
         final HttpServletRequest previous = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         HttpServletRequestThreadLocal.INSTANCE.setRequest(requestAsPersona(persona, null));
         try {
-            return new PageRenderUtil(personaPage, user, mode, 1, site).getContainersRaw().stream()
+            return new PageRenderUtil(page, user, mode, 1, site).getContainersRaw().stream()
                     .flatMap(container -> container.getContentlets().values().stream())
                     .flatMap(List::stream)
                     .map(Contentlet::getIdentifier)
@@ -836,6 +998,14 @@ public class PageResourceReadAccessTest {
                 .setProperty("title", "content")
                 .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                 .nextPersisted();
+    }
+
+    private static Contentlet newPublicContent(final ContentType contentType) throws Exception {
+        final Contentlet publicContent = newContent(contentType);
+        breakInheritance(publicContent);
+        PermissionUtilTest.addAnonymousUser(publicContent);
+        ContentletDataGen.publish(publicContent);
+        return publicContent;
     }
 
     private static void grantRead(final Contentlet contentlet, final User user) throws Exception {
