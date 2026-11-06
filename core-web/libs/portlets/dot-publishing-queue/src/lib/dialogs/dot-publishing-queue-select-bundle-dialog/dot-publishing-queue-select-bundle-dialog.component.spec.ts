@@ -17,6 +17,7 @@ import { Toast } from 'primeng/toast';
 
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import {
+    DotContentChangeService,
     DotContentletEditUrlService,
     DotContentTypeService,
     DotCurrentUserService,
@@ -445,12 +446,19 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             expect(spectator.query(Toast)).not.toBeNull();
         });
 
-        it("reloads the active bundle's assets on every save", () => {
+        // #38303, T174: through the content change notification, at any depth.
+        it("reloads the active bundle's assets on every content change, at any depth", () => {
             clickRow(0);
             (service.getBundleAssets as Mock).mockClear();
 
-            openOptions().saved?.({ inode: 'i1-saved' } as DotCMSContentlet);
+            spectator.inject(DotContentChangeService).notify({
+                kind: 'saved',
+                contentlet: { inode: 'related' } as DotCMSContentlet,
+                depth: 1
+            });
 
+            expect(openOptions().saved).toBeUndefined();
+            expect(service.getBundleAssets).toHaveBeenCalledTimes(1);
             expect(service.getBundleAssets).toHaveBeenCalledWith('bundle-1');
         });
 
