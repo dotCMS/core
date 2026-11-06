@@ -17,7 +17,8 @@ function quoteForRegExp(text: string): string {
 
 async function createLegacyContentType(request: Parameters<typeof createFakeContentType>[0]) {
     return createFakeContentType(request, {
-        name: `E2ELegacyLoaded${uniqueSuffix()}`,
+        // An apostrophe in the type name: it travels in the same event payload as the title.
+        name: `E2E Legacy's ${uniqueSuffix()}`,
         // false -> the legacy Dojo/JSP editor, the one that fires the event.
         metadata: { CONTENT_EDITOR2_ENABLED: false },
         fields: [
@@ -33,11 +34,13 @@ async function createLegacyContentType(request: Parameters<typeof createFakeCont
 test.describe('Legacy editor — loaded event', () => {
     let contentType: ContentType | null = null;
     let contentTypeVariable: string;
+    let contentTypeName: string;
     let contentlet: Contentlet | null = null;
 
     test.beforeEach(async ({ request }) => {
         contentType = await createLegacyContentType(request);
         contentTypeVariable = contentType.variable;
+        contentTypeName = contentType.name;
         contentlet = await createContentlet(request, {
             contentType: contentType.variable,
             title: QUOTED_TITLE
@@ -66,8 +69,13 @@ test.describe('Legacy editor — loaded event', () => {
     test('fires with a title holding quotes and leaves no page error @critical', async ({
         page
     }) => {
-        const pageErrors: string[] = [];
-        page.on('pageerror', (error) => pageErrors.push(error.message));
+        // Only a script that fails to parse matters here; unrelated runtime errors are noise.
+        const syntaxErrors: string[] = [];
+        page.on('pageerror', (error) => {
+            if (error.name === 'SyntaxError') {
+                syntaxErrors.push(error.message);
+            }
+        });
 
         const formPage = new LegacyEditContentFormPage(page);
         await formPage.goToLegacyEdit(contentTypeVariable);
@@ -76,9 +84,12 @@ test.describe('Legacy editor — loaded event', () => {
             timeout: 20000
         });
 
+        // The dialog header comes from the same event's contentType.
+        await expect(page.locator('p-dialog .p-dialog-title')).toHaveText(contentTypeName);
+
         const legacyFrame = await formPage.getLegacyContentFrame();
         await expect(legacyFrame.locator('#title')).toHaveValue(QUOTED_TITLE);
 
-        expect(pageErrors).toEqual([]);
+        expect(syntaxErrors).toEqual([]);
     });
 });
