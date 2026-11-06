@@ -51,8 +51,8 @@ import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
-import org.apache.http.conn.ssl.StrictHostnameVerifier;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.message.BasicHeader;
@@ -189,8 +189,8 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                     }
                     httpClientBuilder
                             .setDefaultCredentialsProvider(credentialsProvider);
-                    httpClientBuilder.setHostnameVerifier(certRequired
-                            ? new StrictHostnameVerifier() : AllowAllHostnameVerifier.INSTANCE);
+                    httpClientBuilder.setSSLHostnameVerifier(certRequired
+                            ? new DefaultHostnameVerifier() : NoopHostnameVerifier.INSTANCE);
                     
                     return httpClientBuilder;
                 })
