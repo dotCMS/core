@@ -17,6 +17,7 @@ import { MessageService } from 'primeng/api';
 import {
     buildPersistedQueryKey,
     DotActionUrlService,
+    DotContentChangeService,
     DotContentletEditUrlService,
     DotContentletService,
     DotContentSearchService,
@@ -548,14 +549,21 @@ describe('DotQueryToolPageComponent', () => {
                 );
             });
 
-            it('reruns the search on every save', () => {
+            /**
+             * #38303, T174: every save and delete in a side panel, at any depth (a relationship's
+             * "New" inside the result's panel), reruns the search through the content change
+             * notification, once each; the panel has no save handler of its own for it.
+             */
+            it('reruns the search on every content change, at any depth', () => {
                 const store = spectator.inject(DotQueryToolStore, true);
                 stubbed(store)['query'] = vi.fn().mockReturnValue('+live:true');
                 clickResult(SAMPLE_CONTENTLET);
+                const changes = spectator.inject(DotContentChangeService);
 
-                opener.opened[0].options.saved?.(SAMPLE_CONTENTLET as never);
-                opener.opened[0].options.saved?.(SAMPLE_CONTENTLET as never);
+                changes.notify({ kind: 'saved', contentlet: SAMPLE_CONTENTLET as never, depth: 0 });
+                changes.notify({ kind: 'saved', contentlet: SAMPLE_CONTENTLET as never, depth: 1 });
 
+                expect(opener.opened[0].options.saved).toBeUndefined();
                 expect(store.runSearch).toHaveBeenCalledTimes(2);
             });
 
@@ -581,7 +589,9 @@ describe('DotQueryToolPageComponent', () => {
                 stubbed(store)['query'] = vi.fn().mockReturnValue('  ');
                 clickResult(SAMPLE_CONTENTLET);
 
-                opener.opened[0].options.saved?.(SAMPLE_CONTENTLET as never);
+                spectator
+                    .inject(DotContentChangeService)
+                    .notify({ kind: 'saved', contentlet: SAMPLE_CONTENTLET as never, depth: 0 });
                 opener.opened[0].ref.close();
                 spectator.flushEffects();
 

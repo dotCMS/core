@@ -14,7 +14,11 @@ import { Button } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Toast } from 'primeng/toast';
 
-import { DotContentletEditUrlService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotContentChangeService,
+    DotContentletEditUrlService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { BundleAssetView, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotEditContentOpenerService, DotEditContentOpenOptions } from '@dotcms/edit-content';
 import { DotSidePanelRef } from '@dotcms/ui';
@@ -269,12 +273,24 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
             expect(spectator.query(Toast)).not.toBeNull();
         });
 
-        it('reloads the asset list on every save', () => {
+        // #38303, T174: through the content change notification, at any depth, once each.
+        it('reloads the asset list on every content change, at any depth', () => {
             clickRow(0);
+            const changes = spectator.inject(DotContentChangeService);
 
-            openOptions().saved?.({ inode: 'i1-saved' } as DotCMSContentlet);
+            changes.notify({
+                kind: 'saved',
+                contentlet: { inode: 'i1-saved' } as DotCMSContentlet,
+                depth: 0
+            });
+            changes.notify({
+                kind: 'saved',
+                contentlet: { inode: 'related' } as DotCMSContentlet,
+                depth: 1
+            });
 
-            expect(store.loadAssets).toHaveBeenCalledTimes(1);
+            expect(openOptions().saved).toBeUndefined();
+            expect(store.loadAssets).toHaveBeenCalledTimes(2);
         });
 
         it('reloads the asset list when the panel closes', () => {
