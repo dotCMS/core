@@ -225,6 +225,10 @@ public final class RestrictedViewToolAccess {
      * announcement always wins over that, so a container parsed from inside such a file is
      * judged by the container's own author.
      *
+     * <p>An expected denial is logged at debug: a page whose author does not hold the role
+     * refuses on every hit, and a visitor decides how often that page is hit. Only an
+     * announcement that something other than a renderer wrote over is logged as a warning.
+     *
      * @param request the request the tool was initialised with
      *
      * @return {@code true} when the render named an author who has access
@@ -247,15 +251,24 @@ public final class RestrictedViewToolAccess {
                 ? ((RenderingAuthor) announced).userId()
                 : ScriptingFileAttribute.get(request);
         if (!UtilMethods.isSet(authorId)) {
-            Logger.warn(RestrictedViewToolAccess.class,
-                    "A view tool was called while no author was announced for the code being "
-                            + "rendered, so it is refused. This is what a render path that does "
-                            + "not announce its author looks like.");
+            // Debug, not warn: a page whose author lacks the role refuses on every hit, and a
+            // visitor can repeat that hit as often as they like.
+            if (null != announced) {
+                Logger.debug(RestrictedViewToolAccess.class, () ->
+                        "A view tool was refused: the code being rendered was announced as having "
+                                + "no author of its own, which is what text built at render time "
+                                + "looks like.");
+            } else {
+                Logger.debug(RestrictedViewToolAccess.class, () ->
+                        "A view tool was called while no author was announced for the code being "
+                                + "rendered, so it is refused. This is what a render path that "
+                                + "does not announce its author looks like.");
+            }
             return false;
         }
         final boolean allowed = isScriptingDeveloper(authorId);
         if (!allowed) {
-            Logger.warn(RestrictedViewToolAccess.class, String.format(
+            Logger.debug(RestrictedViewToolAccess.class, () -> String.format(
                     "A view tool was refused: the code being rendered was last saved by user "
                             + "'%s', who does not have the %s role",
                     authorId, Role.SCRIPTING_DEVELOPER));
