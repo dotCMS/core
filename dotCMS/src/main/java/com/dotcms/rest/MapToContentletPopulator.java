@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.FileAssetContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.DotPreconditions;
@@ -250,12 +251,33 @@ public class MapToContentletPopulator  {
 
                     this.processPlainValueForBinaryField(map, field, value, contentlet);
                 } else {
+                    this.validateFileAssetName(type, field, value);
                     APILocator.getContentletAPI()
                             .setContentletProperty(contentlet, field, value);
                 }
             }
         }
     } // fillFields.
+
+    /**
+     * A File Asset takes its name from its {@code fileName} field, which the request can set
+     * independently of the uploaded file. The name is checked here as it is for a file sent inline
+     * or uploaded, so a blocked extension (in any letter case) cannot be given to the asset by
+     * renaming it.
+     *
+     * @param type  the {@link ContentType} being populated
+     * @param field the {@link Field} about to be set
+     * @param value the value sent for the field
+     * @throws IllegalArgumentException if the name has a blocked extension or is not a valid path
+     */
+    private void validateFileAssetName(final ContentType type, final Field field, final Object value) {
+
+        if (type instanceof FileAssetContentType && null != value
+                && FileAssetContentType.FILEASSET_FILE_NAME_FIELD_VAR.equals(field.getVelocityVarName())) {
+
+            securityUtils.validateFile(value.toString());
+        }
+    }
 
     private static void processPlainValueForBinaryField(final Map<String, Object> map,
                                                         final Field field,

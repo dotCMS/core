@@ -471,6 +471,27 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Scenario: a file asset is saved with the {@code fileName} field set to a listed extension, in
+     * any letter case, and no inline content, so the name does not come through the upload.
+     * Expectation: the name is refused, the same as when the file is sent inline.
+     */
+    @Test
+    public void Test_File_Asset_Name_Field_With_Listed_Extension_Any_Case_Is_Rejected()
+            throws DotDataException, DotSecurityException {
+        final ContentType fileAssetType = contentTypeAPI.find("FileAsset");
+        for (final String name : new String[] {"sample-3.jsp", "sample-4.JSP", "sample-5.Jsp"}) {
+            final Contentlet contentlet = new Contentlet();
+            contentlet.setContentTypeId(fileAssetType.id());
+            final Map<String, Object> map = new HashMap<>();
+            map.put("contentType", "FileAsset");
+            map.put("fileName", name);
+
+            assertThrows(name, IllegalArgumentException.class,
+                    () -> new MapToContentletPopulator().populate(contentlet, map));
+        }
+    }
+
     @Test
     public void Test_Pass_Categoryless_Contentlet() throws DotDataException, DotSecurityException {
         final ContentType contentType = contentTypeWithCategoryField();

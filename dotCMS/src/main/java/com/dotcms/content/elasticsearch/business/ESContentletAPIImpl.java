@@ -10124,10 +10124,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * caller holds. The clauses are appended as text, so the query is normalized first for every
      * caller, administrators included.
      * <p>
-     * Only {@link #addPermissionsToQuery(StringBuffer, User, List, boolean)} is applied here, so
-     * the count is not narrowed by category read permissions the way
-     * {@link #applyPermissionsToQuery(String, User, boolean)} narrows a search, and it can come
-     * out higher than the number of results the same query returns.
+     * The permission clauses come from
+     * {@link #addPermissionsToQuery(StringBuffer, User, List, boolean)}, the same ones a search
+     * applies on this version, so the count matches the number of results the query returns.
      *
      * @param luceneQuery the query written by the caller
      * @param user the {@link User} the count is run for, or {@code null} for an anonymous caller
