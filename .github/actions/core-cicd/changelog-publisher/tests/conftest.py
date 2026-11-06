@@ -1,8 +1,9 @@
 import os
 
-# Must be set before changelog_publisher.client is imported (BASE_URL is read at import
-# time); the real value is a repo variable, never hardcoded in the codebase.
+# Must be set before changelog_publisher.client is imported (BASE_URL and PUBLISH_ACTION_ID
+# are read at import time); the real values are repo variables, never hardcoded in the codebase.
 os.environ.setdefault("DOTCMS_DEVSITE_URL", "https://corpsites.test")
+os.environ.setdefault("DOTCMS_DEVSITE_RELEASENOTES_ACTION", "test-action-id")
 
 import pytest
 

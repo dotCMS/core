@@ -1,4 +1,4 @@
-"""Reconcile the corpsites `EvergreenState` record with a Hub snapshot (`sync-site`)."""
+"""Reconcile the auth instance's `EvergreenState` record with a Hub snapshot (`sync-site`)."""
 from __future__ import annotations
 
 import json
@@ -69,7 +69,7 @@ def reconcile(client: CorpsitesClient, hub: dict, *, apply: bool) -> SyncResult:
     hits = client.find_evergreen_state()
     if not hits:
         raise RuntimeError(
-            "EvergreenState record 'evergreen-state' not found on corpsites (prerequisite FR-044)"
+            "EvergreenState record 'evergreen-state' not found on the auth instance (prerequisite FR-044)"
         )
     if len(hits) > 1:
         raise AmbiguousMatchError("more than one 'evergreen-state' EvergreenState record")
