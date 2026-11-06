@@ -11,6 +11,7 @@ import {
     untracked,
     viewChild
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Params, UrlSerializer, UrlTree } from '@angular/router';
 
@@ -31,6 +32,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { take } from 'rxjs/operators';
 
 import {
+    DotContentChangeService,
     DotContentletEditUrlService,
     DotCurrentUserService,
     DotGlobalMessageService,
@@ -223,15 +225,20 @@ export class DotQueryToolPageComponent implements OnInit {
 
     constructor() {
         // The side panel, open while `$editRequest` is set, in whichever editor the content's type
-        // uses (#38303). Every save reruns the search; a close reruns it too and clears the request.
-        // The opener writes the open panel to this page's URL (`editContent`, `editContentLang`)
-        // and routes browser Back through the editor's guard (FR-044 to FR-047). Called rather than
-        // assigned: nothing here reads the panel back.
+        // uses (#38303). A close reruns the search and clears the request. The opener writes the
+        // open panel to this page's URL (`editContent`, `editContentLang`) and routes browser Back
+        // through the editor's guard (FR-044 to FR-047). Called rather than assigned: nothing here
+        // reads the panel back.
         injectEditContentPanel(this.$editRequest, {
-            saved: () => this.onEditPanelSaved(),
             closed: () => this.onEditPanelClosed(),
             url: {}
         });
+
+        // Every save and delete in a side panel, at any depth, reruns the search: content saved
+        // from a relationship inside the panel a row opened is in the results too (T174).
+        inject(DotContentChangeService)
+            .changes$.pipe(takeUntilDestroyed())
+            .subscribe(() => this.onContentChanged());
     }
 
     ngOnInit(): void {
@@ -323,10 +330,11 @@ export class DotQueryToolPageComponent implements OnInit {
     }
 
     /**
-     * Re-runs the search after a save so the results table reflects the edited content. Nothing
-     * runs when there is no query: a link opens a panel over a page that ran no search.
+     * Re-runs the search after a save or delete in any side panel so the results table reflects
+     * the change. Nothing runs when there is no query: a link opens a panel over a page that ran no
+     * search.
      */
-    onEditPanelSaved(): void {
+    onContentChanged(): void {
         this.#rerunSearch();
     }
 

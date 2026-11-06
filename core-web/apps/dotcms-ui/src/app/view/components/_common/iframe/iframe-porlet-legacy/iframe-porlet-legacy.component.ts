@@ -24,6 +24,7 @@ import {
 } from 'rxjs/operators';
 
 import {
+    DotContentChangeService,
     DotContentTypeService,
     DotEventsSocket,
     DotIframeService,
@@ -125,6 +126,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     readonly #siteChange$ = toObservable(this.#globalStore.siteDetails);
     private dotEventsSocket = inject(DotEventsSocket);
     private dotIframeService = inject(DotIframeService);
+    readonly #contentChanges = inject(DotContentChangeService);
     readonly #injector = inject(Injector);
 
     /** Whether the panel params in the URL are being followed; from the first access granted on. */
@@ -170,6 +172,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
             });
 
         this.subscribeToAIGeneration();
+        this.#reloadOnContentChange();
 
         // Workaroud to remove edit-content ui state
         this.#initContentEditSessionStorage();
@@ -206,6 +209,22 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
         } else {
             this.setUrl(this.url.getValue());
         }
+    }
+
+    /**
+     * Reloads the portlet's list on every save and delete in a side panel, at any depth, for as long
+     * as the portlet is shown (#38303, T174): content saved from a relationship inside the panel a
+     * row opened is in the list too. The portlet is the current one when the change arrives, as
+     * when the panel's close reloads it (`DotCustomEventHandlerService.openContent`).
+     */
+    #reloadOnContentChange(): void {
+        this.#contentChanges.changes$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+            const portletId = this.dotRouterService.currentPortlet.id;
+
+            if (portletId) {
+                this.dotIframeService.reloadData(portletId);
+            }
+        });
     }
 
     /**
