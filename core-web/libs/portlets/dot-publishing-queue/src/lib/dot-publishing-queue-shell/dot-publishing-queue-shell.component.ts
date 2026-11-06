@@ -99,7 +99,8 @@ export class DotPublishingQueueShellComponent {
     /**
      * Opens what the URL names, once, on load (#38303, FR-049). A row opened from the asset list or
      * the bundle wizard wrote its panel to the URL; a refresh or a shared link reopens it over the
-     * list, without the dialog it came from. A URL naming two panels opens neither, and loses both.
+     * list, without the dialog it came from. A link the author cannot have meant (a panel param of
+     * the wrong shape, or two panels) opens nothing, shows the standard error and loses its params.
      */
     #openFromUrl(): void {
         const intent = readPanelUrlIntent(this.#route.snapshot.queryParams);
@@ -109,8 +110,8 @@ export class DotPublishingQueueShellComponent {
             this.#openOverList({ mode: 'edit', identifier, ...(languageId ? { languageId } : {}) });
         } else if (intent.kind === 'create') {
             this.#openOverList({ mode: 'new', contentType: intent.contentType });
-        } else if (intent.kind === 'conflict') {
-            this.#panelUrl.clear();
+        } else if (intent.kind === 'refused') {
+            this.#panelUrl.refuse();
         }
     }
 
