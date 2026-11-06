@@ -67,6 +67,56 @@ describe('DotMessageService', () => {
     });
 
     describe('init', () => {
+        it('rejects a previous session response before the new session starts its bundle request', () => {
+            const failed = vi.fn();
+            service.init({ languageBundleVersion: VERSION }).subscribe({ error: failed });
+            const older = http.expectOne(DEFAULT_URL);
+            service.invalidatePendingSession();
+            older.flush({ entity: messages, languageBundleVersion: VERSION });
+            expect(failed).toHaveBeenCalledExactlyOnceWith(
+                expect.objectContaining({ message: expect.stringContaining('superseded') })
+            );
+            expect(service.loadedBundleVersion()).toBeNull();
+            expect(storage.getItem(MESSAGES_LOCALSTORAGE_KEY)).toBeNull();
+        });
+
+        it.each(['older-first', 'newer-first'])(
+            'does not share or install a previous session request for the same locale and version (%s)',
+            (order) => {
+                const params = { languageBundleVersion: VERSION };
+                const failed = vi.fn();
+                const older$ = service.init(params);
+                older$.subscribe({ error: failed });
+                const older = http.expectOne(DEFAULT_URL);
+                service.invalidatePendingSession();
+                const newer$ = service.init(params);
+                const newer = http.expectOne(DEFAULT_URL);
+                expect(newer$).not.toBe(older$);
+                const finishOlder = () =>
+                    older.flush({ entity: messages, languageBundleVersion: VERSION });
+                const finishNewer = () =>
+                    newer.flush({
+                        entity: { ...messages, 'dot.common.cancel': 'Current session' },
+                        languageBundleVersion: VERSION
+                    });
+                if (order === 'older-first') {
+                    finishOlder();
+                    expect(service.init(params)).toBe(newer$);
+                    finishNewer();
+                } else {
+                    finishNewer();
+                    finishOlder();
+                }
+                expect(failed).toHaveBeenCalledOnce();
+                expect(service.get('dot.common.cancel')).toBe('Current session');
+                expect(
+                    storage.getItem<Record<string, string>>(MESSAGES_LOCALSTORAGE_KEY)?.[
+                        'dot.common.cancel'
+                    ]
+                ).toBe('Current session');
+            }
+        );
+
         it.each(['locale', 'version'])(
             'should reject an older %s response without installing or caching it',
             (identity) => {

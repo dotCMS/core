@@ -40,6 +40,7 @@ export class DotMessageService {
     private readonly installedLanguage = signal<string | null>(null);
     private readonly inFlight = new Map<string, Observable<void>>();
     private latestRequestedIdentity: string | null = null;
+    private pendingSession = 0;
     private readonly versionMismatch = signal<LanguageBundleVersionMismatch | null>(null);
     private readonly installedVersion = signal<string | null>(null);
 
@@ -70,6 +71,12 @@ export class DotMessageService {
         return load$;
     }
 
+    /** Prevents eager requests from a previous session from installing or being reused. */
+    invalidatePendingSession(): void {
+        this.pendingSession++;
+        this.latestRequestedIdentity = null;
+    }
+
     /**
      * Retrieves the value associated with the specified key from the message map.
      * Tracks the installed bundle so reactive consumers update after recovery or a locale change.
@@ -91,7 +98,7 @@ export class DotMessageService {
     }
 
     private getAll(lang: string, expectedVersion: string | null): Observable<void> {
-        const requestKey = JSON.stringify([lang, expectedVersion]);
+        const requestKey = JSON.stringify([lang, expectedVersion, this.pendingSession]);
         // Every selection counts, including memory/cache hits and deduplicated pending requests.
         this.latestRequestedIdentity = requestKey;
         const hasInstalledMessages =

@@ -73,6 +73,7 @@ export function withSystem() {
                 _loadSession: rxMethod<Auth | null>(
                     pipe(
                         switchMap((auth) => {
+                            messages.invalidatePendingSession();
                             if (!auth?.user) {
                                 patchState(store, { systemConfig: null, _sessionStatus: 'idle' });
 

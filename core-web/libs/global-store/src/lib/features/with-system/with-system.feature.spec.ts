@@ -70,6 +70,23 @@ describe('withSystem session loading', () => {
         expect(spectator.inject(DotMessageService).init).not.toHaveBeenCalled();
     });
 
+    it('invalidates old bundle requests immediately on auth changes, before configuration resolves', () => {
+        spectator
+            .inject(DotSystemConfigService)
+            .getSystemConfig.mockReturnValue(new Subject<DotSystemConfig>());
+        emitAuth(authFor());
+        expect(spectator.inject(DotMessageService).invalidatePendingSession).toHaveBeenCalledOnce();
+        expect(spectator.inject(DotMessageService).init).not.toHaveBeenCalled();
+        emitAuth({ ...authFor(), loginAsUser: { userId: 'other', languageId: 'en_US' } } as Auth);
+        expect(spectator.inject(DotMessageService).invalidatePendingSession).toHaveBeenCalledTimes(
+            2
+        );
+        emitAuth({ user: null, loginAsUser: null } as unknown as Auth);
+        expect(spectator.inject(DotMessageService).invalidatePendingSession).toHaveBeenCalledTimes(
+            3
+        );
+    });
+
     it('loads configuration and the matching versioned bundle after login', async () => {
         emitAuth(authFor());
         await ready();
