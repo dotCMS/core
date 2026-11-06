@@ -121,6 +121,18 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
         return credentialsProvider;
     }
 
+    /**
+     * Builds the low-level client builder for the configured endpoints, including TLS settings.
+     *
+     * <p>For an {@code https} endpoint the server certificate is validated and the server name
+     * must match it, against the PEM bundle when one is loaded and the JVM truststore otherwise.
+     * Setting {@code ES_TLS_CERT_REQUIRED=false} restores the previous lenient behaviour (a PEM
+     * bundle if loaded, otherwise any single self-signed certificate, and no name check) and logs
+     * a warning.</p>
+     *
+     * @param credentialsProvider the credentials sent with each request
+     * @return the configured {@link RestClientBuilder}
+     */
     private RestClientBuilder getClientBuilder(final BasicCredentialsProvider credentialsProvider) {
         final String esAuthType = getESAuthType();
         
@@ -140,9 +152,15 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
         
         
         final boolean securedConnection = esEndpoints[0].getSchemeName().equalsIgnoreCase("https");
+        final boolean certRequired = Config.getBooleanProperty("ES_TLS_CERT_REQUIRED", true);
         if (securedConnection){
             Logger.info(this.getClass(),
                     "Initializing Elastic RestHighLevelClient using a secured https connection");
+            if (!certRequired) {
+                Logger.warn(this.getClass(), "Elastic RestHighLevelClient TLS server certificate and"
+                        + " hostname verification is turned off (ES_TLS_CERT_REQUIRED=false). Remove the"
+                        + " setting and, for a private CA, set ES_TLS_ENABLED=true with ES_AUTH_TLS_CA_CERT.");
+            }
         } else{
             Logger.warn(this.getClass(),
                     "Initializing Elastic RestHighLevelClient using an unsecured http connection");
@@ -156,7 +174,7 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                     if (sslContextFromPem != null) {
                         httpClientBuilder.setSSLContext(sslContextFromPem);
 
-                    } else if (securedConnection){
+                    } else if (securedConnection && !certRequired){
                         try {
                             httpClientBuilder.setSSLContext(SSLContexts
                                     .custom().loadTrustMaterial(new TrustSelfSignedStrategy()).build());
@@ -169,7 +187,9 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                     }
                     httpClientBuilder
                             .setDefaultCredentialsProvider(credentialsProvider);
-                    httpClientBuilder.setHostnameVerifier(AllowAllHostnameVerifier.INSTANCE);
+                    if (!certRequired) {
+                        httpClientBuilder.setHostnameVerifier(AllowAllHostnameVerifier.INSTANCE);
+                    }
                     
                     return httpClientBuilder;
                 })

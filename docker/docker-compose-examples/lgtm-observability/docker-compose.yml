@@ -81,7 +81,9 @@ services:
       ES_AUTH_TYPE: 'NONE'
       ES_INDEX_POLICY_ENABLED: 'true'
       # Additional OpenSearch environment variables for dotCMS
+      # Demo stack: the bundled search node uses a self-signed certificate
       DOT_ES_ENDPOINTS: 'https://opensearch:9200'
+      DOT_ES_TLS_CERT_REQUIRED: 'false'
       DOT_ES_AUTH_BASIC_PASSWORD: 'admin'
       DOT_ES_AUTH_TYPE: 'BASIC'
       DOT_ES_PROTOCOL: 'https'

@@ -84,9 +84,10 @@ public enum OSIndexProperty {
     TLS_TRUST_SELF_SIGNED("OS_TLS_TRUST_SELF_SIGNED", null),
 
     /**
-     * Enforce TLS certificate and hostname verification.
-     * Defaults to {@code false} — set to {@code true} only when the server certificate is
-     * trusted by the JVM truststore or {@code OS_TLS_CA_CERT} is configured. No ES equivalent.
+     * Enforce TLS certificate and hostname verification. Defaults to {@code true}; set to
+     * {@code false} only to connect to a server whose certificate cannot be verified (a warning is
+     * logged). A private CA is configured with {@code OS_TLS_CA_CERT}. The Elasticsearch client has
+     * its own {@code ES_TLS_CERT_REQUIRED}.
      */
     TLS_CERT_REQUIRED("OS_TLS_CERT_REQUIRED", null),
 
@@ -96,7 +97,7 @@ public enum OSIndexProperty {
     /** Path to the PEM client private key for mTLS. No ES equivalent. */
     TLS_CLIENT_KEY("OS_TLS_CLIENT_KEY", null),
 
-    /** Path to the PEM CA certificate used to verify the server. No ES equivalent. */
+    /** Path to the PEM file of the CA that signed the server certificate. No ES equivalent. */
     TLS_CA_CERT("OS_TLS_CA_CERT", null),
 
     // -------------------------------------------------------------------------

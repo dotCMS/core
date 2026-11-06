@@ -42,7 +42,9 @@ services:
         DB_USERNAME: 'dotcmsdbuser'
         DB_PASSWORD: 'password'
         DOT_ES_AUTH_BASIC_PASSWORD: 'admin'
+        # Demo stack: the bundled search node uses a self-signed certificate
         DOT_ES_ENDPOINTS: 'https://opensearch:9200'
+        DOT_ES_TLS_CERT_REQUIRED: 'false'
         DOT_INITIAL_ADMIN_PASSWORD: 'admin'
         DOT_DOTCMS_CLUSTER_ID: 'dotcms-redis-cluster'
         DOT_DOT_PUBSUB_PROVIDER_OVERRIDE: 'com.dotcms.dotpubsub.RedisPubSubImpl'
