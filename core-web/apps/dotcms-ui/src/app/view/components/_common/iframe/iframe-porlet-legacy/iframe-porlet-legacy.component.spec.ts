@@ -37,6 +37,7 @@ describe('IframePortletLegacyComponent — the panel in the URL', () => {
     let queryParams$: BehaviorSubject<Params>;
     let openContent: Mock;
     let clear: Mock;
+    let refuse: Mock;
 
     const createComponent = createComponentFactory({
         component: IframePortletLegacyComponent,
@@ -52,6 +53,7 @@ describe('IframePortletLegacyComponent — the panel in the URL', () => {
         queryParams$ = new BehaviorSubject<Params>(params);
         openContent = vi.fn();
         clear = vi.fn();
+        refuse = vi.fn();
 
         spectator = createComponent({
             providers: [
@@ -66,7 +68,10 @@ describe('IframePortletLegacyComponent — the panel in the URL', () => {
                     }
                 },
                 mockProvider(DotCustomEventHandlerService, { openContent, handle: vi.fn() }),
-                { provide: DotPanelUrlStateService, useValue: { clear, register: vi.fn() } },
+                {
+                    provide: DotPanelUrlStateService,
+                    useValue: { clear, refuse, register: vi.fn() }
+                },
                 mockProvider(DotRouterService, {
                     portletReload$: NEVER,
                     isJSPPortlet: vi.fn().mockReturnValue(true),
@@ -191,15 +196,20 @@ describe('IframePortletLegacyComponent — the panel in the URL', () => {
 
         expect(openContent).not.toHaveBeenCalled();
         expect(clear).not.toHaveBeenCalled();
+        expect(refuse).not.toHaveBeenCalled();
     });
 
-    // FR-049: a URL naming two panels opens neither, and loses both, with the create's folder.
-    it('opens nothing for a URL that names two panels, and clears them with the folder', async () => {
-        mount({ editContent: IDENTIFIER, createContent: 'Blog', folder: FOLDER_INODE });
+    // FR-049, T172: a link the author cannot have meant opens nothing, tells them, and loses its
+    // params with the create's folder.
+    it.each([
+        ['names two panels', { editContent: IDENTIFIER, createContent: 'Blog', folder: FOLDER_INODE }],
+        ['names content by a malformed identifier', { editContent: 'wrong-identifier' }]
+    ])('refuses a URL that %s, with the folder', async (_label, params) => {
+        mount(params);
         await settle();
 
         expect(openContent).not.toHaveBeenCalled();
-        expect(clear).toHaveBeenCalledTimes(1);
-        expect(clear).toHaveBeenCalledWith(['folder']);
+        expect(refuse).toHaveBeenCalledTimes(1);
+        expect(refuse).toHaveBeenCalledWith(['folder']);
     });
 });

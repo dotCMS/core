@@ -2128,18 +2128,26 @@ describe('resolveContentDriveUrlIntent', () => {
             });
         });
 
-        it.each(['0', '-1', '1.5', 'abc', ''])(
-            'drops a language that is not a positive integer (%s)',
+        // A link the author cannot have meant is refused, so the shell can tell them (T172).
+        it.each(['0', '-1', '1.5', 'abc'])(
+            'refuses a language that is not a positive integer (%s)',
             (editContentLang) => {
                 expect(
                     resolveContentDriveUrlIntent({ editContent: CONTENT_ID, editContentLang })
-                ).toEqual({ kind: 'edit', identifier: CONTENT_ID, languageId: undefined });
+                ).toEqual({ kind: 'refused', reason: 'malformed' });
             }
         );
 
-        it('treats the old editContent=new create marker as absent', () => {
+        it('leaves the language out when the link carries an empty one', () => {
+            expect(
+                resolveContentDriveUrlIntent({ editContent: CONTENT_ID, editContentLang: '' })
+            ).toEqual({ kind: 'edit', identifier: CONTENT_ID, languageId: undefined });
+        });
+
+        it('refuses the old editContent=new create marker', () => {
             expect(resolveContentDriveUrlIntent({ editContent: 'new' })).toEqual({
-                kind: 'none'
+                kind: 'refused',
+                reason: 'malformed'
             });
         });
 
@@ -2152,15 +2160,19 @@ describe('resolveContentDriveUrlIntent', () => {
 
     /**
      * Values from the URL reach a Lucene query and REST paths, so only the shapes those can take
-     * are accepted; anything else reads as absent (Constitution III, #37759 T109, T111).
+     * are accepted (Constitution III, #37759 T109, T111). A panel param of any other shape refuses
+     * the link (T172); a folder dialog param of another shape still reads as absent.
      */
     describe('refusing values that are not what they claim to be', () => {
         it.each([
             ['an injected Lucene clause', `${CONTENT_ID} OR +working:true`],
             ['a path', '../folder/x'],
             ['a short placeholder', 'id-1']
-        ])('ignores an editContent that is %s', (_label, editContent) => {
-            expect(resolveContentDriveUrlIntent({ editContent })).toEqual({ kind: 'none' });
+        ])('refuses an editContent that is %s', (_label, editContent) => {
+            expect(resolveContentDriveUrlIntent({ editContent })).toEqual({
+                kind: 'refused',
+                reason: 'malformed'
+            });
         });
 
         it.each([
@@ -2171,9 +2183,12 @@ describe('resolveContentDriveUrlIntent', () => {
         });
 
         it.each(['../contenttype', 'Blog Post', 'Blog?x=1', 'Blog%2F..'])(
-            'ignores a createContent that is not a content type variable or id (%s)',
+            'refuses a createContent that is not a content type variable or id (%s)',
             (createContent) => {
-                expect(resolveContentDriveUrlIntent({ createContent })).toEqual({ kind: 'none' });
+                expect(resolveContentDriveUrlIntent({ createContent })).toEqual({
+                    kind: 'refused',
+                    reason: 'malformed'
+                });
             }
         );
 
@@ -2188,10 +2203,10 @@ describe('resolveContentDriveUrlIntent', () => {
             });
         });
 
-        it('does not let a refused value make a conflict', () => {
+        it('refuses a malformed value beside a valid one', () => {
             expect(
                 resolveContentDriveUrlIntent({ editContent: 'id-1', createContent: 'Banner' })
-            ).toEqual({ kind: 'create', contentType: 'Banner' });
+            ).toEqual({ kind: 'refused', reason: 'malformed' });
         });
     });
 
@@ -2239,7 +2254,7 @@ describe('resolveContentDriveUrlIntent', () => {
         it('is a conflict for Edit Code with a folder dialog', () => {
             expect(
                 resolveContentDriveUrlIntent({ editCode: INODE, editFolder: FOLDER_ID })
-            ).toEqual({ kind: 'conflict' });
+            ).toEqual({ kind: 'refused', reason: 'conflict' });
         });
     });
 
@@ -2280,10 +2295,12 @@ describe('resolveContentDriveUrlIntent', () => {
             folderPermissions: { folderPermissions: FOLDER_ID }
         };
 
+        const CONFLICT = { kind: 'refused', reason: 'conflict' };
+
         it('is a conflict when an edit and a create are both asked for', () => {
             expect(
                 resolveContentDriveUrlIntent({ editContent: CONTENT_ID, createContent: 'Banner' })
-            ).toEqual({ kind: 'conflict' });
+            ).toEqual(CONFLICT);
         });
 
         const panelWithFolder = Object.entries(PANEL_PARAMS).flatMap(([panel, panelParams]) =>
@@ -2294,7 +2311,7 @@ describe('resolveContentDriveUrlIntent', () => {
         );
 
         it.each(panelWithFolder)('is a conflict for %s with %s', (_panel, _folder, params) => {
-            expect(resolveContentDriveUrlIntent(params)).toEqual({ kind: 'conflict' });
+            expect(resolveContentDriveUrlIntent(params)).toEqual(CONFLICT);
         });
 
         const folderPairs = [
@@ -2306,13 +2323,13 @@ describe('resolveContentDriveUrlIntent', () => {
         it.each(folderPairs)('is a conflict for %s with %s', (first, second) => {
             expect(
                 resolveContentDriveUrlIntent({ ...FOLDER_PARAMS[first], ...FOLDER_PARAMS[second] })
-            ).toEqual({ kind: 'conflict' });
+            ).toEqual(CONFLICT);
         });
 
-        it('does not count the ignored create marker as a second panel', () => {
+        it('refuses the retired create marker beside a valid create', () => {
             expect(
                 resolveContentDriveUrlIntent({ editContent: 'new', createContent: 'Banner' })
-            ).toEqual({ kind: 'create', contentType: 'Banner' });
+            ).toEqual({ kind: 'refused', reason: 'malformed' });
         });
     });
 });

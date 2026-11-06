@@ -65,7 +65,7 @@ const shellProviders = () => [
     mockProvider(DotEditContentOpenerService, {
         open: vi.fn(() => new DotSidePanelRef(() => undefined))
     }),
-    mockProvider(DotPanelUrlStateService, { clear: vi.fn(), register: vi.fn() })
+    mockProvider(DotPanelUrlStateService, { clear: vi.fn(), refuse: vi.fn(), register: vi.fn() })
 ];
 
 describe('DotPublishingQueueShellComponent', () => {
@@ -361,13 +361,18 @@ describe('DotPublishingQueueShellComponent — the panel named in the URL', () =
 
         expect(opened()).not.toHaveBeenCalled();
         expect(spectator.inject(DotPanelUrlStateService).clear).not.toHaveBeenCalled();
+        expect(spectator.inject(DotPanelUrlStateService).refuse).not.toHaveBeenCalled();
     });
 
-    it('opens nothing for a URL that names two panels, and clears them', () => {
-        mount({ editContent: IDENTIFIER, createContent: 'Blog' });
+    // A link the author cannot have meant opens nothing, tells them, and loses its params (T172).
+    it.each([
+        ['names two panels', { editContent: IDENTIFIER, createContent: 'Blog' }],
+        ['names content by a malformed identifier', { editContent: 'wrong-identifier' }]
+    ])('refuses a URL that %s', (_label, queryParams) => {
+        mount(queryParams);
 
         expect(opened()).not.toHaveBeenCalled();
-        expect(spectator.inject(DotPanelUrlStateService).clear).toHaveBeenCalledTimes(1);
+        expect(spectator.inject(DotPanelUrlStateService).refuse).toHaveBeenCalledTimes(1);
     });
 
     /**
