@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { firstValueFrom, of } from 'rxjs';
+import { firstValueFrom, of, Subject } from 'rxjs';
 import { vi } from 'vitest';
 
 import { HttpClient } from '@angular/common/http';
@@ -91,6 +91,54 @@ describe('DotMessageService', () => {
             await firstValueFrom(dotMessageService.init());
             expect(dotLocalstorageService.getItem).toHaveBeenCalledWith('dotMessagesKeys');
             expect(http.get).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * #38303, T175: the messages arrive after the app's first screens are built (a new build date
+     * fetches them again), so text built before then reads as raw keys. `ready$` tells when they
+     * are there.
+     */
+    describe('ready$', () => {
+        it('emits once the messages arrive over HTTP, and replays it to later subscribers', () => {
+            const response = new Subject<{ entity: Record<string, string> }>();
+            vi.spyOn<any, any>(http, 'get').mockReturnValue(response);
+            vi.spyOn(dotLocalstorageService, 'getItem').mockReturnValue(null);
+            const labels: string[] = [];
+            dotMessageService.ready$.subscribe(() =>
+                labels.push(dotMessageService.get('dot.common.cancel'))
+            );
+
+            dotMessageService.init();
+            expect(labels).toEqual([]);
+
+            response.next({ entity: messages });
+            expect(labels).toEqual(['Cancel']);
+
+            const late = vi.fn();
+            dotMessageService.ready$.subscribe(late);
+            expect(late).toHaveBeenCalledTimes(1);
+        });
+
+        it('emits at once when the messages come from local storage', () => {
+            dotLocalstorageService.setItem(MESSAGES_LOCALSTORAGE_KEY, messages);
+            dotLocalstorageService.setItem(LANGUAGE_LOCALSTORAGE_KEY, DEFAULT_LANG);
+            dotLocalstorageService.setItem(BUILDATE_LOCALSTORAGE_KEY, '2020-01-01');
+            const ready = vi.fn();
+            dotMessageService.ready$.subscribe(ready);
+
+            dotMessageService.init({ buildDate: '2020-01-01' });
+
+            expect(ready).toHaveBeenCalledTimes(1);
+            expect(http.get).not.toHaveBeenCalled();
+        });
+
+        it('emits nothing before the messages are asked for', () => {
+            const ready = vi.fn();
+
+            dotMessageService.ready$.subscribe(ready);
+
+            expect(ready).not.toHaveBeenCalled();
         });
     });
 
