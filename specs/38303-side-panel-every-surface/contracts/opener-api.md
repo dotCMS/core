@@ -211,7 +211,7 @@ Behaviour notes carried over from `injectSidePanel`: a request that changes whil
 | UVE editor | `injectEditContentPanel` on the editor component | no, the URL names the page |
 | UVE shell (Properties outside the content route) | `open()` with the shell's injector | no |
 | Query Tool | `injectEditContentPanel` | yes, `{}` |
-| Pages portlet | `open()` through `DotPageActionsService.openContent(request, refresh)` with the component's injector, for Edit and for what the URL names on load | yes, `{}` |
+| Pages portlet | `open()` through `DotPageActionsService.openContent(request)` with the component's injector, for Edit (from either row menu) and for what the URL names on load; the service refreshes the listing on every `saved` and `closed` | yes, `{}` |
 | Publishing Queue dialogs | `open()` with the dialog component's injector | yes, `{}` |
 | Publishing Queue shell | `open()` with the shell's injector, for what the URL names on load: the panel reopens over the list, not the dialog | yes, `{}` |
 | Custom-event handler (legacy JSP portlets) | `open()` through its public `openContent(request)`, with the side panel host's injector, for the portlets' events and for what a portlet's URL names (`IframePortletLegacyComponent`) | yes, `{}` |
