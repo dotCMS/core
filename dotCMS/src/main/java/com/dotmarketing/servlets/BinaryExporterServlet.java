@@ -339,6 +339,14 @@ public class BinaryExporterServlet extends HttpServlet {
 					assetInode = content.getInode();
 				}
 
+				// A missing inode resolves to no version at all, and every gate below reads one.
+				if (content == null) {
+					Logger.debug(this, "Content '" + fieldVarName + "' with inode: " + assetInode
+							+ " was not found");
+					resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+					return;
+				}
+
 				// A lookup by inode resolves no variant of its own, so the version the caller named
 				// may live in one it cannot be served. Temporal files have no variant axis.
 				if (!isTempBinaryImage && !WebAPILocator.getVariantWebAPI()
