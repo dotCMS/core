@@ -734,6 +734,39 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link MaintenanceResource#listSessions(HttpServletRequest, HttpServletResponse)}
+     * Given scenario: a session tracked on this node belongs to a user who was made inactive after
+     *                 the session was registered (as happens when the change is made on another
+     *                 node), and an administrator lists the sessions
+     * Expected result: the session is listed under that user, not as the anonymous user, and the
+     *                  listing leaves the session's user id in place, so a later kill still knows
+     *                  whose login tokens to invalidate
+     */
+    @Test
+    public void test_listSessions_sessionOfUserMadeInactive_isListedUnderThatUser() throws Exception {
+        final User inactive = newUser();
+        final User toSave = (User) APILocator.getUserAPI().loadUserById(inactive.getUserId()).clone();
+        toSave.setActive(false);
+        APILocator.getUserAPI().save(toSave, APILocator.systemUser(), false);
+        // registered after the status change, like a session this node tracks for a user made
+        // inactive elsewhere
+        final HttpSession session = newPlantedSession(inactive, "7.7.7.7");
+        final HttpServletRequest request = createAdminRequest();
+
+        final List<SessionView> sessions = resource.listSessions(request, mockResponse).getEntity();
+
+        final SessionView view = sessions.stream()
+                .filter(candidate -> "7.7.7.7".equals(candidate.address()))
+                .findFirst().orElse(null);
+        assertNotNull("the inactive user's session must be listed", view);
+        assertEquals("listed under the stored user, not the anonymous user",
+                inactive.getUserId(), view.userId());
+        assertEquals(inactive.getEmailAddress(), view.userEmail());
+        assertEquals("listing must not sign the session out",
+                inactive.getUserId(), session.getAttribute(WebKeys.USER_ID));
+    }
+
+    /**
      * Given scenario: a non-admin user calls listSessions
      * Expected result: SecurityException is thrown
      */

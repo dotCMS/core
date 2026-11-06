@@ -1090,20 +1090,12 @@ public class MaintenanceResource implements Serializable {
         final List<SessionView> sessions = new ArrayList<>();
 
         for (final HttpSession session : sessionMonitor.getUserSessions().values()) {
-            User sessionUser = Try.of(() -> PortalUtil.getUser(session)).getOrNull();
+            User sessionUser = sessionUser(session).orElse(null);
             if (sessionUser == null) {
-                // the session's user may have been made inactive or removed after login:
-                // still list the session under the stored record when there is one
-                sessionUser = sessionUserId(session)
-                        .flatMap(userId -> Try.of(() -> APILocator.getUserAPI().loadUserById(userId))
-                                .toJavaOptional())
-                        .orElse(null);
-            }
-            if (sessionUser == null) {
-                Logger.warn(this, "Could not resolve the user of a tracked session in /_sessions (neither PortalUtil.getUser nor the stored record resolved it); falling back to anonymous user");
+                Logger.warn(this, "Could not resolve the user of a tracked session in /_sessions (the session names no user, or the record no longer exists); falling back to anonymous user");
                 sessionUser = Try.of(() -> APILocator.getUserAPI().getAnonymousUser())
                         .getOrElseThrow(e -> new DotRuntimeException(
-                                "Could not resolve session user (primary PortalUtil.getUser returned null or failed) and the anonymous-user fallback also failed", e));
+                                "Could not resolve the session user and the anonymous-user fallback also failed", e));
             }
 
             sessions.add(SessionView.builder()
@@ -1217,6 +1209,30 @@ public class MaintenanceResource implements Serializable {
      */
     private static Optional<String> sessionUserId(final HttpSession session) {
         return sessionAttribute(session, com.liferay.portal.util.WebKeys.USER_ID);
+    }
+
+    /**
+     * Returns the user record a tracked session is listed under: the record of the session's
+     * stored user id or, for a login that stores only the {@link User} object, of that copy's id.
+     * The record is read as it is stored, so a session whose user was made inactive after login
+     * is still listed under that user. The session itself is left untouched: resolving its user
+     * through {@link PortalUtil#getUser(HttpSession)} would sign out a session whose user is no
+     * longer usable, which removes the ids the kill tools need to invalidate that user's login
+     * tokens.
+     *
+     * @param session a tracked session
+     * @return the {@link User} the session is listed under, or empty when the session names no
+     *         user or the record no longer exists
+     */
+    private static Optional<User> sessionUser(final HttpSession session) {
+        return sessionUserId(session)
+                .or(() -> Try.of(() -> session.getAttribute(com.liferay.portal.util.WebKeys.USER))
+                        .toJavaOptional()
+                        .filter(User.class::isInstance)
+                        .map(stored -> ((User) stored).getUserId())
+                        .filter(UtilMethods::isSet))
+                .flatMap(userId -> Try.of(() -> APILocator.getUserAPI().loadUserById(userId))
+                        .toJavaOptional());
     }
 
     /**

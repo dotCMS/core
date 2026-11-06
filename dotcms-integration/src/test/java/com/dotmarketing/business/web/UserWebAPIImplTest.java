@@ -211,6 +211,33 @@ public class UserWebAPIImplTest {
         assertNull("the session no longer names the user", session.getAttribute(WebKeys.USER_ID));
     }
 
+    /**
+     * Method to test: {@link UserWebAPIImpl#getLoggedInUser(HttpServletRequest)} and
+     * {@link UserWebAPIImpl#getUser(HttpServletRequest)}
+     * Given Scenario: a login filter identifies the user by setting the user id on the request
+     * (no session user), first while the user is active and again after the user is made inactive.
+     * ExpectedResult: the active user is the logged-in user; once inactive, the request has no
+     * logged-in user and counts as anonymous.
+     */
+    @Test
+    public void test_userIdOnRequest_isResolvedOnlyWhileTheUserIsActive() throws Exception {
+        final User user = newBackEndUser();
+        createdUsers.add(user);
+        final HttpServletRequest whileActive = anonymousRequest();
+        whileActive.setAttribute(WebKeys.USER_ID, user.getUserId());
+        assertEquals(user, userWebAPI.getLoggedInUser(whileActive));
+
+        final User toSave = (User) APILocator.getUserAPI().loadUserById(user.getUserId()).clone();
+        toSave.setActive(false);
+        APILocator.getUserAPI().save(toSave, APILocator.systemUser(), false);
+
+        final HttpServletRequest onceInactive = anonymousRequest();
+        onceInactive.setAttribute(WebKeys.USER_ID, user.getUserId());
+        assertNull("an inactive user named on the request is not logged in",
+                userWebAPI.getLoggedInUser(onceInactive));
+        assertEquals(userWebAPI.getAnonymousUserNoThrow(), userWebAPI.getUser(onceInactive));
+    }
+
     private static User newBackEndUser() throws Exception {
         return new UserDataGen().roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
     }
