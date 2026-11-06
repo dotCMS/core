@@ -568,7 +568,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		if(permissionable instanceof Host){	
 			//Send a websocket event to notificate a site permission change  
 			systemEventsAPI.pushAsync(SystemEventType.UPDATE_SITE_PERMISSIONS,
-					new Payload(permissionable, Visibility.GLOBAL,	(String) null));
+					sitePermissionsPayload((Host) permissionable));
 		}
 	}
 
@@ -713,7 +713,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         if(permissionable instanceof Host){	
 			//Send a websocket event to notificate a site permission change  
 			systemEventsAPI.pushAsync(SystemEventType.UPDATE_SITE_PERMISSIONS,
-					new Payload(permissionable, Visibility.GLOBAL,	(String) null));
+					sitePermissionsPayload((Host) permissionable));
 		}
     }
 
@@ -779,7 +779,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			if(permissionable instanceof Host){	
 				//Send a websocket event to notificate a site permission change  
 				systemEventsAPI.pushAsync(SystemEventType.UPDATE_SITE_PERMISSIONS,
-						new Payload(permissionable, Visibility.GLOBAL,	(String) null));
+						sitePermissionsPayload((Host) permissionable));
 			}
 		}
 
@@ -904,7 +904,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		if(permissionable instanceof Host){	
 			//Send a websocket event to notificate a site permission change  
 			systemEventsAPI.pushAsync(SystemEventType.UPDATE_SITE_PERMISSIONS,
-					new Payload(permissionable, Visibility.GLOBAL,	(String) null));
+					sitePermissionsPayload((Host) permissionable));
 		}
 
 		AdminLogger.log(PermissionBitAPIImpl.class, "assign Permissions Action", "Assigning permissions to :"+permissionable.getPermissionId(),user);
@@ -2089,6 +2089,24 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			isCopy = contentlet.getBoolProperty(Contentlet.IS_COPY);
 		}
 		return isCopy;
+	}
+
+
+	/**
+	 * Builds the payload of the event sent to every connected session when the permissions of a site
+	 * change. It carries only what receivers need to tell which site changed, its identifier and host
+	 * name, not the whole {@link Host}. A missing site, identifier or host name is sent as an empty value.
+	 *
+	 * @param site the {@link Host} whose permissions changed
+	 * @return the event payload
+	 */
+	private static Payload sitePermissionsPayload(final Host site) {
+		if (null == site) {
+			return new Payload(Map.of(), Visibility.GLOBAL, (String) null);
+		}
+		return new Payload(Map.of(
+				"identifier", Objects.toString(site.getIdentifier(), ""),
+				"hostname", Objects.toString(site.getHostname(), "")), Visibility.GLOBAL, (String) null);
 	}
 
 }
