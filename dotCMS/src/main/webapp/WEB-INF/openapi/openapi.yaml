@@ -13385,8 +13385,9 @@ paths:
   /v1/maintenance/_sessions:
     delete:
       description: "Walks every active HTTP session tracked by SessionMonitor, skips\
-        \ the caller's own session, and invalidates the rest. Returns the count of\
-        \ invalidated sessions."
+        \ the caller's own session, and invalidates the rest. The login tokens of\
+        \ every user whose session was invalidated are invalidated as well, so those\
+        \ clients must log in again. Returns the count of invalidated sessions."
       operationId: killAllSessions
       responses:
         "200":
@@ -13434,10 +13435,12 @@ paths:
       - Maintenance
   /v1/maintenance/_sessions/{token}:
     delete:
-      description: Invalidates the session whose HMAC-obfuscated token is supplied.
-        The caller's own session cannot be invalidated this way. The CSRF secret must
-        have been issued by GET /v1/maintenance/_sessions within the last 15 minutes
-        — otherwise this endpoint returns 403 and the client must re-list to refresh.
+      description: "Invalidates the session whose HMAC-obfuscated token is supplied.\
+        \ The login tokens issued to the session's user are invalidated as well, so\
+        \ that user's clients must log in again. The caller's own session cannot be\
+        \ invalidated this way. The CSRF secret must have been issued by GET /v1/maintenance/_sessions\
+        \ within the last 15 minutes — otherwise this endpoint returns 403 and the\
+        \ client must re-list to refresh."
       operationId: killSession
       parameters:
       - description: HMAC-obfuscated session token returned by GET /_sessions

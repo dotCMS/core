@@ -2,12 +2,15 @@ package com.dotcms.rest;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.business.CloseDB;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.mock.request.MockSession;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.util.IntegrationTestInitService;
@@ -15,10 +18,16 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import java.util.ArrayList;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.ws.rs.core.Response;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -34,6 +43,17 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
   private static User cmsAnon = null;
   private static User apiUser = null;
   private static User cmsAdmin = null;
+
+  /** Users created by the tests below, removed once after the class. */
+  private static final List<User> createdUsers = new ArrayList<>();
+
+  /**
+   * Removes the users the tests created.
+   */
+  @AfterClass
+  public static void cleanup() {
+    createdUsers.forEach(UserDataGen::remove);
+  }
   @CloseDB
   @BeforeClass
   public static void init() throws Exception {
@@ -481,6 +501,82 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
 
   }
 
+  /**
+   * Method to test: {@link InitBuilder#init()} with {@link InitBuilder#requiredBackendUser(boolean)}
+   * Given Scenario: a back-end user logged in through the session, which holds the user id, is
+   * made inactive after the login.
+   * ExpectedResult: a request on that session is accepted before the change and answered 401
+   * after it.
+   */
+  @Test
+  public void reject_session_user_made_inactive_after_login() throws Exception {
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, NONE);
+    final User user = new UserDataGen().roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+    createdUsers.add(user);
+    final HttpSession session = new MockSession(UUIDGenerator.generateUuid());
+    session.setAttribute(WebKeys.USER_ID, user.getUserId());
 
+    final InitDataObject accepted = new WebResource.InitBuilder()
+        .requiredBackendUser(true)
+        .requestAndResponse(requestOnSession(session), response)
+        .init();
+    assertEquals("an active session user is accepted", user.getUserId(), accepted.getUser().getUserId());
+
+    final User toSave = (User) APILocator.getUserAPI().loadUserById(user.getUserId()).clone();
+    toSave.setActive(false);
+    APILocator.getUserAPI().save(toSave, APILocator.systemUser(), false);
+
+    try {
+      new WebResource.InitBuilder()
+          .requiredBackendUser(true)
+          .requestAndResponse(requestOnSession(session), response)
+          .init();
+      fail("a session whose user was made inactive must be rejected");
+    } catch (final com.dotcms.rest.exception.SecurityException e) {
+      assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), e.getResponse().getStatus());
+    }
+  }
+
+  /**
+   * Method to test: {@link InitBuilder#init()} with {@link InitBuilder#requiredBackendUser(boolean)}
+   * Given Scenario: a back-end user logged in through the session is deleted after the login.
+   * ExpectedResult: a request on that session is answered 401 after the deletion.
+   */
+  @Test
+  public void reject_session_user_deleted_after_login() throws Exception {
+    Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, NONE);
+    final User user = new UserDataGen().roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+    final HttpSession session = new MockSession(UUIDGenerator.generateUuid());
+    session.setAttribute(WebKeys.USER_ID, user.getUserId());
+    final InitDataObject accepted = new WebResource.InitBuilder()
+        .requiredBackendUser(true)
+        .requestAndResponse(requestOnSession(session), response)
+        .init();
+    assertEquals(user.getUserId(), accepted.getUser().getUserId());
+
+    APILocator.getUserAPI().delete(APILocator.getUserAPI().loadUserById(user.getUserId()),
+        APILocator.systemUser(), APILocator.systemUser(), false);
+
+    try {
+      new WebResource.InitBuilder()
+          .requiredBackendUser(true)
+          .requestAndResponse(requestOnSession(session), response)
+          .init();
+      fail("a session whose user was deleted must be rejected");
+    } catch (final com.dotcms.rest.exception.SecurityException e) {
+      assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), e.getResponse().getStatus());
+    }
+  }
+
+  /**
+   * A new request on the given session, as each browser request after a login is. Each request
+   * is a new object because the user resolved for a request is kept on that request.
+   */
+  private static HttpServletRequest requestOnSession(final HttpSession session) {
+    final MockSessionRequest sessionRequest = new MockSessionRequest(
+        new MockHttpRequestIntegrationTest("localhost", "/api/testing-web-resorce").request());
+    sessionRequest.setSession(session);
+    return new MockAttributeRequest(sessionRequest).request();
+  }
 
 }
