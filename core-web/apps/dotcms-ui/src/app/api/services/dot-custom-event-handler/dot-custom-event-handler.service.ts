@@ -159,15 +159,17 @@ export class DotCustomEventHandlerService {
      * Opens a request in the side panel for the current legacy portlet (#38303, R11): for the
      * portlet's events, for what the portlet's URL names on load (`IframePortletLegacyComponent`,
      * FR-049), and for the Workflow Tasks detail's "Edit Content" (`DotWorkflowTaskComponent`,
-     * FR-025a). The request names the portlet current now, every save and the close reload its
-     * list, and the panel is written to its URL like on every surface but the page editor (FR-044).
+     * FR-025a). The request names the portlet current now, the close reloads its list, and the
+     * panel is written to its URL like on every surface but the page editor (FR-044). A save does
+     * not reload the list here: the portlet, while it is shown, reloads it on every save and delete
+     * in any panel (`IframePortletLegacyComponent`, T174).
      *
      * Nothing opens until `DotSidePanelHostComponent` has registered its injector, which it does
      * before any portlet can send an event; a request before then is logged as an error.
      *
      * @param request What to open, without the portlet.
-     * @param after The caller's own `saved` and `closed`, run after the portlet's list reloads: the
-     * Workflow Tasks detail views its task again in them.
+     * @param after The caller's own `saved`, passed on as it is, and `closed`, run after the
+     * portlet's list reloads: the Workflow Tasks detail views its task again in them.
      */
     openContent(
         request: DotEditContentRequest,
@@ -184,22 +186,17 @@ export class DotCustomEventHandlerService {
         }
 
         const portletId = this.dotRouterService.currentPortlet.id;
-        const reload = () => {
-            if (portletId) {
-                this.dotIframeService.reloadData(portletId);
-            }
-        };
 
         void openEditContentPanel(
             { ...request, portletId },
             {
                 injector,
-                saved: (contentlet) => {
-                    reload();
-                    after.saved?.(contentlet);
-                },
+                saved: after.saved,
                 closed: () => {
-                    reload();
+                    if (portletId) {
+                        this.dotIframeService.reloadData(portletId);
+                    }
+
                     after.closed?.();
                 },
                 url: {}

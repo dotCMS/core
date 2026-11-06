@@ -634,7 +634,9 @@ describe('DotEditContentOpenerService', () => {
         /** Every change announced from now on, in order. */
         const announced = (): DotContentChange[] => {
             const changes: DotContentChange[] = [];
-            spectator.inject(DotContentChangeService).changes$.subscribe((change) => changes.push(change));
+            spectator
+                .inject(DotContentChangeService)
+                .changes$.subscribe((change) => changes.push(change));
 
             return changes;
         };
@@ -1130,12 +1132,15 @@ const askingPanels: AskingPanelComponent[] = [];
 
 /**
  * Panel content that asks to open other content the way both editor panels do: an `openContent`
- * event carrying its own injector.
+ * event carrying its own injector. It has `saved` and `deleted` as both editors do: the opener
+ * always listens to them, for the content change notification (T174).
  */
 @Component({ selector: 'dot-test-asking-panel', template: '' })
 class AskingPanelComponent {
     readonly request = input<DotEditContentRequest | null>(null);
     readonly createUrl = input<string | null>(null);
+    readonly saved = output<DotCMSContentlet>();
+    readonly deleted = output<void>();
     readonly openContent = output<DotOpenContentEvent>();
     readonly #injector = inject(Injector);
 
