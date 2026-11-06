@@ -134,6 +134,7 @@ import org.junit.runners.Suite;
     com.dotmarketing.portlets.htmlpageasset.business.render.page.PageViewSerializerRelatedContentTest.class,
         PublisherQueueJobTest.class,
         ContentToStringUtilTest.class,
+    com.dotcms.enterprise.publishing.remote.BundleTrustedListRoundTripTest.class,
         CacheResourceIntegrationTest.class,
     com.dotmarketing.portlets.contentlet.action.ImportContentletsActionTest.class,
         InodeExistenceCheckIntegrationTest.class,
