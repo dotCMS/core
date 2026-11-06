@@ -7,7 +7,8 @@
 #
 # Nothing here mirrors core-web's `overrides`, `peerDependencyRules` or `allowBuilds`:
 # this is a three-dependency Newman runner (newman, xml2js, yargs) with no peer
-# conflicts and no dependency that builds.
+# conflicts and no dependency that builds. The one override at the bottom is this
+# module's own, for a pin inside newman, not a copy of core-web's.
 
 # The important one. pnpm 11 changed the default to `install`, and pom.xml runs
 # `pnpm run start` in the integration-test phase behind a separate, skippable
@@ -21,3 +22,10 @@ verifyDepsBeforeRun: warn
 trustPolicy: no-downgrade
 blockExoticSubdeps: true
 strictDepBuilds: true
+
+# newman 6.2.x pins postman-runtime 7.39.1, which pins handlebars exactly to 4.7.8 (the
+# latest postman-runtime, 7.56.3, still pins 4.7.9), so no lockfile refresh can reach a
+# fixed release. 4.7.10 fixes the critical advisories GHSA-8r5x-fm3f-whwj and
+# GHSA-p8wg-vrv2-v86f. Drop this once newman ships a postman-runtime that allows it.
+overrides:
+    handlebars: 4.7.10

@@ -18,6 +18,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.util.CookieKeys;
+import com.liferay.portal.util.PortalUtil;
 import graphql.language.Document;
 import graphql.language.OperationDefinition;
 import graphql.parser.Parser;
@@ -112,10 +114,25 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         return new String[] {API_CALL + "*"};
     }
 
+    /**
+     * Authenticates before looking up cached GraphQL data, so current credential and anonymous
+     * access policies also apply to cache hits and background refresh requests. Remember-me-only
+     * requests bypass caching so the later AutoLoginFilter can establish their identity.
+     *
+     * @param requestIn the incoming GraphQL request
+     * @param response the response receiving cached data or an authentication error
+     * @return the cached response, or a wrapped request for normal GraphQL execution
+     * @throws IOException if the request body or response cannot be read or written
+     */
     @Override
     public Result intercept(final HttpServletRequest requestIn, final HttpServletResponse response) throws IOException {
 
         if (!"POST".equals(requestIn.getMethod()) || !LicenseManager.getInstance().isEnterprise()) {
+            return Result.NEXT;
+        }
+        // AutoLoginFilter runs later; let it resolve remember-me-only callers before authenticating.
+        if (UtilMethods.getCookie(requestIn.getCookies(), CookieKeys.REMEMBER_ME_COOKIE.get()) != null
+                && PortalUtil.getUser(requestIn) == null) {
             return Result.NEXT;
         }
         final HttpRequestReaderWrapper wrapper = new HttpRequestReaderWrapper(requestIn);
@@ -124,6 +141,8 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         if (query.isEmpty() ) {
             return Result.NEXT;
         }
+
+        new DotGraphQLContextBuilder().build(requestIn, response);
 
         final GraphqlCacheKey cacheKey = GraphqlCacheKey.from(requestIn, query.get(),
                 getParamOrHeader(requestIn, GRAPHQL_CACHE_KEY_PARAM));

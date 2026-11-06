@@ -924,9 +924,13 @@ public class ContentHandler implements IHandler {
 			// and new content is only related to content that exists there
 			this.collectPushedTrees(wrapper, identifier, content, false);
 		}
-        // Categories
+        // Categories. The check-in above copies the categories the content already has in the
+        // receiver, and the trees are only cleaned with the relationships filter on (#30998), so
+        // they're always removed here for the content to get exactly the ones in the bundle,
+        // including none (#38429). Categories are linked by inode, so relationships aren't touched
+        this.categoryAPI.removeParents(content, this.userAPI.getSystemUser(), !RESPECT_FRONTEND_ROLES);
         if (UtilMethods.isSet(wrapper.getCategories())) {
-            handleContentCategories(content.getInode(), wrapper.getCategories());
+            handleContentCategories(content, wrapper.getCategories());
         }
         CacheLocator.getCategoryCache().removeParents(content);
 
@@ -1454,19 +1458,30 @@ public class ContentHandler implements IHandler {
 	}
 
     /**
-     * Handles categories included in the bundle by creating/ensuring a tree for each category is associated to the content inode
+     * Links the pushed content to each category in the bundle, in the bundle's order. Categories
+     * are matched by their key path, and are never created here: one that doesn't exist in the
+     * receiver is skipped with a warning, since the content is still saved without it. They only
+     * reach the receiver when pushed themselves, either as dependencies or with a category sync.
      *
-     * @param inode corresponding to the content
-     * @param categories list of category-qualified-names included in the bundle
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @param content    The pushed content, already checked in on the receiver.
+     * @param categories The category-qualified-names included in the bundle.
+     * @throws DotSecurityException The category lookup was not allowed.
+     * @throws DotDataException     An error occurred when reading categories or saving the links.
      */
 	@WrapInTransaction
-	private void handleContentCategories(String inode, List<String> categories) throws DotSecurityException, DotDataException {
+	private void handleContentCategories(final Contentlet content, final List<String> categories)
+			throws DotSecurityException, DotDataException {
+		final String inode = content.getInode();
 		for(int i = 0; i < categories.size(); i++) {
 			Category category = findCategory(categories.get(i));
 
-			if (category != null) {
+			if (category == null) {
+				Logger.warn(this, String.format("Category '%s' of the pushed content with Identifier '%s' "
+						+ "doesn't exist in the receiver, so the content was saved without it. Push the "
+						+ "categories, or use a filter that includes dependencies, and push the content again",
+						categories.get(i).replace(ContentBundler.CATEGORY_SEPARATOR, " > "),
+						content.getIdentifier()));
+			} else {
 		        Tree tree = new Tree();
 		        tree.setChild(inode);
 		        tree.setParent(category.getInode());

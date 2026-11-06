@@ -26,16 +26,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -89,16 +84,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -173,16 +163,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -273,16 +258,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -351,16 +331,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
-                      "type": "string"
-                    },
-                    {
-                      "key": "password",
-                      "value": "admin",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -415,16 +390,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
-                      "type": "string"
-                    },
-                    {
-                      "key": "password",
-                      "value": "admin",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -474,16 +444,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -556,16 +521,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -648,16 +608,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -708,16 +663,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
-                      "type": "string"
-                    },
-                    {
-                      "key": "password",
-                      "value": "admin",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -769,16 +719,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -843,16 +788,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -933,16 +873,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
-                      "type": "string"
-                    },
-                    {
-                      "key": "password",
-                      "value": "admin",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -997,16 +932,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
-                      "type": "string"
-                    },
-                    {
-                      "key": "password",
-                      "value": "admin",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -1056,16 +986,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -1129,16 +1054,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -1222,16 +1142,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -1282,16 +1197,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
-                      "type": "string"
-                    },
-                    {
-                      "key": "password",
-                      "value": "admin",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -1310,16 +1220,11 @@
               "name": "set USE_JWT_TOKEN_IN_PUSH_PUBLISH to true",
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -1373,16 +1278,11 @@
               "name": "set USE_JWT_TOKEN_IN_PUSH_PUBLISH to true",
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -1436,16 +1336,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -1522,16 +1417,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -1623,16 +1513,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -1720,16 +1605,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
-                      "type": "string"
-                    },
-                    {
-                      "key": "password",
-                      "value": "admin",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -1784,16 +1664,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
-                      "type": "string"
-                    },
-                    {
-                      "key": "password",
-                      "value": "admin",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -1843,16 +1718,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -1916,16 +1786,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -2008,16 +1873,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "password",
-                      "value": "admin",
-                      "type": "string"
-                    },
-                    {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -2072,16 +1932,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
-                      "type": "string"
-                    },
-                    {
-                      "key": "password",
-                      "value": "admin",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]

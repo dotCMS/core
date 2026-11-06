@@ -1601,9 +1601,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     /**
      * Appends to the given query the clauses that keep a caller from seeing content they cannot
      * read: the owner clause, one clause per role the caller holds and, for callers who are not
-     * back-end users, the clause that limits the results to live content. The clauses are appended
-     * as text, so the query is first balanced to make sure it cannot escape the separator that
-     * precedes them.
+     * back-end users, the clauses that limit the results to live content on the default variant.
+     * The clauses are appended as text, so the query is first balanced to make sure it cannot
+     * escape the separator that precedes them.
+     *
+     * <p>The variant clause is imposed rather than defaulted: it is appended whatever the caller's
+     * query already says, so a query naming another variant resolves to nothing instead of to that
+     * variant's content. Which variant a caller resolves on is decided here, never by the query.
      *
      * @param buffy the query being built, modified in place
      * @param user the {@link User} the query is run for, or {@code null} for an anonymous caller
@@ -1641,8 +1645,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         buffy.append(")");
 
+        // A variant is a version axis of a content item, like its language and its live/working
+        // state: which version a caller reads is the server's to decide, not the query's. The
+        // clause is appended rather than used as a default, so a query naming another variant
+        // resolves to nothing instead of to that variant. It belongs here, beside the live clause
+        // and under the same predicate, because every search path reaches this method - the
+        // OpenSearch one included - and a per-endpoint clause would only cover the endpoints
+        // someone remembered.
         if (user == null || !user.isBackendUser()) {
             buffy.append(" +live:true ");
+            // Lowercased with the same call the indexer applies to every String value it writes
+            // (ESMappingAPIImpl), because variant is a keyword field with no normalizer and the
+            // raw-search paths inject this clause without passing it through query translation.
+            buffy.append(" +").append(ESMappingConstants.VARIANT).append(":")
+                    .append(VariantAPI.DEFAULT_VARIANT.name().toLowerCase()).append(" ");
         }
 
 

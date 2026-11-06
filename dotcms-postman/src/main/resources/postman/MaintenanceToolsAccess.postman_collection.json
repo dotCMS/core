@@ -241,7 +241,21 @@
 									"pm.test(\"The user id is returned\", function () {",
 									"    pm.expect(json.entity.userID).to.be.a('string').and.not.empty;",
 									"});",
-									"pm.collectionVariables.set('maintenanceUserId', json.entity.userID);"
+									"pm.collectionVariables.set('maintenanceUserId', json.entity.userID);",
+									"pm.sendRequest({",
+									"    url: pm.environment.get('serverURL') + '/api/v1/apitoken',",
+									"    method: 'POST',",
+									"    header: { Authorization: 'Bearer ' + pm.environment.get('jwt'), 'Content-Type': 'application/json' },",
+									"    body: { mode: 'raw', raw: JSON.stringify({",
+									"        userId: pm.collectionVariables.get('maintenanceUserId'),",
+									"        expirationSeconds: 3600, network: '0.0.0.0/0',",
+									"        claims: { label: 'postman-permission-fixture' } }) }",
+									"}, function (err, response) {",
+									"    if (err || response.code !== 200) throw new Error('Fixture API token issuance failed');",
+									"    const token = response.json().entity.jwt;",
+									"    if (typeof token !== 'string' || !token.trim()) throw new Error('Missing fixture API token');",
+									"    pm.collectionVariables.set('maintenanceJwt', token);",
+									"});"
 								]
 							}
 						}
@@ -322,7 +336,21 @@
 									"pm.test(\"The user id is returned\", function () {",
 									"    pm.expect(json.entity.userID).to.be.a('string').and.not.empty;",
 									"});",
-									"pm.collectionVariables.set('backendUserId', json.entity.userID);"
+									"pm.collectionVariables.set('backendUserId', json.entity.userID);",
+									"pm.sendRequest({",
+									"    url: pm.environment.get('serverURL') + '/api/v1/apitoken',",
+									"    method: 'POST',",
+									"    header: { Authorization: 'Bearer ' + pm.environment.get('jwt'), 'Content-Type': 'application/json' },",
+									"    body: { mode: 'raw', raw: JSON.stringify({",
+									"        userId: pm.collectionVariables.get('backendUserId'),",
+									"        expirationSeconds: 3600, network: '0.0.0.0/0',",
+									"        claims: { label: 'postman-permission-fixture' } }) }",
+									"}, function (err, response) {",
+									"    if (err || response.code !== 200) throw new Error('Fixture API token issuance failed');",
+									"    const token = response.json().entity.jwt;",
+									"    if (typeof token !== 'string' || !token.trim()) throw new Error('Missing fixture API token');",
+									"    pm.collectionVariables.set('backendJwt', token);",
+									"});"
 								]
 							}
 						}
@@ -368,7 +396,21 @@
 									"pm.test(\"The user id is returned\", function () {",
 									"    pm.expect(json.entity.userID).to.be.a('string').and.not.empty;",
 									"});",
-									"pm.collectionVariables.set('frontendUserId', json.entity.userID);"
+									"pm.collectionVariables.set('frontendUserId', json.entity.userID);",
+									"pm.sendRequest({",
+									"    url: pm.environment.get('serverURL') + '/api/v1/apitoken',",
+									"    method: 'POST',",
+									"    header: { Authorization: 'Bearer ' + pm.environment.get('jwt'), 'Content-Type': 'application/json' },",
+									"    body: { mode: 'raw', raw: JSON.stringify({",
+									"        userId: pm.collectionVariables.get('frontendUserId'),",
+									"        expirationSeconds: 3600, network: '0.0.0.0/0',",
+									"        claims: { label: 'postman-permission-fixture' } }) }",
+									"}, function (err, response) {",
+									"    if (err || response.code !== 200) throw new Error('Fixture API token issuance failed');",
+									"    const token = response.json().entity.jwt;",
+									"    if (typeof token !== 'string' || !token.trim()) throw new Error('Missing fixture API token');",
+									"    pm.collectionVariables.set('frontendJwt', token);",
+									"});"
 								]
 							}
 						}
@@ -725,16 +767,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{frontendEmail}}",
+											"key": "token",
+											"value": "{{frontendJwt}}",
 											"type": "string"
 										}
 									]
@@ -775,16 +812,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{frontendEmail}}",
+											"key": "token",
+											"value": "{{frontendJwt}}",
 											"type": "string"
 										}
 									]
@@ -829,16 +861,11 @@
 								"method": "DELETE",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{frontendEmail}}",
+											"key": "token",
+											"value": "{{frontendJwt}}",
 											"type": "string"
 										}
 									]
@@ -880,16 +907,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{frontendEmail}}",
+											"key": "token",
+											"value": "{{frontendJwt}}",
 											"type": "string"
 										}
 									]
@@ -931,16 +953,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{frontendEmail}}",
+											"key": "token",
+											"value": "{{frontendJwt}}",
 											"type": "string"
 										}
 									]
@@ -982,16 +999,11 @@
 								"method": "DELETE",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{frontendEmail}}",
+											"key": "token",
+											"value": "{{frontendJwt}}",
 											"type": "string"
 										}
 									]
@@ -1033,16 +1045,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{frontendEmail}}",
+											"key": "token",
+											"value": "{{frontendJwt}}",
 											"type": "string"
 										}
 									]
@@ -1083,16 +1090,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{frontendEmail}}",
+											"key": "token",
+											"value": "{{frontendJwt}}",
 											"type": "string"
 										}
 									]
@@ -1134,16 +1136,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{frontendEmail}}",
+											"key": "token",
+											"value": "{{frontendJwt}}",
 											"type": "string"
 										}
 									]
@@ -1231,16 +1228,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{backendEmail}}",
+											"key": "token",
+											"value": "{{backendJwt}}",
 											"type": "string"
 										}
 									]
@@ -1281,16 +1273,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{backendEmail}}",
+											"key": "token",
+											"value": "{{backendJwt}}",
 											"type": "string"
 										}
 									]
@@ -1335,16 +1322,11 @@
 								"method": "DELETE",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{backendEmail}}",
+											"key": "token",
+											"value": "{{backendJwt}}",
 											"type": "string"
 										}
 									]
@@ -1386,16 +1368,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{backendEmail}}",
+											"key": "token",
+											"value": "{{backendJwt}}",
 											"type": "string"
 										}
 									]
@@ -1437,16 +1414,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{backendEmail}}",
+											"key": "token",
+											"value": "{{backendJwt}}",
 											"type": "string"
 										}
 									]
@@ -1488,16 +1460,11 @@
 								"method": "DELETE",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{backendEmail}}",
+											"key": "token",
+											"value": "{{backendJwt}}",
 											"type": "string"
 										}
 									]
@@ -1539,16 +1506,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{backendEmail}}",
+											"key": "token",
+											"value": "{{backendJwt}}",
 											"type": "string"
 										}
 									]
@@ -1589,16 +1551,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{backendEmail}}",
+											"key": "token",
+											"value": "{{backendJwt}}",
 											"type": "string"
 										}
 									]
@@ -1640,16 +1597,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{backendEmail}}",
+											"key": "token",
+											"value": "{{backendJwt}}",
 											"type": "string"
 										}
 									]
@@ -1737,16 +1689,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{maintenanceEmail}}",
+											"key": "token",
+											"value": "{{maintenanceJwt}}",
 											"type": "string"
 										}
 									]
@@ -1787,16 +1734,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{maintenanceEmail}}",
+											"key": "token",
+											"value": "{{maintenanceJwt}}",
 											"type": "string"
 										}
 									]
@@ -1841,16 +1783,11 @@
 								"method": "DELETE",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{maintenanceEmail}}",
+											"key": "token",
+											"value": "{{maintenanceJwt}}",
 											"type": "string"
 										}
 									]
@@ -1892,16 +1829,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{maintenanceEmail}}",
+											"key": "token",
+											"value": "{{maintenanceJwt}}",
 											"type": "string"
 										}
 									]
@@ -1943,16 +1875,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{maintenanceEmail}}",
+											"key": "token",
+											"value": "{{maintenanceJwt}}",
 											"type": "string"
 										}
 									]
@@ -1994,16 +1921,11 @@
 								"method": "DELETE",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{maintenanceEmail}}",
+											"key": "token",
+											"value": "{{maintenanceJwt}}",
 											"type": "string"
 										}
 									]
@@ -2045,16 +1967,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{maintenanceEmail}}",
+											"key": "token",
+											"value": "{{maintenanceJwt}}",
 											"type": "string"
 										}
 									]
@@ -2095,16 +2012,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{maintenanceEmail}}",
+											"key": "token",
+											"value": "{{maintenanceJwt}}",
 											"type": "string"
 										}
 									]
@@ -2146,16 +2058,11 @@
 								"method": "GET",
 								"header": [],
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "{{fixturePassword}}",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "{{maintenanceEmail}}",
+											"key": "token",
+											"value": "{{maintenanceJwt}}",
 											"type": "string"
 										}
 									]
@@ -3804,17 +3711,8 @@
 			"script": {
 				"type": "text/javascript",
 				"exec": [
-					"// Runs outside the Maven runner have no jwt: fetch one for admin",
 					"if (!pm.environment.get('jwt')) {",
-					"    const basicAuth = btoa('admin@dotcms.com:admin');",
-					"    pm.sendRequest({",
-					"        url: `${pm.environment.get('serverURL')}/api/v1/apitoken`,",
-					"        method: 'POST',",
-					"        header: {'accept': '*/*', 'content-type': 'application/json', 'Authorization': `Basic ${basicAuth}`},",
-					"        body: {mode: 'raw', raw: JSON.stringify({expirationSeconds: 7200, userId: 'dotcms.org.1', network: '0.0.0.0/0', claims: {label: 'postman-tests'}})}",
-					"    }, function (err, response) {",
-					"        if (err) { console.log(err); } else { pm.environment.set('jwt', response.json().entity.jwt); }",
-					"    });",
+					"    throw new Error('Set environment jwt to a pre-issued dotCMS API token, or use the Node runner.');",
 					"}"
 				]
 			}
@@ -3875,6 +3773,18 @@
 		},
 		{
 			"key": "maintenancePageUrl",
+			"value": ""
+		},
+		{
+			"key": "maintenanceJwt",
+			"value": ""
+		},
+		{
+			"key": "backendJwt",
+			"value": ""
+		},
+		{
+			"key": "frontendJwt",
 			"value": ""
 		}
 	]

@@ -16,6 +16,7 @@ import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
@@ -49,7 +50,9 @@ import org.opensearch.client.opensearch.indices.RefreshRequest;
  *
  * <p>Two documents are indexed, each readable by a different role, with the {@code permissions}
  * field mapped to the whitespace analyzer the production mapping gives it so a permission token
- * survives indexing whole. The restriction is not written here: it is the one
+ * survives indexing whole. Both carry {@code live} and {@code variant}, because
+ * {@code addPermissionsToQuery} appends clauses on both for a caller without back-end access and a
+ * document missing either would drop out of the result for a reason that is not under test. The restriction is not written here: it is the one
  * {@link com.dotmarketing.portlets.contentlet.business.ContentletAPI#addPermissionsToQuery} builds
  * for a real user, normalization included, so reverting that normalization fails
  * {@link #test_productionClauseRestrictsAQueryEndingInBackslash()}.</p>
@@ -330,11 +333,15 @@ public class OSTrailingBackslashQueryTest extends IntegrationTestBase {
      */
     private static String document(final String identifier, final String marker, final Role role) {
         // The permission token is written lower case because the search path lower-cases the query
-        // and the whitespace analyzer does not fold case on either side.
+        // and the whitespace analyzer does not fold case on either side. The variant is carried for
+        // the same reason the live flag is: the clause under test is appended beside clauses on both
+        // of them, so a document missing either field would be filtered out by the fixture rather
+        // than by what is being measured.
         return "{\"identifier\":\"" + identifier + "\","
                 + "\"inode\":\"" + identifier + "-inode\","
                 + "\"contenttype\":\"" + CONTENT_TYPE + "\","
                 + "\"permissions\":\"" + marker + " p" + role.getId() + ".1p\","
+                + "\"variant\":\"" + VariantAPI.DEFAULT_VARIANT.name().toLowerCase() + "\","
                 + "\"live\":true}";
     }
 

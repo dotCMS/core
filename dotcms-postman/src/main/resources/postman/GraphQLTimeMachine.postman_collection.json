@@ -1776,6 +1776,45 @@
 					"response": []
 				},
 				{
+					"name": "Log in for the live banner preview",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Session login succeeds', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Session login sets JSESSIONID for the image preview', function () {",
+									"    const cookies = pm.response.headers.filter(h => h.key.toLowerCase() === 'set-cookie').map(h => h.value).join(';');",
+									"    pm.expect(cookies).to.include('JSESSIONID=');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"userId\": \"admin@dotcms.com\", \"password\": \"admin\", \"backEndLogin\": true}"
+						},
+						"url": "{{serverURL}}/api/v1/authentication",
+						"description": "The banner image servlet reads the time-machine date from a browser session. Establish that session explicitly with JSON login; Bearer authentication deliberately does not create one."
+					},
+					"response": []
+				},
+				{
 					"name": "No publish date shows the live versions",
 					"event": [
 						{
@@ -1848,16 +1887,11 @@
 							]
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -1942,6 +1976,45 @@
 					"response": []
 				},
 				{
+					"name": "Log in for the current-date banner preview",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Session login succeeds', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Session login sets JSESSIONID for the image preview', function () {",
+									"    const cookies = pm.response.headers.filter(h => h.key.toLowerCase() === 'set-cookie').map(h => h.value).join(';');",
+									"    pm.expect(cookies).to.include('JSESSIONID=');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"userId\": \"admin@dotcms.com\", \"password\": \"admin\", \"backEndLogin\": true}"
+						},
+						"url": "{{serverURL}}/api/v1/authentication",
+						"description": "The banner image servlet reads the time-machine date from a browser session. Establish that session explicitly with JSON login; Bearer authentication deliberately does not create one."
+					},
+					"response": []
+				},
+				{
 					"name": "Current publish date shows the live versions",
 					"event": [
 						{
@@ -2018,16 +2091,11 @@
 							]
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -2192,16 +2260,11 @@
 							]
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -2238,6 +2301,45 @@
 								"logout"
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "Log in for the future banner preview",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Session login succeeds', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Session login sets JSESSIONID for the image preview', function () {",
+									"    const cookies = pm.response.headers.filter(h => h.key.toLowerCase() === 'set-cookie').map(h => h.value).join(';');",
+									"    pm.expect(cookies).to.include('JSESSIONID=');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"userId\": \"admin@dotcms.com\", \"password\": \"admin\", \"backEndLogin\": true}"
+						},
+						"url": "{{serverURL}}/api/v1/authentication",
+						"description": "The banner image servlet reads the time-machine date from a browser session. Establish that session explicitly with JSON login; Bearer authentication deliberately does not create one."
 					},
 					"response": []
 				},
@@ -2318,16 +2420,11 @@
 							]
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -2469,16 +2566,11 @@
 							]
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -2576,16 +2668,11 @@
 							]
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -2672,16 +2759,11 @@
 							}
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -2767,16 +2849,11 @@
 							}
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -2862,16 +2939,11 @@
 							]
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -2959,16 +3031,11 @@
 							}
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -3546,18 +3613,7 @@
 				"type": "text/javascript",
 				"exec": [
 					"if (!pm.environment.get('jwt')) {",
-					"    const serverURL = pm.environment.get('serverURL');",
-					"    const basicAuth = Buffer.from(`${pm.environment.get('user')}:${pm.environment.get('password')}`).toString('base64');",
-					"    pm.sendRequest({",
-					"        url: `${serverURL}/api/v1/apitoken`,",
-					"        method: 'POST',",
-					"        header: {'accept': '*/*', 'content-type': 'application/json', 'Authorization': `Basic ${basicAuth}`},",
-					"        body: {mode: 'raw', raw: JSON.stringify({",
-					"            expirationSeconds: 7200, userId: 'dotcms.org.1', network: '0.0.0.0/0', claims: {label: 'postman-tests'}",
-					"        })}",
-					"    }, function (err, response) {",
-					"        if (err) { console.log(err); } else { pm.environment.set('jwt', response.json().entity.jwt); }",
-					"    });",
+					"    throw new Error('Set environment jwt to a pre-issued dotCMS API token, or use the Node runner.');",
 					"}"
 				]
 			}

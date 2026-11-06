@@ -38,7 +38,6 @@ com.dotcms.telemetry.collectors.experiment.CountExperimentsWithExitRateGoalMetri
 com.dotcms.telemetry.collectors.experiment.CountExperimentsWithReachPageGoalMetricTypeTest
 com.dotcms.telemetry.collectors.experiment.CountExperimentsWithURLParameterGoalMetricTypeTest
 com.dotcms.util.MimeTypeUtilsTest
-com.dotcms.variant.business.web.CurrentVariantWebInterceptorTest
 com.dotcms.variant.business.web.VariantWebAPIImplIntegrationTest
 com.dotcms.visitor.VisitorAPITest
 com.dotcms.workflow.helper.TestWorkflowHelper
