@@ -51,6 +51,7 @@ export const DEFAULT_CONFIG: DotAuthConfig = {
     saml: {
         idpName: 'SAML Identity Provider',
         spEndpointHostname: '',
+        additionalAcsUrls: '',
         metadataUrl: '',
         entityId: '',
         ssoUrl: '',
@@ -117,6 +118,7 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
             ...config.saml,
             idpName: String(values.idpName ?? config.saml.idpName),
             spEndpointHostname: String(values.sPEndpointHostname ?? ''),
+            additionalAcsUrls: String(values.additionalAcsUrls ?? ''),
             metadataUrl: String(values.idPMetadataFile ?? ''),
             entityId: String(values.sPIssuerURL ?? ''),
             ssoUrl: String(values['identity.provider.destinationsso.url'] ?? ''),
@@ -193,6 +195,7 @@ export function toPayload(config: DotAuthConfig, siteId: string): DotAuthConfigP
                 // Omit when unset: the backend replaces the whole secrets row on save, so an
                 // empty string would be STORED and shadow the host-name fallback downstream.
                 sPEndpointHostname: config.saml.spEndpointHostname || undefined,
+                additionalAcsUrls: config.saml.additionalAcsUrls.trim() || undefined,
                 signRequests: String(config.saml.signRequests),
                 // Never 'none': with neither box checked both signatures are required.
                 signatureValidationType:
@@ -457,6 +460,7 @@ const SAML_ELEVATED_KEYS = new Set([
     'idpName',
     'sPIssuerURL',
     'sPEndpointHostname',
+    'additionalAcsUrls',
     'signRequests',
     'signatureValidationType',
     'idPMetadataFile',
