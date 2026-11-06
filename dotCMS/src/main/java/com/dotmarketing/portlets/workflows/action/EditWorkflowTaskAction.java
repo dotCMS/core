@@ -6,9 +6,9 @@ import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -38,10 +38,28 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
 	private WorkflowAPI wfAPI = APILocator.getWorkflowAPI();
 	
+	/**
+	 * Handles the commands of the legacy workflow task screen: viewing a task, commenting on it,
+	 * and attaching or removing a file.
+	 *
+	 * <p>The task is named by the {@code inode} request parameter, which any caller can set, so
+	 * the commands that change the task are allowed only for a {@link User} who may read the
+	 * contentlet that task belongs to — or edit it, for removing an attachment. A refused caller
+	 * is rolled back and sent to the error page without the task being touched.</p>
+	 *
+	 * <p>Only the commands that write to the task are checked here. {@code view} renders the
+	 * screen and is outside the scope of this check.</p>
+	 *
+	 * @param mapping the Struts mapping for this action
+	 * @param form    the {@link WorkflowTaskForm} bound to the request
+	 * @param config  the configuration of the portlet the request came through
+	 * @param req     the Struts wrapper for the HTTP request
+	 * @param res     the Struts wrapper for the HTTP response
+	 * @throws Exception if the command cannot be carried out
+	 */
 	public void processAction(ActionMapping mapping, ActionForm form,
 							  PortletConfig config, ActionRequest req, ActionResponse res)
 	throws Exception {
-		PermissionAPI perAPI = APILocator.getPermissionAPI();
 		String cmd = req.getParameter(Constants.CMD);
 		String referer = req.getParameter("referer");
 		HttpServletRequest request =  ((ActionRequestImpl)req).getHttpServletRequest();
@@ -73,6 +91,15 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 				_handleException(ae, req);
 				return;
 			} 
+		}
+
+		final WorkflowTask requestedTask =
+				(WorkflowTask) req.getAttribute(WebKeys.WORKFLOW_TASK_EDIT);
+		if (isTaskWriteCommand(cmd) && !isAllowedOnTask(cmd, requestedTask, user)) {
+			_handleException(new DotSecurityException(String.format(
+					"User '%s' is not allowed to run '%s' on this workflow task",
+					null != user ? user.getUserId() : "<none>", cmd)), req, false);
+			return;
 		}
 
 		if ((cmd != null) && cmd.equals(com.dotmarketing.util.Constants.ADD_COMMENT)) {
@@ -211,6 +238,39 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 	}
 
 
+
+	/**
+	 * Tells whether the given command changes the workflow task, as opposed to only rendering it.
+	 * These are the commands that need the caller checked against the task's contentlet.
+	 *
+	 * @param cmd the value of the request's {@code cmd} parameter, possibly {@code null}
+	 * @return {@code true} when the command writes to the task
+	 */
+	private static boolean isTaskWriteCommand(final String cmd) {
+		return com.dotmarketing.util.Constants.ADD_COMMENT.equals(cmd)
+				|| com.dotmarketing.util.Constants.ADD_FILE.equals(cmd)
+				|| com.dotmarketing.util.Constants.REMOVE_FILE.equals(cmd);
+	}
+
+	/**
+	 * Tells whether the caller may run the given write command on the given task.
+	 *
+	 * <p>Commenting and attaching ask for READ on the task's contentlet, which is what the screen
+	 * offers today and what the REST comments endpoint requires. Removing an attachment asks for
+	 * EDIT instead: it destroys work someone else put there, and no endpoint sets a lower bar for
+	 * it.</p>
+	 *
+	 * @param cmd  the command being run, already known to be a write command
+	 * @param task the {@link WorkflowTask} named by the request, possibly {@code null}
+	 * @param user the {@link User} making the request, possibly {@code null}
+	 * @return {@code true} when the command may go ahead
+	 */
+	private static boolean isAllowedOnTask(final String cmd, final WorkflowTask task,
+			final User user) {
+		return com.dotmarketing.util.Constants.REMOVE_FILE.equals(cmd)
+				? WorkflowTaskAccess.canEdit(task, user)
+				: WorkflowTaskAccess.canAccess(task, user);
+	}
 
 	private void _retrieveWorkflowTask(ActionRequest req, String webkey) throws Exception {
 		WorkflowTask webAsset = (WorkflowTask) wfAPI.findTaskById(req.getParameter("inode"));

@@ -1448,7 +1448,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                 if (data != null) {
                         categories = data;
                         for(i = 0;i< categories.length;i++){
-                                dojo.create("dt", { innerHTML: categories[i]["categoryName"] + ":" }, searchCategoryList);
+                                dojo.create("dt", { innerHTML: escapeHtml(categories[i]["categoryName"]) + ":" }, searchCategoryList);
                                 var selectId = categories[i]["categoryName"].replace(/[^A-Za-z0-9_]/g, "") + "Select";
                                 dijit.registry.remove(selectId);
                                 if(dijit.byId(selectId)){
@@ -1917,7 +1917,8 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
         function getHeader (field) {
                 var fieldContentlet = field["fieldVelocityVarName"];
-                var fieldName = field["fieldName"];
+                // The field name is an editable, user-controlled display value, so encode it before it lands in the header markup.
+                var fieldName = escapeHtml(field["fieldName"]);
                 var stVar = field["fieldStructureVarName"];
                 if(fieldContentlet == '__title__'){
                 	return "<a href=\"javascript: doSearch (1, 'title')\">" + fieldName + "</a>";
@@ -2356,7 +2357,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         var wfActionNameStr = wfActionMapList[k].wfActionNameStr;
                         var hasPushPublishActionlet = wfActionMapList[k].hasPushPublishActionlet;
 
-                        popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\""+icon+"\" onClick=\"contentAdmin.executeWfAction('" + id + "', '" + assignable + "', '" + commentable + "', '" + hasPushPublishActionlet + "', '" + cellData.inode + "', '" + moveable + "');\">"+wfActionNameStr+"</div>";
+                        popupMenuItems += "<div dojoType=\"dijit.MenuItem\" iconClass=\""+escapeHtml(icon)+"\" onClick=\"contentAdmin.executeWfAction('" + id + "', '" + assignable + "', '" + commentable + "', '" + hasPushPublishActionlet + "', '" + cellData.inode + "', '" + moveable + "');\">"+escapeHtml(wfActionNameStr)+"</div>";
 
                     }
 

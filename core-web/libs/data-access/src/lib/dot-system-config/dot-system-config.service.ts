@@ -75,6 +75,8 @@ export class DotSystemConfigService {
         const { config } = response.entity;
 
         return {
+            languageBundleVersion: config.languageBundleVersion,
+            emailRegex: config.emailRegex,
             logos: config.logos,
             colors: config.colors,
             releaseInfo: config.releaseInfo,

@@ -1,6 +1,6 @@
 import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
 
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { ReactiveFormsModule, UntypedFormControl, Validators } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -37,6 +37,53 @@ describe('FieldValidationComponent', () => {
                 useValue: messageServiceMock
             }
         ]
+    });
+
+    describe('bundle recovery', () => {
+        it.each([
+            {
+                validator: 'maxlength',
+                error: { requiredLength: 255 },
+                key: 'error.form.validator.maxlength',
+                template: 'At most {0} characters',
+                expected: 'At most 255 characters'
+            },
+            {
+                validator: 'minlength',
+                error: { requiredLength: 3 },
+                key: 'error.form.validator.minlength',
+                template: 'At least {0} characters',
+                expected: 'At least 3 characters'
+            },
+            {
+                validator: 'pattern',
+                error: { requiredPattern: '^[a-z]+$' },
+                key: 'error.form.validator.pattern',
+                template: 'Match {0}',
+                expected: 'Match ^[a-z]+$'
+            }
+        ])(
+            'reformats an existing $validator error when translations recover without a control status change',
+            ({ validator, error, key, template, expected }) => {
+                const dictionary: Record<string, string> = {};
+                const revision = signal(0);
+                const messages = Object.assign(new MockDotMessageService(dictionary), {
+                    loadedBundleRevision: revision.asReadonly()
+                });
+                spectator = createHost('<dot-field-validation-message [field]="control" />', {
+                    providers: [{ provide: DotMessageService, useValue: messages }]
+                });
+                const control = spectator.hostComponent.control;
+                control.setErrors({ [validator]: error });
+                control.markAsDirty();
+                spectator.detectComponentChanges();
+                expect(spectator.queryHost(byTestId('error-msg'))).toContainText(key);
+                dictionary[key] = template;
+                revision.update((value) => value + 1);
+                spectator.detectChanges();
+                expect(spectator.queryHost(byTestId('error-msg'))).toContainText(expected);
+            }
+        );
     });
 
     describe('Using validators messages', () => {

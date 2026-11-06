@@ -214,9 +214,9 @@ public class SecureIntrospectorImplTest {
     }
 
     /**
-     * Servlet-container internals, embedded interpreters and the alternate reflection, naming
-     * and process APIs must be denied, including implementations reached only through their
-     * type hierarchy.
+     * Servlet-container internals, embedded interpreters and the alternate reflection, naming,
+     * process and desktop/OS-integration APIs must be denied, including implementations reached
+     * only through their type hierarchy.
      */
     @Test
     public void container_interpreter_and_alternate_reflection_types_are_denied() throws Exception {
@@ -224,6 +224,8 @@ public class SecureIntrospectorImplTest {
         assertDenied(java.lang.invoke.MethodHandle.class, "invokeWithArguments");
         assertDenied(ProcessHandle.current().getClass(), "info");
         assertDenied(javax.naming.InitialContext.class, "lookup");
+        assertDenied(java.awt.Desktop.class, "open");
+        assertDenied(java.awt.Desktop.class, "browse");
         assertDeniedIfPresent("bsh.Interpreter", "eval");
         assertDeniedIfPresent("org.apache.tomcat.SimpleInstanceManager", "newInstance");
         assertDeniedIfPresent("org.apache.catalina.core.DefaultInstanceManager", "newInstance");
