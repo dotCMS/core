@@ -3,7 +3,7 @@ import {
     Component,
     OnInit,
     inject,
-    signal,
+    computed,
     viewChild,
     ChangeDetectionStrategy
 } from '@angular/core';
@@ -49,7 +49,7 @@ export class DotToolbarAnnouncementsComponent implements OnInit {
     $overlayPanel = viewChild.required<DotToolbarBtnOverlayComponent>('overlayPanel');
 
     /** Signal containing organized about links with titles and items */
-    $aboutLinks = signal<{ title: string; items: AnnouncementLink[] }[]>([]);
+    readonly $aboutLinks = computed(() => this.getAboutLinks());
 
     /**
      * Component constructor.
@@ -67,7 +67,6 @@ export class DotToolbarAnnouncementsComponent implements OnInit {
      */
     ngOnInit(): void {
         this.announcementsStore.load();
-        this.$aboutLinks.set(this.getAboutLinks());
     }
 
     /**
@@ -85,7 +84,7 @@ export class DotToolbarAnnouncementsComponent implements OnInit {
      * // ]
      * ```
      */
-    getAboutLinks() {
+    getAboutLinks(): { title: string; items: AnnouncementLink[] }[] {
         return [
             { title: 'announcements.knowledge.center', items: this.$knowledgeCenterLinks() },
             { title: 'announcements.knowledge.contact.us', items: this.$contactLinks() }
@@ -113,7 +112,6 @@ export class DotToolbarAnnouncementsComponent implements OnInit {
      */
     private setAnnouncementsStore(): void {
         this.announcementsStore.load();
-        this.$aboutLinks.set(this.getAboutLinks());
     }
 
     /**
