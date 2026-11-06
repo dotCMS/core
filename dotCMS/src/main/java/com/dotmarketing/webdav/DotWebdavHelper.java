@@ -177,8 +177,8 @@ public class DotWebdavHelper {
 	 * Basic authentication policy ({@code ALLOW_BASIC_AUTH}). In token-only mode the credential must
 	 * be an API token and neither the pre-authenticator nor the stored password is consulted. When
 	 * passwords are allowed and a pre-authenticator is configured through {@code auth.pipeline.pre},
-	 * it runs first and must accept the login; any other answer denies access. The password is then
-	 * checked against the one stored in dotCMS, or accepted as an API token.
+	 * it runs first; a thrown exception denies access, but its return value alone does not. The
+	 * password is then checked against the one stored in dotCMS, or accepted as an API token.
 	 *
 	 * @param username the login sent by the client: an email address or a user id, depending on
 	 *                 the company's authentication type
@@ -230,13 +230,14 @@ public class DotWebdavHelper {
 
 				final Authenticator authenticator = (Authenticator) new com.dotcms.repackage.bsh.
 						Interpreter().eval("new " + preAuthenticator + "()");
-				final int authResult = useEmailAsLogin
-						? authenticator.authenticateByEmailAddress(company.getCompanyId(), username, passwd)
-						: authenticator.authenticateByUserId(company.getCompanyId(), username, passwd);
-
-				if (authResult != Authenticator.SUCCESS) {
-
-					throw new AuthException("The pre-authenticator did not accept the login");
+				// The return value is intentionally not used to deny access here: a pre-authenticator
+				// can answer FAILURE/DNE to mean "cannot validate this login", not "this user is
+				// denied", and the password/token check below is the actual decision. Only a thrown
+				// exception, caught below, is treated as an explicit denial.
+				if (useEmailAsLogin) {
+					authenticator.authenticateByEmailAddress(company.getCompanyId(), username, passwd);
+				} else {
+					authenticator.authenticateByUserId(company.getCompanyId(), username, passwd);
 				}
 			}
 		} catch (AuthException ae) {

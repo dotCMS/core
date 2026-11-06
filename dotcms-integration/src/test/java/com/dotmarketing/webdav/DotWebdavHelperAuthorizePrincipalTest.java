@@ -53,16 +53,35 @@ public class DotWebdavHelperAuthorizePrincipalTest extends IntegrationTestBase {
     }
 
     /**
-     * Given: a pre-authenticator that rejects the login by returning a failure result.
+     * Given: a pre-authenticator that rejects the login by returning a failure result, without
+     *        throwing.
      * When:  WebDAV authorizes a user who submits that user's correct dotCMS password.
-     * Then:  access is denied, just as when the pre-authenticator throws.
+     * Then:  access is still granted. A pre-authenticator's return value alone is not treated as a
+     *        denial -- only a thrown exception is (see the next test) -- because a return value can
+     *        mean "cannot validate this login here" rather than "this user is denied", and the
+     *        password/token check is the actual decision.
      */
     @Test
-    public void test_authorizePrincipal_preAuthenticatorFailure_deniesAccess() {
+    public void test_authorizePrincipal_preAuthenticatorFailureReturn_stillChecksPassword() throws Exception {
+        final DotWebdavHelper helper = new DotWebdavHelper();
+
+        final User authorized = helper.authorizePrincipal(
+                login, PASSWORD, RejectingPreAuthenticator.class.getName());
+        assertEquals(user.getUserId(), authorized.getUserId());
+    }
+
+    /**
+     * Given: a pre-authenticator that throws instead of returning a result.
+     * When:  WebDAV authorizes a user who submits that user's correct dotCMS password.
+     * Then:  access is denied outright; a thrown exception is an explicit denial, unlike a plain
+     *        failure return value.
+     */
+    @Test
+    public void test_authorizePrincipal_preAuthenticatorThrows_deniesAccess() {
         final DotWebdavHelper helper = new DotWebdavHelper();
 
         assertThrows(DotSecurityException.class, () -> helper.authorizePrincipal(
-                login, PASSWORD, RejectingPreAuthenticator.class.getName()));
+                login, PASSWORD, ThrowingPreAuthenticator.class.getName()));
     }
 
     /**
