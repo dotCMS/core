@@ -158,8 +158,6 @@ export class DotPagesComponent {
      * its params.
      */
     #openFromUrl(): void {
-        const refresh = () => this.#refreshPages();
-
         this.#route.queryParams
             .pipe(
                 // Before the dedup, so a skipped entry is never the one the next URL is compared to.
@@ -173,15 +171,16 @@ export class DotPagesComponent {
             .subscribe((intent) => {
                 if (intent.kind === 'edit') {
                     const { identifier, languageId } = intent;
-                    this.#dotPageActionsService.openContent(
-                        { mode: 'edit', identifier, ...(languageId ? { languageId } : {}) },
-                        refresh
-                    );
+                    this.#dotPageActionsService.openContent({
+                        mode: 'edit',
+                        identifier,
+                        ...(languageId ? { languageId } : {})
+                    });
                 } else if (intent.kind === 'create') {
-                    this.#dotPageActionsService.openContent(
-                        { mode: 'new', contentType: intent.contentType },
-                        refresh
-                    );
+                    this.#dotPageActionsService.openContent({
+                        mode: 'new',
+                        contentType: intent.contentType
+                    });
                 } else if (intent.kind === 'refused') {
                     void refusePanelUrl(this.#injector);
                 }
@@ -325,16 +324,8 @@ export class DotPagesComponent {
     }
 
     /**
-     * Reloads the listing after an edit in the side panel (#38303), keeping the filters and the
-     * page the author is on. A refetch of the whole page rather than of the edited row: the panel
-     * may have deleted or archived it, and a row lookup would then report an error.
-     */
-    #refreshPages(): void {
-        this.#dotCMSPagesStore.getPages();
-    }
-
-    /**
-     * Opens the PrimeNG popup menu for a page row (three-dots button click).
+     * Opens the PrimeNG popup menu for a page row (three-dots button click). Edit refreshes the
+     * listing itself (`DotPageActionsService`), as it does from the right-click menu.
      * Positions at the button using anchor; menu items are loaded asynchronously.
      *
      * @param event Menu trigger payload containing the original mouse event and the page contentlet.
@@ -343,7 +334,7 @@ export class DotPagesComponent {
         const anchor = originalEvent.currentTarget || originalEvent.target;
         const { clientX, clientY } = originalEvent;
         this.#dotPageActionsService
-            .getItems(data, () => this.#refreshPages())
+            .getItems(data)
             .pipe(take(1))
             .subscribe((actions) => {
                 this.menu()?.show({
