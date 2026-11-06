@@ -226,30 +226,20 @@ public class RestrictedViewToolAccessTest {
     @Test
     public void authorOfRenderedResource_answersForTheFileTheParseArgumentResolvesTo()
             throws Exception {
-        final File namedVtl = File.createTempFile("restricted-named", ".vtl");
-        FileUtil.write(namedVtl, "the file the path mentions first");
-        final Contentlet named = new FileAssetDataGen(new FolderDataGen().nextPersisted(), namedVtl)
-                .user(limitedUser).nextPersisted();
-        files.add(named);
+        final Contentlet named = fileAsset("restricted-named", "the file the path mentions first");
+        // the data generator always saves as the system user, so the second file is saved again
+        // by someone else: what matters is only that the two files have different last editors
+        final Contentlet reached = savedAgainBy(
+                fileAsset("restricted-reached", "the file the path resolves to"), admin);
 
-        final File reachedVtl = File.createTempFile("restricted-reached", ".vtl");
-        FileUtil.write(reachedVtl, "the file the path resolves to");
-        final Contentlet reached = new FileAssetDataGen(new FolderDataGen().nextPersisted(), reachedVtl)
-                .user(user(new UserDataGen().nextPersisted())).nextPersisted();
-        files.add(reached);
-
-        final Path namedOnDisk = Paths.get(APILocator.getFileAssetAPI().fromContentlet(named)
-                .getFileAsset().getAbsolutePath());
-        final Path reachedOnDisk = Paths.get(APILocator.getFileAssetAPI().fromContentlet(reached)
-                .getFileAsset().getAbsolutePath());
+        final Path namedOnDisk = onDisk(named);
+        final Path reachedOnDisk = onDisk(reached);
         // starts inside the first file's folder, then climbs out of it and down to the second
         final String crafted = namedOnDisk.getParent() + "/"
                 + namedOnDisk.getParent().relativize(reachedOnDisk);
 
-        final String namedAuthor = APILocator.getContentletAPI()
-                .find(named.getInode(), APILocator.systemUser(), false).getModUser();
-        final String reachedAuthor = APILocator.getContentletAPI()
-                .find(reached.getInode(), APILocator.systemUser(), false).getModUser();
+        final String namedAuthor = lastEditorOf(named);
+        final String reachedAuthor = lastEditorOf(reached);
         assertNotNull("The reached file must have a last editor", reachedAuthor);
         assertFalse("The two files must have different authors for this case to mean anything",
                 reachedAuthor.equals(namedAuthor));
@@ -260,43 +250,96 @@ public class RestrictedViewToolAccessTest {
     }
 
     /**
+     * A persisted file asset holding the given text, registered for cleanup.
+     *
+     * @param prefix what to call the temporary file
+     * @param text   what to put in it; the content is never rendered, only located
+     *
+     * @return the persisted file asset
+     */
+    private static Contentlet fileAsset(final String prefix, final String text) throws Exception {
+        final File vtl = File.createTempFile(prefix, ".vtl");
+        FileUtil.write(vtl, text);
+        final Contentlet file = new FileAssetDataGen(new FolderDataGen().nextPersisted(), vtl)
+                .nextPersisted();
+        files.add(file);
+        return file;
+    }
+
+    /**
+     * Saves a file asset again as another user, which is what records that user as its last
+     * editor. The new version has an inode of its own, so the caller must use what comes back.
+     *
+     * @param file the file asset to save again
+     * @param user the user to save it as
+     *
+     * @return the new version
+     */
+    private static Contentlet savedAgainBy(final Contentlet file, final User user)
+            throws Exception {
+        final Contentlet checkout = APILocator.getContentletAPI()
+                .checkout(file.getInode(), APILocator.systemUser(), false);
+        checkout.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        final Contentlet saved = APILocator.getContentletAPI().checkin(checkout, user, false);
+        files.add(saved);
+        return saved;
+    }
+
+    /**
+     * @param file a persisted file asset
+     *
+     * @return where that file sits on disk
+     */
+    private static Path onDisk(final Contentlet file) throws Exception {
+        return Paths.get(APILocator.getFileAssetAPI().fromContentlet(file)
+                .getFileAsset().getAbsolutePath());
+    }
+
+    /**
+     * @param file a persisted file asset
+     *
+     * @return the ID of the user recorded as having last saved it
+     */
+    private static String lastEditorOf(final Contentlet file) throws Exception {
+        return APILocator.getContentletAPI()
+                .find(file.getInode(), APILocator.systemUser(), false).getModUser();
+    }
+
+    /**
      * Method to test: {@link RestrictedViewToolAccess#announceRenderingAuthorOf(HttpServletRequest, String)}
      * When: a directive names the resource it is about to render instead of handing over an
      * author it has already worked out
-     * Should: give the same verdict as naming the author directly -- denied for an author
-     * without the role, allowed for one who holds it.
+     * Should: reach the same verdict as naming the author directly, and refuse when the
+     * resource resolves to nothing.
      *
      * <p>Naming the resource is what keeps the author lookup off the render path of the pages
      * that never call a restricted tool, so the verdict has to survive the change of form.
      */
     @Test
-    public void announceRenderingAuthorOf_decidesByTheAuthorOfThatResource() throws Exception {
-        final Role scripting = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
-        final User developer = user(new UserDataGen().roles(scripting).nextPersisted());
+    public void announceRenderingAuthorOf_decidesAsNamingTheAuthorDoes() {
+        // saving a container needs permissions, so the admin stands in as the author; which
+        // user it is does not matter, only that both forms of the announcement agree on them
+        final Container container = new ContainerDataGen().owner(admin).modUser(admin)
+                .nextPersisted();
+        containers.add(container);
+        final String path = "/WORKING/" + container.getIdentifier() + "/1.container";
 
-        final Container byLimitedUser = new ContainerDataGen()
-                .owner(limitedUser).modUser(limitedUser).nextPersisted();
-        containers.add(byLimitedUser);
-        final Container byDeveloper = new ContainerDataGen()
-                .owner(developer).modUser(developer).nextPersisted();
-        containers.add(byDeveloper);
+        final HttpServletRequest byAuthor = request(null);
+        RestrictedViewToolAccess.announceRenderingAuthor(byAuthor,
+                RestrictedViewToolAccess.authorOfRenderedResource(path));
 
-        final HttpServletRequest request = request(admin);
+        final HttpServletRequest byResource = request(null);
+        RestrictedViewToolAccess.announceRenderingAuthorOf(byResource, path);
 
-        RestrictedViewToolAccess.announceRenderingAuthorOf(request,
-                "/WORKING/" + byLimitedUser.getIdentifier() + "/1.container");
-        assertFalse("An author without the role must be refused",
-                RestrictedViewToolAccess.renderingAuthorHasAccess(request));
+        assertEquals("Naming the resource must decide exactly as naming the author does",
+                RestrictedViewToolAccess.renderingAuthorHasAccess(byAuthor),
+                RestrictedViewToolAccess.renderingAuthorHasAccess(byResource));
 
-        RestrictedViewToolAccess.announceRenderingAuthorOf(request,
-                "/WORKING/" + byDeveloper.getIdentifier() + "/1.container");
-        assertTrue("An author holding the role must be allowed",
-                RestrictedViewToolAccess.renderingAuthorHasAccess(request));
-
-        RestrictedViewToolAccess.announceRenderingAuthorOf(request,
+        final HttpServletRequest unresolvable = request(null);
+        RestrictedViewToolAccess.announceRenderingAuthorOf(unresolvable,
                 "/WORKING/" + UUIDGenerator.generateUuid() + "/1.container");
         assertFalse("A resource that resolves to nothing names no author, so it is refused",
-                RestrictedViewToolAccess.renderingAuthorHasAccess(request));
+                RestrictedViewToolAccess.renderingAuthorHasAccess(unresolvable));
     }
 
     /**

@@ -75,7 +75,21 @@ public final class RestrictedViewToolAccess {
      * @param userId ID of the user that last modified the content being rendered, resolving to
      *               {@code null} when the renderer knows the content but not its author
      */
-    private record RenderingAuthor(Lazy<String> userId) { }
+    private record RenderingAuthor(Lazy<String> userId) {
+
+        /**
+         * Resolves the author, so that anything printing the announcement -- a debug dump of
+         * the request, a test reading the attribute back -- shows who it names instead of
+         * showing that nobody has asked yet. No render prints it, so the laziness above
+         * survives.
+         *
+         * @return the announcement, naming its author
+         */
+        @Override
+        public String toString() {
+            return "RenderingAuthor[userId=" + userId.get() + "]";
+        }
+    }
 
     /**
      * Kept in alphabetical order. Besides the tools that work outside of the viewer's
