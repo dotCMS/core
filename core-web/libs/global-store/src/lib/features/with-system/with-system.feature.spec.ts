@@ -12,7 +12,10 @@ import { DotSystemConfig } from '@dotcms/dotcms-models';
 import { withSystem } from './with-system.feature';
 
 const SystemStore = signalStore(withSystem());
-const config = { languageBundleVersion: 'build-hash' } as DotSystemConfig;
+const config = {
+    languageBundleVersion: 'build-hash',
+    emailRegex: '^[^@]+@dotcms\\.com$'
+} as DotSystemConfig;
 const authFor = (languageId = 'en_US'): Auth =>
     ({ user: { userId: 'principal', languageId }, loginAsUser: null }) as Auth;
 
@@ -212,6 +215,7 @@ describe('withSystem session loading', () => {
         );
         await ready();
         expect(spectator.service.systemConfig()).toEqual(config);
+        expect(spectator.service.systemConfig()?.emailRegex).toBe(config.emailRegex);
     });
 
     it('allows degraded readiness when translations fail and retries on later navigation', async () => {

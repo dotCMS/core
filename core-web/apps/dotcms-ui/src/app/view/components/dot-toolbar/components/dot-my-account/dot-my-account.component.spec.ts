@@ -2,9 +2,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
-import { of, Subject, throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 
+import { signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
@@ -16,7 +17,9 @@ import {
     DotMessageService,
     DotRouterService
 } from '@dotcms/data-access';
-import { Auth, DotcmsConfigService, LoginService, User } from '@dotcms/dotcms-js';
+import { Auth, LoginService, User } from '@dotcms/dotcms-js';
+import { DotSystemConfig } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotMyAccountComponent } from './dot-my-account.component';
 
@@ -67,10 +70,14 @@ describe('DotMyAccountComponent', () => {
             mockProvider(DotHttpErrorManagerService, {
                 handle: () => of({})
             }),
-            mockProvider(DotcmsConfigService, {
-                getConfig: () =>
-                    of({ emailRegex: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' })
-            }),
+            {
+                provide: GlobalStore,
+                useValue: {
+                    systemConfig: signal({
+                        emailRegex: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'
+                    })
+                }
+            },
             mockProvider(ConfirmationService)
         ]
     });
@@ -81,40 +88,29 @@ describe('DotMyAccountComponent', () => {
     }
 
     describe('Configuration recovery', () => {
-        let configUpdates$: Subject<{ emailRegex: string }>;
-        let getConfigUpdates: ReturnType<typeof vi.fn>;
+        const regex = '^[^@]+@dotcms\\.com$';
+        let $systemConfig: ReturnType<typeof signal<DotSystemConfig | null>>;
 
         beforeEach(() => {
-            configUpdates$ = new Subject();
-            getConfigUpdates = vi.fn(() => configUpdates$.asObservable());
+            $systemConfig = signal<DotSystemConfig | null>(null);
             spectator = createComponent({
-                providers: [
-                    {
-                        provide: DotcmsConfigService,
-                        useValue: {
-                            getConfig: vi.fn(() =>
-                                throwError(() => new Error('Config unavailable'))
-                            ),
-                            getConfigUpdates
-                        }
-                    }
-                ]
+                providers: [{ provide: GlobalStore, useValue: { systemConfig: $systemConfig } }]
             });
             component = spectator.component;
         });
 
-        it('should install email validation when configuration arrives after an initial failure', () => {
+        it('installs email validation when the shared store recovers after a configuration failure', () => {
             const emailControl = component.form.get('email');
             if (!emailControl) {
                 throw new Error('Email control must exist');
             }
             emailControl.setValue('invalid-email');
             expect(emailControl.valid).toBe(true);
-            expect(getConfigUpdates).toHaveBeenCalledOnce();
 
-            configUpdates$.next({ emailRegex: '^[^@]+@dotcms\\.com$' });
+            $systemConfig.set({ emailRegex: regex } as DotSystemConfig);
+            spectator.detectChanges();
 
-            expect(component.emailRegex).toBe('^[^@]+@dotcms\\.com$');
+            expect(component.emailRegex).toBe(regex);
             expect(emailControl.hasError('pattern')).toBe(true);
             emailControl.setValue('admin@dotcms.com');
             expect(emailControl.valid).toBe(true);
@@ -122,13 +118,20 @@ describe('DotMyAccountComponent', () => {
             expect(emailControl.hasError('required')).toBe(true);
         });
 
-        it('should unsubscribe from recovery updates when destroyed', () => {
-            expect(configUpdates$.observed).toBe(true);
+        it('retains the installed validator when a later configuration refresh fails', () => {
+            $systemConfig.set({ emailRegex: regex } as DotSystemConfig);
+            spectator.detectChanges();
+            $systemConfig.set(null);
+            spectator.detectChanges();
+            component.form.get('email')?.setValue('invalid-email');
+            expect(component.form.get('email')?.hasError('pattern')).toBe(true);
+            expect(component.emailRegex).toBe(regex);
+        });
 
+        it('stops reacting to configuration after destruction', () => {
             spectator.fixture.destroy();
-            configUpdates$.next({ emailRegex: 'recovered-pattern' });
-
-            expect(configUpdates$.observed).toBe(false);
+            $systemConfig.set({ emailRegex: regex } as DotSystemConfig);
+            spectator.flushEffects();
             expect(component.emailRegex).toBe('');
         });
     });

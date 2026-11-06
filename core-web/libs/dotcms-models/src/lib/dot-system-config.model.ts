@@ -88,6 +88,7 @@ export type DotFolderBulkDuplicateCeilings = DotFolderBulkDeleteCeilings;
 export interface DotSystemConfig {
     /** Translation fingerprint; absent on servers that do not advertise bundle versions. */
     languageBundleVersion?: string;
+    emailRegex?: string;
     logos: DotLogos;
     colors: DotUIColors;
     releaseInfo: DotReleaseInfo;
@@ -114,6 +115,7 @@ export interface DotSystemConfig {
 export interface SystemConfigEntity {
     config: {
         languageBundleVersion?: string;
+        emailRegex?: string;
         logos: DotLogos;
         colors: DotUIColors;
         releaseInfo: DotReleaseInfo;

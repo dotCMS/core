@@ -13,6 +13,15 @@ describe('DotSystemConfigService', () => {
     });
 
     describe('getSystemConfig', () => {
+        it('carries the configured email validation pattern for shared store consumers', () => {
+            let config: DotSystemConfig | undefined;
+            spectator.service.getSystemConfig().subscribe((value) => (config = value));
+            spectator
+                .expectOne('/api/v1/appconfiguration', HttpMethod.GET)
+                .flush({ entity: { config: { emailRegex: '^[^@]+@dotcms\\.com$' } } });
+            expect(config?.emailRegex).toBe('^[^@]+@dotcms\\.com$');
+        });
+
         it('carries the language bundle version used for translation cache validation', () => {
             let config: DotSystemConfig | undefined;
             spectator.service.getSystemConfig().subscribe((value) => (config = value));

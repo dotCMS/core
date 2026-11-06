@@ -76,6 +76,7 @@ export class DotSystemConfigService {
 
         return {
             languageBundleVersion: config.languageBundleVersion,
+            emailRegex: config.emailRegex,
             logos: config.logos,
             colors: config.colors,
             releaseInfo: config.releaseInfo,
