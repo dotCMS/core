@@ -1206,9 +1206,12 @@ public class ESIndexAPI implements IndexAPI {
 	}
 
 	/**
-	 * This method will wait for 5 minutes for elasticsearch to become available, after
-	 * which it will shut the dotCMS down.
-	 * @return
+	 * Waits for the search cluster to answer, retrying every 5 seconds up to
+	 * {@code ES_CONNECTION_ATTEMPTS} times (24 by default, about 2 minutes). If the cluster
+	 * never answers, dotCMS is shut down; the final message points at the TLS settings in
+	 * case the cause is a server certificate that is not trusted.
+	 *
+	 * @return true once the cluster has answered
 	 */
     public boolean waitUtilIndexReady() {
         com.dotcms.content.index.domain.ClusterStats stats = null;
@@ -1222,7 +1225,9 @@ public class ESIndexAPI implements IndexAPI {
             Try.run(() -> Thread.sleep(5000));
         }
         if (stats == null) {
-            Logger.fatal(this.getClass(), "No Elasticsearch, dying an ugly death");
+            Logger.fatal(this.getClass(), "No Elasticsearch, dying an ugly death. For https endpoints, check that"
+                    + " the server certificate is trusted by the JVM trust store (or import its CA), or set"
+                    + " ES_TLS_CERT_REQUIRED=false to skip certificate and host name validation");
             com.dotcms.shutdown.SystemExitManager.immediateExit(1, "Elasticsearch connection failed after maximum attempts");
         }
         return true;
