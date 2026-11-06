@@ -43,6 +43,7 @@ import {
 import { RelationshipFieldStore } from './../../store/relationship-field.store';
 import { AddRelationshipsComponent } from './../add-relationships/add-relationships.component';
 
+import { DotEditContentDialogHeaderComponent } from '../../../../components/dot-create-content-dialog/dot-edit-content-dialog-header.component';
 import { loadDotEditContentSidePanel } from '../../../../components/dot-edit-content-side-panel/load-dot-edit-content-side-panel';
 import { EDIT_CONTENT_DIALOG_CONFIG } from '../../../../models/dot-edit-content-dialog.constant';
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
@@ -587,7 +588,10 @@ export class DotRelationshipFieldComponent
         this.#dialogRef = this.#dialogService.open(DotEditContentDialogComponent, {
             ...EDIT_CONTENT_DIALOG_CONFIG,
             data: dialogData,
-            header: dialogData.title
+            header: dialogData.title,
+            // PrimeNG prints `header` only when no header template is given, so this one prints it
+            // and adds the content state chip after the title.
+            templates: { header: DotEditContentDialogHeaderComponent }
         });
     }
 

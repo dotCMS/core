@@ -36,6 +36,7 @@ import {
 import { DotStatusFilterComponent } from '../../../dot-filter-bar/chips/dot-status-filter/dot-status-filter.component';
 import { isCanonicalChipOrder } from '../../../dot-filter-bar/constants';
 import { DOT_FILTER_FACADE, DotFilterFacade } from '../../../dot-filter-bar/filter-facade.token';
+import { DotSearchScopeInputComponent } from '../../../dot-search-scope-input/dot-search-scope-input.component';
 import { buildAssetPickerConfig } from '../../asset-picker-config';
 import { DotAssetPickerStore } from '../../store/dot-asset-picker.store';
 import { DotAssetPickerConfig } from '../../store/models';
@@ -50,11 +51,12 @@ const SITE: DotSite = {
 /** Only the slice of the store the toolbar reads. Signals, not `vi.fn()`s, so `computed` reacts. */
 const createMockStore = (config: DotAssetPickerConfig) => ({
     config: signal(config),
-    filters: signal({}),
+    filters: signal<Record<string, string | string[]>>({}),
     selectedNode: signal(undefined),
     userSearchableFields: signal<DotCMSContentTypeField[]>([]),
     userSearchableActive: signal<string[]>([]),
     setSearch: vi.fn(),
+    setSearchScope: vi.fn(),
     patchFilters: vi.fn(),
     removeFilter: vi.fn(),
     clearFilters: vi.fn(),
@@ -310,6 +312,64 @@ describe('DotAssetPickerToolbarComponent', () => {
             expect(reported).toHaveBeenCalledWith({
                 messageKey: 'content-drive.field-filter.more.error'
             });
+        });
+    });
+
+    // ── The search bar: the same control as Content Drive's, with the Title / All Fields scope.
+
+    describe('search bar with scope', () => {
+        const mockStore = () =>
+            spectator.inject(DotAssetPickerStore, true) as unknown as ReturnType<
+                typeof createMockStore
+            >;
+        const searchBar = () => spectator.query(DotSearchScopeInputComponent);
+
+        beforeEach(() => setup(buildAssetPickerConfig({ mode: 'image', site: SITE })));
+
+        it('should render the shared search-with-scope control instead of a plain search box', () => {
+            expect(searchBar()).toBeTruthy();
+            // The only text search box in the toolbar is the one inside the shared control.
+            const boxes = spectator.queryAll('dot-search-input');
+            expect(boxes).toHaveLength(1);
+            expect(boxes[0].closest('dot-search-scope-input')).toBeTruthy();
+        });
+
+        it('should keep the asset picker search test id on the text box', () => {
+            expect(spectator.query(byTestId('asset-picker-search-input'))).toBeTruthy();
+        });
+
+        it('should show the term the store holds', () => {
+            mockStore().filters.set({ title: 'logo' });
+            spectator.detectChanges();
+
+            expect(searchBar()?.$term()).toBe('logo');
+        });
+
+        it('should start on Title when the editor has not picked a scope', () => {
+            expect(searchBar()?.$scope()).toBe('TITLE');
+        });
+
+        it('should show All Fields when the store holds it', () => {
+            mockStore().filters.set({ searchScope: 'ALL_FIELDS' });
+            spectator.detectChanges();
+
+            expect(searchBar()?.$scope()).toBe('ALL_FIELDS');
+        });
+
+        it('should hand a typed term to the store', () => {
+            searchBar()?.search.emit('logo');
+
+            expect(mockStore().setSearch).toHaveBeenCalledWith('logo');
+        });
+
+        it('should hand a picked scope to the store', () => {
+            searchBar()?.scopeChange.emit('ALL_FIELDS');
+
+            expect(mockStore().setSearchScope).toHaveBeenCalledWith('ALL_FIELDS');
+        });
+
+        it('should keep the upload button next to the search bar', () => {
+            expect(spectator.query(byTestId('asset-picker-upload'))).toBeTruthy();
         });
     });
 

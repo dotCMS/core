@@ -1,5 +1,6 @@
 import {
     DotCMSContentlet,
+    DotCMSBaseTypesContentTypes,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
@@ -294,6 +295,33 @@ export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
     params.set('mode', UVE_MODE.EDIT);
 
     return `${baseUrl}?${params.toString()}`;
+};
+
+/**
+ * Opens the preview of a contentlet in a new tab: the page editor for an HTML page, the URL-map
+ * preview for any other content. Does nothing when there is no contentlet (it may have been cleared
+ * between the button rendering and the click), and warns, without opening anything, when the URL
+ * cannot be built.
+ *
+ * @param {DotCMSContentlet | null} contentlet - The content being previewed.
+ */
+export const openContentletPreview = (contentlet: DotCMSContentlet | null): void => {
+    if (!contentlet) {
+        return;
+    }
+
+    const url =
+        contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
+            ? generatePageEditUrl(contentlet)
+            : generatePreviewUrl(contentlet);
+
+    if (!url) {
+        console.warn('Preview URL could not be generated due to missing contentlet attributes.');
+
+        return;
+    }
+
+    window.open(url, '_blank');
 };
 
 /**

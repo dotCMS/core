@@ -68,7 +68,7 @@ export const DEFAULT_SEARCH_SCOPE: DotContentDriveSearchScope =
     DOT_CONTENT_DRIVE_SEARCH_SCOPE.TITLE;
 
 /** The key the search scope travels under, in the filter state and in the address. */
-export const SEARCH_SCOPE_FILTER_KEY = 'searchScope';
+export { SEARCH_SCOPE_FILTER_KEY } from '@dotcms/dotcms-models';
 
 export const DEFAULT_SORT = {
     field: 'modDate',

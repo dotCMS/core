@@ -91,6 +91,7 @@ const mockEditContentHost = {
     reportSaved: vi.fn(),
     reloadContent: vi.fn(),
     setContentTitle: vi.fn(),
+    setTitleStatus: vi.fn(),
     addBreadcrumb: vi.fn(),
     goToSavedContent: vi.fn(),
     leaveDeletedContent: vi.fn(),
@@ -184,6 +185,7 @@ describe('EditContentLayoutComponent', () => {
     beforeEach(() => {
         mockEditContentHost.resolveIdentity.mockReturnValue({});
         mockEditContentHost.reportSaved.mockClear();
+        mockEditContentHost.setTitleStatus.mockClear();
         mockEditContentHost.reloadContent.mockClear();
 
         spectator = createComponent({
@@ -226,6 +228,30 @@ describe('EditContentLayoutComponent', () => {
             createComponent({ detectChanges: false });
 
             expect(mockEditContentHost.resolveIdentity).toHaveBeenCalled();
+        });
+    });
+
+    describe('Title status reporting', () => {
+        const published = { state: { live: true, working: true, hasLiveVersion: true } };
+
+        it('should hand the store title status to the host so every surface shows the same chip', () => {
+            const freshSpectator = createComponent({ detectChanges: false });
+            const freshStore = freshSpectator.inject(DotEditContentStore, true);
+            vi.spyOn(freshStore, 'titleStatus').mockReturnValue(published);
+
+            freshSpectator.detectChanges();
+
+            expect(mockEditContentHost.setTitleStatus).toHaveBeenCalledWith(published);
+        });
+
+        it('should tell the host to hide the chip while the store has no status yet', () => {
+            const freshSpectator = createComponent({ detectChanges: false });
+            const freshStore = freshSpectator.inject(DotEditContentStore, true);
+            vi.spyOn(freshStore, 'titleStatus').mockReturnValue(null);
+
+            freshSpectator.detectChanges();
+
+            expect(mockEditContentHost.setTitleStatus).toHaveBeenCalledWith(null);
         });
     });
 
@@ -718,6 +744,7 @@ describe('EditContentLayoutComponent - In-place (dialog) host', () => {
         reportSaved: vi.fn(),
         reloadContent: vi.fn(),
         setContentTitle: vi.fn(),
+        setTitleStatus: vi.fn(),
         addBreadcrumb: vi.fn(),
         goToSavedContent: vi.fn(),
         leaveDeletedContent: vi.fn(),
@@ -935,6 +962,7 @@ describe('EditContentLayoutComponent - navigation override from an ancestor', ()
         reportSaved: vi.fn(),
         reloadContent: vi.fn(),
         setContentTitle: vi.fn(),
+        setTitleStatus: vi.fn(),
         addBreadcrumb: vi.fn(),
         goToSavedContent: vi.fn(),
         leaveDeletedContent: vi.fn(),
@@ -1278,6 +1306,7 @@ describe.each([
             reportSaved: vi.fn(),
             reloadContent: vi.fn(),
             setContentTitle: vi.fn(),
+            setTitleStatus: vi.fn(),
             addBreadcrumb: vi.fn(),
             goToSavedContent: vi.fn(),
             leaveDeletedContent: vi.fn(),

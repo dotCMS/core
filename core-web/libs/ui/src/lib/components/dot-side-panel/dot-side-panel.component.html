@@ -38,9 +38,17 @@
     position="right">
     <ng-template #header>
         <div class="flex w-full items-center justify-between gap-4">
-            <span class="truncate text-2xl font-semibold" data-testid="side-panel-title">
-                {{ heading() }}
-            </span>
+            <div class="flex min-w-0 items-center gap-3">
+                <span class="truncate text-2xl font-semibold" data-testid="side-panel-title">
+                    {{ heading() }}
+                </span>
+                @let status = titleStatus();
+                @if (status) {
+                    <div class="shrink-0" data-testid="title-status-chip">
+                        <dot-contentlet-status-badge [state]="status.state" />
+                    </div>
+                }
+            </div>
             <div class="flex items-center gap-1">
                 <p-button
                     [text]="true"

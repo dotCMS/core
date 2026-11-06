@@ -36,6 +36,7 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotEditContentDialogComponent,
+    DotEditContentDialogHeaderComponent,
     DotSourceEditorRequest,
     EDIT_CONTENT_DIALOG_CONFIG,
     EditContentDialogData,
@@ -884,7 +885,10 @@ export class DotUveContentEditorComponent {
             ...EDIT_CONTENT_DIALOG_CONFIG,
             contentStyle: { padding: '0' },
             data,
-            header
+            header,
+            // PrimeNG prints `header` only when no header template is given, so this one prints it
+            // and adds the content state chip after the title.
+            templates: { header: DotEditContentDialogHeaderComponent }
         });
     }
 }
