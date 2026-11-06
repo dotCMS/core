@@ -43,7 +43,7 @@ import {
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
-import { clearPanelUrl } from '../../../../../api/util/open-edit-content-panel';
+import { refusePanelUrl } from '../../../../../api/util/open-edit-content-panel';
 import { IframeComponent } from '../iframe-component/iframe.component';
 
 /**
@@ -57,10 +57,13 @@ const FOLDER_PARAM = 'folder';
 interface DotUrlPanel {
     /** The same for the same panel, whatever else the URL carries. */
     key: string;
-    /** What to open; absent when the URL names nothing, or names two panels. */
+    /** What to open; absent when the URL names nothing, or names a panel the author cannot mean. */
     request?: DotEditContentRequest;
-    /** The URL names two panels: open neither, and clear them. */
-    conflict?: boolean;
+    /**
+     * The URL names a panel param of the wrong shape, or two panels: open nothing, show the
+     * standard error, and clear them.
+     */
+    refused?: boolean;
 }
 
 /**
@@ -99,7 +102,7 @@ function panelFromUrl(params: Params): DotUrlPanel {
         };
     }
 
-    return intent.kind === 'conflict' ? { key, conflict: true } : { key };
+    return intent.kind === 'refused' ? { key, refused: true } : { key };
 }
 
 @Component({
@@ -215,8 +218,9 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
      * A navigation the browser's Back or Forward started opens nothing: those belong to the panel
      * URL service (FR-048), and the router replays an entry that may name a panel still open. A URL
      * whose panel did not change opens nothing again, since an app navigation that changes other
-     * params carries the panel params the router last saw. A URL naming two panels opens neither,
-     * and loses both with the create's folder.
+     * params carries the panel params the router last saw. A link the author cannot have meant (a
+     * panel param of the wrong shape, or two panels) opens nothing, shows the standard error, and
+     * loses its params with the create's folder.
      */
     #followPanelUrl(): void {
         if (this.#followingPanelUrl) {
@@ -232,11 +236,11 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
                 distinctUntilChanged((previous, next) => previous.key === next.key),
                 takeUntil(this.destroy$)
             )
-            .subscribe(({ request, conflict }) => {
+            .subscribe(({ request, refused }) => {
                 if (request) {
                     this.dotCustomEventHandlerService.openContent(request);
-                } else if (conflict) {
-                    void clearPanelUrl(this.#injector, [FOLDER_PARAM]);
+                } else if (refused) {
+                    void refusePanelUrl(this.#injector, [FOLDER_PARAM]);
                 }
             });
     }

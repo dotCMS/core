@@ -349,7 +349,8 @@ export class DotQueryToolPageComponent implements OnInit {
     /**
      * Reopens the panel a shared link names, once, on load (#38303, FR-049): an edit, or a create
      * that was stacked over a result's panel when the link was copied, since a link names only the
-     * front panel. A link naming more than one panel opens nothing and loses the panel params.
+     * front panel. A link the author cannot have meant (a panel param of the wrong shape, or more
+     * than one panel) opens nothing, shows the standard error and loses the panel params.
      * Edit Source never opens from here.
      *
      * An edit is asked for by identifier and language: the opener finds the working version, falls
@@ -368,8 +369,8 @@ export class DotQueryToolPageComponent implements OnInit {
             });
         } else if (intent.kind === 'create') {
             this.$editRequest.set({ mode: 'new', contentType: intent.contentType });
-        } else if (intent.kind === 'conflict') {
-            this.#panelUrl.clear();
+        } else if (intent.kind === 'refused') {
+            this.#panelUrl.refuse();
         }
     }
 

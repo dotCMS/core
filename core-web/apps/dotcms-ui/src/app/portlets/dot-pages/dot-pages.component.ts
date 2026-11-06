@@ -54,7 +54,7 @@ import { DotPageActionsService } from './services/dot-page-actions.service';
 import { DotPageListService } from './services/dot-page-list.service';
 import { DotCMSPagesStore } from './store/store';
 
-import { clearPanelUrl } from '../../api/util/open-edit-content-panel';
+import { refusePanelUrl } from '../../api/util/open-edit-content-panel';
 
 export interface DotActionsMenuEventParams {
     originalEvent: MouseEvent;
@@ -153,8 +153,9 @@ export class DotPagesComponent {
      * A navigation the browser's Back or Forward started opens nothing: those belong to the panel
      * URL service (FR-048), and the router replays an entry that may name a panel still open. The
      * same panel arriving again opens nothing, since an app navigation that changes other params
-     * carries the panel params the router last saw. A URL naming two panels opens neither, and
-     * loses both.
+     * carries the panel params the router last saw. A link the author cannot have meant (a panel
+     * param of the wrong shape, or two panels) opens nothing, shows the standard error and loses
+     * its params.
      */
     #openFromUrl(): void {
         const refresh = () => this.#refreshPages();
@@ -181,8 +182,8 @@ export class DotPagesComponent {
                         { mode: 'new', contentType: intent.contentType },
                         refresh
                     );
-                } else if (intent.kind === 'conflict') {
-                    void clearPanelUrl(this.#injector);
+                } else if (intent.kind === 'refused') {
+                    void refusePanelUrl(this.#injector);
                 }
             });
     }

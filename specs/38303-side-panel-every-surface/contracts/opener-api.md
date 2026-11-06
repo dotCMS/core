@@ -105,17 +105,25 @@ export const DOT_PANEL_URL_PARAM = {
     EDIT_CODE: 'editCode' // inode, Edit Source
 } as const;
 
+/** Why a URL's panel params open nothing: more than one panel, or a value of the wrong shape. */
+export type DotPanelUrlRefusal = 'conflict' | 'malformed';
+
 export type DotPanelUrlIntent =
     | { kind: 'none' }
     | { kind: 'edit'; identifier: string; languageId?: number }
     | { kind: 'create'; contentType: string }
     | { kind: 'editCode'; inode: string }
-    | { kind: 'conflict' };
+    | { kind: 'refused'; reason: DotPanelUrlRefusal };
 
 /**
- * What a URL asks to open, read once by a surface on init. Accepts only identifier-shaped, content
- * type-shaped and inode-shaped values (anything else reads as absent); more than one panel named is a
- * `conflict`, and the surface opens nothing and clears the params.
+ * What a URL asks to open, read by a surface on init (and, on Pages and the legacy portlets, on
+ * every app navigation). Accepts only an identifier for `editContent`, a positive integer for
+ * `editContentLang`, a content type variable or id for `createContent`, an inode for `editCode`. A
+ * panel param of any other shape, or repeated, is `refused` as `malformed`, even beside a valid
+ * one; the value never reaches a query or a path. The retired `editContent=new` marker is one, so
+ * an old bookmark gets the error rather than silence. More than one panel named is `refused` as a
+ * `conflict`. An empty value names nothing and reads as absent. On `refused` a surface opens
+ * nothing and calls `DotPanelUrlStateService.refuse` (T172).
  */
 export function readPanelUrlIntent(queryParams: Record<string, unknown>): DotPanelUrlIntent;
 
@@ -144,8 +152,16 @@ export class DotPanelUrlStateService {
     ): void;
     /** Rewrites the registered panel's params in place (language switch, a create's or a new translation's first save). */
     update(ref: DotSidePanelRef, params: Record<string, string>): void;
-    /** Removes every panel param, and `extraKeys`, in place. For a surface whose URL names more than one thing on load (Content Drive passes `createFolder`, `editFolder` and `folderPermissions`), or a param it does not open (Content Drive's `editCode`). */
+    /** Removes every panel param, and `extraKeys`, in place, without a word: for a param a surface does not reopen from a link (Content Drive's `editCode`). */
     clear(extraKeys?: readonly string[]): void;
+    /**
+     * Refuses a link the author cannot have meant (`readPanelUrlIntent`'s `refused`): shows the
+     * standard not-found error, the one the opener shows for content that does not exist, so every
+     * bad link reads the same, then clears like `clear`. Content Drive passes `createFolder`,
+     * `editFolder` and `folderPermissions`, the legacy portlets `folder`. The admin app's screens call
+     * it through `refusePanelUrl(injector, extraKeys)`, beside `openEditContentPanel`.
+     */
+    refuse(extraKeys?: readonly string[]): void;
 }
 ```
 

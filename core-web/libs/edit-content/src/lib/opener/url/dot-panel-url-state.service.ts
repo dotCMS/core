@@ -1,7 +1,8 @@
 import { Subscription } from 'rxjs';
 
 import { Location, PopStateEvent } from '@angular/common';
-import { Injectable, inject } from '@angular/core';
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
+import { Injectable, Injector, inject } from '@angular/core';
 import {
     Event as RouterEvent,
     NavigationCancel,
@@ -17,6 +18,7 @@ import {
 
 import { filter, take } from 'rxjs/operators';
 
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotSidePanelRef } from '@dotcms/ui';
 import { DOT_PANEL_URL_PARAM } from '@dotcms/utils';
 
@@ -86,6 +88,7 @@ export class DotPanelUrlStateService {
     readonly #location = inject(Location);
     readonly #serializer = inject(UrlSerializer);
     readonly #router = inject(Router);
+    readonly #injector = inject(Injector);
 
     /** The open panels written to the URL, in open order: the last one is in front. */
     readonly #entries: DotPanelUrlEntry[] = [];
@@ -152,13 +155,32 @@ export class DotPanelUrlStateService {
     }
 
     /**
-     * Removes every panel param, and `extraKeys`, from the URL in place. For a surface whose URL
-     * names more than one panel on load: it opens none of them (FR-049).
+     * Removes every panel param, and `extraKeys`, from the URL in place, without a word: for a
+     * param that names a panel the surface does not reopen from a link (Content Drive's Edit Code).
+     * A link the author cannot have meant goes through {@link refuse} instead.
      *
      * @param extraKeys Params of the surface's own that go with the panel params.
      */
     clear(extraKeys: readonly string[] = []): void {
         this.#write('replace', extraKeys);
+    }
+
+    /**
+     * Refuses a link the author cannot have meant, a panel param of the wrong shape or more than one
+     * panel (`readPanelUrlIntent`'s `refused`): shows the standard not-found error, the one a link
+     * to content that does not exist shows, so every bad link reads the same, then removes the panel
+     * params, and `extraKeys`, in place (FR-049, T172). Every surface that reads the panel URL calls
+     * this, the admin app's screens through `refusePanelUrl`.
+     *
+     * @param extraKeys Params of the surface's own that go with the panel params.
+     */
+    refuse(extraKeys: readonly string[] = []): void {
+        // Resolved here rather than on construction: a surface's tests build this service without
+        // the error manager when they never refuse.
+        this.#injector
+            .get(DotHttpErrorManagerService)
+            .handle(new HttpErrorResponse({ status: HttpStatusCode.NotFound }));
+        this.clear(extraKeys);
     }
 
     /**

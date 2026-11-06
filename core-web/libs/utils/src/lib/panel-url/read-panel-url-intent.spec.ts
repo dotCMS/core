@@ -49,14 +49,11 @@ describe('readPanelUrlIntent', () => {
             });
         });
 
-        it.each(['abc', '0', '-1', '1.5'])(
-            'refuses a language of %j',
-            (editContentLang) => {
-                expect(readPanelUrlIntent({ editContent: IDENTIFIER, editContentLang })).toEqual(
-                    MALFORMED
-                );
-            }
-        );
+        it.each(['abc', '0', '-1', '1.5'])('refuses a language of %j', (editContentLang) => {
+            expect(readPanelUrlIntent({ editContent: IDENTIFIER, editContentLang })).toEqual(
+                MALFORMED
+            );
+        });
 
         // `new` is the retired create marker: an old bookmark is refused rather than opening an
         // empty form, or nothing in silence.

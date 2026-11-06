@@ -202,7 +202,10 @@ describe('IframePortletLegacyComponent — the panel in the URL', () => {
     // FR-049, T172: a link the author cannot have meant opens nothing, tells them, and loses its
     // params with the create's folder.
     it.each([
-        ['names two panels', { editContent: IDENTIFIER, createContent: 'Blog', folder: FOLDER_INODE }],
+        [
+            'names two panels',
+            { editContent: IDENTIFIER, createContent: 'Blog', folder: FOLDER_INODE }
+        ],
         ['names content by a malformed identifier', { editContent: 'wrong-identifier' }]
     ])('refuses a URL that %s, with the folder', async (_label, params) => {
         mount(params);

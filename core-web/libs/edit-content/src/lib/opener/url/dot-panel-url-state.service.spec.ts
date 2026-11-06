@@ -626,9 +626,7 @@ describe('DotPanelUrlStateService', () => {
         spectator.service.refuse(['folder']);
 
         expect(handle).toHaveBeenCalledTimes(1);
-        expect((handle.mock.calls[0][0] as HttpErrorResponse).status).toBe(
-            HttpStatusCode.NotFound
-        );
+        expect((handle.mock.calls[0][0] as HttpErrorResponse).status).toBe(HttpStatusCode.NotFound);
         expect(location.go).not.toHaveBeenCalled();
         expect(location.replaceState).toHaveBeenCalledTimes(1);
         expect(lastWrite(location.replaceState).params).toEqual(SURFACE_PARAMS);

@@ -715,10 +715,12 @@ export const DotContentDriveStore = signalStore(
                     // A URL that already says what to show (valid filters, or an item or folder
                     // dialog the shell will open) wins; the remembered type is only for opening the
                     // Drive directly. Both are judged after parsing, so a URL whose filters decode
-                    // to nothing or whose dialog params open nothing doesn't count.
+                    // to nothing or whose dialog params open nothing doesn't count, nor does a link
+                    // the shell refuses (T172): it opens nothing either.
+                    const { kind } = resolveContentDriveUrlIntent(queryParams);
                     const urlHasInstructions =
                         Object.keys(urlFilters).length > 0 ||
-                        resolveContentDriveUrlIntent(queryParams).kind !== 'none';
+                        (kind !== 'none' && kind !== 'refused');
                     const filters =
                         rememberedContentType && currentSite && !urlHasInstructions
                             ? { contentType: [rememberedContentType] }

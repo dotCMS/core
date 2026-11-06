@@ -704,11 +704,12 @@ export class DotContentDriveShellComponent implements OnDestroy {
             // Edit Code's file is in the URL so Back closes it through its prompt; a link to it opens
             // nothing, and the param goes rather than naming a panel that is not open (#37965).
             this.#panelUrl.clear();
-        } else if (intent.kind === 'conflict') {
-            // Params that can't hold together: Content Drive can't tell which one the author meant,
-            // so it opens nothing and removes all of them, keeping the rest of the URL (FR-023).
-            // The panel params are the panel URL service's; the folder dialog ones go with them.
-            this.#panelUrl.clear([
+        } else if (intent.kind === 'refused') {
+            // A link the author cannot have meant (a panel param of the wrong shape, or params that
+            // can't hold together): Content Drive opens nothing, tells the author, and removes all
+            // of them, keeping the rest of the URL (FR-023, T172). The panel params are the panel URL
+            // service's; the folder dialog ones go with them.
+            this.#panelUrl.refuse([
                 CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER,
                 CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER,
                 CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS

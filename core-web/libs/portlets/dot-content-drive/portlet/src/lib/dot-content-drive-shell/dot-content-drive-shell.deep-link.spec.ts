@@ -403,19 +403,22 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         expect(openEditByIdentifier).toHaveBeenCalledWith(DEEP_LINK_ID, 2);
     });
 
-    it('ignores a non-numeric language on the link', () => {
+    // A link the author cannot have meant tells them and loses its params (T172).
+    it('refuses a non-numeric language on the link', () => {
         deepLinkQueryParams['editContent'] = DEEP_LINK_ID;
         deepLinkQueryParams['editContentLang'] = 'nope';
         mountShell();
 
-        expect(openEditByIdentifier).toHaveBeenCalledWith(DEEP_LINK_ID, undefined);
+        expect(openEditByIdentifier).not.toHaveBeenCalled();
+        expect(refusePanelParams).toHaveBeenCalledTimes(1);
     });
 
-    it('ignores the non-shareable `new` marker on construction', () => {
+    it('refuses the retired `new` marker', () => {
         deepLinkQueryParams['editContent'] = 'new';
         mountShell();
 
         expect(openEditByIdentifier).not.toHaveBeenCalled();
+        expect(refusePanelParams).toHaveBeenCalledTimes(1);
     });
 
     describe('createContent link', () => {
@@ -505,28 +508,25 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             ['an edit and a create', { createContent: 'Blog' }],
             ['an edit and a folder dialog', { editFolder: FOLDER_ID }],
             ['a malformed identifier', { editContent: 'wrong-identifier' }]
-        ])(
-            'refuses %s, with the folder dialog params',
-            (_label, extra) => {
-                Object.assign(deepLinkQueryParams, extra);
+        ])('refuses %s, with the folder dialog params', (_label, extra) => {
+            Object.assign(deepLinkQueryParams, extra);
 
-                const spectator = mountShell();
-                const panelUrl = spectator.inject(DotPanelUrlStateService);
-                const location = spectator.inject(Location);
+            const spectator = mountShell();
+            const panelUrl = spectator.inject(DotPanelUrlStateService);
+            const location = spectator.inject(Location);
 
-                expect(openEditByIdentifier).not.toHaveBeenCalled();
-                expect(createContent).not.toHaveBeenCalled();
-                expect(panelUrl.refuse).toHaveBeenCalledTimes(1);
-                expect(panelUrl.refuse).toHaveBeenCalledWith([
-                    'createFolder',
-                    'editFolder',
-                    'folderPermissions'
-                ]);
-                // The shell writes none of it itself.
-                expect(location.replaceState).not.toHaveBeenCalled();
-                expect(location.go).not.toHaveBeenCalled();
-            }
-        );
+            expect(openEditByIdentifier).not.toHaveBeenCalled();
+            expect(createContent).not.toHaveBeenCalled();
+            expect(panelUrl.refuse).toHaveBeenCalledTimes(1);
+            expect(panelUrl.refuse).toHaveBeenCalledWith([
+                'createFolder',
+                'editFolder',
+                'folderPermissions'
+            ]);
+            // The shell writes none of it itself.
+            expect(location.replaceState).not.toHaveBeenCalled();
+            expect(location.go).not.toHaveBeenCalled();
+        });
     });
 
     /**

@@ -174,15 +174,14 @@ export interface DotContentDriveFolderPermissionsPayload {
 /**
  * What a Content Drive URL asks to open when the portlet loads (#37759, FR-023): a panel, read as
  * every surface reads it (`DotPanelUrlIntent`, #38303), or one of Content Drive's folder dialogs.
- * `conflict` means the URL combines params that can't hold together, so nothing opens and all of
- * them are removed.
+ * `refused` (from `DotPanelUrlIntent`) also covers params that can't hold together across panels
+ * and folder dialogs: nothing opens, the author is told, and all of them are removed (T172).
  */
 export type DotContentDriveUrlIntent =
     | DotPanelUrlIntent
     | { kind: 'createFolder' }
     | { kind: 'editFolder'; identifier: string }
-    | { kind: 'folderPermissions'; identifier: string }
-    | { kind: 'conflict' };
+    | { kind: 'folderPermissions'; identifier: string };
 
 /**
  * A workflow action currently being applied to the selection.
