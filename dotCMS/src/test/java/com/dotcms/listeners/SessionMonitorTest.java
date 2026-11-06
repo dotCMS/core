@@ -345,4 +345,63 @@ public class SessionMonitorTest {
         assertFalse(tracked.containsKey("session_failing"));
         assertFalse(tracked.containsKey("session_live2"));
     }
+
+    /**
+     * Method to Test: {@link SessionMonitor#sessionDestroyed(HttpSessionEvent)}
+     * When: a tracked session ends after its user id was removed (it was signed out on its last
+     *       request and later expired or was ended by the session tools)
+     * Should: forget the session, so the tracked map never keeps an ended session
+     */
+    @Test
+    public void testSessionDestroyedForgetsATrackedSessionWithoutUserId() {
+        final HttpSession session = trackedSession("session_signed_out", USER_A);
+        assertTrue(trackedSessions().containsKey("session_signed_out"));
+        when(session.getAttribute(WebKeys.USER_ID)).thenReturn(null);
+        final HttpSessionEvent event = mock(HttpSessionEvent.class);
+        when(event.getSession()).thenReturn(session);
+
+        new SessionMonitor(mock(SystemEventsAPI.class)).sessionDestroyed(event);
+
+        assertFalse(trackedSessions().containsKey("session_signed_out"));
+    }
+
+    /**
+     * Method to Test: {@link SessionMonitor#attributeRemoved(HttpSessionBindingEvent)}
+     * When: the USER_ID attribute is removed from a tracked session (the session was signed out)
+     * Should: forget the session; removing any other attribute keeps it tracked
+     */
+    @Test
+    public void testAttributeRemovedForgetsTheSessionWhenTheUserIdIsRemoved() {
+        final HttpSession session = trackedSession("session_removed", USER_A);
+        final SessionMonitor monitor = new SessionMonitor(mock(SystemEventsAPI.class));
+        final HttpSessionBindingEvent otherAttribute = mock(HttpSessionBindingEvent.class);
+        when(otherAttribute.getName()).thenReturn(WebKeys.USER);
+        when(otherAttribute.getSession()).thenReturn(session);
+
+        monitor.attributeRemoved(otherAttribute);
+        assertTrue(trackedSessions().containsKey("session_removed"));
+
+        final HttpSessionBindingEvent userIdAttribute = mock(HttpSessionBindingEvent.class);
+        when(userIdAttribute.getName()).thenReturn(WebKeys.USER_ID);
+        when(userIdAttribute.getSession()).thenReturn(session);
+
+        monitor.attributeRemoved(userIdAttribute);
+        assertFalse(trackedSessions().containsKey("session_removed"));
+    }
+
+    /**
+     * Method to Test: {@link SessionMonitor#end(HttpSession)}
+     * When: a tracked session is ended through the monitor
+     * Should: forget it, flag it so the remember-me cookie is not reissued, and invalidate it
+     */
+    @Test
+    public void testEndForgetsFlagsAndInvalidatesTheSession() {
+        final HttpSession session = trackedSession("session_end", USER_A);
+
+        SessionMonitor.end(session);
+
+        assertFalse(trackedSessions().containsKey("session_end"));
+        verify(session).setAttribute(SessionMonitor.IGNORE_REMEMBER_ME_ON_INVALIDATION, true);
+        verify(session).invalidate();
+    }
 }

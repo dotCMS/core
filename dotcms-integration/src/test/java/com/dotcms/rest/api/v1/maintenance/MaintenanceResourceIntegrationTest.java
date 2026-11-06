@@ -6,6 +6,9 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
@@ -1144,6 +1147,79 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
                 resolves(adminToken));
         assertEquals("the calling session survives",
                 admin.getUserId(), request.getSession().getAttribute(WebKeys.USER_ID));
+    }
+
+    /**
+     * Given scenario: kill-all ends a planted session that had lost its user id before (it was
+     *                 signed out on its last request); a planted session fires no container
+     *                 callback when it is invalidated
+     * Expected result: the ended session leaves the tracked map all the same, and the listing
+     *                  that follows answers with the caller's session
+     */
+    @Test
+    public void test_killAllSessions_signedOutSession_isForgottenAndListingAnswers() throws Exception {
+        final HttpSession signedOut = newPlantedAdminSession("6.6.6.6");
+        signedOut.removeAttribute(WebKeys.USER_ID);
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession caller = request.getSession();
+        caller.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(caller);
+
+        resource.killAllSessions(request, mockResponse);
+
+        assertNull("Ended session must leave the tracked map",
+                sessionCache().getIfPresent(signedOut.getId()));
+        final ResponseEntitySessionListView result = resource.listSessions(request, mockResponse);
+        assertTrue("Caller's session must be listed",
+                result.getEntity().stream().anyMatch(SessionView::isCurrent));
+    }
+
+    /**
+     * Given scenario: a single kill ends a planted session that had lost its user id before
+     * Expected result: the ended session leaves the tracked map
+     */
+    @Test
+    public void test_killSession_signedOutSession_isForgotten() throws Exception {
+        final HttpSession signedOut = newPlantedAdminSession("7.7.7.7");
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession caller = request.getSession();
+        caller.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(caller);
+        resource.listSessions(request, mockResponse);
+        final String csrf = (String) caller.getAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE);
+        signedOut.removeAttribute(WebKeys.USER_ID);
+
+        resource.killSession(request, mockResponse,
+                SessionTokenUtil.obfuscateSessionId(signedOut.getId(), csrf));
+
+        assertNull("Ended session must leave the tracked map",
+                sessionCache().getIfPresent(signedOut.getId()));
+    }
+
+    /**
+     * Given scenario: the tracked map still holds a session that has already ended, so its
+     *                 attributes can no longer be read
+     * Expected result: the listing answers without that session, and forgets it
+     */
+    @Test
+    public void test_listSessions_endedSessionInTrackedMap_isSkippedAndForgotten() throws Exception {
+        final HttpSession ended = mock(HttpSession.class);
+        when(ended.getId()).thenReturn(UUIDGenerator.generateUuid());
+        when(ended.getAttribute(anyString()))
+                .thenThrow(new IllegalStateException("getAttribute: Session already invalidated"));
+        plantSession(ended);
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession caller = request.getSession();
+        caller.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(caller);
+
+        final ResponseEntitySessionListView result = resource.listSessions(request, mockResponse);
+
+        assertNotNull(result.getEntity());
+        assertTrue("Caller's session must be listed",
+                result.getEntity().stream().anyMatch(SessionView::isCurrent));
+        assertNull("Ended session must leave the tracked map",
+                sessionCache().getIfPresent(ended.getId()));
     }
 
     /**

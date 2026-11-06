@@ -82,11 +82,21 @@ public class SessionMonitor implements ServletRequestListener,
     }
 
     /**
-     * Checks if the attribute removed is "USER_ID". If so, remove the logout user
+     * Forgets the session when its {@code USER_ID} attribute is removed: it no longer belongs to
+     * a user (it was signed out), so the session tools neither list nor end it. Any other
+     * attribute leaves the tracking as it is.
+     *
+     * @param event the attribute binding event
      */
     @Override
     public void attributeRemoved(final HttpSessionBindingEvent event) {
-
+        if (event == null || !com.liferay.portal.util.WebKeys.USER_ID.equals(event.getName())) {
+            return;
+        }
+        final HttpSession session = event.getSession();
+        if (session != null) {
+            forget(session.getId());
+        }
     }
 
     /**
@@ -123,22 +133,28 @@ public class SessionMonitor implements ServletRequestListener,
 
     private static final Lazy<Boolean> sendSessionDestroyedToWebSocket = Lazy.of(() ->  Config.getBooleanProperty("SEND_SESSION_DESTROYED_TO_WEBSOCKET", false));
 
+    /**
+     * Forgets the session that just ended, whatever it holds, and reports its end as a logout
+     * or a session-destroyed event when it still named a user.
+     *
+     * @param event the session event
+     */
     @Override
     public void sessionDestroyed(final HttpSessionEvent event) {
 
         Logger.debug(this, "Session destroyed");
 
-        HttpSession session = event.getSession();
+        final HttpSession session = event.getSession();
         if (session == null) {
             return;
         }
+        final String sessionId = session.getId();
+        forget(sessionId);
+
         final String userId = (String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID);
         if (userId == null) {
             return;
         }
-
-        final String sessionId = session.getId();
-        userSessions.invalidate(sessionId);
 
         boolean ignoreRememberMe = session.getAttribute(IGNORE_REMEMBER_ME_ON_INVALIDATION) != null;
 
@@ -233,6 +249,31 @@ public class SessionMonitor implements ServletRequestListener,
     }
 
     /**
+     * Forgets a tracked session, so it is neither listed nor ended by the session tools.
+     *
+     * @param sessionId the id of the session to forget; unknown ids are ignored
+     */
+    public static void forget(final String sessionId) {
+        if (UtilMethods.isSet(sessionId)) {
+            userSessions.invalidate(sessionId);
+        }
+    }
+
+    /**
+     * Ends a tracked session: it is forgotten first, so an ended session never stays in the
+     * tracked map (the container does not report a destroyed session that no longer names a
+     * user), flagged so the remember-me cookie is not reissued, and invalidated.
+     *
+     * @param session the session to end
+     * @throws IllegalStateException when the session had already ended
+     */
+    public static void end(final HttpSession session) {
+        forget(session.getId());
+        session.setAttribute(IGNORE_REMEMBER_ME_ON_INVALIDATION, true);
+        session.invalidate();
+    }
+
+    /**
      * Ends every session of the given user that is tracked on this node (the sessions it is the
      * user of, and the Login As sessions it is the administrator behind): each one is removed from
      * the tracked map, flagged with {@link #IGNORE_REMEMBER_ME_ON_INVALIDATION} and invalidated,
@@ -256,9 +297,7 @@ public class SessionMonitor implements ServletRequestListener,
                 if (!belongsTo(session, userId)) {
                     continue;
                 }
-                userSessions.invalidate(entry.getKey());
-                session.setAttribute(IGNORE_REMEMBER_ME_ON_INVALIDATION, true);
-                session.invalidate();
+                end(session);
                 ended++;
             } catch (final IllegalStateException e) {
                 // the session was already invalidated elsewhere: forget it and go on

@@ -13,6 +13,7 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.dotmarketing.business.LoginAsSession;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -26,6 +27,8 @@ import javax.servlet.http.HttpSession;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 /**
  * Unit tests for the resolution of the user that an HTTP session belongs to. The resolver reads the
@@ -340,5 +343,27 @@ class SessionUserResolverTest {
         assertSame(current, resolver.resolve(session).get());
         verify(userAPI, times(1)).loadUserById(any());
         verify(session, never()).removeAttribute(any());
+    }
+
+    /**
+     * The shared resolver reads the user API through the API locator on every call, so a user
+     * API served later (as unit tests of its callers do with a mocked locator) is the one used.
+     */
+    @Test
+    void sharedInstance_readsTheUserApiOnEveryCall() throws DotDataException, DotSecurityException {
+        when(session.getAttribute(WebKeys.USER_ID)).thenReturn(USER_ID);
+        final UserAPI first = mock(UserAPI.class);
+        when(first.loadUserById(USER_ID)).thenReturn(user(USER_ID, true));
+        final UserAPI second = mock(UserAPI.class);
+        when(second.loadUserById(USER_ID)).thenReturn(user(USER_ID, false));
+
+        try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
+            apiLocator.when(APILocator::getUserAPI).thenReturn(first);
+            assertTrue(SessionUserResolver.getInstance().resolve(session).isPresent());
+            apiLocator.when(APILocator::getUserAPI).thenReturn(second);
+            assertFalse(SessionUserResolver.getInstance().resolve(session).isPresent());
+        }
+        verify(first).loadUserById(USER_ID);
+        verify(second).loadUserById(USER_ID);
     }
 }

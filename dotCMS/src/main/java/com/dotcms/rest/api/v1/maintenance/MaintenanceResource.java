@@ -1094,28 +1094,48 @@ public class MaintenanceResource implements Serializable {
         final List<SessionView> sessions = new ArrayList<>();
 
         for (final HttpSession session : sessionMonitor.getUserSessions().values()) {
-            User sessionUser = sessionUser(session).orElse(null);
-            if (sessionUser == null) {
-                Logger.warn(this, "Could not resolve the user of a tracked session in /_sessions (the session names no user, or the record no longer exists); falling back to anonymous user");
-                sessionUser = Try.of(() -> APILocator.getUserAPI().getAnonymousUser())
-                        .getOrElseThrow(e -> new DotRuntimeException(
-                                "Could not resolve the session user and the anonymous-user fallback also failed", e));
+            try {
+                sessions.add(sessionView(session, callingSession, csrfToken));
+            } catch (final IllegalStateException e) {
+                // the session ended after it was tracked: forget it instead of failing the listing
+                Logger.debug(this, () -> "Skipping a tracked session that has already ended");
+                SessionMonitor.forget(session.getId());
             }
-
-            sessions.add(SessionView.builder()
-                    .token(SessionTokenUtil.obfuscateSessionId(session.getId(), csrfToken))
-                    .isCurrent(callingSession.getId().equals(session.getId()))
-                    .userId(sessionUser.getUserId())
-                    .userEmail(sessionUser.getEmailAddress())
-                    .userFullName(sessionUser.getFullName())
-                    .address((String) session.getAttribute(SessionMonitor.USER_REMOTE_ADDR))
-                    .sessionTime(DateUtil.prettyDateSince(
-                            new Date(session.getCreationTime()),
-                            PublicCompanyFactory.getDefaultCompany().getLocale()))
-                    .build());
         }
 
         return new ResponseEntitySessionListView(sessions);
+    }
+
+    /**
+     * Builds the listing row of a tracked session. A session that names no user, or whose user
+     * record no longer exists, is listed under the anonymous user.
+     *
+     * @param session        the tracked session
+     * @param callingSession the caller's own session, to mark the current row
+     * @param csrfToken      the secret the row's token is derived from
+     * @return the row
+     * @throws IllegalStateException when the session has already ended
+     */
+    private SessionView sessionView(final HttpSession session, final HttpSession callingSession,
+                                    final String csrfToken) {
+        User sessionUser = sessionUser(session).orElse(null);
+        if (sessionUser == null) {
+            Logger.warn(this, "Could not resolve the user of a tracked session in /_sessions (the session names no user, or the record no longer exists); falling back to anonymous user");
+            sessionUser = Try.of(() -> APILocator.getUserAPI().getAnonymousUser())
+                    .getOrElseThrow(e -> new DotRuntimeException(
+                            "Could not resolve the session user and the anonymous-user fallback also failed", e));
+        }
+        return SessionView.builder()
+                .token(SessionTokenUtil.obfuscateSessionId(session.getId(), csrfToken))
+                .isCurrent(callingSession.getId().equals(session.getId()))
+                .userId(sessionUser.getUserId())
+                .userEmail(sessionUser.getEmailAddress())
+                .userFullName(sessionUser.getFullName())
+                .address((String) session.getAttribute(SessionMonitor.USER_REMOTE_ADDR))
+                .sessionTime(DateUtil.prettyDateSince(
+                        new Date(session.getCreationTime()),
+                        PublicCompanyFactory.getDefaultCompany().getLocale()))
+                .build();
     }
 
     /**
@@ -1198,8 +1218,7 @@ public class MaintenanceResource implements Serializable {
                             request.getRemoteAddr()));
 
             final Set<String> affectedUserIds = sessionUserIds(session);
-            session.setAttribute(SessionMonitor.IGNORE_REMEMBER_ME_ON_INVALIDATION, true);
-            session.invalidate();
+            SessionMonitor.end(session);
             affectedUserIds.forEach(this::invalidateLoginTokens);
             return new ResponseEntityStringView("Session invalidated");
         }
@@ -1326,9 +1345,12 @@ public class MaintenanceResource implements Serializable {
                 continue;
             }
             affectedUserIds.addAll(sessionUserIds(session));
-            session.setAttribute(SessionMonitor.IGNORE_REMEMBER_ME_ON_INVALIDATION, true);
-            session.invalidate();
-            killed++;
+            try {
+                SessionMonitor.end(session);
+                killed++;
+            } catch (final IllegalStateException e) {
+                // the session had already ended; it has been forgotten, nothing to count
+            }
         }
         affectedUserIds.forEach(this::invalidateLoginTokens);
 

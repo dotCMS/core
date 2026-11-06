@@ -15,6 +15,7 @@ import com.liferay.portal.util.WebKeys;
 import io.vavr.Lazy;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import javax.servlet.http.HttpSession;
 
 /**
@@ -41,9 +42,9 @@ public class SessionUserResolver {
     static final String ALLOW_INACTIVE_ACCOUNTS_TO_LOGIN = "ALLOW_INACTIVE_ACCOUNTS_TO_LOGIN";
 
     private static final Lazy<SessionUserResolver> INSTANCE =
-            Lazy.of(() -> new SessionUserResolver(APILocator.getUserAPI()));
+            Lazy.of(() -> new SessionUserResolver(APILocator::getUserAPI));
 
-    private final UserAPI userAPI;
+    private final Supplier<UserAPI> userAPI;
 
     /**
      * Creates a resolver that checks users through the given {@link UserAPI}.
@@ -51,6 +52,16 @@ public class SessionUserResolver {
      * @param userAPI the API used to read the current user record
      */
     public SessionUserResolver(final UserAPI userAPI) {
+        this(() -> userAPI);
+    }
+
+    /**
+     * Creates a resolver that asks {@code userAPI} for the {@link UserAPI} on every call, so the
+     * shared instance follows the API locator instead of keeping the first API it was given.
+     *
+     * @param userAPI supplies the API used to read the current user record
+     */
+    SessionUserResolver(final Supplier<UserAPI> userAPI) {
         this.userAPI = userAPI;
     }
 
@@ -100,7 +111,7 @@ public class SessionUserResolver {
 
         final User currentUser;
         try {
-            currentUser = this.userAPI.loadUserById(userId);
+            currentUser = this.userAPI.get().loadUserById(userId);
         } catch (final NoSuchUserException e) {
             Logger.debug(this, () -> "The session user no longer exists; the session is signed out");
             signOut(session);
@@ -142,7 +153,7 @@ public class SessionUserResolver {
             return Optional.empty();
         }
         try {
-            final User currentUser = this.userAPI.loadUserById(userId);
+            final User currentUser = this.userAPI.get().loadUserById(userId);
             return isUsable(currentUser) ? Optional.of(currentUser) : Optional.empty();
         } catch (final NoSuchUserException e) {
             return Optional.empty();
