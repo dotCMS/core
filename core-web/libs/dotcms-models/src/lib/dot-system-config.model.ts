@@ -42,6 +42,11 @@ export interface DotSystemLicense {
 export interface DotCluster {
     clusterId: string;
     companyKeyDigest: string;
+    /**
+     * `false` when the server heartbeat feature (`ENABLE_SERVER_HEARTBEAT`) is off, so dead
+     * servers are not removed from the cluster. Absent on instances older than the field.
+     */
+    heartbeatEnabled?: boolean;
 }
 
 /**
