@@ -87,7 +87,7 @@ public enum OSIndexProperty {
      * Enforce TLS certificate and hostname verification. Defaults to {@code true}; set to
      * {@code false} only to connect to a server whose certificate cannot be verified (a warning is
      * logged). A private CA is configured with {@code OS_TLS_CA_CERT}. The Elasticsearch client has
-     * its own {@code ES_TLS_CERT_REQUIRED}.
+     * its own {@code ES_TLS_CERT_REQUIRED}, which defaults to {@code false}.
      */
     TLS_CERT_REQUIRED("OS_TLS_CERT_REQUIRED", null),
 

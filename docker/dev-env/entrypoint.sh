@@ -226,8 +226,6 @@ start_dotcms () {
 
     export DB_BASE_URL=${DB_BASE_URL:-"jdbc:postgresql://127.0.0.1/dotcms"}
     export DOT_ES_ENDPOINTS=${DOT_ES_ENDPOINTS:-"https://127.0.0.1:9200"}
-    # Local dev node uses a self-signed certificate
-    export DOT_ES_TLS_CERT_REQUIRED=${DOT_ES_TLS_CERT_REQUIRED:-"false"}
     export DOT_DOTCMS_CLUSTER_ID=${DOT_DOTCMS_CLUSTER_ID:-"dotcms_dev"}
 
     echo "Starting dotCMS using"

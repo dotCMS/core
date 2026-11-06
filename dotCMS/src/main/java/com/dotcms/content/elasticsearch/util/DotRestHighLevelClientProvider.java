@@ -125,11 +125,11 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
     /**
      * Builds the low-level client builder for the configured endpoints, including TLS settings.
      *
-     * <p>For an {@code https} endpoint the server certificate is validated and the server name
-     * must match it, against the PEM bundle when one is loaded and the JVM truststore otherwise.
-     * Setting {@code ES_TLS_CERT_REQUIRED=false} restores the previous lenient behaviour (a PEM
-     * bundle if loaded, otherwise any single self-signed certificate, and no name check) and logs
-     * a warning.</p>
+     * <p>By default an {@code https} endpoint keeps the lenient behaviour of earlier releases: a
+     * PEM bundle if one is loaded, otherwise any single self-signed certificate, and no server name
+     * check. Setting {@code ES_TLS_CERT_REQUIRED=true} validates the server certificate and requires
+     * the server name to match it, against the PEM bundle when one is loaded and the JVM truststore
+     * otherwise. A warning is logged while validation is off.</p>
      *
      * @param credentialsProvider the credentials sent with each request
      * @return the configured {@link RestClientBuilder}
@@ -153,15 +153,16 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
         
         
         final boolean securedConnection = esEndpoints[0].getSchemeName().equalsIgnoreCase("https");
-        final boolean certRequired = Config.getBooleanProperty("ES_TLS_CERT_REQUIRED", true);
+        final boolean certRequired = Config.getBooleanProperty("ES_TLS_CERT_REQUIRED", false);
         if (securedConnection){
             Logger.info(this.getClass(),
                     "Initializing Elastic RestHighLevelClient using a secured https connection");
             if (!certRequired) {
-                Logger.warn(this.getClass(), "Elastic RestHighLevelClient TLS server certificate and"
-                        + " hostname verification is turned off (ES_TLS_CERT_REQUIRED=false). Remove the"
-                        + " setting and, for a private CA, set ES_TLS_ENABLED=true with ES_AUTH_TLS_CA_CERT,"
-                        + " ES_AUTH_TLS_CLIENT_CERT and ES_AUTH_TLS_CLIENT_KEY, or add the CA to the JVM truststore.");
+                Logger.warn(this.getClass(), "Elastic RestHighLevelClient is not validating the TLS server"
+                        + " certificate or host name (ES_TLS_CERT_REQUIRED=false). To turn validation on, set"
+                        + " ES_TLS_CERT_REQUIRED=true and either add the CA to the JVM truststore or set"
+                        + " ES_TLS_ENABLED=true with ES_AUTH_TLS_CA_CERT, ES_AUTH_TLS_CLIENT_CERT and"
+                        + " ES_AUTH_TLS_CLIENT_KEY.");
             }
         } else{
             Logger.warn(this.getClass(),

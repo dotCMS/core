@@ -152,10 +152,11 @@ cannot be verified fails at startup with a `PKIX path building failed` error tha
 Earlier releases did not verify the server certificate by default. After upgrading, an installation that
 connects to an `https` OpenSearch endpoint with a certificate that is self-signed, or that does not match
 the host name, must either configure `OS_TLS_CA_CERT` (preferred) or explicitly set
-`OS_TLS_CERT_REQUIRED=false` to keep the previous behaviour. The Elasticsearch client behaves the same way
-with `ES_TLS_CERT_REQUIRED` (default `true`; `false` keeps the previous behaviour), and a private CA is
-configured there with `ES_TLS_ENABLED=true`, `ES_AUTH_TLS_CA_CERT`, `ES_AUTH_TLS_CLIENT_CERT` and
-`ES_AUTH_TLS_CLIENT_KEY` (all three are required in that mode), or by adding the CA to the JVM truststore.
+`OS_TLS_CERT_REQUIRED=false` to keep the previous behaviour. The legacy Elasticsearch client keeps its previous behaviour by default, so existing installations are
+not affected. To validate the server certificate and host name there, set `ES_TLS_CERT_REQUIRED=true`
+(default `false`) and either add the CA to the JVM truststore or configure it with `ES_TLS_ENABLED=true`,
+`ES_AUTH_TLS_CA_CERT`, `ES_AUTH_TLS_CLIENT_CERT` and `ES_AUTH_TLS_CLIENT_KEY` (all three are required in
+that mode). A warning is logged while validation is off.
 
 ## Full Configuration Example (HTTPS + mTLS)
 

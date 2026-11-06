@@ -209,9 +209,7 @@ services:
       DB_USERNAME: 'dotcmsdbuser'
       DB_PASSWORD: 'password'
       # --- ES / OS 1.x (primary reads+writes in Phase 0–2) ---
-      # Demo stack: the bundled search node uses a self-signed certificate
       DOT_ES_ENDPOINTS: 'https://opensearch1:9200'
-      DOT_ES_TLS_CERT_REQUIRED: 'false'
       DOT_ES_AUTH_TYPE: 'BASIC'
       DOT_ES_AUTH_BASIC_USER: 'dotcms-es-user'
       DOT_ES_AUTH_BASIC_PASSWORD: 'Dev!dotcms-EsUser-2026'

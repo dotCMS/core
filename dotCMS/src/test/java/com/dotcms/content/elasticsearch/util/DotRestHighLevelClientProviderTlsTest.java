@@ -51,7 +51,13 @@ public class DotRestHighLevelClientProviderTlsTest {
     }
 
     @Test
-    public void testDefaultConfig_RefusesUntrustedCertificate() {
+    public void testDefaultConfig_AcceptsUntrustedCertificate() throws Exception {
+        assertEquals(200, status());
+    }
+
+    @Test
+    public void testCertRequiredTrue_RefusesUntrustedCertificate() {
+        Config.setProperty("ES_TLS_CERT_REQUIRED", "true");
         try {
             status();
             fail("the connection should have been refused");
@@ -62,11 +68,5 @@ public class DotRestHighLevelClientProviderTlsTest {
             }
             assertTrue("expected a certificate rejection but got: " + e, rejected);
         }
-    }
-
-    @Test
-    public void testCertRequiredFalse_AcceptsUntrustedCertificate() throws Exception {
-        Config.setProperty("ES_TLS_CERT_REQUIRED", "false");
-        assertEquals(200, status());
     }
 }

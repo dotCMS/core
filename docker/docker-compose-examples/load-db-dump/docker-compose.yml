@@ -57,9 +57,7 @@ services:
       DB_HOST: 'db'
       DB_LOAD_DUMP_SQL: '/data/dump/dump.sql'
       DOT_ES_AUTH_BASIC_PASSWORD: 'admin'
-      # Demo stack: the bundled search node uses a self-signed certificate
       DOT_ES_ENDPOINTS: 'https://opensearch:9200'
-      DOT_ES_TLS_CERT_REQUIRED: 'false'
       DOT_INITIAL_ADMIN_PASSWORD: 'admin'
       DOT_DOTCMS_CLUSTER_ID: 'dotcms-production'
       GLOWROOT_ENABLED: 'true'
