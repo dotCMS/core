@@ -60,7 +60,8 @@ import org.junit.Test;
  * permissions.
  * <p>
  * Scripts run in a GraalJS context built by the engine's own context builder, {@code JsEngine#buildContext}, with a
- * content-backed {@code JsFileSystem} that reads on behalf of a user (the system user unless a test names another). The tests still do not call {@link JsEngine#eval}: {@code eval} first
+ * content-backed {@code JsFileSystem} that reads on behalf of a user (the system user unless a test names another).
+ * The tests still do not call {@link JsEngine#eval}: {@code eval} first
  * preloads the server's {@code WEB-INF/javascript} sources through the servlet context, and the servlet context used
  * by the integration environment does not provide them, so {@code eval} stops before the script runs. The module
  * loading path under test (module path handling, site and file asset lookup, binary read and its cache) is the same
@@ -97,8 +98,8 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Removes every module, folder, site, user and role created by these tests, plus the temporary files the modules were
-     * uploaded from. Each item is removed on its own, so one failure does not leave the rest behind.
+     * Removes every module, folder, site, user and role created by these tests, plus the temporary files the modules
+     * were uploaded from. Each item is removed on its own, so one failure does not leave the rest behind.
      */
     @AfterClass
     public static void cleanUp() {
@@ -464,6 +465,45 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
     }
 
     /**
+     * Checks which version of a public module a script gets when the module is published and then has a newer working
+     * version that is not published: a reader who can read the working version gets it, and a reader who can only
+     * read the published version (the anonymous user, or a back-end user whose access comes from anonymous visitors)
+     * gets the published one instead of "not found".
+     *
+     * @throws Exception when the test data cannot be created or updated
+     */
+    @Test
+    public void readerGetsPublishedVersionWhenWorkingVersionIsNotReadable() throws Exception {
+        // Given a published module that anonymous visitors and one role can read, with a newer working version that is
+        // not published
+        final Role role = newRole();
+        final Host site = newSite("versions");
+        final String fileName = "versioned-public-module-" + RUN_ID + ".mjs";
+        final Contentlet published = ContentletDataGen.publish(
+                createModule(site, fileName, "export const value = 'PUBLISHED-EXPORT';"));
+        readableOnlyBy(published, APILocator.getRoleAPI().loadCMSAnonymousRole(), role);
+        final Contentlet workingCopy = ContentletDataGen.checkout(published);
+        workingCopy.setBinary(FileAssetAPI.BINARY_FIELD,
+                writeTempFile(fileName, "export const value = 'WORKING-EXPORT';"));
+        ContentletDataGen.checkin(workingCopy);
+        final String importScript = "(await import('//" + site.getHostname() + MODULES_FOLDER_PATH + fileName
+                + "')).value";
+
+        // When the anonymous user, a back-end user with no grant of their own, and a back-end user holding the role
+        // import the module through the engine's module file system
+        final String asAnonymous = runAsync(importScript, JsEngine.moduleFileSystem(new HashMap<>()));
+        final String asBackEndUser = runAsync(importScript,
+                JsEngine.moduleFileSystem(new HashMap<>(Map.of("user", newBackEndUser(newRole())))));
+        final String asRoleHolder = runAsync(importScript,
+                JsEngine.moduleFileSystem(new HashMap<>(Map.of("user", newBackEndUser(role)))));
+
+        // Then the readers who can only read the published version get it, and the role holder gets the working one
+        assertEquals("RESOLVED PUBLISHED-EXPORT", asAnonymous);
+        assertEquals("RESOLVED PUBLISHED-EXPORT", asBackEndUser);
+        assertEquals("RESOLVED WORKING-EXPORT", asRoleHolder);
+    }
+
+    /**
      * Checks which user the engine reads modules for: the {@code user} entry of the script's parameters, given as a
      * {@link User} or wrapped in a {@link JsUser}, and the anonymous user when the entry is missing or holds anything
      * else.
@@ -666,8 +706,8 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
 
     /**
      * Runs an asynchronous expression in a GraalJS context built by {@code JsEngine#buildContext}, with a
-     * content-backed {@link JsFileSystem} that reads as the system user and without full host access, and returns {@code RESOLVED <value>} or
-     * {@code REJECTED <error>}.
+     * content-backed {@link JsFileSystem} that reads as the system user and without full host access, and returns
+     * {@code RESOLVED <value>} or {@code REJECTED <error>}.
      *
      * @param expression a JavaScript expression that may use {@code await}
      * @return the outcome of the expression as text
