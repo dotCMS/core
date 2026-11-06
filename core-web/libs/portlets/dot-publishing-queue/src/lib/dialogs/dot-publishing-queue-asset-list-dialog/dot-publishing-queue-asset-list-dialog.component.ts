@@ -29,7 +29,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotContentChangeService, DotMessageService } from '@dotcms/data-access';
 import { BundleAssetView } from '@dotcms/dotcms-models';
 import { DotEditContentOpenerService } from '@dotcms/edit-content';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -129,6 +129,12 @@ export class DotPublishingQueueAssetListDialogComponent {
             this.store.selectedBundleId();
             untracked(() => this.$assetSearch.set(''));
         });
+
+        // Every save and delete in a side panel, at any depth, reloads the asset list: content
+        // saved from a relationship inside the panel a row opened may be in it (T174).
+        inject(DotContentChangeService)
+            .changes$.pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() => this.store.loadAssets());
     }
 
     onSearch(value: string): void {
@@ -140,8 +146,9 @@ export class DotPublishingQueueAssetListDialogComponent {
 
     /**
      * Opens a contentlet row in the side panel over this dialog, in whichever editor its type uses
-     * (#38303, R12). Every save, and the close, reload the asset list (FR-017); the close also puts
-     * focus back on the row once the list has reloaded (FR-039). Other rows do nothing.
+     * (#38303, R12). The close reloads the asset list (FR-017) and puts focus back on the row once
+     * the list has reloaded (FR-039); a save reloads it through the content change notification
+     * (T174). Other rows do nothing.
      *
      * @param asset The clicked row.
      */
@@ -149,8 +156,6 @@ export class DotPublishingQueueAssetListDialogComponent {
         if (!isEditableContentlet(asset)) {
             return;
         }
-
-        const reload = () => this.store.loadAssets();
 
         this.#opener.open(
             {
@@ -162,9 +167,8 @@ export class DotPublishingQueueAssetListDialogComponent {
             },
             {
                 injector: this.#injector,
-                saved: reload,
                 closed: () => {
-                    reload();
+                    this.store.loadAssets();
                     this.#focusRowAfterReload(asset.asset);
                 },
                 // In the portlet's URL: on load the portlet reopens the panel over the list (#38303).

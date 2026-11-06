@@ -15,7 +15,7 @@ import {
     untracked,
     viewChild
 } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, UrlSerializer, UrlTree } from '@angular/router';
 
 import { MessageService, SortEvent, ToastMessageOptions } from 'primeng/api';
@@ -29,6 +29,7 @@ import { catchError, filter, take } from 'rxjs/operators';
 
 import {
     AddToBundleService,
+    DotContentChangeService,
     DotCurrentUserService,
     DotFolderBulkDeleteRefusalKind,
     DotFolderBulkDuplicateRefusalKind,
@@ -410,11 +411,11 @@ export class DotContentDriveShellComponent implements OnDestroy {
     #lastWrittenPath: string | undefined = undefined;
 
     /**
-     * The Edit Content panel's handlers, for either editor. A save and a close both refresh the list
-     * quietly: a move or a language switch inside the legacy editor sends no event of its own, so
-     * the close catches it (#38303, FR-017). A restored version arrives as a save, and a delete is
-     * followed by the close that refreshes. A language switch only moves the URL, which is the
-     * opener's, so it has no handler here.
+     * The Edit Content panel's handlers, for either editor. A close refreshes the list quietly: a
+     * move or a language switch inside the legacy editor sends no event of its own, so the close
+     * catches it (#38303, FR-017). A save or delete refreshes it through the content change
+     * notification, the shell's for every panel at any depth (T174), so the binding has no `saved`.
+     * A language switch only moves the URL, which is the opener's, so it has no handler here.
      *
      * The panel is written to the URL by the opener, with no extra params:
      * the folder a create lands in is already in Content Drive's own `path` param (#38303, FR-044).
@@ -430,7 +431,6 @@ export class DotContentDriveShellComponent implements OnDestroy {
         const forceLegacyEditor = this.#navigationService.$forceLegacyEditor;
 
         return {
-            saved: () => this.onEditPanelSaved(),
             pageEditorRequested: (page) => this.onEditPanelPageEditor(page),
             closed: () => this.onEditPanelClosed(),
             get editor(): 'legacy' | undefined {
@@ -683,6 +683,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
         this.#reportActionExecutionResult(this.#store.actionExecutionResult);
         this.#reportFolderDeleteRefusal(this.#store.folderDeleteRefusal);
         this.#reportFolderDuplicateRefusal(this.#store.folderDuplicateRefusal);
+
+        inject(DotContentChangeService)
+            .changes$.pipe(takeUntilDestroyed())
+            .subscribe(() => this.onContentChanged());
 
         // Shareable deep-link: a panel or folder-dialog param reopens what it names on load. Read
         // once from the snapshot (the portlet is not re-created on in-session query-param changes).
@@ -2061,11 +2065,13 @@ export class DotContentDriveShellComponent implements OnDestroy {
     }
 
     /**
-     * A save in the Edit Content panel, from either editor, including a workflow action and a
-     * restored version: refresh the list quietly and keep the panel open (#37759, FR-013). The
-     * opener switches the URL to the saved content on a create's first save (FR-025).
+     * A save or delete in any side panel, at any depth, from either editor, including a workflow
+     * action and a restored version: refresh the list quietly and keep the panel open (#37759,
+     * FR-013). Content saved from a relationship inside the panel a row opened is in the list too
+     * (#38303, T174). The opener switches the URL to the saved content on a create's first save
+     * (FR-025).
      */
-    protected onEditPanelSaved() {
+    protected onContentChanged() {
         this.#store.reloadContentDrive({ quiet: true });
     }
 

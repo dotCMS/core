@@ -17,6 +17,7 @@ import { map, switchMap, takeUntil, tap } from 'rxjs/operators';
 
 import {
     DotActionUrlService,
+    DotContentChangeService,
     DotContentEditor,
     DotContentEditorChoice,
     DotContentletEditUrlService,
@@ -112,6 +113,7 @@ export class DotEditContentOpenerService {
     readonly #contentSearch = inject(DotContentSearchService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     readonly #urlState = inject(DotPanelUrlStateService);
+    readonly #changes = inject(DotContentChangeService);
 
     /**
      * Opens the side panel for a request. Everything server-side is resolved first (the content type
@@ -141,6 +143,24 @@ export class DotEditContentOpenerService {
         request: DotEditContentRequest | Signal<DotEditContentRequest>,
         options: DotEditContentOpenOptions
     ): DotSidePanelRef {
+        return this.#open(request, options, 0);
+    }
+
+    /**
+     * {@link open}, at a depth: 0 for a panel a surface opened, one more for each panel stacked from
+     * inside another. The depth goes on the content change notification of the panel's saves and
+     * deletes.
+     *
+     * @param request What to open, or a signal of it.
+     * @param options The opener's injector and the events it handles.
+     * @param depth How many panels this one is stacked over.
+     * @returns The panel.
+     */
+    #open(
+        request: DotEditContentRequest | Signal<DotEditContentRequest>,
+        options: DotEditContentOpenOptions,
+        depth: number
+    ): DotSidePanelRef {
         const $source = isSignal(request) ? request : signal(request).asReadonly();
         const initial = untracked($source);
 
@@ -168,7 +188,9 @@ export class DotEditContentOpenerService {
                 () => $request().title || $typeName() || $request().contentType || ''
             ),
             inputs,
-            outputs: this.#outputs(options, url),
+            outputs: this.#outputs(options, url, depth, () =>
+                untracked(() => $contentlet() ?? asContentlet($request()))
+            ),
             injector: options.injector
         });
 
@@ -340,21 +362,36 @@ export class DotEditContentOpenerService {
      * With the URL option a language switch and a save also go to the URL, and the stacked panel is
      * written to the URL too, with an entry of its own and without this panel's extra params.
      *
+     * Every save and delete is then announced on {@link DotContentChangeService}, after the caller's
+     * handler, with the panel's depth: that is how a listing learns its content changed, whichever
+     * panel changed it (#38303, T174). A delete carries the content as it was last saved, or as the
+     * panel opened it.
+     *
      * @param options The caller's injector and handlers.
      * @param url The panel's name in the URL, when it is written there.
+     * @param depth How many panels this one is stacked over.
+     * @param opened The content the panel opened, as far as it is known.
      * @returns The handlers, by output name.
      */
     #outputs(
         options: DotEditContentOpenOptions,
-        url: DotPanelUrlTracker | null
+        url: DotPanelUrlTracker | null,
+        depth: number,
+        opened: () => DotCMSContentlet
     ): Record<string, (value: never) => void> {
+        let lastSaved: DotCMSContentlet | null = null;
+
         const outputs: Record<string, (value: never) => void> = {
             openContent: (event: DotOpenContentEvent) =>
-                this.open(event.request, {
-                    injector: event.injector ?? options.injector,
-                    saved: event.onSaved,
-                    url: options.url && {}
-                })
+                this.#open(
+                    event.request,
+                    {
+                        injector: event.injector ?? options.injector,
+                        saved: event.onSaved,
+                        url: options.url && {}
+                    },
+                    depth + 1
+                )
         };
 
         for (const name of HANDLED_OUTPUTS) {
@@ -370,11 +407,18 @@ export class DotEditContentOpenerService {
                 url.languageChanged(languageId);
                 options.languageChanged?.(languageId);
             };
-            outputs['saved'] = (contentlet: DotCMSContentlet) => {
-                url.saved(contentlet);
-                options.saved?.(contentlet);
-            };
         }
+
+        outputs['saved'] = (contentlet: DotCMSContentlet) => {
+            lastSaved = contentlet;
+            url?.saved(contentlet);
+            options.saved?.(contentlet);
+            this.#changes.notify({ kind: 'saved', contentlet, depth });
+        };
+        outputs['deleted'] = () => {
+            options.deleted?.();
+            this.#changes.notify({ kind: 'deleted', contentlet: lastSaved ?? opened(), depth });
+        };
 
         return outputs;
     }
@@ -568,4 +612,17 @@ function withContentlet(
         title: request.title || contentlet.title,
         languageId: found ? contentlet.languageId : (request.languageId ?? contentlet.languageId)
     };
+}
+
+/**
+ * The content a request names, as a contentlet, for a delete announced before the panel fetched or
+ * saved anything: only what the request said is set.
+ *
+ * @param request The request, completed from any contentlet fetched for it.
+ * @returns A partial contentlet.
+ */
+function asContentlet(request: DotEditContentRequest): DotCMSContentlet {
+    const { inode, identifier, contentType, title, languageId } = request;
+
+    return { inode, identifier, contentType, title, languageId } as DotCMSContentlet;
 }

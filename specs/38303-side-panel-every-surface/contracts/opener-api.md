@@ -60,7 +60,7 @@ Behaviour of `open()`:
 3. `resolveEditor(request.contentType)`.
 4. `editor === 'legacy'` and `mode === 'new'` → `DotActionUrlService.getCreateContentletUrl(contentType, languageId)`. A failure → standard error, close the pending panel.
 5. Call `DotSidePanelService.open(componentPromise, { heading, inputs: { request, createUrl? }, outputs, injector })`, where `componentPromise` resolves to `loadDotEditContentSidePanel()` or `loadDotLegacyEditorSidePanel()` only after steps 2 to 4 complete. The panel's spinner shows meanwhile.
-6. Wire outputs: the five events to the caller's handlers; `openContent` (from either panel, see open-content-from-fields.md) to a nested `open()` with the hosting panel's injector, which the panel puts on the event (`DotOpenContentEvent.injector`), so the stacked panel closes when its host does; routing that panel's `saved` to the event's `onSaved`.
+6. Wire outputs: the five events to the caller's handlers; `openContent` (from either panel, see open-content-from-fields.md) to a nested `open()` with the hosting panel's injector, which the panel puts on the event (`DotOpenContentEvent.injector`), so the stacked panel closes when its host does; routing that panel's `saved` to the event's `onSaved`. The nested open is one level deeper than the panel that asked (next section). `saved` and `deleted` are always listened to, whatever the caller passed, for the content change notification; both editors declare both outputs, so the outlet can bind them.
 7. `closed` is taken from the ref, so it fires even when the content component never loaded.
 8. With the `url` option, register the panel with `DotPanelUrlStateService`: before step 2 for an edit that names its `identifier`, in the language it asks for, so a lookup that finds nothing closes a panel the URL names and that close takes its params out (and step 2's version renames it in place when it is in another language); after step 2 for an edit whose identifier only the fetch tells (identifier and language known, before the editor is chosen); at once for a create. In place when the option says `inPlace`. Route `languageChanged`, the first `saved` of a create and the first `saved` of a new translation to it as `update` calls; the service forgets the panel on the ref's `closed` itself (next section).
 
@@ -175,6 +175,39 @@ A route with `data: { reuseRoute: false }` is rebuilt by the router's navigation
 
 The legacy (JSP) portlets and Pages read their panel params from the router's `queryParams`, on load and on every navigation of the app's own, not once: a deep link redirects there with a router navigation, after the portlet was built. They skip an emission while the router's `currentNavigation()` has `trigger === 'popstate'`: Back and Forward are the service's, and the router replays an entry that may name a panel still open, which opening again would duplicate. So Forward to an entry that still names a closed panel reopens nothing there either. What is left is deduplicated with `panelUrlIntentKey(intent)` (beside `readPanelUrlIntent` in `@dotcms/utils`), skipped emissions left out, since an app navigation that changes only other params carries the panel params the router last saw. Content Drive, the Query Tool and the Publishing Queue read their URL once.
 
+### The content change notification (T174)
+
+```ts
+// @dotcms/data-access: the admin app reaches it without importing @dotcms/edit-content.
+export interface DotContentChange {
+    kind: 'saved' | 'deleted';
+    /** The saved contentlet; for a delete, the content as last saved, or as the panel opened it. */
+    contentlet: DotCMSContentlet;
+    /** 0 for a panel a surface opened, one more for each panel stacked from inside another. */
+    depth: number;
+}
+
+@Injectable({ providedIn: 'root' })
+export class DotContentChangeService {
+    readonly changes$: Observable<DotContentChange>;
+    notify(change: DotContentChange): void;
+}
+```
+
+The opener announces every `saved` and `deleted` of every panel it opens, the stacked ones and the legacy editor's included, after the panel's own handler (the caller's, or a stacked panel's `onSaved`) and after the URL has followed a save. Only the opener calls `notify`. A delete is announced with the content as it was last saved, or as the panel opened it (the fetched contentlet, else what the request named). A close announces nothing.
+
+This is how a listing learns its content changed: each listing surface subscribes once, for as long as it is shown, and refreshes as it did on its own panel's `saved`. So content saved from a relationship's "New" inside the panel a row opened is in the list too, though the surface never opened that panel. Per-open handlers are for what only the opener of that panel can do; refreshing a listing is the notification's job (panel-events.md). A surface keeps its `closed` refresh: a move or a language switch inside the legacy editor sends no event (FR-017).
+
+| Surface | Subscribes in | Refreshes with |
+|---|---|---|
+| Pages | `DotPageActionsService` (provided by the portlet component) | `DotCMSPagesStore.getPages()` |
+| Content Drive | the shell | `reloadContentDrive({ quiet: true })` |
+| Query Tool | the page component | the search again, when a query ran |
+| Publishing Queue | the shell, and each of its two dialogs while open | the bundle list; the dialog's assets |
+| Legacy (JSP) portlets, Workflow Tasks list included | `IframePortletLegacyComponent` | `DotIframeService.reloadData(currentPortlet.id)` |
+
+UVE is the exception: it keeps its own handlers (insert the new content, reload the page), since a page is not a listing, and it subscribes to nothing. The Workflow Tasks detail keeps `saved: viewTask` too: viewing the task again is not a listing refresh. A panel stacked from a parent the opener did not open (UVE's translate panel, `RouterEditContentHost`) goes through the public `open()` and reports depth 0; nothing listens on those screens.
+
 ## The signal helper
 
 ```ts
@@ -211,7 +244,7 @@ Behaviour notes carried over from `injectSidePanel`: a request that changes whil
 | UVE editor | `injectEditContentPanel` on the editor component | no, the URL names the page |
 | UVE shell (Properties outside the content route) | `open()` with the shell's injector | no |
 | Query Tool | `injectEditContentPanel` | yes, `{}` |
-| Pages portlet | `open()` through `DotPageActionsService.openContent(request)` with the component's injector, for Edit (from either row menu) and for what the URL names on load; the service refreshes the listing on every `saved` and `closed` | yes, `{}` |
+| Pages portlet | `open()` through `DotPageActionsService.openContent(request)` with the component's injector, for Edit (from either row menu) and for what the URL names on load; the service refreshes the listing on `closed`, and on every save and delete through the content change notification | yes, `{}` |
 | Publishing Queue dialogs | `open()` with the dialog component's injector | yes, `{}` |
 | Publishing Queue shell | `open()` with the shell's injector, for what the URL names on load: the panel reopens over the list, not the dialog | yes, `{}` |
 | Custom-event handler (legacy JSP portlets) | `open()` through its public `openContent(request)`, with the side panel host's injector, for the portlets' events and for what a portlet's URL names (`IframePortletLegacyComponent`) | yes, `{}` |
