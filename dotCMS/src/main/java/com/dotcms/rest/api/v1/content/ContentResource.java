@@ -15,6 +15,7 @@ import com.dotcms.util.PaginationUtilParams;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.business.web.VariantWebAPI;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -417,10 +418,23 @@ public class ContentResource {
         final long testLangId = LanguageUtil.getLanguageId(language);
         final long languageId = testLangId <=0 ? sessionLanguageSupplier.getAsLong() : testLangId;
 
-        Contentlet contentlet = this.resolveContentletOrFallBack(inodeOrIdentifier, mode, languageId, user, variantName);
+        // Which variant a request resolves on is the server's to decide for every caller but a
+        // back-end user: the name the request carries is honoured only for those, and an inode
+        // that names a version in another variant is answered as a miss, since resolving by inode
+        // picks no variant of its own.
+        final VariantWebAPI variantWebAPI = WebAPILocator.getVariantWebAPI();
+        final String scopedVariantName = variantWebAPI.selectsVariant(user)
+                ? variantName
+                : VariantAPI.DEFAULT_VARIANT.name();
+
+        Contentlet contentlet = this.resolveContentletOrFallBack(inodeOrIdentifier, mode, languageId, user, scopedVariantName);
+
+        if (!variantWebAPI.canReadVariant(contentlet.getVariantId(), user)) {
+            throw new DoesNotExistException(getDoesNotExistMessage(inodeOrIdentifier, languageId));
+        }
 
         if (-1 != depth) {
-            ContentUtils.addRelationships(contentlet, user, mode,
+            contentlet = ContentUtils.copyWithRelationships(contentlet, Contentlet::new, user, mode,
                     contentlet.getLanguageId(), depth, request, response, true);
         }
         final String variant = contentlet.getVariantId();

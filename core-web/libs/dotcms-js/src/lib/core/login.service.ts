@@ -36,6 +36,10 @@ export class LoginService {
     private dotcmsEventsService = inject(DotcmsEventsService);
 
     currentUserLanguageId = '';
+    get sessionLanguageId(): string {
+        return this.auth?.sessionLanguageId || this.currentUserLanguageId;
+    }
+
     private country = '';
     private lang = '';
     private urls: Record<string, string>;
@@ -114,15 +118,22 @@ export class LoginService {
      * @memberof LoginService
      */
     loadAuth(): Observable<Auth> {
-        return this.http.get<DotCMSResponse<Auth>>(this.urls.getAuth).pipe(
-            map((response) => response.entity),
-            tap((auth: Auth) => {
-                if (auth.user) {
-                    this.setAuth(auth);
-                }
-            }),
-            map((auth: Auth) => this.getFullAuth(auth))
-        );
+        return this.http
+            .get<DotCMSResponse<Auth> & { sessionLanguageId?: string }>(this.urls['getAuth'])
+            .pipe(
+                map((response) => ({
+                    ...response.entity,
+                    ...(response.sessionLanguageId
+                        ? { sessionLanguageId: response.sessionLanguageId }
+                        : {})
+                })),
+                tap((auth: Auth) => {
+                    if (auth.user) {
+                        this.setAuth(auth);
+                    }
+                }),
+                map((auth: Auth) => this.getFullAuth(auth))
+            );
     }
 
     /**
@@ -224,7 +235,7 @@ export class LoginService {
                         user: response.entity
                     };
 
-                    this.setAuth(auth);
+                    this.setAuth(auth, language);
 
                     return response.entity;
                 })
@@ -285,13 +296,14 @@ export class LoginService {
      * Set logged_auth and update auth Observable
      *
      * @param {Auth} auth
+     * @param {string} language Session locale explicitly selected on successful login
      * @memberof LoginService
      */
-    setAuth(auth: Auth): void {
+    setAuth(auth: Auth, language?: string): void {
         this._auth = this.getFullAuth(auth);
+        this.currentUserLanguageId =
+            language || auth.sessionLanguageId || auth.user?.languageId || '';
         this._auth$.next(this.getFullAuth(auth));
-
-        this.currentUserLanguageId = auth.user.languageId;
 
         // When not logged user we need to fire the observable chain
         if (!auth.user) {
@@ -373,6 +385,7 @@ export interface User {
 
 export interface Auth {
     user: User;
-    loginAsUser: User;
+    loginAsUser: User | null;
     isLoginAs?: boolean;
+    sessionLanguageId?: string;
 }
