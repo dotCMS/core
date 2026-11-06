@@ -5,7 +5,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.liferay.portal.model.User;
+import java.awt.Desktop;
 import java.io.File;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.ParameterizedType;
@@ -16,6 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.naming.Context;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
@@ -33,8 +37,9 @@ import org.w3c.dom.NodeList;
  * <p>Bound tools are thin, template-facing facades. They resolve the current requester
  * themselves, so they must not hand templates the underlying service APIs (which take the acting
  * {@link User} as an argument) nor {@link User} objects for accounts other than the current
- * requester. This test walks every bound tool class and pins both rules, so a new tool or method
- * that breaks them fails here rather than at review time.
+ * requester, nor a JNDI context, {@link java.lang.invoke.MethodHandle}, {@link ProcessHandle} or
+ * {@link Desktop} object. This test walks every bound tool class and pins all three rules, so a
+ * new tool or method that breaks them fails here rather than at review time.
  */
 public class ToolboxExposureTest {
 
@@ -122,6 +127,50 @@ public class ToolboxExposureTest {
         }
         assertTrue("Bound tools must not return User objects for arbitrary accounts: " + offenders,
                 offenders.isEmpty());
+    }
+
+    /**
+     * No bound tool may hand a template a JNDI naming context, a {@link MethodHandle}/
+     * {@link MethodHandles.Lookup}, a {@link ProcessHandle}, or a {@link Desktop} — the four
+     * families {@code SecureIntrospectorImpl}'s runtime deny-list covers as defense in depth.
+     * This is the reachability check: if a future tool ever returns one of these, this test is
+     * what catches it, rather than the deny-list being the only thing standing in the way.
+     */
+    @Test
+    public void bound_tools_do_not_expose_restricted_runtime_types() {
+        final List<String> offenders = new ArrayList<>();
+        for (final Class<?> toolClass : toolClasses) {
+            for (final Method method : templateCallableMethods(toolClass)) {
+                if (mentionsRestrictedRuntimeType(method.getGenericReturnType())) {
+                    offenders.add(describe(toolClass, method));
+                }
+            }
+        }
+        assertTrue("Bound tools must not return a naming context, MethodHandle/Lookup, "
+                + "ProcessHandle or Desktop: " + offenders, offenders.isEmpty());
+    }
+
+    private static boolean mentionsRestrictedRuntimeType(final Type type) {
+        if (type instanceof Class) {
+            final Class<?> clazz = (Class<?>) type;
+            if (clazz.isArray()) {
+                return mentionsRestrictedRuntimeType(clazz.getComponentType());
+            }
+            return Context.class.isAssignableFrom(clazz)
+                    || MethodHandle.class.isAssignableFrom(clazz)
+                    || MethodHandles.Lookup.class.isAssignableFrom(clazz)
+                    || ProcessHandle.class.isAssignableFrom(clazz)
+                    || Desktop.class.isAssignableFrom(clazz);
+        }
+        if (type instanceof ParameterizedType) {
+            for (final Type argument : ((ParameterizedType) type).getActualTypeArguments()) {
+                if (mentionsRestrictedRuntimeType(argument)) {
+                    return true;
+                }
+            }
+            return mentionsRestrictedRuntimeType(((ParameterizedType) type).getRawType());
+        }
+        return false;
     }
 
     private static List<Method> templateCallableMethods(final Class<?> toolClass) {
