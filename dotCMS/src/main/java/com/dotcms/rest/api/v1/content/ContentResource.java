@@ -434,7 +434,7 @@ public class ContentResource {
         }
 
         if (-1 != depth) {
-            ContentUtils.addRelationships(contentlet, user, mode,
+            contentlet = ContentUtils.copyWithRelationships(contentlet, Contentlet::new, user, mode,
                     contentlet.getLanguageId(), depth, request, response, true);
         }
         final String variant = contentlet.getVariantId();
