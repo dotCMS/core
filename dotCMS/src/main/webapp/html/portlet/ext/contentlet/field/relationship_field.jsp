@@ -373,6 +373,13 @@
                 .replace(/'/g, '&#39;');
         }
 
+        /**
+         * Returns the text of a value that may carry markup, without its tags.
+         */
+        function <%= relationJsName%>TextOf(value) {
+            return new DOMParser().parseFromString(String(value), 'text/html').body.textContent || '';
+        }
+
         function <%= relationJsName%>WriteLinkTitle (o) {
             return <%= relationJsName%>EditRelatedContentWrap(o, <%= relationJsName%>EscapeHtml(o['title'] || ""));
         }
@@ -702,7 +709,7 @@
 						} else {
 							fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
 									item,
-									<%= relationJsName%>EscapeHtml(item[fieldName] || ""));
+									<%= relationJsName%>EscapeHtml(<%= relationJsName%>TextOf(item[fieldName] || "")));
 						}
 
                     }

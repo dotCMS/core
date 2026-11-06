@@ -223,6 +223,13 @@
 						.replace(/"/g, '&quot;')
 						.replace(/'/g, '&#39;');
 				}
+
+				/**
+				 * Returns the text of a value that may carry markup, without its tags.
+				 */
+				function <%= relationJsName%>TextOf(value) {
+					return new DOMParser().parseFromString(String(value), 'text/html').body.textContent || '';
+				}
 		<%String lastIdentifier = "";
 
 
@@ -481,7 +488,7 @@
 				    }else{
 				        innerValue = o[('<%=varName%>')];
 				    }
-					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + <%= relationJsName%>EscapeHtml(innerValue) + "</a>";
+					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + <%= relationJsName%>EscapeHtml(<%= relationJsName%>TextOf(innerValue)) + "</a>";
 	 			}
 	 			return value;
 			}
