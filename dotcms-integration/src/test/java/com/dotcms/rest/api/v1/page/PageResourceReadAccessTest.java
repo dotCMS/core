@@ -47,7 +47,9 @@ import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -56,6 +58,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.personas.model.Persona;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
@@ -101,6 +104,13 @@ public class PageResourceReadAccessTest {
     private static Persona personaWithArchivedContent;
     private static Persona personaWithPublicContentDraftedInVariant;
     private static Contentlet publicContentDraftedInVariant;
+    private static Variant otherVariant;
+    private static Persona personaWithContentInOtherVariant;
+    private static Persona personaWithPublicContentArchivedInVariant;
+    private static Contentlet publicContentArchivedInVariant;
+    private static Persona personaWithFrontEndRoleContent;
+    private static Contentlet frontEndRoleContent;
+    private static User frontEndRoleReader;
     private static HTMLPageAsset livePage;
     private static Persona personaWithNewerDraft;
     private static Contentlet publishedContentWithNewerDraft;
@@ -109,6 +119,7 @@ public class PageResourceReadAccessTest {
     private static User reader;
     private static User frontEndUser;
     private static final List<User> createdUsers = new ArrayList<>();
+    private static final String DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE = "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE";
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -161,7 +172,10 @@ public class PageResourceReadAccessTest {
      * read that exists only in a variant, placed in that variant's tree. In the variant's tree,
      * three more personas hold content whose version in the variant differs from the default one:
      * filed under a category the reader has no permission on, archived, or not published while its
-     * default version is published and readable through the anonymous role.
+     * default version is published and readable through the anonymous role. Two more personas in
+     * the variant's tree hold content the reader can read that exists only in another variant, and
+     * content readable through the anonymous role whose version in the variant is archived. A last
+     * persona holds content readable only through the front-end user role.
      */
     private static void preparePersonaPage(final ContentType webPageContent) throws Exception {
         final PageRenderTestUtil.PageRenderTest personalized = PageRenderTestUtil.createPage(1, site, true);
@@ -216,6 +230,48 @@ public class PageResourceReadAccessTest {
         personaWithPublicContentDraftedInVariant = newPersona("variantdraft");
         saveRow(personaPage, containerId, publicContentDraftedInVariant.getIdentifier(), 7,
                 personaTag(personaWithPublicContentDraftedInVariant), variant.name());
+
+        otherVariant = new VariantDataGen().nextPersisted();
+        final Contentlet otherVariantOnlyContent = new ContentletDataGen(webPageContent.id())
+                .languageId(1)
+                .host(site)
+                .variant(otherVariant)
+                .setProperty("title", "other variant content")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .nextPersisted();
+        grantRead(otherVariantOnlyContent, reader);
+        personaWithContentInOtherVariant = newPersona("othervariant");
+        saveRow(personaPage, containerId, otherVariantOnlyContent.getIdentifier(), 8,
+                personaTag(personaWithContentInOtherVariant), variant.name());
+
+        publicContentArchivedInVariant = newPublicContent(webPageContent);
+        final Contentlet archivedPublicVariantVersion = ContentletDataGen.createNewVersion(
+                publicContentArchivedInVariant, variant, Map.of("title", "archived public variant version"));
+        APILocator.getContentletAPI().archive(archivedPublicVariantVersion, APILocator.systemUser(), false);
+        final Contentlet publicDefaultVersion = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(
+                publicContentArchivedInVariant.getIdentifier(), VariantAPI.DEFAULT_VARIANT.name(), false);
+        ContentletDataGen.publish(publicDefaultVersion);
+        assertTrue("Precondition: the variant's version is archived",
+                APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(
+                        publicContentArchivedInVariant.getIdentifier(), variant.name(), true).isArchived());
+        assertTrue("Precondition: the anonymous role can read the default version",
+                APILocator.getPermissionAPI().doesUserHavePermission(publicDefaultVersion,
+                        PermissionAPI.PERMISSION_READ, APILocator.getUserAPI().getAnonymousUser(), true));
+        personaWithPublicContentArchivedInVariant = newPersona("publicarchived");
+        saveRow(personaPage, containerId, publicContentArchivedInVariant.getIdentifier(), 9,
+                personaTag(personaWithPublicContentArchivedInVariant), variant.name());
+
+        final Role frontEndRole = APILocator.getRoleAPI().loadFrontEndUserRole();
+        frontEndRoleReader = new UserDataGen().roles(TestUserUtils.getBackendRole(), frontEndRole).nextPersisted();
+        createdUsers.add(frontEndRoleReader);
+        frontEndRoleContent = newContent(webPageContent);
+        breakInheritance(frontEndRoleContent);
+        APILocator.getPermissionAPI().save(new Permission(frontEndRoleContent.getPermissionId(),
+                frontEndRole.getId(), PermissionAPI.PERMISSION_READ, true), frontEndRoleContent,
+                APILocator.systemUser(), false);
+        personaWithFrontEndRoleContent = newPersona("frontendrole");
+        saveRow(personaPage, containerId, frontEndRoleContent.getIdentifier(), 10,
+                personaTag(personaWithFrontEndRoleContent), VariantAPI.DEFAULT_VARIANT.name());
     }
 
     /**
@@ -358,12 +414,14 @@ public class PageResourceReadAccessTest {
     @AfterClass
     public static void cleanup() {
         createdUsers.forEach(user -> UserDataGen.remove(user, true));
-        if (variant != null) {
-            try {
-                APILocator.getVariantAPI().archive(variant.name());
-                APILocator.getVariantAPI().delete(variant.name());
-            } catch (final Exception e) {
-                Logger.warn(PageResourceReadAccessTest.class, "Could not remove test variant: " + e.getMessage());
+        for (final Variant createdVariant : new Variant[]{variant, otherVariant}) {
+            if (createdVariant != null) {
+                try {
+                    APILocator.getVariantAPI().archive(createdVariant.name());
+                    APILocator.getVariantAPI().delete(createdVariant.name());
+                } catch (final Exception e) {
+                    Logger.warn(PageResourceReadAccessTest.class, "Could not remove test variant: " + e.getMessage());
+                }
             }
         }
         if (site != null) {
@@ -833,6 +891,53 @@ public class PageResourceReadAccessTest {
     }
 
     /**
+     * Given the same page, personalized in a variant with content that exists only in another
+     * variant,
+     * When the reader previews that variant as the persona,
+     * Then the view-as status is not personalized, since the render only shows versions of the
+     * current and the default variant.
+     */
+    @Test
+    public void viewAsStatus_ignoresContentThatExistsOnlyInAnotherVariant() throws Exception {
+        assertFalse(viewAsPersonalized(reader, personaWithContentInOtherVariant, PageMode.PREVIEW_MODE,
+                variant.name()));
+    }
+
+    /**
+     * Given the same page, personalized in a variant with content whose version in the variant is
+     * archived and whose default version is published and readable through the anonymous role,
+     * When the reader, who has no READ on it, previews that variant as the persona,
+     * Then the page shows the persona's content, which the render shows through the anonymous
+     * role's access to the default version.
+     */
+    @Test
+    public void render_inVariant_asPersonaWithArchivedVariantVersionAndPublicDefaultVersion_showsPersonaContent()
+            throws Exception {
+        assertEquals(List.of(publicContentArchivedInVariant.getIdentifier()),
+                renderedContentIds(reader, personaWithPublicContentArchivedInVariant, PageMode.PREVIEW_MODE,
+                        personaPage, variant.name()));
+    }
+
+    /**
+     * Given the same page, personalized with content readable only through the front-end user
+     * role, and content falling back to the default language,
+     * When a back-end user who also holds the front-end user role previews it as the persona,
+     * Then the page shows the persona's content, since the render counts front-end roles when
+     * content falls back to the default language.
+     */
+    @Test
+    public void render_withDefaultLanguageFallback_countsFrontEndRoles() throws Exception {
+        final boolean previous = Config.getBooleanProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, false);
+        Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, true);
+        try {
+            assertEquals(List.of(frontEndRoleContent.getIdentifier()),
+                    renderedContentIds(frontEndRoleReader, personaWithFrontEndRoleContent, PageMode.PREVIEW_MODE));
+        } finally {
+            Config.setProperty(DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE, previous);
+        }
+    }
+
+    /**
      * Given a page the reader can edit, with no rows in a variant, so the variant shows the default
      * variant's tree, which holds rows for a persona whose content the reader has no READ on,
      * When the reader asks to personalize the page for that persona in the variant,
@@ -893,7 +998,7 @@ public class PageResourceReadAccessTest {
     private static Response requestPersonas(final PageResource resource, final String pageId,
             final boolean respectFrontEndRoles) throws Exception {
         return resource.getPersonalizedPersonasOnPage(mockRequest(), new EmptyHttpResponse(),
-                null, 0, 10, "title", OrderDirection.ASC.name(), site.getIdentifier(), pageId,
+                null, 0, 100, "title", OrderDirection.ASC.name(), site.getIdentifier(), pageId,
                 respectFrontEndRoles);
     }
 

@@ -9,6 +9,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
@@ -25,8 +26,9 @@ import java.util.Set;
 /**
  * Decides which contentlets placed on a page's tree a user can read. A contentlet is looked up by
  * identifier in any language, working version first: in the variant of the tree when it has a
- * version there, otherwise in the default variant (archived versions included), otherwise in any
- * other variant it exists in (archived versions excluded). READ is checked on that version, so the
+ * version there, otherwise in the default variant (archived versions included), otherwise, except
+ * for the render checks ({@link #forRender}, {@link #forViewAs}), in any other variant it exists in
+ * (archived versions excluded). READ is checked on that version, so the
  * categories it is filed under count. READ is checked without front-end roles by default, the same
  * way the page REST endpoints check the page. Each contentlet is checked once per variant and
  * instance, however many tree rows place it. CMS administrators can read every row, including rows
@@ -57,8 +59,9 @@ public class PageTreeReadFilter {
      * @param anonymousFallback    whether content the anonymous user can read in the default
      *                             variant also counts, as the render falls back to it in edit and
      *                             preview mode
-     * @param renderedContentOnly  whether content whose version is archived counts as not readable,
-     *                             as the render never shows it
+     * @param renderedContentOnly  whether only versions the render can show count: an archived
+     *                             version counts as not readable, and versions of variants other
+     *                             than the current and the default one are not looked up
      */
     private PageTreeReadFilter(final User user, final boolean respectFrontendRoles,
             final boolean anonymousFallback, final boolean renderedContentOnly) {
@@ -82,17 +85,22 @@ public class PageTreeReadFilter {
     }
 
     /**
-     * Builds a filter that follows what a page render shows the user in the given mode: READ with
-     * the mode's front-end roles setting on the version the render shows, archived versions not
-     * counted, and, in edit and preview mode, also content whose default-variant version the
-     * anonymous user can read, which the render falls back to there.
+     * Builds a filter that follows what a page render shows the user in the given mode: READ on the
+     * version the render shows (current variant, then default variant; archived versions not
+     * counted), with front-end roles when the mode counts them or when content falls back to the
+     * default language ({@code DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE}), and, in edit and preview mode,
+     * also content whose default-variant version the anonymous user can read, which the render
+     * falls back to there.
      *
      * @param user the user the page is rendered for
      * @param mode the mode the page is rendered in
      * @return the filter for that render
      */
     public static PageTreeReadFilter forRender(final User user, final PageMode mode) {
-        return new PageTreeReadFilter(user, mode.respectAnonPerms, appliesTo(mode), true);
+        // The render's lookup with default-language fallback counts front-end roles in every mode
+        final boolean respectFrontendRoles = mode.respectAnonPerms
+                || Config.getBooleanProperty("DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE", false);
+        return new PageTreeReadFilter(user, respectFrontendRoles, appliesTo(mode), true);
     }
 
     /**
@@ -220,14 +228,16 @@ public class PageTreeReadFilter {
                     + "it is treated as not readable", e);
             return false;
         }
-        if (null == contentlet || (renderedContentOnly && isArchived(contentlet))) {
+        if (null == contentlet) {
             return false;
         }
 
+        // Same order as the render: a version the user can read is shown unless it is archived;
+        // otherwise the render falls back to the default-variant version the anonymous user can read
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         if (permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user,
                 respectFrontendRoles)) {
-            return true;
+            return !(renderedContentOnly && isArchived(contentlet));
         }
         if (!anonymousFallback) {
             return false;
@@ -272,6 +282,8 @@ public class PageTreeReadFilter {
             }
         }
         final Contentlet contentlet = contentletAPI.findContentletByIdentifierAnyLanguage(contentId, true);
-        return null != contentlet ? contentlet : contentletAPI.findContentletByIdentifierAnyLanguageAnyVariant(contentId);
+        // The render only loads versions of the current and the default variant
+        return null != contentlet || renderedContentOnly ? contentlet
+                : contentletAPI.findContentletByIdentifierAnyLanguageAnyVariant(contentId);
     }
 }
