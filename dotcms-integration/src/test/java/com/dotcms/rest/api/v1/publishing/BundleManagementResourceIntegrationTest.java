@@ -697,6 +697,31 @@ public class BundleManagementResourceIntegrationTest {
     }
 
     /**
+     * Given: a bundle owned by one back-end user that is being published
+     * When: a different back-end user, who is not a CMS Administrator, adds an asset to it by id
+     * Then: 403, not 409, and nothing is added
+     */
+    @Test
+    public void test_addAssets_nonOwnerOnInProgressBundle_returns403() throws Exception {
+        final User owner = newBackendUser();
+        final User otherUser = newBackendUser();
+        final Bundle bundle = createBundleWithStatus("add-non-owner-in-progress", owner, Status.PUBLISHING_BUNDLE);
+        final Contentlet contentlet = createContentlet();
+
+        final AddAssetsToBundleForm form = new AddAssetsToBundleForm(
+                bundle.getId(), null, List.of(contentlet.getIdentifier()));
+
+        try {
+            resource.addAssetsToBundle(mockAuthRequest(otherUser), mockResponse, form);
+            fail("A user who does not own the bundle must get 403");
+        } catch (final ForbiddenException e) {
+            // expected
+        }
+
+        assertTrue(queuedAssets(bundle.getId()).isEmpty());
+    }
+
+    /**
      * Given: a bundle owned by a back-end user who is not a CMS Administrator, and an asset the
      * owner may publish
      * When: the owner adds the asset to the bundle by id
