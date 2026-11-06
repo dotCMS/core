@@ -7,6 +7,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -39,6 +40,8 @@ import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.quartz.QuartzUtils;
@@ -1197,6 +1200,62 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
     }
 
     /**
+     * Given scenario: the session an administrator ends by token has already ended on its own
+     *                 (for example its user signed out between the listing and the kill)
+     * Expected result: the call answers as a successful kill instead of failing, and the ended
+     *                  session leaves the tracked map
+     */
+    @Test
+    public void test_killSession_alreadyEndedSession_answersAndIsForgotten() throws Exception {
+        final HttpSession ended = mock(HttpSession.class);
+        when(ended.getId()).thenReturn(UUIDGenerator.generateUuid());
+        doThrow(new IllegalStateException("invalidate: Session already invalidated"))
+                .when(ended).invalidate();
+        plantSession(ended);
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession caller = request.getSession();
+        caller.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(caller);
+        resource.listSessions(request, mockResponse);
+        final String csrf = (String) caller.getAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE);
+
+        final ResponseEntityStringView result = resource.killSession(request, mockResponse,
+                SessionTokenUtil.obfuscateSessionId(ended.getId(), csrf));
+
+        assertEquals("Session invalidated", result.getEntity());
+        assertNull("Ended session must leave the tracked map",
+                sessionCache().getIfPresent(ended.getId()));
+    }
+
+    /**
+     * Given scenario: an administrator ends a tracked session whose user id is the anonymous
+     *                 user, the shared record every unauthenticated request runs as
+     * Expected result: the session is ended, but the anonymous user record is left alone: its
+     *                  login token is not rotated
+     */
+    @Test
+    public void test_killSession_anonymousSession_leavesTheAnonymousUserAlone() throws Exception {
+        final HttpSession anonymous = new MockSession(UUIDGenerator.generateUuid());
+        anonymous.setAttribute(WebKeys.USER_ID, UserAPI.CMS_ANON_USER_ID);
+        plantSession(anonymous);
+        final String tokenBefore = storedLoginTokenOfAnonymousUser();
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession caller = request.getSession();
+        caller.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(caller);
+        resource.listSessions(request, mockResponse);
+        final String csrf = (String) caller.getAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE);
+
+        resource.killSession(request, mockResponse,
+                SessionTokenUtil.obfuscateSessionId(anonymous.getId(), csrf));
+
+        assertEquals("the anonymous user's login token must not change",
+                tokenBefore, storedLoginTokenOfAnonymousUser());
+        assertNull("Ended session must leave the tracked map",
+                sessionCache().getIfPresent(anonymous.getId()));
+    }
+
+    /**
      * Given scenario: the tracked map still holds a session that has already ended, so its
      *                 attributes can no longer be read
      * Expected result: the listing answers without that session, and forgets it
@@ -1220,6 +1279,16 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
                 result.getEntity().stream().anyMatch(SessionView::isCurrent));
         assertNull("Ended session must leave the tracked map",
                 sessionCache().getIfPresent(ended.getId()));
+    }
+
+    /**
+     * Reads the login token id stored for the anonymous user straight from the table, as the
+     * user API keeps that user in memory once loaded and would hide a later update.
+     */
+    private static String storedLoginTokenOfAnonymousUser() throws Exception {
+        return new DotConnect().setSQL("select skinid from user_ where userid = ?")
+                .addParam(UserAPI.CMS_ANON_USER_ID)
+                .getString("skinid");
     }
 
     /**

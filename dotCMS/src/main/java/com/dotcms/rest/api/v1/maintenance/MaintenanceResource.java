@@ -23,6 +23,7 @@ import com.dotcms.util.SizeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -1218,7 +1219,12 @@ public class MaintenanceResource implements Serializable {
                             request.getRemoteAddr()));
 
             final Set<String> affectedUserIds = sessionUserIds(session);
-            SessionMonitor.end(session);
+            try {
+                SessionMonitor.end(session);
+            } catch (final IllegalStateException e) {
+                // the session ended on its own in the meantime; it has been forgotten, the outcome is the same
+                Logger.debug(this, () -> "The session to end had already ended");
+            }
             affectedUserIds.forEach(this::invalidateLoginTokens);
             return new ResponseEntityStringView("Session invalidated");
         }
@@ -1260,12 +1266,15 @@ public class MaintenanceResource implements Serializable {
 
     /**
      * Returns the ids of the users whose login tokens must be invalidated when the session ends:
-     * the session's user and, for a Login As session, the administrator behind it.
+     * the session's user and, for a Login As session, the administrator behind it. The anonymous
+     * user is never among them: it is the shared record unauthenticated requests run as, it holds
+     * no login token, and its row must not be touched by a session kill.
      */
     private static Set<String> sessionUserIds(final HttpSession session) {
         final Set<String> userIds = new HashSet<>();
         sessionUserId(session).ifPresent(userIds::add);
         sessionAttribute(session, com.liferay.portal.util.WebKeys.PRINCIPAL_USER_ID).ifPresent(userIds::add);
+        userIds.remove(UserAPI.CMS_ANON_USER_ID);
         return userIds;
     }
 
