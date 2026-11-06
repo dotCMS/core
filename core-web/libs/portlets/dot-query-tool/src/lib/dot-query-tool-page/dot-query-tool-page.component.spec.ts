@@ -8,6 +8,7 @@ import { NEVER, of } from 'rxjs';
 import { Mock, MockInstance, vi } from 'vitest';
 
 import { Location, PopStateEvent } from '@angular/common';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Signal, WritableSignal, signal } from '@angular/core';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 
@@ -926,22 +927,34 @@ describe('DotQueryToolPageComponent (panel deep link)', () => {
         expect(search).not.toHaveBeenCalled();
     });
 
-    // The value reaches a Lucene query, so only an identifier's shape is looked up (FR-049).
+    /** The status of each error the page showed through the standard handler. */
+    const shownErrors = (): number[] =>
+        (spectator.inject(DotHttpErrorManagerService).handle as Mock).mock.calls.map(
+            ([error]) => (error as HttpErrorResponse).status
+        );
+
+    // The value reaches a Lucene query, so only an identifier's shape is looked up (FR-049). A link
+    // of another shape tells the author, as a link to missing content does, and loses its params
+    // (T172).
     it.each(['new', 'id-1', 'abc OR +live:true'])(
-        'opens nothing and searches nothing for editContent=%j',
+        'refuses editContent=%j: searches nothing, shows the not-found error, removes the params',
         (editContent) => {
-            mount({ editContent });
+            mount({ q: '+live:true', editContent });
 
             expect(search).not.toHaveBeenCalled();
             expect(opener.open).not.toHaveBeenCalled();
+            expect(shownErrors()).toEqual([404]);
+            expect(location.go).not.toHaveBeenCalled();
+            expect(lastWrittenParams(location.replaceState)).toEqual({ q: '+live:true' });
         }
     );
 
-    it('opens nothing for a link naming two panels, and removes their params in place', () => {
+    it('refuses a link naming two panels: the not-found error, the params removed in place', () => {
         mount({ q: '+live:true', editContent: LINKED_IDENTIFIER, createContent: 'Blog' });
 
         expect(opener.open).not.toHaveBeenCalled();
         expect(search).not.toHaveBeenCalled();
+        expect(shownErrors()).toEqual([404]);
         expect(location.go).not.toHaveBeenCalled();
         expect(location.replaceState).toHaveBeenCalledTimes(1);
         expect(lastWrittenParams(location.replaceState)).toEqual({ q: '+live:true' });
