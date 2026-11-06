@@ -4,6 +4,7 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import static com.dotmarketing.common.reindex.ReindexThread.BULK_PROCESSOR_AWAIT_TIMEOUT;
 import static com.dotmarketing.common.reindex.ReindexThread.ELASTICSEARCH_CONCURRENT_REQUESTS;
 
+import com.dotcms.content.elasticsearch.util.AdmittedElasticsearch;
 import com.dotcms.content.index.ContentletIndexOperations;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.content.index.IndexAPI;
@@ -351,6 +352,7 @@ public class ContentletIndexOperationsES implements ContentletIndexOperations {
                 + " from contentType: " + structureName);
     }
 
+    /** Counts documents under the engine's shared search admission and deadline limits. */
     @Override
     public long getIndexDocumentCount(final String indexName) {
         final CountRequest countRequest = new CountRequest(indexName);
@@ -359,8 +361,8 @@ public class ContentletIndexOperationsES implements ContentletIndexOperations {
         countRequest.source(searchSourceBuilder);
 
         final CountResponse countResponse = Sneaky.sneak(
-                () -> RestHighLevelClientProvider.getInstance().getClient()
-                        .count(countRequest, RequestOptions.DEFAULT));
+                () -> AdmittedElasticsearch.count(
+                        RestHighLevelClientProvider.getInstance().getClient(), countRequest));
 
         return countResponse.getCount();
     }

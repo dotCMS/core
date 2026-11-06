@@ -181,6 +181,8 @@ public final class PhaseRouter<T> {
      * <p><strong>Phase 2 only</strong>: OS is the read provider but ES is still active.
      * If OS throws a runtime exception the error is logged at {@code ERROR} level and the
      * read is retried against ES, so a transient OS failure never surfaces to the caller.
+     * Local admission/deadline and temporary search failures propagate without fallback, avoiding
+     * amplification and a second deadline on the other engine.
      * A failure caused by the request itself — a query that is not JSON, a security rule — is not
      * retried: it propagates, logged at {@code WARN} with its cause (see {@link #isCallerError}).
      * A query OpenSearch refused as malformed is still retried, logged at {@code WARN} as a query
@@ -215,6 +217,7 @@ public final class PhaseRouter<T> {
         try {
             return fn.apply(osImpl);
         } catch (final RuntimeException e) {
+            SearchUnavailableException.rethrow(e);
             if (isCallerError(e)) {
                 Logger.warn(PhaseRouter.class, callerErrorMessage(operation, e));
                 throw e;
@@ -457,6 +460,7 @@ public final class PhaseRouter<T> {
         try {
             return fn.apply(osImpl);
         } catch (final Exception e) {
+            SearchUnavailableException.rethrow(e);
             if (isCallerError(e)) {
                 Logger.warn(PhaseRouter.class, callerErrorMessage(null, e));
                 throw e;

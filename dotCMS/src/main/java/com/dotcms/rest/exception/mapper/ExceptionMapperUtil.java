@@ -5,6 +5,7 @@ import static com.dotcms.exception.ExceptionUtil.getRootCause;
 import static com.dotcms.exception.ExceptionUtil.mapValidationException;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.content.index.SearchUnavailableException;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotmarketing.business.APILocator;
@@ -159,6 +160,9 @@ public final class ExceptionMapperUtil {
      * @return Response
      */
     public static Response  createResponse(final Throwable exception, final String key, final Response.Status status){
+        if (SearchUnavailableException.find(exception) != null) {
+            return createSearchUnavailableResponse();
+        }
         //Create the message.
 
         if (exception instanceof WebApplicationException) {
@@ -239,6 +243,18 @@ public final class ExceptionMapperUtil {
                 .header("error-key", errorKey)
                 .header("access-control", accessControlHeader)
                 .type(mediaType)
+                .build();
+    }
+
+    /** A public-safe, non-cacheable response shared by runtime and checked exception mappers. */
+    public static Response createSearchUnavailableResponse() {
+        Logger.warnEvery(ExceptionMapperUtil.class, "search-unavailable",
+                "Search requests are temporarily unavailable; inspect search admission metrics", 5000);
+        return Response.status(Response.Status.SERVICE_UNAVAILABLE)
+                .header("Cache-Control", "no-store")
+                .header("Retry-After", "1")
+                .type(MediaType.APPLICATION_JSON)
+                .entity(Map.of("message", "Search temporarily unavailable. Please retry later."))
                 .build();
     }
 

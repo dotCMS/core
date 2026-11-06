@@ -45,6 +45,22 @@ import org.junit.Test;
  */
 public class PhaseRouterTest {
 
+    /** Admission rejection or deadline must not be retried against the other engine in Phase 2. */
+    @Test
+    public void searchOverloadDoesNotTriggerFallback() throws Exception {
+        setPhase(2);
+        final AtomicBoolean esCalled = new AtomicBoolean();
+        final SearchUnavailableException failure = new SearchUnavailableException(
+                SearchUnavailableException.Reason.REJECTED, null);
+        final Supplier<String> es = () -> { esCalled.set(true); return "fallback"; };
+        final Supplier<String> os = () -> { throw new RuntimeException(failure); };
+        final PhaseRouter<Supplier<String>> router = new PhaseRouter<>(es, os);
+        assertThrows(RuntimeException.class, () -> router.read(Supplier::get));
+        assertFalse(esCalled.get());
+        assertThrows(RuntimeException.class, () -> router.readChecked(Supplier::get));
+        assertFalse(esCalled.get());
+    }
+
     // ── Test setup / teardown ─────────────────────────────────────────────────
 
     @After

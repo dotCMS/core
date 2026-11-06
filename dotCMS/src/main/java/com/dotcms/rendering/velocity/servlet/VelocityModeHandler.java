@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import com.dotcms.content.index.SearchRequestFailure;
 import com.dotcms.rendering.util.HtmlMinifier;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
@@ -102,9 +103,11 @@ public abstract class VelocityModeHandler {
     abstract void serve(OutputStream out) throws DotDataException, IOException, DotSecurityException;
 
 
+    /** Buffers a render and refuses to return partial output after a search outage. */
     public final String eval() {
         try(ByteArrayOutputStream out = new ByteArrayOutputStream(4096)) {
             serve(out);
+            SearchRequestFailure.check();
 
             final String htmlCode = new String(out.toByteArray(), StandardCharsets.UTF_8);
 

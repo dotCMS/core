@@ -30,10 +30,10 @@ import org.opensearch.client.opensearch._types.mapping.FieldType;
 import org.opensearch.client.opensearch._types.Time;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch._types.query_dsl.QueryStringQuery;
-import org.opensearch.client.opensearch.core.ClearScrollRequest;
 import org.opensearch.client.opensearch.core.ScrollRequest;
 import org.opensearch.client.opensearch.core.SearchRequest;
 import org.opensearch.client.opensearch.core.SearchResponse;
+import org.opensearch.client.opensearch.core.ScrollResponse;
 import org.opensearch.client.opensearch.core.search.HitsMetadata;
 
 /**
@@ -130,7 +130,7 @@ public class OSContentletScrollImpl implements IndexContentletScroll {
             final SearchRequest searchRequest = searchRequestBuilder.build();
 
             // Execute initial search
-            final SearchResponse<Object> response = osClient.search(searchRequest, Object.class);
+            final SearchResponse<Object> response = AdmittedOpenSearch.search(osClient, searchRequest);
             this.scrollId = response.scrollId();
             final HitsMetadata<Object> osSearchHits = response.hits();
 
@@ -156,6 +156,7 @@ public class OSContentletScrollImpl implements IndexContentletScroll {
         });
     }
 
+    /** Returns the next bounded batch, preserving the latest cleanup identifier. */
     @Override
     public List<ContentletSearch> nextBatch() throws DotDataException {
         // On the first call, return the cached first batch
@@ -177,7 +178,8 @@ public class OSContentletScrollImpl implements IndexContentletScroll {
                     .scrollId(scrollId)
                     .scroll(Time.of(t -> t.time(SCROLL_KEEP_ALIVE_MINUTES.get() + "m"))));
 
-            final SearchResponse<Object> response = osClient.scroll(scrollRequest, Object.class);
+            final ScrollResponse<Object> response = AdmittedOpenSearch.scroll(osClient, scrollRequest);
+            this.scrollId = response.scrollId();
             final HitsMetadata<Object> osSearchHits = response.hits();
 
             // Convert to domain SearchHits
@@ -213,17 +215,11 @@ public class OSContentletScrollImpl implements IndexContentletScroll {
         return hasMoreResults;
     }
 
+    /** Clears the server-side scroll without blocking the caller on cleanup I/O. */
     @Override
     public void close() {
         if (scrollId != null && osClient != null) {
-            Try.run(() -> {
-                final ClearScrollRequest clearScrollRequest = ClearScrollRequest.of(csr -> csr
-                        .scrollId(scrollId));
-                osClient.clearScroll(clearScrollRequest);
-                Logger.debug(this.getClass(), () -> "Cleared OpenSearch scroll context: " + scrollId);
-            }).onFailure(e ->
-                    Logger.error(this.getClass(), "Error clearing OpenSearch scroll context: " + e.getMessage(), e)
-            );
+            AdmittedOpenSearch.clearScroll(osClient, scrollId);
             scrollId = null;
         }
     }

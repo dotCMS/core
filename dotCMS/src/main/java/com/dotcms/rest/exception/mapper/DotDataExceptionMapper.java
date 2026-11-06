@@ -1,5 +1,6 @@
 package com.dotcms.rest.exception.mapper;
 
+import com.dotcms.content.index.SearchUnavailableException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.Provider;
 import com.dotmarketing.exception.DotDataException;
@@ -13,8 +14,12 @@ import com.dotmarketing.util.Logger;
 public class DotDataExceptionMapper extends DotBadRequestExceptionMapper<DotDataException> {
 
 
+    /** Handles overload without per-request stack traces or query-bearing diagnostic messages. */
     @Override
     public Response toResponse(final DotDataException exception) {
+        if (SearchUnavailableException.find(exception) != null) {
+            return ExceptionMapperUtil.createSearchUnavailableResponse();
+        }
         Logger.error(this, exception.getMessage(), exception);
         return ExceptionMapperUtil.createResponse(exception, this.getErrorKey(), this.getErrorStatus());
     }

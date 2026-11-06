@@ -1,5 +1,6 @@
 package com.dotcms.content.index.opensearch;
 
+import com.dotcms.content.index.SearchUnavailableException;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.index.ContentFactoryIndexOperations;
 import com.dotcms.content.index.IndexContentletScroll;
@@ -126,7 +127,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
                             new Object[]{searchRequest});
 
             OpenSearchClient client = clientProvider.getClient();
-            SearchResponse<Object> response = client.search(searchRequest, Object.class);
+            SearchResponse<Object> response = AdmittedOpenSearch.search(client, searchRequest);
             HitsMetadata<Object> hits = response.hits();
 
             if(shouldQueryCache()) {
@@ -166,6 +167,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             Logger.warnAndDebug(ContentFactoryIndexOperationsOS.class, e);
             throw new DotRuntimeException(e);
         } catch (final Exception e) {
+            SearchUnavailableException.rethrow(e);
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                     searchRequest.toString(), e.getMessage());
             Logger.warnAndDebug(ContentFactoryIndexOperationsOS.class, errorMsg, e);
@@ -204,7 +206,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
                     new Object[]{countRequest});
 
             OpenSearchClient client = clientProvider.getClient();
-            final CountResponse response = client.count(countRequest);
+            final CountResponse response = AdmittedOpenSearch.count(client, countRequest);
             final long count = response.count();
             if(shouldQueryCache()) {
                 queryCache.put(countRequest, count);
@@ -232,6 +234,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             Logger.warnAndDebug(ContentFactoryIndexOperationsOS.class, e);
             throw new DotRuntimeException(e);
         } catch (final Exception e) {
+            SearchUnavailableException.rethrow(e);
             if(ExceptionUtil.causedBy(e, IllegalStateException.class)) {
                 // Handle client rebuild if needed
             }
@@ -261,6 +264,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
                 return SearchHits.empty();
             }
         } catch (final Exception e) {
+            SearchUnavailableException.rethrow(e);
             Logger.error(this, "Can't get indices information.", e);
             if (mustRaiseForPhase2Fallback()) {
                 throw new DotRuntimeException(
@@ -537,6 +541,7 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
             Logger.warnAndDebug(ContentFactoryIndexOperationsOS.class, e);
             throw new DotRuntimeException(e);
         } catch (final Exception e) {
+            SearchUnavailableException.rethrow(e);
             final String errorMsg = String.format("An error occurred when executing the Lucene Query [ %s ] : %s",
                     query, e.getMessage());
             Logger.warnAndDebug(ContentFactoryIndexOperationsOS.class, errorMsg, e);
