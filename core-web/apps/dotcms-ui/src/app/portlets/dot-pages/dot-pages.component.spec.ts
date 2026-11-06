@@ -281,16 +281,14 @@ describe('DotPagesComponent', () => {
             spectator.triggerEventHandler('dot-page-favorites-panel', 'openMenu', eventParams);
 
             expect(stopPropagation).toHaveBeenCalled();
-            expect(mockDotPageActionsService.getItems).toHaveBeenCalledWith(
-                eventParams.data,
-                expect.any(Function)
-            );
+            expect(mockDotPageActionsService.getItems).toHaveBeenCalledWith(eventParams.data);
             expect(showSpy).toHaveBeenCalled();
             expect(spectator.component.menuItems()).toEqual(items);
         });
 
-        // #38303 — Edit opens the page in a side panel; its saves and close refresh the listing.
-        it('should hand the actions a refresh that reloads the listing on the page the author is on', () => {
+        // #38303, T173 — the actions refresh the listing themselves, so the menu hands them only
+        // the page, as the right-click menu does.
+        it('should ask for the actions with the page alone', () => {
             spectator.triggerEventHandler('dot-page-favorites-panel', 'openMenu', {
                 originalEvent: {
                     stopPropagation: vi.fn(),
@@ -298,11 +296,8 @@ describe('DotPagesComponent', () => {
                 } as unknown as MouseEvent,
                 data: mockContentlet({ identifier: 'p1' })
             } satisfies DotActionsMenuEventParams);
-            const [, refresh] = mockDotPageActionsService.getItems.mock.calls[0];
 
-            refresh?.();
-
-            expect(store.getPages).toHaveBeenCalledWith();
+            expect(mockDotPageActionsService.getItems.mock.calls[0]).toHaveLength(1);
         });
     });
 
@@ -498,17 +493,14 @@ describe('DotPagesComponent — the panel named in the URL', () => {
         await vi.dynamicImportSettled();
     };
 
-    it('opens the version the URL names, by identifier and language, refreshing the listing', async () => {
+    // The actions service refreshes the listing itself, for a link as for Edit (T173).
+    it('opens the version the URL names, by identifier and language', async () => {
         await mount({ editContent: IDENTIFIER, editContentLang: '2' });
 
         expect(openContent).toHaveBeenCalledTimes(1);
-        const [request, refresh] = openContent.mock.calls[0];
-        expect(request).toEqual({ mode: 'edit', identifier: IDENTIFIER, languageId: 2 });
-
-        refresh();
-
-        // The same refresh Edit gets: the listing on the page the author is on.
-        expect(getPages).toHaveBeenCalledWith();
+        expect(openContent.mock.calls[0]).toEqual([
+            { mode: 'edit', identifier: IDENTIFIER, languageId: 2 }
+        ]);
     });
 
     it('opens a create of the content type the URL names', async () => {

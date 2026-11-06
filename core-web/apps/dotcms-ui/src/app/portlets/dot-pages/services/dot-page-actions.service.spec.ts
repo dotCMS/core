@@ -1,11 +1,11 @@
 import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
-import { firstValueFrom, Observable, of, throwError } from 'rxjs';
+import { firstValueFrom, of, throwError } from 'rxjs';
 import { Mock, Mocked, vi } from 'vitest';
 
 import { Injector } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 
-import { MenuItem, MenuItemCommandEvent } from 'primeng/api';
+import { MenuItemCommandEvent } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
@@ -41,10 +41,8 @@ import { DotCMSPagesStore } from '../store/store';
 
 type PagesStoreMock = {
     getFavoritePages: Mock;
+    getPages: Mock;
 };
-
-/** `getItems` once it takes the Pages component's list refresh (#38303). */
-type GetItemsWithRefresh = (item: DotCMSContentlet, refresh: () => void) => Observable<MenuItem[]>;
 
 const MOCK_USER = {
     userId: 'test-user-123',
@@ -214,7 +212,8 @@ describe('DotPageActionsService', () => {
         } as unknown as Mocked<PushPublishService>;
 
         mockPagesStore = {
-            getFavoritePages: vi.fn()
+            getFavoritePages: vi.fn(),
+            getPages: vi.fn()
         };
 
         mockOpener = {
@@ -499,21 +498,18 @@ describe('DotPageActionsService', () => {
     /**
      * #38303 (R11) — Edit opens the page in the side panel, over the Pages listing, in whichever
      * editor its type uses. The listing refreshes on every save and when the panel closes, through
-     * the refresh the Pages component hands `getItems`.
+     * the store, whichever menu built the action: the right-click menu asks for it with no callback
+     * at all, and an edit from there used to leave the list as it was (T173).
      */
     describe('Edit Action', () => {
-        /** The Pages component's refresh, as it hands it to `getItems`. */
-        let refresh: Mock;
-
         /** The opener's `open`, as the mock records it. */
         const opened = () => mockOpener.open;
 
-        /** Builds the menu for the page, with the refresh, and clicks Edit. */
+        /** Builds the menu for the page, as the right-click menu does, and clicks Edit. */
         const clickEdit = async (): Promise<void> => {
-            const getItems = (spectator.service.getItems as unknown as GetItemsWithRefresh).bind(
-                spectator.service
+            const items = await firstValueFrom(
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET)
             );
-            const items = await firstValueFrom(getItems(MOCK_HTMLPAGE_CONTENTLET, refresh));
 
             items.find((item) => item.label === 'Edit')?.command?.({} as MenuItemCommandEvent);
             // Edit loads the opener on demand: wait for it to open.
@@ -526,10 +522,6 @@ describe('DotPageActionsService', () => {
 
             return opened().mock.calls[0][1] as DotEditContentOpenOptions;
         };
-
-        beforeEach(() => {
-            refresh = vi.fn();
-        });
 
         it('should open the page in the side panel, naming the Pages portlet', async () => {
             await clickEdit();
@@ -553,20 +545,22 @@ describe('DotPageActionsService', () => {
             expect(openOptions().injector === spectator.inject(Injector)).toBe(true);
         });
 
-        it('should refresh the listing on every save', async () => {
+        // A refetch of the whole page of the listing: the panel may have archived the row.
+        it('should refresh the listing on every save, with no callback from the menu', async () => {
             await clickEdit();
 
             openOptions().saved?.(MOCK_HTMLPAGE_CONTENTLET);
 
-            expect(refresh).toHaveBeenCalledTimes(1);
+            expect(mockPagesStore.getPages).toHaveBeenCalledTimes(1);
+            expect(mockPagesStore.getPages).toHaveBeenCalledWith();
         });
 
-        it('should refresh the listing when the panel closes', async () => {
+        it('should refresh the listing when the panel closes, with no callback from the menu', async () => {
             await clickEdit();
 
             openOptions().closed?.();
 
-            expect(refresh).toHaveBeenCalledTimes(1);
+            expect(mockPagesStore.getPages).toHaveBeenCalledTimes(1);
         });
 
         // The opener writes the panel to the Pages URL, as on every surface but UVE (FR-044).
@@ -579,22 +573,14 @@ describe('DotPageActionsService', () => {
 
     /**
      * #38303 (FR-049) — the Pages portlet opens what its URL names on load through the same path as
-     * Edit, so a link, a refresh and a click open the same panel with the same refresh.
+     * Edit, so a link, a refresh and a click open the same panel with the same refresh, the
+     * service's own (T173).
      */
     describe('openContent', () => {
         const IDENTIFIER = '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57';
 
-        type WithOpenContent = {
-            openContent: (request: Record<string, unknown>, refresh?: () => void) => void;
-        };
-
         it('should open the request for the Pages portlet, written to the URL, refreshing the listing', async () => {
-            const refresh = vi.fn();
-
-            (spectator.service as unknown as WithOpenContent).openContent(
-                { mode: 'edit', identifier: IDENTIFIER, languageId: 2 },
-                refresh
-            );
+            spectator.service.openContent({ mode: 'edit', identifier: IDENTIFIER, languageId: 2 });
             await vi.dynamicImportSettled();
 
             expect(mockOpener.open.mock.calls.length, 'one panel').toBe(1);
@@ -614,7 +600,7 @@ describe('DotPageActionsService', () => {
             options.saved?.(MOCK_HTMLPAGE_CONTENTLET);
             options.closed?.();
 
-            expect(refresh).toHaveBeenCalledTimes(2);
+            expect(mockPagesStore.getPages).toHaveBeenCalledTimes(2);
         });
     });
 
