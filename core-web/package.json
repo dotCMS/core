@@ -129,7 +129,6 @@
         "@tiptap/y-tiptap": "3.0.3",
         "ai": "^6.0.168",
         "ai-sdk-provider-opencode-sdk": "^3.0.6",
-        "axios": "1.15.0",
         "cfonts": "3.3.1",
         "chalk": "5.6.2",
         "chart.js": "4.5.1",

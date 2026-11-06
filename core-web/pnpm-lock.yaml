@@ -415,9 +415,6 @@ importers:
       ai-sdk-provider-opencode-sdk:
         specifier: ^3.0.6
         version: 3.0.6(zod@4.1.9)
-      axios:
-        specifier: 1.15.0
-        version: 1.15.0(debug@4.4.3(supports-color@8.1.1))
       cfonts:
         specifier: 3.3.1
         version: 3.3.1
