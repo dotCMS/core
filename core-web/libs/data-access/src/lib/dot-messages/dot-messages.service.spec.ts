@@ -445,6 +445,22 @@ describe('DotMessageService', () => {
             expect(service.loadedBundleVersion()).toBeNull();
         });
 
+        it('clears a stale in-memory mismatch when another tab has cached the matching version', () => {
+            service.init({ languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush({ entity: messages, languageBundleVersion: VERSION });
+            storage.setItem(BUNDLE_LOCALSTORAGE_KEY, {
+                messages: { ...messages, 'dot.common.cancel': 'Cached update' },
+                language: DEFAULT_LANG,
+                userId: null,
+                version: NEXT_VERSION
+            });
+            service.init({ languageBundleVersion: NEXT_VERSION });
+            http.expectNone(DEFAULT_URL);
+            expect(service.get('dot.common.cancel')).toBe('Cached update');
+            expect(service.loadedBundleVersion()).toBe(NEXT_VERSION);
+            expect(service.bundleVersionMismatch()).toBeNull();
+        });
+
         it('should accept 101 translations and persist one complete atomic record', async () => {
             const persist = vi.spyOn(storage, 'setItem');
             const loaded = firstValueFrom(service.init({ languageBundleVersion: VERSION }));

@@ -195,6 +195,7 @@ export class DotMessageService {
             this.installedLanguage.set(lang);
             this.installedVersion.set(expectedVersion);
             this.#installationRevision.update((revision) => revision + 1);
+            this.versionMismatch.set(null);
 
             return of(void 0);
         }
