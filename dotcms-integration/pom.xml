@@ -81,6 +81,9 @@
         <test.os.upgrade.port>${os.upgrade.port}</test.os.upgrade.port>
         <test.os.upgrade.endpoints>${test.os.upgrade.scheme}://${test.os.upgrade.host}:${os.upgrade.port}</test.os.upgrade.endpoints>
         <maven.failsafe.debugArgs/>
+        <!-- Preload the agent so ByteBuddyFactory doesn't fall back to runtime self-attach;
+             the path is filled in by the resolve-bytebuddy-agent-path execution below. -->
+        <bytebuddy.agent.argline>-javaagent:${net.bytebuddy:byte-buddy-agent:jar}</bytebuddy.agent.argline>
         <coreit.test.skip>true</coreit.test.skip>
         <docker.filter>database,opensearch</docker.filter>
           <!-- Force to use node v18.20.3 -->
@@ -269,6 +272,14 @@
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
+                        <!-- Populate ${net.bytebuddy:byte-buddy-agent:jar} for bytebuddy.agent.argline. -->
+                        <id>resolve-bytebuddy-agent-path</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                    <execution>
                         <id>unpack-webapp</id>
                         <goals>
                             <goal>unpack</goal>
@@ -415,7 +426,20 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <skip>${coreit.test.skip}</skip>
-                    <argLine>${debug.args}</argLine>
+                    <!-- An argLine here replaces the parent's, so its flags are repeated, except
+                         -Xmx1024m: the suites have always run with the JVM's default max heap, and
+                         the GC log is there to show whether a fixed heap would be safe. -->
+                    <argLine>@{argLine}
+                        ${java.module.args}
+                        --enable-preview
+                        -XX:+UseCompactObjectHeaders
+                        --enable-native-access=ALL-UNNAMED
+                        ${vipsffm.libpath.args}
+                        -Dnet.bytebuddy.experimental=true
+                        ${bytebuddy.agent.argline}
+                        -Xlog:gc*:file=${project.build.directory}/gc-it-%p.log:time,uptime,level,tags:filecount=5,filesize=20M
+                        ${debug.args}
+                    </argLine>
                     <forkCount>${it.test.forkcount}</forkCount>
                     <reuseForks>true</reuseForks>
                     <rerunFailingTestsCount>3</rerunFailingTestsCount>
@@ -509,6 +533,10 @@
                     <imagesMap>
                         <database>
                             <run>
+                                <!-- Replaces the parent's <cmd> (it is not merged), so the parent's
+                                     max_connections and shared_buffers are repeated here. Durability is
+                                     off because the test database is thrown away after the run. -->
+                                <cmd>postgres -c max_connections=1024 -c shared_buffers=256MB -c fsync=off -c synchronous_commit=off -c full_page_writes=off</cmd>
                                 <volumes>
                                     <bind combine.children="append">
                                         <volume>${project.basedir}/src/docker-compose/it-test/initdb.sh:/docker-entrypoint-initdb.d/initdb.sh</volume>
@@ -516,6 +544,18 @@
                                 </volumes>
                             </run>
                         </database>
+                        <opensearch>
+                            <run>
+                                <!-- Keep the throwaway index data in memory. The parent's volume targets
+                                     /usr/share/elasticsearch/data, which this image never uses, so it
+                                     doesn't collide with this mount. OpenSearch runs as uid 1000. The size
+                                     cap makes a runaway index hit the disk watermark instead of the
+                                     runner's memory. -->
+                                <tmpfs>
+                                    <mount>/usr/share/opensearch/data:rw,uid=1000,gid=1000,size=2g</mount>
+                                </tmpfs>
+                            </run>
+                        </opensearch>
                     </imagesMap>
                 </configuration>
                 <executions>
