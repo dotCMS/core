@@ -1,5 +1,6 @@
 import { type APIRequestContext } from '@playwright/test';
 import { createContainer, deleteContainer } from '@requests/containers';
+import { findWorkingContentlet } from '@requests/contentlets';
 import {
     actionsPageWorkflow,
     addContentToPage,
@@ -127,7 +128,13 @@ export function uvePagePath(uvePage: UvePage): string {
  * teardown must not turn a failing test into a second, misleading error.
  */
 export async function removeUvePage(request: APIRequestContext, uvePage: UvePage): Promise<void> {
-    await actionsPageWorkflow(request, uvePage.page.inode, [
+    // The page's working version now: a test that saved the page (renamed it in the side panel)
+    // left the version it was created as behind, and its workflow actions no longer apply.
+    const working = await findWorkingContentlet(request, {
+        identifier: uvePage.page.identifier
+    }).catch(() => null);
+
+    await actionsPageWorkflow(request, working?.inode ?? uvePage.page.inode, [
         'Unpublish',
         'Archive',
         'Destroy'
