@@ -97,8 +97,10 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
     // Held at describe scope so we can clear it before each mount (mockProvider reuses the same fn).
     const openEditByIdentifier = vi.fn();
     const createContent = vi.fn();
-    // How a link naming two things, or an Edit Code link, is cleared (#38303).
+    // How an Edit Code link is cleared (#38303).
     const clearPanelParams = vi.fn();
+    // How a link the author cannot have meant is refused: the error, then the params (T172).
+    const refusePanelParams = vi.fn();
     // What a `createContent` link waits for before it opens: the tree's first load, and the
     // default language a create may start in (#37759, FR-024).
     const folders = signal<DotFolderTreeNodeItem[]>([]);
@@ -166,8 +168,12 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 $forceLegacyEditor: signal(false),
                 $reopeningPanel: signal(false)
             }),
-            // A link naming two things is cleared through the service that owns the panel params.
-            mockProvider(DotPanelUrlStateService, { register: vi.fn(), clear: clearPanelParams }),
+            // A link naming two things is refused through the service that owns the panel params.
+            mockProvider(DotPanelUrlStateService, {
+                register: vi.fn(),
+                clear: clearPanelParams,
+                refuse: refusePanelParams
+            }),
             LoggerService,
             StringUtils,
             mockProvider(PushPublishService, {
@@ -205,6 +211,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         sidePanels = createSidePanelsFake();
         openEditByIdentifier.mockClear();
         clearPanelParams.mockClear();
+        refusePanelParams.mockClear();
         createContent.mockClear();
         folders.set([]);
         sidebarLoading.set(false);
@@ -490,14 +497,16 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         });
 
         /**
-         * The panel params are cleared by the service that owns them, with Content Drive's folder
-         * dialog params beside them (#38303, FR-049).
+         * A link the author cannot have meant is refused by the service that owns the panel params:
+         * the standard error, then the params gone, with Content Drive's folder dialog params beside
+         * them (#38303, FR-049, T172).
          */
         it.each([
             ['an edit and a create', { createContent: 'Blog' }],
-            ['an edit and a folder dialog', { editFolder: FOLDER_ID }]
+            ['an edit and a folder dialog', { editFolder: FOLDER_ID }],
+            ['a malformed identifier', { editContent: 'wrong-identifier' }]
         ])(
-            'opens nothing for %s, and clears them with the folder dialog params',
+            'refuses %s, with the folder dialog params',
             (_label, extra) => {
                 Object.assign(deepLinkQueryParams, extra);
 
@@ -507,8 +516,8 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
 
                 expect(openEditByIdentifier).not.toHaveBeenCalled();
                 expect(createContent).not.toHaveBeenCalled();
-                expect(panelUrl.clear).toHaveBeenCalledTimes(1);
-                expect(panelUrl.clear).toHaveBeenCalledWith([
+                expect(panelUrl.refuse).toHaveBeenCalledTimes(1);
+                expect(panelUrl.refuse).toHaveBeenCalledWith([
                     'createFolder',
                     'editFolder',
                     'folderPermissions'
