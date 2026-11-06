@@ -25,10 +25,7 @@ export interface LanguageBundleVersionMismatch {
 }
 
 const DEFAULT_LANG = 'default';
-const LANGUAGE_LOCALSTORAGE_KEY = 'dotMessagesKeys-lang';
-const MESSAGES_LOCALSTORAGE_KEY = 'dotMessagesKeys';
-const VERSION_LOCALSTORAGE_KEY = 'dotMessagesKeys-version';
-const USER_LOCALSTORAGE_KEY = 'dotMessagesKeys-user';
+const BUNDLE_LOCALSTORAGE_KEY = 'dotMessagesBundle';
 // Full bundles contain thousands of translations; small maps indicate a partial/bootstrap response.
 const MINIMUM_TRANSLATION_KEYS = 100;
 
@@ -144,10 +141,23 @@ export class DotMessageService {
         let cachedVersion: unknown = null;
         let cachedUserId: unknown = null;
         try {
-            messages = this.dotLocalstorageService.getItem<unknown>(MESSAGES_LOCALSTORAGE_KEY);
-            cachedLang = this.dotLocalstorageService.getItem<unknown>(LANGUAGE_LOCALSTORAGE_KEY);
-            cachedVersion = this.dotLocalstorageService.getItem<unknown>(VERSION_LOCALSTORAGE_KEY);
-            cachedUserId = this.dotLocalstorageService.getItem<unknown>(USER_LOCALSTORAGE_KEY);
+            const bundle = this.dotLocalstorageService.getItem<{
+                messages?: unknown;
+                language?: unknown;
+                version?: unknown;
+                userId?: unknown;
+            }>(BUNDLE_LOCALSTORAGE_KEY);
+            if (
+                bundle &&
+                typeof bundle === 'object' &&
+                !Array.isArray(bundle) &&
+                (bundle.userId === null || this.isVersion(bundle.userId))
+            ) {
+                messages = bundle.messages;
+                cachedLang = bundle.language;
+                cachedVersion = bundle.version;
+                cachedUserId = bundle.userId;
+            }
         } catch {
             // Blocked storage must not prevent an authenticated, uncached load.
             messages = null;
@@ -262,20 +272,15 @@ export class DotMessageService {
         userId: string | null
     ): void {
         try {
-            // Invalidate first: a partial write must never retain a previously valid version.
-            this.dotLocalstorageService.removeItem(VERSION_LOCALSTORAGE_KEY);
-            this.dotLocalstorageService.setItem(MESSAGES_LOCALSTORAGE_KEY, messages);
-            this.dotLocalstorageService.setItem(LANGUAGE_LOCALSTORAGE_KEY, lang);
-            this.dotLocalstorageService.setItem(USER_LOCALSTORAGE_KEY, JSON.stringify(userId));
-            // Quote the hash to avoid DotLocalstorageService coercing digit-leading hashes to numbers.
-            this.dotLocalstorageService.setItem(VERSION_LOCALSTORAGE_KEY, JSON.stringify(version));
+            // One atomic write keeps a tab's messages and ownership metadata inseparable.
+            this.dotLocalstorageService.setItem(BUNDLE_LOCALSTORAGE_KEY, {
+                messages,
+                language: lang,
+                version,
+                userId
+            });
         } catch {
-            // Persistence is optional; a valid in-memory bundle still allows route activation.
-            try {
-                this.dotLocalstorageService.removeItem(VERSION_LOCALSTORAGE_KEY);
-            } catch {
-                // Storage can be entirely unavailable in restricted browser contexts.
-            }
+            // Keep the previous complete record; valid in-memory messages do not require storage.
         }
     }
 

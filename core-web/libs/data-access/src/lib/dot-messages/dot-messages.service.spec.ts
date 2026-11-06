@@ -18,6 +18,7 @@ const USER_LOCALSTORAGE_KEY = 'dotMessagesKeys-user';
 const BUILDDATE_LOCALSTORAGE_KEY = 'buildDate';
 const VERSION = 'a'.repeat(64);
 const NEXT_VERSION = '1' + 'b'.repeat(63);
+const BUNDLE_LOCALSTORAGE_KEY = 'dotMessagesBundle';
 const DEFAULT_URL = '/api/v2/languages/default/keys';
 
 const createMessages = (count: number): Record<string, string> =>
@@ -37,7 +38,8 @@ const clearCache = () => {
         MESSAGES_LOCALSTORAGE_KEY,
         VERSION_LOCALSTORAGE_KEY,
         USER_LOCALSTORAGE_KEY,
-        BUILDDATE_LOCALSTORAGE_KEY
+        BUILDDATE_LOCALSTORAGE_KEY,
+        BUNDLE_LOCALSTORAGE_KEY
     ].forEach((key) => localStorage.removeItem(key));
 };
 
@@ -46,10 +48,20 @@ describe('DotMessageService', () => {
     let http: HttpTestingController;
     let storage: DotLocalstorageService;
 
+    const cachedBundle = () =>
+        storage.getItem<{
+            messages?: Record<string, string>;
+            language?: unknown;
+            version?: unknown;
+            userId?: unknown;
+        }>(BUNDLE_LOCALSTORAGE_KEY);
     const seedCache = (cachedMessages: unknown = messages, language = DEFAULT_LANG) => {
-        storage.setItem(MESSAGES_LOCALSTORAGE_KEY, cachedMessages);
-        storage.setItem(LANGUAGE_LOCALSTORAGE_KEY, language);
-        storage.setItem(VERSION_LOCALSTORAGE_KEY, JSON.stringify(VERSION));
+        storage.setItem(BUNDLE_LOCALSTORAGE_KEY, {
+            messages: cachedMessages,
+            language,
+            version: VERSION,
+            userId: null
+        });
     };
 
     beforeEach(() => {
@@ -69,6 +81,41 @@ describe('DotMessageService', () => {
     });
 
     describe('user-scoped bundles', () => {
+        it('never pairs a failed write for one user with another user cache metadata', () => {
+            service.init({ userId: 'principal', languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush({ entity: messages, languageBundleVersion: VERSION });
+            const persist = vi.spyOn(storage, 'setItem').mockImplementation(() => {
+                throw new DOMException('Storage quota exceeded', 'QuotaExceededError');
+            });
+            service.init({ userId: 'other-user', languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush({
+                entity: { ...messages, 'dot.common.cancel': 'Other user' },
+                languageBundleVersion: VERSION
+            });
+            expect(cachedBundle()?.userId).toBe('principal');
+            expect(cachedBundle()?.messages?.['dot.common.cancel']).toBe('Cancel');
+            expect(service.get('dot.common.cancel')).toBe('Other user');
+            persist.mockRestore();
+            const restored = TestBed.runInInjectionContext(() => new DotMessageService());
+            restored.init({ userId: 'other-user', languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush(null, { status: 500, statusText: 'Server Error' });
+            expect(restored.get('dot.common.cancel')).toBe('dot.common.cancel');
+        });
+
+        it.each([
+            null,
+            [],
+            'invalid',
+            {},
+            { userId: 42 },
+            { messages, language: DEFAULT_LANG, version: VERSION }
+        ])('does not trust a malformed atomic cache record (case %#)', (record) => {
+            storage.setItem(BUNDLE_LOCALSTORAGE_KEY, record);
+            service.init({ userId: 'principal', languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush(null, { status: 500, statusText: 'Server Error' });
+            expect(service.get('dot.common.cancel')).toBe('dot.common.cancel');
+        });
+
         it('does not reuse an installed same-locale/version bundle for an impersonated user', () => {
             service.init({ userId: 'principal', languageBundleVersion: VERSION });
             http.expectOne(DEFAULT_URL).flush({ entity: messages, languageBundleVersion: VERSION });
@@ -82,7 +129,7 @@ describe('DotMessageService', () => {
                 languageBundleVersion: VERSION
             });
             expect(service.get('dot.common.cancel')).toBe('Scoped cancel');
-            expect(storage.getItem(USER_LOCALSTORAGE_KEY)).toBe('impersonated');
+            expect(cachedBundle()?.userId ?? null).toBe('impersonated');
         });
 
         it.each(['other-user', null])(
@@ -118,8 +165,10 @@ describe('DotMessageService', () => {
             expect(restored.get('dot.common.cancel')).toBe('dot.common.cancel');
         });
 
-        it('does not treat a cache without a user marker as belonging to the authenticated user', () => {
-            seedCache();
+        it('does not treat legacy split-field caches as an authenticated bundle', () => {
+            storage.setItem(MESSAGES_LOCALSTORAGE_KEY, messages);
+            storage.setItem(LANGUAGE_LOCALSTORAGE_KEY, DEFAULT_LANG);
+            storage.setItem(VERSION_LOCALSTORAGE_KEY, JSON.stringify(VERSION));
             service.init({ userId: 'principal', languageBundleVersion: VERSION });
             http.expectOne(DEFAULT_URL).flush(null, { status: 500, statusText: 'Server Error' });
             expect(service.get('dot.common.cancel')).toBe('dot.common.cancel');
@@ -146,7 +195,7 @@ describe('DotMessageService', () => {
                 expect.objectContaining({ message: expect.stringContaining('superseded') })
             );
             expect(service.loadedBundleVersion()).toBeNull();
-            expect(storage.getItem(MESSAGES_LOCALSTORAGE_KEY)).toBeNull();
+            expect(cachedBundle()?.messages ?? null).toBeNull();
         });
 
         it.each(['older-first', 'newer-first'])(
@@ -178,11 +227,7 @@ describe('DotMessageService', () => {
                 }
                 expect(failed).toHaveBeenCalledOnce();
                 expect(service.get('dot.common.cancel')).toBe('Current session');
-                expect(
-                    storage.getItem<Record<string, string>>(MESSAGES_LOCALSTORAGE_KEY)?.[
-                        'dot.common.cancel'
-                    ]
-                ).toBe('Current session');
+                expect(cachedBundle()?.messages?.['dot.common.cancel']).toBe('Current session');
             }
         );
 
@@ -257,8 +302,8 @@ describe('DotMessageService', () => {
                 expect(service.loadedBundleLanguage()).toBe(DEFAULT_LANG);
                 expect(service.loadedBundleVersion()).toBe(VERSION);
                 expect(service.get('dot.common.cancel')).toBe('Cancel');
-                expect(storage.getItem(LANGUAGE_LOCALSTORAGE_KEY)).toBe(DEFAULT_LANG);
-                expect(storage.getItem(VERSION_LOCALSTORAGE_KEY)).toBe(VERSION);
+                expect(cachedBundle()?.language ?? null).toBe(DEFAULT_LANG);
+                expect(cachedBundle()?.version ?? null).toBe(VERSION);
             }
         );
 
@@ -309,10 +354,10 @@ describe('DotMessageService', () => {
             request.flush({ entity: messages, languageBundleVersion: VERSION });
 
             expect(service.get('dot.common.cancel')).toBe('Cancel');
-            expect(storage.getItem(MESSAGES_LOCALSTORAGE_KEY)).toEqual(messages);
-            expect(storage.getItem(LANGUAGE_LOCALSTORAGE_KEY)).toBe(DEFAULT_LANG);
-            expect(storage.getItem(VERSION_LOCALSTORAGE_KEY)).toBe(VERSION);
-            expect(storage.getItem(MESSAGES_LOCALSTORAGE_KEY)).not.toHaveProperty('version');
+            expect(cachedBundle()?.messages ?? null).toEqual(messages);
+            expect(cachedBundle()?.language ?? null).toBe(DEFAULT_LANG);
+            expect(cachedBundle()?.version ?? null).toBe(VERSION);
+            expect(cachedBundle()?.messages ?? null).not.toHaveProperty('version');
         });
 
         it('should emit and complete only after valid messages are loaded', () => {
@@ -330,7 +375,7 @@ describe('DotMessageService', () => {
 
             expect(next).toHaveBeenCalledExactlyOnceWith(undefined);
             expect(complete).toHaveBeenCalledOnce();
-            expect(storage.getItem(LANGUAGE_LOCALSTORAGE_KEY)).toBe('en_US');
+            expect(cachedBundle()?.language ?? null).toBe('en_US');
         });
 
         it('should reuse a valid cache only for the same locale and nonempty expected hash', async () => {
@@ -354,7 +399,7 @@ describe('DotMessageService', () => {
                 languageBundleVersion: NEXT_VERSION
             });
             await loaded;
-            expect(storage.getItem(VERSION_LOCALSTORAGE_KEY)).toBe(NEXT_VERSION);
+            expect(cachedBundle()?.version ?? null).toBe(NEXT_VERSION);
         });
 
         it('should reuse a matching cache containing exactly 101 translations', async () => {
@@ -378,7 +423,7 @@ describe('DotMessageService', () => {
                     languageBundleVersion: NEXT_VERSION
                 });
                 await rejected;
-                expect(storage.getItem(VERSION_LOCALSTORAGE_KEY)).toBe(VERSION);
+                expect(cachedBundle()?.version ?? null).toBe(VERSION);
                 expect(service.loadedBundleVersion()).toBe(VERSION);
                 expect(service.get('dot.common.cancel')).toBe('Cancel');
             }
@@ -396,11 +441,11 @@ describe('DotMessageService', () => {
                 languageBundleVersion: VERSION
             });
             await rejected;
-            expect(storage.getItem(VERSION_LOCALSTORAGE_KEY)).toBeNull();
+            expect(cachedBundle()?.version ?? null).toBeNull();
             expect(service.loadedBundleVersion()).toBeNull();
         });
 
-        it('should accept 101 translations and persist the version last', async () => {
+        it('should accept 101 translations and persist one complete atomic record', async () => {
             const persist = vi.spyOn(storage, 'setItem');
             const loaded = firstValueFrom(service.init({ languageBundleVersion: VERSION }));
             http.expectOne(DEFAULT_URL).flush({
@@ -408,10 +453,12 @@ describe('DotMessageService', () => {
                 languageBundleVersion: VERSION
             });
             await loaded;
-            expect(persist).toHaveBeenLastCalledWith(
-                VERSION_LOCALSTORAGE_KEY,
-                JSON.stringify(VERSION)
-            );
+            expect(persist).toHaveBeenCalledExactlyOnceWith(BUNDLE_LOCALSTORAGE_KEY, {
+                messages: createMessages(101),
+                language: DEFAULT_LANG,
+                version: VERSION,
+                userId: null
+            });
             expect(service.loadedBundleVersion()).toBe(VERSION);
             expect(service.get('key.100')).toBe('Message 100');
         });
@@ -450,11 +497,7 @@ describe('DotMessageService', () => {
             'should fetch when the cached version is missing or invalid: %s',
             async (version) => {
                 seedCache();
-                if (version === undefined) {
-                    storage.removeItem(VERSION_LOCALSTORAGE_KEY);
-                } else {
-                    storage.setItem(VERSION_LOCALSTORAGE_KEY, JSON.stringify(version));
-                }
+                storage.setItem(BUNDLE_LOCALSTORAGE_KEY, { ...cachedBundle(), version });
                 const loaded = firstValueFrom(service.init({ languageBundleVersion: VERSION }));
 
                 http.expectOne(DEFAULT_URL).flush({
@@ -496,7 +539,7 @@ describe('DotMessageService', () => {
 
         it('should fetch when the cached message map is missing', async () => {
             seedCache();
-            storage.removeItem(MESSAGES_LOCALSTORAGE_KEY);
+            storage.setItem(BUNDLE_LOCALSTORAGE_KEY, { ...cachedBundle(), messages: null });
             const loaded = firstValueFrom(service.init({ languageBundleVersion: VERSION }));
 
             http.expectOne(DEFAULT_URL).flush({
@@ -508,7 +551,7 @@ describe('DotMessageService', () => {
 
         it('should not treat missing legacy build dates as a valid version match', async () => {
             seedCache();
-            storage.removeItem(VERSION_LOCALSTORAGE_KEY);
+            storage.setItem(BUNDLE_LOCALSTORAGE_KEY, { ...cachedBundle(), version: null });
             storage.setItem(BUILDDATE_LOCALSTORAGE_KEY, null);
             const loaded = firstValueFrom(service.init());
 
@@ -542,7 +585,7 @@ describe('DotMessageService', () => {
             });
             await loaded;
 
-            expect(storage.getItem(VERSION_LOCALSTORAGE_KEY)).toBe(NEXT_VERSION);
+            expect(cachedBundle()?.version ?? null).toBe(NEXT_VERSION);
             await firstValueFrom(service.init({ languageBundleVersion: NEXT_VERSION }));
             http.expectNone(DEFAULT_URL);
 
@@ -637,7 +680,7 @@ describe('DotMessageService', () => {
                 await failed;
                 expect(service.get('dot.common.cancel')).toBe('Cancel');
                 expect(service.loadedBundleVersion()).toBe(VERSION);
-                expect(storage.getItem(VERSION_LOCALSTORAGE_KEY)).toBe(VERSION);
+                expect(cachedBundle()?.version ?? null).toBe(VERSION);
 
                 const retry = firstValueFrom(
                     service.init({ languageBundleVersion: expectedVersion })
@@ -690,8 +733,8 @@ describe('DotMessageService', () => {
             await failed;
             expect(setItem).not.toHaveBeenCalled();
             expect(service.get('dot.common.cancel')).toBe('Cancel');
-            expect(storage.getItem(VERSION_LOCALSTORAGE_KEY)).toBe(VERSION);
-            expect(storage.getItem(MESSAGES_LOCALSTORAGE_KEY)).toEqual(messages);
+            expect(cachedBundle()?.version ?? null).toBe(VERSION);
+            expect(cachedBundle()?.messages ?? null).toEqual(messages);
 
             await expect(firstValueFrom(load$)).rejects.toMatchObject({ status: 500 });
             http.expectNone(DEFAULT_URL);
@@ -706,30 +749,26 @@ describe('DotMessageService', () => {
             expect(service.get('dot.common.cancel')).toBe('Updated cancel');
         });
 
-        it.each([MESSAGES_LOCALSTORAGE_KEY, LANGUAGE_LOCALSTORAGE_KEY, VERSION_LOCALSTORAGE_KEY])(
-            'should install a valid bundle even if persisting %s fails',
-            async (failedKey) => {
-                seedCache();
-                const persist = storage.setItem.bind(storage);
-                vi.spyOn(storage, 'setItem').mockImplementation((key, value) => {
-                    if (key === failedKey) {
-                        throw new DOMException('Storage quota exceeded', 'QuotaExceededError');
-                    }
-                    persist(key, value);
-                });
-                const loaded = firstValueFrom(
-                    service.init({ languageBundleVersion: NEXT_VERSION })
-                );
-                http.expectOne(DEFAULT_URL).flush({
-                    entity: { ...messages, 'dot.common.cancel': 'Updated cancel' },
-                    languageBundleVersion: NEXT_VERSION
-                });
-                await loaded;
-                expect(service.get('dot.common.cancel')).toBe('Updated cancel');
-                expect(service.loadedBundleVersion()).toBe(NEXT_VERSION);
-                expect(storage.getItem(VERSION_LOCALSTORAGE_KEY)).toBeNull();
-            }
-        );
+        it('keeps a complete previous record when an atomic cache write fails', async () => {
+            seedCache();
+            vi.spyOn(storage, 'setItem').mockImplementation(() => {
+                throw new DOMException('Storage quota exceeded', 'QuotaExceededError');
+            });
+            const loaded = firstValueFrom(service.init({ languageBundleVersion: NEXT_VERSION }));
+            http.expectOne(DEFAULT_URL).flush({
+                entity: { ...messages, 'dot.common.cancel': 'Updated cancel' },
+                languageBundleVersion: NEXT_VERSION
+            });
+            await loaded;
+            expect(service.get('dot.common.cancel')).toBe('Updated cancel');
+            expect(service.loadedBundleVersion()).toBe(NEXT_VERSION);
+            expect(cachedBundle()).toEqual({
+                messages,
+                language: DEFAULT_LANG,
+                version: VERSION,
+                userId: null
+            });
+        });
 
         it('should load without persistence when storage is completely unavailable', async () => {
             vi.spyOn(storage, 'getItem').mockImplementation(() => {
@@ -913,8 +952,8 @@ describe('DotMessageService', () => {
                 await failed;
                 expect(setItem).not.toHaveBeenCalled();
                 expect(service.get('dot.common.cancel')).toBe('Cancel');
-                expect(storage.getItem(MESSAGES_LOCALSTORAGE_KEY)).toEqual(messages);
-                expect(storage.getItem(VERSION_LOCALSTORAGE_KEY)).toBe(VERSION);
+                expect(cachedBundle()?.messages ?? null).toEqual(messages);
+                expect(cachedBundle()?.version ?? null).toBe(VERSION);
 
                 const retry$ = service.init({ languageBundleVersion: NEXT_VERSION });
                 http.expectOne(DEFAULT_URL).flush({
@@ -971,7 +1010,7 @@ describe('DotMessageService', () => {
 
         it('should publish the locale of an unversioned stale fallback', () => {
             seedCache(messages, 'es_ES');
-            storage.removeItem(VERSION_LOCALSTORAGE_KEY);
+            storage.setItem(BUNDLE_LOCALSTORAGE_KEY, { ...cachedBundle(), version: null });
             service.init({ language: 'es_ES', languageBundleVersion: VERSION });
             http.expectOne('/api/v2/languages/es_ES/keys').flush(null, {
                 status: 500,

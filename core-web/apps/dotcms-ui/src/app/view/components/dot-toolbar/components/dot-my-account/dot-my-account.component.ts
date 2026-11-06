@@ -1,6 +1,7 @@
 import {
     ChangeDetectionStrategy,
     Component,
+    DestroyRef,
     EventEmitter,
     OnInit,
     Output,
@@ -8,8 +9,10 @@ import {
     effect,
     inject,
     model,
-    signal
+    signal,
+    untracked
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     AbstractControl,
     FormBuilder,
@@ -126,6 +129,18 @@ export class DotMyAccountComponent implements OnInit {
     constructor() {
         // Create the form as early as possible
         this.initForm();
+
+        const destroyRef = inject(DestroyRef);
+        effect(() => {
+            if (this.visible()) {
+                untracked(() =>
+                    this.#globalStore
+                        .waitForSessionReady()
+                        .pipe(takeUntilDestroyed(destroyRef))
+                        .subscribe()
+                );
+            }
+        });
 
         // Use the shared configuration so a later store retry restores validation too.
         effect(() => {

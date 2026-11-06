@@ -73,6 +73,7 @@ describe('DotMyAccountComponent', () => {
             {
                 provide: GlobalStore,
                 useValue: {
+                    waitForSessionReady: vi.fn(() => of(void 0)),
                     systemConfig: signal({
                         emailRegex: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'
                     })
@@ -90,11 +91,18 @@ describe('DotMyAccountComponent', () => {
     describe('Configuration recovery', () => {
         const regex = '^[^@]+@dotcms\\.com$';
         let $systemConfig: ReturnType<typeof signal<DotSystemConfig | null>>;
+        let waitForSessionReady: ReturnType<typeof vi.fn>;
 
         beforeEach(() => {
             $systemConfig = signal<DotSystemConfig | null>(null);
+            waitForSessionReady = vi.fn(() => of(void 0));
             spectator = createComponent({
-                providers: [{ provide: GlobalStore, useValue: { systemConfig: $systemConfig } }]
+                providers: [
+                    {
+                        provide: GlobalStore,
+                        useValue: { systemConfig: $systemConfig, waitForSessionReady }
+                    }
+                ]
             });
             component = spectator.component;
         });
@@ -116,6 +124,26 @@ describe('DotMyAccountComponent', () => {
             expect(emailControl.valid).toBe(true);
             emailControl.setValue('');
             expect(emailControl.hasError('required')).toBe(true);
+        });
+
+        it('retries shared configuration once per opening without requiring route navigation', () => {
+            expect(waitForSessionReady).not.toHaveBeenCalled();
+            spectator.setInput('visible', true);
+            spectator.detectChanges();
+            expect(waitForSessionReady).toHaveBeenCalledOnce();
+            spectator.detectChanges();
+            expect(waitForSessionReady).toHaveBeenCalledOnce();
+            spectator.setInput('visible', false);
+            spectator.detectChanges();
+            waitForSessionReady.mockImplementation(() => {
+                $systemConfig.set({ emailRegex: regex } as DotSystemConfig);
+                return of(void 0);
+            });
+            spectator.setInput('visible', true);
+            spectator.detectChanges();
+            expect(waitForSessionReady).toHaveBeenCalledTimes(2);
+            component.form.get('email')?.setValue('invalid-email');
+            expect(component.form.get('email')?.hasError('pattern')).toBe(true);
         });
 
         it('retains the installed validator when a later configuration refresh fails', () => {
