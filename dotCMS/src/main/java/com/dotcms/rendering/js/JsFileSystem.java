@@ -4,6 +4,7 @@ import com.dotcms.rendering.util.ScriptingUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -11,6 +12,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.compress.utils.SeekableInMemoryByteChannel;
 import org.graalvm.polyglot.io.FileSystem;
@@ -43,7 +45,8 @@ import java.util.StringJoiner;
  *     <li>{@code //demo.dotcms.com/application/js/modules/mymodule.mjs}, from the named site</li>
  * </ul>
  * Module paths stay logical: the engine sees the path the script asked for, the module source is read through a
- * {@link ModuleSource}, and relative imports resolve against the module's folder. Paths under {@code /javascript/}
+ * {@link ModuleSource}, and relative imports resolve against the module's folder. Modules are read on behalf of the
+ * user the script runs as: a module that user cannot read is not found. Paths under {@code /javascript/}
  * are accepted and answer "not found". Any other path is refused.
  * @author jsanca
  */
@@ -102,10 +105,36 @@ public class JsFileSystem implements FileSystem {
     private final ModuleSource moduleSource;
 
     /**
-     * Creates a file system that reads modules from the content repository.
+     * Creates a file system that reads modules from the content repository on behalf of the anonymous user, so only
+     * modules anonymous visitors can read are found.
+     *
+     * @deprecated use {@link #JsFileSystem(User, boolean)} with the user the script runs as
      */
+    @Deprecated(forRemoval = true)
     public JsFileSystem() {
-        this(JsFileSystem::readFromContent);
+        this(APILocator.getUserAPI().getAnonymousUserNoThrow(), true);
+    }
+
+    /**
+     * Creates a file system that reads modules from the content repository on behalf of a user: a module the user
+     * cannot read is reported as not found.
+     *
+     * @param reader               the user the script runs as
+     * @param respectFrontendRoles whether the front-end roles count when checking what the user can read
+     */
+    public JsFileSystem(final User reader, final boolean respectFrontendRoles) {
+        this(moduleSourceFor(Objects.requireNonNull(reader), respectFrontendRoles));
+    }
+
+    /**
+     * Builds the {@link ModuleSource} that reads modules from the content repository on behalf of a user.
+     *
+     * @param reader               the user the script runs as
+     * @param respectFrontendRoles whether the front-end roles count when checking what the user can read
+     * @return a module source bound to the user
+     */
+    private static ModuleSource moduleSourceFor(final User reader, final boolean respectFrontendRoles) {
+        return (siteName, modulePath) -> readFromContent(siteName, modulePath, reader, respectFrontendRoles);
     }
 
     /**
@@ -303,18 +332,22 @@ public class JsFileSystem implements FileSystem {
      * Reads an {@code /application/} module from the content repository: a named site is looked up by its
      * identifier, name or alias, without falling back to the default site, and the system host counts as no site;
      * with no name, the current site is used (the default one when there is no current site). Then the file asset at
-     * the module path is read, in any language, on its working version, only if its last editor may write scripts.
-     * Lookups run as the system user. The content
-     * is cached by the file's location, so a new version of the module is read again. Any failure while looking up or
-     * reading the module is reported through {@link #moduleNotReadable(String, String, String, Exception)}.
+     * the module path is read, in any language, on its working version, only if the reader may read it and its last
+     * editor may write scripts. The reader's read permission is checked on the file found, so a module the reader
+     * cannot read gets the same answer as a module that does not exist. The content is cached by the file's location, so a new version of the module is read again. Any failure
+     * while looking up or reading the module is reported through
+     * {@link #moduleNotReadable(String, String, String, Exception)}.
      *
-     * @param siteName   the identifier, name or alias of the site, or {@code null} for the current site
-     * @param modulePath the module path inside the site, starting with {@code /application/}
+     * @param siteName             the identifier, name or alias of the site, or {@code null} for the current site
+     * @param modulePath           the module path inside the site, starting with {@code /application/}
+     * @param reader               the user the script runs as
+     * @param respectFrontendRoles whether the front-end roles count when checking what the reader can read
      * @return the module source, or empty when the site or the module does not exist, the site is the system host,
-     *         or the content is not a file asset
+     *         the content is not a file asset, or the reader cannot read it
      * @throws IOException when the module exists but cannot be read, or a lookup fails
      */
-    private static Optional<String> readFromContent(final String siteName, final String modulePath) throws IOException {
+    private static Optional<String> readFromContent(final String siteName, final String modulePath,
+            final User reader, final boolean respectFrontendRoles) throws IOException {
 
         try {
 
@@ -333,6 +366,13 @@ public class JsFileSystem implements FileSystem {
             final Contentlet contentlet = APILocator.getContentletAPI()
                     .findContentletByIdentifierAnyLanguage(identifier.getId());
             if (null == contentlet || !contentlet.isFileAsset()) {
+                return Optional.empty();
+            }
+
+            if (!APILocator.getPermissionAPI().doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
+                    reader, respectFrontendRoles)) {
+                Logger.debug(JsFileSystem.class,
+                        () -> "A JavaScript module was not loaded: the user running the script cannot read it");
                 return Optional.empty();
             }
 
