@@ -17,6 +17,7 @@ import {
     DotRouterService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
+    DotContentChangeService,
     DotWorkflowsActionsService,
     PushPublishService
 } from '@dotcms/data-access';
@@ -545,14 +546,12 @@ describe('DotPageActionsService', () => {
             expect(openOptions().injector === spectator.inject(Injector)).toBe(true);
         });
 
-        // A refetch of the whole page of the listing: the panel may have archived the row.
-        it('should refresh the listing on every save, with no callback from the menu', async () => {
+        // The listing refreshes on the content change notification, once per save, not through a
+        // handler of this panel's (T174).
+        it('should leave the refresh on a save to the content change notification', async () => {
             await clickEdit();
 
-            openOptions().saved?.(MOCK_HTMLPAGE_CONTENTLET);
-
-            expect(mockPagesStore.getPages).toHaveBeenCalledTimes(1);
-            expect(mockPagesStore.getPages).toHaveBeenCalledWith();
+            expect(openOptions().saved).toBeUndefined();
         });
 
         it('should refresh the listing when the panel closes, with no callback from the menu', async () => {
@@ -597,10 +596,31 @@ describe('DotPageActionsService', () => {
             expect(options.url).toEqual({});
             expect(options.injector === spectator.inject(Injector)).toBe(true);
 
-            options.saved?.(MOCK_HTMLPAGE_CONTENTLET);
             options.closed?.();
 
-            expect(mockPagesStore.getPages).toHaveBeenCalledTimes(2);
+            expect(options.saved).toBeUndefined();
+            expect(mockPagesStore.getPages).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    /**
+     * #38303, T174 — every save and delete in a side panel, at any depth (a relationship's "New"
+     * inside the panel Edit opened), reaches the Pages listing through the content change
+     * notification, for as long as the portlet lives. A refetch of the whole page of the listing:
+     * the panel may have archived the row.
+     */
+    describe('content changes', () => {
+        it.each([
+            ['a save', 'saved', 0],
+            ['a save in a stacked panel', 'saved', 2],
+            ['a delete', 'deleted', 1]
+        ] as const)('should refresh the listing on %s it did not open', (_label, kind, depth) => {
+            spectator
+                .inject(DotContentChangeService)
+                .notify({ kind, contentlet: MOCK_HTMLPAGE_CONTENTLET, depth });
+
+            expect(mockPagesStore.getPages).toHaveBeenCalledTimes(1);
+            expect(mockPagesStore.getPages).toHaveBeenCalledWith();
         });
     });
 

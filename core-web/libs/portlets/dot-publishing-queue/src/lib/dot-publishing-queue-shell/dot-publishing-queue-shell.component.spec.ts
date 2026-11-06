@@ -12,6 +12,7 @@ import { Toast } from 'primeng/toast';
 /* eslint-disable @nx/enforce-module-boundaries */
 
 import {
+    DotContentChangeService,
     DotCurrentUserService,
     DotFormatDateService,
     DotGlobalMessageService,
@@ -346,14 +347,21 @@ describe('DotPublishingQueueShellComponent — the panel named in the URL', () =
         });
     });
 
-    it('reloads the list on every save and when the panel closes', () => {
+    /**
+     * #38303, T174: every save and delete in a side panel, at any depth, reloads the list through
+     * the content change notification, once each; the panel only reloads it on its own close.
+     */
+    it('reloads the list on every content change and when the panel closes', () => {
         mount({ editContent: IDENTIFIER, editContentLang: '2' });
         const refresh = vi.spyOn(spectator.inject(DotPublishingQueueStore, true), 'refresh');
+        const changes = spectator.inject(DotContentChangeService);
 
-        openOptions().saved?.({ inode: 'saved' } as never);
+        changes.notify({ kind: 'saved', contentlet: { inode: 'saved' } as never, depth: 0 });
+        changes.notify({ kind: 'saved', contentlet: { inode: 'related' } as never, depth: 1 });
         openOptions().closed?.();
 
-        expect(refresh).toHaveBeenCalledTimes(2);
+        expect(openOptions().saved).toBeUndefined();
+        expect(refresh).toHaveBeenCalledTimes(3);
     });
 
     it('opens nothing for a URL that names no panel', () => {
