@@ -92,7 +92,8 @@ public class ESSearchProxyTest extends IntegrationTestBase {
      * back-end user holding that role and one who does not, and a content type whose Category
      * field enables the secondary category check. Two items of that type are created: one tagged
      * with the readers-only category and one with no category. Object permissions on the type let
-     * every back-end user read both, so the category is the only thing that tells them apart.
+     * every back-end user and anonymous visitors read both, so the category is the only thing that
+     * tells them apart. Both items are published, so they are in the live index as well.
      * Category permissions are set before the items are saved, because they are copied into the
      * index document when an item is indexed.
      */
@@ -101,6 +102,7 @@ public class ESSearchProxyTest extends IntegrationTestBase {
         final User systemUser = APILocator.systemUser();
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         final Role backEndRole = APILocator.getRoleAPI().loadBackEndUserRole();
+        final Role anonymousRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
         final int readOnly = PermissionAPI.PERMISSION_READ;
 
         categoryReaderRole = new RoleDataGen()
@@ -148,22 +150,26 @@ public class ESSearchProxyTest extends IntegrationTestBase {
         permissionAPI.assignPermissions(List.of(
                 new Permission(categorizedType.getPermissionId(), backEndRole.getId(), readOnly, true),
                 new Permission(Contentlet.class.getCanonicalName(),
-                        categorizedType.getPermissionId(), backEndRole.getId(), readOnly, true)),
+                        categorizedType.getPermissionId(), backEndRole.getId(), readOnly, true),
+                new Permission(categorizedType.getPermissionId(), anonymousRole.getId(), readOnly,
+                        true),
+                new Permission(Contentlet.class.getCanonicalName(),
+                        categorizedType.getPermissionId(), anonymousRole.getId(), readOnly, true)),
                 categorizedType, systemUser, false);
 
         final long languageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
-        readersOnlyContent = new ContentletDataGen(categorizedType)
+        readersOnlyContent = ContentletDataGen.publish(new ContentletDataGen(categorizedType)
                 .host(APILocator.systemHost())
                 .languageId(languageId)
                 .setProperty("title", "readersOnly" + suffix)
                 .setProperty(categoryField.variable(), readersOnlyCategory.getInode())
                 .addCategory(readersOnlyCategory)
-                .nextPersisted();
-        uncategorizedContent = new ContentletDataGen(categorizedType)
+                .nextPersisted());
+        uncategorizedContent = ContentletDataGen.publish(new ContentletDataGen(categorizedType)
                 .host(APILocator.systemHost())
                 .languageId(languageId)
                 .setProperty("title", "uncategorized" + suffix)
-                .nextPersisted();
+                .nextPersisted());
     }
 
     /**
@@ -404,7 +410,7 @@ public class ESSearchProxyTest extends IntegrationTestBase {
             throws Exception {
         skipWhenOpenSearchOnly();
 
-        final Set<String> identifiers = searchCategorizedType(categoryOutsider);
+        final Set<String> identifiers = searchCategorizedType(categoryOutsider, false, false);
 
         Assert.assertTrue("The uncategorized item must be returned: " + identifiers,
                 identifiers.contains(uncategorizedContent.getIdentifier()));
@@ -423,7 +429,7 @@ public class ESSearchProxyTest extends IntegrationTestBase {
             throws Exception {
         skipWhenOpenSearchOnly();
 
-        final Set<String> identifiers = searchCategorizedType(categoryReader);
+        final Set<String> identifiers = searchCategorizedType(categoryReader, false, false);
 
         Assert.assertTrue("The uncategorized item must be returned: " + identifiers,
                 identifiers.contains(uncategorizedContent.getIdentifier()));
@@ -432,17 +438,40 @@ public class ESSearchProxyTest extends IntegrationTestBase {
     }
 
     /**
-     * Runs a raw Elasticsearch query for every item of the category test type, as the given user,
-     * against the working index.
+     * MethodToTest {@link ESSearchAPIImpl#esSearchRaw(String, boolean, User, boolean)}
+     * Given Scenario: Same data; an anonymous visitor (no user, respecting front-end roles)
+     *                 searches the type in the live index.
+     * ExpectedResult: Only the uncategorized item comes back.
+     */
+    @Test
+    public void test_esSearchRaw_anonymous_doesNotGetCategoryRestrictedContent() throws Exception {
+        skipWhenOpenSearchOnly();
+
+        final Set<String> identifiers = searchCategorizedType(null, true, true);
+
+        Assert.assertTrue("The uncategorized item must be returned: " + identifiers,
+                identifiers.contains(uncategorizedContent.getIdentifier()));
+        Assert.assertFalse("The item in a category anonymous cannot read must not be returned: "
+                + identifiers, identifiers.contains(readersOnlyContent.getIdentifier()));
+    }
+
+    /**
+     * Runs a raw Elasticsearch query for every item of the category test type.
      *
-     * @param searcher the user the search runs as
+     * @param searcher             the user the search runs as, or {@code null} for an anonymous
+     *                             visitor
+     * @param respectFrontendRoles whether front-end roles count towards the permission check
+     * @param live                 {@code true} for the live index, {@code false} for the working
+     *                             one
      * @return the identifiers of the items returned
      */
-    private static Set<String> searchCategorizedType(final User searcher)
+    private static Set<String> searchCategorizedType(final User searcher,
+            final boolean respectFrontendRoles, final boolean live)
             throws DotDataException, DotSecurityException {
         final String query = "{\"query\":{\"query_string\":{\"query\":\"+contenttype:"
                 + categorizedType.variable() + "\"}}}";
-        final SearchResponse response = new ESSearchAPIImpl().esSearchRaw(query, false, searcher, false);
+        final SearchResponse response = new ESSearchAPIImpl().esSearchRaw(query, live, searcher,
+                respectFrontendRoles);
         final Set<String> identifiers = new HashSet<>();
         for (final SearchHit hit : response.getHits().getHits()) {
             identifiers.add(String.valueOf(hit.getSourceAsMap().get("identifier")));
