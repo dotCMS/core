@@ -8,10 +8,11 @@ import {
     RouterStateSnapshot
 } from '@angular/router';
 
-import { catchError, map, switchMap, take } from 'rxjs/operators';
+import { map, switchMap, take } from 'rxjs/operators';
 
-import { DotMessageService, DotRouterService } from '@dotcms/data-access';
-import { DotcmsConfigService, LoggerService, LoginService } from '@dotcms/dotcms-js';
+import { DotRouterService } from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 
 /**
  * Route Guard that checks if a User is logged in.
@@ -20,9 +21,7 @@ import { DotcmsConfigService, LoggerService, LoginService } from '@dotcms/dotcms
 export class AuthGuardService implements CanActivate, CanActivateChild {
     private dotRouterService = inject(DotRouterService);
     private loginService = inject(LoginService);
-    private configService = inject(DotcmsConfigService);
-    private messageService = inject(DotMessageService);
-    private logger = inject(LoggerService);
+    private globalStore = inject(GlobalStore);
 
     canActivateChild(
         route: ActivatedRouteSnapshot,
@@ -42,36 +41,7 @@ export class AuthGuardService implements CanActivate, CanActivateChild {
                     return of(false);
                 }
 
-                // Reuse a matching bundle, or await the fetch before components translate their labels.
-                return this.configService.getConfig().pipe(
-                    take(1),
-                    catchError((error) => {
-                        this.logger.warn(
-                            'Unable to load configuration; fetching uncached translations.',
-                            error
-                        );
-
-                        return of(null);
-                    }),
-                    switchMap((config) =>
-                        this.messageService.init({
-                            language:
-                                this.loginService.auth?.loginAsUser?.languageId ||
-                                this.loginService.currentUserLanguageId ||
-                                'default',
-                            languageBundleVersion: config?.languageBundleVersion
-                        })
-                    ),
-                    map(() => true),
-                    catchError((error) => {
-                        this.logger.error(
-                            'Unable to load translations; continuing with available messages.',
-                            error
-                        );
-
-                        return of(true);
-                    })
-                );
+                return this.globalStore.waitForSessionReady().pipe(map(() => true));
             })
         );
     }

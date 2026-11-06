@@ -8,13 +8,15 @@ import {
     withState
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { EMPTY, Observable, of, pipe } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 
-import { switchMap } from 'rxjs/operators';
+import { catchError, filter, map, startWith, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotSystemConfigService } from '@dotcms/data-access';
+import { DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
+import { Auth, LoginService } from '@dotcms/dotcms-js';
 import { DotSystemConfig } from '@dotcms/dotcms-models';
 
 /**
@@ -30,13 +32,16 @@ export interface SystemState {
      * Set to `null` when not loaded yet.
      */
     systemConfig: DotSystemConfig | null;
+    /** Errors permit authenticated entry with available labels and are retried on navigation. */
+    _sessionStatus: 'idle' | 'loading' | 'ready' | 'error';
 }
 
 /**
  * Initial state for the System feature.
  */
 const initialSystemState: SystemState = {
-    systemConfig: null
+    systemConfig: null,
+    _sessionStatus: 'idle'
 };
 
 /**
@@ -44,11 +49,11 @@ const initialSystemState: SystemState = {
  *
  * This feature provides state management for system-level configuration data
  * including logos, colors, release information, timezone, languages, license,
- * and cluster information. It automatically loads the configuration on initialization
+ * and cluster information. It loads configuration and translations after authentication
  * and provides convenient computed selectors for accessing specific parts of the config.
  *
  * ## Features
- * - Auto-loads system configuration on initialization
+ * - Refreshes configuration and translations on authentication changes
  * - Provides typed access to system configuration data
  * - Includes computed selectors for common use cases (colors, license, languages)
  * - Modern HttpClient-based service (no deprecated dependencies)
@@ -58,38 +63,94 @@ const initialSystemState: SystemState = {
 export function withSystem() {
     return signalStoreFeature(
         withState(initialSystemState),
-        withMethods((store, systemConfigService = inject(DotSystemConfigService)) => ({
-            /**
-             * Loads the system configuration from DotCMS and updates the store.
-             *
-             * Fetches the system configuration from the DotSystemConfigService and stores it
-             * in the feature state. This includes logos, colors, release info, timezone,
-             * languages, license, and cluster information. This method is automatically
-             * called on store initialization.
-             *
-             */
-            loadSystemConfig: rxMethod<void>(
-                pipe(
-                    switchMap(() =>
-                        systemConfigService.getSystemConfig().pipe(
-                            tapResponse({
-                                next: (systemConfig) => {
-                                    patchState(store, {
-                                        systemConfig
-                                    });
-                                },
-                                error: (error) => {
+        withMethods(
+            (
+                store,
+                systemConfigService = inject(DotSystemConfigService),
+                messages = inject(DotMessageService),
+                loginService = inject(LoginService)
+            ) => ({
+                _loadSession: rxMethod<Auth | null>(
+                    pipe(
+                        switchMap((auth) => {
+                            if (!auth?.user) {
+                                patchState(store, { systemConfig: null, _sessionStatus: 'idle' });
+
+                                return EMPTY;
+                            }
+
+                            const language =
+                                auth.loginAsUser?.languageId ||
+                                loginService.currentUserLanguageId ||
+                                auth.sessionLanguageId ||
+                                'default';
+                            patchState(store, { _sessionStatus: 'loading' });
+
+                            return systemConfigService.getSystemConfig().pipe(
+                                take(1),
+                                catchError((error) => {
                                     console.warn(
-                                        '[withSystem] Error loading system configuration:',
+                                        'Unable to load configuration; fetching uncached translations.',
                                         error
                                     );
-                                }
-                            })
-                        )
+
+                                    return of(null);
+                                }),
+                                tap((systemConfig) => patchState(store, { systemConfig })),
+                                switchMap((config) =>
+                                    messages
+                                        .init({
+                                            language,
+                                            languageBundleVersion: config?.languageBundleVersion
+                                        })
+                                        .pipe(map(() => config != null))
+                                ),
+                                tapResponse({
+                                    next: (configured) =>
+                                        patchState(store, {
+                                            _sessionStatus: configured ? 'ready' : 'error'
+                                        }),
+                                    error: (error) => {
+                                        console.error(
+                                            'Unable to load translations; continuing with available messages.',
+                                            error
+                                        );
+                                        patchState(store, { _sessionStatus: 'error' });
+                                    }
+                                })
+                            );
+                        })
                     )
                 )
-            )
-        })),
+            })
+        ),
+        withMethods((store, loginService = inject(LoginService)) => {
+            const status$ = toObservable(store._sessionStatus);
+
+            return {
+                /** Refreshes configuration and the versioned translations for the current session. */
+                loadSystemConfig(): void {
+                    store._loadSession(loginService.auth);
+                },
+                /** Waits for post-login loading, retrying a previous failure on later navigation. */
+                waitForSessionReady(): Observable<void> {
+                    if (store._sessionStatus() === 'idle' || store._sessionStatus() === 'error') {
+                        store._loadSession(loginService.auth);
+                    }
+
+                    return status$.pipe(
+                        // Check current state: toObservable may still replay readiness from the previous session.
+                        filter(
+                            () =>
+                                store._sessionStatus() === 'ready' ||
+                                store._sessionStatus() === 'error'
+                        ),
+                        take(1),
+                        map(() => void 0)
+                    );
+                }
+            };
+        }),
         withComputed(({ systemConfig }) => ({
             /**
              * Computed signal indicating whether the system configuration is loaded.
@@ -180,15 +241,10 @@ export function withSystem() {
             systemCluster: computed(() => systemConfig()?.cluster ?? null)
         })),
         withHooks({
-            /**
-             * Automatically loads the system configuration when the feature is initialized.
-             *
-             * This ensures the system configuration is available immediately after
-             * the store is created, without requiring manual initialization.
-             */
             onInit(store) {
-                // Auto-load system configuration on feature initialization
-                store.loadSystemConfig();
+                const loginService = inject(LoginService);
+                // Every auth change matters: the principal ID alone misses locale and login-as changes.
+                store._loadSession(loginService.auth$.pipe(startWith(loginService.auth)));
             }
         })
     );

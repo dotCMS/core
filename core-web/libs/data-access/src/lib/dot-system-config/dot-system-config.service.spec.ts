@@ -13,6 +13,15 @@ describe('DotSystemConfigService', () => {
     });
 
     describe('getSystemConfig', () => {
+        it('carries the language bundle version used for translation cache validation', () => {
+            let config: DotSystemConfig | undefined;
+            spectator.service.getSystemConfig().subscribe((value) => (config = value));
+            spectator
+                .expectOne('/api/v1/appconfiguration', HttpMethod.GET)
+                .flush({ entity: { config: { languageBundleVersion: 'build-hash' } } });
+            expect(config?.languageBundleVersion).toBe('build-hash');
+        });
+
         it('should fetch and transform system configuration', () =>
             new Promise<void>((done) => {
                 // Only the `entity` envelope field matters here; the rest of

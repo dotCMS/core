@@ -1,33 +1,18 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
 
 import { take } from 'rxjs/operators';
 
-import {
-    DotCurrentUserService,
-    DotEventsService,
-    DotMessageService,
-    DotRouterService,
-    DotSystemConfigService,
-    DotIframeService
-} from '@dotcms/data-access';
-import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
-import { GlobalStore } from '@dotcms/store';
-import {
-    DOT_SYSTEM_CONFIG_SERVICE_MOCK,
-    DotCurrentUserServiceMock,
-    LoginServiceMock,
-    mockAuth
-} from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
+import { LoggerService, LoginService } from '@dotcms/dotcms-js';
+import { LoginServiceMock, mockAuth } from '@dotcms/utils-testing';
 
 import { DotToolbarUserStore } from './dot-toolbar-user.store';
 
-import { DotMenuService } from '../../../../../../api/services/dot-menu.service';
 import { LOCATION_TOKEN } from '../../../../../../providers';
 import { DotNavigationService } from '../../../../dot-navigation/services/dot-navigation.service';
 
@@ -40,18 +25,10 @@ describe('DotToolbarUserStore', () => {
 
     const createService = createServiceFactory({
         service: DotToolbarUserStore,
-        imports: [RouterTestingModule],
         providers: [
-            LoggerService,
+            mockProvider(LoggerService),
             DotMessageService,
-            DotNavigationService,
-            DotEventsService,
-            DotIframeService,
-            DotMenuService,
-            DotcmsConfigService,
-            StringUtils,
-            DotRouterService,
-            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
+            mockProvider(DotNavigationService),
             {
                 provide: LOCATION_TOKEN,
                 useValue: {
@@ -61,11 +38,6 @@ describe('DotToolbarUserStore', () => {
                 }
             },
             { provide: LoginService, useClass: LoginServiceMock },
-            {
-                provide: DotSystemConfigService,
-                useValue: DOT_SYSTEM_CONFIG_SERVICE_MOCK
-            },
-            GlobalStore,
             provideHttpClient(),
             provideHttpClientTesting()
         ]
@@ -165,10 +137,6 @@ describe('DotToolbarUserStore', () => {
             localStorage.clear();
             messages = spectator.inject(DotMessageService);
             http = spectator.inject(HttpTestingController);
-            // Navigation providers eagerly request data unrelated to bundle recovery.
-            http.match((request) =>
-                ['/api/v1/site/currentSite', '/api/v1/menu'].includes(request.url)
-            );
         });
 
         afterEach(() => {

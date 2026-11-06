@@ -1,14 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
+import { EMPTY } from 'rxjs';
+import { vi } from 'vitest';
 
-import { of, Subject, throwError } from 'rxjs';
-import { MockInstance, vi } from 'vitest';
-
-import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { By } from '@angular/platform-browser';
-import { RouterTestingModule } from '@angular/router/testing';
+import { signal, WritableSignal } from '@angular/core';
+import { provideRouter } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 
@@ -16,291 +11,109 @@ import {
     DEFAULT_COLORS,
     DotAlertConfirmService,
     DotLicenseService,
-    DotMessageService,
     DotNavLogoService,
     DotUiColorsService
 } from '@dotcms/data-access';
-import { DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
+import { DotSystemConfig } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { AppComponent } from './app.component';
 
+const config = {
+    colors: { primary: '#123', secondary: '#456', background: '#789' },
+    logos: { navBar: 'logo-url' },
+    license: { displayServerId: 'test', isCommunity: false, level: 200, levelName: 'test level' }
+} as DotSystemConfig;
+
 describe('AppComponent', () => {
-    let fixture: ComponentFixture<AppComponent>;
-    let de: DebugElement;
-    let dotCmsConfigService: DotcmsConfigService;
-    let dotUiColorsService: DotUiColorsService;
-    let dotMessageService: DotMessageService;
-    let dotLicenseService: DotLicenseService;
-    let dotNavLogoService: DotNavLogoService;
-    let consoleWarnSpy: MockInstance;
+    let spectator: Spectator<AppComponent>;
+    let $systemConfig: WritableSignal<DotSystemConfig | null>;
+    const createComponent = createComponentFactory({
+        component: AppComponent,
+        shallow: true,
+        detectChanges: false,
+        providers: [
+            provideRouter([]),
+            mockProvider(ConfirmationService),
+            mockProvider(DotAlertConfirmService, {
+                confirmDialogOpened$: EMPTY,
+                confirmModel: signal(null),
+                alertModel: signal(null)
+            }),
+            mockProvider(DotUiColorsService),
+            mockProvider(DotNavLogoService),
+            mockProvider(DotLicenseService)
+        ]
+    });
 
     beforeEach(() => {
-        TestBed.configureTestingModule({
-            imports: [AppComponent, RouterTestingModule],
-            providers: [
-                provideHttpClient(),
-                provideHttpClientTesting(),
-                DotUiColorsService,
-                DotNavLogoService,
-                DotcmsConfigService,
-                LoggerService,
-                StringUtils,
-                DotLicenseService,
-                DotMessageService,
-                DotAlertConfirmService,
-                ConfirmationService
-            ]
-        });
-
-        dotCmsConfigService = TestBed.inject(DotcmsConfigService);
-        dotUiColorsService = TestBed.inject(DotUiColorsService);
-        dotMessageService = TestBed.inject(DotMessageService);
-        dotLicenseService = TestBed.inject(DotLicenseService);
-        dotNavLogoService = TestBed.inject(DotNavLogoService);
-
-        vi.spyOn(dotUiColorsService, 'setColors');
-        vi.spyOn(dotMessageService, 'init');
-        vi.spyOn(dotLicenseService, 'setLicense');
-        vi.spyOn(dotNavLogoService, 'setLogo');
-        consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
-
-        fixture = TestBed.createComponent(AppComponent);
-        de = fixture.debugElement;
-    });
-
-    afterEach(() => {
-        consoleWarnSpy.mockRestore();
-    });
-
-    describe('Component initialization', () => {
-        it('should have router-outlet', () => {
-            fixture.detectChanges();
-            expect(de.query(By.css('router-outlet')) !== null).toBe(true);
-        });
-
-        it('should have dot-alert-confirm component', () => {
-            fixture.detectChanges();
-            expect(de.query(By.css('dot-alert-confirm')) !== null).toBe(true);
+        $systemConfig = signal(null);
+        spectator = createComponent({
+            providers: [{ provide: GlobalStore, useValue: { systemConfig: $systemConfig } }]
         });
     });
 
-    describe('Configuration loading', () => {
-        it('should load and apply configuration successfully', () => {
-            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
-                of({
-                    colors: {
-                        primary: '#123',
-                        secondary: '#456',
-                        background: '#789'
-                    },
-                    releaseInfo: {
-                        buildDate: 'Jan 1, 2022'
-                    },
-                    logos: {
-                        navBar: 'logo-url'
-                    },
-                    license: {
-                        displayServerId: 'test',
-                        isCommunity: false,
-                        level: 200,
-                        levelName: 'test level'
-                    }
-                }) as any
-            );
-
-            fixture.detectChanges();
-
-            expect(dotMessageService.init).not.toHaveBeenCalled();
-            expect(dotUiColorsService.setColors).toHaveBeenCalledWith(expect.any(HTMLElement), {
-                primary: '#123',
-                secondary: '#456',
-                background: '#789'
-            });
-            expect(dotNavLogoService.setLogo).toHaveBeenCalledWith('logo-url');
-            // Note: setLicense test is skipped due to DotLicenseService injection issue
-            // expect(dotLicenseService.setLicense).toHaveBeenCalledWith({...});
-        });
-
-        it('should handle partial configuration (missing optional fields)', () => {
-            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
-                of({
-                    colors: {
-                        primary: '#123',
-                        secondary: '#456',
-                        background: '#789'
-                    },
-                    releaseInfo: null,
-                    logos: null,
-                    license: null
-                }) as any
-            );
-
-            fixture.detectChanges();
-
-            // Public app initialization must not request the authenticated language bundle.
-            expect(dotMessageService.init).not.toHaveBeenCalled();
-
-            // Should still set colors
-            expect(dotUiColorsService.setColors).toHaveBeenCalledWith(expect.any(HTMLElement), {
-                primary: '#123',
-                secondary: '#456',
-                background: '#789'
-            });
-
-            // Should not call setLogo if navBar is null
-            expect(dotNavLogoService.setLogo).not.toHaveBeenCalled();
-
-            // Should not call setLicense if license is null
-            expect(dotLicenseService.setLicense).not.toHaveBeenCalled();
-        });
-
-        it('should use default colors when configuration fails to load', () => {
-            const error = new Error('Failed to load configuration');
-            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(throwError(() => error));
-
-            fixture.detectChanges();
-
-            expect(consoleWarnSpy).toHaveBeenCalledWith(
-                'Failed to load configuration, using defaults:',
-                error
-            );
-
-            // Should use default colors
-            expect(dotUiColorsService.setColors).toHaveBeenCalledWith(
-                expect.any(HTMLElement),
-                DEFAULT_COLORS
-            );
-
-            // Should not call other services when config fails
-            expect(dotMessageService.init).not.toHaveBeenCalled();
-            expect(dotNavLogoService.setLogo).not.toHaveBeenCalled();
-            expect(dotLicenseService.setLicense).not.toHaveBeenCalled();
-        });
-
-        it('should handle configuration error gracefully (unauthenticated user)', () => {
-            const httpError = { status: 401, message: 'Unauthorized' };
-            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(throwError(() => httpError));
-
-            fixture.detectChanges();
-
-            expect(consoleWarnSpy).toHaveBeenCalledWith(
-                'Failed to load configuration, using defaults:',
-                httpError
-            );
-
-            // Should still set default colors to ensure app works
-            expect(dotUiColorsService.setColors).toHaveBeenCalledWith(
-                expect.any(HTMLElement),
-                DEFAULT_COLORS
-            );
-
-            // App should continue functioning
-            expect(dotUiColorsService.setColors).toHaveBeenCalledTimes(1);
-        });
-
-        it('should restore configured colors and logo after an initial failure recovers', () => {
-            const updates = new Subject<any>();
-            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
-                throwError(() => new Error('Offline'))
-            );
-            vi.spyOn(dotCmsConfigService, 'getConfigUpdates').mockReturnValue(updates);
-            fixture.detectChanges();
-            expect(dotUiColorsService.setColors).toHaveBeenCalledWith(
-                expect.any(HTMLElement),
-                DEFAULT_COLORS
-            );
-
-            updates.next({
-                colors: { primary: '#123', secondary: '#456', background: '#789' },
-                logos: { navBar: 'restored-logo' },
-                license: null
-            });
-            expect(dotUiColorsService.setColors).toHaveBeenLastCalledWith(expect.any(HTMLElement), {
-                primary: '#123',
-                secondary: '#456',
-                background: '#789'
-            });
-            expect(dotNavLogoService.setLogo).toHaveBeenCalledWith('restored-logo');
-            expect(dotMessageService.init).not.toHaveBeenCalled();
-
-            fixture.destroy();
-            updates.next({ colors: DEFAULT_COLORS, logos: { navBar: 'after-destroy' } });
-            expect(dotNavLogoService.setLogo).not.toHaveBeenCalledWith('after-destroy');
-        });
-
-        it('should always set colors even when configuration fails', () => {
-            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
-                throwError(() => new Error('Network error'))
-            );
-
-            // Mock querySelector to return null (edge case)
-            const originalQuerySelector = document.querySelector;
-            vi.spyOn(document, 'querySelector').mockReturnValue(null);
-
-            fixture.detectChanges();
-
-            // Should not call setColors if html element doesn't exist
-            expect(dotUiColorsService.setColors).not.toHaveBeenCalled();
-
-            // Restore original
-            document.querySelector = originalQuerySelector;
-        });
+    it('renders the router outlet and alert component', () => {
+        spectator.detectChanges();
+        expect(spectator.query('router-outlet')).not.toBeNull();
+        expect(spectator.query('dot-alert-confirm')).not.toBeNull();
     });
 
-    describe('Service initialization', () => {
-        beforeEach(() => {
-            vi.spyOn(dotCmsConfigService, 'getConfig').mockReturnValue(
-                of({
-                    colors: {
-                        primary: '#123',
-                        secondary: '#456',
-                        background: '#789'
-                    },
-                    releaseInfo: {
-                        buildDate: 'Jan 1, 2022'
-                    },
-                    logos: {
-                        navBar: 'logo-url'
-                    },
-                    license: {
-                        displayServerId: 'test',
-                        isCommunity: false,
-                        level: 200,
-                        levelName: 'test level'
-                    }
-                }) as any
-            );
-        });
+    it('uses default colors before authenticated configuration is available', () => {
+        spectator.detectChanges();
+        expect(spectator.inject(DotUiColorsService).setColors).toHaveBeenCalledWith(
+            expect.any(HTMLElement),
+            DEFAULT_COLORS
+        );
+        expect(spectator.inject(DotNavLogoService).setLogo).not.toHaveBeenCalled();
+        expect(spectator.inject(DotLicenseService).setLicense).not.toHaveBeenCalled();
+    });
 
-        it('should defer message loading to authenticated route activation', () => {
-            fixture.detectChanges();
-            expect(dotMessageService.init).not.toHaveBeenCalled();
-        });
+    it('applies colors, logo and license from GlobalStore without loading its own configuration', () => {
+        $systemConfig.set(config);
+        spectator.detectChanges();
+        expect(spectator.inject(DotUiColorsService).setColors).toHaveBeenCalledWith(
+            expect.any(HTMLElement),
+            config.colors
+        );
+        expect(spectator.inject(DotNavLogoService).setLogo).toHaveBeenCalledWith('logo-url');
+        expect(spectator.inject(DotLicenseService).setLicense).toHaveBeenCalledWith(config.license);
+    });
 
-        it('should set ui colors from configuration', () => {
-            fixture.detectChanges();
-            expect(dotUiColorsService.setColors).toHaveBeenCalledWith(expect.any(HTMLElement), {
-                primary: '#123',
-                secondary: '#456',
-                background: '#789'
-            });
-        });
+    it('tolerates partial configuration', () => {
+        $systemConfig.set({ ...config, logos: null, license: null });
+        spectator.detectChanges();
+        expect(spectator.inject(DotUiColorsService).setColors).toHaveBeenCalledWith(
+            expect.any(HTMLElement),
+            config.colors
+        );
+        expect(spectator.inject(DotNavLogoService).setLogo).not.toHaveBeenCalled();
+        expect(spectator.inject(DotLicenseService).setLicense).not.toHaveBeenCalled();
+    });
 
-        it('should set logo from configuration', () => {
-            fixture.detectChanges();
-            expect(dotNavLogoService.setLogo).toHaveBeenCalledWith('logo-url');
-            expect(dotNavLogoService.setLogo).toHaveBeenCalledTimes(1);
-        });
+    it('restores configured branding when post-login loading succeeds', () => {
+        spectator.detectChanges();
+        $systemConfig.set(config);
+        spectator.detectChanges();
+        expect(spectator.inject(DotUiColorsService).setColors).toHaveBeenLastCalledWith(
+            expect.any(HTMLElement),
+            config.colors
+        );
+        expect(spectator.inject(DotNavLogoService).setLogo).toHaveBeenCalledWith('logo-url');
+    });
 
-        it.skip('should set license from configuration', () => {
-            // TODO: Fix this test - DotLicenseService injection issue
-            fixture.detectChanges();
-            expect(dotLicenseService.setLicense).toHaveBeenCalledWith({
-                displayServerId: 'test',
-                isCommunity: false,
-                level: 200,
-                levelName: 'test level'
-            });
-        });
+    it('stops applying configuration after destruction', () => {
+        spectator.detectChanges();
+        const logo = spectator.inject(DotNavLogoService);
+        spectator.fixture.destroy();
+        $systemConfig.set(config);
+        expect(logo.setLogo).not.toHaveBeenCalled();
+    });
+
+    it('tolerates a missing document root', () => {
+        const query = vi.spyOn(document, 'querySelector').mockReturnValue(null);
+        spectator.detectChanges();
+        expect(spectator.inject(DotUiColorsService).setColors).not.toHaveBeenCalled();
+        query.mockRestore();
     });
 });
