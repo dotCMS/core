@@ -23,6 +23,7 @@ import com.dotcms.util.SizeUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -97,6 +98,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -1093,32 +1095,56 @@ public class MaintenanceResource implements Serializable {
         final List<SessionView> sessions = new ArrayList<>();
 
         for (final HttpSession session : sessionMonitor.getUserSessions().values()) {
-            User sessionUser = Try.of(() -> PortalUtil.getUser(session)).getOrNull();
-            if (sessionUser == null) {
-                Logger.warn(this, "Could not resolve user for a tracked session in /_sessions (PortalUtil.getUser returned null or failed); falling back to anonymous user");
-                sessionUser = Try.of(() -> APILocator.getUserAPI().getAnonymousUser())
-                        .getOrElseThrow(e -> new DotRuntimeException(
-                                "Could not resolve session user (primary PortalUtil.getUser returned null or failed) and the anonymous-user fallback also failed", e));
+            try {
+                sessions.add(sessionView(session, callingSession, csrfToken));
+            } catch (final IllegalStateException e) {
+                // the session ended after it was tracked: forget it instead of failing the listing
+                Logger.debug(this, () -> "Skipping a tracked session that has already ended");
+                SessionMonitor.forget(session.getId());
             }
-
-            sessions.add(SessionView.builder()
-                    .token(SessionTokenUtil.obfuscateSessionId(session.getId(), csrfToken))
-                    .isCurrent(callingSession.getId().equals(session.getId()))
-                    .userId(sessionUser.getUserId())
-                    .userEmail(sessionUser.getEmailAddress())
-                    .userFullName(sessionUser.getFullName())
-                    .address((String) session.getAttribute(SessionMonitor.USER_REMOTE_ADDR))
-                    .sessionTime(DateUtil.prettyDateSince(
-                            new Date(session.getCreationTime()),
-                            PublicCompanyFactory.getDefaultCompany().getLocale()))
-                    .build());
         }
 
         return new ResponseEntitySessionListView(sessions);
     }
 
     /**
-     * Invalidates a single session identified by its HMAC-obfuscated token.
+     * Builds the listing row of a tracked session. A session that names no user, or whose user
+     * record no longer exists, is listed under the anonymous user.
+     *
+     * @param session        the tracked session
+     * @param callingSession the caller's own session, to mark the current row
+     * @param csrfToken      the secret the row's token is derived from
+     * @return the row
+     * @throws IllegalStateException when the session has already ended
+     */
+    private SessionView sessionView(final HttpSession session, final HttpSession callingSession,
+                                    final String csrfToken) {
+        User sessionUser = sessionUser(session).orElse(null);
+        if (sessionUser == null) {
+            Logger.warn(this, "Could not resolve the user of a tracked session in /_sessions (the session names no user, or the record no longer exists); falling back to anonymous user");
+            sessionUser = Try.of(() -> APILocator.getUserAPI().getAnonymousUser())
+                    .getOrElseThrow(e -> new DotRuntimeException(
+                            "Could not resolve the session user and the anonymous-user fallback also failed", e));
+        }
+        return SessionView.builder()
+                .token(SessionTokenUtil.obfuscateSessionId(session.getId(), csrfToken))
+                .isCurrent(callingSession.getId().equals(session.getId()))
+                .userId(sessionUser.getUserId())
+                .userEmail(sessionUser.getEmailAddress())
+                .userFullName(sessionUser.getFullName())
+                .address((String) session.getAttribute(SessionMonitor.USER_REMOTE_ADDR))
+                .sessionTime(DateUtil.prettyDateSince(
+                        new Date(session.getCreationTime()),
+                        PublicCompanyFactory.getDefaultCompany().getLocale()))
+                .build();
+    }
+
+    /**
+     * Invalidates a single session identified by its HMAC-obfuscated token, and invalidates the
+     * login tokens issued so far to the user that session belonged to (and, for a Login As
+     * session, to the administrator behind it), so that user's clients must log in again. When
+     * the session belonged to the caller (another session of the same user), the caller's own
+     * login tokens are invalidated too; the calling session itself goes on.
      * <p>
      * Requires a fresh CSRF secret stored in the caller's HTTP session (issued by
      * {@link #listSessions}); the caller cannot invalidate its own session.
@@ -1131,6 +1157,8 @@ public class MaintenanceResource implements Serializable {
     @Operation(
             summary = "Invalidate a single session",
             description = "Invalidates the session whose HMAC-obfuscated token is supplied. "
+                    + "The login tokens issued to the session's user are invalidated as well, so "
+                    + "that user's clients must log in again. "
                     + "The caller's own session cannot be invalidated this way. The CSRF secret "
                     + "must have been issued by GET /v1/maintenance/_sessions within the last "
                     + "15 minutes — otherwise this endpoint returns 403 and the client must "
@@ -1183,15 +1211,21 @@ public class MaintenanceResource implements Serializable {
                 throw new BadRequestException("Cannot invalidate your own session");
             }
 
+            final Optional<String> sessionUserId = sessionUserId(session);
             SecurityLogger.logInfo(this.getClass(),
                     String.format("User '%s' invalidating session of user '%s' from ip: %s",
                             user.getUserId(),
-                            Try.of(() -> PortalUtil.getUser(session).getUserId())
-                                    .getOrElse("unknown"),
+                            sessionUserId.orElse("unknown"),
                             request.getRemoteAddr()));
 
-            session.setAttribute(SessionMonitor.IGNORE_REMEMBER_ME_ON_INVALIDATION, true);
-            session.invalidate();
+            final Set<String> affectedUserIds = sessionUserIds(session);
+            try {
+                SessionMonitor.end(session);
+            } catch (final IllegalStateException e) {
+                // the session ended on its own in the meantime; it has been forgotten, the outcome is the same
+                Logger.debug(this, () -> "The session to end had already ended");
+            }
+            affectedUserIds.forEach(this::invalidateLoginTokens);
             return new ResponseEntityStringView("Session invalidated");
         }
 
@@ -1199,7 +1233,79 @@ public class MaintenanceResource implements Serializable {
     }
 
     /**
-     * Invalidates every active HTTP session except the caller's own.
+     * Returns the id of the user a tracked session belongs to, read from the session's
+     * {@code USER_ID} attribute, or empty when the session has none or is no longer readable.
+     */
+    private static Optional<String> sessionUserId(final HttpSession session) {
+        return sessionAttribute(session, com.liferay.portal.util.WebKeys.USER_ID);
+    }
+
+    /**
+     * Returns the user record a tracked session is listed under: the record of the session's
+     * stored user id or, for a login that stores only the {@link User} object, of that copy's id.
+     * The record is read as it is stored, so a session whose user was made inactive after login
+     * is still listed under that user. The session itself is left untouched: resolving its user
+     * through {@link PortalUtil#getUser(HttpSession)} would sign out a session whose user is no
+     * longer usable, which removes the ids the kill tools need to invalidate that user's login
+     * tokens.
+     *
+     * @param session a tracked session
+     * @return the {@link User} the session is listed under, or empty when the session names no
+     *         user or the record no longer exists
+     */
+    private static Optional<User> sessionUser(final HttpSession session) {
+        return sessionUserId(session)
+                .or(() -> Try.of(() -> session.getAttribute(com.liferay.portal.util.WebKeys.USER))
+                        .toJavaOptional()
+                        .filter(User.class::isInstance)
+                        .map(stored -> ((User) stored).getUserId())
+                        .filter(UtilMethods::isSet))
+                .flatMap(userId -> Try.of(() -> APILocator.getUserAPI().loadUserById(userId))
+                        .toJavaOptional());
+    }
+
+    /**
+     * Returns the ids of the users whose login tokens must be invalidated when the session ends:
+     * the session's user and, for a Login As session, the administrator behind it. The anonymous
+     * user is never among them: it is the shared record unauthenticated requests run as, it holds
+     * no login token, and its row must not be touched by a session kill.
+     */
+    private static Set<String> sessionUserIds(final HttpSession session) {
+        final Set<String> userIds = new HashSet<>();
+        sessionUserId(session).ifPresent(userIds::add);
+        sessionAttribute(session, com.liferay.portal.util.WebKeys.PRINCIPAL_USER_ID).ifPresent(userIds::add);
+        userIds.remove(UserAPI.CMS_ANON_USER_ID);
+        return userIds;
+    }
+
+    /**
+     * Reads a non-blank string attribute of a tracked session, or empty when the attribute is
+     * missing, not a string, or the session is no longer readable.
+     */
+    private static Optional<String> sessionAttribute(final HttpSession session, final String name) {
+        return Try.of(() -> session.getAttribute(name))
+                .toJavaOptional()
+                .filter(String.class::isInstance)
+                .map(String.class::cast)
+                .filter(UtilMethods::isSet);
+    }
+
+    /**
+     * Invalidates the login tokens issued so far to the given user, so that a client whose session
+     * was just ended cannot sign in again with a login token it already holds. A failure is logged
+     * and does not undo the session kill.
+     */
+    private void invalidateLoginTokens(final String userId) {
+        Try.run(() -> APILocator.getUserAPI().invalidateLoginTokens(userId))
+                .onFailure(e -> Logger.warn(this,
+                        "Could not invalidate the login tokens of user '" + userId + "': " + e.getMessage(), e));
+    }
+
+    /**
+     * Invalidates every active HTTP session tracked on this node except the caller's own, and
+     * invalidates the login tokens of every user whose session was ended (for a Login As session,
+     * the administrator behind it as well), the caller's included when another session of the
+     * caller was among them.
      *
      * @param request  The current {@link HttpServletRequest}
      * @param response The current {@link HttpServletResponse}
@@ -1209,6 +1315,8 @@ public class MaintenanceResource implements Serializable {
             summary = "Invalidate all sessions except the caller's",
             description = "Walks every active HTTP session tracked by SessionMonitor, "
                     + "skips the caller's own session, and invalidates the rest. "
+                    + "The login tokens of every user whose session was invalidated are "
+                    + "invalidated as well, so those clients must log in again. "
                     + "Returns the count of invalidated sessions."
     )
     @ApiResponses(value = {
@@ -1240,14 +1348,20 @@ public class MaintenanceResource implements Serializable {
                         user.getUserId(), request.getRemoteAddr()));
 
         int killed = 0;
+        final Set<String> affectedUserIds = new HashSet<>();
         for (final HttpSession session : sessionMonitor.getUserSessions().values()) {
             if (callingSession.getId().equals(session.getId())) {
                 continue;
             }
-            session.setAttribute(SessionMonitor.IGNORE_REMEMBER_ME_ON_INVALIDATION, true);
-            session.invalidate();
-            killed++;
+            affectedUserIds.addAll(sessionUserIds(session));
+            try {
+                SessionMonitor.end(session);
+                killed++;
+            } catch (final IllegalStateException e) {
+                // the session had already ended; it has been forgotten, nothing to count
+            }
         }
+        affectedUserIds.forEach(this::invalidateLoginTokens);
 
         return new ResponseEntityKillSessionsResultView(
                 KillSessionsResultView.builder().killedCount(killed).build());
