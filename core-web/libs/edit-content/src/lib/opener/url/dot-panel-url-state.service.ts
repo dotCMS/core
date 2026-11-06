@@ -18,7 +18,7 @@ import {
 
 import { filter, take } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotSidePanelRef } from '@dotcms/ui';
 import { DOT_PANEL_URL_PARAM } from '@dotcms/utils';
 
@@ -172,15 +172,24 @@ export class DotPanelUrlStateService {
      * params, and `extraKeys`, in place (FR-049, T172). Every surface that reads the panel URL calls
      * this, the admin app's screens through `refusePanelUrl`.
      *
+     * Both wait for the app's messages: a surface refuses on init, which on a fresh load is before
+     * they have arrived, and the error manager builds the dialog's text when it is handed the
+     * error, so it would show the raw keys (T175).
+     *
      * @param extraKeys Params of the surface's own that go with the panel params.
      */
     refuse(extraKeys: readonly string[] = []): void {
         // Resolved here rather than on construction: a surface's tests build this service without
-        // the error manager when they never refuse.
+        // the error manager or the messages when they never refuse.
         this.#injector
-            .get(DotHttpErrorManagerService)
-            .handle(new HttpErrorResponse({ status: HttpStatusCode.NotFound }));
-        this.clear(extraKeys);
+            .get(DotMessageService)
+            .ready$.pipe(take(1))
+            .subscribe(() => {
+                this.#injector
+                    .get(DotHttpErrorManagerService)
+                    .handle(new HttpErrorResponse({ status: HttpStatusCode.NotFound }));
+                this.clear(extraKeys);
+            });
     }
 
     /**
