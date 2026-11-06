@@ -10,9 +10,16 @@ const IDENTIFIER = '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57';
 /** An inode: the same UUID shape as an identifier. */
 const INODE = '9b1d2c3e-4f5a-4b6c-8d7e-1f2a3b4c5d6e';
 
+/** A link the author cannot have meant: a panel param of the wrong shape. */
+const MALFORMED = { kind: 'refused', reason: 'malformed' };
+
+/** A link naming more than one panel. */
+const CONFLICT = { kind: 'refused', reason: 'conflict' };
+
 /**
  * What a URL asks to open when a surface loads (#38303, FR-049). Values reach a Lucene query and
- * REST paths, so only the shapes they can take are accepted and anything else reads as absent.
+ * REST paths, so only the shapes they can take are accepted; a panel param of any other shape
+ * refuses the link, so the surface can tell the author instead of opening nothing in silence.
  */
 describe('readPanelUrlIntent', () => {
     // Content Drive's names, kept so the links authors already share keep opening (FR-044).
@@ -43,22 +50,27 @@ describe('readPanelUrlIntent', () => {
         });
 
         it.each(['abc', '0', '-1', '1.5'])(
-            'reads a language of %j as no language',
+            'refuses a language of %j',
             (editContentLang) => {
-                expect(readPanelUrlIntent({ editContent: IDENTIFIER, editContentLang })).toEqual({
-                    kind: 'edit',
-                    identifier: IDENTIFIER
-                });
+                expect(readPanelUrlIntent({ editContent: IDENTIFIER, editContentLang })).toEqual(
+                    MALFORMED
+                );
             }
         );
 
-        // `new` is the retired create marker: an old link opens nothing rather than an empty form.
-        it.each(['new', 'not-an-identifier', `${IDENTIFIER} OR +live:true`, ''])(
-            'reads editContent=%j as nothing',
+        // `new` is the retired create marker: an old bookmark is refused rather than opening an
+        // empty form, or nothing in silence.
+        it.each(['new', 'wrong-identifier', `${IDENTIFIER} OR +live:true`])(
+            'refuses editContent=%j',
             (editContent) => {
-                expect(readPanelUrlIntent({ editContent })).toEqual({ kind: 'none' });
+                expect(readPanelUrlIntent({ editContent })).toEqual(MALFORMED);
             }
         );
+
+        // An empty value names nothing; it is not a link to anything.
+        it('reads an empty editContent as nothing', () => {
+            expect(readPanelUrlIntent({ editContent: '' })).toEqual({ kind: 'none' });
+        });
 
         // The identifier reaches a Lucene query: a stray space would make the lookup miss.
         it('reads an identifier with spaces around it as the identifier alone', () => {
@@ -70,6 +82,10 @@ describe('readPanelUrlIntent', () => {
 
         it('reads a language alone as nothing', () => {
             expect(readPanelUrlIntent({ editContentLang: '1' })).toEqual({ kind: 'none' });
+        });
+
+        it('refuses a malformed language alone', () => {
+            expect(readPanelUrlIntent({ editContentLang: 'abc' })).toEqual(MALFORMED);
         });
     });
 
@@ -88,12 +104,16 @@ describe('readPanelUrlIntent', () => {
             });
         });
 
-        it.each(['blog/posts', '../Blog', 'Blog Post', ''])(
-            'reads createContent=%j as nothing',
+        it.each(['blog/posts', '../Blog', 'Blog Post'])(
+            'refuses createContent=%j',
             (createContent) => {
-                expect(readPanelUrlIntent({ createContent })).toEqual({ kind: 'none' });
+                expect(readPanelUrlIntent({ createContent })).toEqual(MALFORMED);
             }
         );
+
+        it('reads an empty createContent as nothing', () => {
+            expect(readPanelUrlIntent({ createContent: '' })).toEqual({ kind: 'none' });
+        });
     });
 
     describe('Edit Source', () => {
@@ -104,8 +124,8 @@ describe('readPanelUrlIntent', () => {
             });
         });
 
-        it.each(['not-an-inode', '/etc/passwd', ''])('reads editCode=%j as nothing', (editCode) => {
-            expect(readPanelUrlIntent({ editCode })).toEqual({ kind: 'none' });
+        it.each(['not-an-inode', '/etc/passwd'])('refuses editCode=%j', (editCode) => {
+            expect(readPanelUrlIntent({ editCode })).toEqual(MALFORMED);
         });
     });
 
@@ -114,16 +134,15 @@ describe('readPanelUrlIntent', () => {
             ['an edit and a create', { editContent: IDENTIFIER, createContent: 'Blog' }],
             ['an edit and Edit Source', { editContent: IDENTIFIER, editCode: INODE }],
             ['a create and Edit Source', { createContent: 'Blog', editCode: INODE }]
-        ])('reads %s as a conflict', (_label, queryParams) => {
-            expect(readPanelUrlIntent(queryParams)).toEqual({ kind: 'conflict' });
+        ])('refuses %s as a conflict', (_label, queryParams) => {
+            expect(readPanelUrlIntent(queryParams)).toEqual(CONFLICT);
         });
 
-        // A refused value counts as absent, so it cannot make a conflict out of a valid one.
-        it('reads a refused value beside a valid one as the valid one alone', () => {
-            expect(readPanelUrlIntent({ editContent: 'new', createContent: 'Blog' })).toEqual({
-                kind: 'create',
-                contentType: 'Blog'
-            });
+        // A malformed value refuses the link, even beside a valid one: the author did not mean it.
+        it('refuses a malformed value beside a valid one', () => {
+            expect(readPanelUrlIntent({ editContent: 'new', createContent: 'Blog' })).toEqual(
+                MALFORMED
+            );
         });
     });
 
@@ -136,12 +155,14 @@ describe('readPanelUrlIntent', () => {
             expect(readPanelUrlIntent({ q: '+live:true', limit: '20' })).toEqual({ kind: 'none' });
         });
 
-        // A param repeated in the URL arrives as an array.
-        it('reads a value that is not a string as absent', () => {
-            expect(readPanelUrlIntent({ editContent: [IDENTIFIER, IDENTIFIER] })).toEqual({
-                kind: 'none'
-            });
+        it("reads a repeated param of the surface's own as nothing", () => {
+            expect(readPanelUrlIntent({ q: ['a', 'b'] })).toEqual({ kind: 'none' });
         });
+    });
+
+    // A panel param repeated in the URL arrives as an array, which names no one panel.
+    it('refuses a repeated panel param', () => {
+        expect(readPanelUrlIntent({ editContent: [IDENTIFIER, IDENTIFIER] })).toEqual(MALFORMED);
     });
 });
 

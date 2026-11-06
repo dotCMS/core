@@ -1,8 +1,9 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { Subject } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
 import { Location, PopStateEvent } from '@angular/common';
+import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import {
     Event as RouterEvent,
     NavigationCancel,
@@ -14,6 +15,7 @@ import {
     Router
 } from '@angular/router';
 
+import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotSidePanelRef } from '@dotcms/ui';
 
 import { DotPanelUrlStateService } from './dot-panel-url-state.service';
@@ -117,7 +119,8 @@ describe('DotPanelUrlStateService', () => {
         service: DotPanelUrlStateService,
         providers: [
             { provide: Location, useFactory: () => location },
-            { provide: Router, useFactory: () => router }
+            { provide: Router, useFactory: () => router },
+            mockProvider(DotHttpErrorManagerService)
         ]
     });
 
@@ -606,6 +609,26 @@ describe('DotPanelUrlStateService', () => {
 
         spectator.service.clear(['folder']);
 
+        expect(location.go).not.toHaveBeenCalled();
+        expect(location.replaceState).toHaveBeenCalledTimes(1);
+        expect(lastWrite(location.replaceState).params).toEqual(SURFACE_PARAMS);
+    });
+
+    /**
+     * A link the author cannot have meant (a panel param of the wrong shape, or two panels) tells
+     * them with the error a missing content shows, then loses the params, so every bad link reads
+     * the same (T172).
+     */
+    it('refuses a bad link: the standard not-found error, then the params cleared in place', () => {
+        start(surfaceUrlWith({ editContent: 'wrong-identifier', folder: 'f-1' }));
+        const handle = spectator.inject(DotHttpErrorManagerService).handle as Mock;
+
+        spectator.service.refuse(['folder']);
+
+        expect(handle).toHaveBeenCalledTimes(1);
+        expect((handle.mock.calls[0][0] as HttpErrorResponse).status).toBe(
+            HttpStatusCode.NotFound
+        );
         expect(location.go).not.toHaveBeenCalled();
         expect(location.replaceState).toHaveBeenCalledTimes(1);
         expect(lastWrite(location.replaceState).params).toEqual(SURFACE_PARAMS);

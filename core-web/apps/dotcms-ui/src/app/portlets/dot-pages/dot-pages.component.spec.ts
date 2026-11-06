@@ -424,6 +424,7 @@ describe('DotPagesComponent — the panel named in the URL', () => {
     let queryParams$: BehaviorSubject<Params>;
     let openContent: Mock;
     let clear: Mock;
+    let refuse: Mock;
     let getPages: Mock;
 
     const createComponent = createComponentFactory({
@@ -454,6 +455,7 @@ describe('DotPagesComponent — the panel named in the URL', () => {
 
         openContent = vi.fn();
         clear = vi.fn();
+        refuse = vi.fn();
         getPages = vi.fn();
         queryParams$ = new BehaviorSubject<Params>(queryParams);
 
@@ -484,7 +486,10 @@ describe('DotPagesComponent — the panel named in the URL', () => {
                     provide: ActivatedRoute,
                     useValue: { snapshot: { queryParams }, queryParams: queryParams$ }
                 },
-                { provide: DotPanelUrlStateService, useValue: { clear, register: vi.fn() } }
+                {
+                    provide: DotPanelUrlStateService,
+                    useValue: { clear, refuse, register: vi.fn() }
+                }
             ]
         });
         spectator.detectChanges();
@@ -521,14 +526,19 @@ describe('DotPagesComponent — the panel named in the URL', () => {
 
         expect(openContent).not.toHaveBeenCalled();
         expect(clear).not.toHaveBeenCalled();
+        expect(refuse).not.toHaveBeenCalled();
     });
 
-    // A URL naming two panels opens neither, and loses both.
-    it('opens nothing for a URL that names two panels, and clears them', async () => {
-        await mount({ editContent: IDENTIFIER, createContent: 'htmlpageasset' });
+    // A link the author cannot have meant opens nothing, tells them, and loses its params (T172).
+    it.each([
+        ['names two panels', { editContent: IDENTIFIER, createContent: 'htmlpageasset' }],
+        ['names content by a malformed identifier', { editContent: 'wrong-identifier' }]
+    ])('refuses a URL that %s', async (_label, queryParams) => {
+        await mount(queryParams);
 
         expect(openContent).not.toHaveBeenCalled();
-        expect(clear).toHaveBeenCalledTimes(1);
+        expect(refuse).toHaveBeenCalledTimes(1);
+        expect(refuse).toHaveBeenCalledWith([]);
     });
 
     /**
