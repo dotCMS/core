@@ -159,7 +159,11 @@ export class DotPanelUrlStateService {
      * standard not-found error, the one the opener shows for content that does not exist, so every
      * bad link reads the same, then clears like `clear`. Content Drive passes `createFolder`,
      * `editFolder` and `folderPermissions`, the legacy portlets `folder`. The admin app's screens call
-     * it through `refusePanelUrl(injector, extraKeys)`, beside `openEditContentPanel`.
+     * it through `refusePanelUrl(injector, extraKeys)`, beside `openEditContentPanel`. Both the
+     * error and the clear wait for `DotMessageService.ready$` (replayed once the messages are
+     * loaded, from the server or local storage): a surface refuses on init, before they arrive on
+     * a fresh load, and the error manager builds the dialog's text when it is handed the error, so
+     * it showed the raw keys (T175).
      */
     refuse(extraKeys?: readonly string[]): void;
 }

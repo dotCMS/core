@@ -127,7 +127,7 @@ describe('DotMessageService', () => {
             const ready = vi.fn();
             dotMessageService.ready$.subscribe(ready);
 
-            dotMessageService.init({ buildDate: '2020-01-01' });
+            dotMessageService.init();
 
             expect(ready).toHaveBeenCalledTimes(1);
             expect(http.get).not.toHaveBeenCalled();

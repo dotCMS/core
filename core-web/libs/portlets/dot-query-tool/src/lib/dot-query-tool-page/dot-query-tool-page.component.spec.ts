@@ -866,7 +866,11 @@ describe('DotQueryToolPageComponent (panel deep link)', () => {
         providers: [
             // Records the panel a deep link opens instead of rendering the real editor.
             { provide: DotEditContentOpenerService, useFactory: () => opener },
-            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
+            // Loaded: the panel URL service waits for the messages before it refuses a link.
+            mockProvider(DotMessageService, {
+                get: vi.fn().mockReturnValue(''),
+                ready$: of(undefined)
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotGlobalMessageService, { error: vi.fn() }),
             mockProvider(DotQueryToolService),
