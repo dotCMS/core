@@ -772,9 +772,9 @@ public class PublisherQueueJob implements StatefulJob {
 	 *            - The Id of the generated bundle.
 	 * @return The {@link Publisher} classes for the specified bundle.
 	 */
-	private Set<Class<?>> getPublishersForBundle(String bundleId){
+	private Set<Class<? extends IPublisher>> getPublishersForBundle(String bundleId){
 
-		Set<Class<?>> publishersClasses = new HashSet<>();
+		Set<Class<? extends IPublisher>> publishersClasses = new HashSet<>();
 
 		try{
 			Map<String, Class<? extends IPublisher>> protocolPublisherMap = Maps.newConcurrentMap();
@@ -831,9 +831,9 @@ public class PublisherQueueJob implements StatefulJob {
 	private PublisherConfig setUpConfigForPublisher(PublisherConfig pconf)
 			throws IllegalAccessException, InstantiationException {
 
-		final List<Class> publishers = pconf.getPublishers();
-		for (Class<?> publisher : publishers) {
-			pconf = ((Publisher)publisher.newInstance()).setUpConfig(pconf);
+		final List<Class<? extends IPublisher>> publishers = pconf.getPublishers();
+		for (final Class<? extends IPublisher> publisher : publishers) {
+			pconf = publisher.newInstance().setUpConfig(pconf);
 		}
 
 		return pconf;
