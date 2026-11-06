@@ -107,6 +107,7 @@ import org.junit.runners.Suite;
         ContentDriveWorkflowFilterTest.class,
         ContentDriveStatusFilterTest.class,
         AppsAPIImplTest.class,
+    com.dotmarketing.portal.struts.DotCustomLoginPostActionTest.class,
         com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest.class,
         com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.class,
         com.dotcms.browser.BrowserAPITest.class,
