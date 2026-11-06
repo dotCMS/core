@@ -94,13 +94,11 @@ trustPolicy: no-downgrade
 # trustPolicyIgnoreAfter, which would stop checking every package older than its window.
 trustPolicyExclude:
     # legacy major lines that never adopted provenance, while a newer line already had it
-    - 'semver@5.7.2' # 2023-07-10; semver 7.5.1 attested since 2023-05-12
     - 'semver@6.3.1' # 2023-07-10; same
     - 'css-declaration-sorter@6.4.1' # 2023-07-08; 7.0.0 attested since 2023-05-29
     # a provenance gap in one release of an otherwise attested line
     - 'undici-types@6.21.0' # 2024-11-13; 6.13.0 through 6.16.x (Apr-May 2024) were attested
     - 'detect-port@1.6.1' # 2024-05-08; 1.6.0 was attested the same day
-    - 'chokidar@4.0.3' # 2024-12-18; 3.6.0 attested since 2024-02-06
     - 'storybook@9.1.21' # 2026-10-12; 10.x attested since 2026-06-02 (10.4.2), same GitHub Actions trusted-publisher config (oidcConfigId 79413afc...) but no attestation
     # strongest signal here: over a thousand earlier versions attested, these two are not
     - '@modern-js/node-bundle-require@2.68.2' # 2025-07-11
