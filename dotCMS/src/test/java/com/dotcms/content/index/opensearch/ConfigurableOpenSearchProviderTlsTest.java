@@ -56,6 +56,20 @@ public class ConfigurableOpenSearchProviderTlsTest {
         return false;
     }
 
+    private static void assertRejectedForName(final OSClientConfig config) {
+        try {
+            connect(config);
+            fail("the connection should have been refused");
+        } catch (Exception e) {
+            boolean nameMismatch = false;
+            for (Throwable t = e; t != null; t = t.getCause()) {
+                nameMismatch |= t instanceof SSLException && String.valueOf(t.getMessage())
+                        .contains("subject alternative names");
+            }
+            assertTrue("expected a name mismatch but got: " + e, nameMismatch);
+        }
+    }
+
     private static void assertRejected(final OSClientConfig config) {
         try {
             connect(config);
@@ -88,13 +102,13 @@ public class ConfigurableOpenSearchProviderTlsTest {
 
     @Test
     public void testCertRequired_WithCaCertificate_RefusesMismatchedName() {
-        assertRejected(config(otherName).certRequired(true)
+        assertRejectedForName(config(otherName).certRequired(true)
                 .caCertPath(otherName.certificatePem().toString()).build());
     }
 
     @Test
     public void testCertRequired_WithTrustSelfSigned_RefusesMismatchedName() {
-        assertRejected(config(otherName).certRequired(true).trustSelfSigned(true).build());
+        assertRejectedForName(config(otherName).certRequired(true).trustSelfSigned(true).build());
     }
 
     @Test

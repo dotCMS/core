@@ -1227,7 +1227,8 @@ public class ESIndexAPI implements IndexAPI {
         if (stats == null) {
             Logger.fatal(this.getClass(), "No Elasticsearch, dying an ugly death. For https endpoints, check that"
                     + " the server is reachable and, when ES_TLS_CERT_REQUIRED=true, that its certificate is trusted"
-                    + " by the JVM trust store (or import its CA)");
+                    + " by the JVM trust store (or import its CA). In the OpenSearch migration phases the OpenSearch client"
+                    + " has its own setting, OS_TLS_CERT_REQUIRED");
             com.dotcms.shutdown.SystemExitManager.immediateExit(1, "Elasticsearch connection failed after maximum attempts");
         }
         return true;

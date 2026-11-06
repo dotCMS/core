@@ -145,7 +145,9 @@ OS_TLS_CA_CERT=/path/to/ca.pem
 ```
 
 The host in `OS_ENDPOINTS` must appear in the certificate (subject alternative names). A connection that
-cannot be verified fails at startup with a `PKIX path building failed` error that names these settings.
+cannot be verified fails at startup with an error that names these settings. The underlying cause is
+`PKIX path building failed` when the certificate is not trusted, or
+`Certificate for <host> doesn't match any of the subject alternative names` when the name does not match.
 
 ### Upgrading from earlier releases
 

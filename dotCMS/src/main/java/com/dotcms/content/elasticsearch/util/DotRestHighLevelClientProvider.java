@@ -52,6 +52,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
+import org.apache.http.conn.util.PublicSuffixMatcherLoader;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.BasicCredentialsProvider;
@@ -191,7 +192,7 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                     httpClientBuilder
                             .setDefaultCredentialsProvider(credentialsProvider);
                     httpClientBuilder.setSSLHostnameVerifier(certRequired
-                            ? new DefaultHostnameVerifier() : NoopHostnameVerifier.INSTANCE);
+                            ? new DefaultHostnameVerifier(PublicSuffixMatcherLoader.getDefault()) : NoopHostnameVerifier.INSTANCE);
                     
                     return httpClientBuilder;
                 })

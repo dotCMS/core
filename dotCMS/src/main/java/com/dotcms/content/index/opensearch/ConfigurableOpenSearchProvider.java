@@ -11,6 +11,7 @@ import org.apache.hc.client5.http.auth.AuthScope;
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
+import org.apache.hc.client5.http.psl.PublicSuffixMatcherLoader;
 import org.apache.hc.client5.http.ssl.DefaultHostnameVerifier;
 import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.apache.hc.client5.http.ssl.TrustAllStrategy;
@@ -23,7 +24,8 @@ import org.opensearch.client.transport.OpenSearchTransport;
 import org.opensearch.client.transport.httpclient5.ApacheHttpClient5TransportBuilder;
 
 import javax.net.ssl.SSLContext;
-import java.io.FileInputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
@@ -286,7 +288,9 @@ class ConfigurableOpenSearchProvider {
             ClientTlsStrategyBuilder tlsBuilder = ClientTlsStrategyBuilder.create()
                 .setSslContext(sslContext);
             if (config.certRequired()) {
-                tlsBuilder.setHostnameVerifier(new DefaultHostnameVerifier());
+                // Set explicitly on purpose: without a verifier the client leaves the name check to the
+                // JVM trust manager, and the trust manager installed for OS_TLS_TRUST_SELF_SIGNED skips it.
+                tlsBuilder.setHostnameVerifier(new DefaultHostnameVerifier(PublicSuffixMatcherLoader.getDefault()));
             } else {
                 tlsBuilder.setHostnameVerifier(NoopHostnameVerifier.INSTANCE);
                 Logger.warn(this.getClass(), "OpenSearch TLS server certificate and hostname verification"
@@ -349,12 +353,8 @@ class ConfigurableOpenSearchProvider {
      */
     private static KeyStore loadCaKeyStore(String caCertPath) throws GeneralSecurityException, IOException {
         KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
-        try {
-            trustStore.load(null, null);
-        } catch (IOException | java.security.NoSuchAlgorithmException | java.security.cert.CertificateException e) {
-            throw new GeneralSecurityException("Unable to initialise the trust store", e);
-        }
-        try (InputStream in = new FileInputStream(caCertPath)) {
+        trustStore.load(null, null);
+        try (InputStream in = Files.newInputStream(Paths.get(caCertPath))) {
             int index = 0;
             for (Certificate certificate : CertificateFactory.getInstance("X.509").generateCertificates(in)) {
                 trustStore.setCertificateEntry("ca-" + index++, certificate);
