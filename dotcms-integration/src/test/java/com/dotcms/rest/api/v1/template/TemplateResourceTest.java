@@ -240,7 +240,7 @@ public class TemplateResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Give Permissions Over the Folder
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -409,7 +409,7 @@ public class TemplateResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Give Permissions Over the Folder
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -559,7 +559,7 @@ public class TemplateResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Give Permissions Over the Folder
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -765,7 +765,7 @@ public class TemplateResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Give Permissions Over the Folder
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -925,7 +925,7 @@ public class TemplateResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Give Permissions Over the Folder
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -999,7 +999,7 @@ public class TemplateResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Call Resource
         resource.copy(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,template.getIdentifier());
@@ -1151,7 +1151,7 @@ public class TemplateResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Give Permissions Over the Template B
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,

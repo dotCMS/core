@@ -225,8 +225,6 @@ Located in `.github/actions/`:
 
 ### Notification & Support
 - **notify-slack**: Slack message formatting and posting
-- **issue-fetcher**: Fetch and parse issue details
-- **issue-labeler**: Label management automation
 
 See [Key Actions](WORKFLOW_ARCHITECTURE.md#key-actions) for complete reference.
 
