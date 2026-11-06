@@ -163,7 +163,7 @@ public class ThemeResourceIntegrationTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
 
         resource.findThemes(getHttpRequest(limitedUser.getEmailAddress()),  response, newHost.getIdentifier(), 0, -1,
