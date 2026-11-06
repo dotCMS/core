@@ -8,6 +8,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.transform.DotContentletTransformer;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
@@ -29,6 +30,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 
 /**
  * This JSON Serializer is used to transform a {@link PageView} object into a JSON string.
@@ -89,18 +91,38 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
         return pageViewMap;
     }
 
+    /**
+     * Adds the URL-mapped content to the page map under {@code urlContentMap}, with the related
+     * content the current request asks for. The given contentlet is left unchanged.
+     *
+     * @param urlContent  The contentlet the page URL maps to.
+     * @param pageViewMap The page map being built.
+     */
     protected void createObjectMapUrlContent(final Contentlet urlContent, final Map<String, Object> pageViewMap) {
 
-        Try.run(()->addRelationships(urlContent))
-                .onFailure(e -> Logger.error(PageViewSerializer.class, e.getMessage(), e));
+        final Contentlet content = Try.of(() -> withRelationships(urlContent, Contentlet::new))
+                .onFailure(e -> Logger.error(PageViewSerializer.class, e.getMessage(), e))
+                .getOrElse(urlContent);
 
-        final DotContentletTransformer transformer   = new DotTransformerBuilder().urlContentMapTransformer().content(urlContent).build();
+        final DotContentletTransformer transformer   = new DotTransformerBuilder().urlContentMapTransformer().content(content).build();
         final Map<String, Object>   urlContentletMap = transformer.toMaps().stream().findFirst().orElse(Collections.EMPTY_MAP);
 
         pageViewMap.put("urlContentMap", urlContentletMap);
     }
 
-    private static void addRelationships(final Contentlet urlContent) {
+    /**
+     * Returns the contentlet with the related content the current request asks for, as a copy
+     * made by {@code newInstance}, or the contentlet itself when there is no current request,
+     * user or language, or the request asks for no related content.
+     *
+     * @param contentlet  The contentlet to read the related content of.
+     * @param newInstance Creates the instance that receives the copy.
+     * @param <T>         The type of the contentlet, kept by the copy.
+     *
+     * @return The contentlet to serialize.
+     */
+    private static <T extends Contentlet> T withRelationships(final T contentlet,
+                                                              final Supplier<T> newInstance) {
 
         final HttpServletRequest request   = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
@@ -112,17 +134,30 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
 
             if (null != user && null != mode && null != language) {
 
-                ContentUtils.addRelationships(urlContent, user, mode, language.getId());
+                return ContentUtils.copyWithRelationships(contentlet, newInstance, user, mode, language.getId());
             }
         }
+        return contentlet;
     }
 
 
+    /**
+     * Generates the map of the HTML Page, with the related content the current request asks for.
+     * The page object held by the {@link PageView} is left unchanged. If the related content
+     * cannot be loaded, the error is logged and the page is returned without it, as for the
+     * URL-mapped content.
+     *
+     * @param pageView The {@link PageView} whose page is serialized.
+     *
+     * @return A Map with the HTML Page properties.
+     */
     private Map<Object, Object> asPageMap(final PageView pageView)  {
 
-        addRelationships(pageView.getPage());
+        final HTMLPageAsset page = Try.of(() -> withRelationships(pageView.getPage(), HTMLPageAsset::new))
+                .onFailure(e -> Logger.error(PageViewSerializer.class, e.getMessage(), e))
+                .getOrElse(pageView.getPage());
 
-        final Map<Object, Object> pageMap = this.asMap(pageView.getPage());
+        final Map<Object, Object> pageMap = this.asMap(page);
 
         final String pageUrlMapper = pageView.getPageUrlMapper();
 
