@@ -65,6 +65,7 @@ UserAPI userAPI = APILocator.getUserAPI();   // Service access pattern
 
 - **Config/Logger only**: Never `System.out`, `System.getProperty`, or `System.getenv`
 - **Maven versions**: Add to `bom/application/pom.xml` ONLY, never `dotCMS/pom.xml`
+- **Third-party libraries**: Before adding, upgrading or removing one, verify it live (registry, transitive tree, advisories) and stop if you can't — never pick names or versions from memory. Every core library is potential OSGi plugin API. See [Maven Build System → Third-Party Library Policy](docs/backend/MAVEN_BUILD_SYSTEM.md#third-party-library-policy).
 - **Java version**: see `.sdkmanrc` for the runtime version. Core modules compile to whatever `dotcms.core.compiler.release` is set to in `parent/pom.xml` (override e.g. `-Ddotcms.core.compiler.release=11` for older bytecode); `tools/dotcms-cli` targets whatever `maven.compiler.release` is set to in its own `pom.xml`, historically lower for portability.
 - **Security**: No hardcoded secrets, validate all input, never log sensitive data
 - **REST @Schema**: Must match actual return type — see [REST API Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md)
@@ -126,7 +127,7 @@ table is a gate.
 | `DotConnect`, `@WrapInTransaction`, `@CloseDBIfOpened`, SQL strings | [Database Patterns](docs/backend/DATABASE_PATTERNS.md) |
 | Input handling, auth checks, logging of user data, secrets | [Security Patterns](docs/backend/SECURITY_BACKEND.md) |
 | `ESContentFactoryImpl`, `IndexAPI`, anything under `content/elasticsearch` or `opensearch` | [Search API Migration](docs/backend/SEARCH_API_MIGRATION.md) and [OpenSearch Migration](docs/backend/OPENSEARCH_MIGRATION.md) |
-| A `pom.xml` dependency or version | [Maven Build System](docs/backend/MAVEN_BUILD_SYSTEM.md) |
+| A `pom.xml` dependency or version | [Maven Build System](docs/backend/MAVEN_BUILD_SYSTEM.md) — BOM-only versions and the [Third-Party Library Policy](docs/backend/MAVEN_BUILD_SYSTEM.md#third-party-library-policy) |
 | Anything under `core-web/` | [core-web/CLAUDE.md](core-web/CLAUDE.md) and [docs/frontend/README.md](docs/frontend/README.md) |
 | A commit message, branch name or PR description | [Git Workflows](docs/core/GIT_WORKFLOWS.md) |
 | Any Java under `dotCMS/src/main/java` | [Java Standards](docs/backend/JAVA_STANDARDS.md) — immutables, exceptions, utilities, Javadoc on every method you touch |
