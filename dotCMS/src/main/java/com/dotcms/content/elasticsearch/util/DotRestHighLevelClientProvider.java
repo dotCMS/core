@@ -52,6 +52,7 @@ import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
+import org.apache.http.conn.ssl.StrictHostnameVerifier;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.message.BasicHeader;
@@ -159,7 +160,8 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
             if (!certRequired) {
                 Logger.warn(this.getClass(), "Elastic RestHighLevelClient TLS server certificate and"
                         + " hostname verification is turned off (ES_TLS_CERT_REQUIRED=false). Remove the"
-                        + " setting and, for a private CA, set ES_TLS_ENABLED=true with ES_AUTH_TLS_CA_CERT.");
+                        + " setting and, for a private CA, set ES_TLS_ENABLED=true with ES_AUTH_TLS_CA_CERT,"
+                        + " ES_AUTH_TLS_CLIENT_CERT and ES_AUTH_TLS_CLIENT_KEY, or add the CA to the JVM truststore.");
             }
         } else{
             Logger.warn(this.getClass(),
@@ -187,9 +189,8 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                     }
                     httpClientBuilder
                             .setDefaultCredentialsProvider(credentialsProvider);
-                    if (!certRequired) {
-                        httpClientBuilder.setHostnameVerifier(AllowAllHostnameVerifier.INSTANCE);
-                    }
+                    httpClientBuilder.setHostnameVerifier(certRequired
+                            ? new StrictHostnameVerifier() : AllowAllHostnameVerifier.INSTANCE);
                     
                     return httpClientBuilder;
                 })

@@ -154,7 +154,8 @@ connects to an `https` OpenSearch endpoint with a certificate that is self-signe
 the host name, must either configure `OS_TLS_CA_CERT` (preferred) or explicitly set
 `OS_TLS_CERT_REQUIRED=false` to keep the previous behaviour. The Elasticsearch client behaves the same way
 with `ES_TLS_CERT_REQUIRED` (default `true`; `false` keeps the previous behaviour), and a private CA is
-configured there with `ES_TLS_ENABLED=true` and `ES_AUTH_TLS_CA_CERT`.
+configured there with `ES_TLS_ENABLED=true`, `ES_AUTH_TLS_CA_CERT`, `ES_AUTH_TLS_CLIENT_CERT` and
+`ES_AUTH_TLS_CLIENT_KEY` (all three are required in that mode), or by adding the CA to the JVM truststore.
 
 ## Full Configuration Example (HTTPS + mTLS)
 
