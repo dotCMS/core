@@ -169,6 +169,24 @@ describe('DotToolbarUserStore', () => {
             expect(state().items).toBe(items);
         });
 
+        it('refreshes menu labels when an uncached retry replaces the same-version bundle', () => {
+            installBundle();
+            store.init();
+            TestBed.tick();
+            messages.init();
+            http.expectOne(url).flush({
+                entity: {
+                    ...Object.fromEntries(
+                        Array.from({ length: 101 }, (_, i) => [`key.${i}`, `Message ${i}`])
+                    ),
+                    'my-account': 'Refreshed account'
+                },
+                languageBundleVersion: version
+            });
+            TestBed.tick();
+            expect(state().items[2].label).toBe('Refreshed account');
+        });
+
         it('should rebuild menu labels on a same-version locale switch without an auth update', () => {
             installBundle();
             store.init();

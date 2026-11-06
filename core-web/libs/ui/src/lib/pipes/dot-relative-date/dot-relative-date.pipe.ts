@@ -16,6 +16,7 @@ export class DotRelativeDatePipe implements PipeTransform {
         timeStampAfter: number;
         version: string | null;
         language: string | null;
+        revision: number | undefined;
         locale: DotFormatDateService['localeOptions'];
         value: string;
     };
@@ -24,6 +25,7 @@ export class DotRelativeDatePipe implements PipeTransform {
         // Read on every check so OnPush views retain their signal dependencies on cache hits.
         const version = this.dotMessageService.loadedBundleVersion?.();
         const language = this.dotMessageService.loadedBundleLanguage?.();
+        const revision = this.dotMessageService.loadedBundleRevision?.();
         const locale = this.dotFormatDateService.localeOptions;
         const cached = this.cached;
         if (
@@ -33,13 +35,14 @@ export class DotRelativeDatePipe implements PipeTransform {
             Object.is(cached.timeStampAfter, timeStampAfter) &&
             cached.version === version &&
             cached.language === language &&
+            cached.revision === revision &&
             cached.locale === locale
         ) {
             return cached.value;
         }
 
         const value = this.formatDate(date, format, timeStampAfter);
-        this.cached = { date, format, timeStampAfter, version, language, locale, value };
+        this.cached = { date, format, timeStampAfter, version, language, revision, locale, value };
 
         return value;
     }

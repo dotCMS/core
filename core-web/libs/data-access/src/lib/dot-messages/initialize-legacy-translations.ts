@@ -35,7 +35,8 @@ export function initializeLegacyTranslations(
                     auth.sessionLanguageId ||
                     loginService.currentUserLanguageId ||
                     'default',
-                languageBundleVersion: config?.languageBundleVersion
+                languageBundleVersion: config?.languageBundleVersion,
+                userId: auth.loginAsUser?.userId || auth.user?.userId || null
             })
         ),
         catchError((error) => {

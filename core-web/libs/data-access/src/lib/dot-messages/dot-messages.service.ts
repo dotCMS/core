@@ -14,6 +14,8 @@ export interface DotMessageServiceParams {
     buildDate?: string;
     language?: string;
     languageBundleVersion?: string;
+    /** Effective authenticated user; null explicitly clears the previous user context. */
+    userId?: string | null;
 }
 
 export interface LanguageBundleVersionMismatch {
@@ -26,6 +28,7 @@ const DEFAULT_LANG = 'default';
 const LANGUAGE_LOCALSTORAGE_KEY = 'dotMessagesKeys-lang';
 const MESSAGES_LOCALSTORAGE_KEY = 'dotMessagesKeys';
 const VERSION_LOCALSTORAGE_KEY = 'dotMessagesKeys-version';
+const USER_LOCALSTORAGE_KEY = 'dotMessagesKeys-user';
 // Full bundles contain thousands of translations; small maps indicate a partial/bootstrap response.
 const MINIMUM_TRANSLATION_KEYS = 100;
 
@@ -40,7 +43,9 @@ export class DotMessageService {
     private readonly installedLanguage = signal<string | null>(null);
     private readonly inFlight = new Map<string, Observable<void>>();
     private latestRequestedIdentity: string | null = null;
-    private pendingSession = 0;
+    #pendingSession = 0;
+    #currentUserId: string | null = null;
+    readonly #installationRevision = signal(0);
     private readonly versionMismatch = signal<LanguageBundleVersionMismatch | null>(null);
     private readonly installedVersion = signal<string | null>(null);
 
@@ -51,6 +56,9 @@ export class DotMessageService {
     /** Locale of the installed messages, including a stale cache fallback. */
     readonly loadedBundleLanguage = this.installedLanguage.asReadonly();
 
+    /** Changes whenever available messages change, including same-version installs and user resets. */
+    readonly loadedBundleRevision = this.#installationRevision.asReadonly();
+
     /**
      * Initializes the DotMessageService.
      * @param {DotMessageServiceParams} params - The parameters for initialization.
@@ -59,6 +67,9 @@ export class DotMessageService {
      * Superseded requests settle with an error rather than reporting an installation that did not occur.
      */
     init(params?: DotMessageServiceParams): Observable<void> {
+        if (params?.userId !== undefined && params.userId !== this.#currentUserId) {
+            this.invalidatePendingSession(params.userId);
+        }
         const lang = params?.language || DEFAULT_LANG;
         const version = this.isVersion(params?.languageBundleVersion)
             ? params.languageBundleVersion
@@ -72,9 +83,17 @@ export class DotMessageService {
     }
 
     /** Prevents eager requests from a previous session from installing or being reused. */
-    invalidatePendingSession(): void {
-        this.pendingSession++;
+    invalidatePendingSession(userId: string | null = this.#currentUserId): void {
+        this.#pendingSession++;
         this.latestRequestedIdentity = null;
+        if (userId !== this.#currentUserId) {
+            this.#currentUserId = userId;
+            this.messageMap = {};
+            this.installedLanguage.set(null);
+            this.installedVersion.set(null);
+            this.versionMismatch.set(null);
+            this.#installationRevision.update((revision) => revision + 1);
+        }
     }
 
     /**
@@ -89,6 +108,7 @@ export class DotMessageService {
     get(key: string, ...args: string[]): string {
         this.loadedBundleVersion();
         this.loadedBundleLanguage();
+        this.loadedBundleRevision();
 
         return this.messageMap[key]
             ? args.length
@@ -98,7 +118,8 @@ export class DotMessageService {
     }
 
     private getAll(lang: string, expectedVersion: string | null): Observable<void> {
-        const requestKey = JSON.stringify([lang, expectedVersion, this.pendingSession]);
+        const userId = this.#currentUserId;
+        const requestKey = JSON.stringify([lang, expectedVersion, this.#pendingSession]);
         // Every selection counts, including memory/cache hits and deduplicated pending requests.
         this.latestRequestedIdentity = requestKey;
         const hasInstalledMessages =
@@ -121,19 +142,22 @@ export class DotMessageService {
         let messages: unknown = null;
         let cachedLang: unknown = null;
         let cachedVersion: unknown = null;
+        let cachedUserId: unknown = null;
         try {
             messages = this.dotLocalstorageService.getItem<unknown>(MESSAGES_LOCALSTORAGE_KEY);
             cachedLang = this.dotLocalstorageService.getItem<unknown>(LANGUAGE_LOCALSTORAGE_KEY);
             cachedVersion = this.dotLocalstorageService.getItem<unknown>(VERSION_LOCALSTORAGE_KEY);
+            cachedUserId = this.dotLocalstorageService.getItem<unknown>(USER_LOCALSTORAGE_KEY);
         } catch {
             // Blocked storage must not prevent an authenticated, uncached load.
             messages = null;
             cachedLang = null;
             cachedVersion = null;
+            cachedUserId = null;
         }
         const previousVersion = hasInstalledMessages
             ? this.installedVersion()
-            : lang === cachedLang
+            : lang === cachedLang && userId === cachedUserId
               ? cachedVersion
               : null;
         const mismatch =
@@ -153,12 +177,14 @@ export class DotMessageService {
         if (
             expectedVersion &&
             expectedVersion === cachedVersion &&
+            userId === cachedUserId &&
             lang === cachedLang &&
             this.isMessageMap(messages)
         ) {
             this.messageMap = messages;
             this.installedLanguage.set(lang);
             this.installedVersion.set(expectedVersion);
+            this.#installationRevision.update((revision) => revision + 1);
 
             return of(void 0);
         }
@@ -183,8 +209,14 @@ export class DotMessageService {
 
                     this.messageMap = response.entity;
                     this.installedLanguage.set(lang);
-                    this.cacheMessages(lang, response.entity, response.languageBundleVersion);
+                    this.cacheMessages(
+                        lang,
+                        response.entity,
+                        response.languageBundleVersion,
+                        userId
+                    );
                     this.installedVersion.set(response.languageBundleVersion);
+                    this.#installationRevision.update((revision) => revision + 1);
                     this.versionMismatch.set(null);
                 }),
                 map(() => void 0),
@@ -195,6 +227,7 @@ export class DotMessageService {
                         (this.installedLanguage() !== lang ||
                             !this.isMessageMap(this.messageMap)) &&
                         lang === cachedLang &&
+                        userId === cachedUserId &&
                         this.isMessageMap(messages)
                     ) {
                         this.messageMap = messages;
@@ -202,6 +235,7 @@ export class DotMessageService {
                         this.installedVersion.set(
                             this.isVersion(cachedVersion) ? cachedVersion : null
                         );
+                        this.#installationRevision.update((revision) => revision + 1);
                     }
 
                     return throwError(() => error);
@@ -221,12 +255,18 @@ export class DotMessageService {
         return load$;
     }
 
-    private cacheMessages(lang: string, messages: Record<string, string>, version: string): void {
+    private cacheMessages(
+        lang: string,
+        messages: Record<string, string>,
+        version: string,
+        userId: string | null
+    ): void {
         try {
             // Invalidate first: a partial write must never retain a previously valid version.
             this.dotLocalstorageService.removeItem(VERSION_LOCALSTORAGE_KEY);
             this.dotLocalstorageService.setItem(MESSAGES_LOCALSTORAGE_KEY, messages);
             this.dotLocalstorageService.setItem(LANGUAGE_LOCALSTORAGE_KEY, lang);
+            this.dotLocalstorageService.setItem(USER_LOCALSTORAGE_KEY, JSON.stringify(userId));
             // Quote the hash to avoid DotLocalstorageService coercing digit-leading hashes to numbers.
             this.dotLocalstorageService.setItem(VERSION_LOCALSTORAGE_KEY, JSON.stringify(version));
         } catch {

@@ -47,7 +47,8 @@ describe('initializeLegacyTranslations', () => {
             expect(storage.getItem).not.toHaveBeenCalled();
             expect(messages.init).toHaveBeenCalledExactlyOnceWith({
                 language,
-                languageBundleVersion: 'server-hash'
+                languageBundleVersion: 'server-hash',
+                userId: null
             });
             expect(logger.warn).not.toHaveBeenCalled();
         }
@@ -62,7 +63,8 @@ describe('initializeLegacyTranslations', () => {
 
             expect(messages.init).toHaveBeenCalledExactlyOnceWith({
                 language: 'es_ES',
-                languageBundleVersion: 'server-hash'
+                languageBundleVersion: 'server-hash',
+                userId: null
             });
         }
     );
@@ -77,18 +79,38 @@ describe('initializeLegacyTranslations', () => {
 
         expect(messages.init).toHaveBeenCalledWith({
             language: 'es_ES',
-            languageBundleVersion: 'server-hash'
+            languageBundleVersion: 'server-hash',
+            userId: null
         });
         expect(storage.getItem).not.toHaveBeenCalled();
         expect(logger.warn).not.toHaveBeenCalled();
     });
+
+    it.each([false, true])(
+        'scopes legacy editor translations to the effective user (login-as: %s)',
+        async (impersonating) => {
+            vi.mocked(login.loadAuth).mockReturnValue(
+                of({
+                    user: { userId: 'principal' },
+                    loginAsUser: impersonating ? { userId: 'impersonated' } : null
+                } as Auth)
+            );
+            await firstValueFrom(initialize());
+            expect(messages.init).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    userId: impersonating ? 'impersonated' : 'principal'
+                })
+            );
+        }
+    );
 
     it('uses the fresh session locale even when another tab cached a different valid locale', async () => {
         vi.mocked(storage.getItem).mockReturnValue('fr_FR');
         await firstValueFrom(initialize());
         expect(messages.init).toHaveBeenCalledExactlyOnceWith({
             language: 'es_ES',
-            languageBundleVersion: 'server-hash'
+            languageBundleVersion: 'server-hash',
+            userId: null
         });
         expect(storage.getItem).not.toHaveBeenCalled();
     });
@@ -105,7 +127,8 @@ describe('initializeLegacyTranslations', () => {
 
         expect(messages.init).toHaveBeenCalledExactlyOnceWith({
             language: 'de_DE',
-            languageBundleVersion: 'server-hash'
+            languageBundleVersion: 'server-hash',
+            userId: null
         });
     });
 
@@ -124,7 +147,8 @@ describe('initializeLegacyTranslations', () => {
         auth$.next({ sessionLanguageId: 'de_DE' } as Auth);
         expect(messages.init).toHaveBeenCalledExactlyOnceWith({
             language: 'de_DE',
-            languageBundleVersion: 'server-hash'
+            languageBundleVersion: 'server-hash',
+            userId: null
         });
     });
 
@@ -144,7 +168,8 @@ describe('initializeLegacyTranslations', () => {
         config$.next(config('delayed-hash'));
         expect(messages.init).toHaveBeenCalledWith({
             language: 'es_ES',
-            languageBundleVersion: 'delayed-hash'
+            languageBundleVersion: 'delayed-hash',
+            userId: null
         });
         expect(next).not.toHaveBeenCalled();
         expect(complete).not.toHaveBeenCalled();
@@ -163,7 +188,8 @@ describe('initializeLegacyTranslations', () => {
 
         expect(messages.init).toHaveBeenCalledWith({
             language: 'es_ES',
-            languageBundleVersion: undefined
+            languageBundleVersion: undefined,
+            userId: null
         });
     });
 
@@ -175,7 +201,8 @@ describe('initializeLegacyTranslations', () => {
 
         expect(messages.init).toHaveBeenCalledWith({
             language: 'es_ES',
-            languageBundleVersion: undefined
+            languageBundleVersion: undefined,
+            userId: null
         });
         expect(logger.warn).toHaveBeenCalledExactlyOnceWith(
             expect.stringContaining('configuration'),
@@ -211,7 +238,8 @@ describe('initializeLegacyTranslations', () => {
 
         expect(messages.init).toHaveBeenCalledExactlyOnceWith({
             language: 'es_ES',
-            languageBundleVersion: undefined
+            languageBundleVersion: undefined,
+            userId: null
         });
         expect(logger.warn).toHaveBeenCalledTimes(2);
         expect(logger.warn).toHaveBeenNthCalledWith(1, expect.any(String), configError);
@@ -232,7 +260,8 @@ describe('initializeLegacyTranslations', () => {
 
         expect(messages.init).toHaveBeenCalledExactlyOnceWith({
             language: 'es_ES',
-            languageBundleVersion: 'first-hash'
+            languageBundleVersion: 'first-hash',
+            userId: null
         });
         expect(complete).not.toHaveBeenCalled();
         expect(logger.warn).not.toHaveBeenCalled();

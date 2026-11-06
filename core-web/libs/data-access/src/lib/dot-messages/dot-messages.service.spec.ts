@@ -14,6 +14,7 @@ const DEFAULT_LANG = 'default';
 const LANGUAGE_LOCALSTORAGE_KEY = 'dotMessagesKeys-lang';
 const MESSAGES_LOCALSTORAGE_KEY = 'dotMessagesKeys';
 const VERSION_LOCALSTORAGE_KEY = 'dotMessagesKeys-version';
+const USER_LOCALSTORAGE_KEY = 'dotMessagesKeys-user';
 const BUILDDATE_LOCALSTORAGE_KEY = 'buildDate';
 const VERSION = 'a'.repeat(64);
 const NEXT_VERSION = '1' + 'b'.repeat(63);
@@ -35,6 +36,7 @@ const clearCache = () => {
         LANGUAGE_LOCALSTORAGE_KEY,
         MESSAGES_LOCALSTORAGE_KEY,
         VERSION_LOCALSTORAGE_KEY,
+        USER_LOCALSTORAGE_KEY,
         BUILDDATE_LOCALSTORAGE_KEY
     ].forEach((key) => localStorage.removeItem(key));
 };
@@ -64,6 +66,73 @@ describe('DotMessageService', () => {
         http.verify();
         clearCache();
         vi.restoreAllMocks();
+    });
+
+    describe('user-scoped bundles', () => {
+        it('does not reuse an installed same-locale/version bundle for an impersonated user', () => {
+            service.init({ userId: 'principal', languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush({ entity: messages, languageBundleVersion: VERSION });
+            service.init({ userId: 'principal', languageBundleVersion: VERSION });
+            http.expectNone(DEFAULT_URL);
+            service.invalidatePendingSession('impersonated');
+            expect(service.get('dot.common.cancel')).toBe('dot.common.cancel');
+            service.init({ userId: 'impersonated', languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush({
+                entity: { ...messages, 'dot.common.cancel': 'Scoped cancel' },
+                languageBundleVersion: VERSION
+            });
+            expect(service.get('dot.common.cancel')).toBe('Scoped cancel');
+            expect(storage.getItem(USER_LOCALSTORAGE_KEY)).toBe('impersonated');
+        });
+
+        it.each(['other-user', null])(
+            'does not restore another user cache on failure for %s',
+            (userId) => {
+                service.init({ userId: 'principal', languageBundleVersion: VERSION });
+                http.expectOne(DEFAULT_URL).flush({
+                    entity: messages,
+                    languageBundleVersion: VERSION
+                });
+                service.init({ userId, languageBundleVersion: VERSION });
+                http.expectOne(DEFAULT_URL).flush(null, {
+                    status: 500,
+                    statusText: 'Server Error'
+                });
+                expect(service.get('dot.common.cancel')).toBe('dot.common.cancel');
+                expect(service.loadedBundleVersion()).toBeNull();
+            }
+        );
+
+        it('reuses a persistent cache only for the same effective user, including numeric IDs', () => {
+            service.init({ userId: '123', languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush({ entity: messages, languageBundleVersion: VERSION });
+            const restored = TestBed.runInInjectionContext(() => new DotMessageService());
+            restored.init({ userId: '123', languageBundleVersion: VERSION });
+            http.expectNone(DEFAULT_URL);
+            expect(restored.get('dot.common.cancel')).toBe('Cancel');
+            restored.init({ userId: '456', languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush({
+                entity: createMessages(101),
+                languageBundleVersion: VERSION
+            });
+            expect(restored.get('dot.common.cancel')).toBe('dot.common.cancel');
+        });
+
+        it('does not treat a cache without a user marker as belonging to the authenticated user', () => {
+            seedCache();
+            service.init({ userId: 'principal', languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush(null, { status: 500, statusText: 'Server Error' });
+            expect(service.get('dot.common.cancel')).toBe('dot.common.cancel');
+        });
+
+        it('clears principal messages on logout before another request starts', () => {
+            service.init({ userId: 'principal', languageBundleVersion: VERSION });
+            http.expectOne(DEFAULT_URL).flush({ entity: messages, languageBundleVersion: VERSION });
+            service.invalidatePendingSession(null);
+            expect(service.get('dot.common.cancel')).toBe('dot.common.cancel');
+            expect(service.loadedBundleLanguage()).toBeNull();
+            expect(service.loadedBundleVersion()).toBeNull();
+        });
     });
 
     describe('init', () => {
@@ -988,6 +1057,26 @@ describe('DotMessageService', () => {
     });
 
     describe('reactive get', () => {
+        it('invalidates computed labels when a fallback is replaced at the same locale and version', () => {
+            seedCache();
+            service.init();
+            http.expectOne(DEFAULT_URL).flush(null, { status: 500, statusText: 'Server Error' });
+            const revision = service.loadedBundleRevision();
+            const label = computed(() => service.get('dot.common.cancel'));
+            expect(label()).toBe('Cancel');
+            service.init();
+            http.expectOne(DEFAULT_URL).flush({
+                entity: { ...messages, 'dot.common.cancel': 'Refreshed cancel' },
+                languageBundleVersion: VERSION
+            });
+            expect(service.loadedBundleVersion()).toBe(VERSION);
+            expect(service.loadedBundleRevision()).toBe(revision + 1);
+            expect(label()).toBe('Refreshed cancel');
+            service.init({ languageBundleVersion: VERSION });
+            expect(service.loadedBundleRevision()).toBe(revision + 1);
+            http.expectNone(DEFAULT_URL);
+        });
+
         it('should invalidate a computed after a cold failure recovers, including formatted messages', () => {
             const translate = vi.fn(() =>
                 service.get('dot.common.accept', service.get('dot.common.cancel'))

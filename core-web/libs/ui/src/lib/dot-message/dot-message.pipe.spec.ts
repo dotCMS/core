@@ -39,6 +39,7 @@ describe('DotMessagePipe', () => {
             initialVersion: string | null = null,
             args: string | string[] = ['Costa Rica', 'Panama']
         ) => {
+            const loadedBundleRevision = signal(0);
             const loadedBundleVersion = signal(initialVersion);
             const loadedBundleLanguage = signal<string | null>(initialVersion ? 'default' : null);
             let translation = initialVersion ? 'Old label' : 'apps.best';
@@ -50,7 +51,12 @@ describe('DotMessagePipe', () => {
                 providers: [
                     {
                         provide: DotMessageService,
-                        useValue: { get, loadedBundleVersion, loadedBundleLanguage }
+                        useValue: {
+                            get,
+                            loadedBundleVersion,
+                            loadedBundleLanguage,
+                            loadedBundleRevision
+                        }
                     }
                 ]
             });
@@ -65,6 +71,7 @@ describe('DotMessagePipe', () => {
                     translation = message;
                     loadedBundleVersion.set(version);
                     loadedBundleLanguage.set(language);
+                    loadedBundleRevision.update((revision) => revision + 1);
                     fixture.detectChanges();
                 },
                 label: () =>
@@ -82,6 +89,13 @@ describe('DotMessagePipe', () => {
             install('v1', 'Recovered {0} {1}');
             expect(label()).toBe('Recovered Costa Rica Panama');
             expect(get).toHaveBeenCalledTimes(2);
+        });
+
+        it('refreshes an OnPush label when messages are replaced at the same locale and version', () => {
+            const { install, label } = setup('same-version');
+            expect(label()).toBe('Old label');
+            install('same-version', 'Fresh label');
+            expect(label()).toBe('Fresh label');
         });
 
         it('should refresh an installed fallback when a newer bundle arrives', () => {

@@ -44,6 +44,7 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
     // Undefined until init builds items; null means they were built before a bundle loaded.
     #itemsBundleVersion: string | null | undefined;
     #itemsBundleLanguage: string | null | undefined;
+    #itemsBundleRevision: number | undefined;
 
     readonly vm$: Observable<DotToolbarUserState> = this.select((state) => state).pipe(
         filter((vm) => !!vm.userData.email)
@@ -55,18 +56,21 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
         effect(() => {
             const version = this.#dotMessageService.loadedBundleVersion();
             const language = this.#dotMessageService.loadedBundleLanguage?.();
+            const revision = this.#dotMessageService.loadedBundleRevision?.();
             untracked(() => {
                 const auth = this.#loginService.auth;
                 if (
                     (version || language) &&
                     this.#itemsBundleVersion !== undefined &&
                     (version !== this.#itemsBundleVersion ||
-                        language !== this.#itemsBundleLanguage) &&
+                        language !== this.#itemsBundleLanguage ||
+                        revision !== this.#itemsBundleRevision) &&
                     auth?.user
                 ) {
                     this.patchState({ items: this.getItems(auth) });
                     this.#itemsBundleVersion = version;
                     this.#itemsBundleLanguage = language;
+                    this.#itemsBundleRevision = revision;
                 }
             });
         });
@@ -95,6 +99,7 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
             const userData = auth.loginAsUser || auth.user;
             this.#itemsBundleVersion = this.#dotMessageService.loadedBundleVersion();
             this.#itemsBundleLanguage = this.#dotMessageService.loadedBundleLanguage?.();
+            this.#itemsBundleRevision = this.#dotMessageService.loadedBundleRevision?.();
 
             this.patchState({
                 items: this.getItems(auth),

@@ -93,7 +93,8 @@ describe('withSystem session loading', () => {
         expect(spectator.service.systemConfig()).toEqual(config);
         expect(spectator.inject(DotMessageService).init).toHaveBeenCalledWith({
             language: 'en_US',
-            languageBundleVersion: 'build-hash'
+            languageBundleVersion: 'build-hash',
+            userId: 'principal'
         });
     });
 
@@ -130,7 +131,8 @@ describe('withSystem session loading', () => {
         await ready();
         expect(spectator.inject(DotMessageService).init).toHaveBeenCalledWith({
             language: 'fr_FR',
-            languageBundleVersion: 'build-hash'
+            languageBundleVersion: 'build-hash',
+            userId: 'principal'
         });
     });
 
@@ -141,7 +143,8 @@ describe('withSystem session loading', () => {
         await ready();
         expect(spectator.inject(DotMessageService).init).toHaveBeenLastCalledWith({
             language: 'fr_FR',
-            languageBundleVersion: 'build-hash'
+            languageBundleVersion: 'build-hash',
+            userId: 'principal'
         });
     });
 
@@ -152,13 +155,15 @@ describe('withSystem session loading', () => {
         await ready();
         expect(spectator.inject(DotMessageService).init).toHaveBeenLastCalledWith({
             language: 'es_ES',
-            languageBundleVersion: 'build-hash'
+            languageBundleVersion: 'build-hash',
+            userId: 'other'
         });
         emitAuth(authFor());
         await ready();
         expect(spectator.inject(DotMessageService).init).toHaveBeenLastCalledWith({
             language: 'en_US',
-            languageBundleVersion: 'build-hash'
+            languageBundleVersion: 'build-hash',
+            userId: 'principal'
         });
     });
 
@@ -201,7 +206,8 @@ describe('withSystem session loading', () => {
         await ready();
         expect(spectator.inject(DotMessageService).init).toHaveBeenCalledWith({
             language: 'default',
-            languageBundleVersion: 'build-hash'
+            languageBundleVersion: 'build-hash',
+            userId: 'principal'
         });
     });
 
@@ -213,7 +219,8 @@ describe('withSystem session loading', () => {
         await ready();
         expect(spectator.inject(DotMessageService).init).toHaveBeenCalledWith({
             language: 'en_US',
-            languageBundleVersion: undefined
+            languageBundleVersion: undefined,
+            userId: 'principal'
         });
     });
 
@@ -225,7 +232,8 @@ describe('withSystem session loading', () => {
         emitAuth(authFor());
         expect(spectator.inject(DotMessageService).init).toHaveBeenCalledWith({
             language: 'en_US',
-            languageBundleVersion: undefined
+            languageBundleVersion: undefined,
+            userId: 'principal'
         });
         expect(console.warn).toHaveBeenCalledWith(
             'Unable to load configuration; fetching uncached translations.',
@@ -263,7 +271,8 @@ describe('withSystem session loading', () => {
         expect(spectator.service.systemTimezone()).toEqual(config.systemTimezone);
         expect(spectator.inject(DotMessageService).init).toHaveBeenLastCalledWith({
             language: 'en_US',
-            languageBundleVersion: undefined
+            languageBundleVersion: undefined,
+            userId: 'principal'
         });
     });
 
@@ -302,7 +311,8 @@ describe('withSystem session loading', () => {
         await ready();
         expect(spectator.inject(DotMessageService).init).toHaveBeenLastCalledWith({
             language: 'en_US',
-            languageBundleVersion: 'new-build'
+            languageBundleVersion: 'new-build',
+            userId: 'principal'
         });
     });
 });

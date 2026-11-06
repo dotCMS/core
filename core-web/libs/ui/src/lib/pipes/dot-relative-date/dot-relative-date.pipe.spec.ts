@@ -70,15 +70,18 @@ describe('DotRelativeDatePipe', () => {
     });
 
     describe('bundle recovery in an OnPush view', () => {
+        const revision = signal(0);
         const version = signal<string | null>(null);
         const language = signal<string | null>(null);
         let messages: Record<string, string>;
 
         beforeEach(() => {
+            revision.set(0);
             version.set(null);
             language.set(null);
             messages = {};
             Object.assign(TestBed.inject(DotMessageService), {
+                loadedBundleRevision: revision.asReadonly(),
                 loadedBundleVersion: version.asReadonly(),
                 loadedBundleLanguage: language.asReadonly(),
                 get: (key: string) => messages[key] ?? key
@@ -104,6 +107,20 @@ describe('DotRelativeDatePipe', () => {
             version.set('build-2');
             fixture.detectChanges();
             expect(text()).toBe('Recovered now');
+        });
+
+        it('refreshes an unchanged timestamp when the same-version bundle is replaced', () => {
+            version.set('same-build');
+            language.set('en');
+            messages = { 'relative.date.now': 'Now' };
+            const fixture = TestBed.createComponent(RelativeDateHostComponent);
+            fixture.detectChanges();
+            messages = { 'relative.date.now': 'Fresh now' };
+            revision.update((value) => value + 1);
+            fixture.detectChanges();
+            expect(
+                fixture.nativeElement.querySelector('[data-testid="timestamp"]').textContent
+            ).toBe('Fresh now');
         });
 
         it('should update for a language change with the same bundle version', () => {

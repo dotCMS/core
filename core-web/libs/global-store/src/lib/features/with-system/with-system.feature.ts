@@ -73,7 +73,9 @@ export function withSystem() {
                 _loadSession: rxMethod<Auth | null>(
                     pipe(
                         switchMap((auth) => {
-                            messages.invalidatePendingSession();
+                            messages.invalidatePendingSession(
+                                auth?.loginAsUser?.userId || auth?.user?.userId || null
+                            );
                             if (!auth?.user) {
                                 patchState(store, { systemConfig: null, _sessionStatus: 'idle' });
 
@@ -104,7 +106,8 @@ export function withSystem() {
                                     messages
                                         .init({
                                             language,
-                                            languageBundleVersion: config?.languageBundleVersion
+                                            languageBundleVersion: config?.languageBundleVersion,
+                                            userId: auth.loginAsUser?.userId || auth.user.userId
                                         })
                                         .pipe(map(() => config != null))
                                 ),
