@@ -5,6 +5,7 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -36,6 +37,7 @@ public class PageTreeReadFilter {
     private final User user;
     private final boolean respectFrontendRoles;
     private final boolean anonymousFallback;
+    private final boolean renderedContentOnly;
     private final Map<String, Boolean> readableByVariantAndContentId = new HashMap<>();
 
     /**
@@ -44,7 +46,7 @@ public class PageTreeReadFilter {
      * @param user the user the rows are filtered for
      */
     public PageTreeReadFilter(final User user) {
-        this(user, false);
+        this(user, false, false, false);
     }
 
     /**
@@ -52,16 +54,18 @@ public class PageTreeReadFilter {
      *                             the anonymous user
      * @param respectFrontendRoles whether front-end roles count, as for the page mode being
      *                             rendered ({@code PageMode#respectAnonPerms})
+     * @param anonymousFallback    whether content the anonymous user can read in the default
+     *                             variant also counts, as the render falls back to it in edit and
+     *                             preview mode
+     * @param renderedContentOnly  whether content whose version is archived counts as not readable,
+     *                             as the render never shows it
      */
-    public PageTreeReadFilter(final User user, final boolean respectFrontendRoles) {
-        this(user, respectFrontendRoles, false);
-    }
-
     private PageTreeReadFilter(final User user, final boolean respectFrontendRoles,
-            final boolean anonymousFallback) {
+            final boolean anonymousFallback, final boolean renderedContentOnly) {
         this.user = user;
         this.respectFrontendRoles = respectFrontendRoles;
         this.anonymousFallback = anonymousFallback;
+        this.renderedContentOnly = renderedContentOnly;
     }
 
     /**
@@ -79,7 +83,8 @@ public class PageTreeReadFilter {
 
     /**
      * Builds a filter that follows what a page render shows the user in the given mode: READ with
-     * the mode's front-end roles setting, and, in edit and preview mode, also content the
+     * the mode's front-end roles setting on the version the render shows, archived versions not
+     * counted, and, in edit and preview mode, also content whose default-variant version the
      * anonymous user can read, which the render falls back to there.
      *
      * @param user the user the page is rendered for
@@ -87,8 +92,20 @@ public class PageTreeReadFilter {
      * @return the filter for that render
      */
     public static PageTreeReadFilter forRender(final User user, final PageMode mode) {
-        return new PageTreeReadFilter(user, mode.respectAnonPerms,
-                mode == PageMode.EDIT_MODE || mode == PageMode.PREVIEW_MODE);
+        return new PageTreeReadFilter(user, mode.respectAnonPerms, appliesTo(mode), true);
+    }
+
+    /**
+     * Builds a filter for the view-as status of a page render: READ with the mode's front-end roles
+     * setting, counting only content the render can show (no archived versions), without the
+     * render's anonymous fallback, the same as the page personas endpoint.
+     *
+     * @param user the user the page is rendered for
+     * @param mode the mode the page is rendered in
+     * @return the filter for that view-as status
+     */
+    public static PageTreeReadFilter forViewAs(final User user, final PageMode mode) {
+        return new PageTreeReadFilter(user, mode.respectAnonPerms, false, true);
     }
 
     /**
@@ -203,15 +220,45 @@ public class PageTreeReadFilter {
                     + "it is treated as not readable", e);
             return false;
         }
-        if (null == contentlet) {
+        if (null == contentlet || (renderedContentOnly && isArchived(contentlet))) {
             return false;
         }
 
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-        return permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user,
-                respectFrontendRoles)
-                || (anonymousFallback && permissionAPI.doesUserHavePermission(contentlet,
-                        PermissionAPI.PERMISSION_READ, APILocator.getUserAPI().getAnonymousUser(), true));
+        if (permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user,
+                respectFrontendRoles)) {
+            return true;
+        }
+        if (!anonymousFallback) {
+            return false;
+        }
+        final Contentlet defaultVersion = loadDefaultVariantVersion(contentId);
+        return null != defaultVersion && !isArchived(defaultVersion)
+                && permissionAPI.doesUserHavePermission(defaultVersion, PermissionAPI.PERMISSION_READ,
+                        APILocator.getUserAPI().getAnonymousUser(), true);
+    }
+
+    /**
+     * Loads the default-variant version the render falls back to for the anonymous user, or
+     * {@code null} when the contentlet has none or it cannot be loaded.
+     */
+    private Contentlet loadDefaultVariantVersion(final String contentId) throws DotDataException {
+        try {
+            return APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(contentId,
+                    VariantAPI.DEFAULT_VARIANT.name(), false);
+        } catch (final DotContentletStateException e) {
+            Logger.warn(this, "Default version of contentlet " + contentId + " placed on a page could not "
+                    + "be loaded; it is treated as not readable", e);
+            return null;
+        }
+    }
+
+    private boolean isArchived(final Contentlet contentlet) throws DotDataException {
+        try {
+            return contentlet.isArchived();
+        } catch (final DotSecurityException e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
     }
 
     private Contentlet load(final String contentId, final String variantName) throws DotDataException {

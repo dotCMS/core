@@ -681,7 +681,7 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
         if (!PageTreeReadFilter.appliesTo(pageMode)) {
             return multiTreeAPI.getPersonalizationsForPage(page, variantName).contains(personaTag);
         }
-        return new PageTreeReadFilter(user, pageMode.respectAnonPerms).hasReadableContent(
+        return PageTreeReadFilter.forViewAs(user, pageMode).hasReadableContent(
                 Try.of(() -> multiTreeAPI.getPageMultiTrees(page, variantName, false))
                         .getOrElseThrow(e -> new DotRuntimeException(e)),
                 personaTag, variantName);

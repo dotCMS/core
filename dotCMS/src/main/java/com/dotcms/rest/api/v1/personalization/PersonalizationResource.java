@@ -163,8 +163,7 @@ public class PersonalizationResource {
                 personalizationPersonaPageForm.getPersonaTag();
         final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
 
-        if (UtilMethods.isSet(this.multiTreeAPI.getMultiTreesByPersonalizedPage(pageId, newPersonalization,
-                currentVariantId))) {
+        if (this.hasRowsForPersonalization(pageId, newPersonalization, currentVariantId)) {
             Logger.debug(this, () -> "Page " + pageId + " is already personalized for " + newPersonalization
                     + "; its content is left as it is");
             final List<MultiTree> noCopiedRows = List.of();
@@ -175,6 +174,24 @@ public class PersonalizationResource {
                 pageId, newPersonalization, currentVariantId);
         return Response.ok(new ResponseEntityView<>(new PageTreeReadFilter(user).filter(copiedRows))).build();
     } // personalizePageContainers
+
+    /**
+     * Tells whether the page tree shown in the variant has rows for the personalization. A page
+     * with no rows of its own in a variant shows the default variant's tree there, so the default
+     * variant's rows count in that case ({@code MultiTreeAPI#getMultiTreesByVariant}).
+     *
+     * @param pageId          the page identifier
+     * @param personalization the personalization tag
+     * @param variantName     the current variant
+     * @return {@code true} if the tree shown in the variant has rows for the personalization
+     * @throws DotDataException if the tree cannot be loaded
+     */
+    private boolean hasRowsForPersonalization(final String pageId, final String personalization,
+            final String variantName) throws DotDataException {
+
+        return this.multiTreeAPI.getMultiTreesByVariant(pageId, variantName).stream()
+                .anyMatch(row -> personalization.equals(row.getPersonalization()));
+    }
 
     @Operation(
         summary = "Delete page personalization",

@@ -63,6 +63,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -97,6 +98,9 @@ public class PageResourceReadAccessTest {
     private static Contentlet defaultContent;
     private static Variant variant;
     private static Persona personaWithRestrictedVariantVersion;
+    private static Persona personaWithArchivedContent;
+    private static Persona personaWithPublicContentDraftedInVariant;
+    private static Contentlet publicContentDraftedInVariant;
     private static HTMLPageAsset livePage;
     private static Persona personaWithNewerDraft;
     private static Contentlet publishedContentWithNewerDraft;
@@ -154,7 +158,10 @@ public class PageResourceReadAccessTest {
      * Builds a page with default content the reader can read, personalized for three personas: one
      * holds content the reader can read, one only content the reader has no READ on, and one only
      * content readable through the anonymous role. A fourth persona holds content the reader can
-     * read that exists only in a variant, placed in that variant's tree.
+     * read that exists only in a variant, placed in that variant's tree. In the variant's tree,
+     * three more personas hold content whose version in the variant differs from the default one:
+     * filed under a category the reader has no permission on, archived, or not published while its
+     * default version is published and readable through the anonymous role.
      */
     private static void preparePersonaPage(final ContentType webPageContent) throws Exception {
         final PageRenderTestUtil.PageRenderTest personalized = PageRenderTestUtil.createPage(1, site, true);
@@ -193,6 +200,22 @@ public class PageResourceReadAccessTest {
         personaWithRestrictedVariantVersion = newPersona("restrictedvariant");
         saveRow(personaPage, containerId, newContentWithRestrictedVariantVersion().getIdentifier(), 5,
                 personaTag(personaWithRestrictedVariantVersion), variant.name());
+
+        final Contentlet archivedInVariant = newContent(webPageContent);
+        grantRead(archivedInVariant, reader);
+        final Contentlet archivedVariantVersion = ContentletDataGen.createNewVersion(archivedInVariant, variant,
+                Map.of("title", "archived in variant"));
+        APILocator.getContentletAPI().archive(archivedVariantVersion, APILocator.systemUser(), false);
+        personaWithArchivedContent = newPersona("archived");
+        saveRow(personaPage, containerId, archivedInVariant.getIdentifier(), 6,
+                personaTag(personaWithArchivedContent), variant.name());
+
+        publicContentDraftedInVariant = newPublicContent(webPageContent);
+        ContentletDataGen.createNewVersion(publicContentDraftedInVariant, variant,
+                Map.of("title", "variant draft"));
+        personaWithPublicContentDraftedInVariant = newPersona("variantdraft");
+        saveRow(personaPage, containerId, publicContentDraftedInVariant.getIdentifier(), 7,
+                personaTag(personaWithPublicContentDraftedInVariant), variant.name());
     }
 
     /**
@@ -783,6 +806,50 @@ public class PageResourceReadAccessTest {
     }
 
     /**
+     * Given the same page, personalized in a variant with content the reader can read whose version
+     * in that variant is archived,
+     * When the reader previews that variant as the persona,
+     * Then the view-as status is not personalized, since archived content is never rendered.
+     */
+    @Test
+    public void viewAsStatus_ignoresContentArchivedInTheCurrentVariant() throws Exception {
+        assertFalse(viewAsPersonalized(reader, personaWithArchivedContent, PageMode.PREVIEW_MODE,
+                variant.name()));
+    }
+
+    /**
+     * Given the same page, personalized in a variant with content whose default version is published
+     * and readable through the anonymous role, and whose version in the variant is not published,
+     * When the reader previews that variant as the persona,
+     * Then the page shows the persona's content, which the render shows through the anonymous
+     * role's access to the default version.
+     */
+    @Test
+    public void render_inVariant_asPersonaWithAnonymousReadableDefaultVersion_showsPersonaContent()
+            throws Exception {
+        assertEquals(List.of(publicContentDraftedInVariant.getIdentifier()),
+                renderedContentIds(reader, personaWithPublicContentDraftedInVariant, PageMode.PREVIEW_MODE,
+                        personaPage, variant.name()));
+    }
+
+    /**
+     * Given a page the reader can edit, with no rows in a variant, so the variant shows the default
+     * variant's tree, which holds rows for a persona whose content the reader has no READ on,
+     * When the reader asks to personalize the page for that persona in the variant,
+     * Then nothing is copied and the variant still has no rows of its own.
+     */
+    @Test
+    public void personalizePage_inVariantWithoutRows_forPersonaWithDefaultVariantRows_keepsTheTree()
+            throws Exception {
+        final Response response = personalize(personaWithoutReadableContent, variant.name());
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertTrue(((List<?>) ((ResponseEntityView<?>) response.getEntity()).getEntity()).isEmpty());
+        assertTrue(APILocator.getMultiTreeAPI().getMultiTreesByPersonalizedPage(editablePage.getIdentifier(),
+                personaTag(personaWithoutReadableContent), variant.name()).isEmpty());
+    }
+
+    /**
      * Given a page the reader can edit, already personalized for a persona whose content the
      * reader has no READ on,
      * When the reader asks to personalize the page for that persona,
@@ -935,8 +1002,13 @@ public class PageResourceReadAccessTest {
 
     private static List<String> renderedContentIds(final User user, final Persona persona, final PageMode mode,
             final HTMLPageAsset page) throws Exception {
+        return renderedContentIds(user, persona, mode, page, null);
+    }
+
+    private static List<String> renderedContentIds(final User user, final Persona persona, final PageMode mode,
+            final HTMLPageAsset page, final String variantName) throws Exception {
         final HttpServletRequest previous = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-        HttpServletRequestThreadLocal.INSTANCE.setRequest(requestAsPersona(persona, null));
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(requestAsPersona(persona, variantName));
         try {
             return new PageRenderUtil(page, user, mode, 1, site).getContainersRaw().stream()
                     .flatMap(container -> container.getContentlets().values().stream())
@@ -961,11 +1033,25 @@ public class PageResourceReadAccessTest {
     }
 
     private static Response personalize(final Persona persona) throws Exception {
-        return new PersonalizationResource().personalizePageContainers(requestWithUser(reader),
-                new EmptyHttpResponse(), new PersonalizationPersonaPageForm.Builder()
-                        .pageId(editablePage.getIdentifier())
-                        .personaTag(persona.getKeyTag())
-                        .build());
+        return personalize(persona, null);
+    }
+
+    private static Response personalize(final Persona persona, final String variantName) throws Exception {
+        final HttpServletRequest request = requestWithUser(reader);
+        if (null != variantName) {
+            request.setAttribute(VariantAPI.VARIANT_KEY, variantName);
+        }
+        final HttpServletRequest previous = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        try {
+            return new PersonalizationResource().personalizePageContainers(request,
+                    new EmptyHttpResponse(), new PersonalizationPersonaPageForm.Builder()
+                            .pageId(editablePage.getIdentifier())
+                            .personaTag(persona.getKeyTag())
+                            .build());
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previous);
+        }
     }
 
     private static List<String> personaRowContentIds(final HTMLPageAsset page, final Persona persona)
