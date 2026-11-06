@@ -81,7 +81,8 @@ describe('AppComponent', () => {
     });
 
     it('tolerates partial configuration', () => {
-        $systemConfig.set({ ...config, logos: null, license: null });
+        // Exercise a partial server response even though the legacy model requires both fields.
+        $systemConfig.set({ ...config, logos: null, license: null } as unknown as DotSystemConfig);
         spectator.detectChanges();
         expect(spectator.inject(DotUiColorsService).setColors).toHaveBeenCalledWith(
             expect.any(HTMLElement),

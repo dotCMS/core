@@ -14,7 +14,8 @@ import { withSystem } from './with-system.feature';
 const SystemStore = signalStore(withSystem());
 const config = {
     languageBundleVersion: 'build-hash',
-    emailRegex: '^[^@]+@dotcms\\.com$'
+    emailRegex: '^[^@]+@dotcms\\.com$',
+    systemTimezone: { id: 'America/New_York', label: 'Eastern Time', offset: -18000000 }
 } as DotSystemConfig;
 const authFor = (languageId = 'en_US'): Auth =>
     ({ user: { userId: 'principal', languageId }, loginAsUser: null }) as Auth;
@@ -171,7 +172,7 @@ describe('withSystem session loading', () => {
         const pending$ = new Subject<DotSystemConfig>();
         spectator.inject(DotSystemConfigService).getSystemConfig.mockReturnValue(pending$);
         emitAuth(authFor());
-        emitAuth({ user: null, loginAsUser: null });
+        emitAuth({ user: null, loginAsUser: null } as unknown as Auth);
         pending$.next(config);
         expect(spectator.service.systemConfig()).toBeNull();
         expect(spectator.inject(DotMessageService).init).not.toHaveBeenCalled();
@@ -231,6 +232,24 @@ describe('withSystem session loading', () => {
         expect(spectator.inject(DotMessageService).init).toHaveBeenCalledTimes(2);
     });
 
+    it('retains loaded configuration and timezone when a refresh fails, without reusing its bundle version', async () => {
+        emitAuth(authFor());
+        await ready();
+        const refresh$ = new Subject<DotSystemConfig>();
+        spectator.inject(DotSystemConfigService).getSystemConfig.mockReturnValueOnce(refresh$);
+        spectator.service.loadSystemConfig();
+        const settled = ready();
+        refresh$.error(new Error('Refresh failed'));
+        spectator.flushEffects();
+        await settled;
+        expect(spectator.service.systemConfig()).toEqual(config);
+        expect(spectator.service.systemTimezone()).toEqual(config.systemTimezone);
+        expect(spectator.inject(DotMessageService).init).toHaveBeenLastCalledWith({
+            language: 'en_US',
+            languageBundleVersion: undefined
+        });
+    });
+
     it('settles without blocking authenticated navigation when both requests fail', async () => {
         spectator
             .inject(DotSystemConfigService)
@@ -248,7 +267,7 @@ describe('withSystem session loading', () => {
     it('reloads configuration after logout and re-login as the same principal', async () => {
         emitAuth(authFor());
         await ready();
-        emitAuth({ user: null, loginAsUser: null });
+        emitAuth({ user: null, loginAsUser: null } as unknown as Auth);
         emitAuth(authFor());
         await ready();
         expect(spectator.inject(DotSystemConfigService).getSystemConfig).toHaveBeenCalledTimes(2);

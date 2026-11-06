@@ -96,7 +96,9 @@ export function withSystem() {
 
                                     return of(null);
                                 }),
-                                tap((systemConfig) => patchState(store, { systemConfig })),
+                                tap((systemConfig) => {
+                                    if (systemConfig) patchState(store, { systemConfig });
+                                }),
                                 switchMap((config) =>
                                     messages
                                         .init({
