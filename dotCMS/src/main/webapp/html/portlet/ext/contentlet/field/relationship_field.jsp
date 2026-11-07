@@ -5,6 +5,7 @@
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.liferay.util.Xss"%>
 <%@page import="com.dotmarketing.util.InodeUtils"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotmarketing.business.IdentifierFactory"%>
@@ -372,6 +373,13 @@
                 .replace(/'/g, '&#39;');
         }
 
+        /**
+         * Returns the text of a value that may carry markup, without its tags.
+         */
+        function <%= relationJsName%>TextOf(value) {
+            return new DOMParser().parseFromString(String(value), 'text/html').body.textContent || '';
+        }
+
         function <%= relationJsName%>WriteLinkTitle (o) {
             return <%= relationJsName%>EditRelatedContentWrap(o, <%= relationJsName%>EscapeHtml(o['title'] || ""));
         }
@@ -587,7 +595,7 @@
 	    function <%= relationJsName %>_addContentlet(structureInode) {
 
 	    	var myNode = (currentContentletInode==null || currentContentletInode=='') ? workingContentletInode : currentContentletInode;
-	    	var relationshipReturnValue = { inode: myNode, title: "<%=UtilMethods.escapeDoubleQuotes(contentTitle)%>" };
+	    	var relationshipReturnValue = { inode: myNode, title: "<%=Xss.encodeForJavaScript(contentTitle)%>" };
 	    	localStorage.setItem("dotcms.relationships.relationshipReturnValue",  JSON.stringify(relationshipReturnValue));
 	    	
 			var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
@@ -701,7 +709,7 @@
 						} else {
 							fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
 									item,
-									<%= relationJsName%>EscapeHtml(item[fieldName] || ""));
+									<%= relationJsName%>EscapeHtml(<%= relationJsName%>TextOf(item[fieldName] || "")));
 						}
 
                     }
@@ -754,7 +762,7 @@
 			}
 			
             var myNode = (currentContentletInode==null || currentContentletInode=='') ? workingContentletInode : currentContentletInode;
-            var relationshipReturnValue = { inode: myNode, title: "<%=UtilMethods.escapeDoubleQuotes(contentTitle)%>" };
+            var relationshipReturnValue = { inode: myNode, title: "<%=Xss.encodeForJavaScript(contentTitle)%>" };
             localStorage.setItem("dotcms.relationships.relationshipReturnValue",  JSON.stringify(relationshipReturnValue));
             
 			var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";

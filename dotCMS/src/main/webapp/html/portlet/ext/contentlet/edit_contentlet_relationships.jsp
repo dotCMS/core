@@ -211,6 +211,25 @@
 
 				var hasListedFields = <%= hasListedFields %>;
 				var <%= relationJsName %>_Contents = new Array ();
+
+				/**
+				 * Escapes a value so it is shown as plain text when added to the page with innerHTML.
+				 */
+				function <%= relationJsName%>EscapeHtml(value) {
+					return String(value)
+						.replace(/&/g, '&amp;')
+						.replace(/</g, '&lt;')
+						.replace(/>/g, '&gt;')
+						.replace(/"/g, '&quot;')
+						.replace(/'/g, '&#39;');
+				}
+
+				/**
+				 * Returns the text of a value that may carry markup, without its tags.
+				 */
+				function <%= relationJsName%>TextOf(value) {
+					return new DOMParser().parseFromString(String(value), 'text/html').body.textContent || '';
+				}
 		<%String lastIdentifier = "";
 
 
@@ -325,7 +344,7 @@
 								}
 							}
 		 %>
-		 cont['<%=UtilMethods.escapeSingleQuotes(fieldName)%>'] = '<%=fieldValue.replaceAll("'","\\\\'").replaceAll("\n","").replaceAll("\r","").trim()%>';
+		 cont['<%=com.liferay.util.Xss.encodeForJavaScript(fieldName)%>'] = '<%=com.liferay.util.Xss.encodeForJavaScript(fieldValue.replaceAll("\n","").replaceAll("\r","").trim())%>';
 		 <%
 						}
 					}
@@ -464,12 +483,12 @@
 				var value = "";
 				var innerValue = "";
 				if (o != null){
-				    if (o['<%=UtilMethods.escapeSingleQuotes(fieldName)%>']!=null){
-				        innerValue = o['<%=UtilMethods.escapeSingleQuotes(fieldName)%>'];
+				    if (o['<%=com.liferay.util.Xss.encodeForJavaScript(fieldName)%>']!=null){
+				        innerValue = o['<%=com.liferay.util.Xss.encodeForJavaScript(fieldName)%>'];
 				    }else{
 				        innerValue = o[('<%=varName%>')];
 				    }
-					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + innerValue + "</a>";
+					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + <%= relationJsName%>EscapeHtml(<%= relationJsName%>TextOf(innerValue)) + "</a>";
 	 			}
 	 			return value;
 			}
@@ -640,7 +659,7 @@
 			    function <%= relationJsName %>_addContentlet(structureInode) {
 
                     var myNode = (currentContentletInode==null || currentContentletInode=='') ? workingContentletInode : currentContentletInode;
-	    	        var relationshipReturnValue = { inode: myNode, title: "<%=UtilMethods.escapeDoubleQuotes(contentTitle)%>" };
+	    	        var relationshipReturnValue = { inode: myNode, title: "<%=com.liferay.util.Xss.encodeForJavaScript(contentTitle)%>" };
 	    	        localStorage.setItem("dotcms.relationships.relationshipReturnValue",  JSON.stringify(relationshipReturnValue));
 
 					var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
@@ -804,7 +823,7 @@
 						return;
 
                     var myNode = (currentContentletInode==null || currentContentletInode=='') ? workingContentletInode : currentContentletInode;
-                    var relationshipReturnValue = { inode: myNode, title: "<%=UtilMethods.escapeDoubleQuotes(contentTitle)%>" };
+                    var relationshipReturnValue = { inode: myNode, title: "<%=com.liferay.util.Xss.encodeForJavaScript(contentTitle)%>" };
                     localStorage.setItem("dotcms.relationships.relationshipReturnValue",  JSON.stringify(relationshipReturnValue));
 
 					var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
