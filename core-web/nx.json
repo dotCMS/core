@@ -166,7 +166,14 @@
             "!{projectRoot}/jest.config.[jt]s",
             "!{projectRoot}/eslint.config.mjs",
             "!{projectRoot}/src/test-setup.[jt]s"
-        ]
+        ],
+        "warBuild": [
+            "{workspaceRoot}/pnpm-lock.yaml",
+            "{workspaceRoot}/package.json",
+            { "runtime": "node --version" }
+        ],
+        "dotcmsScss": ["{workspaceRoot}/libs/dotcms-scss/**/*"],
+        "tailwindSources": ["{workspaceRoot}/**/*"]
     },
     "plugins": [
         {
