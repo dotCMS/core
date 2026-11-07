@@ -10,10 +10,17 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.rendering.js.proxy.JsUser;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -30,8 +37,13 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.io.FileUtils;
 import org.graalvm.polyglot.Context;
@@ -44,11 +56,12 @@ import org.junit.Test;
 
 /**
  * Integration tests for loading JavaScript modules stored as file assets with {@code import()}, using the
- * content-backed module source of {@link JsFileSystem} (its default constructor) against real sites, folders and file
- * assets.
+ * content-backed module source of {@link JsFileSystem} against real sites, folders, file assets, users and
+ * permissions.
  * <p>
  * Scripts run in a GraalJS context built by the engine's own context builder, {@code JsEngine#buildContext}, with a
- * content-backed {@code new JsFileSystem()}. The tests still do not call {@link JsEngine#eval}: {@code eval} first
+ * content-backed {@code JsFileSystem} that reads on behalf of a user (the system user unless a test names another).
+ * The tests still do not call {@link JsEngine#eval}: {@code eval} first
  * preloads the server's {@code WEB-INF/javascript} sources through the servlet context, and the servlet context used
  * by the integration environment does not provide them, so {@code eval} stops before the script runs. The module
  * loading path under test (module path handling, site and file asset lookup, binary read and its cache) is the same
@@ -66,6 +79,8 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
     private static final List<Folder> createdFolders = new ArrayList<>();
     private static final List<Host> createdSites = new ArrayList<>();
     private static final List<Path> createdTempFolders = new ArrayList<>();
+    private static final List<User> createdUsers = new ArrayList<>();
+    private static final List<Role> createdRoles = new ArrayList<>();
 
     private static Host defaultSite;
 
@@ -83,8 +98,8 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Removes every module, folder and site created by these tests, plus the temporary files the modules were
-     * uploaded from. Each item is removed on its own, so one failure does not leave the rest behind.
+     * Removes every module, folder, site, user and role created by these tests, plus the temporary files the modules
+     * were uploaded from. Each item is removed on its own, so one failure does not leave the rest behind.
      */
     @AfterClass
     public static void cleanUp() {
@@ -112,6 +127,24 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
                 Logger.warn(JsModuleImportIntegrationTest.class, "Could not remove a test site: " + e.getMessage());
             }
         }
+
+        for (final User user : createdUsers) {
+            try {
+                APILocator.getUserAPI().delete(user, TestUserUtils.getAdminUser(), APILocator.systemUser(), false);
+            } catch (final Exception e) {
+                Logger.warn(JsModuleImportIntegrationTest.class, "Could not remove a test user: " + e.getMessage());
+            }
+        }
+        createdUsers.clear();
+
+        for (final Role role : createdRoles) {
+            try {
+                APILocator.getRoleAPI().delete(role);
+            } catch (final Exception e) {
+                Logger.warn(JsModuleImportIntegrationTest.class, "Could not remove a test role: " + e.getMessage());
+            }
+        }
+        createdRoles.clear();
 
         for (final Path tempFolder : createdTempFolders) {
             FileUtils.deleteQuietly(tempFolder.toFile());
@@ -294,6 +327,277 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
     }
 
     /**
+     * Checks that a module the script's user cannot read is not found, both when the script names the module's site
+     * and when it imports the module from the current site. The file system reports such a module exactly like a
+     * module that does not exist.
+     *
+     * @throws Exception when the test data cannot be created
+     */
+    @Test
+    public void moduleTheReaderCannotReadIsNotFound() throws Exception {
+        // Given a second site and the default site, each with a module only administrators can read, and a back-end
+        // user with no permission on either module
+        final Host site = newSite("unreadable");
+        final String fileName = "unreadable-module-" + RUN_ID + ".mjs";
+        readableOnlyBy(createModule(site, fileName, "export const value = 'SECOND-SITE-UNREADABLE';"));
+        readableOnlyBy(createModule(defaultSite, fileName, "export const value = 'DEFAULT-SITE-UNREADABLE';"));
+        final User reader = newBackEndUser(newRole());
+        final String sitePath = "//" + site.getHostname() + MODULES_FOLDER_PATH + fileName;
+        final String currentSitePath = MODULES_FOLDER_PATH + fileName;
+        final String missingPath = "//" + site.getHostname() + MODULES_FOLDER_PATH + "no-such-module-" + RUN_ID
+                + ".mjs";
+
+        // When a script running as that user imports both modules, and its file system opens them and a missing one
+        final String fromSite = runAsync("(await import('" + sitePath + "')).value", reader, true);
+        final String fromCurrentSite = runAsync("(await import('" + currentSitePath + "')).value", reader, true);
+
+        // Then both imports are rejected without the module's export, and both modules are reported as not found,
+        // the same as the missing module
+        assertTrue(fromSite, fromSite.startsWith("REJECTED"));
+        assertFalse(fromSite, fromSite.contains("SECOND-SITE-UNREADABLE"));
+        assertTrue(fromCurrentSite, fromCurrentSite.startsWith("REJECTED"));
+        assertFalse(fromCurrentSite, fromCurrentSite.contains("DEFAULT-SITE-UNREADABLE"));
+        assertEquals(NoSuchFileException.class, openFailure(missingPath, reader, true));
+        assertEquals(NoSuchFileException.class, openFailure(sitePath, reader, true));
+        assertEquals(NoSuchFileException.class, openFailure(currentSitePath, reader, true));
+    }
+
+    /**
+     * Checks that a user who can read a module imports it, whether the script names the module's site by its name or
+     * its identifier, or imports it from the current site.
+     *
+     * @throws Exception when the test data cannot be created
+     */
+    @Test
+    public void moduleTheReaderCanReadIsImported() throws Exception {
+        // Given a role, a back-end user holding it, and a module on a second site and on the default site that the
+        // role can read
+        final Role role = newRole();
+        final User reader = newBackEndUser(role);
+        final Host site = newSite("readable");
+        final String fileName = "readable-module-" + RUN_ID + ".mjs";
+        readableOnlyBy(createModule(site, fileName, "export const value = 'SECOND-SITE-READABLE';"), role);
+        readableOnlyBy(createModule(defaultSite, fileName, "export const value = 'DEFAULT-SITE-READABLE';"), role);
+
+        // When a script running as that user imports the module by site name, site identifier and current site
+        final String byName = runAsync(
+                "(await import('//" + site.getHostname() + MODULES_FOLDER_PATH + fileName + "')).value", reader, true);
+        final String byIdentifier = runAsync(
+                "(await import('//" + site.getIdentifier() + MODULES_FOLDER_PATH + fileName + "')).value", reader,
+                true);
+        final String fromCurrentSite = runAsync(
+                "(await import('" + MODULES_FOLDER_PATH + fileName + "')).value", reader, true);
+
+        // Then every import returns the export of the module it names
+        assertEquals("RESOLVED SECOND-SITE-READABLE", byName);
+        assertEquals("RESOLVED SECOND-SITE-READABLE", byIdentifier);
+        assertEquals("RESOLVED DEFAULT-SITE-READABLE", fromCurrentSite);
+    }
+
+    /**
+     * Checks that a script running as the anonymous user imports a published module that anonymous visitors can read,
+     * and does not get a published module that only administrators can read. Anonymous visitors only read published
+     * content, so both modules are published.
+     *
+     * @throws Exception when the test data cannot be created
+     */
+    @Test
+    public void anonymousReaderImportsOnlyModulesAnonymousCanRead() throws Exception {
+        // Given a site with one published module anonymous visitors can read and one only administrators can read
+        final Host site = newSite("anonymous");
+        final String publicName = "public-module-" + RUN_ID + ".mjs";
+        final String restrictedName = "restricted-module-" + RUN_ID + ".mjs";
+        final Contentlet publicModule = ContentletDataGen.publish(
+                createModule(site, publicName, "export const value = 'PUBLIC-EXPORT';"));
+        final Contentlet restrictedModule = ContentletDataGen.publish(
+                createModule(site, restrictedName, "export const value = 'RESTRICTED-EXPORT';"));
+        readableOnlyBy(publicModule, APILocator.getRoleAPI().loadCMSAnonymousRole());
+        readableOnlyBy(restrictedModule);
+        final User anonymous = APILocator.getUserAPI().getAnonymousUser();
+
+        // When a script running as the anonymous user imports both modules
+        final String publicImport = runAsync(
+                "(await import('//" + site.getHostname() + MODULES_FOLDER_PATH + publicName + "')).value",
+                anonymous, true);
+        final String restrictedImport = runAsync(
+                "(await import('//" + site.getHostname() + MODULES_FOLDER_PATH + restrictedName + "')).value",
+                anonymous, true);
+
+        // Then the public module is imported, and the other one is rejected without its export
+        assertEquals("RESOLVED PUBLIC-EXPORT", publicImport);
+        assertTrue(restrictedImport, restrictedImport.startsWith("REJECTED"));
+        assertFalse(restrictedImport, restrictedImport.contains("RESTRICTED-EXPORT"));
+    }
+
+    /**
+     * Checks that the engine's module file system lets a back-end user import a published module that only anonymous
+     * visitors can read, and still keeps a module only administrators can read out of that user's reach.
+     *
+     * @throws Exception when the test data cannot be created
+     */
+    @Test
+    public void backEndUserImportsModuleAnonymousCanReadThroughEngine() throws Exception {
+        // Given a site with a published module only anonymous visitors can read, a published module only
+        // administrators can read, and a back-end user with no permission on either
+        final Host site = newSite("engine");
+        final String publicName = "engine-public-module-" + RUN_ID + ".mjs";
+        final String restrictedName = "engine-restricted-module-" + RUN_ID + ".mjs";
+        readableOnlyBy(ContentletDataGen.publish(
+                createModule(site, publicName, "export const value = 'ENGINE-PUBLIC-EXPORT';")),
+                APILocator.getRoleAPI().loadCMSAnonymousRole());
+        readableOnlyBy(ContentletDataGen.publish(
+                createModule(site, restrictedName, "export const value = 'ENGINE-RESTRICTED-EXPORT';")));
+        final User reader = newBackEndUser(newRole());
+        final Map<String, Object> scriptParams = new HashMap<>(Map.of("user", new JsUser(reader)));
+
+        // When a script running as that user, through the engine's module file system, imports both modules
+        final String publicImport = runAsync(
+                "(await import('//" + site.getHostname() + MODULES_FOLDER_PATH + publicName + "')).value",
+                JsEngine.moduleFileSystem(scriptParams));
+        final String restrictedImport = runAsync(
+                "(await import('//" + site.getHostname() + MODULES_FOLDER_PATH + restrictedName + "')).value",
+                JsEngine.moduleFileSystem(scriptParams));
+
+        // Then the public module is imported, and the other one is rejected without its export
+        assertEquals("RESOLVED ENGINE-PUBLIC-EXPORT", publicImport);
+        assertTrue(restrictedImport, restrictedImport.startsWith("REJECTED"));
+        assertFalse(restrictedImport, restrictedImport.contains("ENGINE-RESTRICTED-EXPORT"));
+    }
+
+    /**
+     * Checks which version of a public module a script gets when the module is published and then has a newer working
+     * version that is not published: a reader who can read the working version gets it, and a reader who can only
+     * read the published version (the anonymous user, or a back-end user whose access comes from anonymous visitors)
+     * gets the published one instead of "not found".
+     *
+     * @throws Exception when the test data cannot be created or updated
+     */
+    @Test
+    public void readerGetsPublishedVersionWhenWorkingVersionIsNotReadable() throws Exception {
+        // Given a published module that anonymous visitors and one role can read, with a newer working version that is
+        // not published
+        final Role role = newRole();
+        final Host site = newSite("versions");
+        final String fileName = "versioned-public-module-" + RUN_ID + ".mjs";
+        final Contentlet published = ContentletDataGen.publish(
+                createModule(site, fileName, "export const value = 'PUBLISHED-EXPORT';"));
+        readableOnlyBy(published, APILocator.getRoleAPI().loadCMSAnonymousRole(), role);
+        final Contentlet workingCopy = ContentletDataGen.checkout(published);
+        workingCopy.setBinary(FileAssetAPI.BINARY_FIELD,
+                writeTempFile(fileName, "export const value = 'WORKING-EXPORT';"));
+        ContentletDataGen.checkin(workingCopy);
+        final String importScript = "(await import('//" + site.getHostname() + MODULES_FOLDER_PATH + fileName
+                + "')).value";
+
+        // When the anonymous user, a back-end user with no grant of their own, and a back-end user holding the role
+        // import the module through the engine's module file system
+        final String asAnonymous = runAsync(importScript, JsEngine.moduleFileSystem(new HashMap<>()));
+        final String asBackEndUser = runAsync(importScript,
+                JsEngine.moduleFileSystem(new HashMap<>(Map.of("user", newBackEndUser(newRole())))));
+        final String asRoleHolder = runAsync(importScript,
+                JsEngine.moduleFileSystem(new HashMap<>(Map.of("user", newBackEndUser(role)))));
+
+        // Then the readers who can only read the published version get it, and the role holder gets the working one
+        assertEquals("RESOLVED PUBLISHED-EXPORT", asAnonymous);
+        assertEquals("RESOLVED PUBLISHED-EXPORT", asBackEndUser);
+        assertEquals("RESOLVED WORKING-EXPORT", asRoleHolder);
+    }
+
+    /**
+     * Checks which user the engine reads modules for: the {@code user} entry of the script's parameters, given as a
+     * {@link User} or wrapped in a {@link JsUser}, and the anonymous user when the entry is missing or holds anything
+     * else.
+     *
+     * @throws Exception when the test user or the anonymous user cannot be loaded
+     */
+    @Test
+    public void modulesAreReadForTheUserTheScriptRunsAs() throws Exception {
+        // Given a back-end user and the anonymous user
+        final User user = newBackEndUser(newRole());
+        final String anonymousId = APILocator.getUserAPI().getAnonymousUser().getUserId();
+
+        // When the engine picks the module reader for each kind of user entry
+        final Map<String, Object> asUser = new HashMap<>(Map.of("user", user));
+        final Map<String, Object> asJsUser = new HashMap<>(Map.of("user", new JsUser(user)));
+        final Map<String, Object> asText = new HashMap<>(Map.of("user", user.getUserId()));
+
+        // Then a user, plain or wrapped, is used as given, and anything else falls back to the anonymous user
+        assertEquals(user.getUserId(), JsEngine.moduleReader(asUser).getUserId());
+        assertEquals(user.getUserId(), JsEngine.moduleReader(asJsUser).getUserId());
+        assertEquals(anonymousId, JsEngine.moduleReader(new HashMap<>()).getUserId());
+        assertEquals(anonymousId, JsEngine.moduleReader(asText).getUserId());
+    }
+
+    /**
+     * Creates a site with a unique name and keeps it for removal after the tests.
+     *
+     * @param label a word that tells the sites of different tests apart
+     * @return the new {@link Host}
+     */
+    private static Host newSite(final String label) {
+        final Host site = new SiteDataGen().name("js-modules-" + label + "-" + RUN_ID + ".test").nextPersisted(true);
+        createdSites.add(site);
+        return site;
+    }
+
+    /**
+     * Creates a role and keeps it for removal after the tests.
+     *
+     * @return the new {@link Role}
+     */
+    private static Role newRole() {
+        final Role role = new RoleDataGen().nextPersisted();
+        createdRoles.add(role);
+        return role;
+    }
+
+    /**
+     * Creates a back-end user holding the given role and keeps it for removal after the tests.
+     *
+     * @param role the role the user holds besides the back-end user role
+     * @return the new {@link User}
+     * @throws DotDataException when the back-end user role cannot be loaded
+     */
+    private static User newBackEndUser(final Role role) throws DotDataException {
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole(), role)
+                .nextPersisted();
+        createdUsers.add(user);
+        return user;
+    }
+
+    /**
+     * Gives a module its own permissions, so that only the given roles (and administrators) can read it. The grants
+     * copied from the parent are revoked one by one, because saving a permission only adds to what is there; locked
+     * roles cannot be edited and are left alone.
+     *
+     * @param module the module's {@link Contentlet}
+     * @param roles  the roles that can read the module, none for administrators only
+     * @throws Exception when the permissions cannot be changed
+     */
+    private static void readableOnlyBy(final Contentlet module, final Role... roles) throws Exception {
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final User systemUser = APILocator.systemUser();
+        permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(module), module, systemUser);
+
+        final Set<String> keep = Arrays.stream(roles).map(Role::getId).collect(Collectors.toSet());
+        for (final Permission copied : permissionAPI.getPermissions(module, true, true)) {
+            final Role role = APILocator.getRoleAPI().loadRoleById(copied.getRoleId());
+            if (!keep.contains(role.getId()) && role.isEditPermissions()) {
+                permissionAPI.save(new Permission(copied.getType(), module.getPermissionId(), role.getId(), 0, true),
+                        module, systemUser, false);
+            }
+        }
+
+        if (roles.length > 0) {
+            permissionAPI.save(Arrays.stream(roles)
+                    .map(role -> new Permission(module.getPermissionId(), role.getId(),
+                            PermissionAPI.PERMISSION_READ, true))
+                    .collect(Collectors.toList()), module, systemUser, false);
+        }
+    }
+
+    /**
      * Creates a JavaScript module as a working (unpublished) file asset in the {@code /application/js/modules/}
      * folder of a site, and keeps it for removal after the tests.
      *
@@ -370,14 +674,28 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Opens a module path through a content-backed {@link JsFileSystem}, the way the engine reads a module, and
-     * reports how it failed.
+     * Opens a module path through a content-backed {@link JsFileSystem} that reads as the system user, the way the
+     * engine reads a module, and reports how it failed.
      *
      * @param path the module path, as a script would write it
      * @return the class of the exception thrown, or {@code null} when the module could be opened
      */
     private static Class<? extends Exception> openFailure(final String path) {
-        final JsFileSystem fileSystem = new JsFileSystem();
+        return openFailure(path, APILocator.systemUser(), false);
+    }
+
+    /**
+     * Opens a module path through a content-backed {@link JsFileSystem} that reads on behalf of the given user, and
+     * reports how it failed.
+     *
+     * @param path                 the module path, as a script would write it
+     * @param reader               the user the module is read for
+     * @param respectFrontendRoles whether the front-end roles count when checking what the user can read
+     * @return the class of the exception thrown, or {@code null} when the module could be opened
+     */
+    private static Class<? extends Exception> openFailure(final String path, final User reader,
+            final boolean respectFrontendRoles) {
+        final JsFileSystem fileSystem = new JsFileSystem(reader, respectFrontendRoles);
         try (SeekableByteChannel ignored = fileSystem.newByteChannel(fileSystem.parsePath(path),
                 Collections.emptySet())) {
             return null;
@@ -388,14 +706,38 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
 
     /**
      * Runs an asynchronous expression in a GraalJS context built by {@code JsEngine#buildContext}, with a
-     * content-backed {@link JsFileSystem} and without full host access, and returns {@code RESOLVED <value>} or
-     * {@code REJECTED <error>}.
+     * content-backed {@link JsFileSystem} that reads as the system user and without full host access, and returns
+     * {@code RESOLVED <value>} or {@code REJECTED <error>}.
      *
      * @param expression a JavaScript expression that may use {@code await}
      * @return the outcome of the expression as text
      */
     private static String runAsync(final String expression) {
-        try (Context context = JsEngine.buildContext(new JsFileSystem(), false)) {
+        return runAsync(expression, APILocator.systemUser(), false);
+    }
+
+    /**
+     * Runs an asynchronous expression like {@link #runAsync(String)}, with a {@link JsFileSystem} that reads modules on
+     * behalf of the given user.
+     *
+     * @param expression           a JavaScript expression that may use {@code await}
+     * @param reader               the user the script runs as
+     * @param respectFrontendRoles whether the front-end roles count when checking what the user can read
+     * @return the outcome of the expression as text
+     */
+    private static String runAsync(final String expression, final User reader, final boolean respectFrontendRoles) {
+        return runAsync(expression, new JsFileSystem(reader, respectFrontendRoles));
+    }
+
+    /**
+     * Runs an asynchronous expression like {@link #runAsync(String)}, loading modules through the given file system.
+     *
+     * @param expression a JavaScript expression that may use {@code await}
+     * @param fileSystem the file system the script loads modules through
+     * @return the outcome of the expression as text
+     */
+    private static String runAsync(final String expression, final JsFileSystem fileSystem) {
+        try (Context context = JsEngine.buildContext(fileSystem, false)) {
             context.eval(Source.create("js", "(async () => { try { globalThis.result = 'RESOLVED ' + ("
                     + expression + "); } catch (e) { globalThis.result = 'REJECTED ' + e; } })();"));
             return context.eval("js", "String(globalThis.result)").asString();

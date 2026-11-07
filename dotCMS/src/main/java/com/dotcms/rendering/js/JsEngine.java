@@ -9,6 +9,7 @@ import com.dotcms.rendering.js.JsContext.Builder;
 import com.dotcms.rendering.js.proxy.JsProxyFactory;
 import com.dotcms.rendering.js.proxy.JsRequest;
 import com.dotcms.rendering.js.proxy.JsResponse;
+import com.dotcms.rendering.js.proxy.JsUser;
 import com.dotcms.rendering.js.viewtools.CacheJsViewTool;
 import com.dotcms.rendering.js.viewtools.CategoriesJsViewTool;
 import com.dotcms.rendering.js.viewtools.ContainerJsViewTool;
@@ -28,6 +29,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -62,7 +64,6 @@ public class JsEngine implements ScriptEngine {
     public static final String DOT_JSON = "dotJSON";
     public static final String WEB_INF = "WEB-INF";
     private static final String JS_ENGINE = "js";
-    private final JsFileSystem jsFileSystem = new JsFileSystem();
     private final JsDotLogger jsDotLogger = new JsDotLogger();
     private final Map<String, Class<? extends JsViewTool>> jsRequestViewToolMap = new ConcurrentHashMap<>();
     private final Map<String, JsViewTool> jsAplicationViewToolMap = new ConcurrentHashMap<>();
@@ -125,13 +126,29 @@ public class JsEngine implements ScriptEngine {
     }
 
     /**
-     * Builds the context a script runs in, with this engine's file system and its host access setting.
+     * Builds the context a script runs in, with this engine's host access setting and the file system returned by
+     * {@link #moduleFileSystem(Map)}.
      *
+     * @param contextParams the parameters the script is evaluated with, which name the user it runs as
      * @return a new context, which the caller closes
      */
-    private Context buildContext () {
+    private Context buildContext(final Map<String, Object> contextParams) {
 
-        return buildContext(jsFileSystem, allowAllHostAccess.get());
+        return buildContext(moduleFileSystem(contextParams), allowAllHostAccess.get());
+    }
+
+    /**
+     * Returns the file system a script loads modules through: it reads on behalf of the user the script runs as
+     * ({@link #moduleReader(Map)}), and front-end roles always count, so a module that anonymous visitors can read
+     * stays importable by every user, back-end users included.
+     *
+     * @param contextParams the parameters the script is evaluated with, which name the user it runs as
+     * @return a new file system for one script run
+     */
+    @VisibleForTesting
+    static JsFileSystem moduleFileSystem(final Map<String, Object> contextParams) {
+
+        return new JsFileSystem(moduleReader(contextParams), true);
     }
 
     /**
@@ -163,6 +180,27 @@ public class JsEngine implements ScriptEngine {
         return builder.build();
     }
 
+    /**
+     * Returns the user a script runs as, taken from the {@code user} entry of its context parameters: a
+     * {@link User}, or a {@link JsUser} that wraps one. When the entry is missing or holds anything else, the
+     * anonymous user is returned, so modules are then read with the least access.
+     *
+     * @param contextParams the parameters the script is evaluated with
+     * @return the user the script runs as
+     */
+    @VisibleForTesting
+    static User moduleReader(final Map<String, Object> contextParams) {
+
+        final Object user = contextParams.get("user");
+        if (user instanceof User) {
+            return (User) user;
+        }
+        if (user instanceof JsUser && null != ((JsUser) user).getUser()) {
+            return ((JsUser) user).getUser();
+        }
+        return APILocator.getUserAPI().getAnonymousUserNoThrow();
+    }
+
     @Override
     public Object eval(final HttpServletRequest request,
                        final HttpServletResponse response,
@@ -170,7 +208,7 @@ public class JsEngine implements ScriptEngine {
                        final Map<String, Object> contextParams) {
 
         final DotJSON dotJSON = (DotJSON)contextParams.computeIfAbsent(DOT_JSON, k -> new DotJSON());
-        try (Context context = buildContext()) {
+        try (Context context = buildContext(contextParams)) {
 
             final Object fileName   = contextParams.getOrDefault("dot:jsfilename", "sample.js");
             final Source userSource = Source.newBuilder(JS_ENGINE, scriptReader, fileName.toString()).build();
