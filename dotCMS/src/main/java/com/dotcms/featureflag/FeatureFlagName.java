@@ -6,6 +6,14 @@ package com.dotcms.featureflag;
  */
 public interface FeatureFlagName {
 
+    /**
+     * Opt-in for legacy username/credential login through URL query or path parameters, including
+     * API JWTs supplied as passwords. Off by default. Header, session and JSON login are unchanged;
+     * enabling this does not relax {@code ALLOW_BASIC_AUTH}, lockout or permission checks.
+     * The compatibility key intentionally retains its operator-facing {@code ALLOW_} name.
+     */
+    String ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS = "ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS";
+
     // Experiments and Analytics
     String FEATURE_FLAG_EXPERIMENTS = "FEATURE_FLAG_EXPERIMENTS";
 

@@ -94,6 +94,14 @@ public class MySecureForm {
 
 ### Programmatic Basic authentication
 
+Legacy URL credential login is independently disabled by default through
+`ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS=false`, including API JWTs used as the password.
+Opting in does not bypass `ALLOW_BASIC_AUTH`, account lockout or permissions. Header and
+session authentication and designated JSON login remain unchanged. Rejecting URL credentials
+does not redact incoming URLs from access logs; clients must stop putting secrets in URLs.
+See [URL Credential Login — Upgrade Note](CONFIGURATION_PATTERNS.md#url-credential-login--upgrade-note)
+for migration and rollback limitations.
+
 `ALLOW_BASIC_AUTH` defaults to `JWT_TOKEN` and is read through `Config` for each authentication
 attempt, not cached at startup. The default validates the same persisted API token a
 `Bearer` header would — no password verification and no session — so a Basic wrapper is

@@ -1,8 +1,13 @@
 package com.dotcms.auth;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.dotcms.config.SystemTableConfigSource;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotmarketing.util.Config;
+import java.lang.reflect.Field;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -42,6 +47,30 @@ public class BasicAuthenticationTest {
         assertEquals(BasicAuthentication.Mode.JWT_TOKEN, BasicAuthentication.mode());
         Config.setProperty("ALLOW_BASIC_AUTH", "jwt_Token");
         assertEquals(BasicAuthentication.Mode.JWT_TOKEN, BasicAuthentication.mode());
+    }
+
+    /** System-table booleans must be read without dropping malformed trailing comma fields. */
+    @Test
+    public void urlOptInRejectsMalformedSystemTableValues() throws Exception {
+        final Field sourceField = Config.class.getDeclaredField("systemTableConfigSource");
+        sourceField.setAccessible(true);
+        final Object previousSource = sourceField.get(null);
+        final boolean previousEnabled = Config.enableSystemTableConfigSource;
+        final SystemTableConfigSource source = mock(SystemTableConfigSource.class);
+        try {
+            sourceField.set(null, source);
+            Config.enableSystemTableConfigSource = true;
+            for (final String value : new String[]{"true", "TRUE", " true ", "false", "invalid", "true,",
+                    "true,,", "true,false", ",true", ""}) {
+                when(source.getValue(FeatureFlagName.ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS))
+                        .thenReturn(value);
+                assertEquals("System-table value: " + value, Boolean.parseBoolean(value.trim()),
+                        BasicAuthentication.allowUrlCredentials());
+            }
+        } finally {
+            sourceField.set(null, previousSource);
+            Config.enableSystemTableConfigSource = previousEnabled;
+        }
     }
 
     /** Explicit NONE, FALSE, empty and unrecognized values fail closed, never to a legacy mode. */

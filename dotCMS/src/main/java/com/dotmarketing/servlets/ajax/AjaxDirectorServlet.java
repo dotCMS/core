@@ -2,6 +2,7 @@ package com.dotmarketing.servlets.ajax;
 
 import javax.ws.rs.core.Response;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.exception.SecurityException;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -53,6 +54,15 @@ public class AjaxDirectorServlet extends HttpServlet {
 
     }
 
+    /**
+     * Initializes and dispatches an Ajax action, preserving authentication and permission denials.
+     *
+     * @param req the incoming request
+     * @param response receives the action output or the original security error status
+     * @throws ServletException if servlet dispatch fails
+     * @throws IOException if reading the request or sending the response fails
+     */
+    @Override
     protected void service(HttpServletRequest req, HttpServletResponse response) throws ServletException, IOException {
 
         final HttpServletRequest request = loadJsonAsParams(req);
@@ -82,6 +92,8 @@ public class AjaxDirectorServlet extends HttpServlet {
                 ajaxAction.service(request, response);
             }
             return;
+        } catch (SecurityException e) {
+            response.sendError(e.getResponse().getStatus());
         } catch (Exception e) {
             Logger.error(this.getClass(), e.getMessage(), e);
             response.sendError(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), e.getMessage());

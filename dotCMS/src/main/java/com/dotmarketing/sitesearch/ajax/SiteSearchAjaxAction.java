@@ -33,6 +33,10 @@ import com.liferay.portal.model.User;
 
 public class SiteSearchAjaxAction extends AjaxAction {
 
+    /** Login metadata must never become persisted or immediately executed job configuration. */
+    private static final Set<String> AUTHENTICATION_PARAMETERS =
+            Set.of("u", "p", "user", "passwd", "password");
+
 	/**
 	 * The commands this endpoint serves, which are the ones the Site Search portlet calls. Any
 	 * other command name is answered with a 403.
@@ -46,7 +50,7 @@ public class SiteSearchAjaxAction extends AjaxAction {
 	/**
 	 * Checks that the caller has access to the Site Search portlet and invokes the command named in
 	 * the request, as long as it is one of {@link #SUPPORTED_COMMANDS}; any other command is
-	 * answered with a 403.
+	 * answered with a 403. URL password login additionally requires an explicit compatibility opt-in.
 	 *
 	 * @param request  the current request
 	 * @param response the current response
@@ -74,8 +78,9 @@ public class SiteSearchAjaxAction extends AjaxAction {
 		try {
 			// Check permissions if the user has access to the Site Search portlet
 			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("site-search", user)) {
-				// Only the compatibility mode may exchange URI credentials for a session.
-				if (BasicAuthentication.mode() == BasicAuthentication.Mode.ALL) {
+				// URL login requires both compatibility settings; normal session checks still apply.
+				if (BasicAuthentication.allowUrlCredentials()
+						&& BasicAuthentication.mode() == BasicAuthentication.Mode.ALL) {
 					String userName = map.get("u");
 					String password = map.get("p");
 					LoginFactory.doLogin(userName, password, false, request, response);
@@ -185,18 +190,30 @@ public class SiteSearchAjaxAction extends AjaxAction {
 	}
 
 
+	/**
+	 * Schedules or immediately executes a Site Search job without retaining request login credentials.
+	 *
+	 * @param request job configuration and any legacy authentication parameters
+	 * @param response receives scheduling errors
+	 * @throws ServletException if servlet handling fails
+	 * @throws IOException if writing an error response fails
+	 * @throws DotIndexException if indexing setup fails
+	 */
 	public void scheduleJob(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
 
 		Map<String, String[]> map = request.getParameterMap();
 	    String date = DateUtil.getCurrentDate();
 
 		SiteSearchConfig config = new SiteSearchConfig();
-		for(String key : map.keySet()){
-			if(((String[]) map.get(key)).length ==1 && !key.equals("langToIndex")){
-				config.put(key,((String[]) map.get(key))[0]);
-			}
-			else{
-				config.put(key,map.get(key));
+		for (final String key : map.keySet()) {
+            if (AUTHENTICATION_PARAMETERS.contains(key)) {
+                continue;
+            }
+            final String[] values = map.get(key);
+			if (values.length == 1 && !key.equals("langToIndex")) {
+				config.put(key, values[0]);
+			} else {
+				config.put(key, values);
 			}
 		}
 		String taskName = ((String[]) map.get("QUARTZ_JOB_NAME"))[0];
