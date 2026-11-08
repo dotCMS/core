@@ -3,6 +3,7 @@ package com.dotcms.rendering.velocity.events;
 import static com.dotcms.exception.ExceptionUtil.exceptionAsString;
 import static com.liferay.util.StringPool.BLANK;
 
+import com.dotcms.content.index.SearchUnavailableException;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -28,7 +29,10 @@ public class MethodExceptionEventHandlerImpl implements org.apache.velocity.app.
 	private static final String NEW_LINE = Html.br() + Html.space(2);
 	private static final int EXCEPTION_MAX_LINES = 2;
 
+    /** Lets temporary search failures abort the render rather than becoming missing content. */
+    @Override
 	public Object methodException(final Class clazz, final String message, final Exception e) throws Exception {
+        SearchUnavailableException.rethrow(e);
 
 		if(e instanceof DotToolException) {
 			throw e;

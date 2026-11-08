@@ -66,6 +66,7 @@ caller default is used directly if the OS key is missing.
 | Property | ES Fallback | Type | Default | Description |
 |---|---|---|---|---|
 | `OS_CONNECTION_TIMEOUT` | _(none)_ | `int` (milliseconds) | `10000` | Maximum time to establish a TCP connection. |
+| `OS_CONNECTION_REQUEST_TIMEOUT` | _(none)_ | `int` (milliseconds) | `100` | Maximum wait for a pooled HTTP connection; must be positive. |
 | `OS_SOCKET_TIMEOUT` | _(none)_ | `int` (milliseconds) | `30000` | Maximum time to wait for a server response (socket read timeout). |
 | `OS_MAX_CONNECTIONS` | _(none)_ | `int` | `100` | Total maximum HTTP connections in the connection pool. |
 | `OS_MAX_CONNECTIONS_PER_ROUTE` | _(none)_ | `int` | `50` | Maximum HTTP connections per route (per host:port pair). |
@@ -196,3 +197,9 @@ step 2 and go straight to the caller default.
 | `IndexConfigHelper` | Fallback resolution engine (`getString`, `getInt`, `getBoolean`) |
 | `OSClientConfig` / `ImmutableOSClientConfig` | Immutable value object carrying the resolved configuration |
 | `IndexStartupValidator` | Validates OS version (3.x) and endpoint separation from ES at startup |
+
+## Bounded search reads
+
+Content and Site Search reads now use fail-fast admission and caller deadlines on both engines.
+Transport timeouts are separate; see [Search admission](SEARCH_ADMISSION.md) for defaults, cancellation
+limits, overload responses and metrics.

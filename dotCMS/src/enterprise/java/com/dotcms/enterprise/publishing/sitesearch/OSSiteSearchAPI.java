@@ -9,6 +9,8 @@
 
 package com.dotcms.enterprise.publishing.sitesearch;
 
+import com.dotcms.content.index.opensearch.AdmittedOpenSearch;
+import com.dotcms.content.index.SearchUnavailableException;
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
@@ -223,6 +225,7 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
             final ContentSearchResponse response = rawSearch(physicalName(indexName), body);
             return response.hits().getTotalHits().value();
         } catch (final Exception e) {
+            SearchUnavailableException.rethrow(e);
             Logger.warn(this, String.format(
                     "Site Search document count failed for OS index '%s': %s", indexName, e.getMessage()));
             return -1L;
@@ -336,6 +339,7 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
     // Search & aggregations
     // =========================================================================
 
+    /** Searches the active index and preserves temporary availability failures for the caller. */
     @Override
     public SiteSearchResults search(final String query, final int start, final int rows) {
         final SiteSearchResults results = new SiteSearchResults();
@@ -349,11 +353,13 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         try {
             return search(defaultSiteSearchIndex().orElse(null), query, start, rows);
         } catch (final Exception e) {
+            SearchUnavailableException.rethrow(e);
             results.setError(e.getMessage());
         }
         return results;
     }
 
+    /** Searches one index without converting temporary overload into a successful empty result. */
     @Override
     public SiteSearchResults search(String indexName, String query, final int offset, final int limit) {
         if (!UtilMethods.isSet(query)) {
@@ -411,6 +417,7 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
             results.setMaxScore(maxScore);
 
         } catch (final Exception e) {
+            SearchUnavailableException.rethrow(e);
             Logger.error(OSSiteSearchAPI.class, e.getMessage(), e);
             results.setError(e.getMessage());
         }
@@ -1136,7 +1143,7 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
     private ContentSearchResponse rawSearch(final String physicalIndex, final JSONObject body) {
         final OpenSearchClient client = clientProvider.getClient();
         final JsonpMapper mapper = client._transport().jsonpMapper();
-        try (final Response response = client.generic().execute(Requests.builder()
+        try (final Response response = AdmittedOpenSearch.raw(client, Requests.builder()
                 .method("POST")
                 .endpoint("/" + physicalIndex + "/_search")
                 .query(Map.of("typed_keys", "true"))
@@ -1156,6 +1163,9 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
                  final jakarta.json.stream.JsonParser parser = mapper.jsonProvider().createParser(is)) {
                 final SearchResponse<Object> searchResponse =
                         SEARCH_RESPONSE_DESERIALIZER.deserialize(parser, mapper);
+                if (searchResponse.timedOut() || searchResponse.shards().failed() > 0) {
+                    throw AdmittedOpenSearch.unavailable(null);
+                }
                 return ContentSearchResponse.from(searchResponse);
             }
         } catch (final IOException e) {

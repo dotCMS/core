@@ -9,6 +9,7 @@
 
 package com.dotcms.enterprise.priv;
 
+import com.dotcms.content.elasticsearch.util.AdmittedElasticsearch;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
@@ -37,7 +38,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.search.SearchHit;
@@ -292,7 +292,7 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 			}
 
             request.source(searchSourceBuilder);
-            response = client.search(request, RequestOptions.DEFAULT);
+            response = AdmittedElasticsearch.search(client, request);
         } catch (IOException e) {
             throw new DotStateException(e.getMessage(), e);
         }

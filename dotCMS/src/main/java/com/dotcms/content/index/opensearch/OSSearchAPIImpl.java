@@ -320,7 +320,7 @@ public class OSSearchAPIImpl implements SearchAPI {
         // dropped by the Aggregation deserializer, so a typed round-trip silently strips, e.g., a
         // top_hits nested under a terms aggregation (#36026). typed_keys=true is required so the
         // aggregation results in the response carry their type prefix and can be deserialized.
-        try (final Response response = client.generic().execute(Requests.builder()
+        try (final Response response = AdmittedOpenSearch.raw(client, Requests.builder()
                 .method("POST")
                 .endpoint("/" + indexToHit + "/_search")
                 .query(Map.of("typed_keys", "true"))
@@ -340,6 +340,9 @@ public class OSSearchAPIImpl implements SearchAPI {
                          mapper.jsonProvider().createParser(is)) {
                 final SearchResponse<Object> searchResponse =
                         SEARCH_RESPONSE_DESERIALIZER.deserialize(parser, mapper);
+                if (searchResponse.timedOut() || searchResponse.shards().failed() > 0) {
+                    throw AdmittedOpenSearch.unavailable(null);
+                }
                 return ContentSearchResponse.from(searchResponse);
             }
 

@@ -8,6 +8,7 @@ import static com.dotcms.exception.ExceptionUtil.SECURITY_EXCEPTIONS;
 import static com.dotcms.exception.ExceptionUtil.causedBy;
 import static com.dotcms.exception.ExceptionUtil.getRootCause;
 
+import com.dotcms.content.index.SearchUnavailableException;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.exception.ExceptionUtil;
@@ -152,6 +153,9 @@ public class ResponseUtil implements Serializable {
      * @return Response
      */
     public static Response mapExceptionResponse(final Throwable e){
+        if (SearchUnavailableException.find(e) != null) {
+            return ExceptionMapperUtil.createSearchUnavailableResponse();
+        }
         // case for non-authenticated users (bad credentials)
         if(causedBy(e, SecurityException.class)){
             return createNonAuthenticatedResponse(e);

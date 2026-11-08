@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.directive;
 
+import com.dotcms.content.index.SearchRequestFailure;
+import com.dotcms.content.index.SearchUnavailableException;
 import com.dotcms.business.interceptor.RequestCostHandler;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotmarketing.business.APILocator;
@@ -85,6 +87,8 @@ abstract class DotDirective extends InputBase {
     return Optional.empty();
   }
 
+  /** Renders a fragment, but never caches output after a temporary search failure. */
+  @Override
   final public boolean render(InternalContextAdapter context, Writer writer, Node node)
       throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException {
 
@@ -110,6 +114,7 @@ abstract class DotDirective extends InputBase {
 
     try{
       String templatePath = this.resolveTemplatePath(context, writer, params, arguments);
+      SearchRequestFailure.check();
       if(null ==templatePath) {
           throw new ResourceNotFoundException("null template");
       }
@@ -128,6 +133,7 @@ abstract class DotDirective extends InputBase {
 
       final Writer innerWriter = new StringWriter();
       final boolean result = this.renderTemplate(context, innerWriter, t, templatePath);
+      SearchRequestFailure.check();
       this.afterRender(innerWriter.toString(), arguments, context);
       writer.write(innerWriter.toString());
 
@@ -166,6 +172,7 @@ abstract class DotDirective extends InputBase {
   }
 
 
+  /** Preserves temporary search failures through Velocity's nested template wrappers. */
   final boolean renderTemplate(InternalContextAdapter context, final Writer writer, final Template t, final String templatePath)
       throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException {
 
@@ -185,6 +192,7 @@ abstract class DotDirective extends InputBase {
      * pass through application level runtime exceptions
      */
     catch (RuntimeException e) {
+      SearchUnavailableException.rethrow(e);
       /**
        * Log #parse errors so the user can track which file called which.
        */
@@ -196,6 +204,7 @@ abstract class DotDirective extends InputBase {
       
       return false;
     } catch (Exception e) {
+        SearchUnavailableException.rethrow(e);
         if(!e.getClass().getSimpleName().equals("ClientAbortException")) {
             String msg = "Exception rendering " + this.getName() + " (" + templatePath + ") at "
                     + VelocityException.formatFileString(this);

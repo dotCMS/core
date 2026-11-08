@@ -1,5 +1,6 @@
 package com.dotcms.rest.exception.mapper;
 
+import com.dotcms.content.index.SearchUnavailableException;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotmarketing.util.Logger;
@@ -14,8 +15,12 @@ import javax.ws.rs.ext.Provider;
 @Provider
 public class RuntimeExceptionMapper implements javax.ws.rs.ext.ExceptionMapper<RuntimeException> {
 
+    /** Handles overload without per-request stack traces or query-bearing diagnostic messages. */
     @Override
     public Response toResponse(RuntimeException exception) {
+        if (SearchUnavailableException.find(exception) != null) {
+            return ExceptionMapperUtil.createSearchUnavailableResponse();
+        }
         //Log into our logs first.
         if(ExceptionUtil.causedBy(exception, ExceptionUtil.LOUD_MOUTH_EXCEPTIONS)){
             Logger.warn(this.getClass(), exception.getMessage());
