@@ -13,7 +13,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
@@ -26,7 +25,6 @@ import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -45,14 +43,15 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	private static final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 	private static final UserAPI userAPI = APILocator.getUserAPI();
 	private BrowserAPI browser = APILocator.getBrowserAPI();
-    Context ctx;
-	private InternalContextAdapterImpl ica;
+
+	/** The request the tool was initialised with; it carries the author of the rendered code. */
+	private HttpServletRequest request;
 
 	public void init(Object obj) {
 
                 ViewContext context = (ViewContext) obj;
-		ctx = context.getVelocityContext();
-	
+		this.request = context.getRequest();
+
 	}
 
 	public List getfileRepository(String folderPath, String searchFolder,
@@ -612,25 +611,23 @@ public class DotCMSMacroWebAPI implements ViewTool {
         return getMediaGalleryFolderFiles(folderPath, String.valueOf(hostId));
     }
 	
+	/**
+	 * Decides whether the code that is calling this tool may run {@link #getSQLResults}.
+	 *
+	 * <p>Scripting has to be switched on, and the content whose code calls the tool has to have
+	 * been last saved by someone holding the
+	 * {@link com.dotmarketing.business.Role#SCRIPTING_DEVELOPER} role. That author comes from the
+	 * request, where the render that knows what content it is rendering puts it, rather than from
+	 * the current Velocity resource name: {@code #parse} lets the template author choose that
+	 * name, and the names dotCMS really produces do not parse at all.
+	 *
+	 * @return {@code true} when this tool may run
+	 */
 	protected boolean canUserEvaluate(){
-		if(!Config.getBooleanProperty("ENABLE_SCRIPTING", false)){
+		if (!Config.getBooleanProperty("ENABLE_SCRIPTING", false)) {
 			Logger.warn(this.getClass(), "Scripting called and ENABLE_SCRIPTING set to false");
 			return false;
 		}
-        try{
-            ica = new InternalContextAdapterImpl(ctx);
-            String fieldResourceName = ica.getCurrentTemplateName();
-            String conInode = fieldResourceName.substring(fieldResourceName.indexOf("/") + 1, fieldResourceName.indexOf("_"));
-
-            Contentlet con = APILocator.getContentletAPI().find(conInode, APILocator.getUserAPI().getSystemUser(), true);
-
-            User mu = userAPI.loadUserById(con.getModUser(), APILocator.getUserAPI().getSystemUser(), true);
-            Role scripting =APILocator.getRoleAPI().loadRoleByKey("Scripting Developer");
-            return APILocator.getRoleAPI().doesUserHaveRole(mu, scripting);
-		}
-		catch(Exception e){
-			Logger.warn(this.getClass(), "Scripting called with error" + e);
-			return false;	
-		}
+		return RestrictedViewToolAccess.renderingAuthorHasAccess(this.request);
 	}
 }
