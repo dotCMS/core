@@ -36,6 +36,7 @@
         <netty.version>4.1.138.Final</netty.version>
         <commonmark.version>0.22.0</commonmark.version>
         <jsoup.version>1.23.2</jsoup.version>
+        <guava.version>33.7.2-jre</guava.version>
     </properties>
     <dependencyManagement>
 
@@ -615,7 +616,7 @@
                 <!-- Google Guava: Google Core Libraries -->
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>32.0.1-jre</version>
+                <version>${guava.version}</version>
                 <exclusions>
                     <!-- checker-qual is a banned dependency in this project -->
                     <exclusion>
