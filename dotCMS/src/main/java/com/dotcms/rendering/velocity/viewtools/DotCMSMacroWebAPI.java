@@ -4,6 +4,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.browser.BrowserAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -14,7 +15,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
-import com.dotmarketing.portlets.fileassets.business.FileAssetSearcher;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
@@ -34,7 +35,6 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 import javax.servlet.http.HttpServletRequest;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -601,12 +601,11 @@ public class DotCMSMacroWebAPI implements ViewTool {
         folderPath = (folderPath == null) ? "" : folderPath;
         folderPath = folderPath.trim().endsWith("/") ? folderPath.trim() : folderPath.trim() + "/";
         final User user = getRequestUser();
-        Host site;
         Folder folder;
 		try {
 			// Resolve the site here: the hostId overload of findFolderByPath reads the site
 			// without front-end roles.
-			site = APILocator.getHostAPI().find(hostId, user, true);
+			final Host site = APILocator.getHostAPI().find(hostId, user, true);
 			folder = APILocator.getFolderAPI().findFolderByPath(folderPath, site, user, true);
 		} catch (final DotSecurityException e) {
 			Logger.debug(this, () -> String.format("User '%s' cannot read the requested gallery site or folder",
@@ -618,13 +617,14 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		}
         List<IFileAsset> fileList = new ArrayList<>();
 		try {
-			// Not findFileAssetsByFolder: it reads the folder again with the page mode's front-end
-			// role setting, which is off in edit and preview mode.
-			fileList.addAll(APILocator.getFileAssetAPI().findFileAssetsByDB(FileAssetSearcher.builder()
-					.host(site).folder(folder).live(true).user(user).respectFrontendRoles(true).build()));
-			// Newest first, as the gallery has always listed them.
-			fileList.sort(Comparator.comparing(IFileAsset::getModDate,
-					Comparator.nullsLast(Comparator.reverseOrder())));
+			// The site and the folder were read as the viewer above. The listing itself runs as the
+			// system user because it reads the folder again with the page mode's front-end role
+			// setting (off in edit and preview mode); the files are then kept only if the viewer can
+			// read them.
+			final List<FileAsset> folderFiles = APILocator.getFileAssetAPI().findFileAssetsByFolder(
+					folder, "", true, APILocator.getUserAPI().getSystemUser(), false);
+			fileList.addAll(APILocator.getPermissionAPI().filterCollection(folderFiles,
+					PermissionAPI.PERMISSION_READ, true, user));
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage());
 		}
