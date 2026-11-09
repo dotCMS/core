@@ -23,7 +23,8 @@ import org.junit.Test;
 public class NotificationResourceTest extends UnitTestBase {
 
     private static final String USER_ID = "notification-user";
-    private static final long OWN_COUNT = 1L;
+    private static final long OWN_COUNT = 3L;
+    private static final long OWN_UNREAD_COUNT = 1L;
     private static final long ALL_COUNT = 99L;
 
     private NotificationAPI notificationAPI;
@@ -45,7 +46,7 @@ public class NotificationResourceTest extends UnitTestBase {
 
         when(notificationAPI.getNotificationsCount()).thenReturn(ALL_COUNT);
         when(notificationAPI.getNotificationsCount(USER_ID)).thenReturn(OWN_COUNT);
-        when(notificationAPI.getNewNotificationsCount(USER_ID)).thenReturn(OWN_COUNT);
+        when(notificationAPI.getNewNotificationsCount(USER_ID)).thenReturn(OWN_UNREAD_COUNT);
         when(notificationAPI.getNotifications(anyLong(), anyLong())).thenReturn(List.of());
         when(notificationAPI.getNotifications(any(String.class), anyLong(), anyLong())).thenReturn(List.of());
     }
@@ -53,7 +54,7 @@ public class NotificationResourceTest extends UnitTestBase {
     /**
      * Method to test: {@link NotificationResource#getNotifications(HttpServletRequest, HttpServletResponse, String, String)}
      * Given Scenario: a user without the CMS Administrator role passes allusers/true
-     * ExpectedResult: the totals are the user's own
+     * ExpectedResult: the total and the unread count are the user's own
      */
     @Test
     public void testGetNotifications_WhenNotAdminPassesAllUsers_ShouldReturnOwnTotals() throws Exception {
@@ -62,28 +63,27 @@ public class NotificationResourceTest extends UnitTestBase {
         final Map<String, Object> entity = getNotificationsEntity();
 
         assertEquals(OWN_COUNT, entity.get("total"));
-        assertEquals(OWN_COUNT, entity.get("totalUnreadNotifications"));
+        assertEquals(OWN_UNREAD_COUNT, entity.get("totalUnreadNotifications"));
     }
 
     /**
      * Method to test: {@link NotificationResource#getNotifications(HttpServletRequest, HttpServletResponse, String, String)}
      * Given Scenario: a CMS Administrator passes allusers/true
-     * ExpectedResult: the totals cover every user
+     * ExpectedResult: the total covers every user
      */
     @Test
-    public void testGetNotifications_WhenAdminPassesAllUsers_ShouldReturnAllTotals() throws Exception {
+    public void testGetNotifications_WhenAdminPassesAllUsers_ShouldReturnAllTotal() throws Exception {
         when(user.isAdmin()).thenReturn(true);
 
         final Map<String, Object> entity = getNotificationsEntity();
 
         assertEquals(ALL_COUNT, entity.get("total"));
-        assertEquals(ALL_COUNT, entity.get("totalUnreadNotifications"));
     }
 
     /**
      * Method to test: {@link NotificationResource#getNewNotificationsCount(HttpServletRequest, HttpServletResponse, String)}
      * Given Scenario: a user without the CMS Administrator role passes allusers/true
-     * ExpectedResult: the count is the user's own
+     * ExpectedResult: the count is the user's own unread count
      */
     @Test
     public void testGetNewNotificationsCount_WhenNotAdminPassesAllUsers_ShouldReturnOwnCount() throws Exception {
@@ -93,7 +93,7 @@ public class NotificationResourceTest extends UnitTestBase {
                 .getNewNotificationsCount(mock(HttpServletRequest.class), mock(HttpServletResponse.class),
                         "allusers/true");
 
-        assertEquals(OWN_COUNT, ((ResponseEntityView<?>) response.getEntity()).getEntity());
+        assertEquals(OWN_UNREAD_COUNT, ((ResponseEntityView<?>) response.getEntity()).getEntity());
     }
 
     /**
