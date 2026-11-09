@@ -10,6 +10,8 @@ import sys
 import time
 from dataclasses import dataclass
 
+from .client import CorpsitesClient, wait_for_prod
+
 # Verified current-track stored values (T004, data-model.md). Not the frontend GraphQL
 # filter artifact — these are the values a current-track contentlet actually stores.
 _LTS_CURRENT = 3
@@ -110,8 +112,13 @@ def publish(
     service_account: str | None = None,
     force: bool = False,
     apply: bool,
+    prod: CorpsitesClient | None = None,
 ) -> PublishResult:
-    """Search for an existing entry, decide create/update/skip, and fire Publish."""
+    """Search for an existing entry, decide create/update/skip, and fire Publish.
+
+    With a `prod` reader, every write then waits until its inode is live on prod: this
+    runs once per release, so there is no later run that would notice a failed push.
+    """
     release_notes = prepare_notes(release_notes, version)
     hits = client._search(version)
 
@@ -129,13 +136,15 @@ def publish(
             released_date=released_date,
             eol_date=eol_date,
         )
-        client.fire(contentlet, apply=apply)
+        inode = client.fire(contentlet, apply=apply)
         if apply and not _wait_until_searchable(client, version):
             print(
                 f"warning: created entry for {version} is not yet searchable; "
                 "an immediate re-run may not see it",
                 file=sys.stderr,
             )
+        if apply:
+            _confirm_on_prod(prod, inode, version)
         return PublishResult(status="created", version=version)
 
     # Exactly one hit → update-in-place, unless a human last touched it (FR-011).
@@ -158,8 +167,19 @@ def publish(
         eol_date=eol_date,
         identifier=hit.identifier,
     )
-    client.fire(contentlet, apply=apply)
+    inode = client.fire(contentlet, apply=apply)
+    if apply:
+        _confirm_on_prod(prod, inode, version)
     return PublishResult(status="updated", version=version)
+
+
+def _confirm_on_prod(prod: CorpsitesClient | None, inode: str | None, version: str) -> None:
+    """Wait until the version just written on auth is live on prod; raise if it never is."""
+    if prod is None:
+        return
+    if not inode:
+        raise RuntimeError(f"fire response for {version} had no inode; cannot confirm the push to prod")
+    wait_for_prod(lambda: prod.is_live(inode), f"changelog entry {version}")
 
 
 def _owned_by_service_account(hit, service_account: str | None) -> bool:

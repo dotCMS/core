@@ -9,7 +9,9 @@ from __future__ import annotations
 
 import logging
 import os
+import time
 from dataclasses import dataclass
+from typing import Callable
 
 import requests
 
@@ -25,6 +27,17 @@ _TIMEOUT = 30
 # DOTCMS_DEVSITE_RELEASENOTES_ACTION repo variable and is never hardcoded.
 ACTION_ENV = "DOTCMS_DEVSITE_RELEASENOTES_ACTION"
 PUBLISH_ACTION_ID = os.environ.get(ACTION_ENV, "").strip()
+
+# Prod is read, never written: the workflow action pushes each write from auth to prod
+# asynchronously, so a 200 from auth says nothing about prod. The tool confirms on prod
+# itself. CI feeds these from the prod repo variable and secret.
+PROD_URL_ENV = "DOTCMS_DEVSITE_PROD_URL"
+PROD_TOKEN_ENV = "DOTCMS_DEVSITE_PROD_RELEASENOTES_TOKEN"
+
+# A push from auth normally reaches prod in about a minute, 2-3 at worst; give up at 5.
+PROD_WAIT_SECONDS = 300
+PROD_POLL_ATTEMPTS = 10
+PROD_POLL_DELAY_SECONDS = PROD_WAIT_SECONDS / PROD_POLL_ATTEMPTS
 
 log = logging.getLogger("changelog_publisher.client")
 
@@ -54,6 +67,8 @@ class CorpsitesClient:
         token: str | None = None,
         base_url: str | None = None,
         action_id: str | None = None,
+        *,
+        read_only: bool = False,
     ) -> None:
         token = token if token is not None else os.environ.get(TOKEN_ENV)
         if not token:
@@ -62,12 +77,14 @@ class CorpsitesClient:
         if not base_url:
             raise RuntimeError("DOTCMS_DEVSITE_URL is not set")
         # Required like the URL: an unset repo variable renders as "" in Actions, and a
-        # silent fallback could publish on auth only and never reach prod.
-        action_id = (action_id or PUBLISH_ACTION_ID).strip()
-        if not action_id:
+        # silent fallback could publish on auth only and never reach prod. A read-only
+        # client (the prod reader) never fires, so it needs no action.
+        action_id = None if read_only else (action_id or PUBLISH_ACTION_ID).strip()
+        if not read_only and not action_id:
             raise RuntimeError(f"{ACTION_ENV} is not set")
         self.base_url = base_url.rstrip("/")
         self.action_id = action_id
+        self.read_only = read_only
         self.session = requests.Session()
         self.session.headers.update({"Authorization": f"Bearer {token}"})
 
@@ -97,11 +114,11 @@ class CorpsitesClient:
             for c in self._query(query, 2)
         ]
 
-    def find_evergreen_state(self) -> list[dict]:
-        """The `evergreen-state` record(s); limit 2 so a duplicate is detectable."""
-        return self._query(
-            "+contentType:EvergreenState +EvergreenState.title_dotraw:evergreen-state", 2
-        )
+    def find_evergreen_state(self, *, live: bool = False) -> list[dict]:
+        """The `evergreen-state` record(s); limit 2 so a duplicate is detectable. `live`
+        restricts to the published version (prod: what visitors see, never a draft)."""
+        query = "+contentType:EvergreenState +EvergreenState.title_dotraw:evergreen-state"
+        return self._query(f"{query} +live:true" if live else query, 2)
 
     def has_release_row(self, version: str) -> bool:
         """True if a live, released, downloadable Dotcmsbuilds row exists for `version`."""
@@ -110,16 +127,24 @@ class CorpsitesClient:
             "+Dotcmsbuilds.download:1 +Dotcmsbuilds.released:true +live:true", 1
         ))
 
-    def fire(self, contentlet: dict, *, apply: bool) -> None:
+    def is_live(self, inode: str) -> bool:
+        """True if the version with this inode is live here. A push keeps the inode, so on
+        prod this confirms that a specific write arrived."""
+        return bool(self._query(f"+inode:{inode} +live:true", 1))
+
+    def fire(self, contentlet: dict, *, apply: bool) -> str | None:
         """Fire the configured workflow action with the given contentlet payload.
 
-        Dry-run (apply=False) logs the intended action and issues no request — the
-        `evergreen-tracks` safety convention.
+        Returns the inode of the version the action wrote, so the caller can look for it
+        on prod. Dry-run (apply=False) logs the intended action, issues no request and
+        returns None — the `evergreen-tracks` safety convention.
         """
+        if self.read_only:
+            raise RuntimeError(f"read-only client for {self.base_url} cannot fire workflow actions")
         minor = contentlet.get("minor") or contentlet.get("contentType")
         if not apply:
             log.info("DRY-RUN would fire Publish for %s", minor)
-            return
+            return None
         log.info("firing Publish for %s (action %s)", minor, self.action_id)
         resp = self.session.put(
             f"{self.base_url}/api/v1/workflow/actions/{self.action_id}/fire",
@@ -127,3 +152,31 @@ class CorpsitesClient:
             timeout=_TIMEOUT,
         )
         resp.raise_for_status()
+        return (resp.json().get("entity") or {}).get("inode")
+
+
+def prod_reader() -> CorpsitesClient:
+    """A read-only client for prod, used only to confirm that pushes from auth arrived.
+
+    Both settings are required: without them a push that never reaches prod would go
+    unnoticed, the failure this reader exists to catch.
+    """
+    base_url = os.environ.get(PROD_URL_ENV, "").strip()
+    if not base_url:
+        raise RuntimeError(f"{PROD_URL_ENV} is not set")
+    token = os.environ.get(PROD_TOKEN_ENV, "")
+    if not token:
+        raise RuntimeError(f"{PROD_TOKEN_ENV} is not set")
+    return CorpsitesClient(token=token, base_url=base_url, read_only=True)
+
+
+def wait_for_prod(check: Callable[[], bool], what: str) -> None:
+    """Poll `check` until it passes; raise RuntimeError once the 5-minute bound is spent."""
+    for _ in range(PROD_POLL_ATTEMPTS):
+        time.sleep(PROD_POLL_DELAY_SECONDS)
+        if check():
+            return
+    raise RuntimeError(
+        f"{what} did not reach prod within {PROD_WAIT_SECONDS}s; "
+        "check the push-publishing queue on auth"
+    )
