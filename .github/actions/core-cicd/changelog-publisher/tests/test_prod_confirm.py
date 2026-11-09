@@ -365,35 +365,3 @@ def test_sync_site_cli_re_pushes_stale_prod(tmp_path, capsys):
 
     assert main(["sync-site", "--state-file", _state_file(tmp_path), "--apply"]) == 0
     assert "::evergreen-sync::updated fields=standard" in capsys.readouterr().out
-
-
-@responses_lib.activate
-def test_missing_row_falls_back_to_prods_value_not_auths():
-    """If auth already points a track at a version whose row never reached prod, keeping
-    auth's value would carry that version to prod. Keep prod's value, and correct auth."""
-    on_auth_only = _HUB["latest"]
-    old = {**_HUB, "latest": "26.09.17-02"}
-    _route(_AUTH_SEARCH, record=_record(_HUB))
-    _route(_PROD_SEARCH, record=_record(old), rows={on_auth_only: False}, live=[True])
-    _add_fire()
-
-    result = sync.reconcile(CorpsitesClient(), _HUB, apply=True, prod=_prod())
-
-    assert result.missing_rows == {"latest": on_auth_only}
-    assert result.desired["latest"] == "26.09.17-02"
-    fires = [c for c in responses_lib.calls if c.request.url == _FIRE_URL]
-    assert json.loads(json.loads(fires[0].request.body)["contentlet"]["state"])["latest"] == "26.09.17-02"
-
-
-@responses_lib.activate
-def test_prod_record_is_read_live_only():
-    """Prod's live version is what visitors see; a draft must not count as prod's state."""
-    _route(_AUTH_SEARCH, record=_record(_HUB))
-    _route(_PROD_SEARCH, record=_record(_HUB))
-
-    sync.reconcile(CorpsitesClient(), _HUB, apply=False, prod=_prod())
-
-    record_reads = [json.loads(c.request.body)["query"] for c in responses_lib.calls
-                    if c.request.url == _PROD_SEARCH
-                    and "EvergreenState" in json.loads(c.request.body)["query"]]
-    assert record_reads and all(q.endswith(" +live:true") for q in record_reads)

@@ -85,23 +85,21 @@ def reconcile(
     current = parse_record_state(hits[0].get("state"))
     prod_current = current
     if prod is not None:
-        prod_hits = prod.find_evergreen_state(live=True)
+        prod_hits = prod.find_evergreen_state()
         if len(prod_hits) > 1:
             raise AmbiguousMatchError("more than one 'evergreen-state' EvergreenState record on prod")
         prod_current = parse_record_state(prod_hits[0].get("state")) if prod_hits else {}
 
     desired: dict = {"tainted": hub["tainted"]}
     missing_rows: dict[str, str] = {}
-    # With prod in play, rows and the fallback both come from prod: keeping auth's value
-    # for a track whose row is missing could carry a version to prod that has no row there.
-    rows, fallback = (prod, prod_current) if prod is not None else (client, current)
+    rows = prod if prod is not None else client
     for t in TRACKS:
         if rows.has_release_row(hub[t]):
             desired[t] = hub[t]
         else:
             missing_rows[t] = hub[t]
-            if t in fallback:
-                desired[t] = fallback[t]
+            if t in current:
+                desired[t] = current[t]
 
     fields = diff_fields(current, desired)
     if not fields and prod is not None:
