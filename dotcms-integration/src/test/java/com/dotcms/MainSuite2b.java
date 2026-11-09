@@ -48,7 +48,6 @@ import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.csspreproc.CSSPreProcessServletIT;
 import com.dotcms.dotpubsub.RedisPubSubImplTest;
-import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.enterprise.publishing.bundler.URLMapBundlerTest;
 import com.dotcms.enterprise.publishing.remote.StaticPushPublishBundleGeneratorTest;
@@ -278,7 +277,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplMappingTimeoutIT.class,
         com.dotmarketing.common.reindex.ReindexAPITest.class,
         CleanUpFieldReferencesJobTest.class,
-        EMAWebInterceptorTest.class,
 
         Task220825CreateVariantFieldTest.class,
         Task221007AddVariantIntoPrimaryKeyTest.class,
@@ -486,7 +484,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.IdentifierFactoryTest.class,
         com.dotmarketing.business.IdentifierAPITest.class,
         com.dotmarketing.business.CommitListenerCacheWrapperTest.class,
+        com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccessTest.class,
         com.dotmarketing.business.RoleAPITest.class,
+        com.dotmarketing.business.ajax.RoleAjaxSecurityTest.class,
         com.dotmarketing.business.IdentifierConsistencyIntegrationTest.class,
         com.dotmarketing.business.LayoutAPITest.class,
         com.dotmarketing.business.PermissionAPIIntegrationTest.class,
@@ -586,12 +586,14 @@ import org.junit.runners.Suite.SuiteClasses;
         EmbeddingsResourceAuthTest.class,
         com.dotmarketing.portlets.cmsmaintenance.ajax.CMSMaintenanceAjaxIntegrationTest.class,
         com.dotmarketing.portlets.structure.ajax.StructureAjaxIntegrationTest.class,
-        com.dotmarketing.portlets.structure.action.EditFieldActionReorderTest.class,
         com.dotmarketing.portlets.contentlet.ajax.ImportContentletAjaxIntegrationTest.class,
         com.dotmarketing.portlets.languagesmanager.ajax.LanguageAjaxIntegrationTest.class,
         com.dotmarketing.business.ajax.RoleAjaxLayoutsIntegrationTest.class,
         com.dotmarketing.portlets.languagesmanager.action.EditLanguageKeysActionTest.class,
         UserServiceFactoryTest.class,
+        com.dotmarketing.portlets.contentlet.action.EditContentletActionRetrieveTest.class,
+        com.dotmarketing.quartz.job.ContentImportThreadTest.class,
+        com.dotmarketing.portlets.scheduler.action.EditSchedulerActionTest.class,
 })
 
 public class MainSuite2b {

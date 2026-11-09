@@ -27,6 +27,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.LoginAsSession;
 import com.dotmarketing.business.NoSuchUserException;
@@ -443,7 +444,10 @@ public class UserResource implements Serializable {
 		operationId = "filterUsers",
 		summary = "Filter users",
 		description = "Returns a list of dotCMS users based on specified search criteria with pagination support. "
-				+ "Each item is the user's data map. When `includeRoles=true` is passed, each item additionally "
+				+ "Each item is the user's data map. CMS Administrators and users with access to the Users portlet "
+				+ "receive the complete map; any other back-end user receives only the directory fields of each user "
+				+ "(`userId`, `id`, `firstName`, `lastName`, `fullName`, `name`, `emailAddress`, `emailaddress`, "
+				+ "`gravitar`, `type`). When `includeRoles=true` is passed, each item additionally "
 				+ "carries a `roles` array listing the user's directly assigned roles as `{id, name, roleKey}` "
 				+ "objects (`roleKey` may be null for roles created without a key); roles held through the role "
 				+ "hierarchy and the user's personal role are not included. Requesting roles requires being a CMS "
@@ -560,9 +564,10 @@ public class UserResource implements Serializable {
 	 * @throws DotDataException An error occurred when resolving the User's portlet access.
 	 */
 	private boolean isRoleAdministrator(final User user) throws DotDataException {
+		final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		return user.isAdmin() ||
-				(APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), user));
+				(layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
+						layoutAPI.doesUserHaveAccessToUsersPortlet(user));
 	}
 
 	/**
@@ -706,11 +711,7 @@ public class UserResource implements Serializable {
         final User modUser = initData.getUser();
 
         Logger.debug(this, ()-> "Finding the user by id: " + userId);
-        final boolean isRoleAdministrator = modUser.isAdmin() ||
-                (
-                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-                );
+        final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
         if (isRoleAdministrator) {
 
@@ -789,7 +790,15 @@ public class UserResource implements Serializable {
 					.CURRENT_HOST)), currentUser.getUserId(), loginAsUserId);
 			this.setImpersonatedUserSite(request, sessionData.get(WebKeys.USER_ID).toString());
 			response = Response.ok(new ResponseEntityView<>(Map.of("loginAs", true))).build();
-		} catch (final NoSuchUserException | DotSecurityException e) {
+		} catch (final DotSecurityException e) {
+			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
+							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
+					e.getMessage()));
+			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
+			// 403, not 401: the caller is authenticated but not allowed; a 401 makes the UI end the session.
+			// The key travels in the error-key header so the UI can tell this denial from other 403s
+			return ExceptionMapperUtil.createResponse(e, "loginas.error.adminrequired", Response.Status.FORBIDDEN);
+		} catch (final NoSuchUserException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
 					e.getMessage()));
@@ -1129,13 +1138,16 @@ public class UserResource implements Serializable {
 	 * Creates a user from the payload and grants the requested roles, or the Front-end User role when
 	 * none are sent. Only a CMS Administrator can create users; {@link #create} checks this before
 	 * calling this method, so nothing is written for any other caller.
+	 * <p>
+	 * The password must meet the configured password policy and is stored hashed.
 	 *
 	 * @param modUser        The user performing the request.
 	 * @param createUserForm The payload.
 	 *
 	 * @return The created user.
 	 *
-	 * @throws DotDataException     An error occurred when saving the user or its roles.
+	 * @throws DotDataException     An error occurred when saving the user or its roles, or the
+	 *                              password does not meet the password policy.
 	 * @throws DotSecurityException The caller may not create the user or grant the requested roles.
 	 * @throws ParseException       The birthday is not a valid ISO date.
 	 */
@@ -1155,7 +1167,7 @@ public class UserResource implements Serializable {
 		final List<Role> rolesToGrant = new ArrayList<>();
 		for (final String roleEntry : roleEntries) {
 
-			final Role role = this.resolveRole(roleEntry);
+			final Role role = this.roleAPI.loadRoleByKeyOrId(roleEntry);
 			if (null == role) {
 				Logger.debug(this, ()-> "Role '" + roleEntry + "' (key or id) does NOT exist in dotCMS. Ignoring it...");
 				continue;
@@ -1197,7 +1209,8 @@ public class UserResource implements Serializable {
 			user.setAdditionalInfo(createUserForm.getAdditionalInfo());
 		}
 
-		this.userAPI.save(user, modUser, false);
+		// validatePassword=true: applies the password policy and stores the password hashed
+		this.userAPI.save(user, modUser, true, false);
 		Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 				createUserForm.getEmail() + "' has been created.");
 
@@ -1295,11 +1308,7 @@ public class UserResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init().getUser();
 
-		final boolean isRoleAdministrator = modUser.isAdmin() ||
-				(
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-								APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-				);
+		final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
 		if (isRoleAdministrator) {
 
@@ -1372,11 +1381,7 @@ public class UserResource implements Serializable {
 
         Logger.debug(this, ()-> "Activating user: " + modUser.getUserId());
 
-        final boolean isRoleAdministrator = modUser.isAdmin() ||
-                (
-                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-                );
+        final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
         if (isRoleAdministrator) {
 
@@ -1455,11 +1460,7 @@ public class UserResource implements Serializable {
 
         Logger.debug(this, ()-> "Deactivating user: " + modUser.getUserId());
 
-        final boolean isRoleAdministrator = modUser.isAdmin() ||
-                (
-                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-                );
+        final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
         if (isRoleAdministrator) {
 
@@ -1485,12 +1486,20 @@ public class UserResource implements Serializable {
 	 * user's roles with it. Changing roles requires a CMS Administrator; the role change is checked
 	 * before anything is saved, so a refused request changes nothing. Sending the roles the user
 	 * already holds is not a change.
+	 * <p>
+	 * When the payload has a password, it must meet the configured password policy and is stored
+	 * hashed, and the login tokens issued to the user before the change are invalidated (both done by
+	 * {@link UserAPI#save(User, User, boolean, boolean)}). Without a password, the stored one is left
+	 * as it is.
 	 *
 	 * @param modUser        The user performing the request.
 	 * @param request        The current request.
 	 * @param updateUserForm The payload.
 	 *
 	 * @return The updated user.
+	 *
+	 * @throws DotDataException The user could not be saved, or the new password does not meet the
+	 *                          password policy.
 	 */
 	@WrapInTransaction
 	private User updateUser(final User modUser, final HttpServletRequest request,
@@ -1559,6 +1568,7 @@ public class UserResource implements Serializable {
         if(UtilMethods.isSet(updateUserForm.getPassword())){
 
             userToSave.setPassword(new String(updateUserForm.getPassword()));
+            validatePassword = true;
         }
 
 
@@ -1572,6 +1582,7 @@ public class UserResource implements Serializable {
 				this.roleAPI.checkUserRolesChange(modUser, userToSave, roleChanges.toAdd(), roleChanges.toRemove());
 			}
 
+			// with validatePassword=true, save also invalidates the login tokens issued before the change
 			this.userAPI.save(userToSave, modUser, validatePassword,
 					!WebAPILocator.getUserWebAPI().isLoggedToBackend(request));
 			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
@@ -1590,17 +1601,6 @@ public class UserResource implements Serializable {
 
 		return userToSave;
 	}
-
-    /**
-     * Resolves a {@code roles} payload entry to a {@link Role}: by key first (legacy precedence),
-     * then by ID. Returns {@code null} when neither matches. Roles created in the Roles portlet may
-     * have no key, so the ID form is the only way to reference them (#37209).
-     */
-    private Role resolveRole(final String keyOrId) throws DotDataException {
-
-        final Role byKey = this.roleAPI.loadRoleByKey(keyOrId);
-        return null != byKey ? byKey : this.roleAPI.loadRoleById(keyOrId);
-    }
 
     /**
      * The roles an update would add to and remove from a user.
@@ -1654,7 +1654,7 @@ public class UserResource implements Serializable {
         final List<Role> desiredRoles = new ArrayList<>();
         for (final String roleEntry : roleEntries) {
 
-            final Role role = this.resolveRole(roleEntry);
+            final Role role = this.roleAPI.loadRoleByKeyOrId(roleEntry);
             if (null != role) {
                 desiredRoles.add(role);
             } else {
@@ -1790,11 +1790,7 @@ public class UserResource implements Serializable {
 		Logger.debug(this, ()-> "Deleting user " + userIdToDelete + " by the user id " + modUser.getUserId()
 				+ " will the replacement: " + replacementUserId);
 
-		final boolean isRoleAdministrator = modUser.isAdmin() ||
-				(
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-								APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-				);
+		final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
 		if (isRoleAdministrator) {
 

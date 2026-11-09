@@ -18,6 +18,12 @@ public abstract class ScheduledTask implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * Job property holding the id of the user who saved the job in the Scheduler portlet. Jobs that
+     * act on content, such as {@link com.dotmarketing.quartz.job.ContentImportThread}, run as this user.
+     */
+    public static final String SCHEDULED_BY_USER_ID = "dotScheduledByUserId";
+
     //Job Properties
     private String jobName;
     private String jobGroup;

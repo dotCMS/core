@@ -3,6 +3,7 @@ package com.dotcms.publisher.endpoint.bean;
 import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
 import com.dotmarketing.exception.PublishingEndPointValidationException;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import java.io.Serializable;
 
@@ -94,6 +95,14 @@ public abstract class PublishingEndPoint implements Serializable {
         this.enabled = enabled;
     }
 
+    /**
+     * Returns the stored auth key: the push-publish token, or the AWS S3 / static publishing
+     * properties, encrypted with the company key. Never written to JSON, so REST responses don't
+     * hand it out; use {@link #isTokenExpired()} and {@link #isTokenInvalid()} for its status.
+     *
+     * @return the encrypted auth key
+     */
+    @JsonIgnore
     public StringBuilder getAuthKey() {
         return authKey;
     }

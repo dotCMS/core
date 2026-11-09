@@ -1,5 +1,6 @@
 package com.dotcms.publisher.ajax;
 
+import com.dotcms.auth.BasicAuthentication;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -140,7 +141,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
 								? map.get("passwd")
 									: null;
 
-				LoginFactory.doLogin(userName, password, false, request, response);
+				// Only the compatibility mode may exchange URI credentials for a session.
+				if (BasicAuthentication.mode() == BasicAuthentication.Mode.ALL) {
+					LoginFactory.doLogin(userName, password, false, request, response);
+				}
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
                 //Set the logged user in order to make it available from this action using the getUser() method
                 if ( user != null ) {

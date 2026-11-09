@@ -1,0 +1,15 @@
+<dot-edit-ema-dialog
+    (action)="handleLegacyDialogAction($event)"
+    (reloadFromDialog)="uveStore.pageReload()"
+    #dialog
+    data-testid="uve-content-editor-dialog" />
+
+<!-- Unlike the legacy dialog, only there while the user can edit the page's content, which
+     `editorCanEditContent` already limits to edit mode. -->
+@if (uveStore.editorCanEditContent()) {
+    <dot-block-editor-sidebar
+        [variantName]="uveStore.pageVariantId()"
+        (onSaved)="uveStore.pageReload()"
+        #blockSidebar
+        data-testid="uve-content-editor-block-sidebar" />
+}

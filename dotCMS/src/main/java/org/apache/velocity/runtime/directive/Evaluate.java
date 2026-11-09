@@ -36,6 +36,9 @@ import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 import org.apache.velocity.util.introspection.Info;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess;
+import javax.servlet.http.HttpServletRequest;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.VelocityUtil;
 
@@ -185,6 +188,13 @@ public class Evaluate extends Directive
 
             ica.pushCurrentTemplateName( templateName );
 
+            // The text was assembled by the surrounding code, often out of request input, so it
+            // runs with no author of its own: the view tools that decide by who wrote the code
+            // refuse here instead of letting it borrow the standing of the code that built it.
+            final HttpServletRequest dotRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+            final Object dotPreviousAuthor =
+                    RestrictedViewToolAccess.announceRenderingAuthor(dotRequest, null);
+
             try
             {
                 try
@@ -226,6 +236,7 @@ public class Evaluate extends Directive
             }
             finally
             {
+                RestrictedViewToolAccess.restoreRenderingAuthor(dotRequest, dotPreviousAuthor);
                 ica.popCurrentTemplateName();
                 postRender(ica);
             }

@@ -41,7 +41,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -85,6 +85,7 @@ public class ExportContentletsToCSVTest {
 
     @AfterClass
     public static void cleanUp() {
+        TOKEN_UTILS.close();
         for (final ContentType contentType : createdContentTypes) {
             try {
                 APILocator.getContentTypeAPI(user).delete(contentType);
@@ -307,13 +308,16 @@ public class ExportContentletsToCSVTest {
         return Csv.parse(out.toString());
     }
 
+    /** Mints and owns the admin API token used by the requests below. */
+    private static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
+
     private static HttpServletRequest getHttpRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(new MockAttributeRequest(
                         new MockHttpRequestIntegrationTest("localhost", "/").request())
                         .request()).request());
-        request.setHeader("Authorization", "Basic " + Base64.getEncoder()
-                .encodeToString("admin@dotcms.com:admin".getBytes()));
+        // Username/password Basic is disabled by default; authenticate with an API token.
+        request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
         request.setHeader("Origin", "localhost");
         request.setAttribute(WebKeys.USER, user);
         request.setAttribute(WebKeys.USER_ID, user.getUserId());

@@ -13,8 +13,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.business.StructureAPI;
@@ -58,22 +56,10 @@ public class ViewContentletAction extends DotPortletAction {
    * @param user - The {@link User} loading the portlet.
    * @throws Exception An error occurred when processing this request.
    */
-  @SuppressWarnings("unchecked")
   protected void _viewContentlets(final RenderRequest req, final User user) throws Exception {
     // GIT-2816
     final RenderRequestImpl reqImpl = (RenderRequestImpl) req;
     final HttpServletRequest request = reqImpl.getHttpServletRequest();
-
-    final ContentletAPI conAPI = APILocator.getContentletAPI();
-
-    final List<String> tempBinaryImageInodes = (List<String>) request.getSession().getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-    if (UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0) {
-      for (final String inode : tempBinaryImageInodes) {
-        conAPI.delete(conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false), APILocator.getUserAPI().getSystemUser(), false,
-            true);
-      }
-      tempBinaryImageInodes.clear();
-    }
 
     List<ContentType> contentTypes = resolveContentTypes(request);
     if (contentTypes.size() == 1) {

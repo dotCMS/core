@@ -16,6 +16,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.PageTreeReadFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
@@ -32,6 +33,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -83,9 +85,21 @@ public class PersonalizationResource {
     }
 
 
+    /**
+     * Personalizes a page for a persona by copying the page's default content to it. A page that
+     * already has content for the persona is left as it is.
+     *
+     * @param request                        the current request
+     * @param response                       the current response
+     * @param personalizationPersonaPageForm the page and the persona tag
+     * @return the copied tree rows whose content the user can read, or an empty list when the page
+     *         already had content for the persona
+     * @throws DotDataException     if the page, the persona or the tree cannot be loaded
+     * @throws DotSecurityException if the persona cannot be read by the user
+     */
     @Operation(
         summary = "Personalize page containers",
-        description = "Copies the current content associated to page containers with default personalization and creates a new set with the specified persona personalization. Requires edit permission on the page."
+        description = "Copies the current content associated to page containers with default personalization and creates a new set with the specified persona personalization. Returns the copied rows whose content the user can read. If the page already has content for that persona, nothing is copied and an empty list is returned. Requires edit permission on the page."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
@@ -149,11 +163,35 @@ public class PersonalizationResource {
                 personalizationPersonaPageForm.getPersonaTag();
         final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
 
-        return Response.ok(new ResponseEntityView<>(
-                        this.multiTreeAPI.copyPersonalizationForPage(
-                            personalizationPersonaPageForm.getPageId(), newPersonalization, currentVariantId)
-                        )).build();
+        if (this.hasRowsForPersonalization(pageId, newPersonalization, currentVariantId)) {
+            Logger.debug(this, () -> "Page " + pageId + " is already personalized for " + newPersonalization
+                    + "; its content is left as it is");
+            final List<MultiTree> noCopiedRows = List.of();
+            return Response.ok(new ResponseEntityView<>(noCopiedRows)).build();
+        }
+
+        final List<MultiTree> copiedRows = this.multiTreeAPI.copyPersonalizationForPage(
+                pageId, newPersonalization, currentVariantId);
+        return Response.ok(new ResponseEntityView<>(new PageTreeReadFilter(user).filter(copiedRows))).build();
     } // personalizePageContainers
+
+    /**
+     * Tells whether the page tree shown in the variant has rows for the personalization. A page
+     * with no rows of its own in a variant shows the default variant's tree there, so the default
+     * variant's rows count in that case ({@code MultiTreeAPI#getMultiTreesByVariant}).
+     *
+     * @param pageId          the page identifier
+     * @param personalization the personalization tag
+     * @param variantName     the current variant
+     * @return {@code true} if the tree shown in the variant has rows for the personalization
+     * @throws DotDataException if the tree cannot be loaded
+     */
+    private boolean hasRowsForPersonalization(final String pageId, final String personalization,
+            final String variantName) throws DotDataException {
+
+        return this.multiTreeAPI.getMultiTreesByVariant(pageId, variantName).stream()
+                .anyMatch(row -> personalization.equals(row.getPersonalization()));
+    }
 
     @Operation(
         summary = "Delete page personalization",

@@ -1367,6 +1367,65 @@ public class ContentUtilsTest {
 
     /**
      * Method to test:
+     * {@link ContentUtils#copyWithRelationships(Contentlet, java.util.function.Supplier, User,
+     * PageMode, long, int, HttpServletRequest, HttpServletResponse, boolean)}
+     * <p>
+     * Given scenario: a parent with two related children, loaded through the Content API and
+     * set to a non-default variant.
+     * <p>
+     * Expected result: the returned contentlet is a separate instance that lists both children,
+     * keeps the variant and has its own set of null properties, while the contentlet that was
+     * passed in has no value for the relationship field.
+     */
+    @Test
+    public void test_copyWithRelationships_addsRelatedContentToACopy()
+            throws DotDataException, DotSecurityException {
+
+        final ContentType childContentType = new ContentTypeDataGen().velocityVarName(
+                "child" + System.currentTimeMillis()).nextPersisted();
+        final ContentType parentContentType = new ContentTypeDataGen().velocityVarName(
+                "parent" + System.currentTimeMillis()).nextPersisted();
+        final Field field = FieldBuilder.builder(RelationshipField.class).name("children")
+                .contentTypeId(parentContentType.id())
+                .values(String.valueOf(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                .relationType(childContentType.variable()).build();
+        APILocator.getContentTypeFieldAPI().save(field, APILocator.systemUser());
+
+        final Contentlet child1 = new ContentletDataGen(childContentType.id()).nextPersisted();
+        final Contentlet child2 = new ContentletDataGen(childContentType.id()).nextPersisted();
+        final Contentlet parent = new ContentletDataGen(parentContentType.id()).setProperty(
+                "children", Arrays.asList(child1, child2)).nextPersisted();
+        try {
+            final Contentlet loaded = new Contentlet();
+            loaded.getMap().putAll(APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(parent.getIdentifier()).getMap());
+            loaded.setVariantId("variant" + System.currentTimeMillis());
+            final HttpServletRequest request = new MockHttpRequestIntegrationTest("localhost",
+                    "/api/v1/test").request();
+            final HttpServletResponse response = new MockHttpResponse().response();
+
+            final Contentlet copy = ContentUtils.copyWithRelationships(loaded, Contentlet::new,
+                    user, PageMode.EDIT_MODE, loaded.getLanguageId(), 0, request, response, false);
+
+            Assert.assertNotSame(loaded, copy);
+            Assert.assertEquals(loaded.getVariantId(), copy.getVariantId());
+            Assert.assertEquals(loaded.getInode(), copy.getInode());
+            Assert.assertNotSame(loaded.getMap().get(Contentlet.NULL_PROPERTIES),
+                    copy.getMap().get(Contentlet.NULL_PROPERTIES));
+            final Set<String> childrenIds = new HashSet<>((Collection<String>) copy.get("children"));
+            Assert.assertEquals(Set.of(child1.getIdentifier(), child2.getIdentifier()), childrenIds);
+            Assert.assertFalse(loaded.getMap().containsKey("children"));
+        } finally {
+            ContentletDataGen.remove(parent);
+            ContentletDataGen.remove(child1);
+            ContentletDataGen.remove(child2);
+            ContentTypeDataGen.remove(parentContentType);
+            ContentTypeDataGen.remove(childContentType);
+        }
+    }
+
+    /**
+     * Method to test:
      * {@link ContentUtils#addRelationships(Contentlet, User, PageMode, long, int,
      * HttpServletRequest, HttpServletResponse, boolean)} (the {@code languageFallback} overload,
      * issue #35862, read/display side).

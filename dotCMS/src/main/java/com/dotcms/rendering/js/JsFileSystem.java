@@ -1,5 +1,6 @@
 package com.dotcms.rendering.js;
 
+import com.dotcms.rendering.util.ScriptingUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -302,7 +303,8 @@ public class JsFileSystem implements FileSystem {
      * Reads an {@code /application/} module from the content repository: a named site is looked up by its
      * identifier, name or alias, without falling back to the default site, and the system host counts as no site;
      * with no name, the current site is used (the default one when there is no current site). Then the file asset at
-     * the module path is read, in any language, on its working version. Lookups run as the system user. The content
+     * the module path is read, in any language, on its working version, only if its last editor may write scripts.
+     * Lookups run as the system user. The content
      * is cached by the file's location, so a new version of the module is read again. Any failure while looking up or
      * reading the module is reported through {@link #moduleNotReadable(String, String, String, Exception)}.
      *
@@ -334,6 +336,7 @@ public class JsFileSystem implements FileSystem {
                 return Optional.empty();
             }
 
+            ScriptingUtil.getInstance().checkLastModifierCanScript(contentlet);
             final File binary = APILocator.getFileAssetAPI().fromContentlet(contentlet).getFileAsset();
             final String source = null != binary ? JsEngine.toString(binary.getAbsolutePath(), binary) : null;
             if (null == source) {

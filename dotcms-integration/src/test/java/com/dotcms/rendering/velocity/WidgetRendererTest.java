@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
@@ -69,6 +70,21 @@ public class WidgetRendererTest {
         APILocator.getUserAPI().delete(scriptingDeveloper, admin, APILocator.systemUser(), false);
     }
 
+    /**
+     * @param user the user the widget records as its last modifier
+     * @param code the Velocity to put in the widget's own code field
+     *
+     * @return a persisted widget carrying that code
+     */
+    private static Contentlet widgetLastModifiedBy(final User user, final String code) {
+        final Contentlet widget = new ContentletDataGen(widgetType.id())
+                .setProperty("widgetTitle", "WidgetRendererTest")
+                .setProperty("code", code)
+                .nextPersisted();
+        widget.setModUser(user.getUserId());
+        return widget;
+    }
+
     private static Contentlet widgetLastModifiedBy(final User user) {
         final Contentlet widget = new ContentletDataGen(widgetType.id())
                 .setProperty("widgetTitle", "WidgetRendererTest")
@@ -94,6 +110,26 @@ public class WidgetRendererTest {
         } finally {
             Config.setProperty(FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER, previous);
         }
+    }
+
+    /**
+     * Method to test: {@link WidgetRenderer#render(HttpServletRequest, HttpServletResponse, Contentlet)}
+     * When: a widget's own code runs
+     * Should: find on the request the user that last modified that widget.
+     *
+     * <p>This is what the restricted view tools read to decide whether they may run, so the whole
+     * control rests on the renderer putting it there. The widget reads the value back itself,
+     * which is the only way to see what was on the request at the moment its code ran.
+     */
+    @Test
+    public void renderAnnouncesTheWidgetAuthorWhileItsCodeRuns() {
+        final Contentlet widget = widgetLastModifiedBy(scriptingDeveloper,
+                "$request.getAttribute('" + RestrictedViewToolAccess.RENDERING_AUTHOR_ID + "')");
+
+        final String rendered = render(widget);
+        assertTrue("The widget's code did not see its author on the request, so the view tools "
+                        + "cannot either. Rendered: " + rendered,
+                rendered.contains(scriptingDeveloper.getUserId()));
     }
 
     /**
@@ -188,6 +224,26 @@ public class WidgetRendererTest {
                 APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
         assertTrue(render(notAWidget).isEmpty());
+    }
+
+    /**
+     * Method to test: {@link WidgetRenderer#renderWithDetails(HttpServletRequest, HttpServletResponse, Contentlet)}
+     * Given scenario: no contentlet at all, which is what the widget endpoint hands over when the
+     * requested id has no version the caller may read
+     * Expected result: empty text and no field-scripting note, instead of a failure
+     */
+    @Test
+    public void nullContentletRendersEmpty() {
+        final HttpServletRequest request = new MockSessionRequest(
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                .request();
+        final HttpServletResponse response = new MockHttpResponse().response();
+
+        final WidgetRenderer.Rendering rendering = WidgetRenderer.getInstance()
+                .renderWithDetails(request, response, null);
+
+        assertTrue(rendering.text().isEmpty());
+        assertFalse(rendering.fieldScriptingSkipped());
     }
 
     /**

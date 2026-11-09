@@ -152,6 +152,22 @@ describe('UveIframeMessengerService', () => {
         });
     });
 
+    describe('scrollToSection', () => {
+        it('should ask the page to scroll to the section with that index', () => {
+            service.setIframeWindow(mockIframeWindow);
+
+            service.scrollToSection(2);
+
+            expect(mockIframeWindow.postMessage).toHaveBeenCalledWith(
+                {
+                    name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_TO_SECTION,
+                    sectionIndex: 2
+                },
+                '*'
+            );
+        });
+    });
+
     describe('copyContentletInlineEditingSuccess', () => {
         it('should send copy contentlet success message to iframe', () => {
             service.setIframeWindow(mockIframeWindow);

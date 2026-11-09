@@ -35,6 +35,11 @@ import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.server.JSONP;
@@ -445,16 +450,29 @@ public class LanguagesResource {
      * language variables.
      *
      * @param language languageCode e.g en, it or languageCode_CountryCode e.g en_us, it_it
-     * @return all the messages of the language
+     * @return all language messages with a separate build-derived bundle version in the response envelope
      */
     @GET
     @Path("{language}/keys")
     @JSONP
     @NoCache
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Operation(summary = "Get all language messages",
+            description = "Returns the merged properties, language keys and CMS language variables for the "
+                    + "resolved admin locale. The top-level languageBundleVersion matches "
+                    + "config.languageBundleVersion in /api/v1/appconfiguration and is not a translation key. "
+                    + "Access remains subject to the existing READ anonymous-access policy and authentication checks.")
+    @ApiResponse(responseCode = "200", description = "Language messages and build-derived bundle version",
+            content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                    schema = @Schema(implementation = ResponseEntityLanguageMessagesView.class)))
+    @ApiResponse(responseCode = "401", description = "Authentication required or invalid credentials")
+    @ApiResponse(responseCode = "403", description = "Access denied by the configured access policy")
+    @ApiResponse(responseCode = "500", description = "Unable to retrieve language messages")
     public Response getAllMessages (
             @Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
+            @Parameter(description = "Language code or language_country code, for example en or en_US. "
+                    + "Unsupported locales fall back to the configured default locale.", required = true)
             @PathParam("language") final String language) throws DotDataException {
 
         final InitDataObject initData = new WebResource.InitBuilder(request, response)
@@ -508,7 +526,7 @@ public class LanguagesResource {
         }
 
 
-        return Response.ok(new ResponseEntityView<>(result)).build();
+        return Response.ok(new ResponseEntityLanguageMessagesView(result)).build();
     }
 
     /**
