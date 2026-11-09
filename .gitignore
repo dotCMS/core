@@ -233,6 +233,5 @@ specs/*/quickstart.md
 specs/*/checklists/
 
 
-# Claude Code per-developer settings (may contain pasted secrets)
-**/.claude/settings.local.json
+# Claude Code per-developer settings in any direcotry (may contain pasted secrets)
 **/.claude/*.local.*
