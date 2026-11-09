@@ -81,35 +81,33 @@ public class NotificationResourceTest extends UnitTestBase {
     }
 
     /**
-     * Method to test: {@link NotificationResource#getNewNotificationsCount(HttpServletRequest, HttpServletResponse, String)}
-     * Given Scenario: a user without the CMS Administrator role passes allusers/true
+     * Method to test: {@link NotificationResource#getNewNotificationsCount(HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: a user without the CMS Administrator role asks for the new notifications count
      * ExpectedResult: the count is the user's own unread count
      */
     @Test
-    public void testGetNewNotificationsCount_WhenNotAdminPassesAllUsers_ShouldReturnOwnCount() throws Exception {
+    public void testGetNewNotificationsCount_WhenNotAdmin_ShouldReturnOwnUnreadCount() throws Exception {
         when(user.isAdmin()).thenReturn(false);
 
         final Response response = new NotificationResource(notificationAPI, webResource)
-                .getNewNotificationsCount(mock(HttpServletRequest.class), mock(HttpServletResponse.class),
-                        "allusers/true");
+                .getNewNotificationsCount(mock(HttpServletRequest.class), mock(HttpServletResponse.class));
 
         assertEquals(OWN_UNREAD_COUNT, ((ResponseEntityView<?>) response.getEntity()).getEntity());
     }
 
     /**
-     * Method to test: {@link NotificationResource#getNewNotificationsCount(HttpServletRequest, HttpServletResponse, String)}
-     * Given Scenario: a CMS Administrator passes allusers/true
-     * ExpectedResult: the count covers every user
+     * Method to test: {@link NotificationResource#getNewNotificationsCount(HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: a CMS Administrator asks for the new notifications count
+     * ExpectedResult: the count is the administrator's own unread count, not a total over all users
      */
     @Test
-    public void testGetNewNotificationsCount_WhenAdminPassesAllUsers_ShouldReturnAllCount() throws Exception {
+    public void testGetNewNotificationsCount_WhenAdmin_ShouldReturnOwnUnreadCount() throws Exception {
         when(user.isAdmin()).thenReturn(true);
 
         final Response response = new NotificationResource(notificationAPI, webResource)
-                .getNewNotificationsCount(mock(HttpServletRequest.class), mock(HttpServletResponse.class),
-                        "allusers/true");
+                .getNewNotificationsCount(mock(HttpServletRequest.class), mock(HttpServletResponse.class));
 
-        assertEquals(ALL_COUNT, ((ResponseEntityView<?>) response.getEntity()).getEntity());
+        assertEquals(OWN_UNREAD_COUNT, ((ResponseEntityView<?>) response.getEntity()).getEntity());
     }
 
     @SuppressWarnings("unchecked")
