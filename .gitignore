@@ -232,3 +232,7 @@ specs/*/tasks.md
 specs/*/quickstart.md
 specs/*/checklists/
 
+
+# Claude Code per-developer settings (may contain pasted secrets)
+.claude/settings.local.json
+.claude/*.local.*
