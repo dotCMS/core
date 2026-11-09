@@ -64,7 +64,6 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.ActionRequestImpl;
-import com.liferay.util.ParamUtil;
 import java.net.URLDecoder;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -119,7 +118,6 @@ public class DirectorAction extends DotPortletAction {
 		 throws Exception {
 
 			String cmd = req.getParameter("cmd");
-			String subcmd = ParamUtil.getString(req,"subcmd");
 			String referer = (req.getParameter("referer") != null) ? URLDecoder.decode(req.getParameter("referer"), "UTF-8"): "/c";
 
 			Logger.debug(DirectorAction.class, "DirectorAction :: referer=" + referer);
@@ -131,7 +129,6 @@ public class DirectorAction extends DotPortletAction {
 			HttpSession session = httpReq.getSession();
 
 			Logger.debug(DirectorAction.class, "I'm inside the Director cmd = " + cmd);
-			Logger.debug(DirectorAction.class, "I'm inside the Director subcmd = " + subcmd);
 			Logger.debug(DirectorAction.class, "I'm inside the Director referer = " + referer);
 
 			//get the user
@@ -228,10 +225,6 @@ public class DirectorAction extends DotPortletAction {
 				Logger.debug(DirectorAction.class, "Director :: editHTMLPage");
 
 				IHTMLPage htmlpage = loadPage(req.getParameter("htmlPage"), user);
-				
-				if ("unlockHTMLPage".equals(subcmd)) {
-					APILocator.getVersionableAPI().setLocked(htmlpage, false, user);
-				}
 
 				java.util.Map params = new java.util.HashMap();
 				params.put("struts_action",new String[] {"/ext/contentlet/edit_contentlet"});
@@ -298,10 +291,6 @@ public class DirectorAction extends DotPortletAction {
 						//gets the current working asset
 						WebAsset workingFile = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(identifier,APILocator.getUserAPI().getSystemUser(),false);
 
-						if ("unlockFile".equals(subcmd)) {
-							WebAssetFactory.unLockAsset(workingFile);
-						}
-
 						if (workingFile.isLocked() && !workingFile.getModUser().equals(user.getUserId())) {
 							req.setAttribute(WebKeys.FILE_EDIT, workingFile);
 							setForward(req,"portlet.ext.director.unlock_file");
@@ -346,10 +335,6 @@ public class DirectorAction extends DotPortletAction {
 				} else if (req.getParameter("template")!=null) {
 					workingTemplate = APILocator.getTemplateAPI().findWorkingTemplate(
 							req.getParameter("template"),user,false);
-				}
-
-				if ("unlockTemplate".equals(subcmd)) {
-					WebAssetFactory.unLockAsset(workingTemplate);
 				}
 
 				if (workingTemplate.isLocked() && !workingTemplate.getModUser().equals(user.getUserId())) {
@@ -403,9 +388,6 @@ public class DirectorAction extends DotPortletAction {
 				//gets the current working asset
 				WebAsset workingLink = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(identifier,APILocator.getUserAPI().getSystemUser(),false);
 
-				if ("unlockLink".equals(subcmd)) {
-					WebAssetFactory.unLockAsset(workingLink);
-				}
 				if (workingLink.isLocked() && !workingLink.getModUser().equals(user.getUserId())) {
 					req.setAttribute(WebKeys.LINK_EDIT, workingLink);
 					if (UtilMethods.isSet(popup)) {
