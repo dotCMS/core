@@ -25,9 +25,6 @@
       <form-bean name="EventForm" type="com.dotmarketing.portlets.events.struts.EventForm"></form-bean>
       <form-bean name="RecuranceForm" type="com.dotmarketing.portlets.events.struts.RecuranceForm"></form-bean>
       <form-bean name="CmsMaintenanceForm" type="com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm"></form-bean>
-      <form-bean name="StructureForm" type="com.dotmarketing.portlets.structure.struts.StructureForm"></form-bean>
-
-      <form-bean name="DotFieldForm" type="com.dotmarketing.portlets.structure.struts.FieldForm"></form-bean>
       <form-bean name="OrganizationForm" type="com.dotmarketing.portlets.organization.struts.OrganizationForm"></form-bean>
       <!-- User Manager -->
       <form-bean name="UserManagerListSearchForm" type="com.dotmarketing.portlets.usermanager.struts.UserManagerListSearchForm"></form-bean>
@@ -264,40 +261,8 @@
       <!-- CMS Maintenance -->
 
 
-      <!-- STRUCTURE & FIELD-->
-      <action path="/ext/structure/view_structure" type="com.dotmarketing.portlets.structure.action.ViewStructureAction" name="StructureForm" input="portlet.ext.structure.view" validate="false" scope="request">
-         <forward name="portlet.ext.structure.view" path="portlet.ext.structure.view" />
-         <forward name="portlet.ext.structure.view_structure" path="portlet.ext.structure.view_structure" />
-      </action>
-
-      <action path="/ext/structure/edit_structure" type="com.dotmarketing.portlets.structure.action.EditStructureAction" name="StructureForm" input="portlet.ext.structure.edit_structure" validate="false" scope="request">
-         <forward name="portlet.ext.structure.edit_structure" path="portlet.ext.structure.edit_structure" />
-      </action>
-
-      <action path="/ext/structure/deleteStructure" type="com.dotmarketing.portlets.structure.action.EditStructureAction" name="" input="portlet.ext.answerquestion.view_answer_question" validate="false" scope="request">
-         <forward name="portlet.ext.structure.view_structure" path="portlet.ext.structure.view_structure" />
-      </action>
-
-      <action path="/ext/structure/edit_field" type="com.dotmarketing.portlets.structure.action.EditFieldAction" name="DotFieldForm" input="portlet.ext.structure.edit_field" validate="false" scope="request">
-         <forward name="portlet.ext.structure.edit_field" path="portlet.ext.structure.edit_field" />
-      </action>
-
-      <action path="/ext/structure/deleteField" type="com.dotmarketing.portlets.structure.action.EditFieldAction" name="DotFieldForm" input="" validate="false" scope="request">
-         <forward name="portlet.ext.structure.view_structure" path="portlet.ext.structure.view_structure" />
-      </action>
-
-
-
-
-      <!-- END STRUCTURE & FIELD-->
       
       
-    <!-- FORM HANDLER -->
-      <action path="/ext/formhandler/view_form" type="com.dotmarketing.portlets.form.action.ViewFormHandlerAction" name="" input="portlet.ext.formhandler.view" validate="false" scope="request">
-         <forward name="portlet.ext.formhandler.view" path="portlet.ext.formhandler.view" />
-         <forward name="portlet.ext.formhandler.view_form" path="portlet.ext.formhandler.view_form" />
-      </action>
-    <!-- END FORM HANDLER -->
 
       <!-- User Admin -->
       <action path="/ext/useradmin/view_users" type="com.dotmarketing.portlets.useradmin.action.ViewUsersAction" name="" validate="false" scope="request">
