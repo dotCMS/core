@@ -86,17 +86,23 @@ def reconcile(
     current = parse_record_state(hits[0].get("state"))
     prod_current = current
     if prod is not None:
-        prod_hits = prod.find_evergreen_state(live=True)
-        if len(prod_hits) > 1:
+        # Duplicates and parity are judged on every prod version, drafts included: an
+        # unpublished record under another identifier would still collide with the push.
+        # Versions are counted by identifier, since a draft over a live version is one
+        # record; the limit leaves room for that and a second record.
+        prod_ids = {h.get("identifier") for h in prod.find_evergreen_state(limit=10)}
+        if len(prod_ids) > 1:
             raise AmbiguousMatchError("more than one 'evergreen-state' EvergreenState record on prod")
-        if prod_hits and prod_hits[0].get("identifier") != hits[0].get("identifier"):
+        if prod_ids and prod_ids != {hits[0].get("identifier")}:
             # Auth's record would reach prod as a second record, and every later sync would
             # then fail as ambiguous.
             raise ParityError(
                 "EvergreenState identifiers differ on auth and prod "
-                f"({hits[0].get('identifier')} vs {prod_hits[0].get('identifier')}); "
+                f"({hits[0].get('identifier')} vs {next(iter(prod_ids))}); "
                 "restore auth/prod parity"
             )
+        # The comparison itself uses the live record: that is what visitors see.
+        prod_hits = prod.find_evergreen_state(live=True)
         prod_current = parse_record_state(prod_hits[0].get("state")) if prod_hits else {}
 
     desired: dict = {"tainted": hub["tainted"]}

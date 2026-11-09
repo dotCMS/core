@@ -109,7 +109,8 @@ The release-row check (a track only moves to a version with a live, released row
 prod, so a track never points at a row that has not arrived there. A write waits until it is live
 on prod; if it never is, that counts as a failed attempt and is retried. A dry-run prints each
 side's differences separately, prod's prefixed `prod `, and `fields=` lists both. The record
-must have the same identifier on auth and prod (a parity error otherwise, never retried), and a
+must have the same identifier on auth and prod, counting unpublished versions on prod too (a
+parity error otherwise, never retried); prod's state for the comparison is its live version, and a
 track whose row is missing on prod, with no previous value on prod to keep, fails the sync rather
 than being dropped from the site.
 

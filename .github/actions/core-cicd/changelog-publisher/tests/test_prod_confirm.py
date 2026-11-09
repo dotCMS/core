@@ -58,10 +58,12 @@ def _record(state: dict, inode: str = "inode-old", identifier: str = "evg-1") ->
             "title": "evergreen-state", "state": json.dumps(state, separators=(",", ":"))}
 
 
-def _route(url: str, *, record=None, rows=None, live: list[bool] | None = None):
+def _route(url: str, *, record=None, rows=None, live: list[bool] | None = None,
+           all_records: list[dict] | None = None):
     """Route a `_search` endpoint by query: the EvergreenState record, release rows
     (version -> bool, default True) and `+inode:` liveness checks, which answer from
-    `live` in order (the last value repeating)."""
+    `live` in order (the last value repeating). `all_records` answers record lookups
+    without `+live:true` (drafts included); it defaults to `[record]`."""
     rows = rows or {}
     live = list(live or [True])
 
@@ -71,6 +73,8 @@ def _route(url: str, *, record=None, rows=None, live: list[bool] | None = None):
             hit = live.pop(0) if len(live) > 1 else live[0]
             return 200, {}, json.dumps(_body([{"inode": _NEW_INODE}] if hit else []))
         if "EvergreenState" in q:
+            if "+live:true" not in q and all_records is not None:
+                return 200, {}, json.dumps(_body(all_records))
             return 200, {}, json.dumps(_body([record] if record else []))
         version = q.split("minor_dotraw:")[1].split()[0]
         return 200, {}, json.dumps(_fixture(
@@ -325,7 +329,7 @@ def test_sync_retries_when_the_push_never_lands():
 @responses_lib.activate
 def test_more_than_one_prod_record_is_ambiguous():
     _route(_AUTH_SEARCH, record=_record(_HUB))
-    two = _body([_record(_HUB), _record(_HUB)])
+    two = _body([_record(_HUB), _record(_HUB, identifier="evg-other")])
     responses_lib.add(responses_lib.POST, _PROD_SEARCH, json=two)
 
     with pytest.raises(publisher.AmbiguousMatchError, match="prod"):
@@ -394,16 +398,16 @@ def test_missing_row_falls_back_to_prods_value_not_auths():
 
 @responses_lib.activate
 def test_prod_record_is_read_live_only():
-    """Prod's live version is what visitors see; a draft must not count as prod's state."""
+    """Prod's live version is what visitors see; a stale draft on top of it must not count
+    as prod's state (drafts are read only for the parity check)."""
+    stale = _record({**_HUB, "latest": "26.09.17-02"}, inode="inode-draft")
     _route(_AUTH_SEARCH, record=_record(_HUB))
-    _route(_PROD_SEARCH, record=_record(_HUB))
+    _route(_PROD_SEARCH, record=_record(_HUB), all_records=[stale, _record(_HUB)])
 
-    sync.reconcile(CorpsitesClient(), _HUB, apply=False, prod=_prod())
+    result = sync.reconcile(CorpsitesClient(), _HUB, apply=False, prod=_prod())
 
-    record_reads = [json.loads(c.request.body)["query"] for c in responses_lib.calls
-                    if c.request.url == _PROD_SEARCH
-                    and "EvergreenState" in json.loads(c.request.body)["query"]]
-    assert record_reads and all(q.endswith(" +live:true") for q in record_reads)
+    assert result.status == "unchanged"
+    assert result.prod_current == _HUB
 
 
 # ---------------------------------------------------------------------------
@@ -566,3 +570,37 @@ def test_identifier_mismatch_is_not_retried():
     record_reads = [c for c in responses_lib.calls if c.request.url == _AUTH_SEARCH
                     and "EvergreenState" in json.loads(c.request.body)["query"]]
     assert len(record_reads) == 1
+
+
+@responses_lib.activate
+def test_unpublished_prod_record_with_another_identifier_is_a_parity_error():
+    """Prod has no live record, but an unpublished one under another identifier: the push
+    would add a second record, so the parity check must see drafts too."""
+    _route(_AUTH_SEARCH, record=_record(_HUB))
+    _route(_PROD_SEARCH, record=None, all_records=[_record(_HUB, identifier="evg-other")])
+    _add_fire()
+
+    with pytest.raises(sync.ParityError):
+        sync.reconcile(CorpsitesClient(), _HUB, apply=True, prod=_prod())
+    assert _FIRE_URL not in [c.request.url for c in responses_lib.calls]
+
+
+@responses_lib.activate
+def test_draft_and_live_versions_of_one_prod_record_are_not_ambiguous():
+    """A record with a draft on top of its live version may come back twice; same
+    identifier, so it is one record, not a duplicate."""
+    _route(_AUTH_SEARCH, record=_record(_HUB))
+    _route(_PROD_SEARCH, record=_record(_HUB),
+           all_records=[_record(_HUB, inode="inode-draft"), _record(_HUB)])
+
+    assert sync.reconcile(CorpsitesClient(), _HUB, apply=False, prod=_prod()).status == "unchanged"
+
+
+@responses_lib.activate
+def test_two_prod_records_with_different_identifiers_are_ambiguous_even_unpublished():
+    _route(_AUTH_SEARCH, record=_record(_HUB))
+    _route(_PROD_SEARCH, record=_record(_HUB),
+           all_records=[_record(_HUB), _record(_HUB, identifier="evg-other")])
+
+    with pytest.raises(publisher.AmbiguousMatchError, match="prod"):
+        sync.reconcile(CorpsitesClient(), _HUB, apply=False, prod=_prod())
