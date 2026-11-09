@@ -119,9 +119,6 @@ jobs:
           # Workflow action to fire: Push Publish on auth (publishes there, then pushes to
           # prod). Required — the tool fails if it is unset rather than falling back.
           DOTCMS_DEVSITE_RELEASENOTES_ACTION: ${{ vars.DOTCMS_DEVSITE_RELEASENOTES_ACTION }}
-          # Push-publishing environment on auth (prod receiver), sent as whereToSend. Push
-          # Publish has no default environment, so the tool fails if this is unset.
-          DOTCMS_DEVSITE_RELEASENOTES_ENVIRONMENT: ${{ vars.DOTCMS_DEVSITE_RELEASENOTES_ENVIRONMENT }}
           # Service-account modUser id for human-edit protection (FR-011). --force is never
           # passed here — override is a manual operator re-run only.
           DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT: ${{ vars.DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT }}

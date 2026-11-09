@@ -6,7 +6,6 @@ Uses `responses` to intercept HTTP so the tests run fully offline, mirroring the
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 
 import pytest
@@ -108,42 +107,3 @@ def test_missing_action_id_raises(monkeypatch):
         CorpsitesClient(token="testtoken")
     with pytest.raises(RuntimeError, match="DOTCMS_DEVSITE_RELEASENOTES_ACTION is not set"):
         CorpsitesClient(token="testtoken", action_id="   ")
-
-
-@responses_lib.activate
-def test_fire_sends_push_publish_fields():
-    """Push Publish has no configurable default environment: without whereToSend it queues
-    nothing and still returns 200. The body must name the environment and an immediate
-    publish, in the date/time shape the actionlet parses (yyyy-MM-dd, H-m)."""
-    url = f"{BASE_URL}/api/v1/workflow/actions/test-action-id/fire"
-    responses_lib.add(responses_lib.PUT, url, json={}, status=200)
-    contentlet = {"contentType": "Dotcmsbuilds", "minor": "26.07.10-01"}
-    CorpsitesClient(token="testtoken").fire(contentlet, apply=True)
-
-    body = json.loads(responses_lib.calls[0].request.body)
-    assert body["contentlet"] == contentlet
-    assert body["whereToSend"] == "test-environment-id"  # set by conftest before import
-    assert body["iWantTo"] == "publish"
-    assert body["timezoneId"] == "UTC"
-    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", body["publishDate"])
-    assert re.fullmatch(r"\d{1,2}-\d{1,2}", body["publishTime"])
-
-
-@responses_lib.activate
-def test_fire_environment_id_param_overrides_env():
-    """The constructor `environment_id` wins over the environment value."""
-    url = f"{BASE_URL}/api/v1/workflow/actions/test-action-id/fire"
-    responses_lib.add(responses_lib.PUT, url, json={}, status=200)
-    client = CorpsitesClient(token="testtoken", environment_id="override-env")
-    client.fire({"contentType": "Dotcmsbuilds", "minor": "26.07.10-01"}, apply=True)
-
-    assert json.loads(responses_lib.calls[0].request.body)["whereToSend"] == "override-env"
-
-
-def test_missing_environment_id_raises(monkeypatch):
-    """An unset or empty push environment fails at construction, like the action id."""
-    monkeypatch.setattr("changelog_publisher.client.PUSH_ENVIRONMENT_ID", "")
-    with pytest.raises(RuntimeError, match="DOTCMS_DEVSITE_RELEASENOTES_ENVIRONMENT is not set"):
-        CorpsitesClient(token="testtoken")
-    with pytest.raises(RuntimeError, match="DOTCMS_DEVSITE_RELEASENOTES_ENVIRONMENT is not set"):
-        CorpsitesClient(token="testtoken", environment_id="   ")
