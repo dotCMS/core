@@ -1,6 +1,7 @@
 package com.dotcms.rendering.js;
 
 import com.dotcms.rendering.util.ScriptingUtil;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -10,6 +11,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -374,7 +376,8 @@ public class JsFileSystem implements FileSystem {
                     respectFrontendRoles);
             if (readable.isEmpty()) {
                 Logger.debug(JsFileSystem.class,
-                        () -> "A JavaScript module was not loaded: the user running the script cannot read it");
+                        () -> "A JavaScript module was not loaded: the user running the script cannot read it ("
+                                + moduleLocation(siteName, modulePath) + ")");
                 return Optional.empty();
             }
 
@@ -395,8 +398,9 @@ public class JsFileSystem implements FileSystem {
 
     /**
      * Picks the version of a module the reader may read: the working version when the reader can read it, otherwise
-     * the published version in the same language, when there is one and the reader can read it. Anonymous visitors,
-     * for instance, only read published content, so they get the published version while a newer one is being edited.
+     * the published version {@link #publishedVersion(String, long)} finds, when the reader can read it. Anonymous
+     * visitors, for instance, only read published content, so they get the published version while a newer one is
+     * being edited.
      *
      * @param identifier           the module's identifier
      * @param working              the module's working version
@@ -427,6 +431,36 @@ public class JsFileSystem implements FileSystem {
     }
 
     /**
+     * Returns the published version of a module: the one in the given language when there is one, otherwise the one
+     * in the first other language, in the order the content repository lists them, that has a published version.
+     *
+     * @param identifier the module's identifier
+     * @param languageId the language of the version that is being edited
+     * @return the published version, or {@code null} when the module has none in any language
+     * @throws DotDataException     when a version cannot be loaded
+     * @throws DotSecurityException when the system user cannot look a version up
+     */
+    @Nullable
+    private static Contentlet publishedVersion(final String identifier, final long languageId)
+            throws DotDataException, DotSecurityException {
+
+        final Contentlet sameLanguage = publishedVersionIn(identifier, languageId);
+        if (null != sameLanguage) {
+            return sameLanguage;
+        }
+        for (final ContentletVersionInfo version : APILocator.getVersionableAPI()
+                .findContentletVersionInfos(identifier, VariantAPI.DEFAULT_VARIANT.name())) {
+            if (version.getLang() != languageId && UtilMethods.isSet(version.getLiveInode())) {
+                final Contentlet published = publishedVersionIn(identifier, version.getLang());
+                if (null != published) {
+                    return published;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
      * Returns the published version of a module in the given language.
      *
      * @param identifier the module's identifier
@@ -436,7 +470,7 @@ public class JsFileSystem implements FileSystem {
      * @throws DotSecurityException when the system user cannot look the version up
      */
     @Nullable
-    private static Contentlet publishedVersion(final String identifier, final long languageId)
+    private static Contentlet publishedVersionIn(final String identifier, final long languageId)
             throws DotDataException, DotSecurityException {
 
         try {
@@ -445,6 +479,19 @@ public class JsFileSystem implements FileSystem {
         } catch (final DotContentletStateException e) {
             return null;
         }
+    }
+
+    /**
+     * Describes where a module was looked up, for the log: the site, or the current site when none is named, and the
+     * module path.
+     *
+     * @param siteName   the identifier, name or alias of the site, or {@code null} for the current site
+     * @param modulePath the module path inside the site
+     * @return the site and the module path, as text
+     */
+    private static String moduleLocation(@Nullable final String siteName, final String modulePath) {
+
+        return (null != siteName ? "site " + siteName : "current site") + ", module " + modulePath;
     }
 
     /**
@@ -465,8 +512,7 @@ public class JsFileSystem implements FileSystem {
     private static IOException moduleNotReadable(@Nullable final String siteName, final String modulePath,
             final String detail, @Nullable final Exception failure) {
 
-        final String warning = MODULE_NOT_READABLE_LOG + " ("
-                + (null != siteName ? "site " + siteName : "current site") + ", module " + modulePath + ": " + detail
+        final String warning = MODULE_NOT_READABLE_LOG + " (" + moduleLocation(siteName, modulePath) + ": " + detail
                 + ")";
         if (null == failure || isRepositoryFailure(failure)) {
             Logger.warn(JsFileSystem.class, warning);

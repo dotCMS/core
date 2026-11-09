@@ -132,7 +132,8 @@ public class JsEngine implements ScriptEngine {
      * @param contextParams the parameters the script is evaluated with, which name the user it runs as
      * @return a new context, which the caller closes
      */
-    private Context buildContext(final Map<String, Object> contextParams) {
+    @VisibleForTesting
+    Context buildContext(final Map<String, Object> contextParams) {
 
         return buildContext(moduleFileSystem(contextParams), allowAllHostAccess.get());
     }

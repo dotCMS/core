@@ -18,6 +18,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -28,12 +29,14 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.HostUtil;
@@ -57,6 +60,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Source;
 import org.junit.jupiter.api.AfterEach;
@@ -1140,6 +1144,7 @@ public class JsFileSystemTest {
         final ContentletAPI contentletAPI = stubSiteBModule(working);
         when(contentletAPI.findContentletByIdentifier(eq("module-id"), eq(true), eq(1L), any(User.class), eq(false)))
                 .thenThrow(new DotContentletStateException("no live version"));
+        stubVersions(versionInfo(1L, null));
         when(permissionAPI.doesUserHavePermission(working, PermissionAPI.PERMISSION_READ, reader, true))
                 .thenReturn(false);
 
@@ -1149,9 +1154,88 @@ public class JsFileSystemTest {
         verify(fileAssetAPI, never()).fromContentlet(working);
     }
 
+    @Test
+    public void defaultSourceReadsPublishedVersionInAnotherLanguageWhenWorkingLanguageHasNone() throws Exception {
+        // Given a module of site-b.test whose working version, in language 1, the reader cannot read and was never
+        // published, and which has a published version in language 2 that the reader can read
+        final Contentlet working = fileAssetWithBinary(
+                writeFile("module/draft-1.mjs", "export const v = 'DRAFT-1';").toFile());
+        final Contentlet published = fileAssetWithBinary(
+                writeFile("module/published-2.mjs", "export const v = 'PUBLISHED-2';").toFile());
+        when(working.getLanguageId()).thenReturn(1L);
+        final ContentletAPI contentletAPI = stubSiteBModule(working);
+        when(contentletAPI.findContentletByIdentifier(eq("module-id"), eq(true), eq(1L), any(User.class), eq(false)))
+                .thenThrow(new DotContentletStateException("no live version"));
+        when(contentletAPI.findContentletByIdentifier(eq("module-id"), eq(true), eq(2L), any(User.class), eq(false)))
+                .thenReturn(published);
+        stubVersions(versionInfo(1L, null), versionInfo(2L, "published-2-inode"));
+        when(permissionAPI.doesUserHavePermission(working, PermissionAPI.PERMISSION_READ, reader, true))
+                .thenReturn(false);
+
+        // When newByteChannel reads the module for that reader
+        final String content = read(new JsFileSystem(reader, true), Paths.get(SITE_B_MODULE));
+
+        // Then the version published in language 2 is returned, and the working version's file is never opened
+        assertEquals("export const v = 'PUBLISHED-2';", content);
+        verify(fileAssetAPI, never()).fromContentlet(working);
+    }
+
+    @Test
+    public void defaultSourceLogsSiteAndModuleOfAModuleTheReaderCannotRead() throws Exception {
+        // Given a module of site-b.test that the reader cannot read
+        final Contentlet contentlet = fileAssetWithBinary(
+                writeFile("module/hidden.mjs", "export const v = 'HIDDEN';").toFile());
+        stubSiteBModule(contentlet);
+        when(permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, reader, true))
+                .thenReturn(false);
+        final JsFileSystem fileSystem = new JsFileSystem(reader, true);
+
+        try (MockedStatic<Logger> logger = mockStatic(Logger.class)) {
+
+            // When newByteChannel reads the module for that reader
+            assertThrows(NoSuchFileException.class, () -> read(fileSystem, Paths.get(SITE_B_MODULE)));
+
+            // Then the debug line names the site and the module path
+            @SuppressWarnings("unchecked")
+            final ArgumentCaptor<Supplier<String>> message = ArgumentCaptor.forClass(Supplier.class);
+            logger.verify(() -> Logger.debug(eq(JsFileSystem.class), message.capture()));
+            final String line = message.getValue().get();
+            assertTrue(line.contains("site-b.test"), line);
+            assertTrue(line.contains("/application/js/a.mjs"), line);
+        }
+    }
+
+    /**
+     * Stubs the versions the content repository lists for the module of {@link #stubSiteBModule(Contentlet)}.
+     *
+     * @param versions one entry per language the module has
+     * @throws DotDataException never, the lookup is stubbed
+     */
+    private void stubVersions(final ContentletVersionInfo... versions) throws DotDataException {
+        final VersionableAPI versionableAPI = mock(VersionableAPI.class);
+        when(versionableAPI.findContentletVersionInfos("module-id", VariantAPI.DEFAULT_VARIANT.name()))
+                .thenReturn(List.of(versions));
+        apiLocator.when(APILocator::getVersionableAPI).thenReturn(versionableAPI);
+    }
+
+    /**
+     * Returns the version information of one language of a module.
+     *
+     * @param languageId the language
+     * @param liveInode  the inode of the published version in that language, or {@code null} when there is none
+     * @return the mocked version information
+     */
+    private static ContentletVersionInfo versionInfo(final long languageId, final String liveInode) {
+        final ContentletVersionInfo info = mock(ContentletVersionInfo.class);
+        when(info.getLang()).thenReturn(languageId);
+        when(info.getLiveInode()).thenReturn(liveInode);
+        return info;
+    }
+
     /**
      * Stubs the content repository so that, looked up as the system user, site-b.test exists and its
-     * {@code /application/js/a.mjs} identifier resolves to the given content, and returns the stubbed content API.
+     * {@code /application/js/a.mjs} identifier resolves to the given content with no version listed in another
+     * language, and returns the stubbed content API.
      */
     private ContentletAPI stubSiteBModule(final Contentlet contentlet) throws Exception {
         final User systemUser = mock(User.class);
@@ -1171,6 +1255,7 @@ public class JsFileSystemTest {
         apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
         apiLocator.when(APILocator::getIdentifierAPI).thenReturn(identifierAPI);
         apiLocator.when(APILocator::getContentletAPI).thenReturn(contentletAPI);
+        stubVersions();
         return contentletAPI;
     }
 

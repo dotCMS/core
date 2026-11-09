@@ -10,12 +10,14 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.rendering.js.proxy.JsUser;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -27,6 +29,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -81,6 +84,7 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
     private static final List<Path> createdTempFolders = new ArrayList<>();
     private static final List<User> createdUsers = new ArrayList<>();
     private static final List<Role> createdRoles = new ArrayList<>();
+    private static final List<Language> createdLanguages = new ArrayList<>();
 
     private static Host defaultSite;
 
@@ -98,8 +102,8 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Removes every module, folder, site, user and role created by these tests, plus the temporary files the modules
-     * were uploaded from. Each item is removed on its own, so one failure does not leave the rest behind.
+     * Removes every module, language, folder, site, user and role created by these tests, plus the temporary files
+     * the modules were uploaded from. Each item is removed on its own, so one failure does not leave the rest behind.
      */
     @AfterClass
     public static void cleanUp() {
@@ -110,6 +114,11 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
                 Logger.warn(JsModuleImportIntegrationTest.class, "Could not remove a test module", e);
             }
         }
+
+        for (final Language language : createdLanguages) {
+            LanguageDataGen.remove(language);
+        }
+        createdLanguages.clear();
 
         for (final Folder folder : createdFolders) {
             try {
@@ -504,6 +513,77 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
     }
 
     /**
+     * Checks that the context the engine runs a script in loads modules for the user the script runs as: a module only
+     * that user's role can read is imported, and a module only administrators can read is not.
+     *
+     * @throws Exception when the test data cannot be created
+     */
+    @Test
+    public void engineContextReadsModulesForTheUserTheScriptRunsAs() throws Exception {
+        // Given a site with a module only one role can read, a module only administrators can read, and a back-end
+        // user holding that role
+        final Role role = newRole();
+        final Host site = newSite("context");
+        final String roleName = "context-role-module-" + RUN_ID + ".mjs";
+        final String restrictedName = "context-restricted-module-" + RUN_ID + ".mjs";
+        readableOnlyBy(createModule(site, roleName, "export const value = 'CONTEXT-ROLE-EXPORT';"), role);
+        readableOnlyBy(createModule(site, restrictedName, "export const value = 'CONTEXT-RESTRICTED-EXPORT';"));
+        final Map<String, Object> scriptParams = new HashMap<>(Map.of("user", new JsUser(newBackEndUser(role))));
+        final JsEngine engine = new JsEngine();
+
+        // When a script runs in the context the engine builds for those parameters and imports both modules
+        final String roleImport;
+        final String restrictedImport;
+        try (Context context = engine.buildContext(scriptParams)) {
+            roleImport = runAsync(
+                    "(await import('//" + site.getHostname() + MODULES_FOLDER_PATH + roleName + "')).value", context);
+        }
+        try (Context context = engine.buildContext(scriptParams)) {
+            restrictedImport = runAsync(
+                    "(await import('//" + site.getHostname() + MODULES_FOLDER_PATH + restrictedName + "')).value",
+                    context);
+        }
+
+        // Then the module of the user's role is imported, and the other one is rejected without its export
+        assertEquals("RESOLVED CONTEXT-ROLE-EXPORT", roleImport);
+        assertTrue(restrictedImport, restrictedImport.startsWith("REJECTED"));
+        assertFalse(restrictedImport, restrictedImport.contains("CONTEXT-RESTRICTED-EXPORT"));
+    }
+
+    /**
+     * Checks that a reader who can only read published content gets a module whose working version, in the default
+     * language, was never published, from the version published in another language.
+     *
+     * @throws Exception when the test data cannot be created
+     */
+    @Test
+    public void readerGetsPublishedVersionInAnotherLanguage() throws Exception {
+        // Given a module anonymous visitors can read, with an unpublished version in the default language and a
+        // published version in a second language
+        final Host site = newSite("languages");
+        final String fileName = "two-language-module-" + RUN_ID + ".mjs";
+        final Contentlet draft = createModule(site, fileName, "export const value = 'DEFAULT-LANGUAGE-DRAFT';");
+        final Language secondLanguage = new LanguageDataGen().nextPersisted();
+        createdLanguages.add(secondLanguage);
+        final Contentlet secondVersion = ContentletDataGen.createNewVersion(draft, VariantAPI.DEFAULT_VARIANT,
+                secondLanguage, Map.of(FileAssetAPI.BINARY_FIELD,
+                        writeTempFile(fileName, "export const value = 'SECOND-LANGUAGE-PUBLISHED';")));
+        ContentletDataGen.publish(secondVersion);
+        readableOnlyBy(draft, APILocator.getRoleAPI().loadCMSAnonymousRole());
+        assertEquals("the module's working version is looked up in the default language",
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(), APILocator.getContentletAPI()
+                        .findContentletByIdentifierAnyLanguage(draft.getIdentifier()).getLanguageId());
+
+        // When the anonymous user imports the module through the engine's module file system
+        final String imported = runAsync(
+                "(await import('//" + site.getHostname() + MODULES_FOLDER_PATH + fileName + "')).value",
+                JsEngine.moduleFileSystem(new HashMap<>()));
+
+        // Then the version published in the second language is imported
+        assertEquals("RESOLVED SECOND-LANGUAGE-PUBLISHED", imported);
+    }
+
+    /**
      * Checks which user the engine reads modules for: the {@code user} entry of the script's parameters, given as a
      * {@link User} or wrapped in a {@link JsUser}, and the anonymous user when the entry is missing or holds anything
      * else.
@@ -738,9 +818,20 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
      */
     private static String runAsync(final String expression, final JsFileSystem fileSystem) {
         try (Context context = JsEngine.buildContext(fileSystem, false)) {
-            context.eval(Source.create("js", "(async () => { try { globalThis.result = 'RESOLVED ' + ("
-                    + expression + "); } catch (e) { globalThis.result = 'REJECTED ' + e; } })();"));
-            return context.eval("js", "String(globalThis.result)").asString();
+            return runAsync(expression, context);
         }
+    }
+
+    /**
+     * Runs an asynchronous expression like {@link #runAsync(String)}, in the given context, which the caller closes.
+     *
+     * @param expression a JavaScript expression that may use {@code await}
+     * @param context    the context the expression runs in
+     * @return the outcome of the expression as text
+     */
+    private static String runAsync(final String expression, final Context context) {
+        context.eval(Source.create("js", "(async () => { try { globalThis.result = 'RESOLVED ' + ("
+                + expression + "); } catch (e) { globalThis.result = 'REJECTED ' + e; } })();"));
+        return context.eval("js", "String(globalThis.result)").asString();
     }
 }
