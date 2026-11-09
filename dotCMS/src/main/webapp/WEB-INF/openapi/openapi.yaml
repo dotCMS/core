@@ -13818,12 +13818,6 @@ paths:
   /v1/notification/getNewNotificationsCount:
     get:
       operationId: getNewNotificationsCount
-      parameters:
-      - in: path
-        name: params
-        required: true
-        schema:
-          type: string
       responses:
         default:
           content:
