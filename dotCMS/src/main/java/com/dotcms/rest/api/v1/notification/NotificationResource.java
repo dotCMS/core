@@ -119,8 +119,7 @@ public class NotificationResource {
             final User user = initData.getUser();
             final String limitStr = initData.getParamsMap().get(RESTParams.LIMIT.getValue());
             final String offsetStr = initData.getParamsMap().get(RESTParams.OFFSET.getValue());
-            final boolean allUsers = initData.getParamsMap().get(ALLUSERS) != null ?
-                    Boolean.parseBoolean(initData.getParamsMap().get(ALLUSERS)) : false;
+            final boolean allUsers = isAllUsers(initData);
 
             /* Limit and Offset Parameters Handling, if not passed, using default */
 
@@ -174,6 +173,18 @@ public class NotificationResource {
     } // getNotifications.
 
     /**
+     * Reads the {@code allusers} parameter. It is honored only for CMS Administrators; for anyone
+     * else the listing stays limited to their own notifications.
+     *
+     * @param initData the request data holding the parameters and the current user
+     * @return {@code true} when the parameter is {@code true} and the current user is a CMS Administrator
+     */
+    private boolean isAllUsers(final InitDataObject initData) {
+        return Boolean.parseBoolean(initData.getParamsMap().get(ALLUSERS))
+                && null != initData.getUser() && initData.getUser().isAdmin();
+    }
+
+    /**
      * Returns whether there are new Notifications or not for the given User
      *
      * @param httpServletRequest
@@ -202,14 +213,12 @@ public class NotificationResource {
         Long newNotificationsCount = 0l;
         User user;
         Response response;
-        final boolean allUsers = initData.getParamsMap().get(ALLUSERS) != null ?
-                Boolean.parseBoolean(initData.getParamsMap().get(ALLUSERS)) : false;
 
         try {
 
             user = initData.getUser();
 
-            if (allUsers) {
+            if (isAllUsers(initData)) {
 
                 newNotificationsCount = notificationAPI.getNotificationsCount();
             } else {

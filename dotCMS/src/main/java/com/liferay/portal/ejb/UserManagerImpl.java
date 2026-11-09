@@ -35,8 +35,10 @@ import com.dotcms.util.SecurityUtils;
 import com.dotcms.util.SecurityUtils.DelayStrategy;
 import com.dotcms.util.UrlStrategyUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.DotInvalidPasswordException;
 import com.dotmarketing.cms.login.factories.LoginFactory;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
@@ -910,11 +912,19 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
     public void resetPassword(String userId, String token, String newPassword) throws com.dotmarketing.business.NoSuchUserException,
             DotSecurityException, DotInvalidTokenException, DotInvalidPasswordException {
         try {
-                final User user = APILocator.getUserAPI().loadUserById(userId);
-                ResetPasswordTokenUtil.checkToken(user, token);
+            final User user = APILocator.getUserAPI().loadUserById(userId);
+            ResetPasswordTokenUtil.checkToken(user, token);
+            LocalTransaction.wrapReturn(() -> {
+                if (!FactoryLocator.getUserFactory().clearIcqId(user.getUserId(), token)) {
+                    throw new DotInvalidTokenException(token);
+                }
                 // Also clears any login lockout on the account.
                 APILocator.getUserAPI().updatePassword(user, newPassword, APILocator.getUserAPI().getSystemUser(), false);
-        } catch (DotDataException e) {
+                return null;
+            });
+        } catch (DotInvalidTokenException | DotSecurityException | RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
             throw new IllegalArgumentException();
         }
     }
