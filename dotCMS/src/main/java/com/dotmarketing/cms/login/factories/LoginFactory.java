@@ -119,14 +119,15 @@ public class LoginFactory {
     }
 
     /**
+     * Signs a user in and puts them on the session, checking the password they typed.
      *
-     * @param userName
-     * @param password
-     * @param rememberMe
-     * @param request
-     * @param response
-     * @return
-     * @throws NoSuchUserException
+     * @param userName   the email address or user id, depending on the company's authentication type
+     * @param password   the password typed by the user
+     * @param rememberMe whether the login should be remembered beyond the session
+     * @param request    the request the login was sent on
+     * @param response   the response the session is established on
+     * @return {@code true} when the user was signed in
+     * @throws NoSuchUserException when dotCMS holds no account for the given name
      */
 	public static boolean doLogin(String userName, String password, boolean rememberMe, HttpServletRequest request,
 			HttpServletResponse response) throws NoSuchUserException {
@@ -134,15 +135,23 @@ public class LoginFactory {
 	}
 
 	/**
-	 * 
-	 * @param userName
-	 * @param password
-	 * @param rememberMe
-	 * @param request
-	 * @param response
-	 * @param skipPasswordCheck
-	 * @return
-	 * @throws NoSuchUserException
+	 * Signs a user in and puts them on the session.
+	 *
+	 * <p>The password stored in dotCMS is checked unless {@code skipPasswordCheck} is set, which is
+	 * how a login that already proved the identity some other way, such as the cookie login, signs
+	 * the user in. When the directory authenticator is configured as the pre-authenticator it has
+	 * to accept the login as well; its answer alone is not taken as proof of the password, see
+	 * {@link #directoryLoginAccepted(int, String, User, String)}.</p>
+	 *
+	 * @param userName          the email address or user id, depending on the company's authentication type
+	 * @param password          the password typed by the user, ignored when the check is skipped
+	 * @param rememberMe        whether the login should be remembered beyond the session
+	 * @param request           the request the login was sent on
+	 * @param response          the response the session is established on
+	 * @param skipPasswordCheck when {@code true} the identity is taken as already proven and no
+	 *                          password is checked
+	 * @return {@code true} when the user was signed in
+	 * @throws NoSuchUserException when dotCMS holds no account for the given name
 	 */
     public static boolean doLogin(String userName, String password, boolean rememberMe, HttpServletRequest request, HttpServletResponse response, boolean skipPasswordCheck) throws NoSuchUserException {
         try {
@@ -182,28 +191,23 @@ public class LoginFactory {
 	            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
 	            }
 
-				// a login that skips the directory check leaves the local password alone
-				if (!skipPasswordCheck) {
+				if (skipPasswordCheck) {
 
+					// the user exists on our db and the login is ok (usually it is the case for cookie login),
+					// and a login that skips the directory check leaves the local password alone
+					match = null != user;
+				} else {
+
+					match = directoryLoginAccepted(auth, password, user, LoginLockout.clientAddress(request));
+					if (!match && null != user && auth != Authenticator.SUCCESS) {
+						// the directory refused the login; a wrong local password is counted on its own
+						LoginLockout.getInstance().countFailure(user.getUserId(), LoginLockout.clientAddress(request));
+					}
+
+					// the directory stores the password it accepted in dotCMS, so the local password is
+					// only replaced once it has been checked
 					resetDirectoryPassword(user, auth);
 				}
-
-				// if it is the skip password on true and the user is not null, means the user exists on our db and the login is ok (usually it is the case for cookie login)
-				if (skipPasswordCheck && null != user) {
-
-					auth = Authenticator.SUCCESS;
-				}
-
-    			match = auth == Authenticator.SUCCESS
-    					&& (skipPasswordCheck || !isLockedOut(user, LoginLockout.clientAddress(request)));
-    			if (!skipPasswordCheck && null != user) {
-    				// LDAP checked the password; the result still counts toward the login lockout
-    				if (auth != Authenticator.SUCCESS) {
-    					LoginLockout.getInstance().countFailure(user.getUserId(), LoginLockout.clientAddress(request));
-    				} else if (match) {
-    					LoginLockout.getInstance().succeeded(user.getUserId(), LoginLockout.clientAddress(request));
-    				}
-    			}
         	} else {
 	            if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
 	            	user = APILocator.getUserAPI().loadByUserByEmail(userName, APILocator.getUserAPI().getSystemUser(), false);
@@ -279,12 +283,37 @@ public class LoginFactory {
     }
 
 	/**
-	 * LDAP checked the password; a login that a lockout applies to (this address, or the whole account)
-	 * is still refused.
+	 * Decides a login that the directory service answered for.
+	 *
+	 * <p>The bundled directory authenticator answers {@link Authenticator#SUCCESS} both for a user
+	 * it authenticated and for one it knows nothing about: {@code BaseAuthenticator} falls back to
+	 * that answer for any account it did not find in the directory, where it only means "this is
+	 * not mine to decide". The password stored in dotCMS is therefore still required, the way
+	 * {@code UserManagerImpl#authenticate} requires it for the REST, Basic and WebDAV logins. A
+	 * user the bundled authenticator did authenticate is not kept out by that check, because
+	 * {@code BaseAuthenticator} stores the password it accepted in dotCMS before this runs. An
+	 * authenticator that implements {@link Authenticator} without doing that has to keep the local
+	 * password in step itself, as {@code UserManagerImpl#authenticate} already requires.</p>
+	 *
+	 * <p>The password check is the one that applies the login lockout, so a wrong password counts
+	 * as a failed login and is refused while a lock is in force.</p>
+	 *
+	 * @param authResult the directory's answer, one of the {@link Authenticator} results
+	 * @param password   the password typed by the user
+	 * @param user       the {@link User} the login names, {@code null} when dotCMS has no such account
+	 * @param source     what the attempt is counted under, usually the client address
+	 * @return {@code true} when the login is accepted
 	 */
-	private static boolean isLockedOut(final User user, final String source) {
-		return null != user
-				&& LoginLockout.getInstance().check(user.getUserId(), source) == LoginLockout.Status.LOCKED;
+	@VisibleForTesting
+	static boolean directoryLoginAccepted(final int authResult, final String password, final User user,
+			final String source) {
+
+		if (authResult != Authenticator.SUCCESS || null == user) {
+			return false;
+		}
+
+		return LoginLockout.getInstance().passwordMatch(password, user, source,
+				(secret, candidate) -> false);
 	}
 
 	/**
@@ -337,10 +366,10 @@ public class LoginFactory {
 
 
 	/**
-    * Checks a user's credentials without creating a session. When the directory authenticator
-    * is configured as the pre-authenticator it decides the result, and the local password is
-    * only updated after the directory accepts the login; otherwise the password is checked
-    * against the one stored in dotCMS.
+    * Checks a user's credentials without creating a session. The password stored in dotCMS is
+    * always checked; when the directory authenticator is configured as the pre-authenticator it
+    * has to accept the login as well, and the local password of a directory user is only
+    * replaced once that check has run.
     *
     * @param userName the email address or user id, depending on the company's authentication type
     * @param password the password typed by the user
@@ -386,17 +415,15 @@ public class LoginFactory {
  	            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
  	            }
 
-    			resetDirectoryPassword(user, auth);
-
-    			match = auth == Authenticator.SUCCESS && !isLockedOut(user, LoginLockout.clientAddress());
-    			if (null != user) {
-    				// LDAP checked the password; the result still counts toward the login lockout
-    				if (auth != Authenticator.SUCCESS) {
-    					LoginLockout.getInstance().countFailure(user.getUserId(), LoginLockout.clientAddress());
-    				} else if (match) {
-    					LoginLockout.getInstance().succeeded(user.getUserId(), LoginLockout.clientAddress());
-    				}
+    			match = directoryLoginAccepted(auth, password, user, LoginLockout.clientAddress());
+    			if (!match && null != user && auth != Authenticator.SUCCESS) {
+    				// the directory refused the login; a wrong local password is counted on its own
+    				LoginLockout.getInstance().countFailure(user.getUserId(), LoginLockout.clientAddress());
     			}
+
+    			// the directory stores the password it accepted in dotCMS, so the local password is
+    			// only replaced once it has been checked
+    			resetDirectoryPassword(user, auth);
         	} else {
         	    // Liferay authentication
  	            if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
