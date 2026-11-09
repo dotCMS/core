@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 import os
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 import requests
 
@@ -25,6 +26,12 @@ _TIMEOUT = 30
 # DOTCMS_DEVSITE_RELEASENOTES_ACTION repo variable and is never hardcoded.
 ACTION_ENV = "DOTCMS_DEVSITE_RELEASENOTES_ACTION"
 PUBLISH_ACTION_ID = os.environ.get(ACTION_ENV, "").strip()
+
+# Push-publishing environment id(s) on auth (comma-separated), sent as `whereToSend`. The
+# Push Publish actionlet has no configurable default environment: without this it queues
+# nothing and the fire still returns 200, so it is required, never defaulted.
+ENVIRONMENT_ENV = "DOTCMS_DEVSITE_RELEASENOTES_ENVIRONMENT"
+PUSH_ENVIRONMENT_ID = os.environ.get(ENVIRONMENT_ENV, "").strip()
 
 log = logging.getLogger("changelog_publisher.client")
 
@@ -54,6 +61,7 @@ class CorpsitesClient:
         token: str | None = None,
         base_url: str | None = None,
         action_id: str | None = None,
+        environment_id: str | None = None,
     ) -> None:
         token = token if token is not None else os.environ.get(TOKEN_ENV)
         if not token:
@@ -66,8 +74,12 @@ class CorpsitesClient:
         action_id = (action_id or PUBLISH_ACTION_ID).strip()
         if not action_id:
             raise RuntimeError(f"{ACTION_ENV} is not set")
+        environment_id = (environment_id or PUSH_ENVIRONMENT_ID).strip()
+        if not environment_id:
+            raise RuntimeError(f"{ENVIRONMENT_ENV} is not set")
         self.base_url = base_url.rstrip("/")
         self.action_id = action_id
+        self.environment_id = environment_id
         self.session = requests.Session()
         self.session.headers.update({"Authorization": f"Bearer {token}"})
 
@@ -113,6 +125,10 @@ class CorpsitesClient:
     def fire(self, contentlet: dict, *, apply: bool) -> None:
         """Fire the configured workflow action with the given contentlet payload.
 
+        The body also carries the Push Publish inputs: the target environment and an
+        immediate publish, dated now in UTC (the actionlet parses `yyyy-MM-dd` + `H-m`).
+        Actions without a Push Publish actionlet ignore them.
+
         Dry-run (apply=False) logs the intended action and issues no request — the
         `evergreen-tracks` safety convention.
         """
@@ -120,10 +136,21 @@ class CorpsitesClient:
         if not apply:
             log.info("DRY-RUN would fire Publish for %s", minor)
             return
-        log.info("firing Publish for %s (action %s)", minor, self.action_id)
+        log.info(
+            "firing Publish for %s (action %s, push environment %s)",
+            minor, self.action_id, self.environment_id,
+        )
+        now = datetime.now(timezone.utc)
         resp = self.session.put(
             f"{self.base_url}/api/v1/workflow/actions/{self.action_id}/fire",
-            json={"contentlet": contentlet},
+            json={
+                "contentlet": contentlet,
+                "whereToSend": self.environment_id,
+                "iWantTo": "publish",
+                "publishDate": now.strftime("%Y-%m-%d"),
+                "publishTime": f"{now.hour}-{now.minute}",
+                "timezoneId": "UTC",
+            },
             timeout=_TIMEOUT,
         )
         resp.raise_for_status()

@@ -308,3 +308,20 @@ def test_missing_action_exits_one_with_clean_error(tmp_path, monkeypatch, capsys
     assert "Traceback" not in out and "Traceback" not in err
     assert any("DOTCMS_DEVSITE_RELEASENOTES_ACTION" in r.message for r in caplog.records)
     assert len(responses_lib.calls) == 0  # failed before any network call
+
+
+@responses_lib.activate
+def test_missing_environment_exits_one_with_clean_error(tmp_path, monkeypatch, capsys, caplog):
+    """A missing DOTCMS_DEVSITE_RELEASENOTES_ENVIRONMENT -> rc 1 with a clean one-line error.
+    Without it Push Publish would publish on auth, queue nothing and still return 200."""
+    monkeypatch.setenv("DOTCMS_DEVSITE_RELEASENOTES_TOKEN", "t")
+    monkeypatch.setattr("changelog_publisher.client.PUSH_ENVIRONMENT_ID", "")
+
+    with caplog.at_level("ERROR"):
+        rc = main(_argv(tmp_path, "26.07.10-01", "--apply"))
+
+    assert rc == 1
+    out, err = capsys.readouterr()
+    assert "Traceback" not in out and "Traceback" not in err
+    assert any("DOTCMS_DEVSITE_RELEASENOTES_ENVIRONMENT" in r.message for r in caplog.records)
+    assert len(responses_lib.calls) == 0  # failed before any network call

@@ -43,16 +43,22 @@ the intended action and issues no write.
 | `DOTCMS_DEVSITE_URL` | yes | repo var `AUTODOC_DOTCMS_BASE_URL` | Base URL of the instance to write to (auth). |
 | `DOTCMS_DEVSITE_RELEASENOTES_TOKEN` | yes | secret `DOTCMS_DEVSITEAUTH_RELEASENOTES_TOKEN` | Service-account bearer token for that instance. |
 | `DOTCMS_DEVSITE_RELEASENOTES_ACTION` | yes | repo var `DOTCMS_DEVSITE_RELEASENOTES_ACTION` | Workflow action id fired for every write (Push Publish on auth). |
+| `DOTCMS_DEVSITE_RELEASENOTES_ENVIRONMENT` | yes | repo var `DOTCMS_DEVSITE_RELEASENOTES_ENVIRONMENT` | Push-publishing environment id(s) on auth, comma-separated, sent as `whereToSend`. |
 | `DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT` | no | repo var `DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT` | Service-account `modUser` id for human-edit protection. |
 
 The env var names are the tool's own contract; the workflows choose which repo variable or
 secret feeds them. In CI, `DOTCMS_DEVSITE_URL` is fed from `AUTODOC_DOTCMS_BASE_URL` (shared with
 `issue_autodoc.yml`), so writes land on **auth** and Push Publish carries them to prod. None of
 these values is hardcoded, so an instance or action change is a settings change, not a code
-change. The URL, token and action are all required: if any is unset or empty (an unset repo
+change. The URL, token, action and environment are all required: if any is unset or empty (an unset repo
 variable renders as `""` in Actions) the tool exits 1 with a one-line error and makes no request.
 It never falls back to a default action, because a wrong action could publish on auth and never
-reach prod. The action id is logged with each fire so runs are auditable.
+reach prod. The action and environment ids are logged with each fire so runs are auditable.
+
+Every fire also sends the Push Publish inputs: `whereToSend` (the environment), `iWantTo:
+publish`, and `publishDate` / `publishTime` / `timezoneId` set to now in UTC. The Push Publish
+actionlet has no configurable default environment; without `whereToSend` it queues nothing and
+the fire still returns 200, which is why the environment is required rather than defaulted.
 
 The bearer token is read once and is never logged or echoed. The service-account identity is
 read from `--service-account` or `DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT`; without it, an existing
@@ -89,14 +95,15 @@ Docker Hub snapshot written by `evergreen-tracks state`:
 
 Dry-run is the default; `--apply` writes, publishes and reads back (3 attempts, 60 s then 180 s
 apart). Needs `DOTCMS_DEVSITE_URL`, `DOTCMS_DEVSITE_RELEASENOTES_TOKEN` and
-`DOTCMS_DEVSITE_RELEASENOTES_ACTION` — even a dry-run, since the client requires all three.
+`DOTCMS_DEVSITE_RELEASENOTES_ACTION` and `DOTCMS_DEVSITE_RELEASENOTES_ENVIRONMENT` — even a
+dry-run, since the client requires all of them.
 
 | Exit | Meaning | stdout marker |
 |------|---------|---------------|
 | `0` | Record already matched | `::evergreen-sync::unchanged` |
 | `0` | Written (`--apply`) | `::evergreen-sync::updated fields=<f1,f2>` |
 | `0` | Dry-run difference | `::evergreen-sync::would-update fields=<f1,f2>` |
-| `1` | Runtime failure after all attempts, or token / URL / action unset | `::evergreen-sync-error::<reason>` |
+| `1` | Runtime failure after all attempts, or token / URL / action / environment unset | `::evergreen-sync-error::<reason>` |
 | `2` | Usage / validation error (bad state file), rejected before any network call | *(none)* |
 | `3` | Reconciled, but a track kept its old value because its version has no release row | `::evergreen-sync-missing-row::<track>=<version>` (one per track) |
 
@@ -116,6 +123,7 @@ went live, or after an outage), run the tool **once per version** by hand:
     export DOTCMS_DEVSITE_URL=...                  # auth instance base URL (AUTODOC_DOTCMS_BASE_URL in CI)
     export DOTCMS_DEVSITE_RELEASENOTES_TOKEN=...   # service-account token for auth
     export DOTCMS_DEVSITE_RELEASENOTES_ACTION=...  # Push Publish action id (repo variable in CI)
+    export DOTCMS_DEVSITE_RELEASENOTES_ENVIRONMENT=... # push-publishing environment id on auth
     export DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT=... # service-account modUser id
     # generate the site notes for that version, then:
     uv run changelog-publisher publish --version 26.06.30-01 \
