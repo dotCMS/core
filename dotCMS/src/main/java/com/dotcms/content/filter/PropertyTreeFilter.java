@@ -43,6 +43,15 @@ public final class PropertyTreeFilter {
     /** Suffix of the property that repeats a Story Block value as stored, e.g. {@code blogContent_raw}. */
     private static final String RAW_SUFFIX = "_raw";
 
+    /** Key of the attributes of a Story Block node. */
+    private static final String ATTRIBUTES_KEY = "attrs";
+
+    /** Key of the attribute that holds the data of the contentlet embedded in a Story Block node. */
+    private static final String DATA_KEY = "data";
+
+    /** Marks, while a Story Block is filtered, the nodes whose data is stored as JSON text. */
+    private static final String DATA_AS_TEXT_MARKER = "\u0000dataAsText";
+
     /**
      * Resolves the type of a contentlet field, so the values of JSON, Key/Value and Custom fields can be
      * left untouched.
@@ -232,25 +241,29 @@ public final class PropertyTreeFilter {
     }
 
     /**
-     * Tells whether an object is a contentlet: it has an identifier or an inode, and a content type or a
-     * base type.
+     * Tells whether an object is a contentlet: it has an identifier or an inode, and a content type, a base type
+     * or, as in a contentlet's own property map, the identifier of its content type in {@code stInode}.
      *
      * @param object the object to check
      * @return {@code true} for a contentlet
      */
     private static boolean isContentlet(final Map<?, ?> object) {
         return (object.containsKey(Contentlet.IDENTIFIER_KEY) || object.containsKey(Contentlet.INODE_KEY))
-                && (object.containsKey(Contentlet.CONTENT_TYPE_KEY) || object.containsKey(Contentlet.BASE_TYPE_KEY));
+                && (object.containsKey(Contentlet.CONTENT_TYPE_KEY) || object.containsKey(Contentlet.BASE_TYPE_KEY)
+                    || object.containsKey(Contentlet.STRUCTURE_INODE_KEY));
     }
 
     /**
-     * Returns the content type of a contentlet object, or {@code null} when it only has a base type.
+     * Returns the content type of a contentlet object, from {@code contentType} or else {@code stInode}, or
+     * {@code null} when it only has a base type.
      *
      * @param contentlet the contentlet object
      * @return the content type variable name or identifier, or {@code null}
      */
     private static String contentTypeOf(final Map<?, ?> contentlet) {
-        final Object contentType = contentlet.get(Contentlet.CONTENT_TYPE_KEY);
+        final Object contentType = null != contentlet.get(Contentlet.CONTENT_TYPE_KEY)
+                ? contentlet.get(Contentlet.CONTENT_TYPE_KEY)
+                : contentlet.get(Contentlet.STRUCTURE_INODE_KEY);
         return null == contentType ? null : String.valueOf(contentType);
     }
 
@@ -272,7 +285,8 @@ public final class PropertyTreeFilter {
     }
 
     /**
-     * Filters a Story Block value held as JSON text and returns it as text again. Text that cannot name a
+     * Filters a Story Block value held as JSON text and returns it as text again. The data of an embedded
+     * contentlet stored as JSON text in its node is filtered too, and kept as text. Text that cannot name a
      * filtered property, or that is not a JSON object or array (such as HTML kept from a converted field), is
      * returned as it is.
      *
@@ -290,12 +304,63 @@ public final class PropertyTreeFilter {
         if (!(tree instanceof Map) && !(tree instanceof Collection)) {
             return text;
         }
-        return Try.of(() -> JsonUtil.JSON_MAPPER.writeValueAsString(copy(tree, filter, fieldTypes))).get();
+        readDataText(tree);
+        final Object copied = copy(tree, filter, fieldTypes);
+        writeDataText(copied);
+        return Try.of(() -> JsonUtil.JSON_MAPPER.writeValueAsString(copied)).get();
     }
 
     /**
-     * Tells whether a text may hold, as a JSON key, a property the filter masks or removes. Text with
-     * {@code \}{@code u} character codes is always read, since a key could be written with them.
+     * Replaces, in a Story Block tree parsed for filtering, the data of each node that is stored as JSON object
+     * text with the object it holds, and marks the node so {@link #writeDataText(Object)} can turn it back into
+     * text.
+     *
+     * @param node a node of the parsed tree, changed in place
+     */
+    @SuppressWarnings("unchecked")
+    private static void readDataText(final Object node) {
+        if (node instanceof Map) {
+            final Object attributes = ((Map<String, Object>) node).get(ATTRIBUTES_KEY);
+            if (attributes instanceof Map && ((Map<String, Object>) attributes).get(DATA_KEY) instanceof String) {
+                final Map<String, Object> attributesMap = (Map<String, Object>) attributes;
+                final Object data = Try.of(() -> JsonUtil.getObjectFromJson(
+                        (String) attributesMap.get(DATA_KEY), Object.class)).getOrNull();
+                if (data instanceof Map) {
+                    attributesMap.put(DATA_KEY, data);
+                    attributesMap.put(DATA_AS_TEXT_MARKER, Boolean.TRUE);
+                }
+            }
+            ((Map<String, Object>) node).values().forEach(PropertyTreeFilter::readDataText);
+        } else if (node instanceof Collection) {
+            ((Collection<?>) node).forEach(PropertyTreeFilter::readDataText);
+        }
+    }
+
+    /**
+     * Writes back as JSON text, in a filtered Story Block tree, the data of the nodes marked by
+     * {@link #readDataText(Object)}, nested ones first.
+     *
+     * @param node a node of the filtered tree, changed in place
+     */
+    @SuppressWarnings("unchecked")
+    private static void writeDataText(final Object node) {
+        if (node instanceof Map) {
+            ((Map<String, Object>) node).values().forEach(PropertyTreeFilter::writeDataText);
+            final Object attributes = ((Map<String, Object>) node).get(ATTRIBUTES_KEY);
+            if (attributes instanceof Map && null != ((Map<String, Object>) attributes).remove(DATA_AS_TEXT_MARKER)) {
+                final Map<String, Object> attributesMap = (Map<String, Object>) attributes;
+                final Object data = attributesMap.get(DATA_KEY);
+                attributesMap.put(DATA_KEY, Try.of(() -> JsonUtil.JSON_MAPPER.writeValueAsString(data)).get());
+            }
+        } else if (node instanceof Collection) {
+            ((Collection<?>) node).forEach(PropertyTreeFilter::writeDataText);
+        }
+    }
+
+    /**
+     * Tells whether a text may hold, as a JSON key, a property the filter masks or removes, also as a key of
+     * JSON text nested in it. Text with {@code \}{@code u} character codes is always read, since a key could be
+     * written with them.
      *
      * @param text the text to check
      * @param filter the caller's filter
@@ -306,7 +371,8 @@ public final class PropertyTreeFilter {
             return true;
         }
         final String lowerCased = text.toLowerCase(Locale.ROOT);
-        return filter.restrictedProperties().stream().anyMatch(name -> lowerCased.contains('"' + name + '"'));
+        return filter.restrictedProperties().stream().anyMatch(name -> lowerCased.contains('"' + name + '"')
+                || lowerCased.contains("\\\"" + name + "\\\""));
     }
 
     /**

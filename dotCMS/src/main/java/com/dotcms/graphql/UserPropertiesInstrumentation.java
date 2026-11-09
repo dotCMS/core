@@ -16,13 +16,15 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * Keeps user properties out of the GraphQL results returned to callers who are neither CMS administrators
- * nor back-end users: in the {@code _map} field, Story Block fields and the lock owner of a {@code DotPage},
- * a value that is set is sent as {@link ContentFieldFilter#USER_PROPERTY_PLACEHOLDER}, and searches whose
+ * nor back-end users: in the {@code _map} field, Story Block fields and, while the user properties setting is
+ * on or a content property list names it, the lock owner of a {@code DotPage}, a value that is set is sent as
+ * {@link ContentFieldFilter#USER_PROPERTY_PLACEHOLDER}, and searches whose
  * query or sort names one return a field error.
  * Results for back-end callers, and fields of customer content types, are left unchanged.
  *
@@ -73,7 +75,9 @@ public class UserPropertiesInstrumentation extends SimpleInstrumentation {
             }
             final Object result = dataFetcher.get(environment);
             if (pageLock) {
-                return ContentFieldFilter.userPropertyValue(result);
+                return filter.restrictedProperties().contains(fieldName.toLowerCase(Locale.ROOT))
+                        ? ContentFieldFilter.userPropertyValue(result)
+                        : result;
             }
             if (storyBlock) {
                 return PropertyTreeFilter.filter(result, filter, PropertyTreeFilter.storedContentTypes());

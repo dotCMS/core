@@ -159,6 +159,59 @@ class PropertyTreeFilterTest {
         assertEquals(Map.of(), PropertyTreeFilter.filterContentletProperties("Product", Map.of("title", "Hello"), filter, FIELD_TYPES));
     }
 
+    /**
+     * Given a contentlet map that names its content type only by {@code stInode}, as the content relationships
+     * endpoint returns it, with a Story Block embedding a contentlet and a property listed to hide, when it is
+     * filtered, then it is filtered as a contentlet: the embedded user properties get the placeholder in the
+     * field and in its {@code _raw} copy, and the hidden property is left out.
+     */
+    @Test
+    void filtersContentletsThatNameTheirTypeByStructureInode() {
+        Config.setProperty(ContentFieldFilter.FIELDS_TO_HIDE_PROPERTY, "title");
+        final String storyBlock = "{\"type\":\"doc\",\"content\":[{\"type\":\"dotContent\",\"attrs\":{\"data\":"
+                + "{\"identifier\":\"emb-1\",\"contentType\":\"Product\",\"modUser\":\"dotcms.org.1\","
+                + "\"modUserName\":\"Admin User\"}}}]}";
+        final Map<String, Object> contentlet = content("abc-1");
+        contentlet.remove("contentType");
+        contentlet.put("stInode", "product-type-id");
+        contentlet.put("body", storyBlock);
+        contentlet.put("body_raw", storyBlock);
+
+        final Map<?, ?> filtered = (Map<?, ?>) PropertyTreeFilter.filter(contentlet, anonymousFilter(), FIELD_TYPES);
+
+        for (final String key : List.of("body", "body_raw")) {
+            final String text = (String) filtered.get(key);
+            assertFalse(text.contains("dotcms.org.1") || text.contains("Admin User"), key + ": " + text);
+            assertTrue(text.contains(ContentFieldFilter.USER_PROPERTY_PLACEHOLDER), key + ": " + text);
+        }
+        assertFalse(filtered.containsKey("title"));
+        assertEquals("product-type-id", filtered.get("stInode"));
+    }
+
+    /**
+     * Given a Story Block whose embedded contentlet is stored as JSON text in the node's {@code data}, when it is
+     * filtered, then the embedded user properties get the placeholder and {@code data} is still JSON text.
+     */
+    @Test
+    void replacesUserPropertiesOfContentEmbeddedAsJsonText() throws Exception {
+        final String data = "{\"identifier\":\"emb-1\",\"contentType\":\"Product\",\"title\":\"Helmet\","
+                + "\"modUser\":\"dotcms.org.1\",\"modUserName\":\"Admin User\"}";
+        final String storyBlock = JsonUtil.JSON_MAPPER.writeValueAsString(Map.of("type", "doc", "content",
+                List.of(Map.of("type", "dotContent", "attrs", Map.of("data", data)))));
+        final Map<String, Object> contentlet = content("abc-1");
+        contentlet.put("body", storyBlock);
+
+        final Map<?, ?> filtered = (Map<?, ?>) PropertyTreeFilter.filter(contentlet, anonymousFilter(), FIELD_TYPES);
+
+        final String text = (String) filtered.get("body");
+        assertFalse(text.contains("dotcms.org.1") || text.contains("Admin User"), text);
+        final JsonNode filteredData = JsonUtil.JSON_MAPPER.readTree(text).at("/content/0/attrs/data");
+        assertTrue(filteredData.isTextual(), text);
+        final JsonNode embedded = JsonUtil.JSON_MAPPER.readTree(filteredData.asText());
+        assertEquals("Helmet", embedded.get("title").asText());
+        assertEquals(ContentFieldFilter.USER_PROPERTY_PLACEHOLDER, embedded.get("modUser").asText());
+    }
+
     /** Returns a contentlet map of the test content type with the usual user properties. */
     private static Map<String, Object> content(final String identifier) {
         final Map<String, Object> content = new LinkedHashMap<>();
