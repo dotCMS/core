@@ -128,6 +128,31 @@ def publish(
             f"{len(hits)} entries match version {version}; refusing to guess which to update"
         )
 
+    # Prod gets whatever this write pushes, so the same rules apply to prod's copy: no
+    # guessing between duplicates, and a hand edit made on prod is not overwritten.
+    if prod is not None:
+        prod_hits = prod._search(version)
+        if len(prod_hits) > 1:
+            raise AmbiguousMatchError(
+                f"{len(prod_hits)} entries match version {version} on prod; refusing to guess"
+            )
+        if prod_hits and not hits:
+            # Creating it on auth would push a second row, with a new identifier, to prod.
+            raise RuntimeError(
+                f"an entry for {version} exists on prod but not on auth; "
+                "restore auth/prod parity before publishing"
+            )
+        if prod_hits and not force and not _owned_by_service_account(prod_hits[0], service_account):
+            editor = prod_hits[0].mod_user_name or prod_hits[0].mod_user
+            return PublishResult(
+                status="skipped",
+                version=version,
+                reason=(
+                    f"last modified on prod by {editor} "
+                    "(not the automation service account); use --force to override"
+                ),
+            )
+
     if not hits:
         contentlet = build_contentlet(
             version=version,

@@ -29,6 +29,7 @@ class SyncResult:
     desired: dict
     current: dict
     missing_rows: dict[str, str] = field(default_factory=dict)
+    prod_current: dict | None = None  # prod's live record, when prod was compared
 
 
 def load_state_file(path: str) -> dict:
@@ -103,13 +104,15 @@ def reconcile(
             if t in fallback:
                 desired[t] = fallback[t]
 
-    fields = diff_fields(current, desired)
-    if not fields and prod is not None:
-        fields = diff_fields(prod_current, desired)
-        if fields:
-            log.info("auth matches but prod differs in %s; re-pushing", ",".join(fields))
-            current = prod_current  # report the stale side, so the diff shows what changes
-    result = SyncResult("unchanged", fields, desired, current, missing_rows)
+    # One write fixes both sides, so the fields to report are the union of auth's and
+    # prod's differences, in the usual track order.
+    auth_fields = diff_fields(current, desired)
+    prod_fields = diff_fields(prod_current, desired) if prod is not None else []
+    fields = [f for f in (*TRACKS, "tainted") if f in auth_fields or f in prod_fields]
+    if prod_fields and not auth_fields:
+        log.info("auth matches but prod differs in %s; re-pushing", ",".join(prod_fields))
+    result = SyncResult("unchanged", fields, desired, current, missing_rows,
+                        prod_current if prod is not None else None)
     if not fields:
         return result
     if not apply:

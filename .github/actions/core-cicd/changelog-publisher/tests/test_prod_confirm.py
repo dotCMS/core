@@ -73,8 +73,8 @@ def _route(url: str, *, record=None, rows=None, live: list[bool] | None = None):
         if "EvergreenState" in q:
             return 200, {}, json.dumps(_body([record] if record else []))
         version = q.split("minor_dotraw:")[1].split()[0]
-        return 200, {}, json.dumps(
-            _fixture("search_hit.json" if rows.get(version, True) else "search_empty.json"))
+        return 200, {}, json.dumps(_fixture(
+            "search_hit_automation.json" if rows.get(version, True) else "search_empty.json"))
 
     responses_lib.add_callback(responses_lib.POST, url, callback=cb,
                                content_type="application/json")
@@ -173,14 +173,15 @@ def test_create_waits_for_the_new_inode_on_prod():
     responses_lib.add(responses_lib.POST, _AUTH_SEARCH, json=_fixture("search_empty.json"))
     responses_lib.add(responses_lib.POST, _AUTH_SEARCH, json=_fixture("search_hit.json"))
     _add_fire()
-    _route(_PROD_SEARCH, live=[False, True])
+    _route(_PROD_SEARCH, rows={"26.07.10-01": False}, live=[False, True])
 
     result = _publish(CorpsitesClient(), _prod())
 
     assert result.status == "created"
-    prod_checks = [json.loads(c.request.body)["query"] for c in responses_lib.calls
-                   if c.request.url == _PROD_SEARCH]
-    assert prod_checks == [f"+inode:{_NEW_INODE} +live:true"] * 2
+    inode_checks = [json.loads(c.request.body)["query"] for c in responses_lib.calls
+                    if c.request.url == _PROD_SEARCH
+                    and "+inode:" in json.loads(c.request.body)["query"]]
+    assert inode_checks == [f"+inode:{_NEW_INODE} +live:true"] * 2
 
 
 @responses_lib.activate
@@ -192,7 +193,9 @@ def test_update_waits_for_the_new_inode_on_prod():
     result = _publish(CorpsitesClient(), _prod())
 
     assert result.status == "updated"
-    assert [c.request.url for c in responses_lib.calls].count(_PROD_SEARCH) == 1
+    inode_checks = [c for c in responses_lib.calls if c.request.url == _PROD_SEARCH
+                    and "+inode:" in json.loads(c.request.body)["query"]]
+    assert len(inode_checks) == 1
 
 
 @responses_lib.activate
@@ -208,8 +211,10 @@ def test_push_that_never_lands_is_a_failure():
 @responses_lib.activate
 def test_dry_run_publish_never_touches_prod():
     responses_lib.add(responses_lib.POST, _AUTH_SEARCH, json=_fixture("search_hit_automation.json"))
+    _route(_PROD_SEARCH)
     _publish(CorpsitesClient(), _prod(), apply=False)
-    assert _PROD_SEARCH not in [c.request.url for c in responses_lib.calls]
+    assert not [c for c in responses_lib.calls if c.request.url == _PROD_SEARCH
+                and "+inode:" in json.loads(c.request.body)["query"]]
 
 
 @responses_lib.activate
@@ -218,10 +223,12 @@ def test_fire_response_without_inode_is_a_failure():
     fails rather than reporting an unconfirmed push as success."""
     responses_lib.add(responses_lib.POST, _AUTH_SEARCH, json=_fixture("search_hit_automation.json"))
     responses_lib.add(responses_lib.PUT, _FIRE_URL, json={"entity": {}}, status=200)
+    _route(_PROD_SEARCH)
 
     with pytest.raises(RuntimeError, match="no inode"):
         _publish(CorpsitesClient(), _prod())
-    assert _PROD_SEARCH not in [c.request.url for c in responses_lib.calls]
+    assert not [c for c in responses_lib.calls if c.request.url == _PROD_SEARCH
+                and "+inode:" in json.loads(c.request.body)["query"]]
 
 
 # ---------------------------------------------------------------------------
@@ -265,7 +272,7 @@ def test_dry_run_reports_stale_prod_as_would_update():
 
     assert result.status == "would-update"
     assert result.fields == ["tainted"]
-    assert result.current["tainted"] == []  # the diff shows prod's stale value, not auth's
+    assert result.prod_current["tainted"] == []
 
 
 @responses_lib.activate
@@ -274,7 +281,7 @@ def test_dry_run_cli_prints_the_prod_side_of_the_diff(tmp_path, capsys):
     _route(_PROD_SEARCH, record=_record({**_HUB, "latest": "26.09.17-02"}))
 
     assert main(["sync-site", "--state-file", _state_file(tmp_path)]) == 0
-    assert "  latest: 26.09.17-02 -> 26.09.28-02" in capsys.readouterr().out
+    assert "  prod latest: 26.09.17-02 -> 26.09.28-02" in capsys.readouterr().out
 
 
 @responses_lib.activate
@@ -397,3 +404,91 @@ def test_prod_record_is_read_live_only():
                     if c.request.url == _PROD_SEARCH
                     and "EvergreenState" in json.loads(c.request.body)["query"]]
     assert record_reads and all(q.endswith(" +live:true") for q in record_reads)
+
+
+# ---------------------------------------------------------------------------
+# publish: hand edits on prod are protected, and prod/auth parity is enforced
+# ---------------------------------------------------------------------------
+
+def _prod_rows(fixture: str):
+    """Answer prod's Dotcmsbuilds lookups with `fixture`; inode checks say live."""
+    def cb(request):
+        q = json.loads(request.body)["query"]
+        if "+inode:" in q:
+            return 200, {}, json.dumps(_body([{"inode": _NEW_INODE}]))
+        return 200, {}, json.dumps(_fixture(fixture))
+    responses_lib.add_callback(responses_lib.POST, _PROD_SEARCH, callback=cb,
+                               content_type="application/json")
+
+
+@responses_lib.activate
+def test_entry_hand_edited_on_prod_is_skipped():
+    """Auth's copy is the automation's, but someone edited prod's: leave both alone."""
+    responses_lib.add(responses_lib.POST, _AUTH_SEARCH, json=_fixture("search_hit_automation.json"))
+    _prod_rows("search_hit.json")
+
+    result = _publish(CorpsitesClient(), _prod())
+
+    assert result.status == "skipped"
+    assert "on prod" in result.reason and "Jamie Mauro" in result.reason
+    assert _FIRE_URL not in [c.request.url for c in responses_lib.calls]
+
+
+@responses_lib.activate
+def test_force_overrides_a_hand_edit_on_prod():
+    responses_lib.add(responses_lib.POST, _AUTH_SEARCH, json=_fixture("search_hit_automation.json"))
+    _prod_rows("search_hit.json")
+    _add_fire()
+
+    assert _publish(CorpsitesClient(), _prod(), force=True).status == "updated"
+
+
+@responses_lib.activate
+def test_more_than_one_prod_entry_is_ambiguous():
+    responses_lib.add(responses_lib.POST, _AUTH_SEARCH, json=_fixture("search_hit_automation.json"))
+    _prod_rows("search_two_hits.json")
+
+    with pytest.raises(publisher.AmbiguousMatchError, match="on prod"):
+        _publish(CorpsitesClient(), _prod())
+    assert _FIRE_URL not in [c.request.url for c in responses_lib.calls]
+
+
+@responses_lib.activate
+def test_entry_on_prod_but_missing_on_auth_is_a_parity_error():
+    """Creating it on auth would push a second row with a new identifier to prod."""
+    responses_lib.add(responses_lib.POST, _AUTH_SEARCH, json=_fixture("search_empty.json"))
+    _prod_rows("search_hit_automation.json")
+
+    with pytest.raises(RuntimeError, match="exists on prod but not on auth"):
+        _publish(CorpsitesClient(), _prod())
+    assert _FIRE_URL not in [c.request.url for c in responses_lib.calls]
+
+
+# ---------------------------------------------------------------------------
+# sync dry-run: report auth and prod differences side by side
+# ---------------------------------------------------------------------------
+
+@responses_lib.activate
+def test_dry_run_reports_differences_on_both_sides():
+    """Auth lags on `latest`, prod on `tainted`: both belong in the report."""
+    _route(_AUTH_SEARCH, record=_record({**_HUB, "latest": "26.09.17-02"}))
+    _route(_PROD_SEARCH, record=_record({**_HUB, "tainted": []}))
+
+    result = sync.reconcile(CorpsitesClient(), _HUB, apply=False, prod=_prod())
+
+    assert result.status == "would-update"
+    assert result.fields == ["latest", "tainted"]
+    assert result.current["latest"] == "26.09.17-02"
+    assert result.prod_current["tainted"] == []
+
+
+@responses_lib.activate
+def test_dry_run_cli_prints_both_sides(tmp_path, capsys):
+    _route(_AUTH_SEARCH, record=_record({**_HUB, "latest": "26.09.17-02"}))
+    _route(_PROD_SEARCH, record=_record({**_HUB, "tainted": []}))
+
+    assert main(["sync-site", "--state-file", _state_file(tmp_path)]) == 0
+    out = capsys.readouterr().out
+    assert "  latest: 26.09.17-02 -> 26.09.28-02" in out
+    assert "  prod tainted: +26.08.28-01,26.08.31-01 -" in out
+    assert "::evergreen-sync::would-update fields=latest,tainted" in out

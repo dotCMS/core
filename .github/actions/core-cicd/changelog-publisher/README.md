@@ -67,6 +67,12 @@ to 5 minutes (pushes normally land in about a minute). If it never appears, the 
 names the record; check the push-publishing queue on auth. Prod is only ever read: the prod
 client cannot fire actions.
 
+**Prod's copy is protected too.** Before writing, `publish` also looks the version up on prod,
+since prod receives whatever the write pushes. More than one entry there is an error (never
+guess), an entry on prod with none on auth is a parity error (creating it on auth would push a
+second row to prod), and an entry last modified on prod by anyone other than the service account
+is skipped like a hand edit on auth, unless `--force` is passed.
+
 ## Exit-code / stdout contract
 
 The workflow branches Slack wording on this contract, so it is fixed here before any CLI code:
@@ -100,7 +106,8 @@ Prod is compared as well as auth. If a push failed earlier, auth already matches
 does not, so the record is re-pushed even though auth is unchanged; the next daily run heals it.
 The release-row check (a track only moves to a version with a live, released row) also reads
 prod, so a track never points at a row that has not arrived there. A write waits until it is live
-on prod; if it never is, that counts as a failed attempt and is retried.
+on prod; if it never is, that counts as a failed attempt and is retried. A dry-run prints each
+side's differences separately, prod's prefixed `prod `, and `fields=` lists both.
 
 | Exit | Meaning | stdout marker |
 |------|---------|---------------|
