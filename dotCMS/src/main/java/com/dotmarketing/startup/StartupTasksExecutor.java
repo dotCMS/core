@@ -3,6 +3,9 @@ package com.dotmarketing.startup;
 import com.dotmarketing.exception.DotHibernateException;
 import com.google.common.annotations.VisibleForTesting;
 import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.ResultSet;
 import java.util.Date;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexThread;
@@ -229,7 +232,67 @@ public class StartupTasksExecutor {
     }
 
 
+    /**
+     * Serializes PostgreSQL schema upgrades across nodes, including their version records.
+     * A session lock survives concurrent DDL's autocommit boundaries; a transaction lock cannot.
+     *
+     * @throws DotDataException if an upgrade or database lock operation fails
+     */
     public void executeSchemaUpgrades() throws DotDataException {
+        if (!DbConnectionFactory.isPostgres()) {
+            executeSchemaUpgradeTasks();
+            return;
+        }
+        try (Connection connection = DbConnectionFactory.getDataSource().getConnection()) {
+            if (!connection.getAutoCommit()) {
+                throw new DotDataException("Schema upgrade locking requires an autocommit connection");
+            }
+            try (Statement lock = connection.createStatement()) {
+                // A blocking lock SELECT keeps a snapshot that can stall CREATE INDEX CONCURRENTLY.
+                boolean acquired = false;
+                while (!acquired) {
+                    try (ResultSet result = lock.executeQuery(
+                            "SELECT pg_try_advisory_lock(1146049603, 1)")) {
+                        acquired = result.next() && result.getBoolean(1);
+                    }
+                    if (!acquired) {
+                        try {
+                            Thread.sleep(100);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            throw new DotDataException("Interrupted waiting for the schema upgrade lock", e);
+                        }
+                    }
+                }
+                try {
+                    Config.DB_VERSION = new DotConnect().setSQL(SELECT).loadInt("test", connection);
+                    executeSchemaUpgradeTasks();
+                } finally {
+                    try {
+                        lock.execute("SELECT pg_advisory_unlock(1146049603, 1)");
+                    } catch (SQLException unlockFailure) {
+                        // Closing a pooled connection alone does not release session locks.
+                        try {
+                            connection.abort(Runnable::run);
+                        } catch (SQLException abortFailure) {
+                            unlockFailure.addSuppressed(abortFailure);
+                        }
+                        throw unlockFailure;
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            throw new DotDataException("Unable to acquire or release the schema upgrade lock", e);
+        }
+    }
+
+    /**
+     * Executes pending schema tasks and records each successful version while the caller holds
+     * the PostgreSQL upgrade lock, or follows the existing flow for another database vendor.
+     *
+     * @throws DotDataException if an upgrade fails
+     */
+    private void executeSchemaUpgradeTasks() throws DotDataException {
 
         Logger.info(this, "---");
         Logger.info(this, "");
