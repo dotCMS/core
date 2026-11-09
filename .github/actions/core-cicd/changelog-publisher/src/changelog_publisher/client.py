@@ -114,11 +114,11 @@ class CorpsitesClient:
             for c in self._query(query, 2)
         ]
 
-    def find_evergreen_state(self) -> list[dict]:
-        """The `evergreen-state` record(s); limit 2 so a duplicate is detectable."""
-        return self._query(
-            "+contentType:EvergreenState +EvergreenState.title_dotraw:evergreen-state", 2
-        )
+    def find_evergreen_state(self, *, live: bool = False) -> list[dict]:
+        """The `evergreen-state` record(s); limit 2 so a duplicate is detectable. `live`
+        restricts to the published version (prod: what visitors see, never a draft)."""
+        query = "+contentType:EvergreenState +EvergreenState.title_dotraw:evergreen-state"
+        return self._query(f"{query} +live:true" if live else query, 2)
 
     def has_release_row(self, version: str) -> bool:
         """True if a live, released, downloadable Dotcmsbuilds row exists for `version`."""
