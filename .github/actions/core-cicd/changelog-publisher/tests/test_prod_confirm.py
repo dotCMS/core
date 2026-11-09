@@ -53,8 +53,8 @@ def _body(contentlets: list[dict]) -> dict:
     return {"entity": {"jsonObjectView": {"contentlets": contentlets}}}
 
 
-def _record(state: dict, inode: str = "inode-old") -> dict:
-    return {"contentType": "EvergreenState", "identifier": "evg-1", "inode": inode,
+def _record(state: dict, inode: str = "inode-old", identifier: str = "evg-1") -> dict:
+    return {"contentType": "EvergreenState", "identifier": identifier, "inode": inode,
             "title": "evergreen-state", "state": json.dumps(state, separators=(",", ":"))}
 
 
@@ -410,22 +410,33 @@ def test_prod_record_is_read_live_only():
 # publish: hand edits on prod are protected, and prod/auth parity is enforced
 # ---------------------------------------------------------------------------
 
-def _prod_rows(fixture: str):
-    """Answer prod's Dotcmsbuilds lookups with `fixture`; inode checks say live."""
+def _prod_rows(fixture):
+    """Answer prod's Dotcmsbuilds lookups with `fixture` (a fixture name or a body);
+    inode checks say live."""
+    body = _fixture(fixture) if isinstance(fixture, str) else fixture
+
     def cb(request):
         q = json.loads(request.body)["query"]
         if "+inode:" in q:
             return 200, {}, json.dumps(_body([{"inode": _NEW_INODE}]))
-        return 200, {}, json.dumps(_fixture(fixture))
+        return 200, {}, json.dumps(body)
     responses_lib.add_callback(responses_lib.POST, _PROD_SEARCH, callback=cb,
                                content_type="application/json")
+
+
+def _hand_edited_on_prod() -> dict:
+    """Prod's copy of auth's automation-owned row, last modified by a person on prod."""
+    body = _fixture("search_hit_automation.json")
+    row = body["entity"]["jsonObjectView"]["contentlets"][0]
+    row.update(modUser="user-5a8a91c4-0cd7-4108-bece-549e466409bf", modUserName="Jamie Mauro")
+    return body
 
 
 @responses_lib.activate
 def test_entry_hand_edited_on_prod_is_skipped():
     """Auth's copy is the automation's, but someone edited prod's: leave both alone."""
     responses_lib.add(responses_lib.POST, _AUTH_SEARCH, json=_fixture("search_hit_automation.json"))
-    _prod_rows("search_hit.json")
+    _prod_rows(_hand_edited_on_prod())
 
     result = _publish(CorpsitesClient(), _prod())
 
@@ -437,7 +448,7 @@ def test_entry_hand_edited_on_prod_is_skipped():
 @responses_lib.activate
 def test_force_overrides_a_hand_edit_on_prod():
     responses_lib.add(responses_lib.POST, _AUTH_SEARCH, json=_fixture("search_hit_automation.json"))
-    _prod_rows("search_hit.json")
+    _prod_rows(_hand_edited_on_prod())
     _add_fire()
 
     assert _publish(CorpsitesClient(), _prod(), force=True).status == "updated"
@@ -492,3 +503,66 @@ def test_dry_run_cli_prints_both_sides(tmp_path, capsys):
     assert "  latest: 26.09.17-02 -> 26.09.28-02" in out
     assert "  prod tainted: +26.08.28-01,26.08.31-01 -" in out
     assert "::evergreen-sync::would-update fields=latest,tainted" in out
+
+
+# ---------------------------------------------------------------------------
+# identifier parity: auth and prod must hold the same record, or a push adds a second
+# ---------------------------------------------------------------------------
+
+@responses_lib.activate
+def test_changelog_entry_with_different_identifiers_is_a_parity_error():
+    """search_hit.json has a different identifier from search_hit_automation.json."""
+    responses_lib.add(responses_lib.POST, _AUTH_SEARCH, json=_fixture("search_hit_automation.json"))
+    _prod_rows("search_hit.json")
+
+    with pytest.raises(RuntimeError, match="identifier"):
+        _publish(CorpsitesClient(), _prod(), force=True)
+    assert _FIRE_URL not in [c.request.url for c in responses_lib.calls]
+
+
+@responses_lib.activate
+def test_evergreen_state_with_different_identifiers_is_a_parity_error():
+    _route(_AUTH_SEARCH, record=_record({**_HUB, "latest": "26.09.17-02"}))
+    _route(_PROD_SEARCH, record=_record(_HUB, identifier="evg-other"))
+    _add_fire()
+
+    with pytest.raises(RuntimeError, match="identifier"):
+        sync.reconcile(CorpsitesClient(), _HUB, apply=True, prod=_prod())
+    assert _FIRE_URL not in [c.request.url for c in responses_lib.calls]
+
+
+@responses_lib.activate
+def test_missing_row_with_no_prod_value_is_an_error_not_a_dropped_track():
+    """Prod has no live record to fall back on: writing the state without the track
+    would drop it from the site, so stop instead."""
+    _route(_AUTH_SEARCH, record=_record({**_HUB, "latest": "26.09.17-02"}))
+    _route(_PROD_SEARCH, record=None, rows={_HUB["latest"]: False})
+    _add_fire()
+
+    with pytest.raises(RuntimeError, match="latest"):
+        sync.reconcile(CorpsitesClient(), _HUB, apply=True, prod=_prod())
+    assert _FIRE_URL not in [c.request.url for c in responses_lib.calls]
+
+
+@responses_lib.activate
+def test_record_missing_on_prod_is_created_by_the_push_when_no_row_is_missing():
+    """With every row on prod, a record absent from prod is simply pushed there."""
+    _route(_AUTH_SEARCH, record=_record(_HUB))
+    _route(_PROD_SEARCH, record=None, live=[True])
+    _add_fire()
+
+    assert sync.reconcile(CorpsitesClient(), _HUB, apply=True, prod=_prod()).status == "updated"
+
+
+@responses_lib.activate
+def test_identifier_mismatch_is_not_retried():
+    """Like a duplicate record, a parity break cannot fix itself, so the retries (60 s,
+    then 180 s) would only delay the failure."""
+    _route(_AUTH_SEARCH, record=_record({**_HUB, "latest": "26.09.17-02"}))
+    _route(_PROD_SEARCH, record=_record(_HUB, identifier="evg-other"))
+
+    with pytest.raises(sync.ParityError):
+        sync.sync_with_retries(CorpsitesClient(), _HUB, prod=_prod())
+    record_reads = [c for c in responses_lib.calls if c.request.url == _AUTH_SEARCH
+                    and "EvergreenState" in json.loads(c.request.body)["query"]]
+    assert len(record_reads) == 1

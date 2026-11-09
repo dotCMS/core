@@ -23,6 +23,11 @@ class AmbiguousMatchError(RuntimeError):
     """Raised when >1 entry matches a version — the tool refuses to guess (D4)."""
 
 
+class ParityError(RuntimeError):
+    """Auth and prod hold different records for the same thing, so a push would add a
+    second record on prod. Permanent until someone restores parity; never retried."""
+
+
 # dotCMS _search is Elasticsearch-backed and indexes asynchronously after Publish fires.
 # After a create, wait until the new row is searchable before exiting, so a re-run started
 # after this run finished cannot miss it and double-create (the workflow's concurrency
@@ -138,8 +143,15 @@ def publish(
             )
         if prod_hits and not hits:
             # Creating it on auth would push a second row, with a new identifier, to prod.
-            raise RuntimeError(
+            raise ParityError(
                 f"an entry for {version} exists on prod but not on auth; "
+                "restore auth/prod parity before publishing"
+            )
+        if prod_hits and prod_hits[0].identifier != hits[0].identifier:
+            # Same reason: auth's row would reach prod as a second row, not an update.
+            raise ParityError(
+                f"auth and prod hold {version} under different identifiers "
+                f"({hits[0].identifier} vs {prod_hits[0].identifier}); "
                 "restore auth/prod parity before publishing"
             )
         if prod_hits and not force and not _owned_by_service_account(prod_hits[0], service_account):

@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 import requests
 
 from .client import CorpsitesClient, wait_for_prod
-from .publisher import AmbiguousMatchError
+from .publisher import AmbiguousMatchError, ParityError
 from .version import is_current_track
 
 log = logging.getLogger("changelog_publisher.sync")
@@ -89,6 +89,14 @@ def reconcile(
         prod_hits = prod.find_evergreen_state(live=True)
         if len(prod_hits) > 1:
             raise AmbiguousMatchError("more than one 'evergreen-state' EvergreenState record on prod")
+        if prod_hits and prod_hits[0].get("identifier") != hits[0].get("identifier"):
+            # Auth's record would reach prod as a second record, and every later sync would
+            # then fail as ambiguous.
+            raise ParityError(
+                "EvergreenState identifiers differ on auth and prod "
+                f"({hits[0].get('identifier')} vs {prod_hits[0].get('identifier')}); "
+                "restore auth/prod parity"
+            )
         prod_current = parse_record_state(prod_hits[0].get("state")) if prod_hits else {}
 
     desired: dict = {"tainted": hub["tainted"]}
@@ -103,6 +111,13 @@ def reconcile(
             missing_rows[t] = hub[t]
             if t in fallback:
                 desired[t] = fallback[t]
+            elif prod is not None:
+                # Nothing on prod to keep, and writing without the track would remove it
+                # from the site; wait for the row instead.
+                raise RuntimeError(
+                    f"cannot keep track {t}: {hub[t]} has no release row on prod "
+                    "and prod has no previous value for it"
+                )
 
     # One write fixes both sides, so the fields to report are the union of auth's and
     # prod's differences, in the usual track order.
@@ -147,8 +162,8 @@ def sync_with_retries(
     for i in range(1, attempts + 1):
         try:
             return reconcile(client, hub, apply=True, prod=prod)
-        except AmbiguousMatchError:
-            raise  # duplicate record is a permanent data-integrity error, not transient
+        except (AmbiguousMatchError, ParityError):
+            raise  # duplicates and parity breaks are permanent data-integrity errors, not transient
         except (requests.RequestException, RuntimeError) as exc:
             log.error("attempt %d/%d failed: %s", i, attempts, exc)
             if i == attempts:

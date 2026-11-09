@@ -69,9 +69,10 @@ client cannot fire actions.
 
 **Prod's copy is protected too.** Before writing, `publish` also looks the version up on prod,
 since prod receives whatever the write pushes. More than one entry there is an error (never
-guess), an entry on prod with none on auth is a parity error (creating it on auth would push a
-second row to prod), and an entry last modified on prod by anyone other than the service account
-is skipped like a hand edit on auth, unless `--force` is passed.
+guess), an entry on prod with none on auth, or under a different identifier, is a parity error
+(the push would add a second row to prod rather than update one), and an entry last modified on
+prod by anyone other than the service account is skipped like a hand edit on auth, unless
+`--force` is passed.
 
 ## Exit-code / stdout contract
 
@@ -107,7 +108,10 @@ does not, so the record is re-pushed even though auth is unchanged; the next dai
 The release-row check (a track only moves to a version with a live, released row) also reads
 prod, so a track never points at a row that has not arrived there. A write waits until it is live
 on prod; if it never is, that counts as a failed attempt and is retried. A dry-run prints each
-side's differences separately, prod's prefixed `prod `, and `fields=` lists both.
+side's differences separately, prod's prefixed `prod `, and `fields=` lists both. The record
+must have the same identifier on auth and prod (a parity error otherwise, never retried), and a
+track whose row is missing on prod, with no previous value on prod to keep, fails the sync rather
+than being dropped from the site.
 
 | Exit | Meaning | stdout marker |
 |------|---------|---------------|
