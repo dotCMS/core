@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.Optional;
 
 import org.apache.velocity.exception.ResourceNotFoundException;
 
@@ -80,43 +81,68 @@ public class VTLLoader implements DotLoader {
 
     }
 
-    InputStream streamFile(String filePath) throws IOException {
-        boolean serveFile = false;
-        Logger.debug(this, "Not a CMS Velocity File : " + filePath);
+    /**
+     * Resolves the file a VTL resource path points at, under the same rules this loader serves
+     * it by: the path is tried under the Velocity root -- or under the dynamic content folder,
+     * for a {@code dynamic} path -- and then as it was given, and whatever it lands on must
+     * canonically sit inside one of the folders Velocity is allowed to read from.
+     *
+     * <p>The path is written by whoever wrote the Velocity that asked for it, so it may carry
+     * {@code ..} segments: canonicalising here is what makes the answer the file that will
+     * actually be read rather than the one the text appears to name. A caller that needs to know
+     * who wrote the code it is about to run must ask this and not read the path itself.
+     *
+     * @param filePath The resource path the renderer resolved.
+     *
+     * @return The canonical file to read, or empty when nothing readable sits there.
+     *
+     * @throws IOException If the canonical path cannot be worked out.
+     */
+    public Optional<File> resolveServableFile(final String filePath) throws IOException {
 
-        java.io.File f = null;
-        String lookingFor = "";
-        if (filePath.startsWith("dynamic")) {
-            lookingFor = ConfigUtils.getDynamicContentPath() + File.separator + "velocity" + File.separator + filePath;
+        final String lookingFor = filePath.startsWith("dynamic")
+                ? ConfigUtils.getDynamicContentPath() + File.separator + "velocity" + File.separator + filePath
+                : VELOCITY_ROOT + filePath;
 
-        } else {
-            lookingFor = VELOCITY_ROOT + filePath;
+        File file = new File(lookingFor);
+        if (!file.exists()) {
+            file = new File(filePath);
         }
-        f = new java.io.File(lookingFor);
-        if (!f.exists()) {
-            f = new java.io.File(filePath);
+        if (!file.exists()) {
+            return Optional.empty();
         }
-        if (!f.exists()) {
-            throw new ResourceNotFoundException("cannot find resource");
-        }
-        String canon = f.getCanonicalPath();
-        File dynamicContent = new File(ConfigUtils.getDynamicContentPath());
 
-        if (assetRealCanoncalPath != null && canon.startsWith(assetRealCanoncalPath)) {
-            serveFile = true;
-        } else if (velocityCanoncalPath != null && canon.startsWith(velocityCanoncalPath)) {
-            serveFile = true;
-        } else if (assetCanoncalPath != null && canon.startsWith(assetCanoncalPath)) {
-            serveFile = true;
-        } else if (canon.startsWith(dynamicContent.getCanonicalPath())) {
-            serveFile = true;
-        }
+        final File canonical = file.getCanonicalFile();
+        final String canon = canonical.getPath();
+        final File dynamicContent = new File(ConfigUtils.getDynamicContentPath());
+
+        final boolean serveFile =
+                (assetRealCanoncalPath != null && canon.startsWith(assetRealCanoncalPath))
+                        || (velocityCanoncalPath != null && canon.startsWith(velocityCanoncalPath))
+                        || (assetCanoncalPath != null && canon.startsWith(assetCanoncalPath))
+                        || canon.startsWith(dynamicContent.getCanonicalPath());
+
         if (!serveFile) {
             Logger.warn(this, "POSSIBLE HACK ATTACK DotResourceLoader: " + lookingFor);
-            throw new ResourceNotFoundException("cannot find resource");
+            return Optional.empty();
         }
-        return new BufferedInputStream(Files.newInputStream(f.toPath()));
+        return Optional.of(canonical);
+    }
 
+    /**
+     * Streams the VTL resource the given path points at.
+     *
+     * @param filePath The resource path the renderer resolved.
+     *
+     * @return The contents of the file that path resolves to.
+     *
+     * @throws IOException If the file cannot be opened.
+     */
+    InputStream streamFile(final String filePath) throws IOException {
+        Logger.debug(this, "Not a CMS Velocity File : " + filePath);
+        final File file = resolveServableFile(filePath)
+                .orElseThrow(() -> new ResourceNotFoundException("cannot find resource"));
+        return new BufferedInputStream(Files.newInputStream(file.toPath()));
     }
 
 

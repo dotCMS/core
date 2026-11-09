@@ -159,6 +159,8 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
         final PageMode pageMode = PageMode.get(request);
 
         final Map<String, Object> removedTools = restrictViewTools(context, contentlet);
+        final Object previousAuthor = RestrictedViewToolAccess.announceRenderingAuthor(request,
+                null != contentlet ? contentlet.getModUser() : null);
         try {
             context.put("content", contentlet);
             context.put("contentlet", contentlet);
@@ -172,6 +174,7 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
             }
         } finally {
             restoreViewTools(context, removedTools);
+            RestrictedViewToolAccess.restoreRenderingAuthor(request, previousAuthor);
         }
 
         final DotJSON dotJSON = (DotJSON) context.get("dotJSON");
@@ -226,6 +229,8 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
 
         final StringWriter evalResult = new StringWriter();
         final Map<String, Object> removedTools = restrictViewTools(context, contentlet);
+        final Object previousAuthor = RestrictedViewToolAccess.announceRenderingAuthor(request,
+                null != contentlet ? contentlet.getModUser() : null);
         try {
             context.put("content", contentlet);
             context.put("contentlet", contentlet);
@@ -239,6 +244,7 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
             );
         } finally {
             restoreViewTools(context, removedTools);
+            RestrictedViewToolAccess.restoreRenderingAuthor(request, previousAuthor);
         }
 
         final DotJSON dotJSON = (DotJSON) context.get("dotJSON");

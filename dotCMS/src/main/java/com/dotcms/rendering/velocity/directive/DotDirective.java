@@ -25,6 +25,7 @@ import org.apache.velocity.runtime.parser.node.Node;
 import org.apache.velocity.runtime.parser.node.SimpleNode;
 
 import com.dotcms.rendering.velocity.services.VelocityType;
+import com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 
 import com.dotmarketing.util.Logger;
@@ -127,7 +128,17 @@ abstract class DotDirective extends InputBase {
               "render", new Object[]{templatePath});
 
       final Writer innerWriter = new StringWriter();
-      final boolean result = this.renderTemplate(context, innerWriter, t, templatePath);
+      // A container or a template carries Velocity of its own. While that code runs, the author
+      // on the request is the one who saved it, so the view tools it calls are judged on who
+      // wrote them and not on the resource name the code itself can choose.
+      final Object previousAuthor =
+              RestrictedViewToolAccess.announceRenderingAuthorOf(request, templatePath);
+      final boolean result;
+      try {
+        result = this.renderTemplate(context, innerWriter, t, templatePath);
+      } finally {
+        RestrictedViewToolAccess.restoreRenderingAuthor(request, previousAuthor);
+      }
       this.afterRender(innerWriter.toString(), arguments, context);
       writer.write(innerWriter.toString());
 
