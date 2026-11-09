@@ -23,6 +23,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import io.vavr.control.Try;
@@ -162,6 +163,24 @@ public class DotCMSMacroWebAPIGalleryTest {
         assertTrue(listed.isEmpty(), "Expected no files, got " + listed);
     }
 
+    /**
+     * When: a back-end user without permissions of their own on the folder previews a page in edit mode, and the
+     * folder and its file can be read by the anonymous role
+     * Should: list the file, as it is listed to the anonymous user on the live site
+     */
+    @Test
+    void backendUserInEditMode_publicFolder_listsItsFiles() throws Exception {
+        final Folder folder = newFolder(anonymousRole);
+        final Contentlet file = publishedFile(folder, anonymousRole);
+        final User editor = new UserDataGen().roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        users.add(editor);
+
+        final List<String> listed = fileNames(
+                galleryFor(editor, PageMode.EDIT_MODE).getMediaGalleryFolderFiles(folder.getPath(), site));
+
+        assertEquals(List.of(fileName(file)), listed);
+    }
+
     private static Role newRole() {
         final Role role = new RoleDataGen().nextPersisted();
         roles.add(role);
@@ -197,8 +216,16 @@ public class DotCMSMacroWebAPIGalleryTest {
      * Creates the tool as Velocity does for a request made by the given user, or by nobody when it is {@code null}.
      */
     private static DotCMSMacroWebAPI galleryFor(final User user) {
+        return galleryFor(user, PageMode.LIVE);
+    }
+
+    /**
+     * Creates the tool as Velocity does for a request made by the given user while viewing the page in the given mode.
+     */
+    private static DotCMSMacroWebAPI galleryFor(final User user, final PageMode pageMode) {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getAttribute(WebKeys.USER)).thenReturn(user);
+        when(request.getAttribute(com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER)).thenReturn(pageMode);
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
         final ViewContext viewContext = mock(ViewContext.class);
         when(viewContext.getVelocityContext()).thenReturn(mock(Context.class));

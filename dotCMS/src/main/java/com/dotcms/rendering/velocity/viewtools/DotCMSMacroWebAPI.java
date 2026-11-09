@@ -14,6 +14,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAssetSearcher;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
@@ -33,6 +34,7 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 import javax.servlet.http.HttpServletRequest;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -599,11 +601,12 @@ public class DotCMSMacroWebAPI implements ViewTool {
         folderPath = (folderPath == null) ? "" : folderPath;
         folderPath = folderPath.trim().endsWith("/") ? folderPath.trim() : folderPath.trim() + "/";
         final User user = getRequestUser();
-        Folder folder = new Folder();
+        Host site;
+        Folder folder;
 		try {
 			// Resolve the site here: the hostId overload of findFolderByPath reads the site
 			// without front-end roles.
-			final Host site = APILocator.getHostAPI().find(hostId, user, true);
+			site = APILocator.getHostAPI().find(hostId, user, true);
 			folder = APILocator.getFolderAPI().findFolderByPath(folderPath, site, user, true);
 		} catch (final DotSecurityException e) {
 			Logger.debug(this, () -> String.format("User '%s' cannot read the requested gallery site or folder",
@@ -615,7 +618,13 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		}
         List<IFileAsset> fileList = new ArrayList<>();
 		try {
-			fileList.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, "", true, user, true));
+			// Not findFileAssetsByFolder: it reads the folder again with the page mode's front-end
+			// role setting, which is off in edit and preview mode.
+			fileList.addAll(APILocator.getFileAssetAPI().findFileAssetsByDB(FileAssetSearcher.builder()
+					.host(site).folder(folder).live(true).user(user).respectFrontendRoles(true).build()));
+			// Newest first, as the gallery has always listed them.
+			fileList.sort(Comparator.comparing(IFileAsset::getModDate,
+					Comparator.nullsLast(Comparator.reverseOrder())));
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage());
 		}

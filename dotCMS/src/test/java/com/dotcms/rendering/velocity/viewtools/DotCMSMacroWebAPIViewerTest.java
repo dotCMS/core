@@ -1,6 +1,8 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -25,12 +27,15 @@ import com.dotmarketing.portlets.calendar.business.EventAPI;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.dotmarketing.portlets.fileassets.business.FileAssetSearcher;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -38,7 +43,9 @@ import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
 /**
@@ -104,8 +111,7 @@ class DotCMSMacroWebAPIViewerTest {
                 .thenReturn(folder);
         when(folderAPI.findFolderByPath(eq(NORMALIZED_PATH), anyString(), any(User.class), anyBoolean()))
                 .thenReturn(folder);
-        when(fileAssetAPI.findFileAssetsByFolder(any(Folder.class), anyString(), anyBoolean(), any(User.class),
-                anyBoolean())).thenReturn(new ArrayList<>());
+        when(fileAssetAPI.findFileAssetsByDB(any(FileAssetSearcher.class))).thenReturn(new ArrayList<>());
     }
 
     @AfterEach
@@ -126,7 +132,7 @@ class DotCMSMacroWebAPIViewerTest {
         // Then the site, the folder and the files are read as the anonymous user, honoring front-end roles
         verify(hostAPI).find(SITE_ID, anonymous, true);
         verify(folderAPI).findFolderByPath(NORMALIZED_PATH, site, anonymous, true);
-        verify(fileAssetAPI).findFileAssetsByFolder(folder, "", true, anonymous, true);
+        verifyFilesListedAs(anonymous);
     }
 
     @Test
@@ -141,7 +147,7 @@ class DotCMSMacroWebAPIViewerTest {
         // Then every read uses that user
         verify(hostAPI).find(SITE_ID, viewer, true);
         verify(folderAPI).findFolderByPath(NORMALIZED_PATH, site, viewer, true);
-        verify(fileAssetAPI).findFileAssetsByFolder(folder, "", true, viewer, true);
+        verifyFilesListedAs(viewer);
     }
 
     @Test
@@ -159,8 +165,7 @@ class DotCMSMacroWebAPIViewerTest {
 
         // Then it answers an empty list and never lists the folder's files
         assertTrue(files.isEmpty());
-        verify(fileAssetAPI, never()).findFileAssetsByFolder(any(Folder.class), anyString(), anyBoolean(),
-                any(User.class), anyBoolean());
+        verify(fileAssetAPI, never()).findFileAssetsByDB(any(FileAssetSearcher.class));
     }
 
     @Test
@@ -175,8 +180,7 @@ class DotCMSMacroWebAPIViewerTest {
 
         // Then it answers an empty list and never lists files
         assertTrue(files.isEmpty());
-        verify(fileAssetAPI, never()).findFileAssetsByFolder(any(Folder.class), anyString(), anyBoolean(),
-                any(User.class), anyBoolean());
+        verify(fileAssetAPI, never()).findFileAssetsByDB(any(FileAssetSearcher.class));
     }
 
     @Test
@@ -192,7 +196,7 @@ class DotCMSMacroWebAPIViewerTest {
 
         // Then the user of the current thread's request is used
         verify(folderAPI).findFolderByPath(NORMALIZED_PATH, site, threadUser, true);
-        verify(fileAssetAPI).findFileAssetsByFolder(folder, "", true, threadUser, true);
+        verifyFilesListedAs(threadUser);
     }
 
     @Test
@@ -206,7 +210,7 @@ class DotCMSMacroWebAPIViewerTest {
 
         // Then the user of the request the tool was created for is used
         verify(folderAPI).findFolderByPath(NORMALIZED_PATH, site, initUser, true);
-        verify(fileAssetAPI).findFileAssetsByFolder(folder, "", true, initUser, true);
+        verifyFilesListedAs(initUser);
     }
 
     @Test
@@ -219,7 +223,7 @@ class DotCMSMacroWebAPIViewerTest {
 
         // Then it reads as the anonymous user
         verify(folderAPI).findFolderByPath(NORMALIZED_PATH, site, anonymous, true);
-        verify(fileAssetAPI).findFileAssetsByFolder(folder, "", true, anonymous, true);
+        verifyFilesListedAs(anonymous);
     }
 
     @Test
@@ -275,6 +279,45 @@ class DotCMSMacroWebAPIViewerTest {
         verify(eventAPI, never()).find(any(), any(), any(), any(), anyList(), anyBoolean(), anyBoolean(),
                 org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt(), any(),
                 anyBoolean());
+    }
+
+    @Test
+    void galleryFiles_areListedNewestFirst() throws Exception {
+        // Given a folder whose files come back oldest first
+        final FileAsset older = fileModifiedAt("older.jpg", 1_000L);
+        final FileAsset newer = fileModifiedAt("newer.jpg", 2_000L);
+        when(fileAssetAPI.findFileAssetsByDB(any(FileAssetSearcher.class))).thenReturn(List.of(older, newer));
+        final DotCMSMacroWebAPI macro = toolFor(requestOf(null));
+
+        // When the gallery lists it
+        final List<HashMap<String, IFileAsset>> files = macro.getMediaGalleryFolderFiles(FOLDER_PATH, SITE_ID);
+
+        // Then the most recently modified file comes first
+        assertEquals(List.of(newer, older), files.stream().map(entry -> entry.get("photo")).collect(
+                java.util.stream.Collectors.toList()));
+    }
+
+    private static FileAsset fileModifiedAt(final String name, final long modDate) {
+        final FileAsset file = mock(FileAsset.class);
+        when(file.getExtension()).thenReturn("jpg");
+        when(file.getFileName()).thenReturn(name);
+        when(file.getModDate()).thenReturn(new Date(modDate));
+        return file;
+    }
+
+    /**
+     * Checks that the live files of the resolved site and folder were listed as the given user, honoring front-end
+     * roles.
+     */
+    private void verifyFilesListedAs(final User user) throws Exception {
+        final ArgumentCaptor<FileAssetSearcher> captor = ArgumentCaptor.forClass(FileAssetSearcher.class);
+        verify(fileAssetAPI).findFileAssetsByDB(captor.capture());
+        final FileAssetSearcher searcher = captor.getValue();
+        assertSame(site, FieldUtils.readField(searcher, "host", true));
+        assertSame(folder, FieldUtils.readField(searcher, "folder", true));
+        assertSame(user, FieldUtils.readField(searcher, "user", true));
+        assertEquals(true, FieldUtils.readField(searcher, "respectFrontendRoles", true));
+        assertEquals(true, FieldUtils.readField(searcher, "live", true));
     }
 
     private static User user(final String id) {
