@@ -17,7 +17,7 @@ import sys
 
 import requests
 
-from .client import CorpsitesClient, prod_reader
+from .client import CorpsitesClient
 from .publisher import AmbiguousMatchError, publish
 from .sync import load_state_file, reconcile, sync_with_retries
 from .version import is_current_track
@@ -67,7 +67,6 @@ def cmd_publish(args: argparse.Namespace) -> int:
 
     try:
         client = CorpsitesClient()
-        prod = prod_reader()
         result = publish(
             client,
             version=args.version,
@@ -78,12 +77,11 @@ def cmd_publish(args: argparse.Namespace) -> int:
             service_account=service_account or None,
             force=args.force,
             apply=args.apply,
-            prod=prod,
         )
     except (requests.RequestException, AmbiguousMatchError, RuntimeError) as exc:
         # Concise, token-free failure (the token lives in the session header, not the URL/body).
-        # RuntimeError covers a missing setting (auth URL / token / action, prod URL / token)
-        # and a push that never reached prod — a clean one-line error, no traceback.
+        # RuntimeError covers a missing DOTCMS_DEVSITE_URL, DOTCMS_DEVSITE_RELEASENOTES_TOKEN or
+        # DOTCMS_DEVSITE_RELEASENOTES_ACTION — a clean one-line error, no traceback.
         log.error("publish failed for %s: %s", args.version, exc)
         return 1
 
@@ -112,13 +110,11 @@ def cmd_sync_site(args: argparse.Namespace) -> int:
         return 2
     try:
         client = CorpsitesClient()
-        prod = prod_reader()
     except RuntimeError as exc:
         print(f"::evergreen-sync-error::{exc}")
         return 1
     try:
-        result = (sync_with_retries(client, hub, prod=prod) if args.apply
-                  else reconcile(client, hub, apply=False, prod=prod))
+        result = sync_with_retries(client, hub) if args.apply else reconcile(client, hub, apply=False)
     except (requests.RequestException, AmbiguousMatchError, RuntimeError) as exc:
         print(f"::evergreen-sync-error::{' '.join(str(exc).split())}")
         return 1

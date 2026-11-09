@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 
 import requests
 
-from .client import CorpsitesClient, wait_for_prod
+from .client import CorpsitesClient
 from .publisher import AmbiguousMatchError
 from .version import is_current_track
 
@@ -65,16 +65,7 @@ def diff_fields(current: dict, desired: dict) -> list[str]:
     return changed
 
 
-def reconcile(
-    client: CorpsitesClient, hub: dict, *, apply: bool, prod: CorpsitesClient | None = None
-) -> SyncResult:
-    """Bring the record in line with Hub.
-
-    With a `prod` reader, prod is compared as well as auth: a push that failed earlier
-    leaves auth matching Hub but prod stale, and only reading prod notices that and
-    re-fires. Release rows are then checked on prod, and a write waits until it is live
-    there.
-    """
+def reconcile(client: CorpsitesClient, hub: dict, *, apply: bool) -> SyncResult:
     hits = client.find_evergreen_state()
     if not hits:
         raise RuntimeError(
@@ -83,18 +74,11 @@ def reconcile(
     if len(hits) > 1:
         raise AmbiguousMatchError("more than one 'evergreen-state' EvergreenState record")
     current = parse_record_state(hits[0].get("state"))
-    prod_current = current
-    if prod is not None:
-        prod_hits = prod.find_evergreen_state()
-        if len(prod_hits) > 1:
-            raise AmbiguousMatchError("more than one 'evergreen-state' EvergreenState record on prod")
-        prod_current = parse_record_state(prod_hits[0].get("state")) if prod_hits else {}
 
     desired: dict = {"tainted": hub["tainted"]}
     missing_rows: dict[str, str] = {}
-    rows = prod if prod is not None else client
     for t in TRACKS:
-        if rows.has_release_row(hub[t]):
+        if client.has_release_row(hub[t]):
             desired[t] = hub[t]
         else:
             missing_rows[t] = hub[t]
@@ -102,11 +86,6 @@ def reconcile(
                 desired[t] = current[t]
 
     fields = diff_fields(current, desired)
-    if not fields and prod is not None:
-        fields = diff_fields(prod_current, desired)
-        if fields:
-            log.info("auth matches but prod differs in %s; re-pushing", ",".join(fields))
-            current = prod_current  # report the stale side, so the diff shows what changes
     result = SyncResult("unchanged", fields, desired, current, missing_rows)
     if not fields:
         return result
@@ -114,7 +93,7 @@ def reconcile(
         result.status = "would-update"
         return result
 
-    inode = client.fire({
+    client.fire({
         "contentType": "EvergreenState",
         "identifier": hits[0]["identifier"],
         "title": RECORD_TITLE,
@@ -127,21 +106,15 @@ def reconcile(
         time.sleep(_READBACK_DELAY_SECONDS)
     else:
         print("warning: EvergreenState read-back did not match after publish", file=sys.stderr)
-    if prod is not None:
-        if not inode:
-            raise RuntimeError("fire response for EvergreenState had no inode; cannot confirm the push to prod")
-        wait_for_prod(lambda: prod.is_live(inode), "EvergreenState record")
     result.status = "updated"
     return result
 
 
-def sync_with_retries(
-    client: CorpsitesClient, hub: dict, *, prod: CorpsitesClient | None = None
-) -> SyncResult:
+def sync_with_retries(client: CorpsitesClient, hub: dict) -> SyncResult:
     attempts = len(_RETRY_DELAYS_SECONDS) + 1
     for i in range(1, attempts + 1):
         try:
-            return reconcile(client, hub, apply=True, prod=prod)
+            return reconcile(client, hub, apply=True)
         except AmbiguousMatchError:
             raise  # duplicate record is a permanent data-integrity error, not transient
         except (requests.RequestException, RuntimeError) as exc:

@@ -53,9 +53,6 @@ on:
       DOTCMS_DEVSITEAUTH_RELEASENOTES_TOKEN:
         required: true
         description: 'Service-account bearer token for the dev-site authoring (auth) instance'
-      DOTCMS_DEVSITE_RELEASENOTES_TOKEN:
-        required: true
-        description: 'Bearer token for the prod instance, used read-only to confirm each push from auth arrived'
       SLACK_BOT_TOKEN:
         required: true
         description: 'Slack bot token for #dot-releases failure/skip notifications'
@@ -122,10 +119,6 @@ jobs:
           # Workflow action to fire: Push Publish on auth (publishes there, then pushes to
           # prod). Required — the tool fails if it is unset rather than falling back.
           DOTCMS_DEVSITE_RELEASENOTES_ACTION: ${{ vars.DOTCMS_DEVSITE_RELEASENOTES_ACTION }}
-          # Prod, read-only: after each write the tool waits (up to 5 min) until the new
-          # version is live there, so a push that never lands fails the job.
-          DOTCMS_DEVSITE_PROD_URL: ${{ vars.DOTCMS_DEVSITE_URL }}
-          DOTCMS_DEVSITE_PROD_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITE_RELEASENOTES_TOKEN }}
           # Service-account modUser id for human-edit protection (FR-011). --force is never
           # passed here — override is a manual operator re-run only.
           DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT: ${{ vars.DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT }}
