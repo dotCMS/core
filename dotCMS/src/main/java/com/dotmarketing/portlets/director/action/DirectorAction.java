@@ -53,7 +53,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.user.factories.UserPreferencesFactory;
 import com.dotmarketing.portlets.user.model.UserPreference;
@@ -762,20 +761,6 @@ public class DirectorAction extends DotPortletAction {
 					contentlet = conAPI.find(cInode, user, true);	
 				}
 				conAPI.unlock(contentlet, user,true);
-			}
-			
-			if (cmd!=null && cmd.equals("createForm")) {
-
-				Logger.debug(DirectorAction.class, "Director :: createForrm");
-				java.util.Map params = new java.util.HashMap();
-				params.put("struts_action",new String[] {"/ext/structure/edit_structure"});
-				params.put("structureType",new String[] {Integer.toString(Structure.STRUCTURE_TYPE_FORM)});
-				params.put("cmd",new String[] {"null"});
-	
-				String af = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq,WindowState.MAXIMIZED.toString(),params);
-
-				_sendToReferral(req, res, af);
-				return;
 			}
 			
 			Contentlet contentlet = new Contentlet();

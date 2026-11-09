@@ -2,6 +2,7 @@ package com.dotcms.auth.providers.saml.v1;
 
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.company.CompanyAPI;
+import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.filters.interceptor.saml.SamlWebInterceptor;
 import com.dotcms.rest.api.v1.user.UserHelper;
 import com.dotcms.saml.Attributes;
@@ -22,7 +23,6 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
@@ -728,7 +728,16 @@ public class SAMLHelper {
         return doHash? hashIt(token): token;
     }
 
-
+    /**
+     * Creates the dotCMS user for someone signing in through the identity provider for the first
+     * time, using the attributes the provider sent. The local password is the hash of a random
+     * secret, so the account can only sign in through the identity provider.
+     *
+     * @param systemUser                    the system {@link User}, used to save the new user
+     * @param attributesBean                the attributes sent by the identity provider
+     * @param identityProviderConfiguration the configuration of that identity provider
+     * @return the new {@link User}
+     */
     protected User createNewUser(final User systemUser, final Attributes attributesBean,
                                  final IdentityProviderConfiguration identityProviderConfiguration) {
         User user = null;
@@ -752,7 +761,7 @@ public class SAMLHelper {
             user.setActive(true);
 
             user.setCreateDate(new Date());
-            user.setPassword(PublicEncryptionFactory.digestString(UUIDGenerator.generateUuid() + "/" + UUIDGenerator.generateUuid()));
+            user.setPassword(PasswordFactoryProxy.generateRandomHash());
             user.setPasswordEncrypted(true);
 
             if (Objects.nonNull(attributesBean.getAdditionalAttributes()) &&

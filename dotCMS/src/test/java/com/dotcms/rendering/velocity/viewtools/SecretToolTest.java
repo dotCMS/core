@@ -21,7 +21,6 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
@@ -29,7 +28,6 @@ import com.liferay.portal.model.User;
 import java.util.Optional;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
-import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.jupiter.api.AfterEach;
@@ -272,39 +270,35 @@ public class SecretToolTest {
     }
 
     /**
-     * When the template name resolves to stored content, that content's last editor decides even
-     * if a scripting file was also recorded for the request.
+     * When a renderer announced the author of the code being run, that author decides even if a
+     * scripting file was also recorded for the request: a container parsed from inside a script
+     * file is judged by whoever saved the container.
      */
     @Test
-    public void canUserEvaluate_TemplateNameResolves_IgnoresScriptingFile() throws Exception {
+    public void canUserEvaluate_AnnouncedAuthorWins_IgnoresScriptingFile() throws Exception {
         final Role scriptingRole = anonymousRequestWithScriptingFileEditedBy("scripter");
         final User scripter = mock(User.class);
         when(userAPI.loadUserById(eq("scripter"), any(), eq(true))).thenReturn(scripter);
         when(roleAPI.doesUserHaveRole(scripter, scriptingRole)).thenReturn(true);
 
-        final ContentletAPI contentletAPI = mock(ContentletAPI.class);
-        mockedApiLocator.when(APILocator::getContentletAPI).thenReturn(contentletAPI);
-        final Contentlet pageContent = mock(Contentlet.class);
-        when(pageContent.getModUser()).thenReturn("editor");
-        when(contentletAPI.find(eq("content-inode"), any(), eq(true))).thenReturn(pageContent);
         final User editor = mock(User.class);
         when(userAPI.loadUserById(eq("editor"), any(), eq(true))).thenReturn(editor);
         when(roleAPI.doesUserHaveRole(editor, scriptingRole)).thenReturn(false);
-        initWithTemplateName("/LIVE/content-inode/1");
+        announceRenderingAuthor("editor");
 
         assertThrows(SecurityException.class, () -> secretTool.canUserEvaluate());
         verify(userAPI, never()).loadUserById(eq("scripter"), any(), any(Boolean.class));
     }
 
     /**
-     * A nested evaluation such as {@code $render.eval} inside a scripting file has its own
-     * template name, so it does not inherit the file's last editor.
+     * A nested evaluation such as {@code $render.eval} inside a scripting file runs with an
+     * announced author of nobody, so it does not inherit the file's last editor.
      */
     @Test
     public void canUserEvaluate_NestedEvalInScriptingFile_IgnoresScriptingFile() throws Exception {
         anonymousRequestWithScriptingFileEditedBy("scripter");
-        // the log tag RenderTool passes to Velocity for $render.eval
-        initWithTemplateName("RenderTool.eval()");
+        // what RenderTool.eval announces around the string it evaluates
+        announceRenderingAuthor(null);
 
         assertThrows(SecurityException.class, () -> secretTool.canUserEvaluate());
         verify(userAPI, never()).loadUserById(eq("scripter"), any(), any(Boolean.class));
@@ -371,16 +365,20 @@ public class SecretToolTest {
     }
 
     /**
-     * Re-initialises the tool with a real Velocity context whose current template name is the
-     * given one, as Velocity sets it while rendering.
+     * Announces a rendering author on the mocked request the way a renderer does, and stubs the
+     * request to hand that announcement back. The announcement is an opaque value only
+     * {@link RestrictedViewToolAccess} creates, so it cannot be built here by hand.
      *
-     * @param templateName name to push onto the context's template name stack
+     * @param authorId id of the author to announce, {@code null} for code that has no author of
+     *                 its own, such as an evaluated string
      */
-    private void initWithTemplateName(final String templateName) {
-        final VelocityContext context = new VelocityContext();
-        context.pushCurrentTemplateName(templateName);
-        when(viewContext.getVelocityContext()).thenReturn(context);
-        secretTool.init(viewContext);
+    private void announceRenderingAuthor(final String authorId) {
+        RestrictedViewToolAccess.announceRenderingAuthor(request, authorId);
+        final ArgumentCaptor<Object> announcement = ArgumentCaptor.forClass(Object.class);
+        verify(request).setAttribute(eq(RestrictedViewToolAccess.RENDERING_AUTHOR_ID),
+                announcement.capture());
+        when(request.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID))
+                .thenReturn(announcement.getValue());
     }
 
     /**
