@@ -96,6 +96,22 @@ public class NotificationResourceTest extends UnitTestBase {
         assertEquals(OWN_COUNT, ((ResponseEntityView<?>) response.getEntity()).getEntity());
     }
 
+    /**
+     * Method to test: {@link NotificationResource#getNewNotificationsCount(HttpServletRequest, HttpServletResponse, String)}
+     * Given Scenario: a CMS Administrator passes allusers/true
+     * ExpectedResult: the count covers every user
+     */
+    @Test
+    public void testGetNewNotificationsCount_WhenAdminPassesAllUsers_ShouldReturnAllCount() throws Exception {
+        when(user.isAdmin()).thenReturn(true);
+
+        final Response response = new NotificationResource(notificationAPI, webResource)
+                .getNewNotificationsCount(mock(HttpServletRequest.class), mock(HttpServletResponse.class),
+                        "allusers/true");
+
+        assertEquals(ALL_COUNT, ((ResponseEntityView<?>) response.getEntity()).getEntity());
+    }
+
     @SuppressWarnings("unchecked")
     private Map<String, Object> getNotificationsEntity() throws Exception {
         final Response response = new NotificationResource(notificationAPI, webResource)
