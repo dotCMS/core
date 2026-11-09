@@ -258,6 +258,25 @@ class DotCMSMacroWebAPIViewerTest {
                 anyBoolean());
     }
 
+    @Test
+    void events_whenACategoryDoesNotExist_returnsEmptyList() throws Exception {
+        // Given two categories, the second one unknown
+        when(categoryAPI.find(eq("known-category"), any(User.class), anyBoolean()))
+                .thenReturn(mock(Category.class));
+        when(categoryAPI.find(eq("unknown-category"), any(User.class), anyBoolean())).thenReturn(null);
+        final DotCMSMacroWebAPI macro = toolFor(requestOf(null));
+
+        // When the events of both categories are listed
+        final List<?> events = assertDoesNotThrow(
+                () -> macro.getEvents("known-category,unknown-category", 5, 0, 0));
+
+        // Then it answers an empty list and never searches events with a partial category filter
+        assertTrue(events.isEmpty());
+        verify(eventAPI, never()).find(any(), any(), any(), any(), anyList(), anyBoolean(), anyBoolean(),
+                org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt(), any(),
+                anyBoolean());
+    }
+
     private static User user(final String id) {
         final User user = mock(User.class);
         when(user.getUserId()).thenReturn(id);

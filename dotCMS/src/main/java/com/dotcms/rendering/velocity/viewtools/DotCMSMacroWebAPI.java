@@ -231,8 +231,8 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	 * if daysToShow is null or cero, en end date is today at 00:00:00, if not the
 	 * end date if from the start date + daysToShow.
 	 * Categories and events are read with the permissions of the user making the request (the
-	 * anonymous user when nobody is logged in); when that user cannot read one of the categories,
-	 * no events are returned.
+	 * anonymous user when nobody is logged in); when one of the categories does not exist or that
+	 * user cannot read it, no events are returned.
 	 * @param categories a string list of comma separated categories inodes
 	 * @param limit max number of events to get
 	 * @param startDayOffset days from today where the range starts
@@ -269,7 +269,13 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		final List<Category> categoriesList = new ArrayList<>(categoryInodes.length);
 		try {
 			for (final String inode : categoryInodes) {
-				categoriesList.add(APILocator.getCategoryAPI().find(inode, user, true));
+				final Category category = APILocator.getCategoryAPI().find(inode, user, true);
+				if (null == category) {
+					// Same reason as below: leaving it out would widen the filter.
+					Logger.debug(this, () -> String.format("Event category '%s' does not exist", inode));
+					return new ArrayList<>();
+				}
+				categoriesList.add(category);
 			}
 		} catch (final DotSecurityException e) {
 			// Searching with only the readable categories would widen the filter: answer nothing.
@@ -600,7 +606,7 @@ public class DotCMSMacroWebAPI implements ViewTool {
 			final Host site = APILocator.getHostAPI().find(hostId, user, true);
 			folder = APILocator.getFolderAPI().findFolderByPath(folderPath, site, user, true);
 		} catch (final DotSecurityException e) {
-			Logger.debug(this, () -> String.format("User '%s' cannot read the requested gallery folder",
+			Logger.debug(this, () -> String.format("User '%s' cannot read the requested gallery site or folder",
 					user.getUserId()));
 			return new ArrayList<>();
 		} catch (Exception e) {
