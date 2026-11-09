@@ -1,3 +1,5 @@
+import { Observable, of } from 'rxjs';
+
 /**
  * Mock of DotMessageService.
  * How to use:
@@ -20,8 +22,12 @@
 export class MockDotMessageService {
     constructor(private messages: MessageConfig) {}
 
-    init() {
-        // do nothing
+    init(): Observable<void> {
+        return of(void 0);
+    }
+
+    invalidatePendingSession(): void {
+        // The mock has no pending requests.
     }
 
     get(key: string, ...args: string[]): string {

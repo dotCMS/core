@@ -97,9 +97,12 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
             List<IBundler> confBundlers = new ArrayList<>();
 
             // init publishers
-            for ( Class<Publisher> c : config.getPublishers() ) {
+            for ( Class<? extends IPublisher> c : config.getPublishers() ) {
                 // Process config
-                Publisher publisher = c.getDeclaredConstructor().newInstance();
+                // Cast kept explicit: the loop needs Publisher's bundle-output hook, which is
+                // not part of the IPublisher contract. Before the list was parameterized the
+                // same assumption was made silently through a raw Class.
+                Publisher publisher = (Publisher) c.getDeclaredConstructor().newInstance();
                 config = publisher.init(config);
 
                 if (config.isIncremental() && config.getEndDate() == null

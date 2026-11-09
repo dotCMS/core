@@ -173,17 +173,42 @@ public class DotWebdavHelper {
 	}
 
 	/**
-	 * Authenticates DAV's username/credential pair under the shared Basic authentication policy.
-	 * Token-only mode never enters the password or pre-authentication pipeline.
+	 * Checks the credentials a WebDAV client sent and returns the matching user, under the shared
+	 * Basic authentication policy ({@code ALLOW_BASIC_AUTH}). In token-only mode the credential must
+	 * be an API token and neither the pre-authenticator nor the stored password is consulted. When
+	 * passwords are allowed and a pre-authenticator is configured through {@code auth.pipeline.pre},
+	 * it runs first; a thrown exception denies access, but its return value alone does not. The
+	 * password is then checked against the one stored in dotCMS, or accepted as an API token.
 	 *
-	 * @param username the company's configured email or user-id login
-	 * @param passwd the password in ALL mode, or the API JWT in token-only mode
-	 * @return the authenticated {@link User}; resource permission checks still apply
-	 * @throws DotSecurityException if credentials are disabled or invalid
+	 * @param username the login sent by the client: an email address or a user id, depending on
+	 *                 the company's authentication type
+	 * @param passwd   the password or API token sent by the client
+	 * @return the authenticated {@link User}
+	 * @throws DotSecurityException if credentials are disabled or not accepted
 	 * @throws NoSuchUserException if the named user does not exist
 	 * @throws DotDataException if the user lookup fails
 	 */
 	public User authorizePrincipal(final String username, final String passwd) throws DotSecurityException, NoSuchUserException, DotDataException {
+
+		return authorizePrincipal(username, passwd, PRE_AUTHENTICATOR);
+	}
+
+	/**
+	 * Same as {@link #authorizePrincipal(String, String)}, with the pre-authenticator class given
+	 * explicitly instead of read from {@code auth.pipeline.pre}.
+	 *
+	 * @param username         the login sent by the client
+	 * @param passwd           the password or API token sent by the client
+	 * @param preAuthenticator fully qualified class name of the pre-authenticator, or
+	 *                         {@code null}/empty when none is configured
+	 * @return the authenticated {@link User}
+	 * @throws DotSecurityException if credentials are disabled or not accepted
+	 * @throws NoSuchUserException if the named user does not exist
+	 * @throws DotDataException if the user lookup fails
+	 */
+	@VisibleForTesting
+	User authorizePrincipal(final String username, final String passwd, final String preAuthenticator)
+			throws DotSecurityException, NoSuchUserException, DotDataException {
 
 		final BasicAuthentication.Mode mode = BasicAuthentication.mode();
 		if (mode == BasicAuthentication.Mode.NONE) {
@@ -201,26 +226,28 @@ public class DotWebdavHelper {
 
 		try {
 
-			if (PRE_AUTHENTICATOR != null && !PRE_AUTHENTICATOR.equals("")) {
+			if (preAuthenticator != null && !preAuthenticator.equals("")) {
 
 				final Authenticator authenticator = (Authenticator) new com.dotcms.repackage.bsh.
-						Interpreter().eval("new " + PRE_AUTHENTICATOR + "()");
+						Interpreter().eval("new " + preAuthenticator + "()");
+				// The return value is intentionally not used to deny access here: a pre-authenticator
+				// can answer FAILURE/DNE to mean "cannot validate this login", not "this user is
+				// denied", and the password/token check below is the actual decision. Only a thrown
+				// exception, caught below, is treated as an explicit denial.
 				if (useEmailAsLogin) {
-
 					authenticator.authenticateByEmailAddress(company.getCompanyId(), username, passwd);
 				} else {
-
-					authenticator.authenticateByUserId      (company.getCompanyId(), username, passwd);
+					authenticator.authenticateByUserId(company.getCompanyId(), username, passwd);
 				}
 			}
 		} catch (AuthException ae) {
 
-			Logger.debug(this, "Username : " + username + " failed to login", ae);
+			Logger.debug(this, "Username : " + stripLogControls(username) + " failed to login", ae);
 			this.countPreAuthenticatorFailure(username, useEmailAsLogin);
 			throw new DotSecurityException(ae.getMessage(),ae);
 		} catch (Exception e) {
 
-			Logger.error(this, e.getMessage(), e);
+			Logger.error(this, stripLogControls(e.getMessage()), e);
 			throw new DotSecurityException(e.getMessage(),e);
 		}
 

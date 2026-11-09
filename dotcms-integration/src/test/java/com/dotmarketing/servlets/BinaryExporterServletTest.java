@@ -623,6 +623,70 @@ public class BinaryExporterServletTest {
     }
 
     /**
+     * Method to test: {@link BinaryExporterServlet#doGet(HttpServletRequest, HttpServletResponse)}
+     * Given scenario: the same two published versions, requested by an anonymous caller that names the inode
+     * of the version living on the named variant. An inode names one exact version, so nothing is resolved
+     * here and the request carries no variant name.
+     * Expected result: the request is answered as a miss. The control runs first: the inode of the
+     * default-variant version is served through the very same call, so a failure below is about the variant
+     * and not about inodes being unreachable.
+     */
+    @Test
+    public void requestBinaryFile_anonymousUserNamingTheVariantInode_isAnsweredNotFound()
+            throws Exception {
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Path defaultBytesPath = Files.createTempFile("variant-inode-default-", ".png");
+        final Path variantBytesPath = Files.createTempFile("variant-inode-named-", ".png");
+        Files.write(defaultBytesPath, ShortyServletAndTitleImageTest.pngPixel);
+        Files.write(variantBytesPath, concat(ShortyServletAndTitleImageTest.pngPixel,
+                "named-variant".getBytes(StandardCharsets.UTF_8)));
+
+        Contentlet onDefaultVariant = null;
+        try {
+            onDefaultVariant = new FileAssetDataGen(sharedFolder, defaultBytesPath.toFile())
+                    .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+            ContentletDataGen.publish(onDefaultVariant);
+
+            final Contentlet onNamedVariant = ContentletDataGen.createNewVersion(onDefaultVariant,
+                    variant, Map.of(FileAssetAPI.BINARY_FIELD, variantBytesPath.toFile()));
+            ContentletDataGen.publish(onNamedVariant);
+
+            assertEquals("fixture problem: a version is not served by inode at all, so refusing another "
+                            + "one proves nothing", HttpServletResponse.SC_OK,
+                    fetchByInodeAsAnonymous(onDefaultVariant.getInode()));
+
+            assertEquals("a caller without back-end access must not reach a version on another variant "
+                            + "by naming its inode", HttpServletResponse.SC_NOT_FOUND,
+                    fetchByInodeAsAnonymous(onNamedVariant.getInode()));
+        } finally {
+            if (onDefaultVariant != null) {
+                ContentletDataGen.destroy(onDefaultVariant);
+            }
+            Files.deleteIfExists(defaultBytesPath);
+            Files.deleteIfExists(variantBytesPath);
+        }
+    }
+
+    /**
+     * Requests a file asset by inode as an anonymous caller and returns the status the servlet answered
+     * with.
+     *
+     * @param inode the version's inode
+     * @return the response status
+     * @throws Exception if the request fails
+     */
+    private int fetchByInodeAsAnonymous(final String inode) throws Exception {
+        try (TmpBinaryFile captured = new TmpBinaryFile(false)) {
+            final HttpServletRequest request = mockServletRequest(
+                    "/contentAsset/raw-data/" + inode + "/fileAsset/");
+            final HttpServletResponse response = mockServletResponse(captured);
+            sendRequest(request, response);
+            return response.getStatus();
+        }
+    }
+
+    /**
      * @return the two arrays joined, used to build a payload that differs from a known one
      */
     private static byte[] concat(final byte[] first, final byte[] second) {

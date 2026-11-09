@@ -12,6 +12,7 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
@@ -36,6 +37,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.structure.model.Relationship;
@@ -71,6 +73,8 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
     private static final List<ContentType> contentTypes = new ArrayList<>();
     private static final List<String> filterKeys = new ArrayList<>();
     private static final List<PreparedBundle> bundles = new ArrayList<>();
+    // Parent categories come before their children, so they are removed in reverse order
+    private static final List<Category> categories = new ArrayList<>();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -109,7 +113,12 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
             ContentTypeDataGen.remove(contentTypes.get(i));
         }
 
+        for (int i = categories.size() - 1; i >= 0; i--) {
+            CategoryDataGen.delete(categories.get(i));
+        }
+
         // Surefire may rerun the class, which runs this method again
+        categories.clear();
         bundles.clear();
         filterKeys.clear();
         contentTypes.clear();
@@ -416,6 +425,102 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
                 findRelatedIds(newArticle, data.relationship).isEmpty());
         assertEquals("Jane must keep the Article she has in the receiver",
                 List.of(data.article.getIdentifier()), findRelatedIds(data.author, data.relationship));
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
+     * Given scenario: An Article with category A in the sender is pushed with a filter that sets
+     * {@code relationships: false}. In the receiver, the Article also has category B, which was
+     * removed in the sender.
+     * Expected result: The Article only has category A in the receiver, as in the bundle, and keeps
+     * its relationship to the Author, as reported in
+     * <a href="https://github.com/dotCMS/core/issues/38429">#38429</a>.
+     */
+    @Test
+    public void test_existingContent_pushedWithoutRelationshipsFilter_matchesSenderCategories() throws Exception {
+        final TestData data = createRelatedContent();
+        final List<Category> children = createCategories();
+        addCategory(data.article, children.get(0));
+        final PreparedBundle bundle = generateBundleFor(data.article, createFilterWithoutRelationships());
+        addCategory(data.article, children.get(1));
+        assertEquals("The receiver-only category was not set up; the scenario under test is not in place",
+                Set.of(children.get(0).getKey(), children.get(1).getKey()), findCategoryKeys(data.article));
+
+        processBundle(bundle);
+
+        assertEquals("The pushed Article must have exactly the categories in the bundle",
+                Set.of(children.get(0).getKey()), findCategoryKeys(data.article));
+        assertEquals("Syncing the categories must not change the Article's relationships",
+                List.of(data.author.getIdentifier()), findRelatedIds(data.article, data.relationship));
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
+     * Given scenario: An Article without categories in the sender is pushed with a filter that sets
+     * {@code relationships: false}. In the receiver, it still has categories A and B.
+     * Expected result: The Article has no categories in the receiver, as reported in
+     * <a href="https://github.com/dotCMS/core/issues/38429">#38429</a>.
+     */
+    @Test
+    public void test_existingContent_pushedWithoutRelationshipsFilter_removesAllCategories() throws Exception {
+        final TestData data = createRelatedContent();
+        final List<Category> children = createCategories();
+        final PreparedBundle bundle = generateBundleFor(data.article, createFilterWithoutRelationships());
+        addCategory(data.article, children.get(0));
+        addCategory(data.article, children.get(1));
+        assertEquals("The receiver-only categories were not set up; the scenario under test is not in place",
+                Set.of(children.get(0).getKey(), children.get(1).getKey()), findCategoryKeys(data.article));
+
+        processBundle(bundle);
+
+        assertTrue("The pushed Article must have no categories, as in the bundle",
+                findCategoryKeys(data.article).isEmpty());
+    }
+
+    /**
+     * Creates a top-level category with two children, A and B, and returns the children. They are
+     * removed once all tests ran.
+     */
+    private static List<Category> createCategories() {
+        final String suffix = UUIDGenerator.shorty();
+        final Category parent = new CategoryDataGen().setCategoryName("parent-" + suffix)
+                .setKey("parent-" + suffix).setCategoryVelocityVarName("parent" + suffix).nextPersisted();
+        categories.add(parent);
+        final List<Category> children = new ArrayList<>();
+        for (final String name : List.of("a", "b")) {
+            final Category child = new CategoryDataGen().setCategoryName(name + "-" + suffix)
+                    .setKey(name + "-" + suffix).setCategoryVelocityVarName(name + suffix)
+                    .parent(parent).nextPersisted();
+            categories.add(child);
+            children.add(child);
+        }
+        return children;
+    }
+
+    /**
+     * Links the category to the content's current version, the same way the Category field does.
+     */
+    private static void addCategory(final Contentlet contentlet, final Category category) throws Exception {
+        APILocator.getCategoryAPI().addParent(contentlet, category, APILocator.systemUser(), false);
+    }
+
+    /**
+     * Returns the keys of the categories linked to the working version of the content, read from
+     * the {@code tree} table so that the category cache can't affect the result.
+     */
+    private static Set<String> findCategoryKeys(final Contentlet contentlet) {
+        try {
+            final Contentlet working = APILocator.getContentletAPI().findContentletByIdentifier(
+                    contentlet.getIdentifier(), false, contentlet.getLanguageId(), APILocator.systemUser(), false);
+            return new DotConnect().setSQL("select category.category_key from tree "
+                            + "join category on tree.parent = category.inode where tree.child = ?")
+                    .addParam(working.getInode())
+                    .loadObjectResults().stream()
+                    .map(row -> row.get("category_key").toString())
+                    .collect(Collectors.toSet());
+        } catch (final Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**

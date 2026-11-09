@@ -9,6 +9,7 @@
 
 package com.dotcms.enterprise.publishing.sitesearch;
 
+import com.dotcms.publishing.IPublisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.google.common.collect.ImmutableList;
 import java.util.List;
@@ -116,7 +117,7 @@ public class SiteSearchConfig extends PublisherConfig {
 	}
 
 	@Override
-	public List<Class> getPublishers(){
+	public List<Class<? extends IPublisher>> getPublishers(){
 		return ImmutableList.of(ESSiteSearchPublisher.class);
 	}
 
