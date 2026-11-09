@@ -72,10 +72,13 @@ action DID apply. Fix the title by hand (`gh release edit v<version> --title ...
   other reason: check the run log, then re-run the failed job. The next promote run (daily) also
   heals it.
 - **"Evergreen site record drifted"**: after the daily sync the record still differs from Hub in
-  the named fields. Re-run `evergreen-tracks-promote`; if it persists, check the record on
-  the auth instance for a human edit, and check auth's push-publishing queue for a failed or
-  stuck bundle. The sync reads back from auth only, so a push that failed on its way to prod does
-  not turn the job red.
+  the named fields, on auth or on prod. Re-run `evergreen-tracks-promote`; if it persists, check
+  the record on the auth instance for a human edit, and check auth's push-publishing queue for a
+  failed or stuck bundle.
+- **"... did not reach prod within 300s"**: the write landed on auth but its push never showed up
+  on prod. Check auth's push-publishing queue for the bundle and its error. The sync retries on
+  its own and the next daily run re-pushes a stale prod record; for a changelog entry, re-run the
+  failed release-notes job once the queue is healthy.
 
 ### ⚠️ Taint does not roll anything back
 
