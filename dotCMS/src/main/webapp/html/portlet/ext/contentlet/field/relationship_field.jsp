@@ -148,6 +148,15 @@
                     .map(fieldName -> String.format("'%s'", fieldName.trim()))
                     .collect(Collectors.joining(","))
             : "";
+    // Shown fields that hold markup (WYSIWYG): only these are reduced to their text in the table.
+    final String jsHtmlFieldNames = showFieldNames
+            .stream()
+            .filter(fieldName -> {
+                final Field field = relatedFields.get(fieldName);
+                return field != null && Field.FieldType.WYSIWYG.toString().equals(field.getFieldType());
+            })
+            .map(fieldName -> String.format("'%s'", Xss.encodeForJavaScript(fieldName)))
+            .collect(Collectors.joining(","));
     final List<Contentlet> relatedContentlets = recordList
             .stream()
             .findFirst()
@@ -265,6 +274,7 @@
 		var <%= relationJsName %>_jsOverrideRelated = <%= overrideRelated %>;
 		var <%= relationJsName %>_specialFields = { <%= jsSpecialFields %> };
 		var <%= relationJsName %>_showFields = [ <%= jsFieldNames %> ];
+		var <%= relationJsName %>_htmlFields = [ <%= jsHtmlFieldNames %> ];
 
 		// Add the relation to the map, and set it to false.
 		relationsLoadedMap['<%=relationJsName%>'] = false;
@@ -707,9 +717,13 @@
 									item,
 									<%= relationJsName%>EscapeHtml(item["siblings"]?.[0]?.[fieldName] || item["siblings"]?.[0]?.[fieldName.toUpperCase()] || item[fieldName] || ""));
 						} else {
+							var cellValue = item[fieldName] || "";
 							fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
 									item,
-									<%= relationJsName%>EscapeHtml(<%= relationJsName%>TextOf(item[fieldName] || "")));
+									<%= relationJsName%>EscapeHtml(
+											<%= relationJsName%>_htmlFields.indexOf(fieldName) >= 0
+													? <%= relationJsName%>TextOf(cellValue)
+													: cellValue));
 						}
 
                     }

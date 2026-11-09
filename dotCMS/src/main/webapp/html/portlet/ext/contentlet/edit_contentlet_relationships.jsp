@@ -478,6 +478,9 @@
 					    String fieldName = f.getFieldName();
 					    String varName   = f.getVelocityVarName();
 					    String functionName = relationJsName + "_" + UtilMethods.javaScriptifyVariable(fieldName) + "_func";
+					    // Only a WYSIWYG field carries markup; every other value is shown literally.
+					    String cellText = Field.FieldType.WYSIWYG.toString().equals(f.getFieldType())
+					            ? relationJsName + "TextOf(innerValue)" : "innerValue";
 		 %>
 	 		function <%= functionName %> (o) {
 				var value = "";
@@ -488,7 +491,7 @@
 				    }else{
 				        innerValue = o[('<%=varName%>')];
 				    }
-					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + <%= relationJsName%>EscapeHtml(<%= relationJsName%>TextOf(innerValue)) + "</a>";
+					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + <%= relationJsName%>EscapeHtml(<%= cellText %>) + "</a>";
 	 			}
 	 			return value;
 			}
