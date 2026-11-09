@@ -13,8 +13,11 @@ import { uniqueSuffix } from '@utils/utils';
 /** Markup-looking text typed into a plain text field: it has to be shown exactly as typed. */
 const PLAIN_VALUE = '<admin> &copy; Smith';
 
-/** A WYSIWYG value: the table has to show its words, not its tags. */
-const WYSIWYG_VALUE = '<p>Hello <b>world</b> &amp; co</p>';
+/**
+ * A WYSIWYG value: the table has to show its words, not its tags, and two paragraphs written
+ * back to back are two words, not one.
+ */
+const WYSIWYG_VALUE = '<p>Hello</p><p><b>world</b> &amp; co</p>';
 
 const RELATIONSHIP_VARIABLE = 'related';
 
@@ -138,7 +141,7 @@ test.describe('Legacy editor — relationship field table', () => {
         // Plain text field: the literal characters, nothing parsed.
         await expect(row).toContainText(PLAIN_VALUE);
 
-        // WYSIWYG field: the words, without the tags and with the entity decoded once.
+        // WYSIWYG field: the words kept apart, without the tags and with the entity decoded once.
         await expect(row).toContainText('Hello world & co');
         await expect(row).not.toContainText('<p>');
         await expect(row).not.toContainText('<b>');
