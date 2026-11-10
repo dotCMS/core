@@ -164,7 +164,10 @@ A session login token is renewed once half its lifetime has passed, on the next 
 request (`/api/`, `/dotAdmin`, `/html/`, `/c/`, `/dwr/`) that carries the cookie
 (`DefaultAutoLoginWebInterceptor`). An active user therefore keeps a valid cookie, and a browser
 left idle for longer than the lifetime must log in again. Site pages and assets never receive a
-renewed cookie. Setting the minutes to `1440` restores the earlier one-day lifetime.
+renewed cookie. The cookie is renewed only for its own owner, when that owner is the session's
+user and still active, and never while an administrator is logged in as another user. Setting the
+minutes to `1440` sets a one-day lifetime, still renewed while the user works; a value below 1 is
+ignored and the default used. `SET_JWT_SESSION_COOKIE=false` still turns the session cookie off.
 
 The "remember me" token is a separate, opt-in lifetime. Deployments that want a shorter limit
 for it can lower `json.web.token.days.max.age`. API tokens (`/api/v1/apitoken`) have their own

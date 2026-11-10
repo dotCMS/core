@@ -627,10 +627,7 @@ public class LoginServiceAPIFactory implements Serializable {
                 return;
             }
 
-            final HttpSession session = req.getSession(false);
-            if (null != session) {
-                session.removeAttribute(SESSION_LOGIN_TOKEN_RENEW_AT);
-            }
+            clearSessionLoginTokenRenewal(req);
             final int maxAgeDays = JWT_TOKEN_MAX_AGE_DAYS.get();
             final String rememberMeToken = this.jsonWebTokenUtils.createUserToken(user, maxAgeDays);
             createJsonWebTokenCookie(req, res, rememberMeToken, Optional.of(maxAgeDays));
@@ -657,6 +654,7 @@ public class LoginServiceAPIFactory implements Serializable {
                     this.setSessionLoginTokenCookie(req, res, user);
                     return;
                 }
+                clearSessionLoginTokenRenewal(req);
                 final String rememberMeToken = this.jsonWebTokenUtils.createUserToken(user, tokenMaxAge);
                 createJsonWebTokenCookie(req, res, rememberMeToken, Optional.of(cookieMaxAge));
             } catch (Exception e) {
@@ -675,8 +673,7 @@ public class LoginServiceAPIFactory implements Serializable {
                                                 final HttpServletResponse res,
                                                 final User user) {
 
-            final Duration lifetime = Duration.ofMinutes(Config.getIntProperty(
-                    JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES, JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT));
+            final Duration lifetime = LoginServiceAPI.sessionLoginTokenLifetime();
             final String sessionToken = this.jsonWebTokenUtils.createUserToken(user, lifetime);
             createJsonWebTokenCookie(req, res, sessionToken, Optional.of(0));
 
@@ -684,6 +681,18 @@ public class LoginServiceAPIFactory implements Serializable {
             if (null != session) {
                 session.setAttribute(SESSION_LOGIN_TOKEN_RENEW_AT,
                         System.currentTimeMillis() + lifetime.toMillis() / 2);
+            }
+        }
+
+        /**
+         * Removes any pending session login token renewal, so a persistent "remember me" cookie
+         * set on this session is never replaced by a renewed session cookie.
+         */
+        private static void clearSessionLoginTokenRenewal(final HttpServletRequest req) {
+
+            final HttpSession session = req.getSession(false);
+            if (null != session) {
+                session.removeAttribute(SESSION_LOGIN_TOKEN_RENEW_AT);
             }
         }
 

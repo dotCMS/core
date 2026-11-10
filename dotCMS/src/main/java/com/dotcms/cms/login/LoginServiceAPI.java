@@ -4,8 +4,10 @@ import static com.dotcms.util.FunctionUtils.ifTrue;
 
 import com.dotcms.auth.LoginLockout;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import io.vavr.Lazy;
 import java.io.Serializable;
+import java.time.Duration;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -59,6 +61,24 @@ public interface LoginServiceAPI extends Serializable {
      * cookie is renewed. It is only present on sessions whose cookie holds a session login token.
      */
     public static final String SESSION_LOGIN_TOKEN_RENEW_AT = "com.dotcms.SESSION_LOGIN_TOKEN_RENEW_AT";
+
+    /**
+     * The configured session login token lifetime ({@link #JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES}).
+     * A value below one minute is ignored with a warning and the default is used instead.
+     *
+     * @return the lifetime of a session login token
+     */
+    static Duration sessionLoginTokenLifetime() {
+        final int minutes = Config.getIntProperty(JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES,
+                JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT);
+        if (minutes < 1) {
+            Logger.warn(LoginServiceAPI.class, () -> String.format(
+                    "'%s' is %d; it must be at least 1, using the default of %d minutes",
+                    JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES, minutes, JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT));
+            return Duration.ofMinutes(JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT);
+        }
+        return Duration.ofMinutes(minutes);
+    }
 
     public final static Lazy<Integer> JWT_TOKEN_MAX_AGE_DAYS = Lazy.of(() -> Config.getIntProperty(
             JSON_WEB_TOKEN_DAYS_MAX_AGE,
