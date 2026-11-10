@@ -14,7 +14,10 @@ import org.junit.Test;
 
 public class H22GroupStatsTest {
 
-    /** Concurrent async writers must not lose bytes, write counts or timings. */
+    /**
+     * Concurrent writers must not lose updates. writeTime owns the single successful-write
+     * increment; writeSize records bytes only, matching the real doUpsert path.
+     */
     @Test
     public void testConcurrentAccountingPreservesEveryUpdate() throws Exception {
         final H22GroupStats stats = new H22GroupStats("concurrent");

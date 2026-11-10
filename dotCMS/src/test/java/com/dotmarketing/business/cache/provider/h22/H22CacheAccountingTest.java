@@ -43,7 +43,9 @@ public class H22CacheAccountingTest {
         final Connection connection = mock(Connection.class);
         statement = mock(PreparedStatement.class);
         when(connection.prepareStatement(anyString())).thenReturn(statement);
-        when(statement.executeQuery()).thenReturn(mock(ResultSet.class));
+        final ResultSet rowCounts = mock(ResultSet.class);
+        when(statement.executeQuery()).thenReturn(rowCounts);
+        when(rowCounts.next()).thenReturn(false);
         cache = new H22Cache("unused-accounting-test") {
             /** Supplies a mock connection without opening an H22 database. */
             @Override
@@ -93,8 +95,9 @@ public class H22CacheAccountingTest {
 
         assertEquals(2, counter("writes"));
         assertEquals(expectedBytes, counter("totalSize"));
-        assertEquals(UtilMethods.prettyByteify(expectedBytes / 2),
-                cache.getStats().getStats().get(0).getStatValue(AVERAGE_SIZE));
+        final CacheStats region = cache.getStats().getStats().get(0);
+        assertEquals(UtilMethods.prettyByteify(expectedBytes), region.getStatValue(BYTES_WRITTEN));
+        assertEquals(UtilMethods.prettyByteify(expectedBytes / 2), region.getStatValue(AVERAGE_SIZE));
         assertTrue(counter("totalSize") > firstSize);
     }
 

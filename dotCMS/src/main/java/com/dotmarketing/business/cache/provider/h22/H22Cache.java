@@ -410,6 +410,10 @@ public class H22Cache extends CacheProvider {
 		return groups;
 	}
 
+    /**
+     * Reports current row counts and cumulative, write-weighted serialized sizes, not heap usage.
+     * Counter samples are approximate while writes are in progress.
+     */
     @Override
     public CacheProviderStats getStats() {
         CacheStats providerStats = new CacheStats();
@@ -420,11 +424,13 @@ public class H22Cache extends CacheProvider {
         
         for (String group : currentGroups) {
             H22GroupStats groupStats = stats.group(group);
-            long perObject = (groupStats.writes==0) ? 0 : groupStats.totalSize/groupStats.writes;
+            final long bytesWritten = groupStats.totalSize.sum();
+            final long writes = groupStats.writes.sum();
+            final long perObject = writes == 0 ? 0 : bytesWritten / writes;
             CacheStats stats = new CacheStats();
             stats.addStat(CacheStats.REGION, group);
-            stats.addStat(CacheStats.REGION_MEM_TOTAL_PRETTY, UtilMethods.prettyByteify(groupStats.totalSize ));
-            stats.addStat(CacheStats.REGION_MEM_PER_OBJECT, UtilMethods.prettyByteify(perObject ));
+            stats.addStat(CacheStats.REGION_BYTES_WRITTEN, UtilMethods.prettyByteify(bytesWritten));
+            stats.addStat(CacheStats.REGION_AVG_SERIALIZED_SIZE, UtilMethods.prettyByteify(perObject));
             
             try {
               stats.addStat(CacheStats.REGION_SIZE,  _getGroupCount(group));
@@ -592,6 +598,7 @@ public class H22Cache extends CacheProvider {
 		return Optional.empty();
 	}
 
+	/** Writes a serialized value and accounts its byte length after successful SQL execution. */
 	private boolean doUpsert(final Fqn fqn, final Serializable obj) throws Exception {
 		long start = System.nanoTime();
 		long bytes = 0;
@@ -623,8 +630,7 @@ public class H22Cache extends CacheProvider {
     
     			worked = upsertStmt.execute();
 		    }
-			stats.group(fqn.group).writes++;
-			stats.group(fqn.group).writeSize(bytes * 8);
+			stats.group(fqn.group).writeSize(bytes);
 			stats.group(fqn.group).writeTime(System.nanoTime() - start);
 			DONT_CACHE_ME.invalidate(fqn.id);
 		}
