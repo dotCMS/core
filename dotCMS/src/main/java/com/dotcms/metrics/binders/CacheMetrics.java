@@ -16,6 +16,8 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 
+import java.text.NumberFormat;
+import java.text.ParsePosition;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -361,12 +363,7 @@ public class CacheMetrics implements MeterBinder {
                 if (sizeStr.contains(" |")) {
                     sizeStr = sizeStr.substring(0, sizeStr.indexOf(" |")); // Remove TTL part
                 }
-                // Remove commas and parse
-                sizeStr = sizeStr.replace(",", "").trim();
-                if (!sizeStr.isEmpty() && !"NaN".equalsIgnoreCase(sizeStr)) {
-                    double result = Double.parseDouble(sizeStr);
-                    return Double.isNaN(result) || Double.isInfinite(result) ? 0.0 : result;
-                }
+                return parseStatNumber(sizeStr.trim());
             } else {
                 // Handle GuavaCache format: direct NumberFormat output like "1,000"
                 return getStatDoubleValue(stats, CacheStats.REGION_CONFIGURED_SIZE);
@@ -514,9 +511,6 @@ public class CacheMetrics implements MeterBinder {
                 value = numPart;
             }
             
-            // Handle size values with commas from NumberFormat (e.g., "10,000")
-            value = value.replace(",", "");
-            
             // Handle empty values after processing
             if (value.isEmpty()) {
                 return 0.0;
@@ -529,9 +523,7 @@ public class CacheMetrics implements MeterBinder {
                 return 0.0;
             }
             
-            double result = Double.parseDouble(value);
-            // Return 0 for NaN or infinite values (additional safety)
-            return Double.isNaN(result) || Double.isInfinite(result) ? 0.0 : result;
+            return parseStatNumber(value);
             
         } catch (NumberFormatException e) {
             Logger.debug(this, "Failed to parse numeric value '" + stats.getStatValue(key) + "' for key '" + key + "': " + e.getMessage());
@@ -542,6 +534,17 @@ public class CacheMetrics implements MeterBinder {
         }
     }
     
+    /** Parses the same JVM locale used by providers, rejecting incomplete or non-finite values. */
+    private double parseStatNumber(final String value) {
+        final ParsePosition position = new ParsePosition(0);
+        final Number number = NumberFormat.getNumberInstance().parse(value, position);
+        if (number == null || position.getIndex() != value.length()) {
+            return 0.0;
+        }
+        final double result = number.doubleValue();
+        return Double.isFinite(result) ? result : 0.0;
+    }
+
     /**
      * Sanitize metric names for Prometheus compatibility.
      */

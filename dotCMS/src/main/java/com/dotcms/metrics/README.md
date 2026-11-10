@@ -52,7 +52,7 @@ dotcms_cache_hit_rate_overall                 // Overall cache hit rate %
 dotcms_cache_region_hit_rate{region="content"} // Hit rate by cache region
 dotcms_cache_region_size{region="X"}          // Number of objects per region
 dotcms_cache_region_hits{region="X"}          // Hit count per region
-dotcms_cache_region_memory_bytes{region="X"}  // Memory usage per region (H22 only)
+dotcms_cache_region_memory_bytes{region="X"}  // Provider-reported memory, excluding H22 write totals
 dotcms_cache_region_evictions{region="X"}     // Evictions per region (Caffeine/Guava)
 dotcms_cache_region_configured_size{region="X"} // Max configured size per region
 dotcms_cache_region_loads{region="X"}         // Load count per region
@@ -65,6 +65,12 @@ Aggregate and region gauges share one current provider snapshot for `metrics.cac
 hit and request counts, never inferred from provider-specific "loads". Providers without native
 counters are excluded from that rate; no observed requests produces `NaN`.
 Region identities are registered at startup; discovering regions created later still requires a restart.
+Provider-formatted numeric statistics use the JVM formatting locale, including grouped counts and
+fractional percentages. Redis region sizes use one cluster-scoped, streamed keyspace scan per
+snapshot collection, not one full scan per region. This still costs a keyspace traversal per TTL;
+collection is not constant-time, and Redis size counts remain approximate during concurrent writes.
+H22 serialized-write totals are deliberately excluded from memory gauges because they are not
+resident-memory measurements.
 
 #### **`TomcatMetrics`** - Web Server Performance
 ```java

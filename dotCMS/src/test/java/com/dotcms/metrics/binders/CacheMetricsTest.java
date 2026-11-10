@@ -19,7 +19,10 @@ import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.simple.SimpleConfig;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.lang.reflect.Method;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -217,6 +220,60 @@ class CacheMetricsTest {
             assertEquals(expected, gauge("memory_bytes"), 0.001, value);
             assertEquals(expected, gauge("memory_per_object_bytes"), 0.001, value);
         });
+    }
+
+    /** Provider-formatted decimal and grouped values retain their meaning in supported locales. */
+    @Test
+    void regionGauges_parseProviderLocale() {
+        final Locale previous = Locale.getDefault(Locale.Category.FORMAT);
+        try {
+            for (final Locale locale : new Locale[]{Locale.US, Locale.GERMANY, Locale.FRANCE}) {
+                Locale.setDefault(Locale.Category.FORMAT, locale);
+                final NumberFormat numbers = NumberFormat.getInstance();
+                final DecimalFormat percentages = new DecimalFormat("##.##%");
+                final CacheStats region = new CacheStats()
+                        .addStat(CacheStats.REGION, "region.foo")
+                        .addStat(CacheStats.REGION_SIZE, numbers.format(1234))
+                        .addStat(CacheStats.REGION_HITS, numbers.format(755))
+                        .addStat(CacheStats.REGION_HIT_RATE, percentages.format(0.755))
+                        .addStat(CacheStats.REGION_CONFIGURED_SIZE,
+                                "size:" + numbers.format(4000) + " | ttl:300s")
+                        .addStat(CacheStats.REGION_LOAD, numbers.format(1000))
+                        .addStat(CacheStats.REGION_AVG_LOAD_TIME, numbers.format(1.5) + " ms")
+                        .addStat(CacheStats.REGION_EVICTIONS, numbers.format(12));
+                final CacheProviderStats provider = new CacheProviderStats(new CacheStats(), "Provider-A");
+                provider.addStatRecord(region);
+                snapshots.set(List.of(provider));
+                expireSnapshot();
+
+                org.junit.jupiter.api.Assertions.assertAll(locale.toLanguageTag(),
+                        () -> assertEquals(1234.0, gauge("size"), 0.001),
+                        () -> assertEquals(755.0, gauge("hits"), 0.001),
+                        () -> assertEquals(75.5, gauge("hit_rate"), 0.001),
+                        () -> assertEquals(4000.0, gauge("configured_size"), 0.001),
+                        () -> assertEquals(1000.0, gauge("loads"), 0.001),
+                        () -> assertEquals(1.5, gauge("avg_load_time_ms"), 0.001),
+                        () -> assertEquals(12.0, gauge("evictions"), 0.001));
+            }
+        } finally {
+            Locale.setDefault(Locale.Category.FORMAT, previous);
+        }
+    }
+
+    /** Locale parsing must not accept a valid prefix of malformed or non-finite statistics. */
+    @Test
+    void regionGauges_rejectIncompleteAndNonFiniteNumbers() {
+        for (final String value : new String[]{"12oops", "NaN", "∞", "Infinity"}) {
+            final CacheProviderStats provider = snapshot(1);
+            provider.getStats().get(0)
+                    .addStat(CacheStats.REGION_SIZE, value)
+                    .addStat(CacheStats.REGION_CONFIGURED_SIZE, "size:" + value + " | ttl:300s");
+            snapshots.set(List.of(provider));
+            expireSnapshot();
+
+            assertEquals(0.0, gauge("size"), 0.001, value);
+            assertEquals(0.0, gauge("configured_size"), 0.001, value);
+        }
     }
 
     /** Advances the registry clock beyond the configured cache TTL without sleeping. */
