@@ -572,14 +572,14 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
 
                                 result += "<div class=\"checkbox\"><input onchange='doSearch()' type=\"checkbox\" dojoType=\"dijit.form.CheckBox\" value=\""
-                                                        + actual_option[1] + "\" id=\"" + selectedStruct + "." + fieldContentlet + "Field"+ counter_checkbox
+                                                        + escapeHtml(actual_option[1]) + "\" id=\"" + selectedStruct + "." + fieldContentlet + "Field"+ counter_checkbox
                                                         + "\" name=\"" + selectedStruct + "." + fieldContentlet + "\"";
                                 for(var j = 0;j < lastChecked.length; j++){
                                                 if(lastChecked[j] == actual_option[1]){
                                                 result = result + "checked = \"checked\"";
                                         }
                                 }
-                                result = result + "><label for='"+myD+"'>" + actual_option[0] + "</label></div>";
+                                result = result + "><label for='"+myD+"'>" + escapeHtml(actual_option[0]) + "</label></div>";
                             checkboxesIds[counter_checkbox] = selectedStruct+"."+fieldContentlet + "Field" + counter_checkbox;
 
                             setDotFieldTypeStr = setDotFieldTypeStr
@@ -608,12 +608,12 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                        var actual_option = option[i].split("|");
                        if(actual_option.length > 1 && actual_option[1] !='' && actual_option[1].length > 0){
                                 result = result + "<div class=\"radio\"><input onchange='doSearch()' type=\"radio\" dojoType=\"dijit.form.RadioButton\" value=\""
-                                                        + actual_option[1] + "\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field"+ counter_radio
+                                                        + escapeHtml(actual_option[1]) + "\" id=\"" + selectedStruct+"."+ fieldContentlet + "Field"+ counter_radio
                                                         + "\" name=\"" + selectedStruct+ "." + fieldContentlet + "\"";
                                         if(value == actual_option[1]){
                                         result = result + "checked = \"checked\"";
                                 }
-                                result = result + "><label for='" + myD+ "'>" + actual_option[0] + "</label></div>";
+                                result = result + "><label for='" + myD+ "'>" + escapeHtml(actual_option[0]) + "</label></div>";
                                 radiobuttonsIds[counter_radio] = selectedStruct+"."+fieldContentlet + "Field"+ counter_radio;
 
                                  setDotFieldTypeStr = setDotFieldTypeStr
@@ -652,11 +652,11 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                                     }
                                 }
                                 result = result + "<option value=\""
-                                                                + auxValue + "\""
+                                                                + escapeHtml(auxValue) + "\""
                                 if(value == auxValue){
                                         result = result + " selected ";
                                 }
-                                result = result + " >" + actual_option[0]+"</option>\n";
+                                result = result + " >" + escapeHtml(actual_option[0])+"</option>\n";
                         }
                     }
 
@@ -695,13 +695,13 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                                     }
                                 }
                                 result = result + "<option value=\""
-                                                                + auxValue + "\"";
+                                                                + escapeHtml(auxValue) + "\"";
                                 for(var j = 0;j < lastSelected.length; j++){
                                         if(lastSelected[j] == auxValue){
                                                 result = result + " selected ";
                                         }
                                 }
-                                result = result + " >" + actual_option[0]+"</option>\n";
+                                result = result + " >" + escapeHtml(actual_option[0])+"</option>\n";
                         }
                     }
 
@@ -1319,7 +1319,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                         var type2 = field["fieldFieldType"];
                         // date and date_time fields now use From/To pickers — no tooltip needed
                         if (type2 === 'date' || type2 === 'date_time') {
-                            return field["fieldName"] + ":";
+                            return escapeHtml(field["fieldName"]) + ":";
                         }
                         var id = field["fieldStructureInode"] + '_' + field["fieldContentlet"];
 	             dijit.registry.remove("tipMsg_" + id);
@@ -1327,13 +1327,13 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 	                             dijit.byId("tipMsg_" + id).destroy();
 	                     }
 	                     var hintLabel = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "viewcontentlets.message.time.hint")) %>';
-	                     return field["fieldName"] + " <a href=\"#\" id=\"hint_" + id + "\">?</a>:<div dojoType=\"dijit.Tooltip\" connectId=\"hint_" + id + "\" position=\"above\" label=\"" + hintLabel + "\"></div>";
+	                     return escapeHtml(field["fieldName"]) + " <a href=\"#\" id=\"hint_" + id + "\">?</a>:<div dojoType=\"dijit.Tooltip\" connectId=\"hint_" + id + "\" position=\"above\" label=\"" + hintLabel + "\"></div>";
 	             } else {
 	                     var isOneOption = field["fieldValues"].split("\r\n").length === 1;
 	                     if (type === 'checkbox' && isOneOption || type === 'radio' && isOneOption) {
-	                         return field["fieldName"];
+	                         return escapeHtml(field["fieldName"]);
 	                     } else {
-	                         return field["fieldName"] + ":";
+	                         return escapeHtml(field["fieldName"]) + ":";
 	                     }
 	             }
              }

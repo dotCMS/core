@@ -35,7 +35,6 @@ import com.dotmarketing.image.vips.VipsResizePhotoIntegrationTest;
 import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.cmsmaintenance.action.ViewCMSMaintenanceActionTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
-import com.dotmarketing.portlets.structure.action.EditStructureActionSaveTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -80,9 +79,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.contenttype.ContentTypeResourceUpdateMetadataTest.class,
         com.dotcms.rest.api.v2.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v3.contenttype.FieldResourceTest.class,
-        EditStructureActionSaveTest.class,
         com.dotcms.rest.api.v3.contenttype.MoveFieldFormTest.class,
         com.dotcms.rest.api.CorsFilterTest.class,
+        com.dotmarketing.webdav.DotWebdavHelperAuthorizePrincipalTest.class,
         com.dotcms.rest.elasticsearch.ESContentResourcePortletTest.class,
         com.dotcms.filters.VanityUrlFilterTest.class,
         com.dotcms.vanityurl.business.VanityUrlAPITest.class,
@@ -96,6 +95,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ContainerStructureFinderStrategyResolverTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletAPITest.class,
         com.dotmarketing.portlets.contentlet.model.ContentletIntegrationTest.class,
+        com.dotcms.rest.api.v1.authentication.AuthenticationResourceStoredPasswordTest.class,
         com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformerTest.class,
         com.dotcms.content.elasticsearch.business.ContentletPermissionReplacementIntegrationTest.class,
         com.dotmarketing.portlets.contentlet.transform.ContentletTransformerTest.class,
@@ -132,6 +132,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcherTest.class,
         com.dotcms.rest.AuditPublishingResourceTest.class,
         com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPIImplTest.class,
+        com.dotmarketing.cms.login.factories.LoginFactoryTest.class,
         com.dotcms.cms.login.LoginTokenInvalidationTest.class,
         MaintenanceResourceIntegrationTest.class,
         FolderHandlerTest.class,

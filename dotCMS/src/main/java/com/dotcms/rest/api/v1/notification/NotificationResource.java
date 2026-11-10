@@ -119,8 +119,7 @@ public class NotificationResource {
             final User user = initData.getUser();
             final String limitStr = initData.getParamsMap().get(RESTParams.LIMIT.getValue());
             final String offsetStr = initData.getParamsMap().get(RESTParams.OFFSET.getValue());
-            final boolean allUsers = initData.getParamsMap().get(ALLUSERS) != null ?
-                    Boolean.parseBoolean(initData.getParamsMap().get(ALLUSERS)) : false;
+            final boolean allUsers = isAllUsers(initData);
 
             /* Limit and Offset Parameters Handling, if not passed, using default */
 
@@ -174,27 +173,38 @@ public class NotificationResource {
     } // getNotifications.
 
     /**
-     * Returns whether there are new Notifications or not for the given User
+     * Reads the {@code allusers} parameter. It is honored only for CMS Administrators; for anyone
+     * else the listing stays limited to their own notifications.
      *
-     * @param httpServletRequest
-     * @param params
-     * @return
-     * @throws DotStateException
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws JSONException
+     * @param initData the request data holding the parameters and the current user
+     * @return {@code true} when the parameter is {@code true} and the current user is a CMS Administrator
+     */
+    private boolean isAllUsers(final InitDataObject initData) {
+        return Boolean.parseBoolean(initData.getParamsMap().get(ALLUSERS))
+                && null != initData.getUser() && initData.getUser().isAdmin();
+    }
+
+    /**
+     * Returns the number of unread notifications of the current user. The count is always the
+     * user's own, for administrators too.
+     *
+     * @param httpServletRequest the current request
+     * @param httpServletResponse the current response
+     * @return a response whose entity is the user's unread notifications count
+     * @throws DotStateException if the request cannot be initialized
+     * @throws DotDataException if the count cannot be read
+     * @throws DotSecurityException if the user cannot be resolved
+     * @throws JSONException kept for compatibility with existing callers
      */
     @GET
     @Path ("/getNewNotificationsCount")
     @Produces ("application/json")
     public Response getNewNotificationsCount ( @Context final HttpServletRequest httpServletRequest,
-                                               @Context final HttpServletResponse httpServletResponse,
-                                               @PathParam ("params") final String params ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
+                                               @Context final HttpServletResponse httpServletResponse ) throws DotStateException, DotDataException, DotSecurityException, JSONException {
         
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
-                .params(params)
                 .requestAndResponse(httpServletRequest, httpServletResponse)
                 .rejectWhenNoUser(true).init();
 
@@ -202,22 +212,14 @@ public class NotificationResource {
         Long newNotificationsCount = 0l;
         User user;
         Response response;
-        final boolean allUsers = initData.getParamsMap().get(ALLUSERS) != null ?
-                Boolean.parseBoolean(initData.getParamsMap().get(ALLUSERS)) : false;
 
         try {
 
             user = initData.getUser();
 
-            if (allUsers) {
+            if (null != user) {
 
-                newNotificationsCount = notificationAPI.getNotificationsCount();
-            } else {
-
-                if (null != user) {
-
-                    newNotificationsCount = notificationAPI.getNewNotificationsCount(user.getUserId());
-                }
+                newNotificationsCount = notificationAPI.getNewNotificationsCount(user.getUserId());
             }
 
             response = Response.ok(new ResponseEntityView(newNotificationsCount))
@@ -228,6 +230,26 @@ public class NotificationResource {
         }
 
         return response;
+    }
+
+    /**
+     * Returns the number of unread notifications of the current user.
+     *
+     * @param httpServletRequest the current request
+     * @param httpServletResponse the current response
+     * @param params ignored; the endpoint takes no path parameters
+     * @return a response whose entity is the user's unread notifications count
+     * @throws DotStateException if the request cannot be initialized
+     * @throws DotDataException if the count cannot be read
+     * @throws DotSecurityException if the user cannot be resolved
+     * @throws JSONException kept for compatibility with existing callers
+     * @deprecated use {@link #getNewNotificationsCount(HttpServletRequest, HttpServletResponse)}
+     */
+    @Deprecated
+    public Response getNewNotificationsCount (final HttpServletRequest httpServletRequest,
+                                              final HttpServletResponse httpServletResponse,
+                                              final String params) throws DotStateException, DotDataException, DotSecurityException, JSONException {
+        return getNewNotificationsCount(httpServletRequest, httpServletResponse);
     }
 
     /**

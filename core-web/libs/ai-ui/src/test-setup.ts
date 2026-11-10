@@ -48,13 +48,6 @@ Object.defineProperty(window, 'getComputedStyle', {
     })
 });
 
-Object.defineProperty(document.body.style, 'transform', {
-    value: () => ({
-        enumerable: true,
-        configurable: true
-    })
-});
-
 // structuredClone is not exposed by the happy-dom sandbox — polyfill for tests
 if (typeof globalThis.structuredClone === 'undefined') {
     globalThis.structuredClone = <T>(obj: T): T => JSON.parse(JSON.stringify(obj));

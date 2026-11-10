@@ -41,8 +41,9 @@
 <%@ page import="com.dotcms.contenttype.model.field.JSONField" %>
 <%@ page import="org.apache.commons.lang.StringEscapeUtils" %>
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
-<%@ page import="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" %>
+<%@ page import="com.dotcms.rest.api.v1.DotObjectMapperProvider" %>
 <%@ page import="com.dotmarketing.util.ConfigUtils" %>
+<%@ page import="com.liferay.util.Xss" %>
 
 
 <%
@@ -54,8 +55,8 @@
     final com.dotcms.contenttype.model.field.Field newField = LegacyFieldTransformer.from(field);
 
     Object value = (Object) request.getAttribute("value");
-    ObjectMapper mapper = new ObjectMapper(); // Create an ObjectMapper instance
-    mapper.registerModule(new Jdk8Module());
+    // Its output is written inside script elements below, so it uses the mapper whose text can sit there
+    final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getScriptEmbeddableObjectMapper();
     String hint = UtilMethods.isSet(field.getHint()) ? field.getHint() : null;
     boolean isReadOnly = field.isReadOnly();
     String defaultValue = field.getDefaultValue() != null ? field
@@ -837,14 +838,14 @@
                         try {
                             fieldData = {
                                 ...(<%=jsonField%>),
-                                hint: '<%=hint%>',
+                                hint: '<%=Xss.encodeForJavaScript(hint)%>',
                                 variable,
                                 fieldVariables: <%=fieldVariablesContent%>
                             }
                         } catch (error) {
                             fieldData = {
                                  ...(<%=jsonField%>),
-                                 hint: '<%=hint%>',
+                                 hint: '<%=Xss.encodeForJavaScript(hint)%>',
                                  variable
                             }
                             console.warn('Error parsing the field variables', error);
@@ -1616,11 +1617,11 @@
 
             // Escape chars and set value to hidden input
             var dotKeyValueHiddenIput = document.getElementById('<%=field.getVelocityVarName()%>');
-            dotKeyValueHiddenIput.value = formatToJsonData(escapeQuoteAndBackSlash("<%=keyValueDataRaw%>"));
+            dotKeyValueHiddenIput.value = formatToJsonData(escapeQuoteAndBackSlash("<%=Xss.encodeForJavaScript(keyValueDataRaw.toString())%>"));
 
             var dotKeyValue = document.querySelector('#<%=field.getVelocityVarName()%>KeyValue');
             dotKeyValue.uniqueKeys = "true";
-            dotKeyValue.value = "<%=dotKeyValueDataRaw.toString()%>";
+            dotKeyValue.value = "<%=Xss.encodeForJavaScript(dotKeyValueDataRaw.toString())%>";
             dotKeyValue.disabled = '<%=field.isReadOnly()%>';
             dotKeyValue.whiteList = '<%=whiteListKeyValues%>';
             dotKeyValue.formKeyLabel = '<%= LanguageUtil.get(pageContext, "Key") %>'

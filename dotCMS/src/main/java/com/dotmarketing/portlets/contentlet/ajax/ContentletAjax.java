@@ -1846,7 +1846,6 @@ public class ContentletAjax {
 	  Map<String,Object> callbackData = new HashMap<>();
 	  List<String> saveContentErrors = new ArrayList<>();
 	  User user = null;
-      boolean clearBinary = true;//flag to check if the binary field needs to be cleared or not
       HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
       String newInode = "";
 
@@ -2154,23 +2153,19 @@ public class ContentletAjax {
 	  catch(DotLockException dse){
 		  String errorString = LanguageUtil.get(user,"message.content.locked");
 		  saveContentErrors.add(errorString);
-		  clearBinary = false;
 	  }
 	  catch(DotSecurityException dse){
 		  String errorString = LanguageUtil.get(user,"message.insufficient.permissions.to.save") + ". " + dse.getMessage();
 		  saveContentErrors.add(errorString);
-		  clearBinary = false;
 	  }
 	  catch ( PublishStateException pe ) {
 		  String errorString = LanguageUtil.get( user, pe.getMessage() );
 		  saveContentErrors.add( errorString );
-		  clearBinary = false;
 	  }
 	  catch ( DotLanguageException e ) {
 		  saveContentErrors.add( e.getMessage() );
 		  callbackData.put( "saveContentErrors", saveContentErrors );
 		  callbackData.put( "referer", referer );
-		  clearBinary = false;
 		  return callbackData;
 	  }
 	  catch(final Exception e){
@@ -2180,20 +2175,19 @@ public class ContentletAjax {
 
 		  if (optionalThrowable.isPresent()) {
 			  final DotContentletValidationException ve = (DotContentletValidationException) optionalThrowable.get();
-			  clearBinary = handleValidationException(user, ve, saveContentErrors);
+			  handleValidationException(user, ve, saveContentErrors);
 		  } else {
 			  final Throwable rootCause = getRootCause(e);
 			  if (rootCause instanceof DotContentletValidationException) {
 				  final DotContentletValidationException ve = DotContentletValidationException.class
 						  .cast(rootCause);
-				  clearBinary = handleValidationException(user, ve, saveContentErrors);
+				  handleValidationException(user, ve, saveContentErrors);
 			  } else {
 				  Logger.debug(this, e.getMessage(), e);
 				  Logger.error(this, e.getMessage());
 				  saveContentErrors.add(e.getMessage());
 				  callbackData.put("saveContentErrors", saveContentErrors);
 				  callbackData.put("referer", referer);
-				  clearBinary = false;
 				  return callbackData;
 			  }
 		  }
@@ -2223,34 +2217,6 @@ public class ContentletAjax {
 				SessionMessages.clear(req.getSession());
 
 			}
-		    if(clearBinary){//if an error occur with any other field (was unique, required, length, pattern or bad type) when saving the contentlet, do not clear the binary field
-			// If an error occurred, manually delete all other uploaded binary
-		    // files since they were not included in the Hibernate transaction
-			try {
-				HttpSession ses = req.getSession();
-				List<String> tempBinaryImageInodes = (List<String>) ses
-						.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-				if (UtilMethods.isSet(tempBinaryImageInodes)
-						&& tempBinaryImageInodes.size() > 0) {
-					for (String inode : tempBinaryImageInodes) {
-						Contentlet contentlet = conAPI.find(inode, APILocator
-								.getUserAPI().getSystemUser(), false);
-						if (contentlet != null) {
-							conAPI.archive(contentlet, user, false);
-							conAPI.delete(contentlet, APILocator.getUserAPI()
-									.getSystemUser(), false, true);
-						}
-					}
-					tempBinaryImageInodes.clear();
-				}
-			} catch (DotContentletStateException e1) {
-				Logger.warn(this, "Could not delete temporary image inode", e1);
-			} catch (DotDataException e1) {
-				Logger.warn(this, "Could not delete temporary image inode", e1);
-			} catch (DotSecurityException e1) {
-				Logger.warn(this, "Could not delete temporary image inode", e1);
-			}
-		    }
 		}
 
 		if(!isAutoSave
@@ -2282,17 +2248,19 @@ public class ContentletAjax {
 	}
 
 	/**
-	 * This code has been extracted into a separate method so we can use it when original exception has been wrapped within a Runtime Exception
-	 * @param user
-	 * @param ve
-	 * @param saveContentErrors
-	 * @return
-	 * @throws LanguageException
+	 * Adds the localized message of each validation failure in the given exception to the list of
+	 * save errors. Used for the exception as thrown and when it is wrapped in another one. When the
+	 * exception reports unique-field errors, the current Hibernate transaction is rolled back. When no
+	 * specific message applies, the message of the exception itself is added.
+	 *
+	 * @param user              the user the messages are localized for
+	 * @param ve                the validation exception
+	 * @param saveContentErrors the list the messages are added to
+	 * @throws LanguageException if a message cannot be localized
 	 */
-	private boolean handleValidationException(final User user,
+	private void handleValidationException(final User user,
 			final DotContentletValidationException ve, final List<String> saveContentErrors)
 			throws LanguageException {
-		boolean clearBinary = true;
 		if (ve instanceof FileAssetValidationException) {
 			final List<Field> reqs = ve.getNotValidFields()
 					.get(DotContentletValidationException.VALIDATION_FAILED_BADTYPE);
@@ -2312,7 +2280,6 @@ public class ContentletAjax {
 					errorString = errorString.replace("{0}", field.getFieldName());
 					saveContentErrors.add(errorString);
 				}
-				clearBinary = false;
 			}
 
 			if (ve.hasPatternErrors()) {
@@ -2323,7 +2290,6 @@ public class ContentletAjax {
 					errorString = errorString.replace("{0}", field.getFieldName());
 					saveContentErrors.add(errorString);
 				}
-				clearBinary = false;
 			}
 
 			if (ve.hasBadTypeErrors()) {
@@ -2334,7 +2300,6 @@ public class ContentletAjax {
 					errorString = errorString.replace("{0}", field.getFieldName());
 					saveContentErrors.add(errorString);
 				}
-				clearBinary = false;
 			}
 
 			if (ve.hasCharLimitErrors()) {
@@ -2347,7 +2312,6 @@ public class ContentletAjax {
 							maxLimit != null ? maxLimit : 0);
 					saveContentErrors.add(errorString);
 				}
-				clearBinary = false;
 			}
 
 			if (ve.hasRelationshipErrors()) {
@@ -2395,7 +2359,6 @@ public class ContentletAjax {
 				String errorString = LanguageUtil.get(user, "message.relationship.required_ext");
 				errorString = errorString.replace("{0}", sb.toString());
 				saveContentErrors.add(errorString);
-				clearBinary = false;
 			}
 
 			if (ve.hasUniqueErrors()) {
@@ -2406,7 +2369,6 @@ public class ContentletAjax {
 					errorString = errorString.replace("{0}", field.getFieldName());
 					saveContentErrors.add(errorString);
 				}
-				clearBinary = false;
 
                 try {
                     HibernateUtil.rollbackTransaction();
@@ -2429,10 +2391,20 @@ public class ContentletAjax {
 		if (saveContentErrors.size() == 0) {
 			saveContentErrors.add(ve.getMessage());
 		}
-		return clearBinary;
 	}
 
 
+	/**
+	 * Ends the edition of a contentlet in the legacy edit screen. When the contentlet being edited
+	 * is a Site, the Site Browser goes back to the default Site. Content is looked up with the
+	 * permissions of the logged-in user.
+	 *
+	 * @param workingContentletInode the inode of the working version being edited
+	 * @param currentContentletInode the inode of the current version, unused
+	 * @param referer the URL to return to
+	 * @param language the language id to set on the returned URL
+	 * @return the URL to return to, with the language set
+	 */
 	@CloseDB
 	//http://jira.dotmarketing.net/browse/DOTCMS-2273
 	public String cancelContentEdit(String workingContentletInode,String currentContentletInode,String referer,String language){
@@ -2442,15 +2414,6 @@ public class ContentletAjax {
 			User user = com.liferay.portal.util.PortalUtil.getUser(req);
 			//contentletWebAPI.cancelContentEdit(workingContentletInode,currentContentletInode,user);
 			HttpSession ses = req.getSession();
-			List<String> tempBinaryImageInodes = (List<String>) ses.getAttribute(Contentlet.TEMP_BINARY_IMAGE_INODES_LIST);
-
-			if(UtilMethods.isSet(tempBinaryImageInodes) && tempBinaryImageInodes.size() > 0){
-				for(String inode : tempBinaryImageInodes){
-					conAPI.delete(conAPI.find(inode, APILocator.getUserAPI().getSystemUser(), false), APILocator.getUserAPI().getSystemUser(), false, true);
-				}
-				tempBinaryImageInodes.clear();
-			}
-
 			// if we are canceling the edition of a host, let's restore the default one for the site browser
 
 			Contentlet content = conAPI.find(workingContentletInode, user, false);
