@@ -796,7 +796,7 @@ public class H22Cache extends CacheProvider {
             try (Connection current = connection.get()) {
                 for (int table = 0; table < numberOfTablesPerDb; table++) {
                     try (PreparedStatement statement = current.prepareStatement(
-                            "select cache_group, count(*) from " + TABLE_PREFIX + table + " group by cache_group");
+                            "select cache_group, count(*) from " + TABLE_PREFIX + table + " group by cache_group"); // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- hardcoded prefix and bounded integer table index, no user input
                             ResultSet rows = statement.executeQuery()) {
                         while (rows.next()) {
                             final String group = rows.getString(1);
