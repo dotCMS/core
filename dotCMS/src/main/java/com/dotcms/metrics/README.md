@@ -66,7 +66,9 @@ hit and request counts, never inferred from provider-specific "loads". Providers
 counters are excluded from that rate; no observed requests produces `NaN`.
 Region identities are registered at startup; discovering regions created later still requires a restart.
 Provider-formatted numeric statistics use the JVM formatting locale, including grouped counts and
-fractional percentages. Redis region sizes use one cluster-scoped, streamed keyspace scan per
+fractional percentages and locale-specific percent signs. H22 discovers and counts all regions
+with one grouped query per shard table (18 queries with the default layout), not a query per
+region/table pair. Redis region sizes use one cluster-scoped, streamed keyspace scan per
 snapshot collection, not one full scan per region. This still costs a keyspace traversal per TTL;
 collection is not constant-time, and Redis size counts remain approximate during concurrent writes.
 H22 serialized-write totals are deliberately excluded from memory gauges because they are not

@@ -16,6 +16,7 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 
+import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.ParsePosition;
 import java.util.HashMap;
@@ -363,7 +364,7 @@ public class CacheMetrics implements MeterBinder {
                 if (sizeStr.contains(" |")) {
                     sizeStr = sizeStr.substring(0, sizeStr.indexOf(" |")); // Remove TTL part
                 }
-                return parseStatNumber(sizeStr.trim());
+                return parseStatNumber(sizeStr.trim(), NumberFormat.getNumberInstance());
             } else {
                 // Handle GuavaCache format: direct NumberFormat output like "1,000"
                 return getStatDoubleValue(stats, CacheStats.REGION_CONFIGURED_SIZE);
@@ -485,6 +486,12 @@ public class CacheMetrics implements MeterBinder {
             }
             
             value = value.trim();
+            if (CacheStats.REGION_HIT_RATE.equals(key)) {
+                final DecimalFormat percentFormat = new DecimalFormat("##.##%");
+                if (value.endsWith(percentFormat.getPositiveSuffix())) {
+                    return parseStatNumber(value, percentFormat) * 100;
+                }
+            }
             
             // Handle DecimalFormat outputs for invalid floating point numbers
             if ("NaN".equalsIgnoreCase(value) || 
@@ -523,7 +530,7 @@ public class CacheMetrics implements MeterBinder {
                 return 0.0;
             }
             
-            return parseStatNumber(value);
+            return parseStatNumber(value, NumberFormat.getNumberInstance());
             
         } catch (NumberFormatException e) {
             Logger.debug(this, "Failed to parse numeric value '" + stats.getStatValue(key) + "' for key '" + key + "': " + e.getMessage());
@@ -535,9 +542,9 @@ public class CacheMetrics implements MeterBinder {
     }
     
     /** Parses the same JVM locale used by providers, rejecting incomplete or non-finite values. */
-    private double parseStatNumber(final String value) {
+    private double parseStatNumber(final String value, final NumberFormat format) {
         final ParsePosition position = new ParsePosition(0);
-        final Number number = NumberFormat.getNumberInstance().parse(value, position);
+        final Number number = format.parse(value, position);
         if (number == null || position.getIndex() != value.length()) {
             return 0.0;
         }

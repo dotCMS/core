@@ -22,7 +22,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Optional;
-import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -44,7 +44,9 @@ public class H22CacheAccountingTest {
         when(connection.prepareStatement(anyString())).thenReturn(statement);
         final ResultSet rowCounts = mock(ResultSet.class);
         when(statement.executeQuery()).thenReturn(rowCounts);
-        when(rowCounts.next()).thenReturn(false);
+        final AtomicInteger cursor = new AtomicInteger();
+        when(rowCounts.next()).thenAnswer(ignored -> cursor.getAndIncrement() % 2 == 0);
+        when(rowCounts.getString(1)).thenReturn(GROUP);
         cache = new H22Cache("unused-accounting-test") {
             /** Supplies a mock connection without opening an H22 database. */
             @Override
@@ -52,11 +54,6 @@ public class H22CacheAccountingTest {
                 return Optional.of(connection);
             }
 
-            /** Keeps the test region visible before its first successful write. */
-            @Override
-            public Set<String> getGroups() {
-                return Set.of(GROUP);
-            }
         };
         final Field statsField = H22Cache.class.getDeclaredField("stats");
         statsField.setAccessible(true);

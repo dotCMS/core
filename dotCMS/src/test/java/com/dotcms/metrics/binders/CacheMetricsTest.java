@@ -227,7 +227,8 @@ class CacheMetricsTest {
     void regionGauges_parseProviderLocale() {
         final Locale previous = Locale.getDefault(Locale.Category.FORMAT);
         try {
-            for (final Locale locale : new Locale[]{Locale.US, Locale.GERMANY, Locale.FRANCE}) {
+            for (final Locale locale : new Locale[]{Locale.US, Locale.GERMANY, Locale.FRANCE,
+                    Locale.forLanguageTag("ar")}) {
                 Locale.setDefault(Locale.Category.FORMAT, locale);
                 final NumberFormat numbers = NumberFormat.getInstance();
                 final DecimalFormat percentages = new DecimalFormat("##.##%");
