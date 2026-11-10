@@ -43,8 +43,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import io.vavr.control.Try;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -465,6 +467,83 @@ public class IntegrityUtilTest  {
         assertEquals(newInode_1, results.get(0).get("remote_inode"));
     }
 
+
+    /**
+     * Method to test: {@link IntegrityUtil#fixConflicts(java.io.InputStream, String, IntegrityType)}
+     * When: The uploaded roles-to-fix file carries a remote role id that contains a single quote
+     * Should: Apply the fix and store the remote id exactly as received, keeping the original role key
+     */
+    @Test
+    public void roleFixFromRemoteStoresRemoteIdAsData() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final String endPointID = "endpointID_" + System.currentTimeMillis();
+        final String remoteRoleId = "r'" + UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+
+        final File zip = File.createTempFile("roles-to-fix", ".zip");
+        try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zip))) {
+            out.putNextEntry(new ZipEntry(IntegrityType.CMS_ROLES.getDataToFixCSVName()));
+            final String row = String.join("|", role.getName(), role.getRoleKey(), role.getId(),
+                    remoteRoleId, role.getDBFQN(), remoteRoleId) + "\n";
+            out.write(row.getBytes(StandardCharsets.UTF_8));
+            out.closeEntry();
+        }
+
+        try {
+            try (FileInputStream in = new FileInputStream(zip)) {
+                new IntegrityUtil().fixConflicts(in, endPointID, IntegrityType.CMS_ROLES);
+            }
+
+            final List<Map<String, Object>> rows = new DotConnect()
+                    .setSQL("select id, role_key from cms_role where id in (?, ?)")
+                    .addParam(remoteRoleId)
+                    .addParam(role.getId())
+                    .loadObjectResults();
+            assertEquals(1, rows.size());
+            assertEquals(remoteRoleId, rows.get(0).get("id"));
+            assertEquals(role.getRoleKey(), rows.get(0).get("role_key"));
+        } finally {
+            new DotConnect().setSQL("delete from cms_role where id = ?").addParam(remoteRoleId).loadResult();
+            IntegrityUtil.completeDiscardConflicts(endPointID);
+            zip.delete();
+        }
+    }
+
+    /**
+     * Method to test: {@link IntegrityUtil#fixConflicts(String, IntegrityType)}
+     * When: A content type conflict carries a remote inode that contains a single quote
+     * Should: Move the content type to the remote inode, stored exactly as received
+     */
+    @Test
+    public void contentTypeFixStoresRemoteInodeAsData() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final String endPointID = "endpointID_" + System.currentTimeMillis();
+        final String remoteInode = "s'" + UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+
+        new DotConnect()
+                .setSQL("insert into structures_ir (velocity_name, local_inode, remote_inode, endpoint_id) values (?,?,?,?)")
+                .addParam(contentType.variable())
+                .addParam(contentType.inode())
+                .addParam(remoteInode)
+                .addParam(endPointID)
+                .loadResult();
+
+        try {
+            new IntegrityUtil().fixConflicts(endPointID, IntegrityType.STRUCTURES);
+
+            final List<Map<String, Object>> rows = new DotConnect()
+                    .setSQL("select inode, velocity_var_name from structure where inode in (?, ?)")
+                    .addParam(remoteInode)
+                    .addParam(contentType.inode())
+                    .loadObjectResults();
+            assertEquals(1, rows.size());
+            assertEquals(remoteInode, rows.get(0).get("inode"));
+            assertEquals(contentType.variable(), rows.get(0).get("velocity_var_name"));
+        } finally {
+            IntegrityUtil.completeDiscardConflicts(endPointID);
+            Try.run(() -> ContentTypeDataGen.remove(
+                    APILocator.getContentTypeAPI(APILocator.systemUser()).find(remoteInode), true));
+        }
+    }
 
     private String createCSVFile(final String endPointID, final IntegrityType integrityType) throws IOException {
         final String path = ConfigUtils.getIntegrityPath() + File.separator

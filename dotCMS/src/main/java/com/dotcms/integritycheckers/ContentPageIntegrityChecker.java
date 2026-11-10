@@ -97,8 +97,6 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
     @Override
     public boolean generateIntegrityResults(final String endpointId) throws Exception {
         try {
-            final DotConnect dc = new DotConnect();
-
             // Create a temporary table and insert all the records coming from
             // the CSV file.
             createContentletTemporaryTable(endpointId);
@@ -107,7 +105,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
             checkPages(endpointId, IntegrityType.HTMLPAGES);
 
             // Legacy HTML pages and contentlet pages share the same result table
-            return (Long) dc.getRecordCount(getIntegrityType().getResultsTableName(), "where endpoint_id = '"+ endpointId+ "'") > 0;
+            return hasResults(endpointId);
         } catch (final Exception e) {
 			throw new Exception(String.format("Error running the HTML Pages Integrity Check for Endpoint '%s': %s",
 					endpointId, e.getMessage()), e);
@@ -299,9 +297,8 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
                         + " as " + getIntegrityType().getFirstDisplayColumnLabel() + ", "
                         + "lcvi.working_inode as local_working_inode, lcvi.live_inode as local_live_inode, "
                         + "t.working_inode as remote_working_inode, t.live_inode as remote_live_inode, "
-                        + "lc.identifier as local_identifier, t.identifier as remote_identifier, '"
-                        + endpointId
-                        + "', t.language_id as language_id "
+                        + "lc.identifier as local_identifier, t.identifier as remote_identifier, "
+                        + "?, t.language_id as language_id "
                         + "FROM identifier li "
                         + "INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet' "
 						+ "and lc.variant_id = '"+DEFAULT_VARIANT.name()+"') "
@@ -318,7 +315,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
                 insertSQL = insertSQL.replaceAll(" as ", " ");
             }
 
-            dc.executeStatement(insertSQL);
+            dc.setSQL(insertSQL).addParam(endpointId).loadResult();
         }
     }
 

@@ -38,6 +38,22 @@ import java.util.Map;
  */
 public class StructureIntegrityChecker extends AbstractIntegrityChecker {
 
+    /**
+     * Table and column pairs that point at a content type inode and must follow it when the inode
+     * changes. Each pair is fixed SQL; the inodes themselves are always bound as parameters.
+     */
+    private static final String[][] CONTENT_TYPE_REFERENCES = {
+            {"container_structures", "structure_id"},
+            {"contentlet", "structure_inode"},
+            {"field", "structure_inode"},
+            {"relationship", "parent_structure_inode"},
+            {"relationship", "child_structure_inode"},
+            {"workflow_scheme_x_structure", "structure_id"},
+            {"permission", "inode_id"},
+            {"permission_reference", "asset_id"},
+            {"folder", "default_file_type"},
+    };
+
     @Override
     public final IntegrityType getIntegrityType() {
         return IntegrityType.STRUCTURES;
@@ -153,14 +169,12 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                         + getIntegrityType().getResultsTableName() 
                         + " (velocity_name, local_inode, remote_inode, endpoint_id)" 
                         + " select s.velocity_var_name as velocity_name, "
-                        + "s.inode as local_inode, st.inode as remote_inode, '"
-                        + endpointId
-                        + "' from structure s "
+                        + "s.inode as local_inode, st.inode as remote_inode, ? from structure s "
                         + "join "
                         + tempTableName
                         + " st on lower(s.velocity_var_name) = lower(st.velocity_var_name) and s.inode <> st.inode";
 
-                dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
+                dc.setSQL(INSERT_INTO_RESULTS_TABLE).addParam(endpointId).loadResult();
             }
 
             return !results.isEmpty();
@@ -198,58 +212,30 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                 
                 // 1.1) Insert dummy temp row on INODE table
 
-                dc.executeStatement("insert into inode (inode, owner, idate, type) values ('" + TEMP_INODE + "', 'DUMMY_OWNER', '1900-01-01 00:00:00.00', 'DUMMY_TYPE') " );
+                dc.setSQL("insert into inode (inode, owner, idate, type) values (?, 'DUMMY_OWNER', '1900-01-01 00:00:00.00', 'DUMMY_TYPE') ")
+                        .addParam(TEMP_INODE).loadResult();
 
 
                 // 1.2) Insert dummy temp row on STRUCTURE table
 
-                dc.executeStatement("insert into structure (inode, name, description, default_structure, review_interval, reviewer_role, page_detail, structuretype, system, fixed, velocity_var_name, url_map_pattern, host, folder, expire_date_var, publish_date_var, mod_date) values ('" + TEMP_INODE + "', 'DUMMY_NAME', 'DUMMY_DESC', "
+                dc.setSQL("insert into structure (inode, name, description, default_structure, review_interval, reviewer_role, page_detail, structuretype, system, fixed, velocity_var_name, url_map_pattern, host, folder, expire_date_var, publish_date_var, mod_date) values (?, 'DUMMY_NAME', 'DUMMY_DESC', "
                         + DbConnectionFactory.getDBFalse()
                         + ", '', '', '', 1, "
                         + DbConnectionFactory.getDBTrue()
                         + ", "
                         + DbConnectionFactory.getDBFalse()
                         + ", 'DUMMY_VAR_NAME'"
-                        + ", 'DUMMY_PATERN', '"
-                        + st.getHost()
-                        + "', '"
-                        + st.getFolder()
-                        + "', 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', '1900-01-01 00:00:00.00')");
+                        + ", 'DUMMY_PATERN', ?, ?, 'EXPIRE_DUMMY', 'PUBLISH_DUMMY', '1900-01-01 00:00:00.00')")
+                        .addParam(TEMP_INODE)
+                        .addParam(st.getHost())
+                        .addParam(st.getFolder())
+                        .loadResult();
 
 
                 // 2) Update references to the new dummies temps
 
                 // update foreign tables references to TEMP
-                dc.executeStatement("update container_structures set structure_id = '" + TEMP_INODE + "' where structure_id = '"
-                        + oldStructureInode + "'" );
-
-
-                dc.executeStatement("update contentlet set structure_inode = '" + TEMP_INODE + "' where structure_inode = '"
-                        + oldStructureInode + "'" );
-                dc.executeStatement("update field set structure_inode = '" + TEMP_INODE + "' where structure_inode = '"
-                        + oldStructureInode + "'" );
-                dc.executeStatement("update relationship set parent_structure_inode = '" + TEMP_INODE + "' where parent_structure_inode = '"
-                        + oldStructureInode + "'" );
-                dc.executeStatement("update relationship set child_structure_inode = '" + TEMP_INODE + "' where child_structure_inode = '"
-                        + oldStructureInode + "'" );
-                dc.executeStatement("update workflow_scheme_x_structure set structure_id = '" + TEMP_INODE + "' where structure_id = '"
-                        + oldStructureInode + "'" );
-                dc.executeStatement("update permission set inode_id = '" + TEMP_INODE + "' where inode_id = '"
-                        + oldStructureInode + "'" );
-                dc.executeStatement("update permission_reference set asset_id = '" + TEMP_INODE + "' where asset_id = '"
-                        + oldStructureInode + "'" );
-				// Update references in Folder regarding default file type and
-				// remove folders from cache
-				dc.setSQL("SELECT inode FROM folder WHERE default_file_type = '"
-						+ oldStructureInode + "'");
-				final List<Map<String, Object>> referencedFolders = dc
-						.loadObjectResults();
-				if (!referencedFolders.isEmpty()) {
-
-					dc.executeStatement("UPDATE folder SET default_file_type = '"
-							+ TEMP_INODE + "' WHERE default_file_type = '"
-							+ oldStructureInode + "'");
-				}
+                repointContentTypeReferences(dc, oldStructureInode, TEMP_INODE);
 
                 // 3.1) delete old STRUCTURE row
                 // lets save old structure columns values first
@@ -280,8 +266,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                 final String publishDateVar = (String) oldFolderRow.get("publish_date_var");
                 final Date modDate = (Date) oldFolderRow.get("mod_date");
 
-                dc.executeStatement("delete from structure where inode = '" + oldStructureInode
-                        + "'");
+                dc.setSQL("delete from structure where inode = ?").addParam(oldStructureInode).loadResult();
 
                 // 3.2) delete old INODE row
 
@@ -292,7 +277,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                 final Date idate = (Date) oldInodeRow.get("idate");
                 final String type = (String) oldInodeRow.get("type");
 
-                dc.executeStatement("delete from inode where inode = '" + oldStructureInode + "'");
+                dc.setSQL("delete from inode where inode = ?").addParam(oldStructureInode).loadResult();
 
                 // 4.1) insert real new INODE row
                 dc.setSQL("insert into inode (inode, owner, idate, type) values (?, ?, ?, ?) ");
@@ -324,42 +309,17 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                 dc.loadResult();
 
                 // 5) update foreign tables references to the new real row
-                dc.executeStatement("update container_structures set structure_id = '"
-                        + newStructureInode + "' where structure_id = '" + TEMP_INODE + "'" );
-
-
-                dc.setSQL("UPDATE contentlet SET contentlet_as_json['contentType'] = '\"" + newStructureInode + "\"'"
+                dc.setSQL("UPDATE contentlet SET contentlet_as_json['contentType'] = to_jsonb(?::text)"
                                 + " WHERE structure_inode = ? ")
+                        .addParam(newStructureInode)
                         .addParam(TEMP_INODE)
                         .loadResult();
 
-
-
-
-
-                dc.executeStatement("update contentlet set structure_inode = '" + newStructureInode
-                        + "' where structure_inode = '" + TEMP_INODE + "'" );
-                dc.executeStatement("update field set structure_inode = '" + newStructureInode
-                        + "' where structure_inode = '" + TEMP_INODE + "'" );
-                dc.executeStatement("update relationship set parent_structure_inode = '"
-                        + newStructureInode + "' where parent_structure_inode = '" + TEMP_INODE + "'" );
-                dc.executeStatement("update relationship set child_structure_inode = '"
-                        + newStructureInode + "' where child_structure_inode = '" + TEMP_INODE + "'" );
-                dc.executeStatement("update workflow_scheme_x_structure set structure_id = '"
-                        + newStructureInode + "' where structure_id = '" + TEMP_INODE + "'" );
-                dc.executeStatement("update permission set inode_id = '" + newStructureInode
-                        + "' where inode_id = '" + TEMP_INODE + "'" );
-                dc.executeStatement("update permission_reference set asset_id = '"
-                        + newStructureInode + "' where asset_id = '" + TEMP_INODE + "'" );
-                if (!referencedFolders.isEmpty()) {
-					dc.executeStatement("UPDATE folder SET default_file_type = '"
-							+ newStructureInode + "' WHERE default_file_type = '"
-							+ TEMP_INODE + "'");
-                }
+                repointContentTypeReferences(dc, TEMP_INODE, newStructureInode);
 
                 // 6) delete dummy temp
-                dc.executeStatement("delete from structure where inode = '" + TEMP_INODE + "'" );
-                dc.executeStatement("delete from inode where inode = '" + TEMP_INODE + "'" );
+                dc.setSQL("delete from structure where inode = ?").addParam(TEMP_INODE).loadResult();
+                dc.setSQL("delete from inode where inode = ?").addParam(TEMP_INODE).loadResult();
 
 
                 ContentType fakeType = ImmutableSimpleContentType.builder()
@@ -375,11 +335,30 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
 
 
             }
-        } catch (final SQLException e) {
+        } catch (final DotDataException e) {
             throw new DotDataException(String.format("An error occurred when executing the fix for Content Types in " +
                     "Endpoint '%s': %s", key, e.getMessage()), e);
         }
 
+    }
+
+    /**
+     * Points every reference listed in {@link #CONTENT_TYPE_REFERENCES} from one content type inode
+     * to another.
+     *
+     * @param dc the connection helper to run the statements with
+     * @param fromInode the inode the references hold now
+     * @param toInode the inode the references should hold
+     * @throws DotDataException when a statement fails
+     */
+    private static void repointContentTypeReferences(final DotConnect dc, final String fromInode,
+            final String toInode) throws DotDataException {
+        for (final String[] reference : CONTENT_TYPE_REFERENCES) {
+            dc.setSQL("UPDATE " + reference[0] + " SET " + reference[1] + " = ? WHERE " + reference[1] + " = ?")
+                    .addParam(toInode)
+                    .addParam(fromInode)
+                    .loadResult();
+        }
     }
 
 }

@@ -270,19 +270,20 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                         " (local_identifier, remote_identifier, endpoint_id, local_working_inode, local_live_inode," +
                         " remote_working_inode, remote_live_inode, language_id, host)" +
                         " SELECT DISTINCT c.identifier as local_identifier, ht.identifier as remote_identifier," +
-                        " '" + endpointId + "', cvi.working_inode as local_working_inode," +
+                        " ?, cvi.working_inode as local_working_inode," +
                         " cvi.live_inode as local_live_inode, ht.working_inode as remote_working_inode," +
                         " ht.live_inode as remote_live_inode, c.language_id, " + coalescedHostValue + " as host" +
                         conflictSql;
                 dc.setSQL(insertStmt)
+                        .addParam(endpointId)
                         .addParam(Host.SYSTEM_HOST)
                         .loadResult();
             }
 
-            final int count = dc.getRecordCount(
-                    getIntegrityType().getResultsTableName(),
-                    "WHERE endpoint_id = '"+ endpointId + "'")
-                    .intValue();
+            final long count = ((Number) dc.setSQL("SELECT COUNT(*) AS count FROM "
+                    + getIntegrityType().getResultsTableName() + " WHERE endpoint_id = ?")
+                    .addParam(endpointId)
+                    .loadObjectResults().get(0).get("count")).longValue();
             Logger.info(this, String.format("For endpoint %s the number of Host conflicts is: %d ", endpointId, count));
 
             return count > 0;
@@ -419,7 +420,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                     .loadResult();
         }
 
-        if (dc.getRecordCount("inode", "WHERE inode = '" + remoteWorkingInode + "'") == 0) {
+        if (!hasRows("inode", "WHERE inode = ?", remoteWorkingInode)) {
             // Insert the new Inodes records so they can be used in the contentlet
             dc.setSQL("INSERT INTO inode(inode, owner, idate, type)" +
                     " SELECT ?, owner, idate, type FROM inode i WHERE i.inode = ?")
@@ -431,7 +432,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
         if (!remoteWorkingInode.equals(remoteLiveInode)
                 && UtilMethods.isSet(remoteLiveInode)
                 && UtilMethods.isSet(localLiveInode)
-                && dc.getRecordCount("inode", "WHERE i.inode = '" + remoteLiveInode + "'") == 0) {
+                && !hasRows("inode", "WHERE inode = ?", remoteLiveInode)) {
             dc.setSQL("INSERT INTO inode(inode, owner, idate, type)" +
                     " SELECT ?, owner, idate, type FROM inode i WHERE i.inode = ?")
                     .addParam(remoteLiveInode)
@@ -649,7 +650,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                                     final DotConnect dc,
                                     final String cviInodeColumn)
             throws DotDataException, DotSecurityException {
-        if (dc.getRecordCount("contentlet", "WHERE identifier = '" + newHostIdentifier + "'") > 0) {
+        if (hasRows("contentlet", "WHERE identifier = ?", newHostIdentifier)) {
             Logger.warn(this,
                     String.format(
                             "Cannot insert new host (contentlet) with inode %s since it already exists (old:%s/new:%s)",
@@ -709,9 +710,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                                        final String newHostIdentifier,
                                        final Long languageId,
                                        final DotConnect dc) throws DotDataException {
-        if (dc.getRecordCount(
-                "contentlet_version_info",
-                "WHERE identifier = '" + newHostIdentifier + "' AND lang = " + languageId) > 0) {
+        if (hasRows("contentlet_version_info", "WHERE identifier = ? AND lang = ?", newHostIdentifier, languageId)) {
             Logger.warn(this,
                     String.format(
                             "Cannot insert new contentlet version since it already exists (old:%s/new:%s)",

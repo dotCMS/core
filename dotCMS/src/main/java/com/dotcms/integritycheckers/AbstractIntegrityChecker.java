@@ -21,6 +21,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Base class for all the integrity checkers implementation
@@ -31,6 +32,39 @@ import java.util.Map;
  *
  */
 public abstract class AbstractIntegrityChecker implements IntegrityChecker {
+
+    /** Characters an end point id may contain, since it becomes part of a table name. */
+    private static final Pattern TABLE_NAME_PART = Pattern.compile("[A-Za-z0-9_-]+");
+
+    /**
+     * Tells whether the given table has at least one row matching the where clause. The table name
+     * and the where clause must be fixed SQL written in code; every value goes in {@code params}.
+     *
+     * @param tableName the table to look in
+     * @param whereClause the where clause, using {@code ?} for each value
+     * @param params the values bound to the placeholders, in order
+     * @return {@code true} when a matching row exists
+     * @throws DotDataException when the query fails
+     */
+    protected static boolean hasRows(final String tableName, final String whereClause, final Object... params)
+            throws DotDataException {
+        final DotConnect dc = new DotConnect().setSQL("SELECT 1 FROM " + tableName + " " + whereClause);
+        for (final Object param : params) {
+            dc.addParam(param);
+        }
+        return !dc.setMaxRows(1).loadObjectResults().isEmpty();
+    }
+
+    /**
+     * Tells whether the results table of this checker holds conflicts for the given end point.
+     *
+     * @param endpointId the end point id
+     * @return {@code true} when at least one conflict is stored
+     * @throws DotDataException when the query fails
+     */
+    protected boolean hasResults(final String endpointId) throws DotDataException {
+        return hasRows(getIntegrityType().getResultsTableName(), "WHERE endpoint_id = ?", endpointId);
+    }
 
     /**
      * Creates temporary TABLE for integrity checking purposes.
@@ -54,17 +88,25 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
 	}
 
     /**
-     * Creates temporary TABLE for integrity checking purposes.
+     * Builds the name of the temporary table used to check the given end point's data. The name is
+     * made of the integrity type, the suffix and the end point id without dashes, so the end point id
+     * may only hold letters, digits, dashes and underscores.
      *
-     * @param endpointId
-     * @param type
-     * @param suffixName
-     * @return temporal table name
+     * @param endpointId the id of the end point being checked
+     * @param type the integrity type the table belongs to
+     * @param suffixName optional suffix that tells apart several tables of the same type
+     * @return the temporary table name, or {@code null} when no end point id is given
+     * @throws IllegalArgumentException when the end point id holds any other character
      */
     protected String getTempTableName(String endpointId, IntegrityType type, String suffixName) {
 
     	if (!UtilMethods.isSet(endpointId)) {
             return null;
+        }
+
+        if (!TABLE_NAME_PART.matcher(endpointId).matches()) {
+            throw new IllegalArgumentException("End point id '" + endpointId
+                    + "' can only contain letters, digits, '-' and '_'");
         }
 
         final String endpointIdforDB = endpointId.replace("-", "");
@@ -300,9 +342,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
                     .append("lcvi.working_inode as local_working_inode, lcvi.live_inode as local_live_inode, ")
                     .append("t.working_inode as remote_working_inode, t.live_inode as remote_live_inode, ")
                     .append("lc.identifier as local_identifier, t.identifier as remote_identifier, ")
-                    .append("'")
-                    .append(endpointId)
-                    .append("', t.language_id as language_id ")
+                    .append("?, t.language_id as language_id ")
                     .append("FROM identifier li ")
                     .append("INNER JOIN contentlet lc ON (lc.identifier = li.id and li.asset_type = 'contentlet') ")
                     .append("INNER JOIN contentlet_version_info lcvi ON (lc.identifier = lcvi.identifier and lc.language_id = lcvi.lang) ")
@@ -318,7 +358,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
                 insertSQL = insertSQL.replaceAll(" as ", " ");
             }
 
-            dc.executeStatement(insertSQL);
+            dc.setSQL(insertSQL).addParam(endpointId).loadResult();
         }
     }
 

@@ -96,8 +96,45 @@ public class FolderIntegrityCheckerTest extends IntegrationTestBase {
         }
     }
 
-    @WrapInTransaction
+    /**
+     * Method to test: {@link FolderIntegrityChecker#executeFix(String)}
+     * When: A folder conflict carries a remote inode that contains a single quote
+     * Should: Move the folder to the remote inode, stored exactly as received
+     * @throws Exception
+     */
+    @Test
+    public void test_executeFix_storesRemoteInodeAsData() throws Exception {
+        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        final Folder folder = new FolderDataGen().name("testFolder" + UUID.randomUUID()).site(host).nextPersisted();
+        final String remoteInode = "f'" + UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+        final String remoteIdentifier = introduceConflict(folder, endpointId, remoteInode);
+
+        try {
+            new IntegrityUtil().fixConflicts(endpointId, IntegrityType.FOLDERS);
+
+            final List<Map<String, Object>> rows = new DotConnect()
+                    .setSQL("SELECT inode, identifier FROM folder WHERE inode IN (?, ?)")
+                    .addParam(remoteInode)
+                    .addParam(folder.getInode())
+                    .loadObjectResults();
+            Assert.assertEquals(1, rows.size());
+            Assert.assertEquals(remoteInode, rows.get(0).get("inode"));
+            Assert.assertEquals(remoteIdentifier, rows.get(0).get("identifier"));
+        } finally {
+            integrityChecker.discardConflicts(endpointId);
+            new DotConnect().setSQL("DELETE FROM folder WHERE inode = ?").addParam(remoteInode).loadResult();
+            new DotConnect().setSQL("DELETE FROM identifier WHERE id = ?").addParam(remoteIdentifier).loadResult();
+            DbConnectionFactory.closeSilently();
+        }
+    }
+
     private String introduceConflict(final Folder folder, final String endpointId) throws DotDataException {
+        return introduceConflict(folder, endpointId, UUID.randomUUID().toString());
+    }
+
+    @WrapInTransaction
+    private String introduceConflict(final Folder folder, final String endpointId,
+            final String remoteWorkingInode) throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
 
         dotConnect.setSQL("INSERT INTO folders_ir " +
@@ -105,7 +142,6 @@ public class FolderIntegrityCheckerTest extends IntegrationTestBase {
                 "values(?,?,?,?,?)");
 
         final String remoteIdentifier = UUID.randomUUID().toString();
-        final String remoteWorkingInode = UUID.randomUUID().toString();
 
         dotConnect.addParam(folder.getIdentifier());
         dotConnect.addParam(remoteIdentifier);

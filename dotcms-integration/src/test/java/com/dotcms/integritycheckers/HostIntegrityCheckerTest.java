@@ -346,15 +346,53 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
         }
     }
 
-    @WrapInTransaction
+    /**
+     * Method to test: {@link HostIntegrityChecker#executeFix(String)}
+     * When: A site conflict carries a remote working inode that contains a single quote
+     * Should: Move the site to the remote inode, stored exactly as received
+     * @throws Exception
+     */
+    @Test
+    public void test_executeFix_storesRemoteInodeAsData() throws Exception {
+        final Host newSite = new SiteDataGen().nextPersisted();
+        final String remoteInode = "h'" + UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+        final String remoteIdentifier = introduceConflict(newSite, endpointId, remoteInode);
+
+        try {
+            new IntegrityUtil().fixConflicts(endpointId, IntegrityType.HOSTS);
+
+            final List<Map<String, Object>> rows = new DotConnect()
+                    .setSQL("SELECT inode, identifier FROM contentlet WHERE inode IN (?, ?)")
+                    .addParam(remoteInode)
+                    .addParam(newSite.getInode())
+                    .loadObjectResults();
+            assertEquals(1, rows.size());
+            assertEquals(remoteInode, rows.get(0).get("inode"));
+            assertEquals(remoteIdentifier, rows.get(0).get("identifier"));
+        } finally {
+            integrityChecker.discardConflicts(endpointId);
+            new DotConnect().setSQL("DELETE FROM contentlet_version_info WHERE working_inode = ?")
+                    .addParam(remoteInode).loadResult();
+            new DotConnect().setSQL("DELETE FROM contentlet WHERE inode = ?").addParam(remoteInode).loadResult();
+            new DotConnect().setSQL("DELETE FROM inode WHERE inode = ?").addParam(remoteInode).loadResult();
+            new DotConnect().setSQL("DELETE FROM identifier WHERE id = ?").addParam(remoteIdentifier).loadResult();
+            DbConnectionFactory.closeSilently();
+        }
+    }
+
     private String introduceConflict(final Host site, final String endpointId) throws DotDataException {
+        return introduceConflict(site, endpointId, UUID.randomUUID().toString());
+    }
+
+    @WrapInTransaction
+    private String introduceConflict(final Host site, final String endpointId,
+            final String remoteWorkingInode) throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
         dotConnect.setSQL("INSERT INTO hosts_ir \n"
                 + "(local_identifier, remote_identifier, endpoint_id, local_working_inode, remote_working_inode, language_id, host)\n"
                 + "VALUES(?, ?, ?, ?, ?, ?, ?)");
 
         final String remoteIdentifier = UUID.randomUUID().toString();
-        final String remoteWorkingInode = UUID.randomUUID().toString();
 
         dotConnect.addParam(site.getIdentifier());
         dotConnect.addParam(remoteIdentifier);
