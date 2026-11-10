@@ -168,12 +168,16 @@ private double parseMetricValue(String value) {
 
 ### **Core Settings**
 ```properties
-# Enable/disable metrics system
+# Collection and Prometheus default to enabled; no enablement flags are required.
+# Set DOT_METRICS_ENABLED=false to disable collection at startup.
 metrics.enabled=true
 
+# Set DOT_METRICS_PROMETHEUS_ENABLED=false to disable the scrape endpoint.
 # Prometheus endpoint (management port only)
 metrics.prometheus.enabled=true
 metrics.prometheus.endpoint=/dotmgt/metrics
+# Require normal dotCMS authentication for GET and HEAD (default: false)
+metrics.prometheus.require-authentication=false
 
 # Performance tuning
 metrics.cache.ttl-seconds=30           # Cache expensive calculations
@@ -229,20 +233,25 @@ metrics.sampling.rate=1.0             # No sampling
 
 ### **Security & Performance**
 - **Endpoint**: `/dotmgt/metrics` on port 8090 (management port)
-- **Security**: Protected by `InfrastructureManagementFilter`
-- **Performance**: Bypasses expensive application filters
-- **Response Time**: Sub-5ms for metrics scraping
+- **Security**: `InfrastructureManagementFilter` requires the actual management connector for metrics; forwarded-port headers cannot grant access from an application connector.
+- **Authentication**: Set `DOT_METRICS_PROMETHEUS_REQUIRE_AUTHENTICATION=true` to require normal dotCMS authentication for GET and HEAD. The default remains false for isolated monitoring networks; restrict network access and use verified TLS for remote scraping.
+- **Startup**: The existing metrics initializer runs through the normal startup service loader. Disabled metrics do not resolve the service; initialization failures remain non-fatal.
+- **Availability**: Disabled metrics/Prometheus or a missing registry return 503, not an empty successful scrape. GET and HEAD share the same access and availability checks.
+- **Performance**: Bypasses expensive application filters; measure collection and optional authentication time in the deployed environment.
+
+The deployed servlet path is `/dotmgt/metrics`; changing `metrics.prometheus.endpoint` alone does not change the deployment descriptor's mapping.
 
 ### **Access Examples**
 ```bash
 # Direct access (local)
 curl http://localhost:8090/dotmgt/metrics
 
-# Through load balancer with proxy headers
-curl -H "X-Forwarded-Port: 8090" http://dotcms.example.com/dotmgt/metrics
+# A Docker host mapping of 9020:8090 still reaches the real management connector
+curl http://localhost:9020/dotmgt/metrics
 
-# Kubernetes service
-curl http://dotcms-service:8090/dotmgt/metrics
+# Application connectors do not grant metrics access through forwarding headers.
+# For remote monitoring, route to the management connector over verified TLS,
+# with narrow network permissions and authentication where required.
 ```
 
 ## 📈 **Monitoring Integration**

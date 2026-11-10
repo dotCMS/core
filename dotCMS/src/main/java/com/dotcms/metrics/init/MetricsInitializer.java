@@ -4,6 +4,7 @@ import com.dotcms.cdi.CDIUtils;
 import com.dotcms.config.DotInitializer;
 import com.dotcms.metrics.MetricsConfig;
 import com.dotcms.metrics.MetricsService;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
 import java.util.Optional;
@@ -25,9 +26,10 @@ public class MetricsInitializer implements DotInitializer {
     
     private static final String CLASS_NAME = MetricsInitializer.class.getSimpleName();
     
+    /** Resolves the metrics bean at startup, unless instrumentation is disabled. */
     @Override
     public void init() {
-        if (!MetricsConfig.ENABLED) {
+        if (!Config.getBooleanProperty("metrics.enabled", true)) {
             Logger.info(this, "Metrics collection is disabled, skipping initialization");
             return;
         }

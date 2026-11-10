@@ -73,6 +73,11 @@ public class InfrastructureManagementFilter implements Filter {
     private boolean isManagementAccessAuthorized(HttpServletRequest request) {
         int serverPort = request.getServerPort();
         int managementPort = getManagementPortFromEnvironment();
+
+        // Newly enabled metrics must not trust a caller-supplied proxy port as connector identity.
+        if (HttpRequestDataUtil.getDispatchPath(request).startsWith("/dotmgt/metrics")) {
+            return request.getLocalPort() == managementPort;
+        }
         
         // Check if on management port
         if (serverPort == managementPort) {
