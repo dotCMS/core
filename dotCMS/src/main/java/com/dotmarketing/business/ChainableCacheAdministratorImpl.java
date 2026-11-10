@@ -193,16 +193,21 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
         }
     }
 
-    /*
-     * (non-Javadoc)
-     *
-     * @see com.dotmarketing.business.DotCacheAdministrator#flushAll()
+    /**
+     * Flushes every cache region on this node and, unless every provider in use is distributed,
+     * tells the other cluster nodes to do the same by sending {@code 0:root}.
+     * <p>
+     * Whether to broadcast is decided before the local flush, because the flush clears the
+     * provider registry that {@link CacheProviderAPI#isDistributed()} reads.
      */
+    @Override
     public void flushAll() {
+
+        final boolean distributed = cacheProviderAPI.isDistributed();
 
         flushAlLocalOnly(false);
 
-        if (!cacheProviderAPI.isDistributed()) {
+        if (!distributed) {
 
             try {
                 getTransport().send("0:" + ROOT_GOUP);
