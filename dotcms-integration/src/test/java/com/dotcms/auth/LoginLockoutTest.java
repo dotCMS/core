@@ -1162,4 +1162,41 @@ public class LoginLockoutTest {
             cleanUp(user);
         }
     }
+
+    /**
+     * Given: lockout switched off with {@code AUTH_LOCKOUT_ENABLED=false}
+     * When: an attempt is started
+     * Then: it is reported as untracked — the same sentinel a database error in {@link LoginLockout#begin}
+     *       also returns, which lets a caller fall back to a different count rather than treat it as a real,
+     *       freshly-counted attempt of 0
+     */
+    @Test
+    public void test_untrackedAttempt_whenLockoutDisabled_isReportedUntracked() throws Exception {
+        final boolean enabledBefore = Config.getBooleanProperty(LoginLockout.LOCKOUT_ENABLED, true);
+        Config.setProperty(LoginLockout.LOCKOUT_ENABLED, false);
+        final User user = newUser();
+        try {
+            final LoginLockout.Attempt attempt = LoginLockout.getInstance().begin(user.getUserId(), ADDRESS);
+            assertTrue(attempt.isUntracked());
+        } finally {
+            Config.setProperty(LoginLockout.LOCKOUT_ENABLED, enabledBefore);
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: lockout switched on
+     * When: a normal attempt is started
+     * Then: it is reported as tracked, not the sentinel returned when nothing could be recorded
+     */
+    @Test
+    public void test_trackedAttempt_whenLockoutEnabled_isNotReportedUntracked() throws Exception {
+        final User user = newUser();
+        try {
+            final LoginLockout.Attempt attempt = LoginLockout.getInstance().begin(user.getUserId(), ADDRESS);
+            assertFalse(attempt.isUntracked());
+        } finally {
+            cleanUp(user);
+        }
+    }
 }

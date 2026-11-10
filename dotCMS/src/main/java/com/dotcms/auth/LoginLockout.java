@@ -217,6 +217,16 @@ public final class LoginLockout {
         public int number() {
             return number;
         }
+
+        /**
+         * @return {@code true} when this attempt was never recorded against a real account and source: lockout
+         * is switched off, or {@link #begin} could not count it, for example after a database error. A caller
+         * that paces something by the attempt's count should fall back to a different count instead, rather
+         * than treat this as a real, freshly-counted attempt of 0.
+         */
+        public boolean isUntracked() {
+            return this == UNTRACKED;
+        }
     }
 
     /**
