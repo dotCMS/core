@@ -183,7 +183,6 @@ public class GuavaCache extends CacheProvider {
         Cache defaultCache = getCache(DEFAULT_CACHE);
         for ( String group : currentGroups ) {
           Cache foundCache = getCache(group);
-          CacheStats stats = new CacheStats();
           
           boolean isDefault = (Config.getIntProperty("cache." + group + ".size", -1) == -1);
 
@@ -196,6 +195,7 @@ public class GuavaCache extends CacheProvider {
           
           
           com.google.common.cache.CacheStats guavaStats = foundCache.stats();
+          CacheStats stats = new CacheStats(guavaStats.hitCount(), guavaStats.requestCount());
           
           NumberFormat nf = DecimalFormat.getInstance();
           DecimalFormat pf = new DecimalFormat("##.##%");

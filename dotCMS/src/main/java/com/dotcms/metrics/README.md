@@ -59,8 +59,11 @@ dotcms_cache_region_loads{region="X"}         // Load count per region
 dotcms_cache_region_avg_load_time_ms{region="X"} // Average load time per region
 ```
 
-Region gauges share a current provider snapshot for `metrics.cache.ttl-seconds` (default: 30 seconds),
-then refresh on the next read. Missing regions or failed collections report `NaN`, not stale or zero values.
+Aggregate and region gauges share one current provider snapshot for `metrics.cache.ttl-seconds`
+(default: 30 seconds), then refresh on the next read. Missing regions or failed collections report
+`NaN`, not stale or zero values. Overall hit rate is request-weighted from native Caffeine/Guava
+hit and request counts, never inferred from provider-specific "loads". Providers without native
+counters are excluded from that rate; no observed requests produces `NaN`.
 Region identities are registered at startup; discovering regions created later still requires a restart.
 
 #### **`TomcatMetrics`** - Web Server Performance
@@ -238,7 +241,7 @@ metrics.sampling.rate=1.0             # No sampling
 ### **Security & Performance**
 - **Endpoint**: `/dotmgt/metrics` on port 8090 (management port)
 - **Security**: With default strict checking, `InfrastructureManagementFilter` requires the actual management connector for metrics; forwarded-port headers cannot grant access from an application connector. The existing `management.port.strict.check.enabled=false` override permits a single-connector development setup; do not disable strict checking in production.
-- **Authentication**: Set `DOT_METRICS_PROMETHEUS_REQUIRE_AUTHENTICATION=true` to require normal dotCMS back-end authentication for GET and HEAD. Front-end-only users are denied. Scrapers can send a persisted API JWT in `Authorization: Bearer <token>`; a login token is not an API JWT. The default remains false for isolated monitoring networks; restrict network access and use verified TLS for remote scraping.
+- **Authentication**: Set `DOT_METRICS_PROMETHEUS_REQUIRE_AUTHENTICATION=true` to require normal dotCMS back-end authentication for GET and HEAD. Front-end-only users are denied; the request thread's prior principal is restored after authentication. Scrapers can send a persisted API JWT in `Authorization: Bearer <token>`; a login token is not an API JWT. The default remains false for isolated monitoring networks; restrict network access and use verified TLS for remote scraping.
 - **Startup**: The existing metrics initializer runs through the normal startup service loader. Disabled metrics do not resolve the service; initialization failures remain non-fatal.
 - **Availability**: Disabled metrics/Prometheus or a missing registry return 503, not an empty successful scrape. GET and HEAD share the same access and availability checks.
 - **Performance**: Bypasses expensive application filters; measure collection and optional authentication time in the deployed environment.

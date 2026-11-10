@@ -9,6 +9,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.auth.PrincipalThreadLocal;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import java.io.IOException;
 import java.util.Optional;
@@ -44,11 +45,17 @@ public class ManagementMetricsServlet extends AbstractManagementServlet {
             if (!Config.getBooleanProperty(MetricsConfig.PROMETHEUS_REQUIRE_AUTH_PROPERTY, false)) {
                 return true;
             }
-            new WebResource.InitBuilder()
-                    .requestAndResponse(request, response)
-                    .rejectWhenNoUser(true)
-                    .requiredBackendUser(true)
-                    .init();
+            final String previousPrincipal = PrincipalThreadLocal.getName();
+            try {
+                new WebResource.InitBuilder()
+                        .requestAndResponse(request, response)
+                        .rejectWhenNoUser(true)
+                        .requiredBackendUser(true)
+                        .init();
+            } finally {
+                // Management forwarding bypasses MainServlet's normal thread-identity cleanup.
+                PrincipalThreadLocal.setName(previousPrincipal);
+            }
             return true;
         } catch (SecurityException e) {
             // sendError dispatches the site's HTML error page and can redirect scrapers to login.

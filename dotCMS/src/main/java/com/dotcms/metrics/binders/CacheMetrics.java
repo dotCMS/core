@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
@@ -41,6 +42,9 @@ public class CacheMetrics implements MeterBinder {
 
     /** Raw identities keep sanitized metric labels out of snapshot lookups. */
     private record RegionKey(String provider, String region) {}
+
+    /** Provider count includes empty providers, which cannot be inferred from the region map. */
+    private record CacheSnapshot(int providers, Map<RegionKey, CacheStats> regions) {}
     
     @Override
     public void bindTo(MeterRegistry registry) {
@@ -53,8 +57,14 @@ public class CacheMetrics implements MeterBinder {
                 .register(registry);
             
             if (cacheAdmin != null) {
-                registerProviderLevelMetrics(registry, cacheAdmin);
-                registerRegionLevelMetrics(registry, cacheAdmin);
+                // One bounded provider collection serves every aggregate and region gauge.
+                final LoadingCache<Boolean, Optional<CacheSnapshot>> current = Caffeine.newBuilder()
+                        .expireAfterWrite(Math.max(1, MetricsConfig.METRIC_CACHE_TTL_SECONDS), TimeUnit.SECONDS)
+                        .ticker(registry.config().clock()::monotonicTime)
+                        .build(ignored -> loadSnapshot(cacheAdmin));
+                final Supplier<Optional<CacheSnapshot>> snapshots = () -> current.get(Boolean.TRUE);
+                registerProviderLevelMetrics(registry, snapshots);
+                registerRegionLevelMetrics(registry, snapshots);
                 registerTransportMetrics(registry);
             }
             
@@ -131,65 +141,68 @@ public class CacheMetrics implements MeterBinder {
     /**
      * Register provider-level aggregate metrics.
      */
-    private void registerProviderLevelMetrics(MeterRegistry registry, DotCacheAdministrator cacheAdmin) {
-        // Total cache regions across all providers
-        Gauge.builder(METRIC_PREFIX + ".regions.total", this, metrics -> getTotalCacheRegions())
+    private void registerProviderLevelMetrics(MeterRegistry registry,
+            Supplier<Optional<CacheSnapshot>> snapshots) {
+        Gauge.builder(METRIC_PREFIX + ".regions.total", snapshots,
+                state -> readSnapshotValue(state, snapshot -> snapshot.regions().size()))
             .description("Total number of cache regions across all providers")
+            .strongReference(true)
             .register(registry);
-        
-        // Total cache providers
-        Gauge.builder(METRIC_PREFIX + ".providers.total", this, metrics -> getTotalCacheProviders())
+
+        Gauge.builder(METRIC_PREFIX + ".providers.total", snapshots,
+                state -> readSnapshotValue(state, CacheSnapshot::providers))
             .description("Total number of cache providers")
+            .strongReference(true)
             .register(registry);
-        
-        // Total cache hits across all providers
-        Gauge.builder(METRIC_PREFIX + ".hits.total", this, metrics -> getTotalCacheHits())
+
+        Gauge.builder(METRIC_PREFIX + ".hits.total", snapshots,
+                state -> readSnapshotValue(state, snapshot -> sumStats(snapshot, CacheStats.REGION_HITS)))
             .description("Total cache hits across all providers and regions")
+            .strongReference(true)
             .register(registry);
-        
-        // Total cache size across all providers
-        Gauge.builder(METRIC_PREFIX + ".size.total", this, metrics -> getTotalCacheSize())
+
+        Gauge.builder(METRIC_PREFIX + ".size.total", snapshots,
+                state -> readSnapshotValue(state, snapshot -> sumStats(snapshot, CacheStats.REGION_SIZE)))
             .description("Total cache size across all providers and regions")
+            .strongReference(true)
             .register(registry);
-        
-        // Overall cache hit rate
-        Gauge.builder(METRIC_PREFIX + ".hit_rate.overall", this, metrics -> getOverallHitRate())
-            .description("Overall cache hit rate across all providers and regions")
+
+        Gauge.builder(METRIC_PREFIX + ".hit_rate.overall", snapshots,
+                state -> readSnapshotValue(state, this::getOverallHitRate))
+            .description("Request-weighted cache hit rate for regions reporting native request counters")
+            .strongReference(true)
             .register(registry);
     }
-    
+
     /**
      * Register detailed metrics for each cache region.
      */
-    private void registerRegionLevelMetrics(MeterRegistry registry, DotCacheAdministrator cacheAdmin) {
-        // Share a bounded snapshot rather than scanning every provider once per region gauge.
-        final LoadingCache<Boolean, Map<RegionKey, CacheStats>> snapshots = Caffeine.newBuilder()
-                .expireAfterWrite(Math.max(1, MetricsConfig.METRIC_CACHE_TTL_SECONDS), TimeUnit.SECONDS)
-                .ticker(registry.config().clock()::monotonicTime)
-                .build(ignored -> loadRegionStats(cacheAdmin));
-
+    private void registerRegionLevelMetrics(MeterRegistry registry,
+            Supplier<Optional<CacheSnapshot>> snapshots) {
         // shortcut: region identities are fixed at startup; revisit for post-startup region discovery.
-        for (final RegionKey region : snapshots.get(Boolean.TRUE).keySet()) {
-            final Supplier<CacheStats> current = () -> snapshots.get(Boolean.TRUE).get(region);
+        for (final RegionKey region : snapshots.get().map(CacheSnapshot::regions).orElse(Map.of()).keySet()) {
+            final Supplier<CacheStats> current =
+                    () -> snapshots.get().map(snapshot -> snapshot.regions().get(region)).orElse(null);
             registerRegionMetrics(registry, sanitizeMetricName(region.provider()),
                     sanitizeMetricName(region.region()), current);
         }
     }
 
-    /** Collects raw identities and current stats once per interval; failures remain unknown until retry. */
-    private Map<RegionKey, CacheStats> loadRegionStats(final DotCacheAdministrator cacheAdmin) {
+    /** Collects provider and region facts once per TTL; failures stay unknown until the next retry. */
+    private Optional<CacheSnapshot> loadSnapshot(final DotCacheAdministrator cacheAdmin) {
         try {
+            final List<CacheProviderStats> providers = cacheAdmin.getCacheStatsList();
             final Map<RegionKey, CacheStats> current = new HashMap<>();
-            for (final CacheProviderStats provider : cacheAdmin.getCacheStatsList()) {
+            for (final CacheProviderStats provider : providers) {
                 for (final CacheStats region : provider.getStats()) {
                     current.put(new RegionKey(provider.getProviderName(),
                             getStatValue(region, CacheStats.REGION, "unknown")), region);
                 }
             }
-            return Map.copyOf(current);
+            return Optional.of(new CacheSnapshot(providers.size(), Map.copyOf(current)));
         } catch (Exception e) {
-            Logger.warn(this, "Failed to collect cache-region metrics", e);
-            return Map.of();
+            Logger.warn(this, "Failed to collect cache metrics", e);
+            return Optional.empty();
         }
     }
 
@@ -290,98 +303,32 @@ public class CacheMetrics implements MeterBinder {
     // HELPER METHODS FOR ACCESSING CACHE STATISTICS
     // ====================================================================
     
-    private double getTotalCacheRegions() {
-        try {
-            DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
-            if (cacheAdmin != null) {
-                List<CacheProviderStats> statsList = cacheAdmin.getCacheStatsList();
-                return statsList.stream()
-                    .mapToInt(stats -> stats.getStats().size())
-                    .sum();
-            }
-            return 0;
-        } catch (Exception e) {
-            Logger.debug(this, "Failed to get total cache regions: " + e.getMessage());
-            return 0;
-        }
+    /** Preserves unknown collection state for aggregate gauges, just as for individual regions. */
+    private double readSnapshotValue(final Supplier<Optional<CacheSnapshot>> snapshots,
+            final ToDoubleFunction<CacheSnapshot> reader) {
+        return snapshots.get().map(reader::applyAsDouble).orElse(Double.NaN);
     }
-    
-    private double getTotalCacheProviders() {
-        try {
-            DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
-            if (cacheAdmin != null) {
-                List<CacheProviderStats> statsList = cacheAdmin.getCacheStatsList();
-                return statsList.size();
-            }
-            return 0;
-        } catch (Exception e) {
-            Logger.debug(this, "Failed to get total cache providers: " + e.getMessage());
-            return 0;
-        }
+
+    /** Sums an already collected stat without scanning the providers again. */
+    private double sumStats(final CacheSnapshot snapshot, final String key) {
+        return snapshot.regions().values().stream().mapToDouble(stats -> getStatDoubleValue(stats, key)).sum();
     }
-    
-    private double getTotalCacheHits() {
-        try {
-            DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
-            if (cacheAdmin != null) {
-                List<CacheProviderStats> statsList = cacheAdmin.getCacheStatsList();
-                return statsList.stream()
-                    .flatMap(providerStats -> providerStats.getStats().stream())
-                    .mapToDouble(regionStats -> getStatDoubleValue(regionStats, CacheStats.REGION_HITS))
-                    .sum();
+
+    /** Uses native request counters: provider-specific "loads" are not a reliable miss count. */
+    private double getOverallHitRate(final CacheSnapshot snapshot) {
+        double totalHits = 0;
+        double totalRequests = 0;
+        for (final CacheStats region : snapshot.regions().values()) {
+            final OptionalLong hits = region.getHitCount();
+            final OptionalLong requests = region.getRequestCount();
+            if (hits.isPresent() && requests.isPresent()) {
+                totalHits += hits.getAsLong();
+                totalRequests += requests.getAsLong();
             }
-            return 0;
-        } catch (Exception e) {
-            Logger.debug(this, "Failed to get total cache hits: " + e.getMessage());
-            return 0;
         }
+        return totalRequests > 0 ? totalHits / totalRequests * 100 : Double.NaN;
     }
-    
-    private double getTotalCacheSize() {
-        try {
-            DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
-            if (cacheAdmin != null) {
-                List<CacheProviderStats> statsList = cacheAdmin.getCacheStatsList();
-                return statsList.stream()
-                    .flatMap(providerStats -> providerStats.getStats().stream())
-                    .mapToDouble(regionStats -> getStatDoubleValue(regionStats, CacheStats.REGION_SIZE))
-                    .sum();
-            }
-            return 0;
-        } catch (Exception e) {
-            Logger.debug(this, "Failed to get total cache size: " + e.getMessage());
-            return 0;
-        }
-    }
-    
-    private double getOverallHitRate() {
-        try {
-            DotCacheAdministrator cacheAdmin = CacheLocator.getCacheAdministrator();
-            if (cacheAdmin != null) {
-                List<CacheProviderStats> statsList = cacheAdmin.getCacheStatsList();
-                
-                double totalHits = 0;
-                double totalRequests = 0;
-                
-                for (CacheProviderStats providerStats : statsList) {
-                    for (CacheStats regionStats : providerStats.getStats()) {
-                        double hits = getStatDoubleValue(regionStats, CacheStats.REGION_HITS);
-                        double loads = getStatDoubleValue(regionStats, CacheStats.REGION_LOAD);
-                        
-                        totalHits += hits;
-                        totalRequests += (hits + loads); // Total requests = hits + misses (loads)
-                    }
-                }
-                
-                return totalRequests > 0 ? (totalHits / totalRequests) * 100 : 0;
-            }
-            return 0;
-        } catch (Exception e) {
-            Logger.debug(this, "Failed to calculate overall hit rate: " + e.getMessage());
-            return 0;
-        }
-    }
-    
+
     /**
      * Get a string value from cache stats with fallback.
      */

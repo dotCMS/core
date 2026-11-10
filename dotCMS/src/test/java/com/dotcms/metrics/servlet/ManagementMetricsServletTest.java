@@ -19,6 +19,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.util.Config;
+import com.liferay.portal.auth.PrincipalThreadLocal;
 import io.micrometer.prometheusmetrics.PrometheusMeterRegistry;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -229,6 +230,41 @@ class ManagementMetricsServletTest {
             verify(response, never()).sendError(org.mockito.ArgumentMatchers.anyInt());
             cdi.verifyNoInteractions();
             assertEquals("", body.toString());
+        }
+    }
+
+    /** Authentication may change the pooled thread's identity even when a later check fails. */
+    @Test
+    void authentication_restoresPreviousPrincipalOnSuccessAndFailure() throws Exception {
+        config.when(() -> Config.getBooleanProperty(
+                "metrics.prometheus.require-authentication", false)).thenReturn(true);
+        final String original = PrincipalThreadLocal.getName();
+        try {
+            for (final String previous : new String[]{null, "caller-context"}) {
+                for (final RuntimeException failure : new RuntimeException[]{
+                        null, new SecurityException("Denied", Response.Status.FORBIDDEN),
+                        new IllegalStateException("Authentication unavailable")}) {
+                    PrincipalThreadLocal.setName(previous);
+                    try (var authentication = mockConstruction(WebResource.InitBuilder.class,
+                            (builder, context) -> {
+                                when(builder.requestAndResponse(request, response)).thenReturn(builder);
+                                when(builder.rejectWhenNoUser(true)).thenReturn(builder);
+                                when(builder.requiredBackendUser(true)).thenReturn(builder);
+                                when(builder.init()).thenAnswer(ignored -> {
+                                    PrincipalThreadLocal.setName("scrape-user");
+                                    if (failure != null) {
+                                        throw failure;
+                                    }
+                                    return new InitDataObject();
+                                });
+                            })) {
+                        servlet.service(request, response);
+                        assertEquals(previous, PrincipalThreadLocal.getName());
+                    }
+                }
+            }
+        } finally {
+            PrincipalThreadLocal.setName(original);
         }
     }
 

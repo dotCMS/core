@@ -13,11 +13,13 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
+import com.dotmarketing.business.cache.provider.caffine.CaffineCache;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.simple.SimpleConfig;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -79,6 +81,57 @@ class CacheMetricsTest {
         verify(administrator, times(1)).getCacheStatsList();
     }
 
+    /** Provider gauges must use the same bounded snapshot, including empty providers. */
+    @Test
+    void aggregateGauges_shareRegionSnapshotAndRefresh() {
+        assertAggregates(1, 1);
+        assertValues(1);
+        assertAggregates(1, 1);
+        verify(administrator, times(1)).getCacheStatsList();
+
+        snapshots.set(List.of(snapshot(2),
+                new CacheProviderStats(new CacheStats(), "Empty-Provider")));
+        expireSnapshot();
+
+        assertAggregates(2, 2);
+        assertValues(2);
+        verify(administrator, times(2)).getCacheStatsList();
+    }
+
+    /** Caffeine loads already include hits; idle and unsupported counts must not invent a hit rate. */
+    @Test
+    void overallHitRate_usesNativeCaffeineRequestCounts() {
+        for (final int[] counts : new int[][]{{1, 0}, {3, 1}, {0, 1}, {0, 0}}) {
+            snapshots.set(List.of(caffeineSnapshot(counts[0], counts[1])));
+            expireSnapshot();
+
+            final double actual = aggregate("hit_rate.overall");
+            final int requests = counts[0] + counts[1];
+            if (requests == 0) {
+                assertTrue(Double.isNaN(actual));
+            } else {
+                assertEquals(100.0 * counts[0] / requests, actual, 0.001);
+            }
+        }
+    }
+
+    /** Request-weighted aggregation must not average region percentages or infer misses from loads. */
+    @Test
+    void overallHitRate_weightsRegionsByNativeRequests() {
+        final CacheProviderStats provider = caffeineSnapshot(9, 1);
+        provider.addStatRecord(caffeineSnapshot(1, 89).getStats().get(0));
+        snapshots.set(List.of(provider));
+        expireSnapshot();
+
+        assertEquals(10.0, aggregate("hit_rate.overall"), 0.001);
+    }
+
+    /** A provider without native hit/request counters cannot supply a reliable aggregate rate. */
+    @Test
+    void overallHitRate_withoutNativeCountersReportsUnknown() {
+        assertTrue(Double.isNaN(aggregate("hit_rate.overall")));
+    }
+
     /** Regions with the same raw name must remain isolated by provider identity. */
     @Test
     void regionLookup_matchesBothProviderAndRegion() {
@@ -111,6 +164,8 @@ class CacheMetricsTest {
 
         assertTrue(Double.isNaN(gauge("size")));
         assertTrue(Double.isNaN(gauge("hits")));
+        assertTrue(Double.isNaN(aggregate("size.total")));
+        assertTrue(Double.isNaN(aggregate("providers.total")));
         verify(administrator, times(2)).getCacheStatsList();
 
         org.mockito.Mockito.doAnswer(ignored -> snapshots.get())
@@ -145,6 +200,43 @@ class CacheMetricsTest {
     private double gauge(final String name) {
         return registry.get("dotcms.cache.region." + name)
                 .tag("provider", "provider_a").tag("region", "region_foo").gauge().value();
+    }
+
+    /** Reads aggregate gauges without provider/region labels. */
+    private double aggregate(final String name) {
+        return registry.get("dotcms.cache." + name).gauge().value();
+    }
+
+    /** Checks the aggregate facts and evaluates the fifth gauge to catch redundant provider scans. */
+    private void assertAggregates(final int scale, final int providers) {
+        assertEquals(1.0, aggregate("regions.total"), 0.001);
+        assertEquals(providers, aggregate("providers.total"), 0.001);
+        assertEquals(7.0 * scale, aggregate("hits.total"), 0.001);
+        assertEquals(3.0 * scale, aggregate("size.total"), 0.001);
+        aggregate("hit_rate.overall");
+    }
+
+    /** Uses real Caffeine stats so tests also verify the provider publishes native counters. */
+    private CacheProviderStats caffeineSnapshot(final int hits, final int misses) {
+        final CaffineCache cache = new CaffineCache();
+        final String group = "metrics-regression-" + UUID.randomUUID();
+        try {
+            cache.put(group, "present", "value");
+            for (int i = 0; i < hits; i++) {
+                cache.get(group, "present");
+            }
+            for (int i = 0; i < misses; i++) {
+                cache.get(group, "missing");
+            }
+            final CacheProviderStats provider = new CacheProviderStats(new CacheStats(), cache.getName());
+            cache.getStats().getStats().stream()
+                    .filter(region -> group.equals(region.getStatValue(CacheStats.REGION)))
+                    .forEach(provider::addStatRecord);
+            assertEquals(1, provider.getStats().size());
+            return provider;
+        } finally {
+            cache.remove(group);
+        }
     }
 
     /** Creates a provider response rather than mutating the original startup snapshot in place. */
