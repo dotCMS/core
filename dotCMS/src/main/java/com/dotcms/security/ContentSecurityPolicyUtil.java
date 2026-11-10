@@ -11,6 +11,7 @@ import org.apache.commons.lang.RandomStringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -73,6 +74,11 @@ import java.util.function.Function;
  * html equals to "<script nonce='[random nonce value]'>console.log('This is a test');</script><style nonce='[random nonce value]'>h1{color:red;}</style>";
  *
  * Where <code>random nonce value</code> is a random string encode with Base 64 algorithm.
+ *
+ * <p>Separately from site pages, {@link #addBackendHeader(HttpServletRequest, HttpServletResponse)}
+ * writes a fixed policy on the back-end paths ({@code /dotAdmin}, {@code /api}, {@code /html} and
+ * {@code /c}). It is configured by {@value #BACKEND_ENABLED}, {@value #BACKEND_POLICY} and
+ * {@value #BACKEND_REPORT_ONLY}, and does not use the nonce placeholders.
  */
 public class ContentSecurityPolicyUtil {
 
@@ -85,6 +91,36 @@ public class ContentSecurityPolicyUtil {
             .getStringProperty("ContentSecurityPolicy.header", null));
 
     private static String overwriteContentSecurityPolicyConfig;
+
+    /**
+     * Turns the back-end policy on or off. On by default: responses on the back-end paths carry
+     * {@value #BACKEND_POLICY} (or {@link #DEFAULT_BACKEND_POLICY}). Off: they carry no policy
+     * header. Site pages are not affected either way.
+     */
+    public static final String BACKEND_ENABLED = "CONTENT_SECURITY_POLICY_BACKEND_ENABLED";
+
+    /**
+     * The policy sent on the back-end paths, replacing {@link #DEFAULT_BACKEND_POLICY}. A blank
+     * value sends no policy.
+     */
+    public static final String BACKEND_POLICY = "CONTENT_SECURITY_POLICY_BACKEND_HEADER";
+
+    /**
+     * When true, the back-end policy is sent as {@code Content-Security-Policy-Report-Only}, so
+     * browsers report what it would block without blocking it. Off by default.
+     */
+    public static final String BACKEND_REPORT_ONLY = "CONTENT_SECURITY_POLICY_BACKEND_REPORT_ONLY";
+
+    /**
+     * The back-end policy sent when {@value #BACKEND_POLICY} is not set: only dotCMS itself may
+     * frame the back end, and plugin content ({@code object}, {@code embed}) does not load. Script,
+     * style, image and connection sources are left open, because the legacy portlets rely on
+     * inline scripts and the page editor shows site pages, with their own resources, inside the
+     * back-end document.
+     */
+    public static final String DEFAULT_BACKEND_POLICY = "frame-ancestors 'self'; object-src 'none'";
+
+    private static final List<String> BACKEND_PATH_PREFIXES = List.of("/dotAdmin", "/api", "/html", "/c");
 
     static {
         contentSecurityPolicyResolvers = Map.of(
@@ -188,6 +224,44 @@ public class ContentSecurityPolicyUtil {
         }
 
         return htmlCodeResult;
+    }
+
+    /**
+     * Writes the back-end policy to the response when the request is for a back-end path
+     * ({@code /dotAdmin}, {@code /api}, {@code /html} or {@code /c}, or anything below them) and
+     * the policy is enabled. The path is read from the servlet path and path info, which the
+     * container has already decoded and normalized, so an encoded spelling of a back-end path is
+     * matched too. Any other request is left untouched, so site pages keep the policy configured
+     * by {@code ContentSecurityPolicy.header}.
+     *
+     * @param request  the current request
+     * @param response the response to write the header to
+     */
+    public static void addBackendHeader(final HttpServletRequest request,
+            final HttpServletResponse response) {
+        if (!isBackendPath(request) || !Config.getBooleanProperty(BACKEND_ENABLED, true)) {
+            return;
+        }
+        final String policy = Config.getStringProperty(BACKEND_POLICY, DEFAULT_BACKEND_POLICY);
+        if (!UtilMethods.isSet(policy)) {
+            return;
+        }
+        final String header = Config.getBooleanProperty(BACKEND_REPORT_ONLY, false)
+                ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy";
+        response.setHeader(header, policy.trim());
+    }
+
+    /**
+     * Tells whether the request's path is one of the back-end prefixes or lies below one.
+     *
+     * @param request the current request
+     * @return true for {@code /c} and {@code /c/portal/layout}, false for {@code /cars}
+     */
+    private static boolean isBackendPath(final HttpServletRequest request) {
+        final String path = (request.getServletPath() == null ? "" : request.getServletPath())
+                + (request.getPathInfo() == null ? "" : request.getPathInfo());
+        return BACKEND_PATH_PREFIXES.stream()
+                .anyMatch(prefix -> path.equals(prefix) || path.startsWith(prefix + "/"));
     }
 
     private static String calculateNonceToScript(final String htmlCode) {
