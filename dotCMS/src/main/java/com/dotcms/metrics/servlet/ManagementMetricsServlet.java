@@ -52,7 +52,7 @@ public class ManagementMetricsServlet extends AbstractManagementServlet {
             // sendError dispatches the site's HTML error page and can redirect scrapers to login.
             response.setStatus(e.getResponse().getStatus());
         } catch (Exception e) {
-            Logger.error(this, "Authentication unavailable for metrics request");
+            Logger.error(this, "Authentication unavailable for metrics request", e);
             response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
         }
         return false;
@@ -95,7 +95,7 @@ public class ManagementMetricsServlet extends AbstractManagementServlet {
             final String exposition = registry.scrape();
             response.getWriter().write(exposition);
         } catch (Exception e) {
-            Logger.error(this, "Error serving Prometheus metrics");
+            Logger.error(this, "Error serving Prometheus metrics", e);
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
             response.getWriter().write("# Error serving metrics\n");
         }

@@ -75,6 +75,20 @@ class MetricsManagementPortTest {
         verify(chain, never()).doFilter(request, response);
     }
 
+    /** An explicit development override still permits a single-connector setup. */
+    @Test
+    void disabledStrictChecking_allowsSingleConnectorDevelopment() throws Exception {
+        config.when(() -> Config.getBooleanProperty("management.port.strict.check.enabled", true))
+                .thenReturn(false);
+        when(request.getLocalPort()).thenReturn(8080);
+        when(request.getServerPort()).thenReturn(8080);
+
+        filter.doFilter(request, response, chain);
+
+        verify(dispatcher).forward(request, response);
+        verify(response, never()).sendError(anyInt());
+    }
+
     /** A proxy-rewritten server port is not evidence of the connector that accepted the request. */
     @Test
     void applicationConnector_rejectsRewrittenServerPort() throws Exception {

@@ -76,7 +76,8 @@ public class InfrastructureManagementFilter implements Filter {
 
         // Newly enabled metrics must not trust a caller-supplied proxy port as connector identity.
         if (HttpRequestDataUtil.getDispatchPath(request).startsWith("/dotmgt/metrics")) {
-            return request.getLocalPort() == managementPort;
+            return request.getLocalPort() == managementPort
+                    || !Config.getBooleanProperty(InfrastructureConstants.Ports.STRICT_CHECK_PROPERTY, true);
         }
         
         // Check if on management port

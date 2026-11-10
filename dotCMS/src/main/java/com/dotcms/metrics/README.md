@@ -233,7 +233,7 @@ metrics.sampling.rate=1.0             # No sampling
 
 ### **Security & Performance**
 - **Endpoint**: `/dotmgt/metrics` on port 8090 (management port)
-- **Security**: `InfrastructureManagementFilter` requires the actual management connector for metrics; forwarded-port headers cannot grant access from an application connector.
+- **Security**: With default strict checking, `InfrastructureManagementFilter` requires the actual management connector for metrics; forwarded-port headers cannot grant access from an application connector. The existing `management.port.strict.check.enabled=false` override permits a single-connector development setup; do not disable strict checking in production.
 - **Authentication**: Set `DOT_METRICS_PROMETHEUS_REQUIRE_AUTHENTICATION=true` to require normal dotCMS authentication for GET and HEAD. Scrapers can send a persisted API JWT in `Authorization: Bearer <token>`; a login token is not an API JWT. The default remains false for isolated monitoring networks; restrict network access and use verified TLS for remote scraping.
 - **Startup**: The existing metrics initializer runs through the normal startup service loader. Disabled metrics do not resolve the service; initialization failures remain non-fatal.
 - **Availability**: Disabled metrics/Prometheus or a missing registry return 503, not an empty successful scrape. GET and HEAD share the same access and availability checks.
