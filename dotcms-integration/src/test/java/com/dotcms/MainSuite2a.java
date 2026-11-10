@@ -124,6 +124,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.personas.business.DeleteMultiTreeUsedPersonaTagJobTest.class,
         com.dotcms.rest.api.v1.maintenance.MaintenanceToolsAccessIntegrationTest.class,
         com.dotmarketing.portlets.links.business.MenuLinkAPITest.class,
+        com.dotcms.rest.api.v1.linkchecker.LinkCheckerResourceIntegrationTest.class,
         com.dotmarketing.portlets.links.factories.LinkFactoryTest.class,
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
         com.dotmarketing.filters.FiltersTest.class,
