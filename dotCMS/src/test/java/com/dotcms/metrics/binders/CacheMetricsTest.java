@@ -14,6 +14,7 @@ import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.business.cache.provider.caffine.CaffineCache;
+import com.dotmarketing.util.UtilMethods;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.simple.SimpleConfig;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
@@ -174,6 +175,47 @@ class CacheMetricsTest {
         expireSnapshot();
         assertValues(2);
         verify(administrator, times(3)).getCacheStatsList();
+    }
+
+    /** H22's actual formatter uses single-letter units for both memory gauges. */
+    @Test
+    void memoryGauges_parseH22PrettyByteUnits() {
+        for (final long bytes : new long[]{512, 1536, 1572864, 1610612736}) {
+            final CacheStats region = new CacheStats()
+                    .addStat(CacheStats.REGION, "region.foo")
+                    .addStat(CacheStats.REGION_MEM_TOTAL_PRETTY, UtilMethods.prettyByteify(bytes))
+                    .addStat(CacheStats.REGION_MEM_PER_OBJECT, UtilMethods.prettyByteify(bytes));
+            final CacheProviderStats provider = new CacheProviderStats(new CacheStats(), "Provider-A");
+            provider.addStatRecord(region);
+            snapshots.set(List.of(provider));
+            expireSnapshot();
+
+            org.junit.jupiter.api.Assertions.assertAll(
+                    () -> assertEquals(bytes, gauge("memory_bytes"), 0.001, "total: " + bytes),
+                    () -> assertEquals(bytes, gauge("memory_per_object_bytes"), 0.001,
+                            "per object: " + bytes));
+        }
+    }
+
+    /** Existing long units, raw byte counts, and malformed-value fallbacks must stay compatible. */
+    @Test
+    void memoryGauges_preserveExistingByteFormats() {
+        final Map<String, Double> formats = Map.of(
+                "1.5 KB", 1536.0, "1.5 MB", 1572864.0, "1.5 GB", 1610612736.0,
+                "512 bytes", 512.0, "512 B", 512.0, "512", 512.0, "invalid", 0.0);
+        formats.forEach((value, expected) -> {
+            final CacheStats region = new CacheStats()
+                    .addStat(CacheStats.REGION, "region.foo")
+                    .addStat(CacheStats.REGION_MEM_TOTAL, value)
+                    .addStat(CacheStats.REGION_MEM_PER_OBJECT_PRETTY, value);
+            final CacheProviderStats provider = new CacheProviderStats(new CacheStats(), "Provider-A");
+            provider.addStatRecord(region);
+            snapshots.set(List.of(provider));
+            expireSnapshot();
+
+            assertEquals(expected, gauge("memory_bytes"), 0.001, value);
+            assertEquals(expected, gauge("memory_per_object_bytes"), 0.001, value);
+        });
     }
 
     /** Advances the registry clock beyond the configured cache TTL without sleeping. */

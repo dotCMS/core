@@ -421,14 +421,14 @@ public class CacheMetrics implements MeterBinder {
     }
     
     /**
-     * Parse pretty-formatted byte values like "1.2 MB", "512 KB", "1024 bytes"
+     * Parses byte counts and pretty units, including H22 single-letter K, M, and G suffixes.
      */
     private double parsePrettyByteValue(String value) {
         if (!UtilMethods.isSet(value)) {
             return 0.0;
         }
         
-        value = value.trim().toLowerCase();
+        value = value.trim().toLowerCase().replaceFirst("\\s+([gmk])$", " $1b");
         
         // Handle different units
         double multiplier = 1.0;

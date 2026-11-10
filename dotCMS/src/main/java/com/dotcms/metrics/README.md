@@ -104,7 +104,14 @@ dotcms_http_requests_duration_avg_ms{processor="X"}   // Average response time
 dotcms_http_responses_error_rate              // Error rate percentage
 dotcms_http_endpoints_api_requests            // API endpoint usage
 dotcms_http_requests_active                   // Currently active requests
+dotcms_http_requests_rate_rps{processor="X"}   // Average requests/second over JVM uptime
+dotcms_http_performance_throughput_rpm        // Average requests/minute over JVM uptime
 ```
+
+The RPS and RPM gauges divide cumulative Tomcat request counts by JVM uptime; they are
+lifetime averages, not rolling traffic rates. Processor counter resets or late connector startup
+shorten the counted interval without resetting JVM uptime. For a rolling rate, use Prometheus
+`rate(dotcms_http_requests_total[5m])` instead.
 
 #### **`FileAssetMetrics`** - Storage & File Operations
 ```java
