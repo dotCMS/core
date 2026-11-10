@@ -283,6 +283,20 @@ public class DotHttpHeaderSecurityFilterTest extends UnitTestBase {
 
     /**
      * Method to test: {@link DotHttpHeaderSecurityFilter#doFilter}
+     * Given scenario: the configured policy is blank
+     * Expected result: no policy header is written on a back-end path
+     */
+    @Test
+    public void testDoFilter_whenPolicyBlank_shouldNotSendPolicy() throws Exception {
+        Config.setProperty(CSP_POLICY, "  ");
+
+        final HttpServletResponse response = filter("/dotAdmin", "/");
+        verify(response, never()).setHeader(eq(CSP_HEADER), anyString());
+        verify(response, never()).setHeader(eq(CSP_REPORT_ONLY_HEADER), anyString());
+    }
+
+    /**
+     * Method to test: {@link DotHttpHeaderSecurityFilter#doFilter}
      * Given scenario: report-only mode is switched on
      * Expected result: the policy goes out as Content-Security-Policy-Report-Only and the
      * enforcing header is not written
