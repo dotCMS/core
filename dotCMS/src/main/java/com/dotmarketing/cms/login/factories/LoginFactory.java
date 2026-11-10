@@ -43,7 +43,12 @@ import javax.servlet.http.HttpSession;
 @Deprecated
 public class LoginFactory {
 
-	public static final String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
+	/**
+	 * The authenticator named by {@code auth.pipeline.pre} as it stood when this class was loaded.
+	 * Kept because it is part of this class's published surface; the login paths read the property
+	 * through {@link #preAuthenticator()} instead, so a change takes effect without a restart.
+	 */
+	public static final String PRE_AUTHENTICATOR = PropsUtil.get(PropsUtil.AUTH_PIPELINE_PRE);
 
 
     private static final String LOCK_PREFIX = "UserIdLogin:";
@@ -173,11 +178,9 @@ public class LoginFactory {
 				}
 			}
 
-        	if ((PRE_AUTHENTICATOR != null) &&
-        		(0 < PRE_AUTHENTICATOR.length()) &&
-        		PRE_AUTHENTICATOR.equals(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION"))) {
+        	if (directoryPreAuthenticatorConfigured()) {
 
-				int auth = 0;
+				int auth = Authenticator.DNE;
 
 				// if skipPasswordCheck is in true, means we do not have to check the user on LDAP just our DB
 				if (!skipPasswordCheck) {
@@ -190,6 +193,13 @@ public class LoginFactory {
 	            } else {
 	            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
 	            }
+
+				if (isRefusedAccount(user)) {
+					SecurityLogger.logInfo(LoginFactory.class, "An invalid attempt to login to an inactive account as "
+							+ userName + " from IP: " + request.getRemoteAddr());
+
+					return false;
+				}
 
 				if (skipPasswordCheck) {
 
@@ -281,6 +291,43 @@ public class LoginFactory {
 
         return false;
     }
+
+	/**
+	 * @return the authenticator configured as {@code auth.pipeline.pre}, read for every login the
+	 * way {@code UserManagerImpl#authenticate} reads it, so the two paths agree on whether a
+	 * pre-authenticator is in place
+	 */
+	@VisibleForTesting
+	static String preAuthenticator() {
+
+		return PropsUtil.get(PropsUtil.AUTH_PIPELINE_PRE);
+	}
+
+	/**
+	 * @return {@code true} when the pre-authenticator in force is the directory authenticator this
+	 * class knows how to call, which is the only case where the login is answered by a directory
+	 */
+	private static boolean directoryPreAuthenticatorConfigured() {
+
+		final String preAuthenticator = preAuthenticator();
+		return UtilMethods.isSet(preAuthenticator)
+				&& preAuthenticator.equals(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION"));
+	}
+
+	/**
+	 * Says whether an account must be refused whatever the credentials are, which is the check the
+	 * login against dotCMS and {@code UserManagerImpl#checkUserStatus} both apply: an account that
+	 * was never finished, or a deactivated one, unless {@code ALLOW_INACTIVE_ACCOUNTS_TO_LOGIN}
+	 * says otherwise.
+	 *
+	 * @param user the {@link User} the login names, {@code null} when dotCMS has no such account
+	 * @return {@code true} when the login must be refused
+	 */
+	private static boolean isRefusedAccount(final User user) {
+
+		return null != user && (user.isNew()
+				|| (!Config.getBooleanProperty("ALLOW_INACTIVE_ACCOUNTS_TO_LOGIN", false) && !user.isActive()));
+	}
 
 	/**
 	 * Decides a login that the directory service answered for.
@@ -396,9 +443,7 @@ public class LoginFactory {
  			}
 
         	// LDAP Authentication
-        	if ((PRE_AUTHENTICATOR != null) &&
-        		(0 < PRE_AUTHENTICATOR.length()) &&
-        		PRE_AUTHENTICATOR.equals(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION"))) {
+        	if (directoryPreAuthenticatorConfigured()) {
         		Class ldap_auth_impl_class = Class.forName(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION"));
         		Authenticator ldap_auth_impl = (Authenticator) ldap_auth_impl_class.getDeclaredConstructor().newInstance();
         		int auth = 0;
@@ -414,6 +459,13 @@ public class LoginFactory {
  	            } else {
  	            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
  	            }
+
+    			if (isRefusedAccount(user)) {
+ 					SecurityLogger.logInfo(LoginFactory.class, "An invalid attempt to login as " + userName
+ 							+ " has been made  - user is marked inactive");
+
+ 					return false;
+ 				}
 
     			match = directoryLoginAccepted(auth, password, user, LoginLockout.clientAddress());
     			if (!match && null != user && auth != Authenticator.SUCCESS) {
