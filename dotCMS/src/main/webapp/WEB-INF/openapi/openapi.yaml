@@ -16908,6 +16908,74 @@ paths:
       summary: Update a role
       tags:
       - Roles
+  /v1/roles/{roleid}/_lock:
+    put:
+      description: Locks a role. A locked role cannot be updated or deleted until
+        it is unlocked. Locking a role that is already locked changes nothing.
+      operationId: lockRole
+      parameters:
+      - description: Id of the role to lock
+        in: path
+        name: roleid
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleDetailView"
+          description: Role locked
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin permissions required
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+      summary: Lock a role
+      tags:
+      - Roles
+  /v1/roles/{roleid}/_unlock:
+    put:
+      description: Unlocks a role so it can be updated and deleted again. Unlocking
+        a role that is not locked changes nothing.
+      operationId: unlockRole
+      parameters:
+      - description: Id of the role to unlock
+        in: path
+        name: roleid
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleDetailView"
+          description: Role unlocked
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin permissions required
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+      summary: Unlock a role
+      tags:
+      - Roles
   /v1/roles/{roleid}/rolehierarchyanduserroles:
     get:
       description: "Load the user and roles by role id with optional hierarchy and\

@@ -920,6 +920,144 @@ public class RoleResourceIntegrationTest {
         assertNotNull(roleAPI.loadRoleById(role.getId()));
     }
 
+    // ==================== PUT /v1/roles/{roleId}/_lock and /_unlock ====================
+
+    /**
+     * Builds a backend user whose only tool is the given portlet, without the CMS admin role.
+     */
+    private static User backendUserWithOnlyPortlet(final String portletId) throws Exception {
+        final Layout layout = new LayoutDataGen().portletIds(portletId).nextPersisted();
+        final Role portletRole = new RoleDataGen().layout(layout).nextPersisted();
+        final User user = UserTestUtil.getUser(portletId + "only" + uniq(), false, true);
+        roleAPI.addRoleToUser(roleAPI.loadBackEndUserRole(), user);
+        roleAPI.addRoleToUser(portletRole, user);
+        return user;
+    }
+
+    /**
+     * Method to test: {@link RoleResource#lockRole(HttpServletRequest, HttpServletResponse, String)}
+     * and {@link RoleResource#unlockRole(HttpServletRequest, HttpServletResponse, String)}
+     * Given Scenario: An admin locks an unlocked role, then unlocks it.
+     * Expected Result: each call returns the role with the new state, and the state is stored.
+     */
+    @Test
+    public void testLockAndUnlockRole_admin_changesLockedState() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        assertFalse(role.isLocked());
+
+        final ResponseEntityRoleDetailView locked = resource.lockRole(
+                adminRequest(), new MockHttpResponse().response(), role.getId());
+        assertTrue(locked.getEntity().isLocked());
+        assertTrue(roleAPI.loadRoleById(role.getId()).isLocked());
+
+        final ResponseEntityRoleDetailView unlocked = resource.unlockRole(
+                adminRequest(), new MockHttpResponse().response(), role.getId());
+        assertFalse(unlocked.getEntity().isLocked());
+        assertFalse(roleAPI.loadRoleById(role.getId()).isLocked());
+    }
+
+    /**
+     * Given Scenario: Backend users without the CMS admin role (one with only the Users tool, one
+     * with only the Roles tool) and an anonymous caller try to lock and unlock roles.
+     * Expected Result: every call is refused and the locked state does not change.
+     */
+    @Test
+    public void testLockAndUnlockRole_nonAdmin_refused() throws Exception {
+        final Role unlockedRole = new RoleDataGen().nextPersisted();
+        final Role lockedRole = new RoleDataGen().nextPersisted();
+        roleAPI.lock(lockedRole);
+
+        try {
+            final List<HttpServletRequest> callers = List.of(
+                    requestFor(backendUserWithOnlyPortlet("users")),
+                    requestFor(backendUserWithOnlyPortlet("roles")),
+                    requestFor(limitedUser),
+                    anonymousRequest());
+            for (final HttpServletRequest caller : callers) {
+                try {
+                    resource.lockRole(caller, new MockHttpResponse().response(), unlockedRole.getId());
+                    fail("lock should have been refused");
+                } catch (final DotSecurityException | com.dotcms.rest.exception.SecurityException e) {
+                    // expected
+                }
+                try {
+                    resource.unlockRole(caller, new MockHttpResponse().response(), lockedRole.getId());
+                    fail("unlock should have been refused");
+                } catch (final DotSecurityException | com.dotcms.rest.exception.SecurityException e) {
+                    // expected
+                }
+            }
+
+            assertFalse(roleAPI.loadRoleById(unlockedRole.getId()).isLocked());
+            assertTrue(roleAPI.loadRoleById(lockedRole.getId()).isLocked());
+        } finally {
+            roleAPI.unLock(lockedRole);
+        }
+    }
+
+    /**
+     * Given Scenario: An admin locks a role id that does not exist.
+     * Expected Result: DoesNotExistException (404).
+     */
+    @Test(expected = DoesNotExistException.class)
+    public void testLockRole_missingRole_notFound() throws Exception {
+        resource.lockRole(adminRequest(), new MockHttpResponse().response(),
+                "missing-role-" + UUID.randomUUID());
+    }
+
+    // ==================== role inheritance after a save ====================
+
+    /**
+     * Given Scenario: A user holds role P and has already had its roles resolved (and cached).
+     * An admin moves an unrelated root role C under P.
+     * Expected Result: the user holds C through P right away, without waiting for the cached
+     * role list to expire.
+     */
+    @Test
+    public void testUpdateRole_moveUnderHeldRole_userInheritsImmediately() throws Exception {
+        final Role parent = new RoleDataGen().nextPersisted();
+        final Role child = new RoleDataGen().nextPersisted();
+        final User user = UserTestUtil.getUser("inheritmove" + uniq(), false, true);
+        roleAPI.addRoleToUser(parent, user);
+        assertFalse(roleAPI.doesUserHaveRole(user, child));
+
+        resource.updateRole(adminRequest(), new MockHttpResponse().response(), child.getId(),
+                formFrom(child).parentRoleId(parent.getId()).build());
+
+        assertTrue(roleAPI.doesUserHaveRole(user, roleAPI.loadRoleById(child.getId())));
+
+        // and moving it back to root takes the inherited role away right away too
+        resource.updateRole(adminRequest(), new MockHttpResponse().response(), child.getId(),
+                formFrom(roleAPI.loadRoleById(child.getId())).parentRoleId(null).build());
+
+        assertFalse(roleAPI.doesUserHaveRole(user, roleAPI.loadRoleById(child.getId())));
+    }
+
+    /**
+     * Given Scenario: A user holds role P and has already had its roles resolved (and cached).
+     * An admin creates a new role under P.
+     * Expected Result: the user holds the new role through P right away.
+     */
+    @Test
+    public void testAddNewRole_underHeldRole_userInheritsImmediately() throws Exception {
+        final Role parent = new RoleDataGen().nextPersisted();
+        final User user = UserTestUtil.getUser("inheritnew" + uniq(), false, true);
+        roleAPI.addRoleToUser(parent, user);
+        assertTrue(roleAPI.doesUserHaveRole(user, parent));
+
+        final RoleForm form = new RoleForm.Builder()
+                .roleName("inherited-role-" + uniq())
+                .roleKey("inherited-key-" + uniq())
+                .parentRoleId(parent.getId())
+                .build();
+        final Response restResponse = resource.addNewRole(
+                adminRequest(), new MockHttpResponse().response(), form);
+        final String newRoleId = (String) ((RoleResponseEntityView) restResponse.getEntity())
+                .getEntity().get("id");
+
+        assertTrue(roleAPI.doesUserHaveRole(user, roleAPI.loadRoleById(newRoleId)));
+    }
+
     // ==================== POST /v1/roles/{roleId}/users/{userId} — #36937 ====================
 
     private static boolean isDirectMember(final Role role, final User user) throws Exception {

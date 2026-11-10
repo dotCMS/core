@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
@@ -313,16 +314,29 @@ public class RoleFactoryImpl extends RoleFactory {
 				() -> CacheLocator.getPermissionCache().flushShortTermCache());
 	}
 
+	/**
+	 * Inserts or updates a role and recomputes the qualified names of the role and its
+	 * descendants. When the role is created under a parent, or an existing role moves to a
+	 * different parent, the cached role lists of all users are dropped, because those lists
+	 * include roles inherited through the tree.
+	 *
+	 * @param role the role to store
+	 * @return the stored role
+	 * @throws DotDataException if the role cannot be read or written
+	 */
 	@Override
 	protected Role save(Role role) throws DotDataException {
 //		role.setRoleKey(UUIDGenerator.generateUuid());
 		HibernateUtil hu = new HibernateUtil(Role.class);
 
 		Role r = null;
+		// a role whose place in the tree changes is inherited by a different set of users
+		boolean hierarchyChanged;
 		if(InodeUtils.isSet(role.getId())) {
 			hu.setQuery("from com.dotmarketing.business.Role where id = ?");
 			hu.setParam(role.getId());
 			r = (Role)hu.load();
+			hierarchyChanged = !Objects.equals(r.getParent(), role.getParent());
 			rc.remove(r.getId());
 			if(UtilMethods.isSet(r.getParent())) {
 				rc.remove(r.getParent());
@@ -339,6 +353,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		} else {
 
 			r = role;
+			hierarchyChanged = UtilMethods.isSet(role.getParent()) && !role.getParent().equals(role.getId());
 			if(DbConnectionFactory.isMsSql()){
 				String roleKey= StringUtils.camelCaseLower(r.getName());
 				DotConnect dc = new DotConnect();
@@ -402,6 +417,10 @@ public class RoleFactoryImpl extends RoleFactory {
 		}
 		if(r.getParent().equals(r.getId())){
 			rc.clearRootRoleCache();
+		}
+		if(hierarchyChanged){
+			// cached role lists include inherited roles, so a move must be seen by every user now
+			rc.clearUserRoleCache();
 		}
 		rc.add(r);
 		HibernateUtil.evict(r);

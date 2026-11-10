@@ -500,6 +500,101 @@ public class RoleResource implements Serializable {
 	}
 
 	/**
+	 * Locks a role so it cannot be edited or deleted until it is unlocked. The caller must be a
+	 * backend user with access to the Roles portlet and the CMS Administrator role.
+	 *
+	 * @param request  the current request
+	 * @param response the current response
+	 * @param roleId   id of the role to lock
+	 * @return the locked role, in the same shape as GET /v1/roles/{roleid}
+	 */
+	@Operation(
+		operationId = "lockRole",
+		summary = "Lock a role",
+		description = "Locks a role. A locked role cannot be updated or deleted until it is unlocked. " +
+				"Locking a role that is already locked changes nothing."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "Role locked",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleDetailView.class))),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - admin permissions required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404",
+					description = "Role not found",
+					content = @Content(mediaType = "application/json"))
+	})
+	@PUT
+	@Path("/{roleid}/_lock")
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntityRoleDetailView lockRole(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			@Parameter(description = "Id of the role to lock", required = true)
+			final @PathParam("roleid") String roleId) throws DotDataException, DotSecurityException {
+
+		return this.setRoleLocked(request, response, roleId, true);
+	}
+
+	/**
+	 * Unlocks a role so it can be edited and deleted again. The caller must be a backend user
+	 * with access to the Roles portlet and the CMS Administrator role.
+	 *
+	 * @param request  the current request
+	 * @param response the current response
+	 * @param roleId   id of the role to unlock
+	 * @return the unlocked role, in the same shape as GET /v1/roles/{roleid}
+	 */
+	@Operation(
+		operationId = "unlockRole",
+		summary = "Unlock a role",
+		description = "Unlocks a role so it can be updated and deleted again. Unlocking a role that is " +
+				"not locked changes nothing."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "Role unlocked",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleDetailView.class))),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - admin permissions required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404",
+					description = "Role not found",
+					content = @Content(mediaType = "application/json"))
+	})
+	@PUT
+	@Path("/{roleid}/_unlock")
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntityRoleDetailView unlockRole(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			@Parameter(description = "Id of the role to unlock", required = true)
+			final @PathParam("roleid") String roleId) throws DotDataException, DotSecurityException {
+
+		return this.setRoleLocked(request, response, roleId, false);
+	}
+
+	/** Shared body of the lock and unlock endpoints: authorizes, applies the state, returns the role. */
+	private ResponseEntityRoleDetailView setRoleLocked(final HttpServletRequest request,
+			final HttpServletResponse response, final String roleId, final boolean locked)
+			throws DotDataException, DotSecurityException {
+
+		final User user = this.initRequireRolesPortletAndCmsAdmin(request, response);
+		final Role role = this.roleHelper.setRoleLocked(roleId, locked, user);
+		return new ResponseEntityRoleDetailView(
+				this.roleHelper.toRoleViews(List.of(role), true, this.roleAPI).get(0));
+	}
+
+	/**
 	 * Grants a role to a user. Idempotent, mirroring the legacy DWR
 	 * {@code RoleAjax#addUserToRole} path: granting a role the user already holds — directly
 	 * or inherited through the role hierarchy — returns 200 and changes nothing. The only
