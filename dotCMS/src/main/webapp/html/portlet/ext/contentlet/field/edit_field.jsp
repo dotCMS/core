@@ -1494,7 +1494,7 @@
             // the restricted view tools it calls answer to their role, and nothing else on this
             // path names anybody.
             final Object previousAuthor =
-                    RestrictedViewToolAccess.announceFieldPreviewAuthor(request, user);
+                    RestrictedViewToolAccess.announceFieldPreviewAuthor(request, structure, user);
             try {
                 HTMLString = new VelocityUtil().parseVelocity(textValue,velocityContext);
             } finally {

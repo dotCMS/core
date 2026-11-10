@@ -357,7 +357,8 @@
                     // name them: the restricted view tools it calls answer to their role. Nothing
                     // else on this path names anybody, and an unnamed render is refused.
                     final Object previousAuthor =
-                            RestrictedViewToolAccess.announceFieldPreviewAuthor(request, user);
+                            RestrictedViewToolAccess.announceFieldPreviewAuthor(request,
+                                    contentType, user);
                     try {
                         HTMLString = new VelocityUtil().parseVelocity(textValue,velocityContext);
                     } finally {

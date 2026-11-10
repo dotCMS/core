@@ -548,9 +548,9 @@ public class ContentTypeHelper implements Serializable {
      * <p>
      * The user the preview is being rendered for is named on the request while the code runs,
      * so the view tools reserved for the Scripting Developer role can answer to that user's own
-     * role. This is off unless
-     * {@link com.dotcms.featureflag.FeatureFlagName#FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED}
-     * is turned on; see
+     * role, and only when that user may change this Content Type. This can be turned off with
+     * {@link com.dotcms.featureflag.FeatureFlagName#FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED};
+     * see
      * {@link com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess#announceFieldPreviewAuthor}.
      *
      * @param contentTypeMap  The {@link Map} containing all the Content Type's properties,
@@ -578,7 +578,7 @@ public class ContentTypeHelper implements Serializable {
             // the restricted view tools it calls answer to their role, and nothing else on this
             // path names anybody.
             final Object previousAuthor =
-                    RestrictedViewToolAccess.announceFieldPreviewAuthor(request, user);
+                    RestrictedViewToolAccess.announceFieldPreviewAuthor(request, contentType, user);
             try {
                 fieldsMap.forEach(fieldMap -> {
                     if (fieldMap.get("clazz").equals(ImmutableCustomField.class.getName())

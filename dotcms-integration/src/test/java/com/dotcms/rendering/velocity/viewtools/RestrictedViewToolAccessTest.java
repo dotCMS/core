@@ -23,7 +23,9 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -345,73 +347,104 @@ public class RestrictedViewToolAccessTest {
 
     /**
      * Method to test: {@link RestrictedViewToolAccess#announceFieldPreviewAuthor}
-     * When: the Content Editor renders a Custom Field as a preview and the feature flag that
-     * turns the restricted tools on in the preview is off, which is the default
-     * Should: name nobody, so the tools are refused and the preview renders without them
+     * When: the Content Editor renders a Custom Field as a preview
+     * Should: name the user it is being rendered for only when that user may change the Content
+     * Type the field belongs to, so what runs is code that user could have written themselves
      */
     @Test
-    public void announceFieldPreviewAuthor_namesNobodyWhileTheFlagIsOff() throws Exception {
-        final User developer = developer();
+    public void announceFieldPreviewAuthor_namesTheUserOnlyWhenTheyMayChangeTheContentType()
+            throws Exception {
+        final ContentType contentType = previewedContentType();
+        final User typeEditor = developer();
+        final User otherDeveloper = developer();
+        letUserChangeContentType(typeEditor, contentType);
 
-        final HttpServletRequest request = request(developer);
-        final Object previous =
-                RestrictedViewToolAccess.announceFieldPreviewAuthor(request, developer);
+        assertTrue("precondition: the editor of the type may change it",
+                APILocator.getPermissionAPI().doesUserHavePermission(contentType,
+                        PermissionAPI.PERMISSION_EDIT_PERMISSIONS, typeEditor, false));
+        assertFalse("precondition: the other developer may not",
+                APILocator.getPermissionAPI().doesUserHavePermission(contentType,
+                        PermissionAPI.PERMISSION_EDIT_PERMISSIONS, otherDeveloper, false));
 
-        assertFalse("While the flag is off the preview names nobody, whoever is looking at it",
-                RestrictedViewToolAccess.renderingAuthorHasAccess(request));
-        RestrictedViewToolAccess.restoreRenderingAuthor(request, previous);
-        assertFalse("and it leaves nothing behind once it is over",
-                RestrictedViewToolAccess.renderingAuthorHasAccess(request));
+        final HttpServletRequest forTypeEditor = request(typeEditor);
+        RestrictedViewToolAccess.announceFieldPreviewAuthor(forTypeEditor, contentType,
+                typeEditor);
+        assertTrue("A user who holds the role and may change the type sees the output",
+                RestrictedViewToolAccess.renderingAuthorHasAccess(forTypeEditor));
+
+        final HttpServletRequest forOtherDeveloper = request(otherDeveloper);
+        RestrictedViewToolAccess.announceFieldPreviewAuthor(forOtherDeveloper, contentType,
+                otherDeveloper);
+        assertFalse("Holding the role is not enough while the user may not change the type",
+                RestrictedViewToolAccess.renderingAuthorHasAccess(forOtherDeveloper));
+
+        letUserChangeContentType(limitedUser, contentType);
+        final HttpServletRequest forLimitedUser = request(limitedUser);
+        RestrictedViewToolAccess.announceFieldPreviewAuthor(forLimitedUser, contentType,
+                limitedUser);
+        assertFalse("and being able to change the type is not enough without the role",
+                RestrictedViewToolAccess.renderingAuthorHasAccess(forLimitedUser));
+
+        final HttpServletRequest nobody = request(typeEditor);
+        RestrictedViewToolAccess.announceFieldPreviewAuthor(nobody, contentType, null);
+        assertFalse("A preview that names nobody is refused",
+                RestrictedViewToolAccess.renderingAuthorHasAccess(nobody));
     }
 
     /**
      * Method to test: {@link RestrictedViewToolAccess#announceFieldPreviewAuthor}
-     * When: the feature flag is on and the Content Editor renders a Custom Field as a preview
-     * Should: answer to the role of the user the preview is being rendered for, and to nobody
-     * else's
-     *
-     * <p>The code of a Custom Field belongs to the Content Type, which records no author of its
-     * own, and the preview is shown to the one user the editor is serving. So what the preview
-     * renders is decided by what that user is allowed to run: a Scripting Developer sees the
-     * output, anybody else sees the field without it.
+     * When: the preview nests inside another render, and when the feature flag is turned off
+     * Should: leave the surrounding render deciding again once the preview is over, and name
+     * nobody at all while the flag is off
      */
     @Test
-    public void announceFieldPreviewAuthor_answersToTheUserThePreviewIsRenderedFor()
+    public void announceFieldPreviewAuthor_restoresTheRenderAroundItAndObeysTheFlag()
             throws Exception {
-        final User developer = developer();
+        final ContentType contentType = previewedContentType();
+        final User typeEditor = developer();
+        letUserChangeContentType(typeEditor, contentType);
+
+        final HttpServletRequest nested = request(typeEditor);
+        final Object outerRender = RestrictedViewToolAccess.announceRenderingAuthor(nested,
+                limitedUser.getUserId());
+        final Object beforePreview = RestrictedViewToolAccess.announceFieldPreviewAuthor(nested,
+                contentType, typeEditor);
+        assertTrue("The preview decides while it is the innermost render",
+                RestrictedViewToolAccess.renderingAuthorHasAccess(nested));
+        RestrictedViewToolAccess.restoreRenderingAuthor(nested, beforePreview);
+        assertFalse("and the render around it decides again once the preview is over",
+                RestrictedViewToolAccess.renderingAuthorHasAccess(nested));
+        RestrictedViewToolAccess.restoreRenderingAuthor(nested, outerRender);
+
         Config.setProperty(FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED,
-                true);
+                false);
         try {
-            final HttpServletRequest forDeveloper = request(developer);
-            RestrictedViewToolAccess.announceFieldPreviewAuthor(forDeveloper, developer);
-            assertTrue("A user holding the role sees the output of their own preview",
-                    RestrictedViewToolAccess.renderingAuthorHasAccess(forDeveloper));
-
-            final HttpServletRequest forLimitedUser = request(limitedUser);
-            RestrictedViewToolAccess.announceFieldPreviewAuthor(forLimitedUser, limitedUser);
-            assertFalse("A user without the role does not, whatever the request says",
-                    RestrictedViewToolAccess.renderingAuthorHasAccess(forLimitedUser));
-
-            final HttpServletRequest nobody = request(developer);
-            RestrictedViewToolAccess.announceFieldPreviewAuthor(nobody, null);
-            assertFalse("A preview that names nobody is refused",
-                    RestrictedViewToolAccess.renderingAuthorHasAccess(nobody));
-
-            final HttpServletRequest nested = request(developer);
-            final Object previous = RestrictedViewToolAccess.announceRenderingAuthor(nested,
-                    limitedUser.getUserId());
-            final Object beforePreview =
-                    RestrictedViewToolAccess.announceFieldPreviewAuthor(nested, developer);
-            assertTrue("The preview decides while it is the innermost render",
-                    RestrictedViewToolAccess.renderingAuthorHasAccess(nested));
-            RestrictedViewToolAccess.restoreRenderingAuthor(nested, beforePreview);
-            assertFalse("and the render around it decides again once the preview is over",
-                    RestrictedViewToolAccess.renderingAuthorHasAccess(nested));
-            RestrictedViewToolAccess.restoreRenderingAuthor(nested, previous);
+            final HttpServletRequest switchedOff = request(typeEditor);
+            final Object previous = RestrictedViewToolAccess.announceFieldPreviewAuthor(
+                    switchedOff, contentType, typeEditor);
+            assertNull("The preview names nobody while the flag is off",
+                    switchedOff.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID));
+            assertFalse("so the tools are refused",
+                    RestrictedViewToolAccess.renderingAuthorHasAccess(switchedOff));
+            RestrictedViewToolAccess.restoreRenderingAuthor(switchedOff, previous);
+            assertNull("and it leaves nothing behind once it is over",
+                    switchedOff.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID));
         } finally {
-            Config.setProperty(FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED,
-                    null);
+            Config.setProperty(
+                    FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED, null);
         }
+    }
+
+    /**
+     * A Content Type holding one Custom Field, cleaned up with the class.
+     */
+    private static ContentType previewedContentType() {
+        final ContentType contentType = new ContentTypeDataGen()
+                .fields(List.of(new FieldDataGen().type(TextAreaField.class)
+                        .velocityVarName("code").next()))
+                .nextPersisted();
+        contentTypes.add(contentType);
+        return contentType;
     }
 
     /**
@@ -420,6 +453,20 @@ public class RestrictedViewToolAccessTest {
     private static User developer() throws Exception {
         final Role scripting = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
         return user(new UserDataGen().roles(scripting).nextPersisted());
+    }
+
+    /**
+     * Grants the user the permission the Content Type API requires to save the type, through a
+     * role of their own, so that the grant reaches nobody else.
+     */
+    private static void letUserChangeContentType(final User user, final ContentType contentType)
+            throws Exception {
+        final Role own = role(new RoleDataGen().nextPersisted());
+        APILocator.getRoleAPI().addRoleToUser(own, user);
+        APILocator.getPermissionAPI().save(
+                new Permission(contentType.getPermissionId(), own.getId(),
+                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT_PERMISSIONS),
+                contentType, APILocator.systemUser(), false);
     }
 
     /**

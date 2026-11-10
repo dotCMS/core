@@ -6,8 +6,11 @@ import com.dotcms.rendering.velocity.services.VTLLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -259,35 +262,74 @@ public final class RestrictedViewToolAccess {
      * role answer to that user's own role.
      *
      * <p>A preview is not a page. Its output goes to the one user the editor is serving and to
-     * nobody else, so what it renders is decided by what that user is allowed to run. The code
-     * itself belongs to the Content Type, which records no author of its own, and the content
-     * being edited may not exist yet, so neither can answer for it.
+     * nobody else, and the code it runs is the Content Type's, which records no author of its
+     * own. So the preview names the user it is being rendered for, and does it only when that
+     * user is allowed to change the Content Type the field belongs to: what runs is then code
+     * that user could have written themselves, which is the same answer the tools would give
+     * if they had.
      *
-     * <p>Gated by {@link FeatureFlagName#FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED},
-     * which is off by default: nothing is announced, the tools return nothing and the preview
-     * renders the rest of the field. The value handed back still restores correctly either way.
+     * <p>Nothing is announced, and the tools render nothing, when the user may not change the
+     * Content Type, when they are not named at all, or when
+     * {@link FeatureFlagName#FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED} is turned
+     * off. The value handed back restores correctly in every one of those cases.
      *
      * <p>Nothing that renders for a visitor may use this. On a page the viewer and the author
      * are different people, and letting the viewer answer for the code would hand a restricted
      * tool to whoever merely opens the page.
      *
-     * @param request       the request the preview is running under; {@code null} is ignored
+     * @param request        the request the preview is running under; {@code null} is ignored
+     * @param contentType    the Content Type the field belongs to, as a {@link Permissionable}:
+     *                       either a {@link com.dotcms.contenttype.model.type.ContentType} or
+     *                       the {@link com.dotmarketing.portlets.structure.model.Structure} of
+     *                       the same row, which answer the permission check alike
      * @param previewingUser the user the Content Editor is rendering the preview for
      *
      * @return whatever was recorded before, to restore afterwards
      */
     public static Object announceFieldPreviewAuthor(final HttpServletRequest request,
-            final User previewingUser) {
+            final Permissionable contentType, final User previewingUser) {
         if (null == request) {
             return null;
         }
+        // leave the request as it is: restoring this value puts back what is already there
+        final Object unchanged = request.getAttribute(RENDERING_AUTHOR_ID);
         if (!Config.getBooleanProperty(
-                FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED, false)) {
-            // leave the request as it is: restoring this value puts back what is already there
-            return request.getAttribute(RENDERING_AUTHOR_ID);
+                FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED, true)) {
+            return unchanged;
         }
-        return announce(request,
-                Lazy.of(() -> null != previewingUser ? previewingUser.getUserId() : null));
+        if (null == previewingUser || null == contentType
+                || !mayChangeTheCodeOf(contentType, previewingUser)) {
+            return unchanged;
+        }
+        return announce(request, Lazy.of(previewingUser::getUserId));
+    }
+
+    /**
+     * Answers whether the user is allowed to change the Content Type a previewed field belongs
+     * to, and therefore to write the code the preview is about to run.
+     *
+     * <p>This is the permission the Content Type and Field APIs require to save one
+     * ({@code ContentTypeAPIImpl.save}, {@code FieldAPIImpl.save}), not the one that lets a
+     * user edit the content of that type. Front-end roles do not count towards it.
+     *
+     * @param contentType    the Content Type the field belongs to
+     * @param previewingUser the user the preview is being rendered for
+     *
+     * @return {@code true} when that user could have written the field's code
+     */
+    private static boolean mayChangeTheCodeOf(final Permissionable contentType,
+            final User previewingUser) {
+        try {
+            return APILocator.getPermissionAPI().doesUserHavePermission(contentType,
+                    PermissionAPI.PERMISSION_EDIT_PERMISSIONS, previewingUser, false);
+        } catch (final DotDataException e) {
+            Logger.warn(RestrictedViewToolAccess.class,
+                    "A Custom Field preview named nobody: the permissions of user '"
+                            + previewingUser.getUserId() + "' on Content Type '"
+                            + contentType.getPermissionId() + "' could not be read: "
+                            + e.getMessage());
+            return false;
+        }
     }
 
     /**
