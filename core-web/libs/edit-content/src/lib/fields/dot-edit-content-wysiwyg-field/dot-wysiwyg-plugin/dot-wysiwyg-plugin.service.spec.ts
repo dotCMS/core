@@ -351,4 +351,137 @@ describe('DotWysiwygPluginService', () => {
             );
         });
     });
+
+    describe('filePickerOptions (browse buttons in the image and link dialogs)', () => {
+        const FILE_ASSET = {
+            ...EMPTY_CONTENTLET,
+            baseType: 'FILEASSET',
+            path: '/docs/report.pdf',
+            title: 'Annual report'
+        } as DotCMSContentlet;
+
+        const DOT_ASSET = {
+            ...EMPTY_CONTENTLET,
+            baseType: 'DOTASSET',
+            identifier: 'abcdef1234567890',
+            fileName: 'brochure.pdf',
+            title: 'Brochure'
+        } as DotCMSContentlet;
+
+        /** Clicks the browse button of the TinyMCE dialog that asks for `filetype`. */
+        const browse = (filetype: 'image' | 'file', callback = vi.fn()) => {
+            spectator.service
+                .filePickerOptions()
+                .file_picker_callback(callback, '', { filetype, fieldname: 'src' });
+
+            return callback;
+        };
+
+        it('should enable the browse button for images and files', () => {
+            const options = spectator.service.filePickerOptions();
+
+            expect(options.file_picker_types).toBe('file image');
+            expect(options.file_picker_callback).toEqual(expect.any(Function));
+        });
+
+        it('should open the picker in image mode from the image dialog, above TinyMCE', () => {
+            const spyDialog = vi
+                .spyOn(dialogService, 'open')
+                .mockReturnValue({ onClose: of(undefined) } as DynamicDialogRef);
+
+            browse('image');
+
+            expect(spyDialog).toHaveBeenCalledWith(
+                DotAssetPickerComponent,
+                expect.objectContaining({
+                    // TinyMCE's dialog layer is at 1300; anything lower opens behind it.
+                    baseZIndex: 1300,
+                    data: expect.objectContaining({
+                        site: SITE,
+                        mimeTypes: ['image/*'],
+                        languageId: String(LOCALE_ID),
+                        title: 'dot.asset.picker.header.image'
+                    })
+                })
+            );
+        });
+
+        it('should open the picker in file mode from the link dialog', () => {
+            const spyDialog = vi
+                .spyOn(dialogService, 'open')
+                .mockReturnValue({ onClose: of(undefined) } as DynamicDialogRef);
+
+            browse('file');
+
+            const config = spyDialog.mock.calls[0][1];
+            expect(config.baseZIndex).toBe(1300);
+            expect(config.data).toEqual(
+                expect.objectContaining({ site: SITE, title: 'dot.asset.picker.header.file' })
+            );
+            // File mode lists any asset, not just images.
+            expect(config.data.mimeTypes ?? []).not.toContain('image/*');
+        });
+
+        it('should hand the image URL and alt text back to the dialog instead of inserting', () => {
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of(EMPTY_CONTENTLET)
+            } as DynamicDialogRef);
+
+            const callback = browse('image');
+
+            expect(callback).toHaveBeenCalledWith(
+                formatDotImageNode(MOCK_IMAGE_URL_PATTERN, EMPTY_CONTENTLET).match(
+                    /src="([^"]*)"/
+                )[1],
+                { alt: EMPTY_CONTENTLET.title }
+            );
+            expect(editor.insertContent).not.toHaveBeenCalled();
+        });
+
+        it('should link a file asset by its path', () => {
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of(FILE_ASSET)
+            } as DynamicDialogRef);
+
+            expect(browse('file')).toHaveBeenCalledWith('/docs/report.pdf', {
+                text: 'Annual report'
+            });
+        });
+
+        it('should link a dotAsset by its /dA/ URL', () => {
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of(DOT_ASSET)
+            } as DynamicDialogRef);
+
+            expect(browse('file')).toHaveBeenCalledWith('/dA/abcdef1234/brochure.pdf', {
+                text: 'Brochure'
+            });
+        });
+
+        it('should leave the dialog untouched when the picker is dismissed', () => {
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of(undefined)
+            } as DynamicDialogRef);
+
+            expect(browse('file')).not.toHaveBeenCalled();
+        });
+
+        it('should not stack a second picker while one is open', () => {
+            const onClose = new Subject<DotCMSContentlet>();
+            const spyDialog = vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: onClose.asObservable(),
+                close: vi.fn()
+            } as unknown as DynamicDialogRef);
+
+            browse('file');
+            browse('image');
+
+            expect(spyDialog).toHaveBeenCalledTimes(1);
+
+            onClose.next(undefined);
+            browse('image');
+
+            expect(spyDialog).toHaveBeenCalledTimes(2);
+        });
+    });
 });
