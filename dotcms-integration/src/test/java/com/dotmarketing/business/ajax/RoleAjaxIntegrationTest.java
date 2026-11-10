@@ -142,6 +142,33 @@ public class RoleAjaxIntegrationTest {
     }
 
     /**
+     * Method to test: {@link RoleAjax#getUsersByRole(String[])}, through
+     * {@link DwrUtil#validateRoleMembershipPermissions(User)}
+     * Given Scenario: a back-end user whose only portlets are the old screens, {@code roles-legacy}
+     * and {@code users-legacy}, lists the users in a role, as the old Roles &amp; Tools screen does
+     * ExpectedResult: the members come back, exactly as for a holder of {@code roles} and
+     * {@code users}
+     */
+    @Test
+    public void getUsersByRole_rolesLegacyAndUsersLegacyPortlets_returnsMembers() throws Exception {
+        final Role role = track(new RoleDataGen().nextPersisted());
+        final User member = track(new UserDataGen().roles(role).nextPersisted());
+        final Layout layout = new LayoutDataGen()
+                .portletIds(PortletID.ROLES_LEGACY.toString(), PortletID.USERS_LEGACY.toString()).nextPersisted();
+        layoutsToClean.add(layout);
+        final Role portletRole = track(new RoleDataGen().layout(layout).nextPersisted());
+        final User delegate = track(new UserDataGen()
+                .roles(roleAPI.loadBackEndUserRole(), portletRole).nextPersisted());
+
+        callAs(delegate);
+        final Map<String, List<Map<String, Object>>> usersByRole =
+                new RoleAjax().getUsersByRole(new String[] {role.getId()});
+
+        assertTrue(usersByRole.get(role.getId()).stream()
+                .anyMatch(map -> member.getUserId().equals(map.get("userId"))));
+    }
+
+    /**
      * Method to test: {@link RoleAjax#getRole(String)}, through the Roles portlet check in
      * {@link DwrUtil#validateRolesPortletPermissions(User)}
      * Given Scenario: a back-end user whose only portlet is {@code roles} reads a role
