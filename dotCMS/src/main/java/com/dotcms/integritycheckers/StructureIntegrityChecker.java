@@ -311,8 +311,7 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                 dc.loadResult();
 
                 // 5) update foreign tables references to the new real row
-                dc.setSQL("UPDATE contentlet SET contentlet_as_json['contentType'] = to_jsonb(?::text)"
-                                + " WHERE structure_inode = ? ")
+                dc.setSQL("UPDATE contentlet SET contentlet_as_json['contentType'] = to_jsonb(?::text) WHERE structure_inode = ? ")
                         .addParam(newStructureInode)
                         .addParam(TEMP_INODE)
                         .loadResult();
