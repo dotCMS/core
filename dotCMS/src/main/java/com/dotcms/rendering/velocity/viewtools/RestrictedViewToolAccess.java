@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rendering.velocity.services.VTLLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.services.VelocityType;
@@ -250,6 +251,43 @@ public final class RestrictedViewToolAccess {
     public static Object announceRenderingAuthorOf(final HttpServletRequest request,
             final String velocityResourcePath) {
         return announce(request, Lazy.of(() -> authorOfRenderedResource(velocityResourcePath)));
+    }
+
+    /**
+     * Records on the request that the Content Editor is about to render a Custom Field as a
+     * preview for the given user, so that the view tools reserved for the Scripting Developer
+     * role answer to that user's own role.
+     *
+     * <p>A preview is not a page. Its output goes to the one user the editor is serving and to
+     * nobody else, so what it renders is decided by what that user is allowed to run. The code
+     * itself belongs to the Content Type, which records no author of its own, and the content
+     * being edited may not exist yet, so neither can answer for it.
+     *
+     * <p>Gated by {@link FeatureFlagName#FEATURE_FLAG_CUSTOM_FIELD_PREVIEW_RESTRICTED_TOOLS},
+     * which is off by default: nothing is announced, the tools return nothing and the preview
+     * renders the rest of the field. The value handed back still restores correctly either way.
+     *
+     * <p>Nothing that renders for a visitor may use this. On a page the viewer and the author
+     * are different people, and letting the viewer answer for the code would hand a restricted
+     * tool to whoever merely opens the page.
+     *
+     * @param request       the request the preview is running under; {@code null} is ignored
+     * @param previewingUser the user the Content Editor is rendering the preview for
+     *
+     * @return whatever was recorded before, to restore afterwards
+     */
+    public static Object announceFieldPreviewAuthor(final HttpServletRequest request,
+            final User previewingUser) {
+        if (null == request) {
+            return null;
+        }
+        if (!Config.getBooleanProperty(
+                FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_PREVIEW_RESTRICTED_TOOLS, false)) {
+            // leave the request as it is: restoring this value puts back what is already there
+            return request.getAttribute(RENDERING_AUTHOR_ID);
+        }
+        return announce(request,
+                Lazy.of(() -> null != previewingUser ? previewingUser.getUserId() : null));
     }
 
     /**

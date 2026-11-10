@@ -1,6 +1,7 @@
 <%@page import="com.dotmarketing.image.focalpoint.FocalPoint"%>
 <%@page import="java.util.Optional"%>
 <%@page import="com.dotmarketing.image.focalpoint.FocalPointAPIImpl"%>
+<%@page import="com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess"%>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@page import="com.dotmarketing.util.Config"%>
@@ -1489,7 +1490,16 @@
                     velocityContext.put(field.getVelocityVarName(), defaultValue);
                 }
             }
-            HTMLString = new VelocityUtil().parseVelocity(textValue,velocityContext);
+            // The field's code is about to run as a preview for this user alone, so name them:
+            // the restricted view tools it calls answer to their role, and nothing else on this
+            // path names anybody.
+            final Object previousAuthor =
+                    RestrictedViewToolAccess.announceFieldPreviewAuthor(request, user);
+            try {
+                HTMLString = new VelocityUtil().parseVelocity(textValue,velocityContext);
+            } finally {
+                RestrictedViewToolAccess.restoreRenderingAuthor(request, previousAuthor);
+            }
         }
 
     %>

@@ -7,6 +7,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.exception.BadRequestException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -544,6 +545,13 @@ public class ContentTypeHelper implements Serializable {
      * If a contentlet inode is provided, contentlet-specific variables ({@code $inode},
      * {@code $identifier}, {@code $lang}, {@code $contentlet}) are also injected when the
      * contentlet can be loaded and belongs to the requested content type.
+     * <p>
+     * The user the preview is being rendered for is named on the request while the code runs,
+     * so the view tools reserved for the Scripting Developer role can answer to that user's own
+     * role. This is off unless
+     * {@link com.dotcms.featureflag.FeatureFlagName#FEATURE_FLAG_CUSTOM_FIELD_PREVIEW_RESTRICTED_TOOLS}
+     * is turned on; see
+     * {@link com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess#announceFieldPreviewAuthor}.
      *
      * @param contentTypeMap  The {@link Map} containing all the Content Type's properties,
      *                        including its fields.
@@ -566,21 +574,30 @@ public class ContentTypeHelper implements Serializable {
                 .collect(Collectors.toMap(Field::variable, f -> f, (a, b) -> a));
         try {
             final Context velocityContext = VelocityWebUtil.getVelocityContext(request, response);
-            fieldsMap.forEach(fieldMap -> {
-                if (fieldMap.get("clazz").equals(ImmutableCustomField.class.getName())
-                        && getCustomFieldRenderMode(fieldMap).equals(CustomField.RenderMode.COMPONENT)) {
-                    try {
-                        final Field fieldObj = fieldsByVar.get(fieldMap.get("variable"));
-                        loadVelocityContextVariables(velocityContext, contentType, contentlet, fieldObj);
-                        final String textValue = (String) fieldMap.getOrDefault("values", BLANK);
-                        final String htmlString = new VelocityUtil().parseVelocity(textValue, velocityContext);
-                        fieldMap.put("rendered", htmlString);
-                    } catch (final Exception e) {
-                        Logger.error(JsonContentTypeTransformer.class, String.format("Failed to render Custom Field " +
-                                "'%s': %s", fieldMap.get("variable"), ExceptionUtil.getErrorMessage(e)));
+            // The fields' code is about to run as a preview for this user alone, so name them:
+            // the restricted view tools it calls answer to their role, and nothing else on this
+            // path names anybody.
+            final Object previousAuthor =
+                    RestrictedViewToolAccess.announceFieldPreviewAuthor(request, user);
+            try {
+                fieldsMap.forEach(fieldMap -> {
+                    if (fieldMap.get("clazz").equals(ImmutableCustomField.class.getName())
+                            && getCustomFieldRenderMode(fieldMap).equals(CustomField.RenderMode.COMPONENT)) {
+                        try {
+                            final Field fieldObj = fieldsByVar.get(fieldMap.get("variable"));
+                            loadVelocityContextVariables(velocityContext, contentType, contentlet, fieldObj);
+                            final String textValue = (String) fieldMap.getOrDefault("values", BLANK);
+                            final String htmlString = new VelocityUtil().parseVelocity(textValue, velocityContext);
+                            fieldMap.put("rendered", htmlString);
+                        } catch (final Exception e) {
+                            Logger.error(JsonContentTypeTransformer.class, String.format("Failed to render Custom Field " +
+                                    "'%s': %s", fieldMap.get("variable"), ExceptionUtil.getErrorMessage(e)));
+                        }
                     }
-                }
-            });
+                });
+            } finally {
+                RestrictedViewToolAccess.restoreRenderingAuthor(request, previousAuthor);
+            }
         } catch (final Exception e) {
             Logger.error(ContentTypeHelper.class, String.format(
                     "Failed to initialize Velocity context for Custom Field rendering: %s",

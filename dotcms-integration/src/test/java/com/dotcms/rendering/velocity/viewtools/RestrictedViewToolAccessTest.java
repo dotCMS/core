@@ -9,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
@@ -340,6 +341,85 @@ public class RestrictedViewToolAccessTest {
                 "/WORKING/" + UUIDGenerator.generateUuid() + "/1.container");
         assertFalse("A resource that resolves to nothing names no author, so it is refused",
                 RestrictedViewToolAccess.renderingAuthorHasAccess(unresolvable));
+    }
+
+    /**
+     * Method to test: {@link RestrictedViewToolAccess#announceFieldPreviewAuthor}
+     * When: the Content Editor renders a Custom Field as a preview and the feature flag that
+     * turns the restricted tools on in the preview is off, which is the default
+     * Should: name nobody, so the tools are refused and the preview renders without them
+     */
+    @Test
+    public void announceFieldPreviewAuthor_namesNobodyWhileTheFlagIsOff() throws Exception {
+        final User developer = developer();
+
+        final HttpServletRequest request = request(developer);
+        final Object previous =
+                RestrictedViewToolAccess.announceFieldPreviewAuthor(request, developer);
+
+        assertFalse("While the flag is off the preview names nobody, whoever is looking at it",
+                RestrictedViewToolAccess.renderingAuthorHasAccess(request));
+        RestrictedViewToolAccess.restoreRenderingAuthor(request, previous);
+        assertFalse("and it leaves nothing behind once it is over",
+                RestrictedViewToolAccess.renderingAuthorHasAccess(request));
+    }
+
+    /**
+     * Method to test: {@link RestrictedViewToolAccess#announceFieldPreviewAuthor}
+     * When: the feature flag is on and the Content Editor renders a Custom Field as a preview
+     * Should: answer to the role of the user the preview is being rendered for, and to nobody
+     * else's
+     *
+     * <p>The code of a Custom Field belongs to the Content Type, which records no author of its
+     * own, and the preview is shown to the one user the editor is serving. So what the preview
+     * renders is decided by what that user is allowed to run: a Scripting Developer sees the
+     * output, anybody else sees the field without it.
+     */
+    @Test
+    public void announceFieldPreviewAuthor_answersToTheUserThePreviewIsRenderedFor()
+            throws Exception {
+        final User developer = developer();
+        Config.setProperty(FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_PREVIEW_RESTRICTED_TOOLS,
+                true);
+        try {
+            final HttpServletRequest forDeveloper = request(developer);
+            RestrictedViewToolAccess.announceFieldPreviewAuthor(forDeveloper, developer);
+            assertTrue("A user holding the role sees the output of their own preview",
+                    RestrictedViewToolAccess.renderingAuthorHasAccess(forDeveloper));
+
+            final HttpServletRequest forLimitedUser = request(limitedUser);
+            RestrictedViewToolAccess.announceFieldPreviewAuthor(forLimitedUser, limitedUser);
+            assertFalse("A user without the role does not, whatever the request says",
+                    RestrictedViewToolAccess.renderingAuthorHasAccess(forLimitedUser));
+
+            final HttpServletRequest nobody = request(developer);
+            RestrictedViewToolAccess.announceFieldPreviewAuthor(nobody, null);
+            assertFalse("A preview that names nobody is refused",
+                    RestrictedViewToolAccess.renderingAuthorHasAccess(nobody));
+
+            final HttpServletRequest nested = request(developer);
+            final Object previous = RestrictedViewToolAccess.announceRenderingAuthor(nested,
+                    limitedUser.getUserId());
+            final Object beforePreview =
+                    RestrictedViewToolAccess.announceFieldPreviewAuthor(nested, developer);
+            assertTrue("The preview decides while it is the innermost render",
+                    RestrictedViewToolAccess.renderingAuthorHasAccess(nested));
+            RestrictedViewToolAccess.restoreRenderingAuthor(nested, beforePreview);
+            assertFalse("and the render around it decides again once the preview is over",
+                    RestrictedViewToolAccess.renderingAuthorHasAccess(nested));
+            RestrictedViewToolAccess.restoreRenderingAuthor(nested, previous);
+        } finally {
+            Config.setProperty(FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_PREVIEW_RESTRICTED_TOOLS,
+                    null);
+        }
+    }
+
+    /**
+     * A user who holds the Scripting Developer role.
+     */
+    private static User developer() throws Exception {
+        final Role scripting = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
+        return user(new UserDataGen().roles(scripting).nextPersisted());
     }
 
     /**
