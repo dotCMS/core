@@ -426,6 +426,7 @@ public class H22Cache extends CacheProvider {
             counts = getGroupCounts();
         } catch (SQLException exception) {
             Logger.warn(this, "Unable to collect H22 region counts", exception);
+            ret.markUnavailable();
             return ret;
         }
 
@@ -791,7 +792,7 @@ public class H22Cache extends CacheProvider {
         for (int db = 0; db < numberOfDbs; db++) {
             final Optional<Connection> connection = createConnection(true, db);
             if (connection.isEmpty()) {
-                continue;
+                throw new SQLException("H22 shard connection unavailable");
             }
             try (Connection current = connection.get()) {
                 for (int table = 0; table < numberOfTablesPerDb; table++) {

@@ -4,11 +4,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
+import com.dotcms.metrics.MetricsConfig;
+import com.dotcms.metrics.binders.CacheMetrics;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.cache.provider.CacheStats;
+import io.micrometer.core.instrument.Clock;
+import io.micrometer.core.instrument.simple.SimpleConfig;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.lang.reflect.Field;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -20,11 +30,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
 
 /** H22 stats must discover and count every region with one grouped query per shard table. */
 class H22CacheStatsTest {
@@ -135,6 +148,47 @@ class H22CacheStatsTest {
 
         assertTrue(cache.getStats().getStats().isEmpty());
         assertTrue(collections.isEmpty());
+    }
+
+    /** SQL and missing-shard failures must be unknown to every gauge and recover after the TTL. */
+    @Test
+    void metrics_reportUnknownDuringCollectionFailureAndRecover() {
+        final AtomicLong nanos = new AtomicLong();
+        final Clock clock = mock(Clock.class);
+        when(clock.monotonicTime()).thenAnswer(ignored -> nanos.get());
+        final DotCacheAdministrator administrator = mock(DotCacheAdministrator.class);
+        when(administrator.getCacheStatsList()).thenAnswer(ignored -> List.of(cache.getStats()));
+        final long ttl = TimeUnit.SECONDS.toNanos(Math.max(1, MetricsConfig.METRIC_CACHE_TTL_SECONDS)) + 1;
+        final SimpleMeterRegistry registry = new SimpleMeterRegistry(SimpleConfig.DEFAULT, clock);
+        try (MockedStatic<CacheLocator> locator = mockStatic(CacheLocator.class)) {
+            locator.when(CacheLocator::getCacheAdministrator).thenReturn(administrator);
+            new CacheMetrics().bindTo(registry);
+            assertEquals(3.0 * databases * tables,
+                    registry.get("dotcms.cache.size.total").gauge().value(), 0.001);
+
+            for (final boolean missingShard : new boolean[]{false, true}) {
+                failQueries = !missingShard;
+                unavailable = missingShard;
+                nanos.addAndGet(ttl);
+                for (final String name : List.of("size.total", "regions.total", "providers.total",
+                        "hits.total", "hit_rate.overall")) {
+                    assertTrue(Double.isNaN(registry.get("dotcms.cache." + name).gauge().value()), name);
+                }
+                assertTrue(Double.isNaN(registry.get("dotcms.cache.region.size")
+                        .tag("provider", "h22_cache").tag("region", "shared").gauge().value()));
+
+                failQueries = false;
+                unavailable = false;
+                nanos.addAndGet(ttl);
+                assertEquals(3.0 * databases * tables,
+                        registry.get("dotcms.cache.size.total").gauge().value(), 0.001);
+                assertEquals(2.0 * databases * tables, registry.get("dotcms.cache.region.size")
+                        .tag("provider", "h22_cache").tag("region", "shared").gauge().value(), 0.001);
+            }
+            verify(administrator, times(5)).getCacheStatsList();
+        } finally {
+            registry.close();
+        }
     }
 
     /** Mirrors the configured shard layout without exposing production fields for tests. */

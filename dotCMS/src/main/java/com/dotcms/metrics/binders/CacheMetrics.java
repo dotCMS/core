@@ -197,6 +197,9 @@ public class CacheMetrics implements MeterBinder {
             final List<CacheProviderStats> providers = cacheAdmin.getCacheStatsList();
             final Map<RegionKey, CacheStats> current = new HashMap<>();
             for (final CacheProviderStats provider : providers) {
+                if (!provider.isAvailable()) {
+                    return Optional.empty();
+                }
                 for (final CacheStats region : provider.getStats()) {
                     current.put(new RegionKey(provider.getProviderName(),
                             getStatValue(region, CacheStats.REGION, "unknown")), region);

@@ -60,7 +60,9 @@ dotcms_cache_region_avg_load_time_ms{region="X"} // Average load time per region
 ```
 
 Aggregate and region gauges share one current provider snapshot for `metrics.cache.ttl-seconds`
-(default: 30 seconds), then refresh on the next read. Missing regions or failed collections report
+(default: 30 seconds), then refresh on the next read. H22 SQL/missing-shard failures and Redis
+collection failures mark the snapshot unavailable rather than returning healthy empty totals.
+Missing regions or failed collections report
 `NaN`, not stale or zero values. Overall hit rate is request-weighted from native Caffeine/Guava
 hit and request counts, never inferred from provider-specific "loads". Providers without native
 counters are excluded from that rate; no observed requests produces `NaN`.

@@ -1,6 +1,7 @@
 package com.dotcms.cache.lettuce;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -8,11 +9,17 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.metrics.binders.CacheMetrics;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.vavr.Lazy;
 import java.util.Collection;
 import java.util.List;
@@ -24,6 +31,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 
 /** Redis statistics must collect all region counts in one cluster-scoped keyspace pass. */
@@ -81,7 +89,9 @@ class RedisCacheStatsTest {
     void stats_groupLookupFailureDoesNotScan() {
         when(client.getMembers("GROUP_KEY")).thenThrow(new IllegalStateException("unavailable"));
 
-        assertEquals(Map.of("n/a", "0"), sizes(cache.getStats()));
+        final CacheProviderStats stats = cache.getStats();
+        assertEquals(Map.of("n/a", "0"), sizes(stats));
+        assertUnavailableMetrics(stats);
         verify(client, never()).scanKeys(anyString(), anyInt(), any());
     }
 
@@ -91,9 +101,27 @@ class RedisCacheStatsTest {
         doThrow(new IllegalStateException("unavailable"))
                 .when(client).scanKeys(anyString(), anyInt(), any());
 
+        final CacheProviderStats stats = cache.getStats();
         assertEquals(Map.of("dotCMS: foo", "0", "dotCMS: foo.bar", "0",
-                "dotCMS: other", "0", "dotCMS: empty", "0"), sizes(cache.getStats()));
+                "dotCMS: other", "0", "dotCMS: empty", "0"), sizes(stats));
+        assertUnavailableMetrics(stats);
         verify(client, org.mockito.Mockito.times(1)).scanKeys(anyString(), anyInt(), any());
+    }
+
+    /** Internal collection failures stay visible as unknown rather than healthy empty totals. */
+    private void assertUnavailableMetrics(final CacheProviderStats stats) {
+        final DotCacheAdministrator administrator = mock(DotCacheAdministrator.class);
+        when(administrator.getCacheStatsList()).thenReturn(List.of(stats));
+        final SimpleMeterRegistry registry = new SimpleMeterRegistry();
+        try (MockedStatic<CacheLocator> locator = mockStatic(CacheLocator.class)) {
+            locator.when(CacheLocator::getCacheAdministrator).thenReturn(administrator);
+            new CacheMetrics().bindTo(registry);
+
+            assertTrue(Double.isNaN(registry.get("dotcms.cache.size.total").gauge().value()));
+            assertTrue(Double.isNaN(registry.get("dotcms.cache.providers.total").gauge().value()));
+        } finally {
+            registry.close();
+        }
     }
 
     /** Reads the public stats values without widening production visibility. */

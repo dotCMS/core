@@ -12,6 +12,8 @@ public class CacheProviderStats {
 
     private CacheStats providerStats;
     private String providerName;
+    // Collection state is metadata, not a cache-stats UI column.
+    private boolean available = true;
 
     /**
      * CacheProviderStats is a class to help return the stats for different cache providers in dotCMS
@@ -21,6 +23,16 @@ public class CacheProviderStats {
     public CacheProviderStats(CacheStats providerStats, String providerName) {
         this.providerStats = providerStats;
         this.providerName = providerName;
+    }
+
+    /** Returns whether this collection completed, distinguishing outages from empty providers. */
+    public boolean isAvailable() {
+        return available;
+    }
+
+    /** Marks an incomplete collection without changing the legacy stats rows or columns. */
+    public void markUnavailable() {
+        available = false;
     }
 
     public void addStatRecord(CacheStats stats) {

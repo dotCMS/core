@@ -281,7 +281,7 @@ public class RedisCache extends CacheProvider {
 
 
     /** Counts every known group prefix in one cluster-scoped scan without retaining the keyspace. */
-    private Map<String, Long> keyCounts(final Set<String> groups) {
+    private Map<String, Long> keyCounts(final Set<String> groups, final CacheProviderStats collection) {
         final Map<String, Long> counts = groups.stream()
                 .collect(Collectors.toMap(this::cacheKey, group -> 0L));
         if (counts.isEmpty()) {
@@ -300,7 +300,8 @@ public class RedisCache extends CacheProvider {
                         }
                     });
         } catch (final Exception e) {
-            // Never drop the provider from the stats screen when Redis is unavailable.
+            // Preserve UI rows, but do not publish partial counts as complete metrics.
+            collection.markUnavailable();
             Logger.warnAndDebug(RedisCache.class, "Unable to count Redis cache keys: " + e.getMessage(), e);
         }
         return counts;
@@ -330,10 +331,11 @@ public class RedisCache extends CacheProvider {
             currentGroups = getGroups();
         } catch (final Exception e) {
             Logger.warnAndDebug(RedisCache.class, "Unable to list Redis groups: " + e.getMessage(), e);
+            cacheProviderStats.markUnavailable();
             currentGroups = Collections.emptySet();
         }
 
-        final Map<String, Long> counts = keyCounts(currentGroups);
+        final Map<String, Long> counts = keyCounts(currentGroups, cacheProviderStats);
         for (final String group : currentGroups) {
 
             final CacheStats stats = new CacheStats();
