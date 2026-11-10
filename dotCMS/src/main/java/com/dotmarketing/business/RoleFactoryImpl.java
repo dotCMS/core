@@ -318,7 +318,8 @@ public class RoleFactoryImpl extends RoleFactory {
 	 * Inserts or updates a role and recomputes the qualified names of the role and its
 	 * descendants. When the role is created under a parent, or an existing role moves to a
 	 * different parent, the cached role lists of all users are dropped, because those lists
-	 * include roles inherited through the tree.
+	 * include roles inherited through the tree. They are dropped again after the commit, together
+	 * with the short-lived permission decisions.
 	 *
 	 * @param role the role to store
 	 * @return the stored role
@@ -419,8 +420,11 @@ public class RoleFactoryImpl extends RoleFactory {
 			rc.clearRootRoleCache();
 		}
 		if(hierarchyChanged){
-			// cached role lists include inherited roles, so a move must be seen by every user now
+			// cached role lists include inherited roles, so a move must be seen by every user now;
+			// flush again after the commit in case a list was rebuilt from the old tree meanwhile
 			rc.clearUserRoleCache();
+			HibernateUtil.addCommitListener("role-hierarchy-flush-user-roles", rc::clearUserRoleCache);
+			flushPermissionShortTermCacheOnCommit();
 		}
 		rc.add(r);
 		HibernateUtil.evict(r);

@@ -21,6 +21,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
@@ -29,6 +30,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
@@ -1031,6 +1033,46 @@ public class RoleResourceIntegrationTest {
                 formFrom(roleAPI.loadRoleById(child.getId())).parentRoleId(null).build());
 
         assertFalse(roleAPI.doesUserHaveRole(user, roleAPI.loadRoleById(child.getId())));
+    }
+
+    /**
+     * Given Scenario: A user holds role P and reads a site through a permission granted to C, a
+     * child of P; the permission decision is cached. An admin moves C to the root.
+     * Expected Result: the user loses the permission right away; the cached decision is dropped.
+     */
+    @Test
+    public void testUpdateRole_moveToRoot_dropsCachedPermissionDecisions() throws Exception {
+        final int originalShortLivedSize = Config.getIntProperty("cache.permissionshortlived.size", 0);
+        // the short-lived permission cache must be on for the cached decision to exist
+        Config.setProperty("cache.permissionshortlived.size", 1000);
+        CacheLocator.getPermissionCache().clearCache();
+        try {
+            final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+            final User systemUser = APILocator.getUserAPI().getSystemUser();
+            final Host site = new SiteDataGen().nextPersisted();
+            permissionAPI.permissionIndividually(site.getParentPermissionable(), site, systemUser);
+
+            final Role parent = new RoleDataGen().nextPersisted();
+            final Role child = new RoleDataGen().parent(parent.getId()).nextPersisted();
+            final User user = UserTestUtil.getUser("inheritperm" + uniq(), false, true);
+            roleAPI.addRoleToUser(parent, user);
+
+            final Permission read = new Permission();
+            read.setPermission(PermissionAPI.PERMISSION_READ);
+            read.setRoleId(child.getId());
+            read.setInode(site.getIdentifier());
+            permissionAPI.save(read, site, systemUser, false);
+
+            assertTrue(permissionAPI.doesUserHavePermission(site, PermissionAPI.PERMISSION_READ, user, false));
+
+            resource.updateRole(adminRequest(), new MockHttpResponse().response(), child.getId(),
+                    formFrom(roleAPI.loadRoleById(child.getId())).parentRoleId(null).build());
+
+            assertFalse(permissionAPI.doesUserHavePermission(site, PermissionAPI.PERMISSION_READ, user, false));
+        } finally {
+            Config.setProperty("cache.permissionshortlived.size", originalShortLivedSize);
+            CacheLocator.getPermissionCache().clearCache();
+        }
     }
 
     /**
