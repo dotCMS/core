@@ -84,7 +84,7 @@ public class XStreamHandler {
                     final DataHolder dataHolder) {
                 try {
                     return super.unmarshal(reader, root, dataHolder);
-                } catch (final RuntimeException e) {
+                } catch (final Throwable e) {
                     //Recorded here rather than where the refusal is raised, because XStream
                     //caches a refusal by element name: the second document naming the same type
                     //is turned away without the mapper below being entered again. An instance
@@ -97,6 +97,13 @@ public class XStreamHandler {
                     //the usual shape, because a bundle names most of its types as values in
                     //that map rather than as a document's root element. Whatever was thrown is
                     //re-thrown untouched, so the message a caller already acts on is unchanged.
+                    //
+                    //Caught as Throwable rather than RuntimeException: XStream declares nothing
+                    //checked here and every failure of its own is unchecked, but the JVM does
+                    //not enforce that, so a converter registered by a plugin can let a checked
+                    //exception through this signature. Re-throwing still compiles unchanged,
+                    //because the compiler narrows a re-thrown catch parameter to what the body
+                    //can actually raise.
                     refusalIn(e).ifPresent(TrustedListException::record);
                     throw e;
                 }
@@ -196,7 +203,7 @@ public class XStreamHandler {
      * @param thrown what the read threw
      * @return the refusal, or empty when the read failed for an unrelated reason
      */
-    private static Optional<TrustedListException> refusalIn(final RuntimeException thrown) {
+    private static Optional<TrustedListException> refusalIn(final Throwable thrown) {
         final Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Throwable current = thrown; current != null && seen.add(current);
                 current = current.getCause()) {
