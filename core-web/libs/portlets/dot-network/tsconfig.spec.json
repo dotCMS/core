@@ -1,0 +1,19 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "outDir": "../../../dist/out-tsc",
+        "module": "esnext",
+        "target": "es2016",
+        "types": ["vitest/globals", "vitest/importMeta", "vite/client", "node", "vitest"],
+        "moduleResolution": "bundler",
+        "isolatedModules": true
+    },
+    "files": ["src/test-setup.ts"],
+    "include": [
+        "vite.config.mts",
+        "src/**/*.test.ts",
+        "src/**/*.spec.ts",
+        "src/**/*.d.ts",
+        "src/**/*.ts"
+    ]
+}
