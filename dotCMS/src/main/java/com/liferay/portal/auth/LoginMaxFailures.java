@@ -25,6 +25,15 @@ package com.liferay.portal.auth;
 /**
  * <a href="LoginMaxFailures.java.html"><b><i>View Source</i></b></a>
  *
+ * <p>Default handler for the {@code auth.max.failures} extension point (see {@link
+ * com.liferay.portal.ejb.UserManagerImpl#runCustomMaxFailuresHandlers}), run whenever an account's failed
+ * logins reach {@code auth.max.failures.limit}. Both methods below are empty: out of the box this does
+ * nothing, including no lockout or account disabling. It exists only so a deployment can plug in its own
+ * {@link AuthFailure} here (notify an admin, disable the account, etc.) without touching dotCMS's own code.
+ *
+ * <p>Account lockout itself is decided by {@link com.dotcms.auth.LoginLockout}, which runs independently of
+ * this hook and does not call it. Do not look here for the lockout logic.
+ *
  * @author  Brian Wing Shun Chan
  * @version $Revision: 1.5 $
  *
