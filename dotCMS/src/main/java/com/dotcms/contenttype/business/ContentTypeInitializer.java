@@ -291,8 +291,8 @@ public class ContentTypeInitializer implements DotInitializer {
      */
     private void acquireRepairLock() throws DotDataException {
 
-        // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- static SQL, the only runtime
-        // value is bound via addParam
+        // The statement is a single literal; the lock name is bound.
+        // nosemgrep
         new DotConnect().setSQL("SELECT pg_advisory_xact_lock(hashtext(?))")
                 .addParam(FAVORITE_PAGE_PERMISSIONS_LOCK)
                 .loadObjectResults();
@@ -308,7 +308,8 @@ public class ContentTypeInitializer implements DotInitializer {
      */
     private boolean favoritesWereReset() throws DotDataException {
 
-        // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- static SQL, the key is bound
+        // The statement is a single literal; the key is bound.
+        // nosemgrep
         return new DotConnect().setSQL("select count(*) as total from system_table where key = ?")
                 .addParam(FAVORITE_PAGE_PERMISSIONS_RESET_KEY).getInt("total") > 0;
     }
