@@ -327,7 +327,8 @@ public class ContentTypeInitializer implements DotInitializer {
      */
     private int countFavoritesWithOwnRows(final ContentType contentType) throws DotDataException {
 
-        return new DotConnect().setSQL("select count(distinct inode_id) as total from permission where inode_id in"
+        // The statement is two string literals; the content type inode is bound.
+        return new DotConnect().setSQL("select count(distinct inode_id) as total from permission where inode_id in" // nosemgrep
                         + " (select identifier from contentlet where structure_inode = ?)")
                 .addParam(contentType.inode()).getInt("total");
     }
