@@ -8,19 +8,29 @@ import com.bradmcevoy.http.FolderResource;
 import com.bradmcevoy.http.HttpManager;
 import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.Resource;
+import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,6 +45,20 @@ public class DotWebdavHelperTest {
     }
 
     private final DotWebdavHelper helper = new DotWebdavHelper();
+
+    private static final List<User> createdUsers = new ArrayList<>();
+
+    @AfterClass
+    public static void cleanup() {
+        createdUsers.forEach(UserDataGen::remove);
+        createdUsers.clear();
+    }
+
+    private static User newUserWithPassword(final String password) {
+        final User user = new UserDataGen().password(password).nextPersisted();
+        createdUsers.add(user);
+        return user;
+    }
 
     @Test
     public void Test_Get_Folder_Resource_Then_Get_File_Resource() throws IOException, DotDataException, DotSecurityException {
@@ -175,6 +199,70 @@ public class DotWebdavHelperTest {
                         null, java.util.Calendar.getInstance().getTime(), user, true);
             }
         }
+    }
+
+    /**
+     * Method to test: {@link DotWebdavHelper#authorizePrincipal(String, String)}
+     * <p>
+     * Given Scenario: A user authenticates to WebDAV using a valid API token (JWT) as the Basic-auth
+     * password instead of the account password.
+     * <p>
+     * ExpectedResult: Authentication succeeds and the resolved user is returned. API tokens remain a
+     * valid WebDAV credential because they are deliberately issued, revocable and network-bound.
+     */
+    @Test
+    public void Test_authorizePrincipal_with_api_token_as_password_is_accepted() throws Exception {
+        final User user = newUserWithPassword("aValidPassword-" + System.currentTimeMillis());
+        final Date expires = Date.from(Instant.now().plus(1, ChronoUnit.DAYS));
+        final ApiToken apiToken = APILocator.getApiTokenAPI().persistApiToken(
+                user.getUserId(), expires, APILocator.systemUser().getUserId(), "127.0.0.1");
+        final String apiJwt = APILocator.getApiTokenAPI().getJWT(apiToken, APILocator.systemUser());
+
+        final User authorized = helper.authorizePrincipal(user.getEmailAddress(), apiJwt);
+
+        Assert.assertNotNull("API-token WebDAV auth should resolve a user", authorized);
+        Assert.assertEquals(user.getUserId(), authorized.getUserId());
+    }
+
+    /**
+     * Method to test: {@link DotWebdavHelper#authorizePrincipal(String, String)}
+     * <p>
+     * Given Scenario: A user presents a valid session (user) token — the kind minted on every login
+     * and stored in the remember-me cookie — as the Basic-auth password for WebDAV.
+     * <p>
+     * ExpectedResult: Authentication is rejected with a {@link DotSecurityException}. Session tokens
+     * are issued automatically, are not individually revocable and carry no network restriction, so
+     * they must never substitute for a WebDAV credential (security issue #757). Only API tokens are
+     * accepted. The token itself resolves as a valid JWT, proving the rejection is by token type and
+     * not because the token is malformed.
+     */
+    @Test
+    public void Test_authorizePrincipal_with_session_user_token_as_password_is_rejected() throws Exception {
+        final User user = newUserWithPassword("aValidPassword-" + System.currentTimeMillis());
+        final String sessionJwt = JsonWebTokenUtils.getInstance().createUserToken(user, 1);
+
+        // Sanity: the session token is a valid, resolvable JWT — it is only rejected for being USER_TOKEN.
+        Assert.assertTrue("session token should resolve as a valid JWT",
+                APILocator.getApiTokenAPI().fromJwt(sessionJwt, null).isPresent());
+
+        Assert.assertThrows(DotSecurityException.class,
+                () -> helper.authorizePrincipal(user.getEmailAddress(), sessionJwt));
+    }
+
+    /**
+     * Method to test: {@link DotWebdavHelper#authorizePrincipal(String, String)}
+     * <p>
+     * Given Scenario: A user presents a password that is neither the account password nor a valid
+     * JWT.
+     * <p>
+     * ExpectedResult: Authentication is rejected with a {@link DotSecurityException}.
+     */
+    @Test
+    public void Test_authorizePrincipal_with_invalid_password_is_rejected() throws Exception {
+        final User user = newUserWithPassword("aValidPassword-" + System.currentTimeMillis());
+
+        Assert.assertThrows(DotSecurityException.class,
+                () -> helper.authorizePrincipal(user.getEmailAddress(), "not-a-password-nor-a-token"));
     }
 
 }

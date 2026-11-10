@@ -7,6 +7,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.BasicAuthentication;
 import com.dotcms.auth.LoginLockout;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
+import com.dotcms.auth.providers.jwt.beans.TokenType;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.bradmcevoy.http.CollectionResource;
 import com.bradmcevoy.http.HttpManager;
@@ -295,13 +296,50 @@ public class DotWebdavHelper {
 		}
 	}
 
+	/**
+	 * Attempts to authenticate a WebDAV request by treating the supplied Basic-auth password as a
+	 * dotCMS API token (a JWT). WebDAV clients (Finder, Windows Explorer, cadaver, etc.) can only
+	 * send credentials through Basic auth, so a token must travel in the password field; that is the
+	 * only transport those clients support, which is why the token is not required in an
+	 * {@code Authorization: Bearer} header.
+	 * <p>
+	 * Only an {@link TokenType#API_TOKEN} is accepted. Session tokens ({@link TokenType#USER_TOKEN},
+	 * e.g. the remember-me cookie) are rejected on purpose: they are minted automatically on every
+	 * login, are not individually revocable and carry no network restriction, so they must never
+	 * stand in for a WebDAV credential. An API token, by contrast, is deliberately issued, revocable
+	 * and may be network-bound; {@link com.dotcms.auth.providers.jwt.factories.ApiTokenAPI#fromJwt}
+	 * already enforces its revocation, expiry and allowed-IP range before it is returned here.
+	 * <p>
+	 * Every parsed token attempt (accepted or rejected) is written to the {@link SecurityLogger} for
+	 * auditing. The token string itself is never logged.
+	 *
+	 * @param jsonWebToken the Basic-auth password, possibly an API-token JWT
+	 * @param user         the user resolved from the Basic-auth username
+	 * @return {@code true} only when the password is a valid API token belonging to {@code user}
+	 */
 	private boolean tryMatchJsonWebToken (final String jsonWebToken, final User user) {
 
 		final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 		final String ipAddress           = null != request? request.getRemoteAddr(): null;
 		final Optional<JWToken> tokenOpt = APILocator.getApiTokenAPI().fromJwt(jsonWebToken.trim(), ipAddress);
 
-		return tokenOpt.isPresent() && tokenOpt.get().getUserId().equals(user.getUserId());
+		// Not a parseable/valid JWT: this is an ordinary (failed) password attempt, nothing to audit here.
+		if (tokenOpt.isEmpty()) {
+			return false;
+		}
+
+		final JWToken token  = tokenOpt.get();
+		final boolean matched = token.getTokenType() == TokenType.API_TOKEN
+				&& token.getUserId().equals(user.getUserId());
+
+		SecurityLogger.logInfo(DotWebdavHelper.class,
+				() -> "WebDAV token authentication " + (matched ? "accepted" : "rejected")
+						+ " [tokenType=" + token.getTokenType()
+						+ ", tokenUserId=" + token.getUserId()
+						+ ", requestedUserId=" + user.getUserId()
+						+ ", ip=" + ipAddress + "]");
+
+		return matched;
 	}
 
 	public boolean isFolder(String uriAux, User user) throws IOException {
