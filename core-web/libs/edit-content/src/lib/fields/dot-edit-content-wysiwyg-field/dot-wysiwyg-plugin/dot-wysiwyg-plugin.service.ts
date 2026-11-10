@@ -30,7 +30,7 @@ import {
 import { DotEditContentStore } from '../../../store/edit-content.store';
 
 /** TinyMCE's `file_picker_callback`: hands a URL (and field values) back to the open dialog. */
-type FilePickerCallback = Parameters<RawEditorOptions['file_picker_callback']>[0];
+type FilePickerCallback = Parameters<NonNullable<RawEditorOptions['file_picker_callback']>>[0];
 
 /** z-index of TinyMCE's dialog layer (`.tox-tinymce-aux`), which a picker must open above. */
 const TINYMCE_DIALOG_Z_INDEX = 1300;
@@ -142,7 +142,7 @@ export class DotWysiwygPluginService implements OnDestroy {
         return {
             file_picker_types: 'file image',
             file_picker_callback: (callback, _value, meta) =>
-                this.openFilePicker(callback, meta?.filetype === 'image' ? 'image' : 'file')
+                this.openFilePicker(callback, meta?.['filetype'] === 'image' ? 'image' : 'file')
         };
     }
 
@@ -153,7 +153,9 @@ export class DotWysiwygPluginService implements OnDestroy {
      * one picker at a time, and teardown closes whichever is open.
      */
     private openFilePicker(callback: FilePickerCallback, mode: 'image' | 'file'): void {
-        if (this.imagePickerBusy) {
+        const launcher = this.assetPickerLauncher;
+
+        if (!launcher || this.imagePickerBusy) {
             return;
         }
 
@@ -170,7 +172,7 @@ export class DotWysiwygPluginService implements OnDestroy {
                 this.ngZone.run(() =>
                     this.releaseBusyIfOpenThrows(() =>
                         this.trackPicker(
-                            this.assetPickerLauncher.open(
+                            launcher.open(
                                 this.dialogService,
                                 {
                                     mode,
@@ -217,8 +219,10 @@ export class DotWysiwygPluginService implements OnDestroy {
             return replaceURLPattern(this.IMAGE_URL_PATTERN, asset);
         }
 
-        return asset.baseType === 'FILEASSET' && asset.path
-            ? asset.path
+        const path: unknown = asset['path'];
+
+        return asset.baseType === 'FILEASSET' && typeof path === 'string' && path
+            ? path
             : replaceURLPattern(DOT_ASSET_FILE_URL_PATTERN, asset);
     }
 

@@ -22,7 +22,7 @@ import {
 import { EMPTY_CONTENTLET } from '@dotcms/utils-testing';
 
 import { DotWysiwygPluginService } from './dot-wysiwyg-plugin.service';
-import { formatDotImageNode } from './utils/editor.utils';
+import { formatDotImageNode, replaceURLPattern } from './utils/editor.utils';
 
 import { DotEditContentStore } from '../../../store/edit-content.store';
 
@@ -370,9 +370,13 @@ describe('DotWysiwygPluginService', () => {
 
         /** Clicks the browse button of the TinyMCE dialog that asks for `filetype`. */
         const browse = (filetype: 'image' | 'file', callback = vi.fn()) => {
-            spectator.service
-                .filePickerOptions()
-                .file_picker_callback(callback, '', { filetype, fieldname: 'src' });
+            const pick = spectator.service.filePickerOptions().file_picker_callback;
+
+            if (!pick) {
+                throw new Error('filePickerOptions() returned no file_picker_callback');
+            }
+
+            pick(callback, '', { filetype, fieldname: 'src' });
 
             return callback;
         };
@@ -419,7 +423,9 @@ describe('DotWysiwygPluginService', () => {
                 expect.objectContaining({ site: SITE, title: 'dot.asset.picker.header.file' })
             );
             // File mode lists any asset, not just images.
-            expect(config.data.mimeTypes ?? []).not.toContain('image/*');
+            expect((config.data as { mimeTypes?: string[] }).mimeTypes ?? []).not.toContain(
+                'image/*'
+            );
         });
 
         it('should hand the image URL and alt text back to the dialog instead of inserting', () => {
@@ -430,9 +436,7 @@ describe('DotWysiwygPluginService', () => {
             const callback = browse('image');
 
             expect(callback).toHaveBeenCalledWith(
-                formatDotImageNode(MOCK_IMAGE_URL_PATTERN, EMPTY_CONTENTLET).match(
-                    /src="([^"]*)"/
-                )[1],
+                replaceURLPattern(MOCK_IMAGE_URL_PATTERN, EMPTY_CONTENTLET),
                 { alt: EMPTY_CONTENTLET.title }
             );
             expect(editor.insertContent).not.toHaveBeenCalled();
@@ -467,7 +471,7 @@ describe('DotWysiwygPluginService', () => {
         });
 
         it('should not stack a second picker while one is open', () => {
-            const onClose = new Subject<DotCMSContentlet>();
+            const onClose = new Subject<DotCMSContentlet | undefined>();
             const spyDialog = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: onClose.asObservable(),
                 close: vi.fn()
