@@ -472,6 +472,17 @@
 	}
 
 	/**
+	 * Shows a message as an error notification. The notification renders HTML, so the message is
+	 * encoded as text before it is shown; server messages can contain role, workflow scheme and
+	 * action names.
+	 */
+	function showRolesApiError(message) {
+		var holder = document.createElement('div');
+		holder.textContent = message;
+		showDotCMSErrorMessage(holder.innerHTML);
+	}
+
+	/**
 	 * Sends a JSON request to the REST API with the session of the logged-in user. Resolves with
 	 * the response's "entity"; rejects with an Error whose message is the server's message and
 	 * whose "status" is the HTTP status.
@@ -598,11 +609,12 @@
 			callRolesApi('DELETE', '/api/v1/roles/' + encodeURIComponent(roleId)).then(function () {
 				deleteRoleCallback(true);
 			}, function (error) {
-				// 409: the role still has child roles or a workflow action assigns to it
+				// 409: the role still has child roles or a workflow action assigns to it;
+				// the server message says which
 				if (error.status == 409) {
-					deleteRoleCallback(false);
+					showRolesApiError(roleNotRemovedMsg + ' ' + error.message);
 				} else {
-					showDotCMSErrorMessage(error.message);
+					showRolesApiError(error.message);
 				}
 			});
 		}
@@ -648,7 +660,7 @@
 			callRolesApi('PUT', '/api/v1/roles/' + encodeURIComponent(roleId) + '/_lock').then(function () {
 				lockRoleCallback(roleId);
 			}, function (error) {
-				showDotCMSErrorMessage(error.message);
+				showRolesApiError(error.message);
 			});
 	}
 
@@ -657,7 +669,7 @@
 			callRolesApi('PUT', '/api/v1/roles/' + encodeURIComponent(roleId) + '/_unlock').then(function () {
 				unlockRoleCallback(roleId);
 			}, function (error) {
-				showDotCMSErrorMessage(error.message);
+				showRolesApiError(error.message);
 			});
 	}
 
