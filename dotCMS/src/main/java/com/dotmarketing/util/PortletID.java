@@ -55,6 +55,19 @@ public enum PortletID {
      * Users-portlet check has been widened to the beta id yet. Remove when the Angular portlet is promoted.
      */
     USERS_BETA("users-beta"),
+    /**
+     * The old JSP/Dojo Users screen, kept as an opt-in portlet after the Angular Users portlet
+     * took over the {@link #USERS} id. It ships in no menu layout; an administrator adds it to a
+     * section from the Tools portlet. Gates that mean "can administer users" accept it alongside
+     * {@link #USERS}, so a role holding only this portlet can still use the screen.
+     */
+    USERS_LEGACY("users-legacy"),
+    /**
+     * The old JSP/Dojo Roles &amp; Tools screen, kept as an opt-in portlet after the Angular Roles
+     * portlet took over the {@link #ROLES} id. It ships in no menu layout. The gates its Roles
+     * and Tools tabs call accept it alongside {@link #ROLES}.
+     */
+    ROLES_LEGACY("roles-legacy"),
     VANITY_URLS,
     WEB_EVENT_REGISTRATIONS,
     WEB_FORMS,
