@@ -9,7 +9,7 @@ import { vi } from 'vitest';
 
 import { HttpClient, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -116,6 +116,24 @@ describe('DotToolbarAnnouncementsComponent', () => {
         store = spectator.inject(AnnouncementsStore, true);
     });
 
+    afterEach(() => vi.restoreAllMocks());
+
+    it('derives announcement links again when translations recover without a site change', () => {
+        const revision = signal(0);
+        vi.spyOn(messageServiceMock, 'get').mockImplementation((key: string) => {
+            return revision() ? `Recovered ${key}` : key;
+        });
+        spectator.detectChanges();
+        const key = 'announcements.knowledge.center.documentation';
+        expect(spectator.component.$aboutLinks()[0].items[0].label).toBe(key);
+        const load = vi.spyOn(store, 'load');
+        revision.set(1);
+        spectator.detectChanges();
+        expect(spectator.component.$aboutLinks()[0].items[0].label).toBe(`Recovered ${key}`);
+        expect(spectator.element.textContent).toContain(`Recovered ${key}`);
+        expect(load).not.toHaveBeenCalled();
+    });
+
     describe('Component Initialization', () => {
         it('should create the component', () => {
             expect(spectator.component).toBeTruthy();
@@ -138,7 +156,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
     });
 
     describe('ngOnInit', () => {
-        it('should load announcements and set about links on init', () => {
+        it('should load announcements and derive about links on init', () => {
             const loadSpy = vi.spyOn(store, 'load');
             const getAboutLinksSpy = vi
                 .spyOn(spectator.component, 'getAboutLinks')
@@ -147,6 +165,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
             spectator.component.ngOnInit();
 
             expect(loadSpy).toHaveBeenCalled();
+            expect(spectator.component.$aboutLinks()).toEqual([]);
             expect(getAboutLinksSpy).toHaveBeenCalled();
         });
 
@@ -166,15 +185,10 @@ describe('DotToolbarAnnouncementsComponent', () => {
     describe('Site Switching Subscription', () => {
         it('should reload announcements when site changes', () => {
             const loadSpy = vi.spyOn(spectator.component.announcementsStore, 'load');
-            const getAboutLinksSpy = vi
-                .spyOn(spectator.component, 'getAboutLinks')
-                .mockReturnValue([]);
-
             spectator.detectChanges();
             siteService.setFakeCurrentSite({});
 
             expect(loadSpy).toHaveBeenCalledTimes(2); // Once on init, once on site switch
-            expect(getAboutLinksSpy).toHaveBeenCalledTimes(2);
         });
 
         it('should update about links when site changes', () => {

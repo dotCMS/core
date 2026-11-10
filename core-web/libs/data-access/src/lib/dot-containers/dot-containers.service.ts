@@ -8,6 +8,7 @@ import { map, switchMap, filter } from 'rxjs/operators';
 import { DotConfigurationVariables, DotContainer } from '@dotcms/dotcms-models';
 
 import { DotPropertiesService } from '../dot-properties/dot-properties.service';
+import { PaginatorService } from '../paginator/paginator.service';
 
 /**
  * The id of the system container.
@@ -25,6 +26,17 @@ const DEFAULT_CONTAINER_CONFIG = {
 interface DefaultContainerSubject {
     container: DotContainer | null;
     isInitial: boolean;
+}
+
+/**
+ * The containers that use a content type: the page of containers returned and how many use it in
+ * all, so a caller can tell when the page is not the whole list.
+ */
+export interface DotContainersByContentType {
+    /** The containers returned, at most the page size asked for. */
+    containers: DotContainer[];
+    /** How many containers use the content type in all. */
+    total: number;
 }
 
 /**
@@ -97,6 +109,36 @@ export class DotContainersService {
         return this.#http
             .get<{ entity: DotContainer[] }>(url)
             .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Get the containers that use the given content type, archived ones included.
+     *
+     * The total comes from the `X-Pagination-Total-Entries` header; when the header is missing
+     * the total is the number of containers returned.
+     *
+     * @param {string} contentTypeId id of the content type
+     * @param {number} [perPage=100] maximum number of containers to return
+     * @return {*}  {Observable<DotContainersByContentType>} the containers (an empty list when none
+     * use it) and how many use it in all
+     * @memberof DotContainersService
+     */
+    getByContentType(contentTypeId: string, perPage = 100): Observable<DotContainersByContentType> {
+        const url = `${this.#CONTAINER_API_URL}?content_type=${encodeURIComponent(contentTypeId)}&per_page=${perPage}&archive=true`;
+
+        return this.#http.get<{ entity?: DotContainer[] }>(url, { observe: 'response' }).pipe(
+            map((response) => {
+                const containers = response.body?.entity ?? [];
+                const total = Number(
+                    response.headers.get(PaginatorService.PAGINATION_TOTAL_ENTRIES_HEADER_NAME)
+                );
+
+                return {
+                    containers,
+                    total: Number.isFinite(total) && total > 0 ? total : containers.length
+                };
+            })
+        );
     }
 
     /**

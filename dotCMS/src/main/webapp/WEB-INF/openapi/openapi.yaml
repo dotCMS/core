@@ -4684,7 +4684,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityMapMapView"
+                $ref: "#/components/schemas/ResponseEntitySessionUsersView"
           description: User data successfully collected
         "400":
           description: Bad request
@@ -13815,12 +13815,6 @@ paths:
   /v1/notification/getNewNotificationsCount:
     get:
       operationId: getNewNotificationsCount
-      parameters:
-      - in: path
-        name: params
-        required: true
-        schema:
-          type: string
       responses:
         default:
           content:
@@ -14677,7 +14671,9 @@ paths:
       description: "Returns the multi-tree data associated with a page, which represents\
         \ the mapping between containers, contentlets, and their positions on the\
         \ page. Each entry includes the page ID, container ID, contentlet ID, relation\
-        \ type, tree order, personalization, and variant ID."
+        \ type, tree order, personalization, and variant ID. Only entries whose contentlet\
+        \ the user can read are returned; entries whose contentlet cannot be loaded\
+        \ are returned to CMS administrators only."
       operationId: getPageContentTree
       parameters:
       - description: Identifier of the HTML Page
@@ -14692,7 +14688,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityMulitreeView"
-          description: Content tree retrieved successfully
+          description: "Content tree retrieved successfully, limited to the entries\
+            \ the user can read"
         "401":
           description: "Authentication required, or the user is not a back-end user"
         "404":
@@ -14780,7 +14777,8 @@ paths:
     get:
       description: Returns a paginated list of personas with a flag indicating whether
         each persona has been customized (personalized) on the specified page. Useful
-        for identifying which personas have page-specific content variations.
+        for identifying which personas have page-specific content variations. Only
+        content the user can read counts towards the flag.
       operationId: getPersonalizedPersonasOnPage
       parameters:
       - description: Filter text to narrow persona results
@@ -15409,9 +15407,11 @@ paths:
       - Permissions
   /v1/personalization/pagepersonas:
     post:
-      description: Copies the current content associated to page containers with default
-        personalization and creates a new set with the specified persona personalization.
-        Requires edit permission on the page.
+      description: "Copies the current content associated to page containers with\
+        \ default personalization and creates a new set with the specified persona\
+        \ personalization. Returns the copied rows whose content the user can read.\
+        \ If the page already has content for that persona, nothing is copied and\
+        \ an empty list is returned. Requires edit permission on the page."
       operationId: personalizePageContainers
       requestBody:
         content:
@@ -24260,19 +24260,34 @@ paths:
       - Internationalization
   /v2/languages/{language}/keys:
     get:
+      description: "Returns the merged properties, language keys and CMS language\
+        \ variables for the resolved admin locale. The top-level languageBundleVersion\
+        \ matches config.languageBundleVersion in /api/v1/appconfiguration and is\
+        \ not a translation key. Access remains subject to the existing READ anonymous-access\
+        \ policy and authentication checks."
       operationId: getAllMessages
       parameters:
-      - in: path
+      - description: "Language code or language_country code, for example en or en_US.\
+          \ Unsupported locales fall back to the configured default locale."
+        in: path
         name: language
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityLanguageMessagesView"
+          description: Language messages and build-derived bundle version
+        "401":
+          description: Authentication required or invalid credentials
+        "403":
+          description: Access denied by the configured access policy
+        "500":
+          description: Unable to retrieve language messages
+      summary: Get all language messages
       tags:
       - Internationalization
   /v2/tags:
@@ -35889,6 +35904,38 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityLanguageMessagesView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        languageBundleVersion:
+          type: string
+          description: "Build-derived SHA-256 language bundle version, matching config.languageBundleVersion\
+            \ in /api/v1/appconfiguration. This is envelope metadata, not a translation\
+            \ key."
+          pattern: "^[0-9a-f]{64}$"
+          readOnly: true
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityLanguagesForPageView:
       type: object
       properties:
@@ -36194,33 +36241,6 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/LoginFormResultView"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityMapMapView:
-      type: object
-      properties:
-        entity:
-          type: object
-          additionalProperties:
-            type: object
-            additionalProperties:
-              type: object
         errors:
           type: array
           items:
@@ -37165,6 +37185,38 @@ components:
           type: array
           items:
             type: string
+    ResponseEntitySessionUsersView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+        sessionLanguageId:
+          type: string
+          description: "Effective admin session locale, or null when no session locale\
+            \ is set"
+          readOnly: true
     ResponseEntitySetStringView:
       type: object
       properties:

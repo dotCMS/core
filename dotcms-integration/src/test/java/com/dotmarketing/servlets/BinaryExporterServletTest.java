@@ -53,7 +53,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -75,6 +77,9 @@ import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
 public class BinaryExporterServletTest {
+
+    /** Name of the session attribute the legacy edit screen used for its uploaded files. */
+    private static final String LEGACY_TEMP_BINARY_LIST_ATTRIBUTE = "tempBinaryImageInodesList";
 
     // Temporary binary png file
     private static class TmpBinaryFile implements Closeable {
@@ -372,6 +377,43 @@ public class BinaryExporterServletTest {
         }
     }
 
+    /**
+     * Method to test: {@link BinaryExporterServlet#doGet(HttpServletRequest, HttpServletResponse)}
+     * Given scenario: An authenticated user without READ permission on a file asset requests it
+     * by inode, and the user's session holds that inode under
+     * {@code tempBinaryImageInodesList}.
+     * Expected result: 403 Forbidden. The file is served according to the user's permissions
+     * only, whatever the session holds.
+     */
+    @Test
+    public void requestBinaryFileByInode_authenticatedUserWithoutPermission_returns403()
+            throws DotDataException, DotSecurityException, ServletException, IOException {
+
+        final User frontEndUser = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadRoleByKey(DOTCMS_FRONT_END_USER))
+                .nextPersisted();
+
+        try (TmpBinaryFile tmpTargetFile = new TmpBinaryFile(false)) {
+
+            final String fileURI = "/contentAsset/raw-data/"
+                    + sharedFileAssetWithPerms.getInode() + "/fileAsset/";
+            final MockHeaderRequest request = new MockHeaderRequest(mockServletRequest(fileURI));
+            request.setAttribute(WebKeys.USER, frontEndUser);
+            request.getSession(true).setAttribute(LEGACY_TEMP_BINARY_LIST_ATTRIBUTE,
+                    new ArrayList<>(List.of(sharedFileAssetWithPerms.getInode())));
+
+            final HttpServletResponse response = mockServletResponse(tmpTargetFile);
+
+            sendRequest(request, response);
+
+            assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+            assertEquals("No file content should be written", 0,
+                    Files.size(tmpTargetFile.getPath()));
+        } finally {
+            UserDataGen.remove(frontEndUser);
+        }
+    }
+
     @Test
     @Ignore("This test is failing because a difference with m1 mac native library")
     public void requestGifFile()
@@ -577,6 +619,70 @@ public class BinaryExporterServletTest {
                 HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
             }
             return Files.readAllBytes(captured.getPath());
+        }
+    }
+
+    /**
+     * Method to test: {@link BinaryExporterServlet#doGet(HttpServletRequest, HttpServletResponse)}
+     * Given scenario: the same two published versions, requested by an anonymous caller that names the inode
+     * of the version living on the named variant. An inode names one exact version, so nothing is resolved
+     * here and the request carries no variant name.
+     * Expected result: the request is answered as a miss. The control runs first: the inode of the
+     * default-variant version is served through the very same call, so a failure below is about the variant
+     * and not about inodes being unreachable.
+     */
+    @Test
+    public void requestBinaryFile_anonymousUserNamingTheVariantInode_isAnsweredNotFound()
+            throws Exception {
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Path defaultBytesPath = Files.createTempFile("variant-inode-default-", ".png");
+        final Path variantBytesPath = Files.createTempFile("variant-inode-named-", ".png");
+        Files.write(defaultBytesPath, ShortyServletAndTitleImageTest.pngPixel);
+        Files.write(variantBytesPath, concat(ShortyServletAndTitleImageTest.pngPixel,
+                "named-variant".getBytes(StandardCharsets.UTF_8)));
+
+        Contentlet onDefaultVariant = null;
+        try {
+            onDefaultVariant = new FileAssetDataGen(sharedFolder, defaultBytesPath.toFile())
+                    .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+            ContentletDataGen.publish(onDefaultVariant);
+
+            final Contentlet onNamedVariant = ContentletDataGen.createNewVersion(onDefaultVariant,
+                    variant, Map.of(FileAssetAPI.BINARY_FIELD, variantBytesPath.toFile()));
+            ContentletDataGen.publish(onNamedVariant);
+
+            assertEquals("fixture problem: a version is not served by inode at all, so refusing another "
+                            + "one proves nothing", HttpServletResponse.SC_OK,
+                    fetchByInodeAsAnonymous(onDefaultVariant.getInode()));
+
+            assertEquals("a caller without back-end access must not reach a version on another variant "
+                            + "by naming its inode", HttpServletResponse.SC_NOT_FOUND,
+                    fetchByInodeAsAnonymous(onNamedVariant.getInode()));
+        } finally {
+            if (onDefaultVariant != null) {
+                ContentletDataGen.destroy(onDefaultVariant);
+            }
+            Files.deleteIfExists(defaultBytesPath);
+            Files.deleteIfExists(variantBytesPath);
+        }
+    }
+
+    /**
+     * Requests a file asset by inode as an anonymous caller and returns the status the servlet answered
+     * with.
+     *
+     * @param inode the version's inode
+     * @return the response status
+     * @throws Exception if the request fails
+     */
+    private int fetchByInodeAsAnonymous(final String inode) throws Exception {
+        try (TmpBinaryFile captured = new TmpBinaryFile(false)) {
+            final HttpServletRequest request = mockServletRequest(
+                    "/contentAsset/raw-data/" + inode + "/fileAsset/");
+            final HttpServletResponse response = mockServletResponse(captured);
+            sendRequest(request, response);
+            return response.getStatus();
         }
     }
 

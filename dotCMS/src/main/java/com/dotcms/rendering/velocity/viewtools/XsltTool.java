@@ -9,7 +9,6 @@ import com.dotcms.rendering.velocity.viewtools.cache.XSLTransformationCache;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -50,7 +49,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -97,8 +95,6 @@ public class XsltTool implements ViewTool {
 	private HttpServletRequest request;
 	private HostWebAPI hostWebAPI; 
 	protected Host host;
-	Context ctx;
-	private InternalContextAdapterImpl ica;
 	protected User user = null;
 	protected User backuser = null;
 	protected boolean respectFrontendRoles = false;
@@ -110,7 +106,6 @@ public class XsltTool implements ViewTool {
 		ViewContext context = (ViewContext) obj;
 		
 		this.request = context.getRequest();
-		ctx = context.getVelocityContext();		
 		try {
 			host = WebAPILocator.getHostWebAPI().getCurrentHost(request);
 		} catch (PortalException e1) {
@@ -478,29 +473,29 @@ public class XsltTool implements ViewTool {
 		return Optional.of(new StreamSource(new ByteArrayInputStream(document)));
 	}
 
+	/**
+	 * Decides whether the code that is calling this tool may run it.
+	 *
+	 * <p>Two conditions, and both are about the installation and the author rather than about the
+	 * user reading the page: scripting has to be switched on, and the content whose code calls
+	 * this tool has to have been last saved by someone holding the
+	 * {@link com.dotmarketing.business.Role#SCRIPTING_DEVELOPER} role.
+	 *
+	 * <p>Who that author is comes from the request, where the render that knows what content it
+	 * is rendering puts it. It used to be read off the current Velocity resource name, which
+	 * cannot work: {@code #parse} pushes whatever string the template author wrote as the current
+	 * template name, so the caller got to name the user it was checked against, and the names
+	 * dotCMS really produces ({@code /LIVE/{id}/1.container}, {@code /EDIT_MODE/{id}/{id}.fields})
+	 * do not even parse, which denied every legitimate caller as well.
+	 *
+	 * @return {@code true} when this tool may run
+	 */
 	protected boolean canUserEvaluate() {
-		if(!Config.getBooleanProperty("ENABLE_SCRIPTING", false)){
+		if (!Config.getBooleanProperty("ENABLE_SCRIPTING", false)) {
 			Logger.warn(this.getClass(), "Scripting called and ENABLE_SCRIPTING set to false");
 			return false;
 		}
-		try{
-		
-			ica = new InternalContextAdapterImpl(ctx);
-			String fieldResourceName = ica.getCurrentTemplateName();
-			String conInode = fieldResourceName.substring(fieldResourceName.indexOf("/") + 1, fieldResourceName.indexOf("_"));
-			
-			Contentlet con = APILocator.getContentletAPI().find(conInode, APILocator.getUserAPI().getSystemUser(), true);
-			
-			
-			User mu = userAPI.loadUserById(con.getModUser(), APILocator.getUserAPI().getSystemUser(), true);
-			Role scripting =APILocator.getRoleAPI().loadRoleByKey("Scripting Developer");
-			return APILocator.getRoleAPI().doesUserHaveRole(mu, scripting);
-		}
-		catch(Exception e){
-			Logger.warn(this.getClass(), "Scripting called with error" + e);
-			return false;	
-			
-		}
+		return RestrictedViewToolAccess.renderingAuthorHasAccess(this.request);
 	}
 	
 }

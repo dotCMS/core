@@ -36,7 +36,9 @@ import com.dotcms.util.SecurityUtils.DelayStrategy;
 import com.dotcms.util.UrlStrategyUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotInvalidPasswordException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.cms.login.factories.LoginFactory;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
@@ -297,6 +299,15 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         return user.getUserId();
     }
 
+    /**
+     * Gives every user that still has the default password a newly generated one and emails it
+     * to them with the registration email. The new password is stored as a secure hash; only the
+     * email carries it in clear text.
+     *
+     * @return the number of users notified
+     * @throws PortalException if the current user is not an administrator
+     * @throws SystemException if a password cannot be generated or an email cannot be sent
+     */
     @Override
     public int notifyNewUsers() throws PortalException, SystemException {
         String companyId = getUser().getCompanyId();
@@ -327,7 +338,13 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         for (int i = 0; i < users.size(); i++) {
             User user = (User) users.get(i);
 
-            user.setPassword(PwdToolkitUtil.generate());
+            final String newPassword = PwdToolkitUtil.generate();
+            try {
+                user.setPassword(PasswordFactoryProxy.generateHash(newPassword));
+                user.setPasswordEncrypted(true);
+            } catch (final PasswordException e) {
+                throw new SystemException(e);
+            }
 
             UserUtil.update(user);
 
@@ -335,13 +352,13 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
                     new String[] {"[$ADMIN_EMAIL_ADDRESS$]", "[$ADMIN_NAME$]", "[$COMPANY_MX$]", "[$COMPANY_NAME$]", "[$PORTAL_URL$]",
                             "[$USER_EMAIL_ADDRESS$]", "[$USER_NAME$]", "[$USER_PASSWORD$]"},
                     new String[] {company.getEmailAddress(), adminName, company.getMx(), company.getName(), company.getPortalURL(),
-                            user.getEmailAddress(), user.getFullName(), user.getPassword()});
+                            user.getEmailAddress(), user.getFullName(), newPassword});
 
             body = StringUtil.replace(body,
                     new String[] {"[$ADMIN_EMAIL_ADDRESS$]", "[$ADMIN_NAME$]", "[$COMPANY_MX$]", "[$COMPANY_NAME$]", "[$PORTAL_URL$]",
                             "[$USER_EMAIL_ADDRESS$]", "[$USER_NAME$]", "[$USER_PASSWORD$]"},
                     new String[] {company.getEmailAddress(), adminName, company.getMx(), company.getName(), company.getPortalURL(),
-                            user.getEmailAddress(), user.getFullName(), user.getPassword()});
+                            user.getEmailAddress(), user.getFullName(), newPassword});
 
             try {
                 MailManagerUtil.sendEmail(new MailMessage(new InternetAddress(company.getEmailAddress(), adminName),
@@ -895,11 +912,19 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
     public void resetPassword(String userId, String token, String newPassword) throws com.dotmarketing.business.NoSuchUserException,
             DotSecurityException, DotInvalidTokenException, DotInvalidPasswordException {
         try {
-                final User user = APILocator.getUserAPI().loadUserById(userId);
-                ResetPasswordTokenUtil.checkToken(user, token);
+            final User user = APILocator.getUserAPI().loadUserById(userId);
+            ResetPasswordTokenUtil.checkToken(user, token);
+            LocalTransaction.wrapReturn(() -> {
+                if (!FactoryLocator.getUserFactory().clearIcqId(user.getUserId(), token)) {
+                    throw new DotInvalidTokenException(token);
+                }
                 // Also clears any login lockout on the account.
                 APILocator.getUserAPI().updatePassword(user, newPassword, APILocator.getUserAPI().getSystemUser(), false);
-        } catch (DotDataException e) {
+                return null;
+            });
+        } catch (DotInvalidTokenException | DotSecurityException | RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
             throw new IllegalArgumentException();
         }
     }
