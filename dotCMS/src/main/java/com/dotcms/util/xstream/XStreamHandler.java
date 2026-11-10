@@ -1,7 +1,11 @@
 package com.dotcms.util.xstream;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -80,13 +84,20 @@ public class XStreamHandler {
                     final DataHolder dataHolder) {
                 try {
                     return super.unmarshal(reader, root, dataHolder);
-                } catch (final TrustedListException e) {
+                } catch (final RuntimeException e) {
                     //Recorded here rather than where the refusal is raised, because XStream
                     //caches a refusal by element name: the second document naming the same type
                     //is turned away without the mapper below being entered again. An instance
                     //is held for the life of the JVM, so recording at the point of refusal
                     //would leave every import after the first one with no trace at all.
-                    e.record();
+                    //
+                    //The refusal is not always what comes out: a converter that calls a type's
+                    //own readObject, as the one for a contentlet's property map does, reports
+                    //the failure as a ConversionException and carries ours underneath. That is
+                    //the usual shape, because a bundle names most of its types as values in
+                    //that map rather than as a document's root element. Whatever was thrown is
+                    //re-thrown untouched, so the message a caller already acts on is unchanged.
+                    refusalIn(e).ifPresent(TrustedListException::record);
                     throw e;
                 }
             }
@@ -178,6 +189,24 @@ public class XStreamHandler {
      * @param cause XStream's refusal, whose message is the refused type's name
      * @return the refusal to throw in its place
      */
+    /**
+     * Finds the trusted-list refusal behind a failed read, whether it is the exception itself or
+     * something a converter wrapped it in.
+     *
+     * @param thrown what the read threw
+     * @return the refusal, or empty when the read failed for an unrelated reason
+     */
+    private static Optional<TrustedListException> refusalIn(final RuntimeException thrown) {
+        final Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (Throwable current = thrown; current != null && seen.add(current);
+                current = current.getCause()) {
+            if (current instanceof TrustedListException) {
+                return Optional.of((TrustedListException) current);
+            }
+        }
+        return Optional.empty();
+    }
+
     private static TrustedListException refusal(final ForbiddenClassException cause) {
         return new TrustedListException(String.format(
                 "`%s` is not in the xstream trusted list and was not read while importing "
