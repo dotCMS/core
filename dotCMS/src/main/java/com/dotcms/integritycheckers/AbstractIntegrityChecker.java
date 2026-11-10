@@ -48,7 +48,8 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
      */
     protected static boolean hasRows(final String tableName, final String whereClause, final Object... params)
             throws DotDataException {
-        final DotConnect dc = new DotConnect().setSQL("SELECT 1 FROM " + tableName + " " + whereClause);
+        // Callers pass table names and where clauses written in code; values are bound.
+        final DotConnect dc = new DotConnect().setSQL("SELECT 1 FROM " + tableName + " " + whereClause); // nosemgrep
         for (final Object param : params) {
             dc.addParam(param);
         }

@@ -165,7 +165,8 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
 
             if (!results.isEmpty()) {
                 // if we have conflicts, lets create a table out of them
-                String INSERT_INTO_RESULTS_TABLE = "insert into "
+                // Table names come from the integrity type and the temporary table name, whose end point id part getTempTableName limits to letters, digits, '-' and '_'; values are bound.
+                String INSERT_INTO_RESULTS_TABLE = "insert into " // nosemgrep
                         + getIntegrityType().getResultsTableName() 
                         + " (velocity_name, local_inode, remote_inode, endpoint_id)" 
                         + " select s.velocity_var_name as velocity_name, "
@@ -218,7 +219,8 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
 
                 // 1.2) Insert dummy temp row on STRUCTURE table
 
-                dc.setSQL("insert into structure (inode, name, description, default_structure, review_interval, reviewer_role, page_detail, structuretype, system, fixed, velocity_var_name, url_map_pattern, host, folder, expire_date_var, publish_date_var, mod_date) values (?, 'DUMMY_NAME', 'DUMMY_DESC', "
+                // Only the database's boolean keywords are concatenated; values are bound.
+                dc.setSQL("insert into structure (inode, name, description, default_structure, review_interval, reviewer_role, page_detail, structuretype, system, fixed, velocity_var_name, url_map_pattern, host, folder, expire_date_var, publish_date_var, mod_date) values (?, 'DUMMY_NAME', 'DUMMY_DESC', " // nosemgrep
                         + DbConnectionFactory.getDBFalse()
                         + ", '', '', '', 1, "
                         + DbConnectionFactory.getDBTrue()
@@ -354,7 +356,8 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
     private static void repointContentTypeReferences(final DotConnect dc, final String fromInode,
             final String toInode) throws DotDataException {
         for (final String[] reference : CONTENT_TYPE_REFERENCES) {
-            dc.setSQL("UPDATE " + reference[0] + " SET " + reference[1] + " = ? WHERE " + reference[1] + " = ?")
+            // Table and column names come from the fixed CONTENT_TYPE_REFERENCES list; values are bound.
+            dc.setSQL("UPDATE " + reference[0] + " SET " + reference[1] + " = ? WHERE " + reference[1] + " = ?") // nosemgrep
                     .addParam(toInode)
                     .addParam(fromInode)
                     .loadResult();

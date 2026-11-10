@@ -230,7 +230,8 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
     private void applyFixToRole( DotConnect dc, Role oldRole, String oldRoleId, String newRoleId) throws DotDataException, DotSecurityException {
 		// Create new role with dummy role_key to ensure uniqueness
 		dc.setSQL(
-			"INSERT INTO cms_role (id, role_name, description, role_key, db_fqn, parent, edit_permissions, edit_users, edit_layouts, locked, system) "+
+			// The statement is built from string literals only; values are bound.
+			"INSERT INTO cms_role (id, role_name, description, role_key, db_fqn, parent, edit_permissions, edit_users, edit_layouts, locked, system) "+ // nosemgrep
 			"SELECT ?, role_name, description, ?, REPLACE(db_fqn, ?, ?), parent, edit_permissions, edit_users, edit_layouts, locked, system "+
 			"FROM cms_role WHERE id = ?"
 		);

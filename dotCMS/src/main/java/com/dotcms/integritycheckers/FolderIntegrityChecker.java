@@ -322,15 +322,18 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
         // 1.2) Insert dummy temp row on FOLDER table
 
         if ( DbConnectionFactory.isOracle() ) {
-            dc.setSQL("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"
+            // Only the database's boolean keywords are concatenated; values are bound.
+            dc.setSQL("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '" // nosemgrep
                     + DbConnectionFactory.getDBFalse()
                     + "', '0', '', 'TEMP_IDENTIFIER', ?, to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'DUMMY_OWNER', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))");
         } else if ( DbConnectionFactory.isPostgres() ) {
-            dc.setSQL("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', "
+            // Only the database's boolean keywords are concatenated; values are bound.
+            dc.setSQL("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', " // nosemgrep
                     + DbConnectionFactory.getDBFalse()
                     + ", '0', '', 'TEMP_IDENTIFIER', ?, '1900-01-01 00:00:00.00', 'DUMMY_OWNER', '1900-01-01 00:00:00.00')");
         } else {
-            dc.setSQL("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"
+            // Only the database's boolean keywords are concatenated; values are bound.
+            dc.setSQL("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '" // nosemgrep
                     + DbConnectionFactory.getDBFalse()
                     + "', '0', '', 'TEMP_IDENTIFIER', ?, '1900-01-01 00:00:00.00', 'DUMMY_OWNER', '1900-01-01 00:00:00.00')");
         }

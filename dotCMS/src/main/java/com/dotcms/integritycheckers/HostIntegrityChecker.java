@@ -280,7 +280,8 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                         .loadResult();
             }
 
-            final long count = ((Number) dc.setSQL("SELECT COUNT(*) AS count FROM "
+            // The table name comes from the integrity type; the end point id is bound.
+            final long count = ((Number) dc.setSQL("SELECT COUNT(*) AS count FROM " // nosemgrep
                     + getIntegrityType().getResultsTableName() + " WHERE endpoint_id = ?")
                     .addParam(endpointId)
                     .loadObjectResults().get(0).get("count")).longValue();

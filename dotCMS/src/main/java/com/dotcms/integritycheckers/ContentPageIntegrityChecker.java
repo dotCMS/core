@@ -286,7 +286,8 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
 
             String insertSQL = null;
                 // Query the new content pages
-                insertSQL = "insert into "
+                // Built from code constants (integrity type table and column names, the variant name) and the temporary table name, whose end point id part getTempTableName limits to letters, digits, '-' and '_'; the end point id value is bound.
+                insertSQL = "insert into " // nosemgrep
                         // Legacy HTML pages and contentlet pages share the same
                         // result table
                         + getIntegrityType().getResultsTableName() 
