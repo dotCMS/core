@@ -211,6 +211,32 @@
 
 				var hasListedFields = <%= hasListedFields %>;
 				var <%= relationJsName %>_Contents = new Array ();
+
+				/**
+				 * Escapes a value so it is shown as plain text when added to the page with innerHTML.
+				 */
+				function <%= relationJsName%>EscapeHtml(value) {
+					return String(value)
+						.replace(/&/g, '&amp;')
+						.replace(/</g, '&lt;')
+						.replace(/>/g, '&gt;')
+						.replace(/"/g, '&quot;')
+						.replace(/'/g, '&#39;');
+				}
+
+				/**
+				 * Returns the text of a value that may carry markup, without its tags. A space surrounds each
+				 * block or line break, so neighbouring and nested blocks stay as separate words.
+				 */
+				function <%= relationJsName%>TextOf(value) {
+					var doc = new DOMParser().parseFromString(String(value), 'text/html');
+					doc.body.querySelectorAll('br, p, div, li, h1, h2, h3, h4, h5, h6, blockquote, pre, tr, td, th')
+						.forEach(function (node) {
+							node.before(doc.createTextNode(' '));
+							node.after(doc.createTextNode(' '));
+						});
+					return (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
+				}
 		<%String lastIdentifier = "";
 
 
@@ -325,7 +351,7 @@
 								}
 							}
 		 %>
-		 cont['<%=UtilMethods.escapeSingleQuotes(fieldName)%>'] = '<%=fieldValue.replaceAll("'","\\\\'").replaceAll("\n","").replaceAll("\r","").trim()%>';
+		 cont['<%=com.liferay.util.Xss.encodeForJavaScript(fieldName)%>'] = '<%=com.liferay.util.Xss.encodeForJavaScript(fieldValue.replaceAll("\n","").replaceAll("\r","").trim())%>';
 		 <%
 						}
 					}
@@ -459,17 +485,20 @@
 					    String fieldName = f.getFieldName();
 					    String varName   = f.getVelocityVarName();
 					    String functionName = relationJsName + "_" + UtilMethods.javaScriptifyVariable(fieldName) + "_func";
+					    // Only a WYSIWYG field carries markup; every other value is shown literally.
+					    String cellText = Field.FieldType.WYSIWYG.toString().equals(f.getFieldType())
+					            ? relationJsName + "TextOf(innerValue)" : "innerValue";
 		 %>
 	 		function <%= functionName %> (o) {
 				var value = "";
 				var innerValue = "";
 				if (o != null){
-				    if (o['<%=UtilMethods.escapeSingleQuotes(fieldName)%>']!=null){
-				        innerValue = o['<%=UtilMethods.escapeSingleQuotes(fieldName)%>'];
+				    if (o['<%=com.liferay.util.Xss.encodeForJavaScript(fieldName)%>']!=null){
+				        innerValue = o['<%=com.liferay.util.Xss.encodeForJavaScript(fieldName)%>'];
 				    }else{
 				        innerValue = o[('<%=varName%>')];
 				    }
-					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + innerValue + "</a>";
+					value = "<a class=\"beta\" href=\"javascript:<%= relationJsName %>editRelatedContent('" + o['inode'] + "', '"+ o['siblingInode'] +"', '"+ o['langId'] +"');\"" + ">" + <%= relationJsName%>EscapeHtml(<%= cellText %>) + "</a>";
 	 			}
 	 			return value;
 			}
@@ -640,7 +669,7 @@
 			    function <%= relationJsName %>_addContentlet(structureInode) {
 
                     var myNode = (currentContentletInode==null || currentContentletInode=='') ? workingContentletInode : currentContentletInode;
-	    	        var relationshipReturnValue = { inode: myNode, title: "<%=UtilMethods.escapeDoubleQuotes(contentTitle)%>" };
+	    	        var relationshipReturnValue = { inode: myNode, title: "<%=com.liferay.util.Xss.encodeForJavaScript(contentTitle)%>" };
 	    	        localStorage.setItem("dotcms.relationships.relationshipReturnValue",  JSON.stringify(relationshipReturnValue));
 
 					var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
@@ -804,7 +833,7 @@
 						return;
 
                     var myNode = (currentContentletInode==null || currentContentletInode=='') ? workingContentletInode : currentContentletInode;
-                    var relationshipReturnValue = { inode: myNode, title: "<%=UtilMethods.escapeDoubleQuotes(contentTitle)%>" };
+                    var relationshipReturnValue = { inode: myNode, title: "<%=com.liferay.util.Xss.encodeForJavaScript(contentTitle)%>" };
                     localStorage.setItem("dotcms.relationships.relationshipReturnValue",  JSON.stringify(relationshipReturnValue));
 
 					var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
