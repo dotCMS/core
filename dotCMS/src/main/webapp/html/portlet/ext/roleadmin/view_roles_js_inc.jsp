@@ -46,8 +46,6 @@
 	var isCMSAdmin = <%=isCMSAdmin%>;
 
 	//I18n messages
-	var roleKeyAlreadyExistsMesg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "role-key-already-exists")) %>';
-	var roleNameAlreadyExistsMesg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "role-name-already-exists")) %>';
 	var lockRoleConfirmMesg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "lock-role-confirm")) %>';
 	var unlockRoleConfirmMesg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "unlock-role-confirm")) %>';
 	var noUsersFoundMesg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "no-users-found")) %>';
@@ -457,19 +455,52 @@
 		var canEditLayouts = dijit.byId('editTabs').checked;
 		var description = dijit.byId('roleDescription').attr('value');
 
-		if(isNewRole) {
-			RoleAjax.addNewRole(roleName, roleKey, (parentRoleId == 0?null:parentRoleId), canEditUsers, canEditPermissions, canEditLayouts, description, {
-				callback: saveRoleCallback,
-				exceptionHandler: saveRoleExceptionHandler
-			});
-		}
-		else {
-			RoleAjax.updateRole(roleToSaveId, roleName, roleKey, (parentRoleId == 0?null:parentRoleId), canEditUsers, canEditPermissions, canEditLayouts, description, {
-				callback: saveRoleCallback,
-				exceptionHandler: saveRoleExceptionHandler
-			});
-		}
+		var roleForm = {
+			roleName: roleName,
+			roleKey: roleKey,
+			parentRoleId: (parentRoleId == 0 ? null : parentRoleId),
+			canEditUsers: canEditUsers,
+			canEditPermissions: canEditPermissions,
+			canEditLayouts: canEditLayouts,
+			description: description
+		};
+		var saved = isNewRole
+			? callRolesApi('POST', '/api/v1/roles', roleForm)
+			: callRolesApi('PUT', '/api/v1/roles/' + encodeURIComponent(roleToSaveId), roleForm);
+		saved.then(saveRoleCallback, saveRoleExceptionHandler);
 
+	}
+
+	/**
+	 * Sends a JSON request to the REST API with the session of the logged-in user. Resolves with
+	 * the response's "entity"; rejects with an Error whose message is the server's message and
+	 * whose "status" is the HTTP status.
+	 */
+	function callRolesApi(method, url, body) {
+		return fetch(url, {
+			method: method,
+			credentials: 'same-origin',
+			headers: { 'Content-Type': 'application/json' },
+			body: body ? JSON.stringify(body) : undefined
+		}).then(function (response) {
+			return response.text().then(function (text) {
+				var data = null;
+				try {
+					data = text ? JSON.parse(text) : null;
+				} catch (e) {
+					data = null;
+				}
+				if (!response.ok) {
+					var message = (data && (data.message
+							|| (data.errors && data.errors.length && data.errors[0].message)))
+							|| response.statusText;
+					var error = new Error(message);
+					error.status = response.status;
+					throw error;
+				}
+				return data ? data.entity : null;
+			});
+		});
 	}
 
 	function saveRoleCallback (savedRole) {
@@ -545,17 +576,12 @@
 		currentRole=null;
 	}
 
-	function saveRoleExceptionHandler (message, exception) {
-		dojo.byId('addRoleErrorMessagesList').innerHTML = '';
-		if(exception.javaClassName == 'com.dotmarketing.business.DuplicateRoleKeyException') {
-			dojo.place("<li>" + roleKeyAlreadyExistsMesg + "</li>", "addRoleErrorMessagesList", "last");
-		} else if (exception.javaClassName == 'com.dotmarketing.business.DuplicateRoleException') {
-			dojo.place("<li>" + roleNameAlreadyExistsMesg + "</li>", "addRoleErrorMessagesList", "last");
-		} else if (exception.javaClassName == 'com.dotmarketing.exception.RoleNameException') {
-			dojo.place("<li>" + exception.message + "</li>", "addRoleErrorMessagesList", "last");
- 		} else {
-			throw exception;
-		}
+	function saveRoleExceptionHandler (error) {
+		var list = dojo.byId('addRoleErrorMessagesList');
+		list.innerHTML = '';
+		var item = document.createElement('li');
+		item.textContent = error.message;
+		list.appendChild(item);
 	}
 
 	//Event handler then deleting a user
@@ -568,8 +594,17 @@
 		}
 
 		if(roleId && confirm(confirmRemoveRoleMsg)) {
-			RoleAjax.deleteRole(roleId, deleteRoleCallback);
 			roleToDeleteId = roleId;
+			callRolesApi('DELETE', '/api/v1/roles/' + encodeURIComponent(roleId)).then(function () {
+				deleteRoleCallback(true);
+			}, function (error) {
+				// 409: the role still has child roles or a workflow action assigns to it
+				if (error.status == 409) {
+					deleteRoleCallback(false);
+				} else {
+					showDotCMSErrorMessage(error.message);
+				}
+			});
 		}
 	}
 
@@ -610,12 +645,20 @@
 
 	function lockRole(roleId) {
 		if(confirm(confirmLockRoleMsg))
-			RoleAjax.lockRole(roleId, dojo.hitch(this, lockRoleCallback, roleId));
+			callRolesApi('PUT', '/api/v1/roles/' + encodeURIComponent(roleId) + '/_lock').then(function () {
+				lockRoleCallback(roleId);
+			}, function (error) {
+				showDotCMSErrorMessage(error.message);
+			});
 	}
 
 	function unlockRole(roleId) {
 		if(confirm(confirmUnlockRoleMsg))
-			RoleAjax.unlockRole(roleId, dojo.hitch(this, unlockRoleCallback, roleId));
+			callRolesApi('PUT', '/api/v1/roles/' + encodeURIComponent(roleId) + '/_unlock').then(function () {
+				unlockRoleCallback(roleId);
+			}, function (error) {
+				showDotCMSErrorMessage(error.message);
+			});
 	}
 
 	function lockRoleCallback (lockedRoleId) {
@@ -1425,8 +1468,13 @@
 		var description = dijit.byId('layoutDescription').attr('value');
 		var porletIds = getPortletsList();
 		if(newLayout)
-			RoleAjax.addNewLayout(name, description, order, porletIds,
-				{ callback: saveLayoutCallback.bind(this), exceptionHandler: saveLayoutException.bind(this) });
+			// create the section, then apply its position and tools with the same call an edit uses
+			callRolesApi('POST', '/api/v1/layouts', { name: name, icon: description }).then(function (section) {
+				RoleAjax.updateLayout(section.id, name, description, order, porletIds,
+					{ callback: saveLayoutCallback.bind(this), exceptionHandler: saveLayoutException.bind(this) });
+			}.bind(this), function (error) {
+				dojo.byId('addLayoutErrorMessagesList').textContent = error.message;
+			});
 		else
 			RoleAjax.updateLayout(norm(currentLayout.id), name, description,order, porletIds,
 				{ callback: saveLayoutCallback.bind(this), exceptionHandler: saveLayoutException.bind(this) });
