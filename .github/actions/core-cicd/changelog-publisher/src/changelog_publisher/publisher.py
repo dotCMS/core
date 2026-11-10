@@ -137,8 +137,12 @@ def publish(
     # guessing between duplicates, and a hand edit made on prod is not overwritten.
     # Working and live versions are both looked up (a draft can change `minor` and hide the
     # live row) and grouped by identifier, since a draft over a live row is one entry.
+    # When auth has the entry, every prod version of its identifier is added too: a draft
+    # whose `minor` changed is invisible to both `minor` lookups.
     if prod is not None:
         prod_hits = prod._search(version) + prod._search(version, live=True)
+        if hits:
+            prod_hits += prod.versions(hits[0].identifier)
         prod_ids = sorted({h.identifier for h in prod_hits})
         if len(prod_ids) > 1:
             raise AmbiguousMatchError(

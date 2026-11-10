@@ -76,6 +76,8 @@ def _route(url: str, *, record=None, rows=None, live: list[bool] | None = None,
             if "+live:true" not in q and all_records is not None:
                 return 200, {}, json.dumps(_body(all_records))
             return 200, {}, json.dumps(_body([record] if record else []))
+        if "+identifier:" in q:  # every version of one entry: the automation's row
+            return 200, {}, json.dumps(_fixture("search_hit_automation.json"))
         version = q.split("minor_dotraw:")[1].split()[0]
         return 200, {}, json.dumps(_fixture(
             "search_hit_automation.json" if rows.get(version, True) else "search_empty.json"))
@@ -414,18 +416,24 @@ def test_prod_record_is_read_live_only():
 # publish: hand edits on prod are protected, and prod/auth parity is enforced
 # ---------------------------------------------------------------------------
 
-def _prod_rows(fixture, live=None):
-    """Answer prod's Dotcmsbuilds lookups with `fixture` (a fixture name or a body), and
-    `+live:true` lookups with `live` when given; inode checks say live."""
+def _prod_rows(fixture, live=None, by_identifier=None):
+    """Answer prod's Dotcmsbuilds lookups with `fixture` (a fixture name or a body),
+    `+live:true` lookups with `live` when given, and `+identifier:` lookups (every version
+    of one entry) with `by_identifier` when given; inode checks say live."""
     def load(f):
         return _fixture(f) if isinstance(f, str) else f
     body = load(fixture)
     live_body = load(live) if live is not None else body
+    id_body = load(by_identifier) if by_identifier is not None else None
 
     def cb(request):
         q = json.loads(request.body)["query"]
         if "+inode:" in q:
             return 200, {}, json.dumps(_body([{"inode": _NEW_INODE}]))
+        if "+identifier:" in q:
+            if id_body is not None:
+                return 200, {}, json.dumps(id_body)
+            return 200, {}, json.dumps(live_body if q.endswith("+live:true") else body)
         return 200, {}, json.dumps(live_body if q.endswith("+live:true") else body)
     responses_lib.add_callback(responses_lib.POST, _PROD_SEARCH, callback=cb,
                                content_type="application/json")
@@ -663,3 +671,22 @@ def test_live_prod_record_hidden_by_a_draft_still_counts_for_parity():
 
     with pytest.raises(sync.ParityError):
         sync.reconcile(CorpsitesClient(), _HUB, apply=True, prod=_prod())
+
+
+@responses_lib.activate
+def test_hand_edited_draft_with_changed_minor_is_found_by_identifier():
+    """The draft's `minor` changed, so neither `minor` lookup sees it; the live row is the
+    automation's. Looking up every version of the entry's identifier finds the person's
+    draft, and the write is skipped instead of replacing it."""
+    responses_lib.add(responses_lib.POST, _AUTH_SEARCH, json=_fixture("search_hit_automation.json"))
+    _prod_rows("search_empty.json", live="search_hit_automation.json",
+               by_identifier=_hand_edited_on_prod())
+
+    result = _publish(CorpsitesClient(), _prod())
+
+    assert result.status == "skipped" and "on prod" in result.reason
+    assert _FIRE_URL not in [c.request.url for c in responses_lib.calls]
+    id_lookups = [json.loads(c.request.body)["query"] for c in responses_lib.calls
+                  if c.request.url == _PROD_SEARCH
+                  and "+identifier:" in json.loads(c.request.body)["query"]]
+    assert id_lookups and all("aaaa1111-bbbb-2222-cccc-333344445555" in q for q in id_lookups)

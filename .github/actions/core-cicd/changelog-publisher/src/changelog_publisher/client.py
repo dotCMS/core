@@ -117,6 +117,20 @@ class CorpsitesClient:
             for c in self._query(query, 2)
         ]
 
+    def versions(self, identifier: str) -> list[SearchHit]:
+        """Every version of one Dotcmsbuilds entry, working and live, found by identifier
+        rather than by `minor`, which a draft can change."""
+        query = f"+contentType:Dotcmsbuilds +identifier:{identifier}"
+        return [
+            SearchHit(
+                identifier=c.get("identifier"),
+                mod_user=c.get("modUser"),
+                mod_user_name=c.get("modUserName"),
+            )
+            for q in (query, f"{query} +live:true")
+            for c in self._query(q, 2)
+        ]
+
     def find_evergreen_state(self, *, live: bool = False, limit: int = 2) -> list[dict]:
         """The `evergreen-state` record(s); limit 2 by default so a duplicate is detectable.
         `live` restricts to the published version (prod: what visitors see, never a draft)."""
