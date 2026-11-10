@@ -13459,7 +13459,9 @@ paths:
         "400":
           content:
             application/json: {}
-          description: Bad request - attempting to invalidate caller's own session
+          description: "Bad request - attempting to invalidate caller's own session,\
+            \ or the login tokens of the session's user could not be invalidated (the\
+            \ session is left untouched)"
         "401":
           content:
             application/json: {}

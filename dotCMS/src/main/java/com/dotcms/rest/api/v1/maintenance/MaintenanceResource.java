@@ -26,6 +26,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
 import com.dotmarketing.quartz.QuartzUtils;
@@ -100,6 +101,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -132,6 +134,9 @@ public class MaintenanceResource implements Serializable {
      */
     private volatile MaintenanceJobHelper jobHelper;
 
+    /** Supplies the user API the session tools invalidate login tokens with. */
+    private final Supplier<UserAPI> userAPI;
+
     /**
      * Default class constructor.
      */
@@ -141,7 +146,20 @@ public class MaintenanceResource implements Serializable {
 
     @VisibleForTesting
     public MaintenanceResource(WebResource webResource) {
+        this(webResource, APILocator::getUserAPI);
+    }
+
+    /**
+     * Creates the resource with the given web resource and user API, for tests that need to see
+     * what the session tools do when the user API fails.
+     *
+     * @param webResource the {@link WebResource} that checks the caller
+     * @param userAPI     supplies the {@link UserAPI} the session tools use
+     */
+    @VisibleForTesting
+    MaintenanceResource(final WebResource webResource, final Supplier<UserAPI> userAPI) {
         this.webResource = webResource;
+        this.userAPI = userAPI;
     }
 
     /**
@@ -1144,7 +1162,9 @@ public class MaintenanceResource implements Serializable {
      * login tokens issued so far to the user that session belonged to (and, for a Login As
      * session, to the administrator behind it), so that user's clients must log in again. When
      * the session belonged to the caller (another session of the same user), the caller's own
-     * login tokens are invalidated too; the calling session itself goes on.
+     * login tokens are invalidated too; the calling session itself goes on. The login tokens are
+     * invalidated before the session is ended: when that step fails, the session is left as it
+     * was and the failure reaches the caller, who can try again.
      * <p>
      * Requires a fresh CSRF secret stored in the caller's HTTP session (issued by
      * {@link #listSessions}); the caller cannot invalidate its own session.
@@ -1153,6 +1173,8 @@ public class MaintenanceResource implements Serializable {
      * @param response The current {@link HttpServletResponse}
      * @param token    HMAC-obfuscated session token returned by {@link #listSessions}
      * @return A success message when the session was invalidated.
+     * @throws DotDataException the login tokens of the session's user could not be invalidated;
+     *                          the session was left untouched
      */
     @Operation(
             summary = "Invalidate a single session",
@@ -1170,7 +1192,9 @@ public class MaintenanceResource implements Serializable {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityStringView.class))),
             @ApiResponse(responseCode = "400",
-                    description = "Bad request - attempting to invalidate caller's own session",
+                    description = "Bad request - attempting to invalidate caller's own session, "
+                            + "or the login tokens of the session's user could not be invalidated "
+                            + "(the session is left untouched)",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
@@ -1191,7 +1215,7 @@ public class MaintenanceResource implements Serializable {
             @Parameter(hidden = true) @Context final HttpServletResponse response,
             @Parameter(description = "HMAC-obfuscated session token returned by GET /_sessions",
                     required = true)
-            @PathParam("token") final String token) {
+            @PathParam("token") final String token) throws DotDataException {
 
         final User user = assertBackendUser(request, response).getUser();
 
@@ -1218,14 +1242,14 @@ public class MaintenanceResource implements Serializable {
                             sessionUserId.orElse("unknown"),
                             request.getRemoteAddr()));
 
-            final Set<String> affectedUserIds = sessionUserIds(session);
+            // the tokens first: if this fails the session is left as it was, for a retry
+            invalidateLoginTokens(sessionUserIds(session));
             try {
                 SessionMonitor.end(session);
             } catch (final IllegalStateException e) {
                 // the session ended on its own in the meantime; it has been forgotten, the outcome is the same
                 Logger.debug(this, () -> "The session to end had already ended");
             }
-            affectedUserIds.forEach(this::invalidateLoginTokens);
             return new ResponseEntityStringView("Session invalidated");
         }
 
@@ -1274,7 +1298,7 @@ public class MaintenanceResource implements Serializable {
         final Set<String> userIds = new HashSet<>();
         sessionUserId(session).ifPresent(userIds::add);
         sessionAttribute(session, com.liferay.portal.util.WebKeys.PRINCIPAL_USER_ID).ifPresent(userIds::add);
-        userIds.remove(UserAPI.CMS_ANON_USER_ID);
+        userIds.removeIf(UserAPI.CMS_ANON_USER_ID::equalsIgnoreCase);
         return userIds;
     }
 
@@ -1291,21 +1315,27 @@ public class MaintenanceResource implements Serializable {
     }
 
     /**
-     * Invalidates the login tokens issued so far to the given user, so that a client whose session
-     * was just ended cannot sign in again with a login token it already holds. A failure is logged
-     * and does not undo the session kill.
+     * Invalidates the login tokens issued so far to the given users, so that a client whose
+     * session is about to be ended cannot sign in again with a login token it already holds. The
+     * kill tools call this before ending a session, so a session is only ended once the tokens of
+     * its users are gone.
+     *
+     * @param userIds the users whose login tokens to invalidate
+     * @throws DotDataException the tokens of one of the users could not be invalidated
      */
-    private void invalidateLoginTokens(final String userId) {
-        Try.run(() -> APILocator.getUserAPI().invalidateLoginTokens(userId))
-                .onFailure(e -> Logger.warn(this,
-                        "Could not invalidate the login tokens of user '" + userId + "': " + e.getMessage(), e));
+    private void invalidateLoginTokens(final Set<String> userIds) throws DotDataException {
+        for (final String userId : userIds) {
+            this.userAPI.get().invalidateLoginTokens(userId);
+        }
     }
 
     /**
      * Invalidates every active HTTP session tracked on this node except the caller's own, and
      * invalidates the login tokens of every user whose session was ended (for a Login As session,
      * the administrator behind it as well), the caller's included when another session of the
-     * caller was among them.
+     * caller was among them. The login tokens of a session's users are invalidated before that
+     * session is ended: when that step fails, the session is left as it was, out of the count, so
+     * a later call can end it.
      *
      * @param request  The current {@link HttpServletRequest}
      * @param response The current {@link HttpServletResponse}
@@ -1348,12 +1378,21 @@ public class MaintenanceResource implements Serializable {
                         user.getUserId(), request.getRemoteAddr()));
 
         int killed = 0;
-        final Set<String> affectedUserIds = new HashSet<>();
+        final Set<String> invalidatedUserIds = new HashSet<>();
         for (final HttpSession session : sessionMonitor.getUserSessions().values()) {
             if (callingSession.getId().equals(session.getId())) {
                 continue;
             }
-            affectedUserIds.addAll(sessionUserIds(session));
+            final Set<String> userIds = sessionUserIds(session);
+            userIds.removeAll(invalidatedUserIds);
+            try {
+                invalidateLoginTokens(userIds);
+            } catch (final DotDataException e) {
+                Logger.error(this, "Could not invalidate the login tokens of the users of a session,"
+                        + " which is left as it is: " + e.getMessage(), e);
+                continue;
+            }
+            invalidatedUserIds.addAll(userIds);
             try {
                 SessionMonitor.end(session);
                 killed++;
@@ -1361,7 +1400,6 @@ public class MaintenanceResource implements Serializable {
                 // the session had already ended; it has been forgotten, nothing to count
             }
         }
-        affectedUserIds.forEach(this::invalidateLoginTokens);
 
         return new ResponseEntityKillSessionsResultView(
                 KillSessionsResultView.builder().killedCount(killed).build());

@@ -480,7 +480,7 @@ public class UserAPIImpl implements UserAPI {
             // straight from the data source because the object being saved can be the cached instance,
             // which already carries the new status.
             storedUser = userToSave.isActive() ? null : userFactory.loadStoredUser(userId).orElse(null);
-        } catch (final DotDataException | DotSecurityException e) {
+        } catch (final DotDataException | DotSecurityException | DotRuntimeException e) {
             // the object may be the cached instance, already changed by the caller: do not keep it
             CacheLocator.getUserCache().remove(userId);
             throw e;

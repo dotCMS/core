@@ -10,6 +10,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import io.vavr.Lazy;
@@ -47,11 +48,13 @@ public class SessionUserResolver {
     private final Supplier<UserAPI> userAPI;
 
     /**
-     * Creates a resolver that checks users through the given {@link UserAPI}.
+     * Creates a resolver that checks users through the given {@link UserAPI}, for tests. The
+     * rest of the code uses the shared instance from {@link #getInstance()}.
      *
      * @param userAPI the API used to read the current user record
      */
-    public SessionUserResolver(final UserAPI userAPI) {
+    @VisibleForTesting
+    SessionUserResolver(final UserAPI userAPI) {
         this(() -> userAPI);
     }
 
@@ -61,7 +64,7 @@ public class SessionUserResolver {
      *
      * @param userAPI supplies the API used to read the current user record
      */
-    SessionUserResolver(final Supplier<UserAPI> userAPI) {
+    private SessionUserResolver(final Supplier<UserAPI> userAPI) {
         this.userAPI = userAPI;
     }
 
@@ -117,8 +120,9 @@ public class SessionUserResolver {
             signOut(session);
             return Optional.empty();
         } catch (final DotDataException | DotSecurityException | DotRuntimeException e) {
-            Logger.warn(this, "Could not read the status of the session user, treating the session"
-                    + " as having no user for this request: " + e.getMessage());
+            Logger.error(this, "Could not read the status of the session user '" + userId
+                    + "', treating the session as having no user for this request: "
+                    + e.getMessage(), e);
             session.removeAttribute(WebKeys.USER);
             return Optional.empty();
         }
@@ -142,7 +146,9 @@ public class SessionUserResolver {
     /**
      * Returns the current record of the user with the given id when that user exists and is
      * active, for callers that hold a user id without a session (for example a user id set as a
-     * request attribute by a login filter).
+     * request attribute by a login filter). Unlike {@link #resolve(HttpSession)} there is nothing
+     * to sign out or to drop when the user is missing, inactive or cannot be read: the id lives
+     * on the request alone, and the request simply goes on without a user.
      *
      * @param userId the user id to check
      * @return the current {@link User} record, or empty when the user is blank, missing, inactive
@@ -158,8 +164,8 @@ public class SessionUserResolver {
         } catch (final NoSuchUserException e) {
             return Optional.empty();
         } catch (final DotDataException | DotSecurityException | DotRuntimeException e) {
-            Logger.warn(this, "Could not read the status of the user, treating the request as"
-                    + " having no user: " + e.getMessage());
+            Logger.error(this, "Could not read the status of the user '" + userId
+                    + "', treating the request as having no user: " + e.getMessage(), e);
             return Optional.empty();
         }
     }
