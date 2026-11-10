@@ -1258,4 +1258,39 @@ public class LoginLockoutTest {
             cleanUp(user);
         }
     }
+
+    /**
+     * Given: lockout switched off, an account whose stored failed-login count is far above the limit, and a
+     *        delay strategy with a literal per-unit rate
+     * When: one more wrong password is tried
+     * Then: the delay is capped the same way the tracked path already is, not scaled by the uncapped stored
+     *       count — a strategy that scales by the seed must not be able to sleep arbitrarily long off a count
+     *       that, with lockout off, nothing ever resets
+     */
+    @Test
+    public void test_delaySeed_caps_the_untracked_fallback_count() throws Exception {
+        final boolean enabledBefore = Config.getBooleanProperty(LoginLockout.LOCKOUT_ENABLED, true);
+        final Object strategyBefore = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
+        Config.setProperty(LoginLockout.LOCKOUT_ENABLED, false);
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true);
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "TIME_MILLS:50");
+        final User user = newUser();
+        try {
+            final User counted = APILocator.getUserAPI().loadUserById(user.getUserId());
+            counted.setFailedLoginAttempts(20);
+            APILocator.getUserAPI().save(counted, APILocator.systemUser(), false);
+
+            // Uncapped, this failure would sleep 20 * 50 = 1000ms; capped at LIMIT - 1 it sleeps at most 200ms
+            final long start = System.currentTimeMillis();
+            assertEquals(Authenticator.FAILURE, login(user, "wrong-uncapped"));
+            final long elapsed = System.currentTimeMillis() - start;
+            assertTrue("failed login took " + elapsed + "ms, should be capped well under the uncapped 1000ms",
+                    elapsed < 600L);
+        } finally {
+            Config.setProperty(LoginLockout.LOCKOUT_ENABLED, enabledBefore);
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, false);
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, strategyBefore);
+            cleanUp(user);
+        }
+    }
 }

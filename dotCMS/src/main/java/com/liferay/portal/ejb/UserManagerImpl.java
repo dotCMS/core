@@ -847,10 +847,13 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
      * Returns the count that paces the delay. With login lockout on and the attempt actually tracked, this is
      * {@link LoginLockout#pacingSeed}: each attempt's own atomically-counted position, or the source's total
      * recent failures across every account, whichever is larger, so the delay is paced whichever way the
-     * failures are concentrated. It is capped below the limit here rather than reset in the database, so the
-     * first failed login of a dormant account does not sleep for the square of an old count. With lockout off,
-     * or when the attempt is untracked (for example after a database error in {@link LoginLockout#begin}), the
-     * legacy per-user failed-attempts count is used instead, since no lockout attempt is being tracked.
+     * failures are concentrated. With lockout off, or when the attempt is untracked (for example after a
+     * database error in {@link LoginLockout#begin}), the legacy per-user failed-attempts count is used
+     * instead, since no lockout attempt is being tracked.
+     *
+     * <p>Either way the result is capped below the configured limit rather than reset in the database, so
+     * neither the first failed login of a dormant account, nor the legacy count left to grow unbounded while
+     * lockout is off (nothing resets it then), sleeps for a strategy's full scale of an old count.
      *
      * @param user    The {@link User} that failed to log in.
      * @param attempt The login lockout attempt for this login; see {@link LoginLockout#begin(String, String)}.
@@ -859,9 +862,10 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
      */
     private int delaySeed(final User user, final LoginLockout.Attempt attempt) {
         final int maxFailures = LoginLockout.maxFailures();
-        return LoginLockout.getInstance().isEnabled(maxFailures) && !attempt.isUntracked()
-                ? Math.min(LoginLockout.getInstance().pacingSeed(attempt), maxFailures - 1)
+        final int seed = LoginLockout.getInstance().isEnabled(maxFailures) && !attempt.isUntracked()
+                ? LoginLockout.getInstance().pacingSeed(attempt)
                 : user.getFailedLoginAttempts();
+        return maxFailures > 0 ? Math.min(seed, maxFailures - 1) : seed;
     }
 
     /**
