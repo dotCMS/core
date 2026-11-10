@@ -149,6 +149,7 @@ class ManagementMetricsServletTest {
                 (builder, context) -> {
                     when(builder.requestAndResponse(request, response)).thenReturn(builder);
                     when(builder.rejectWhenNoUser(true)).thenReturn(builder);
+                    when(builder.requiredBackendUser(true)).thenReturn(builder);
                     when(builder.requestAndResponse(eq(request), any(HttpServletResponse.class)))
                             .thenReturn(builder);
                     when(builder.init()).thenThrow(new SecurityException(
@@ -176,13 +177,36 @@ class ManagementMetricsServletTest {
                 (builder, context) -> {
                     when(builder.requestAndResponse(request, response)).thenReturn(builder);
                     when(builder.rejectWhenNoUser(true)).thenReturn(builder);
+                    when(builder.requiredBackendUser(true)).thenReturn(builder);
                     when(builder.init()).thenReturn(new InitDataObject());
                 })) {
             servlet.service(request, response);
 
             assertEquals(1, authentication.constructed().size());
             verify(authentication.constructed().get(0)).rejectWhenNoUser(true);
+            verify(authentication.constructed().get(0)).requiredBackendUser(true);
             assertEquals("jvm_memory_used_bytes{area=\"heap\"} 123\n", body.toString());
+        }
+    }
+
+    /** Opt-in authentication also requires a back-end role, not just a front-end login. */
+    @Test
+    void requiredAuthentication_rejectsFrontendOnlyUser() throws Exception {
+        config.when(() -> Config.getBooleanProperty(
+                "metrics.prometheus.require-authentication", false)).thenReturn(true);
+        try (var authentication = mockConstruction(WebResource.InitBuilder.class,
+                (builder, context) -> {
+                    when(builder.requestAndResponse(request, response)).thenReturn(builder);
+                    when(builder.rejectWhenNoUser(true)).thenReturn(builder);
+                    when(builder.requiredBackendUser(true)).thenReturn(builder);
+                    when(builder.init()).thenThrow(new SecurityException(
+                            "Back-end role required", Response.Status.FORBIDDEN));
+                })) {
+            servlet.service(request, response);
+
+            verify(authentication.constructed().get(0)).requiredBackendUser(true);
+            verify(response).setStatus(HttpServletResponse.SC_FORBIDDEN);
+            cdi.verifyNoInteractions();
         }
     }
 
@@ -195,6 +219,7 @@ class ManagementMetricsServletTest {
                 (builder, context) -> {
                     when(builder.requestAndResponse(request, response)).thenReturn(builder);
                     when(builder.rejectWhenNoUser(true)).thenReturn(builder);
+                    when(builder.requiredBackendUser(true)).thenReturn(builder);
                     when(builder.init()).thenThrow(new IllegalStateException("private auth detail"));
                 })) {
             servlet.service(request, response);

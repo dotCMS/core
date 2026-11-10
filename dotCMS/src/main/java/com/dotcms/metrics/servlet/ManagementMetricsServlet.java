@@ -34,7 +34,7 @@ public class ManagementMetricsServlet extends AbstractManagementServlet {
     }
 
     /**
-     * Uses normal dotCMS authentication when requested, failing closed if it is unavailable.
+     * Requires normal dotCMS back-end authentication when requested, failing closed if unavailable.
      *
      * @return whether the request may reach the metrics service
      */
@@ -47,6 +47,7 @@ public class ManagementMetricsServlet extends AbstractManagementServlet {
             new WebResource.InitBuilder()
                     .requestAndResponse(request, response)
                     .rejectWhenNoUser(true)
+                    .requiredBackendUser(true)
                     .init();
             return true;
         } catch (SecurityException e) {

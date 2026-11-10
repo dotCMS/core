@@ -1,6 +1,9 @@
 package com.dotcms.metrics.binders;
 
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.metrics.MetricsConfig;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
@@ -13,8 +16,13 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.binder.MeterBinder;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 
 /**
  * Comprehensive metric binder for dotCMS cache-related metrics.
@@ -30,6 +38,9 @@ import java.util.Optional;
 public class CacheMetrics implements MeterBinder {
     
     private static final String METRIC_PREFIX = "dotcms.cache";
+
+    /** Raw identities keep sanitized metric labels out of snapshot lookups. */
+    private record RegionKey(String provider, String region) {}
     
     @Override
     public void bindTo(MeterRegistry registry) {
@@ -151,101 +162,130 @@ public class CacheMetrics implements MeterBinder {
      * Register detailed metrics for each cache region.
      */
     private void registerRegionLevelMetrics(MeterRegistry registry, DotCacheAdministrator cacheAdmin) {
-        try {
-            List<CacheProviderStats> statsList = cacheAdmin.getCacheStatsList();
-            
-            for (CacheProviderStats providerStats : statsList) {
-                String providerName = sanitizeMetricName(providerStats.getProviderName());
-                
-                for (CacheStats regionStats : providerStats.getStats()) {
-                    String regionName = sanitizeMetricName(getStatValue(regionStats, CacheStats.REGION, "unknown"));
-                    
-                    registerRegionMetrics(registry, providerName, regionName, regionStats);
-                }
-            }
-            
-        } catch (Exception e) {
-            Logger.warn(this, "Failed to register region-level metrics: " + e.getMessage());
+        // Share a bounded snapshot rather than scanning every provider once per region gauge.
+        final LoadingCache<Boolean, Map<RegionKey, CacheStats>> snapshots = Caffeine.newBuilder()
+                .expireAfterWrite(Math.max(1, MetricsConfig.METRIC_CACHE_TTL_SECONDS), TimeUnit.SECONDS)
+                .ticker(registry.config().clock()::monotonicTime)
+                .build(ignored -> loadRegionStats(cacheAdmin));
+
+        // shortcut: region identities are fixed at startup; revisit for post-startup region discovery.
+        for (final RegionKey region : snapshots.get(Boolean.TRUE).keySet()) {
+            final Supplier<CacheStats> current = () -> snapshots.get(Boolean.TRUE).get(region);
+            registerRegionMetrics(registry, sanitizeMetricName(region.provider()),
+                    sanitizeMetricName(region.region()), current);
         }
     }
-    
+
+    /** Collects raw identities and current stats once per interval; failures remain unknown until retry. */
+    private Map<RegionKey, CacheStats> loadRegionStats(final DotCacheAdministrator cacheAdmin) {
+        try {
+            final Map<RegionKey, CacheStats> current = new HashMap<>();
+            for (final CacheProviderStats provider : cacheAdmin.getCacheStatsList()) {
+                for (final CacheStats region : provider.getStats()) {
+                    current.put(new RegionKey(provider.getProviderName(),
+                            getStatValue(region, CacheStats.REGION, "unknown")), region);
+                }
+            }
+            return Map.copyOf(current);
+        } catch (Exception e) {
+            Logger.warn(this, "Failed to collect cache-region metrics", e);
+            return Map.of();
+        }
+    }
+
     /**
      * Register metrics for a specific cache region.
      */
-    private void registerRegionMetrics(MeterRegistry registry, String providerName, String regionName, CacheStats regionStats) {
+    private void registerRegionMetrics(MeterRegistry registry, String providerName, String regionName, Supplier<CacheStats> regionStats) {
         // Cache region size (current number of objects)
         Gauge.builder(METRIC_PREFIX + ".region.size", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_SIZE))
+                readRegionValue(stats, current -> getStatDoubleValue(current, CacheStats.REGION_SIZE)))
             .description("Current number of objects in cache region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
         
         // Cache region hits
         Gauge.builder(METRIC_PREFIX + ".region.hits", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_HITS))
+                readRegionValue(stats, current -> getStatDoubleValue(current, CacheStats.REGION_HITS)))
             .description("Number of cache hits for this region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
         
         // Cache region hit rate (as percentage 0-100)
         Gauge.builder(METRIC_PREFIX + ".region.hit_rate", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_HIT_RATE))
+                readRegionValue(stats, current -> getStatDoubleValue(current, CacheStats.REGION_HIT_RATE)))
             .description("Cache hit rate percentage for this region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
         
         // Cache region configured size
         Gauge.builder(METRIC_PREFIX + ".region.configured_size", regionStats, stats -> 
-                getConfiguredSizeValue(stats))
+                readRegionValue(stats, this::getConfiguredSizeValue))
             .description("Maximum configured size for this cache region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
         
         // Cache region load count
         Gauge.builder(METRIC_PREFIX + ".region.loads", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_LOAD))
+                readRegionValue(stats, current -> getStatDoubleValue(current, CacheStats.REGION_LOAD)))
             .description("Number of cache loads for this region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
         
         // Cache region average load time
         Gauge.builder(METRIC_PREFIX + ".region.avg_load_time_ms", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_AVG_LOAD_TIME))
+                readRegionValue(stats, current -> getStatDoubleValue(current, CacheStats.REGION_AVG_LOAD_TIME)))
             .description("Average load time in milliseconds for this region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
         
         // Cache region evictions
         Gauge.builder(METRIC_PREFIX + ".region.evictions", regionStats, stats -> 
-                getStatDoubleValue(stats, CacheStats.REGION_EVICTIONS))
+                readRegionValue(stats, current -> getStatDoubleValue(current, CacheStats.REGION_EVICTIONS)))
             .description("Number of evictions for this cache region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
         
         // Cache region memory usage
         Gauge.builder(METRIC_PREFIX + ".region.memory_bytes", regionStats, stats -> 
-                getMemoryBytesValue(stats))
+                readRegionValue(stats, this::getMemoryBytesValue))
             .description("Total memory usage in bytes for this cache region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
         
         // Cache region memory per object
         Gauge.builder(METRIC_PREFIX + ".region.memory_per_object_bytes", regionStats, stats -> 
-                getMemoryPerObjectBytesValue(stats))
+                readRegionValue(stats, this::getMemoryPerObjectBytesValue))
             .description("Average memory per object in bytes for this cache region")
             .tag("provider", providerName)
             .tag("region", regionName)
+            .strongReference(true)
             .register(registry);
     }
     
+    /** Reads a current region snapshot, exposing unavailable regions as unknown rather than stale or zero. */
+    private double readRegionValue(final Supplier<CacheStats> snapshots,
+            final ToDoubleFunction<CacheStats> reader) {
+        final CacheStats current = snapshots.get();
+        return current == null ? Double.NaN : reader.applyAsDouble(current);
+    }
+
     // ====================================================================
     // HELPER METHODS FOR ACCESSING CACHE STATISTICS
     // ====================================================================
