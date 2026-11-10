@@ -1,6 +1,7 @@
 package com.dotmarketing.startup;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -155,6 +156,43 @@ class StartupTasksExecutorSchemaLockTest {
             verify(connection).close();
         } finally {
             Config.DB_VERSION = previousVersion;
+        }
+    }
+
+    /** Acquisition may succeed on the server even if JDBC cannot return or close its result. */
+    @ParameterizedTest
+    @ValueSource(strings = {"query", "next", "read", "close"})
+    void unlocksAfterUncertainAcquisition(final String failurePoint) throws Exception {
+        final Connection connection = mock(Connection.class);
+        final Statement statement = mock(Statement.class);
+        final ResultSet result = mock(ResultSet.class);
+        final DataSource source = mock(DataSource.class);
+        final SQLException failure = new SQLException("acquisition " + failurePoint + " failed");
+        when(source.getConnection()).thenReturn(connection);
+        when(connection.getAutoCommit()).thenReturn(true);
+        when(connection.createStatement()).thenReturn(statement);
+        when(statement.executeQuery("SELECT pg_try_advisory_lock(1146049603, 1)"))
+                .thenReturn(result);
+        when(result.next()).thenReturn(true);
+        when(result.getBoolean(1)).thenReturn(true);
+        switch (failurePoint) {
+            case "query" -> when(statement.executeQuery("SELECT pg_try_advisory_lock(1146049603, 1)"))
+                    .thenThrow(failure);
+            case "next" -> when(result.next()).thenThrow(failure);
+            case "read" -> when(result.getBoolean(1)).thenThrow(failure);
+            case "close" -> doAnswer(invocation -> { throw failure; }).when(result).close();
+            default -> throw new AssertionError("Unexpected failure point: " + failurePoint);
+        }
+        try (var database = mockStatic(DbConnectionFactory.class);
+                var logger = mockStatic(Logger.class)) {
+            database.when(DbConnectionFactory::isPostgres).thenReturn(true);
+            database.when(DbConnectionFactory::getDataSource).thenReturn(source);
+            final DotDataException error = assertThrows(DotDataException.class,
+                    () -> mock(StartupTasksExecutor.class, CALLS_REAL_METHODS).executeSchemaUpgrades());
+            assertSame(failure, error.getCause());
+            verify(statement).execute("SELECT pg_advisory_unlock(1146049603, 1)");
+            verify(connection, never()).abort(any());
+            verify(connection).close();
         }
     }
 

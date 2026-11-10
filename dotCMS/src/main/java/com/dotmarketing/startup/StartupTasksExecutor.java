@@ -243,28 +243,31 @@ public class StartupTasksExecutor {
             executeSchemaUpgradeTasks();
             return;
         }
+        // shortcut: the lock reserves one pool slot; revisit for installations requiring tiny pools.
         try (Connection connection = DbConnectionFactory.getDataSource().getConnection()) {
             if (!connection.getAutoCommit()) {
                 throw new DotDataException("Schema upgrade locking requires an autocommit connection");
             }
             try (Statement lock = connection.createStatement()) {
-                // A blocking lock SELECT keeps a snapshot that can stall CREATE INDEX CONCURRENTLY.
-                boolean acquired = false;
-                while (!acquired) {
-                    try (ResultSet result = lock.executeQuery(
-                            "SELECT pg_try_advisory_lock(1146049603, 1)")) {
-                        acquired = result.next() && result.getBoolean(1);
-                    }
-                    if (!acquired) {
-                        try {
-                            Thread.sleep(100);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            throw new DotDataException("Interrupted waiting for the schema upgrade lock", e);
+                try {
+                    Logger.info(this, "Acquiring the schema upgrade lock; another node may be upgrading");
+                    // A blocking lock SELECT keeps a snapshot that can stall CREATE INDEX CONCURRENTLY.
+                    boolean acquired = false;
+                    while (!acquired) {
+                        try (ResultSet result = lock.executeQuery(
+                                "SELECT pg_try_advisory_lock(1146049603, 1)")) {
+                            acquired = result.next() && result.getBoolean(1);
+                        }
+                        if (!acquired) {
+                            try {
+                                Thread.sleep(100);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                                throw new DotDataException("Interrupted waiting for the schema upgrade lock", e);
+                            }
                         }
                     }
-                }
-                try {
+                    Logger.info(this, "Acquired the schema upgrade lock");
                     Config.DB_VERSION = new DotConnect().setSQL(SELECT).loadInt("test", connection);
                     executeSchemaUpgradeTasks();
                 } finally {

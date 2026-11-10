@@ -50,8 +50,9 @@ public class Task261109AddMultiTreeParentIndexes implements StartupTask {
                     PreparedStatement validation = connection.prepareStatement(VALIDATE_INDEX)) {
                 for (final String parent : List.of("parent1", "parent2")) {
                     final String index = "idx_multitree_" + parent + "_variant";
-                    ddl.execute("CREATE INDEX CONCURRENTLY IF NOT EXISTS " + index
-                            + " ON multi_tree (" + parent + ", variant_id)");
+                    ddl.execute(parent.equals("parent1")
+                            ? "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_multitree_parent1_variant ON multi_tree (parent1, variant_id)"
+                            : "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_multitree_parent2_variant ON multi_tree (parent2, variant_id)");
                     validation.setString(1, parent);
                     validation.setString(2, index);
                     try (ResultSet result = validation.executeQuery()) {
