@@ -379,7 +379,7 @@ public class RestrictedViewToolAccessTest {
     public void announceFieldPreviewAuthor_answersToTheUserThePreviewIsRenderedFor()
             throws Exception {
         final User developer = developer();
-        Config.setProperty(FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_PREVIEW_RESTRICTED_TOOLS,
+        Config.setProperty(FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED,
                 true);
         try {
             final HttpServletRequest forDeveloper = request(developer);
@@ -409,7 +409,7 @@ public class RestrictedViewToolAccessTest {
                     RestrictedViewToolAccess.renderingAuthorHasAccess(nested));
             RestrictedViewToolAccess.restoreRenderingAuthor(nested, previous);
         } finally {
-            Config.setProperty(FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_PREVIEW_RESTRICTED_TOOLS,
+            Config.setProperty(FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED,
                     null);
         }
     }

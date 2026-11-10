@@ -263,7 +263,7 @@ public final class RestrictedViewToolAccess {
      * itself belongs to the Content Type, which records no author of its own, and the content
      * being edited may not exist yet, so neither can answer for it.
      *
-     * <p>Gated by {@link FeatureFlagName#FEATURE_FLAG_CUSTOM_FIELD_PREVIEW_RESTRICTED_TOOLS},
+     * <p>Gated by {@link FeatureFlagName#FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED},
      * which is off by default: nothing is announced, the tools return nothing and the preview
      * renders the rest of the field. The value handed back still restores correctly either way.
      *
@@ -282,7 +282,7 @@ public final class RestrictedViewToolAccess {
             return null;
         }
         if (!Config.getBooleanProperty(
-                FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_PREVIEW_RESTRICTED_TOOLS, false)) {
+                FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED, false)) {
             // leave the request as it is: restoring this value puts back what is already there
             return request.getAttribute(RENDERING_AUTHOR_ID);
         }

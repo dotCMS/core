@@ -549,7 +549,7 @@ public class ContentTypeHelper implements Serializable {
      * The user the preview is being rendered for is named on the request while the code runs,
      * so the view tools reserved for the Scripting Developer role can answer to that user's own
      * role. This is off unless
-     * {@link com.dotcms.featureflag.FeatureFlagName#FEATURE_FLAG_CUSTOM_FIELD_PREVIEW_RESTRICTED_TOOLS}
+     * {@link com.dotcms.featureflag.FeatureFlagName#FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED}
      * is turned on; see
      * {@link com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess#announceFieldPreviewAuthor}.
      *

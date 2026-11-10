@@ -218,6 +218,6 @@ public interface FeatureFlagName {
      *
      * @see com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess
      */
-    String FEATURE_FLAG_CUSTOM_FIELD_PREVIEW_RESTRICTED_TOOLS =
-            "FEATURE_FLAG_CUSTOM_FIELD_PREVIEW_RESTRICTED_TOOLS";
+    String FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED =
+            "FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED";
 }
