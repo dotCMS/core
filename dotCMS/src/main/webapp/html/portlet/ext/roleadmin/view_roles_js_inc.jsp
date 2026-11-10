@@ -1470,8 +1470,15 @@
 		if(newLayout)
 			// create the section, then apply its position and tools with the same call an edit uses
 			callRolesApi('POST', '/api/v1/layouts', { name: name, icon: description }).then(function (section) {
-				RoleAjax.updateLayout(section.id, name, description, order, porletIds,
-					{ callback: saveLayoutCallback.bind(this), exceptionHandler: saveLayoutException.bind(this) });
+				RoleAjax.updateLayout(section.id, name, description, order, porletIds, {
+					callback: saveLayoutCallback.bind(this),
+					exceptionHandler: function (message, exception) {
+						// remove the section just created so a failed save leaves nothing behind
+						var removeCreated = callRolesApi('DELETE', '/api/v1/layouts/' + encodeURIComponent(section.id));
+						var report = function () { saveLayoutException(message, exception); };
+						removeCreated.then(report, report);
+					}
+				});
 			}.bind(this), function (error) {
 				dojo.byId('addLayoutErrorMessagesList').textContent = error.message;
 			});
@@ -1506,10 +1513,11 @@
 	}
 
 	function saveLayoutException(message, exception) {
-		if(exception.javaClassName = 'com.dotmarketing.business.LayoutNameAlreadyExistsException') {
+		if(exception && exception.javaClassName == 'com.dotmarketing.business.LayoutNameAlreadyExistsException') {
 			dojo.byId('addLayoutErrorMessagesList').innerHTML = anotherLayoutAlreadyExistsMsg
 			return;
 		}
+		dojo.byId('addLayoutErrorMessagesList').textContent = message;
 	}
 
 	function cancelEditLayout() {
