@@ -623,6 +623,9 @@ public class LoginServiceAPIFactory implements Serializable {
             if (!rememberMe) {
                 if (SET_JWT_SESSION_COOKIE.get()) {
                     this.setSessionLoginTokenCookie(req, res, user);
+                } else {
+                    // session cookies are turned off, so nothing is left to renew
+                    clearSessionLoginTokenRenewal(req);
                 }
                 return;
             }

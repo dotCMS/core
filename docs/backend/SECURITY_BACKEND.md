@@ -167,7 +167,11 @@ left idle for longer than the lifetime must log in again. Site pages and assets 
 renewed cookie. The cookie is renewed only for its own owner, when that owner is the session's
 user and still active, and never while an administrator is logged in as another user. Setting the
 minutes to `1440` sets a one-day lifetime, still renewed while the user works; a value below 1 is
-ignored and the default used. `SET_JWT_SESSION_COOKIE=false` still turns the session cookie off.
+ignored and the default used. `SET_JWT_SESSION_COOKIE=false` still turns the session cookie off
+for interactive logins. A renewal that cannot happen (the cookie expired, or was replaced by a
+logout or password change) is dropped for that session rather than retried. The lifetime that
+decides whether a restored token is renewed is the one configured now, so after lowering it,
+older and longer tokens are simply left to expire.
 
 The "remember me" token is a separate, opt-in lifetime. Deployments that want a shorter limit
 for it can lower `json.web.token.days.max.age`. API tokens (`/api/v1/apitoken`) have their own

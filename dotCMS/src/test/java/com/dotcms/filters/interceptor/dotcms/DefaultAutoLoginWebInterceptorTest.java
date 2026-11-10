@@ -2,9 +2,12 @@ package com.dotcms.filters.interceptor.dotcms;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -24,6 +27,8 @@ import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.WebKeys;
 import io.jsonwebtoken.Claims;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -178,6 +183,37 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
     }
 
     /**
+     * When a due renewal does not happen because the cookie no longer validates, the renewal is
+     * dropped from the session, so the next back-end request does not read the cookie again.
+     */
+    @Test
+    public void failedRenewal_isNotRetriedOnTheNextRequest() {
+        cookieOwnedBy(null);
+        final HttpSession session = statefulSession(pastRenewal());
+
+        interceptor.intercept(request("/api/v1/a", session, true), mock(HttpServletResponse.class));
+        interceptor.intercept(request("/api/v1/b", session, true), mock(HttpServletResponse.class));
+
+        verify(jsonWebTokenUtils, times(1)).getUser(any(), any());
+        verify(session).removeAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT);
+        verifyNoRenewal();
+    }
+
+    /**
+     * A due renewal on a request without the login cookie is dropped from the session as well.
+     */
+    @Test
+    public void dueRenewalWithoutLoginCookie_isDropped() {
+        final HttpSession session = statefulSession(pastRenewal());
+
+        interceptor.intercept(request("/api/v1/a", session, false), mock(HttpServletResponse.class));
+
+        verify(session).removeAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT);
+        assertNull(session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
+        verifyNoRenewal();
+    }
+
+    /**
      * A request authenticated by an Authorization header, with no HTTP session and no login cookie,
      * passes through without any cookie being set.
      */
@@ -277,6 +313,21 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
 
     private static Long pastRenewal() {
         return System.currentTimeMillis() - 1_000L;
+    }
+
+    /**
+     * A session whose attributes are kept in a map, so a removal is seen by later requests.
+     */
+    private HttpSession statefulSession(final Long renewAt) {
+        final Map<String, Object> attributes = new HashMap<>();
+        attributes.put(WebKeys.USER, sessionUser);
+        attributes.put(WebKeys.USER_ID, sessionUser.getUserId());
+        attributes.put(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT, renewAt);
+        final HttpSession session = mock(HttpSession.class);
+        when(session.getAttribute(anyString())).thenAnswer(call -> attributes.get(call.<String>getArgument(0)));
+        doAnswer(call -> attributes.remove(call.<String>getArgument(0)))
+                .when(session).removeAttribute(anyString());
+        return session;
     }
 
     private HttpSession session(final Long renewAt) {

@@ -11,6 +11,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LoginAsSession;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
@@ -154,6 +155,8 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
      * login cookie renew it, so site pages and assets never set a cookie; a session without a
      * renewal time (a "remember me" login, or a request authenticated by a header) is left alone.
      * Two requests that pass the check together each issue a valid token, so either cookie works.
+     * A due renewal that cannot happen (no cookie, or a cookie that is not valid for the session's
+     * user) is removed from the session, so later requests do not read the cookie again.
      */
     private void renewSessionLoginTokenIfDue(final HttpServletRequest request,
                                              final HttpServletResponse response) {
@@ -168,16 +171,20 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
             return;
         }
         final Cookie loginCookie = UtilMethods.getCookie(request.getCookies(), CookieKeys.REMEMBER_ME_COOKIE.get());
-        if (null == loginCookie) {
-            return;
-        }
-        final User cookieOwner = Try.of(() -> this.jsonWebTokenUtils.getUser(
+        final User cookieOwner = null == loginCookie ? null : Try.of(() -> this.jsonWebTokenUtils.getUser(
                 loginCookie.getValue(), request.getRemoteAddr())).getOrNull();
         final Object sessionUserId = session.getAttribute(WebKeys.USER_ID);
         if (null != cookieOwner && null != sessionUserId
                 && cookieOwner.getUserId().equals(sessionUserId.toString())) {
             this.loginServiceAPI.doRememberMe(request, response, cookieOwner, false);
+            return;
         }
+        // The cookie cannot become valid again by itself, so the renewal is dropped rather than
+        // retried on every request; the next login schedules a new one.
+        session.removeAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT);
+        Logger.debug(this, () -> String.format("Session login token not renewed for user '%s': the request "
+                + "carries %s", sessionUserId, null == loginCookie ? "no login cookie"
+                : "a login cookie that is not valid for this user"));
     }
 
     private static boolean isLoggedInAsAnotherUser(final HttpSession session) {
