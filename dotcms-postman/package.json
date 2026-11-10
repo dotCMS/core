@@ -6,7 +6,7 @@
   "license": "MIT",
   "packageManager": "pnpm@12.4.2",
   "dependencies": {
-    "newman": "^6.2.1",
+    "newman": "^6.2.3",
     "xml2js": "^0.6.2",
     "yargs": "^17.7.2"
   },
