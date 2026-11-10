@@ -78,6 +78,9 @@ const SITE: DotSite = {
 
 const LOCALE_ID = 2;
 
+/** The contentlet being edited, as the Edit Content store holds it. `null` = new content. */
+const editedContentlet = signal<DotCMSContentlet | null>(null);
+
 /**
  * Swapped per test so the site lookup can be resolved, deferred or failed. Read lazily by the mock
  * because `currentSite$` defers the call until the first picker opens.
@@ -126,7 +129,8 @@ describe('DotWysiwygPluginService', () => {
                 provide: DotEditContentStore,
                 useValue: {
                     hasAttemptedSubmit: signal(false),
-                    currentLocale: signal({ id: LOCALE_ID })
+                    currentLocale: signal({ id: LOCALE_ID }),
+                    contentlet: editedContentlet
                 }
             },
             // Angular Edit Content host: the launcher is what makes the new picker the picker.
@@ -140,6 +144,7 @@ describe('DotWysiwygPluginService', () => {
         // counts accumulate across tests unless they are cleared first. Before the service is built,
         // since its constructor is itself a call worth counting.
         vi.clearAllMocks();
+        editedContentlet.set(null);
         siteSource = of(SITE);
         spectator = createService();
         dialogService = spectator.inject(DialogService);
@@ -356,9 +361,15 @@ describe('DotWysiwygPluginService', () => {
         const FILE_ASSET = {
             ...EMPTY_CONTENTLET,
             baseType: 'FILEASSET',
+            host: SITE.identifier,
+            identifier: 'fedcba0987654321',
+            fileName: 'report.pdf',
             path: '/docs/report.pdf',
             title: 'Annual report'
         } as DotCMSContentlet;
+
+        /** The same file, owned by a site other than the one the content is published on. */
+        const OTHER_SITE_FILE_ASSET = { ...FILE_ASSET, host: 'site-2' } as DotCMSContentlet;
 
         const DOT_ASSET = {
             ...EMPTY_CONTENTLET,
@@ -442,12 +453,44 @@ describe('DotWysiwygPluginService', () => {
             expect(editor.insertContent).not.toHaveBeenCalled();
         });
 
-        it('should link a file asset by its path', () => {
+        it('should link a file asset on the same site by its path', () => {
             vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: of(FILE_ASSET)
             } as DynamicDialogRef);
 
             expect(browse('file')).toHaveBeenCalledWith('/docs/report.pdf', {
+                text: 'Annual report'
+            });
+        });
+
+        it('should link a file asset from another site by its /dA/ URL, not a path that would 404', () => {
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of(OTHER_SITE_FILE_ASSET)
+            } as DynamicDialogRef);
+
+            expect(browse('file')).toHaveBeenCalledWith('/dA/fedcba0987/report.pdf', {
+                text: 'Annual report'
+            });
+        });
+
+        it("should compare against the edited content's site, not the site the picker opened on", () => {
+            // Content lives on site-2 while the admin's current site (the picker's start) is site-1.
+            editedContentlet.set({ ...EMPTY_CONTENTLET, host: 'site-2' } as DotCMSContentlet);
+            const onClose = new Subject<DotCMSContentlet | undefined>();
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: onClose.asObservable(),
+                close: vi.fn()
+            } as unknown as DynamicDialogRef);
+
+            const fromContentSite = browse('file');
+            onClose.next(OTHER_SITE_FILE_ASSET);
+            expect(fromContentSite).toHaveBeenCalledWith('/docs/report.pdf', {
+                text: 'Annual report'
+            });
+
+            const fromPickerSite = browse('file');
+            onClose.next(FILE_ASSET);
+            expect(fromPickerSite).toHaveBeenCalledWith('/dA/fedcba0987/report.pdf', {
                 text: 'Annual report'
             });
         });

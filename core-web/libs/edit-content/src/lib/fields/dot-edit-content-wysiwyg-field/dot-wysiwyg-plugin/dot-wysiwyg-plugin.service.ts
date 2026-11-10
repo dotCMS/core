@@ -195,7 +195,7 @@ export class DotWysiwygPluginService implements OnDestroy {
                                 // TinyMCE writes these into its own fields (attributes, not
                                 // markup), so the title needs no escaping here.
                                 callback(
-                                    this.assetUrl(asset, mode),
+                                    this.assetUrl(asset, mode, site),
                                     mode === 'image' ? { alt: asset.title } : { text: asset.title }
                                 );
                             }
@@ -211,17 +211,24 @@ export class DotWysiwygPluginService implements OnDestroy {
      * URL a dialog gets for a picked asset.
      *
      * Images use the same `WYSIWYG_IMAGE_URL_PATTERN` as the toolbar button, so both entry points
-     * produce the same `src`. Files follow the legacy editor's link picker: a file asset links to its
-     * path, a dotAsset to its `/dA/` URL.
+     * produce the same `src`. Files follow the legacy editor's link picker — a file asset links to its
+     * path, a dotAsset to its `/dA/` URL — with one exception: a file asset from another site also
+     * gets the `/dA/` URL. A path only resolves on the site that owns the file, and the picker lets
+     * the editor browse any site, so a bare path would 404 wherever this content is published.
+     *
+     * "This site" is the edited contentlet's site; for content not saved yet, it is the site the
+     * picker opened on.
      */
-    private assetUrl(asset: DotCMSContentlet, mode: 'image' | 'file'): string {
+    private assetUrl(asset: DotCMSContentlet, mode: 'image' | 'file', site: DotSite): string {
         if (mode === 'image') {
             return replaceURLPattern(this.IMAGE_URL_PATTERN, asset);
         }
 
         const path: unknown = asset['path'];
+        const contentSiteId = this.editContentStore?.contentlet()?.host || site.identifier;
+        const sameSite = !!asset.host && asset.host === contentSiteId;
 
-        return asset.baseType === 'FILEASSET' && typeof path === 'string' && path
+        return asset.baseType === 'FILEASSET' && sameSite && typeof path === 'string' && path
             ? path
             : replaceURLPattern(DOT_ASSET_FILE_URL_PATTERN, asset);
     }
