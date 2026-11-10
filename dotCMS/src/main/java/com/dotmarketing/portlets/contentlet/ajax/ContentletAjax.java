@@ -110,6 +110,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static com.dotcms.content.elasticsearch.business.ESContentletAPIImpl.MAX_LIMIT;
@@ -138,6 +139,9 @@ public class ContentletAjax {
 	private static String VELOCITY_CODE_TEMPLATE = "#foreach($con in $dotcontent.pull(\"%s\",10,\"%s\"))<br/>%s<br/>#end";
 
 	private static final String CONTENT_TYPES_INODE_SEPARATOR = ",";
+
+	/** Name of a binary column, which is also the name of its form field: binary1, binary2, ... */
+	private static final Pattern BINARY_COLUMN = Pattern.compile("binary\\d+");
 
 	private java.text.DateFormat modDateFormat = java.text.DateFormat.getDateTimeInstance(java.text.DateFormat.SHORT,
 			java.text.DateFormat.SHORT);
@@ -1826,6 +1830,26 @@ public class ContentletAjax {
 	}
 
 	/**
+	 * Finds the file the edit screen left for a binary field in the user's temp folder, under a
+	 * folder named after the binary column ({@code binary1}, {@code binary2}, ...).
+	 *
+	 * @param tmpRoot  the temp folder for binaries
+	 * @param userId   the id of the user saving the content
+	 * @param column   the name of the form field; only a binary column has a folder
+	 * @param fileName the name of the file, without any folder
+	 * @return the file, or empty when the field is not a binary column or has no such file
+	 */
+	static Optional<File> stagedBinary(final File tmpRoot, final String userId, final String column,
+			final String fileName) {
+		if (column == null || !BINARY_COLUMN.matcher(column).matches()
+				|| fileName == null || !new File(fileName).getName().equals(fileName)) {
+			return Optional.empty();
+		}
+		final File staged = new File(new File(new File(tmpRoot, userId), column), fileName);
+		return staged.isFile() ? Optional.of(staged) : Optional.empty();
+	}
+
+	/**
 	 * Saves the content submitted by the legacy edit content screen.
 	 *
 	 * @param formData   the form fields, each one as name, separator and value
@@ -1934,17 +1958,14 @@ public class ContentletAjax {
 				File binaryFile = null;
 				if(UtilMethods.isSet(binaryFileValue) && !binaryFileValue.equals("---removed---")){
 					binaryFileValue = ContentletUtil.sanitizeFileName(binaryFileValue);
-					binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-							+ File.separator + user.getUserId() + File.separator + elementName
-							+ File.separator + binaryFileValue);
-					if(binaryFile.exists()) {
+					binaryFile = stagedBinary(new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()),
+							user.getUserId(), elementName, binaryFileValue).orElse(null);
+					if(binaryFile != null) {
     					try {
     					    // https://github.com/dotCMS/dotCMS/issues/35
     					    // making a copy just in case the transaction fails so
     					    // we can have the file for possible next attempts
-                            File acopyFolder=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-                                    + File.separator + user.getUserId() + File.separator + elementName
-                                    + File.separator + UUIDGenerator.generateUuid());
+                            File acopyFolder=new File(binaryFile.getParentFile(), UUIDGenerator.generateUuid());
                             if(!acopyFolder.exists())
                                 acopyFolder.mkdir();
                             File acopy=new File(acopyFolder, binaryFileValue);
