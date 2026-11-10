@@ -14,6 +14,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.CacheOSGIService;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
+import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.business.cache.provider.caffine.CaffineCache;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -337,26 +338,23 @@ public class CacheProviderAPIImpl implements CacheProviderAPI, CacheOSGIService 
         return groups;
     }
 
+    /** Collects every provider, preserving failed or null collections as unavailable metadata. */
     @Override
     public List<CacheProviderStats> getStats () {
-
-        //Getting the list of all the cache providers
-
-        List<CacheProviderStats> ret = new ArrayList<>();
-        for ( CacheProvider provider : getAllProviders() ) {
-
+        final List<CacheProviderStats> ret = new ArrayList<>();
+        for (final CacheProvider provider : getAllProviders()) {
+            CacheProviderStats providerStat = null;
             try {
-                CacheProviderStats providerStat = provider.getStats();
-                if(providerStat != null){
-                    ret.add(providerStat);
-                }
-
-            } catch ( Exception e ) {
-                //On Error we don't want to stop the execution of the other providers
+                providerStat = provider.getStats();
+            } catch (Exception e) {
                 Logger.error(this.getClass(), "Error calculating stats from CacheProvider [" + provider.getName() + "].", e);
             }
+            if (providerStat == null) {
+                providerStat = new CacheProviderStats(new CacheStats(), provider.getName());
+                providerStat.markUnavailable();
+            }
+            ret.add(providerStat);
         }
-
         return ret;
     }
 

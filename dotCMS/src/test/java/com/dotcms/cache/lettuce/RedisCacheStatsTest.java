@@ -8,6 +8,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -19,6 +20,8 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
+import io.lettuce.core.api.StatefulRedisConnection;
+import io.lettuce.core.api.sync.RedisCommands;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.vavr.Lazy;
 import java.util.Collection;
@@ -30,6 +33,7 @@ import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
@@ -39,6 +43,12 @@ class RedisCacheStatsTest {
 
     @Mock
     private RedisClient<String, Object> client;
+    @Mock(answer = Answers.CALLS_REAL_METHODS)
+    private MasterReplicaLettuceClient<String, Object> concreteClient;
+    @Mock
+    private StatefulRedisConnection<String, Object> connection;
+    @Mock
+    private RedisCommands<String, Object> commands;
     private AutoCloseable mocks;
     private RedisCache cache;
 
@@ -106,6 +116,50 @@ class RedisCacheStatsTest {
                 "dotCMS: other", "0", "dotCMS: empty", "0"), sizes(stats));
         assertUnavailableMetrics(stats);
         verify(client, org.mockito.Mockito.times(1)).scanKeys(anyString(), anyInt(), any());
+    }
+
+    /** The real client must not disguise a failed initial connection borrow as an empty provider. */
+    @Test
+    void stats_missingRedisConnectionReportsUnknown() {
+        doReturn(null).when(concreteClient).getConn();
+        final RedisCache unavailableCache = new RedisCache(Lazy.of(() -> concreteClient));
+
+        assertUnavailableMetrics(unavailableCache.getStats());
+    }
+
+    /** The scan can lose its connection even after a successful group lookup. */
+    @Test
+    void stats_missingScanConnectionReportsUnknown() {
+        when(connection.isOpen()).thenReturn(true);
+        when(connection.sync()).thenReturn(commands);
+        when(commands.smembers("test_GROUP_KEY")).thenReturn(Set.of("foo"));
+        doReturn("test_GROUP_KEY").when(concreteClient).wrapKey("GROUP_KEY");
+        doReturn(connection, null).when(concreteClient).getConn();
+        final RedisCache unavailableCache = new RedisCache(Lazy.of(() -> concreteClient));
+
+        assertUnavailableMetrics(unavailableCache.getStats());
+    }
+
+    /** An actual empty Redis set on an open connection is still a successful collection. */
+    @Test
+    void stats_connectedEmptyRedisRemainsAvailable() {
+        when(connection.isOpen()).thenReturn(true);
+        when(connection.sync()).thenReturn(commands);
+        when(commands.smembers("test_GROUP_KEY")).thenReturn(Set.of());
+        doReturn("test_GROUP_KEY").when(concreteClient).wrapKey("GROUP_KEY");
+        doReturn(connection).when(concreteClient).getConn();
+        final CacheProviderStats stats = new RedisCache(Lazy.of(() -> concreteClient)).getStats();
+
+        assertTrue(stats.isAvailable());
+        assertEquals(Map.of("n/a", "0"), sizes(stats));
+    }
+
+    /** The disabled/null Redis implementation must not be mistaken for a connected empty cache. */
+    @Test
+    void stats_nullRedisClientReportsUnknown() {
+        final RedisCache unavailableCache = new RedisCache(Lazy.of(NullLettuceClient::new));
+
+        assertUnavailableMetrics(unavailableCache.getStats());
     }
 
     /** Internal collection failures stay visible as unknown rather than healthy empty totals. */

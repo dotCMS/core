@@ -441,6 +441,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
         return null;
     }
 
+    /** Returns set members, failing explicitly when no open Redis connection can be borrowed. */
     @Override
     public Set<V> getMembers (final K key) {
 
@@ -452,7 +453,7 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
             }
         }
 
-        return Collections.emptySet();
+        throw new DotStateException("Redis connection unavailable for set membership lookup");
     }
 
     @Override
@@ -478,26 +479,24 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
         }
     }
 
-    public void scanKeys(final String matchesPattern, int keyBatchingSize,
+    /** Streams key batches, failing explicitly rather than reporting an unavailable scan as empty. */
+    @Override
+    public void scanKeys(final String matchesPattern, final int keyBatchingSize,
                          final Consumer<Collection<K>> keyConsumer) {
-
         KeyScanCursor<String> scanCursor = null;
-
         try (StatefulRedisConnection<String,V> conn = this.getConn()) {
-
-            if (isOpen(conn)) {
-
-                final RedisCommands<String, V> syncCommand = conn.sync();
-                final ScanArgs scanArgs = ScanArgs.Builder.matches(this.keyPrefix() + matchesPattern).limit(keyBatchingSize);
-                do {
-
-                    scanCursor = scanCursor == null?
-                            syncCommand.scan(scanArgs):syncCommand.scan(scanCursor, scanArgs);
-
-                    keyConsumer.accept(ConversionUtils.INSTANCE.convert(
-                            scanCursor.getKeys(), this::unwrapKey));
-                } while (!scanCursor.isFinished());
+            if (!isOpen(conn)) {
+                throw new DotStateException("Redis connection unavailable for key scan");
             }
+            final RedisCommands<String, V> syncCommand = conn.sync();
+            final ScanArgs scanArgs = ScanArgs.Builder.matches(this.keyPrefix() + matchesPattern).limit(keyBatchingSize);
+            do {
+                scanCursor = scanCursor == null?
+                        syncCommand.scan(scanArgs):syncCommand.scan(scanCursor, scanArgs);
+
+                keyConsumer.accept(ConversionUtils.INSTANCE.convert(
+                        scanCursor.getKeys(), this::unwrapKey));
+            } while (!scanCursor.isFinished());
         }
     }
 

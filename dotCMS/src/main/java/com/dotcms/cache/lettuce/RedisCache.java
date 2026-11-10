@@ -1,6 +1,7 @@
 package com.dotcms.cache.lettuce;
 
 import com.dotcms.util.DotCloneable;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
@@ -324,10 +325,12 @@ public class RedisCache extends CacheProvider {
         final CacheProviderStats cacheProviderStats = new CacheProviderStats(providerStats, getName());
 
         final NumberFormat nf = DecimalFormat.getInstance();
-        // Getting the list of groups. Guard against a throw: CacheProviderAPIImpl.getStats() drops the whole
-        // provider from the cache stats screen if getStats() throws, so the Redis region would vanish entirely.
+        // Keep the legacy stats-screen rows on discovery failure; metrics use availability metadata.
         Set<String> currentGroups;
         try {
+            if (getClient() instanceof NullLettuceClient<?, ?>) {
+                throw new DotStateException("Redis client unavailable for cache statistics");
+            }
             currentGroups = getGroups();
         } catch (final Exception e) {
             Logger.warnAndDebug(RedisCache.class, "Unable to list Redis groups: " + e.getMessage(), e);
