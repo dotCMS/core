@@ -43,18 +43,13 @@ public enum PortletID {
     TIME_MACHINE,
     REPORTS,
     RULES,
-    ROLES, 
+    /** The Angular Roles portlet, which took over this id from the old screen (now {@link #ROLES_LEGACY}). */
+    ROLES,
     SITES,
     SITE_BROWSER,
     SITE_SEARCH,
+    /** The Angular Users portlet, which took over this id from the old screen (now {@link #USERS_LEGACY}). */
     USERS,
-    /**
-     * Beta-period alias of {@link #USERS}: the Angular Users portlet ships opt-in as
-     * {@code users-beta} (see {@code portlet.xml}). A gate meaning "can administer users" should accept
-     * either id while both portlets coexist, as {@code UserPaginator#canReadFullProfile} does; not every
-     * Users-portlet check has been widened to the beta id yet. Remove when the Angular portlet is promoted.
-     */
-    USERS_BETA("users-beta"),
     /**
      * The old JSP/Dojo Users screen, kept as an opt-in portlet after the Angular Users portlet
      * took over the {@link #USERS} id. It ships in no menu layout; an administrator adds it to a
@@ -81,12 +76,6 @@ public enum PortletID {
     DOT_AUTH("dotAuth"),
     /** The Tools portlet, which owns the navigation sections and the tools inside them. */
     TOOLS,
-    /**
-     * Beta-period alias of {@link #TOOLS}. Every Tools gate accepts both ids while the Angular
-     * portlet ships opt-in as {@code tools-beta}. Remove when the Tools portlet is promoted
-     * (#37356).
-     */
-    TOOLS_BETA("tools-beta"),
     /**
      * Beta-period alias for the Network portlet. The cluster nodes endpoint accepts it alongside
      * {@link #CONFIGURATION} while the Angular Network portlet ships opt-in as {@code network-beta}.
