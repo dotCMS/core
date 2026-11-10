@@ -101,13 +101,19 @@ function disableButtons(x) {
 
 function runNow() {
 	disableButtons(true);
-	dojo.xhr('GET',{
-        url:'/DotAjaxDirector/com.dotmarketing.portlets.linkchecker.ajax.LinkCheckerAjaxAction/cmd/runCheckNow',
+	dojo.xhr('POST',{
+        url:'/api/v1/link-checker/_run',
         handleAs: 'json',
-        preventCache: true,
+        headers: {'Content-Type': 'application/json'},
+        postData: '{}',
         load: function() {
         	disableButtons(false);
         	showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext,"BROKEN_LINKS_RUNNING_BG")%>");
+        },
+        error: function(err) {
+        	console.log(err);
+        	disableButtons(false);
+        	showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext,"an-unexpected-error-occurred")%>", true);
         }
 	});
 }
@@ -128,46 +134,72 @@ function loadTable() {
             page=(parseInt(dojo.byId('currentPage').innerText)-1)*pageSize;
     }
 	dojo.xhr('GET',{
-		url:'/DotAjaxDirector/com.dotmarketing.portlets.linkchecker.ajax.LinkCheckerAjaxAction/cmd/getBrokenLinks/offset/'+page+'/pageSize/'+pageSize+'/structInode/'+dijit.byId('structureSelect').get('value'),
+		url:'/api/v1/link-checker/broken-links?contentType='+encodeURIComponent(dijit.byId('structureSelect').get('value'))+'&offset='+page+'&limit='+pageSize,
 		handleAs: 'json',
+		preventCache: true,
 		load: function(data) {
-			for(var i=0;i<data.list.length;i++) {
-				var inode = data.list[i].inode;
-				var action=baseUrl+"&inode="+inode+'&referer=' + encodeURIComponent(referrer+"&r="+Math.floor((Math.random()*10000)+1));
-				var conTitle=data.list[i].con_title;
-				var status = data.list[i].status;
-				var field=data.list[i].field;
-				var structure=data.list[i].structure;
-				var moduser=data.list[i].user;
-				var moddate=data.list[i].date;
-				var link=(data.list[i].url_title!="Untitled") ? "<div><strong>"+data.list[i].url_title+"</strong></div> "+data.list[i].url : data.list[i].url;
-				
-				var statusRowHTML = "";
-				if(status == "archived") {
-					statusRowHTML = "<span class='archivedIcon'></span>";
-				}
-				else if(status == "live") {
-					statusRowHTML = "<span class='liveIcon'></span>";					
-				}
-				else if(status == "working") {
-					statusRowHTML = "<span class='workingIcon'></span>";
-				}
-				var row="<tr onclick='window.location=\""+action+"\"' class='alternate_1'>"+ 
-						"<td style='text-align:center'>"+statusRowHTML+"</td>"+
-						
-						"<td><a href=\""+action+"\">"+conTitle+"</a></td>"+
-						       
-						"<td>"+field+"</td>"+
-						
+			var rows = data.entity.list;
+			var total = data.entity.total;
+			var statusIcons = { archived: 'archivedIcon', live: 'liveIcon', working: 'workingIcon' };
+			var tableBody = document.getElementById('table_body');
 
-						"<td>"+link+"</td>"+
-						"<td>"+moduser+"</td>"+
-						"<td nowrap='true'>"+moddate+"</td>"+
-						"</tr>";
-				dojo.place(dojo.toDom(row),'table_body');				
-			}
+			// cells are written as text
+			rows.forEach(function(row) {
+				var action=baseUrl+"&inode="+encodeURIComponent(row.inode)+'&referer=' + encodeURIComponent(referrer+"&r="+Math.floor((Math.random()*10000)+1));
 
-			if( inode !== undefined && pageSize >= data.total ) {
+				var tr = document.createElement('tr');
+				tr.className = 'alternate_1';
+				tr.addEventListener('click', function() {
+					window.location = action;
+				});
+
+				var statusCell = document.createElement('td');
+				statusCell.style.textAlign = 'center';
+				if(statusIcons.hasOwnProperty(row.status)) {
+					var statusIcon = document.createElement('span');
+					statusIcon.className = statusIcons[row.status];
+					statusCell.appendChild(statusIcon);
+				}
+				tr.appendChild(statusCell);
+
+				var titleCell = document.createElement('td');
+				var titleLink = document.createElement('a');
+				titleLink.href = action;
+				titleLink.textContent = row.contentTitle;
+				titleCell.appendChild(titleLink);
+				tr.appendChild(titleCell);
+
+				var fieldCell = document.createElement('td');
+				fieldCell.textContent = row.field;
+				tr.appendChild(fieldCell);
+
+				var linkCell = document.createElement('td');
+				if(row.linkTitle !== "Untitled") {
+					var linkTitleDiv = document.createElement('div');
+					var linkTitleStrong = document.createElement('strong');
+					linkTitleStrong.textContent = row.linkTitle;
+					linkTitleDiv.appendChild(linkTitleStrong);
+					linkCell.appendChild(linkTitleDiv);
+					linkCell.appendChild(document.createTextNode(" " + row.url));
+				}
+				else {
+					linkCell.appendChild(document.createTextNode(row.url));
+				}
+				tr.appendChild(linkCell);
+
+				var userCell = document.createElement('td');
+				userCell.textContent = row.modUserName;
+				tr.appendChild(userCell);
+
+				var dateCell = document.createElement('td');
+				dateCell.setAttribute('nowrap', 'true');
+				dateCell.textContent = row.modDate;
+				tr.appendChild(dateCell);
+
+				tableBody.appendChild(tr);
+			});
+
+			if( rows.length > 0 && pageSize >= total ) {
 				require([ 'dojo/dom-style', 'dijit/registry' ], function (domStyle, registry) {
 					domStyle.set(registry.byId("prevBtn").domNode, 'display', 'none');
 					domStyle.set(registry.byId("nextBtn").domNode, 'display', 'none');
@@ -175,16 +207,18 @@ function loadTable() {
 			}
 
 			if(typeof id.textContent == "undefined"){
-                dojo.byId('totalPages').innerText=Math.ceil(data.total/pageSize);
+                dojo.byId('totalPages').innerText=Math.ceil(total/pageSize);
 				
         	}
         	else {
-                dojo.byId('totalPages').textContent=Math.ceil(data.total/pageSize);
+                dojo.byId('totalPages').textContent=Math.ceil(total/pageSize);
 				disableButtons(false);
 			}
 		},
 		error: function(err) {
 			console.log(err);
+			disableButtons(false);
+			showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext,"an-unexpected-error-occurred")%>", true);
 		}
 	});
 }
