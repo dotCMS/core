@@ -98,13 +98,16 @@ class CorpsitesClient:
         resp.raise_for_status()
         return resp.json().get("entity", {}).get("jsonObjectView", {}).get("contentlets", [])
 
-    def _search(self, version: str) -> list[SearchHit]:
+    def _search(self, version: str, *, live: bool = False) -> list[SearchHit]:
         """Locate Dotcmsbuilds entries whose `minor` exactly equals `version`.
 
         Uses the `minor_dotraw` exact-match field. `limit: 2` so a `>1` ambiguity is
-        detectable rather than silently truncated to one.
+        detectable rather than silently truncated to one. `live` searches published
+        versions instead of working ones (a draft can change `minor` and hide them).
         """
         query = f"+contentType:Dotcmsbuilds +Dotcmsbuilds.minor_dotraw:{version}"
+        if live:
+            query += " +live:true"
         return [
             SearchHit(
                 identifier=c.get("identifier"),

@@ -414,16 +414,19 @@ def test_prod_record_is_read_live_only():
 # publish: hand edits on prod are protected, and prod/auth parity is enforced
 # ---------------------------------------------------------------------------
 
-def _prod_rows(fixture):
-    """Answer prod's Dotcmsbuilds lookups with `fixture` (a fixture name or a body);
-    inode checks say live."""
-    body = _fixture(fixture) if isinstance(fixture, str) else fixture
+def _prod_rows(fixture, live=None):
+    """Answer prod's Dotcmsbuilds lookups with `fixture` (a fixture name or a body), and
+    `+live:true` lookups with `live` when given; inode checks say live."""
+    def load(f):
+        return _fixture(f) if isinstance(f, str) else f
+    body = load(fixture)
+    live_body = load(live) if live is not None else body
 
     def cb(request):
         q = json.loads(request.body)["query"]
         if "+inode:" in q:
             return 200, {}, json.dumps(_body([{"inode": _NEW_INODE}]))
-        return 200, {}, json.dumps(body)
+        return 200, {}, json.dumps(live_body if q.endswith("+live:true") else body)
     responses_lib.add_callback(responses_lib.POST, _PROD_SEARCH, callback=cb,
                                content_type="application/json")
 
@@ -604,3 +607,59 @@ def test_two_prod_records_with_different_identifiers_are_ambiguous_even_unpublis
 
     with pytest.raises(publisher.AmbiguousMatchError, match="prod"):
         sync.reconcile(CorpsitesClient(), _HUB, apply=False, prod=_prod())
+
+
+# ---------------------------------------------------------------------------
+# prod lookups cover live versions too: a draft whose lookup field changed must not
+# hide the live row or record behind it
+# ---------------------------------------------------------------------------
+
+@responses_lib.activate
+def test_live_prod_row_hidden_by_a_draft_still_protects_a_hand_edit():
+    """The draft's `minor` changed, so only the live lookup finds the row; it was last
+    edited by a person on prod, so the write is skipped."""
+    responses_lib.add(responses_lib.POST, _AUTH_SEARCH, json=_fixture("search_hit_automation.json"))
+    _prod_rows("search_empty.json", live=_hand_edited_on_prod())
+
+    result = _publish(CorpsitesClient(), _prod())
+
+    assert result.status == "skipped" and "on prod" in result.reason
+    assert _FIRE_URL not in [c.request.url for c in responses_lib.calls]
+
+
+@responses_lib.activate
+def test_live_and_draft_prod_rows_with_different_identifiers_are_ambiguous():
+    responses_lib.add(responses_lib.POST, _AUTH_SEARCH, json=_fixture("search_hit_automation.json"))
+    _prod_rows("search_hit_automation.json", live="search_hit.json")
+
+    with pytest.raises(publisher.AmbiguousMatchError, match="on prod"):
+        _publish(CorpsitesClient(), _prod())
+
+
+@responses_lib.activate
+def test_a_draft_hand_edited_over_an_automation_live_row_is_protected():
+    """Same entry, two versions: the live one is the automation's, the draft a person's."""
+    responses_lib.add(responses_lib.POST, _AUTH_SEARCH, json=_fixture("search_hit_automation.json"))
+    _prod_rows(_hand_edited_on_prod(), live="search_hit_automation.json")
+
+    assert _publish(CorpsitesClient(), _prod()).status == "skipped"
+
+
+@responses_lib.activate
+def test_live_and_draft_versions_of_one_prod_row_are_one_entry():
+    responses_lib.add(responses_lib.POST, _AUTH_SEARCH, json=_fixture("search_hit_automation.json"))
+    _prod_rows("search_hit_automation.json", live="search_hit_automation.json")
+    _add_fire()
+
+    assert _publish(CorpsitesClient(), _prod()).status == "updated"
+
+
+@responses_lib.activate
+def test_live_prod_record_hidden_by_a_draft_still_counts_for_parity():
+    """The draft's title changed, so only the live lookup finds the record, and it has
+    another identifier: a push would add a second record."""
+    _route(_AUTH_SEARCH, record=_record(_HUB))
+    _route(_PROD_SEARCH, record=_record(_HUB, identifier="evg-other"), all_records=[])
+
+    with pytest.raises(sync.ParityError):
+        sync.reconcile(CorpsitesClient(), _HUB, apply=True, prod=_prod())
