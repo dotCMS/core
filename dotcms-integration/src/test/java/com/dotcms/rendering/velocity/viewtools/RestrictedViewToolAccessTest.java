@@ -377,6 +377,9 @@ public class RestrictedViewToolAccessTest {
                 otherDeveloper);
         assertFalse("Holding the role is not enough while the user may not change the type",
                 RestrictedViewToolAccess.renderingAuthorHasAccess(forOtherDeveloper));
+        assertNotNull("but the preview still announces itself, so the refusal can say why it "
+                        + "refused rather than read as a render that forgot to announce",
+                forOtherDeveloper.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID));
 
         letUserChangeContentType(limitedUser, contentType);
         final HttpServletRequest forLimitedUser = request(limitedUser);

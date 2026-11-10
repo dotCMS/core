@@ -79,7 +79,7 @@ public final class RestrictedViewToolAccess {
      * @param userId ID of the user that last modified the content being rendered, resolving to
      *               {@code null} when the renderer knows the content but not its author
      */
-    private record RenderingAuthor(Lazy<String> userId) {
+    private record RenderingAuthor(Lazy<String> userId, Kind kind) {
 
         /**
          * Resolves the author, so that anything printing the announcement -- a debug dump of
@@ -91,8 +91,23 @@ public final class RestrictedViewToolAccess {
          */
         @Override
         public String toString() {
-            return "RenderingAuthor[userId=" + userId.get() + "]";
+            return "RenderingAuthor[userId=" + userId.get() + ", kind=" + kind + "]";
         }
+    }
+
+    /**
+     * What kind of render made an announcement. A refused tool is only worth a log line if the
+     * line says why, and the two kinds are refused for different reasons: code held by a
+     * container, template, file or field answers for whoever saved it, while a Custom Field
+     * preview answers for the user it is being rendered for.
+     */
+    private enum Kind {
+
+        /** Code a Velocity resource holds, answering for whoever last saved it. */
+        SAVED_CODE,
+
+        /** A Custom Field preview, answering for the user the Content Editor is serving. */
+        FIELD_PREVIEW
     }
 
     /**
@@ -268,10 +283,17 @@ public final class RestrictedViewToolAccess {
      * that user could have written themselves, which is the same answer the tools would give
      * if they had.
      *
-     * <p>Nothing is announced, and the tools render nothing, when the user may not change the
-     * Content Type, when they are not named at all, or when
+     * <p>The tools render nothing when the user may not change the Content Type, when they are
+     * not named at all, or when
      * {@link FeatureFlagName#FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED} is turned
-     * off. The value handed back restores correctly in every one of those cases.
+     * off. In the first two cases the preview still announces itself, naming nobody, so that a
+     * tool refused further down says that this is why instead of reading as a render path that
+     * forgot to announce; with the flag off nothing is written at all. The value handed back
+     * restores correctly in every one of those cases.
+     *
+     * <p>Whether the user may change the Content Type is worked out only if a tool asks, like
+     * every other announcement here: most Custom Fields never call one, and the permission
+     * lookup is not worth putting on the preview path for an answer nobody reads.
      *
      * <p>Nothing that renders for a visitor may use this. On a page the viewer and the author
      * are different people, and letting the viewer answer for the code would hand a restricted
@@ -291,17 +313,18 @@ public final class RestrictedViewToolAccess {
         if (null == request) {
             return null;
         }
-        // leave the request as it is: restoring this value puts back what is already there
-        final Object unchanged = request.getAttribute(RENDERING_AUTHOR_ID);
         if (!Config.getBooleanProperty(
                 FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED, true)) {
-            return unchanged;
+            // leave the request as it is: restoring this value puts back what is already there
+            return request.getAttribute(RENDERING_AUTHOR_ID);
         }
-        if (null == previewingUser || null == contentType
-                || !mayChangeTheCodeOf(contentType, previewingUser)) {
-            return unchanged;
-        }
-        return announce(request, Lazy.of(previewingUser::getUserId));
+        // announced even when it names nobody, so that a tool refused further down the preview
+        // can say that this is why rather than reading as a render path that forgot to announce
+        final Lazy<String> author = Lazy.of(() -> null != previewingUser && null != contentType
+                && mayChangeTheCodeOf(contentType, previewingUser)
+                ? previewingUser.getUserId()
+                : null);
+        return announce(request, author, Kind.FIELD_PREVIEW);
     }
 
     /**
@@ -341,11 +364,25 @@ public final class RestrictedViewToolAccess {
      * @return whatever was recorded before, to restore afterwards
      */
     private static Object announce(final HttpServletRequest request, final Lazy<String> author) {
+        return announce(request, author, Kind.SAVED_CODE);
+    }
+
+    /**
+     * Writes the announcement and hands back the one it replaced.
+     *
+     * @param request the render is running under; {@code null} is ignored
+     * @param author  the author of the code about to run, resolved on demand
+     * @param kind    what kind of render is announcing, so a refusal can say why
+     *
+     * @return whatever was recorded before, to restore afterwards
+     */
+    private static Object announce(final HttpServletRequest request, final Lazy<String> author,
+            final Kind kind) {
         if (null == request) {
             return null;
         }
         final Object previous = request.getAttribute(RENDERING_AUTHOR_ID);
-        request.setAttribute(RENDERING_AUTHOR_ID, new RenderingAuthor(author));
+        request.setAttribute(RENDERING_AUTHOR_ID, new RenderingAuthor(author, kind));
         return previous;
     }
 
@@ -411,8 +448,15 @@ public final class RestrictedViewToolAccess {
         final String authorId = null != announced
                 ? ((RenderingAuthor) announced).userId().get()
                 : ScriptingFileAttribute.get(request);
+        final Kind kind = null != announced ? ((RenderingAuthor) announced).kind() : null;
         if (!UtilMethods.isSet(authorId)) {
-            if (null != announced) {
+            if (Kind.FIELD_PREVIEW == kind) {
+                reportRefusal("preview-names-nobody", () ->
+                        "A view tool was refused in a Custom Field preview: the preview names "
+                                + "nobody, because the user it is being rendered for is not "
+                                + "allowed to change the Content Type the field belongs to, or "
+                                + "is not logged in. The rest of the field renders.");
+            } else if (null != announced) {
                 reportRefusal("announced-without-author", () ->
                         "A view tool was refused: the code being rendered was announced as having "
                                 + "no author of its own, which is what text built at render time "
@@ -430,10 +474,18 @@ public final class RestrictedViewToolAccess {
         }
         final boolean allowed = isScriptingDeveloper(authorId);
         if (!allowed) {
-            reportRefusal("author:" + authorId, () -> String.format(
-                    "A view tool was refused: the code being rendered was last saved by user "
-                            + "'%s', who does not have the %s role",
-                    authorId, Role.SCRIPTING_DEVELOPER));
+            if (Kind.FIELD_PREVIEW == kind) {
+                reportRefusal("preview-author:" + authorId, () -> String.format(
+                        "A view tool was refused in a Custom Field preview: the preview is being "
+                                + "rendered for user '%s', who does not have the %s role. The "
+                                + "rest of the field renders.",
+                        authorId, Role.SCRIPTING_DEVELOPER));
+            } else {
+                reportRefusal("author:" + authorId, () -> String.format(
+                        "A view tool was refused: the code being rendered was last saved by user "
+                                + "'%s', who does not have the %s role",
+                        authorId, Role.SCRIPTING_DEVELOPER));
+            }
         }
         return allowed;
     }
