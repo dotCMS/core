@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.management.config.InfrastructureConstants;
 import com.dotmarketing.util.Config;
 import javax.servlet.FilterChain;
 import javax.servlet.RequestDispatcher;
@@ -35,11 +36,11 @@ class MetricsManagementPortTest {
         config.when(() -> Config.getIntProperty("CMS_MANAGEMENT_PORT", 8090)).thenReturn(8090);
         config.when(() -> Config.getBooleanProperty("management.port.strict.check.enabled", true))
                 .thenReturn(true);
-        when(request.getRequestURI()).thenReturn("/dotmgt/metrics");
-        when(request.getServletPath()).thenReturn("/dotmgt/metrics");
+        when(request.getRequestURI()).thenReturn(InfrastructureConstants.METRICS_PATH);
+        when(request.getServletPath()).thenReturn(InfrastructureConstants.METRICS_PATH);
         when(request.getLocalPort()).thenReturn(8090);
         when(request.getServerPort()).thenReturn(8090);
-        when(request.getRequestDispatcher("/dotmgt/metrics")).thenReturn(dispatcher);
+        when(request.getRequestDispatcher(InfrastructureConstants.METRICS_PATH)).thenReturn(dispatcher);
     }
 
     /** Restores real configuration after each isolated request. */

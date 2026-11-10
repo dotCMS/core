@@ -29,7 +29,7 @@ public class MetricsInitializer implements DotInitializer {
     /** Resolves the metrics bean at startup, unless instrumentation is disabled. */
     @Override
     public void init() {
-        if (!Config.getBooleanProperty("metrics.enabled", true)) {
+        if (!Config.getBooleanProperty(MetricsConfig.ENABLED_PROPERTY, true)) {
             Logger.info(this, "Metrics collection is disabled, skipping initialization");
             return;
         }

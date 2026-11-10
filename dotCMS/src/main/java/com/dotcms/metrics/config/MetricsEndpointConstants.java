@@ -5,10 +5,8 @@ import com.dotcms.management.config.InfrastructureConstants;
 /**
  * Metrics service specific endpoint constants.
  * 
- * This class defines metrics-specific endpoints that build upon the shared
- * management infrastructure prefix. The metrics service is aware of the
- * management infrastructure, but the infrastructure is NOT aware of 
- * metrics-specific details.
+ * This class derives metrics endpoints from shared infrastructure routing constants and
+ * defines the service's responses. Infrastructure does not depend on metrics implementations.
  * 
  * Dependency Direction: MetricsService -> Infrastructure (one-way)
  */
@@ -28,11 +26,11 @@ public final class MetricsEndpointConstants {
         private Endpoints() {}
         
         // Path suffixes (without prefix) - eliminates magic strings
-        public static final String METRICS_SUFFIX = "/metrics";
-        public static final String PROMETHEUS_SUFFIX = "/metrics/prometheus";
+        public static final String METRICS_SUFFIX = InfrastructureConstants.METRICS_SUFFIX;
+        public static final String PROMETHEUS_SUFFIX = METRICS_SUFFIX + "/prometheus";
         
         // Full endpoint paths (with prefix)
-        public static final String METRICS = InfrastructureConstants.MANAGEMENT_PATH_PREFIX + METRICS_SUFFIX;
+        public static final String METRICS = InfrastructureConstants.METRICS_PATH;
         public static final String PROMETHEUS = InfrastructureConstants.MANAGEMENT_PATH_PREFIX + PROMETHEUS_SUFFIX;
     }
     

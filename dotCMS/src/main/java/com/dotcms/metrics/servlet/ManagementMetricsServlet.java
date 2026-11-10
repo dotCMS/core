@@ -2,6 +2,7 @@ package com.dotcms.metrics.servlet;
 
 import com.dotcms.cdi.CDIUtils;
 import com.dotcms.management.servlet.AbstractManagementServlet;
+import com.dotcms.metrics.MetricsConfig;
 import com.dotcms.metrics.MetricsService;
 import com.dotcms.metrics.config.MetricsEndpointConstants;
 import com.dotcms.rest.WebResource;
@@ -40,7 +41,7 @@ public class ManagementMetricsServlet extends AbstractManagementServlet {
     private boolean requireAuthentication(final HttpServletRequest request,
             final HttpServletResponse response) throws IOException {
         try {
-            if (!Config.getBooleanProperty("metrics.prometheus.require-authentication", false)) {
+            if (!Config.getBooleanProperty(MetricsConfig.PROMETHEUS_REQUIRE_AUTH_PROPERTY, false)) {
                 return true;
             }
             new WebResource.InitBuilder()
@@ -67,12 +68,12 @@ public class ManagementMetricsServlet extends AbstractManagementServlet {
         response.setDateHeader("Expires", 0L);
 
         try {
-            if (!Config.getBooleanProperty("metrics.enabled", true)) {
+            if (!Config.getBooleanProperty(MetricsConfig.ENABLED_PROPERTY, true)) {
                 response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
                 response.getWriter().write(MetricsEndpointConstants.Responses.METRICS_DISABLED_MESSAGE);
                 return;
             }
-            if (!Config.getBooleanProperty("metrics.prometheus.enabled", true)) {
+            if (!Config.getBooleanProperty(MetricsConfig.PROMETHEUS_ENABLED_PROPERTY, true)) {
                 response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
                 response.getWriter().write(MetricsEndpointConstants.Responses.PROMETHEUS_DISABLED_MESSAGE);
                 return;

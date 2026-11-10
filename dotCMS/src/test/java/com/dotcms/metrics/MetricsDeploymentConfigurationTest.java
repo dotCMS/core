@@ -4,6 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 import com.dotcms.config.DotInitializer;
+import com.dotcms.management.config.InfrastructureConstants;
+import com.dotcms.metrics.config.MetricsEndpointConstants;
 import java.io.File;
 import java.util.ServiceLoader;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -36,8 +38,11 @@ public class MetricsDeploymentConfigurationTest {
                 descriptor).trim();
         assertFalse("ManagementMetricsServlet must be declared in web.xml", servletName.isEmpty());
 
+        assertEquals("Service and management filter must share the same route",
+                InfrastructureConstants.METRICS_PATH, MetricsEndpointConstants.Endpoints.METRICS);
         final String mappedName = xpath.evaluate(
-                "/web-app/servlet-mapping[url-pattern='/dotmgt/metrics']/servlet-name",
+                "/web-app/servlet-mapping[url-pattern='" + InfrastructureConstants.METRICS_PATH
+                        + "']/servlet-name",
                 descriptor).trim();
         assertEquals("The management metrics path must resolve to the metrics servlet",
                 servletName, mappedName);

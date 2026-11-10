@@ -83,6 +83,8 @@ The system eliminates magic strings through a clean hierarchy of constants:
 ```java
 // InfrastructureConstants.java - Generic infrastructure
 public static final String MANAGEMENT_PATH_PREFIX = "/dotmgt";
+public static final String METRICS_SUFFIX = "/metrics";
+public static final String METRICS_PATH = MANAGEMENT_PATH_PREFIX + METRICS_SUFFIX;
 public static final String ACCESS_DENIED_MESSAGE = "Management endpoints are only available on the management port";
 
 // HealthEndpointConstants.java - Health-specific endpoints
@@ -101,18 +103,18 @@ public static final String HEALTH = InfrastructureConstants.MANAGEMENT_PATH_PREF
 - ✅ **Compile-time safety** - typos become compilation errors
 - ✅ **IDE support** - full refactoring and find usages support
 - ✅ **Easy maintenance** - change path in one place, updates everywhere
-- ✅ **Service isolation** - infrastructure unaware of specific services
+- ✅ **One-way dependencies** - services use shared routing constants without infrastructure importing service implementations
 
 ### **Adding New Management Services**
 
 The constants architecture makes adding new services straightforward:
 
 ```java
-// MetricsEndpointConstants.java - Future metrics service
-public static final String METRICS_SUFFIX = "/metrics";
-public static final String PROMETHEUS_SUFFIX = "/prometheus";
+// MetricsEndpointConstants.java - Shared route identity, service-specific responses
+public static final String METRICS_SUFFIX = InfrastructureConstants.METRICS_SUFFIX;
+public static final String PROMETHEUS_SUFFIX = METRICS_SUFFIX + "/prometheus";
 
-public static final String METRICS = InfrastructureConstants.MANAGEMENT_PATH_PREFIX + METRICS_SUFFIX;
+public static final String METRICS = InfrastructureConstants.METRICS_PATH;
 public static final String PROMETHEUS = InfrastructureConstants.MANAGEMENT_PATH_PREFIX + PROMETHEUS_SUFFIX;
 ```
 
@@ -573,8 +575,8 @@ The infrastructure supports easy addition of new management services:
 1. **Create service constants** following the pattern:
    ```java
    public class MetricsEndpointConstants {
-       public static final String METRICS_SUFFIX = "/metrics";
-       public static final String METRICS = InfrastructureConstants.MANAGEMENT_PATH_PREFIX + METRICS_SUFFIX;
+       public static final String METRICS_SUFFIX = InfrastructureConstants.METRICS_SUFFIX;
+       public static final String METRICS = InfrastructureConstants.METRICS_PATH;
    }
    ```
 

@@ -1,14 +1,9 @@
 package com.dotcms.management.config;
 
 /**
- * Core infrastructure constants for the management filter and port validation.
- * 
- * This class contains ONLY the minimal information needed by the generic 
- * InfrastructureManagementFilter. It should NOT contain specific service 
- * endpoint details to maintain proper decoupling.
- * 
- * Specific services (like HealthProbeServlet) should define their own 
- * endpoint constants while sharing the common MANAGEMENT_PATH_PREFIX.
+ * Shared routing and port-validation constants for management endpoints.
+ * Services derive paths used by the management filter from these constants so routing and
+ * connector checks cannot drift. Service implementations and responses remain separate.
  */
 public final class InfrastructureConstants {
     
@@ -17,12 +12,15 @@ public final class InfrastructureConstants {
     }
     
     /**
-     * Base path prefix for ALL management endpoints.
-     * 
-     * This is the ONLY path knowledge the management filter should have.
-     * Specific services define their own endpoints under this prefix.
+     * Base path prefix for all management endpoints.
      */
     public static final String MANAGEMENT_PATH_PREFIX = "/dotmgt";
+
+    /** Metrics path suffix, also exposed by the service's endpoint constants. */
+    public static final String METRICS_SUFFIX = "/metrics";
+
+    /** Shared metrics route used by both forwarding and connector validation. */
+    public static final String METRICS_PATH = MANAGEMENT_PATH_PREFIX + METRICS_SUFFIX;
     
          /**
       * Port configuration for management access validation.
