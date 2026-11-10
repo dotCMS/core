@@ -126,6 +126,12 @@ function loadTable() {
 	var baseUrl="/c/portal/layout?p_l_id="+lid+"&p_p_id=<%=PortletID.CONTENT%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_<%=PortletID.CONTENT%>_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet&_<%=PortletID.CONTENT%>_cmd=edit";
 	var referrer="/c/portal/layout?p_l_id="+lidBL+"&p_p_id=<%=PortletID.LINK_CHECKER%>&p_p_action=0&pageNumber="+dojo.byId('currentPage').textContent;
 	dojo.empty('table_body');
+	var contentType=dijit.byId('structureSelect').get('value');
+	if(!contentType) {
+		// nothing to list until a content type is selected
+		disableButtons(false);
+		return;
+	}
 	var pageSize=25;
 	var page=(parseInt(dojo.byId('currentPage').textContent)-1)*pageSize;
 	var id = dojo.byId('currentPage');
@@ -134,7 +140,7 @@ function loadTable() {
             page=(parseInt(dojo.byId('currentPage').innerText)-1)*pageSize;
     }
 	dojo.xhr('GET',{
-		url:'/api/v1/link-checker/broken-links?contentType='+encodeURIComponent(dijit.byId('structureSelect').get('value'))+'&offset='+page+'&limit='+pageSize,
+		url:'/api/v1/link-checker/broken-links?contentType='+encodeURIComponent(contentType)+'&offset='+page+'&limit='+pageSize,
 		handleAs: 'json',
 		preventCache: true,
 		load: function(data) {
