@@ -443,21 +443,87 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
     /**
      * Method to test: {@link ContentTypeInitializer#init()}
      * Given Scenario: The favorite page content type is in the state the starter ships, with no
-     * row its contentlets inherit, and an existing favorite has its own rows granting CMS
-     * Anonymous READ, as favorites saved before the repair may have.
+     * row its contentlets inherit, the favorites have not been reset yet, and an existing favorite
+     * has its own rows granting CMS Anonymous READ, as favorites saved before the repair may have.
      * ExpectedResult: The first repair removes the favorite's own rows, so it inherits from the
      * type and cannot be read anonymously.
      */
     @Test
     public void test_first_init_resets_own_rows_of_existing_favorites() throws Exception {
 
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME);
+        final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
+        assertFirstInitResetsOwnRowsOfFavorite(List.of(
+                new Permission(contentType.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true)));
+    }
+
+    /**
+     * Method to test: {@link ContentTypeInitializer#init()}
+     * Given Scenario: The favorite page content type already has both CMS Owner rows, as the
+     * previous initializer wrote them, but the favorites have not been reset yet, and an existing
+     * favorite has its own rows granting CMS Anonymous READ.
+     * ExpectedResult: The first repair still removes the favorite's own rows, so it cannot be read
+     * anonymously.
+     */
+    @Test
+    public void test_first_init_resets_own_rows_of_existing_favorites_when_type_rows_are_correct() throws Exception {
+
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME);
+        final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
+        assertFirstInitResetsOwnRowsOfFavorite(List.of(
+                new Permission(contentType.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true),
+                new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
+                        cmsOwner.getId(), OWNER_BITS, true)));
+    }
+
+    /**
+     * Method to test: {@link ContentTypeInitializer#init()}
+     * Given Scenario: The favorites were already reset by an earlier repair, the row the favorite
+     * page contentlets inherit is missing one CMS Owner bit, and a favorite has its own rows
+     * sharing it with another back-end user.
+     * ExpectedResult: The initializer repairs the type rows but leaves the favorite's own rows, so
+     * the other user can still read it.
+     */
+    @Test
+    public void test_init_keeps_own_rows_of_a_favorite_when_an_owner_bit_is_missing() throws Exception {
+
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
         final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME);
         permissionAPI.removePermissions(contentType);
-        permissionAPI.save(new Permission(contentType.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true),
+        permissionAPI.assignPermissions(List.of(
+                new Permission(contentType.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true),
+                new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
+                        cmsOwner.getId(), OWNER_BITS & ~PermissionAPI.PERMISSION_EDIT_PERMISSIONS, true)),
                 contentType, APILocator.systemUser(), false);
+
+        assertSharedFavoriteSurvivesInit();
+
+        final String cmsOwnerId = cmsOwner.getId();
+        Assert.assertTrue("The favorite page content type must pass every CMS Owner bit to its contentlets",
+                permissionAPI.getInheritablePermissions(contentType, true).stream().anyMatch(permission ->
+                        Contentlet.class.getCanonicalName().equals(permission.getType())
+                                && cmsOwnerId.equals(permission.getRoleId())
+                                && (permission.getPermission() & OWNER_BITS) == OWNER_BITS));
+    }
+
+    /**
+     * Gives the favorite page content type the given rows, marks the favorites as not reset yet,
+     * saves a favorite on the System Host with its own rows granting CMS Anonymous READ, runs the
+     * initializer and checks the favorite's own rows are gone and it cannot be read anonymously.
+     */
+    private static void assertFirstInitResetsOwnRowsOfFavorite(final List<Permission> typeRows) throws Exception {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME);
+        permissionAPI.removePermissions(contentType);
+        permissionAPI.assignPermissions(typeRows, contentType, APILocator.systemUser(), false);
+        APILocator.getSystemAPI().getSystemTable().delete(ContentTypeInitializer.FAVORITE_PAGE_PERMISSIONS_RESET_KEY);
 
         // on the System Host, where the dialog saves favorites, so it inherits from the type;
         // on a site it would inherit from the site instead
@@ -482,6 +548,9 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
             Assert.assertFalse("A favorite must not be readable anonymously",
                     permissionAPI.doesUserHavePermission(favorite, PermissionAPI.PERMISSION_READ,
                             APILocator.getUserAPI().getAnonymousUser(), true));
+            Assert.assertTrue("The repair must record that the favorites were reset",
+                    APILocator.getSystemAPI().getSystemTable()
+                            .get(ContentTypeInitializer.FAVORITE_PAGE_PERMISSIONS_RESET_KEY).isPresent());
         } finally {
 
             ContentletDataGen.destroy(favorite);
@@ -489,8 +558,9 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
     }
 
     /**
-     * Saves a favorite, gives it its own rows sharing it with another back-end user, runs the
-     * initializer and checks the rows and the shared read survive.
+     * Marks the favorites as already reset, as on any start after the first repair, saves a
+     * favorite, gives it its own rows sharing it with another back-end user, runs the initializer
+     * and checks the rows and the shared read survive.
      */
     private static void assertSharedFavoriteSurvivesInit() throws Exception {
 
@@ -498,6 +568,7 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
         final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
         final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
                 .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME);
+        APILocator.getSystemAPI().getSystemTable().set(ContentTypeInitializer.FAVORITE_PAGE_PERMISSIONS_RESET_KEY, "true");
         final User sharedWith = new UserDataGen().active(true)
                 .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
         final Contentlet favorite = new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)

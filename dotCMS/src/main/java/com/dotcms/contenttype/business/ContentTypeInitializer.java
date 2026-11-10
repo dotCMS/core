@@ -44,6 +44,9 @@ public class ContentTypeInitializer implements DotInitializer {
     public static final String LEGACY_FAVORITE_PAGE_VAR_NAME = "favoritePage";
     public static final String FAVORITE_PAGE_VAR_NAME = "dotFavoritePage";
 
+    /** System table key written once a repair has reset the favorites' own permission rows. */
+    public static final String FAVORITE_PAGE_PERMISSIONS_RESET_KEY = "FAVORITE_PAGE_PERMISSIONS_RESET";
+
     private static final String FAVORITE_PAGE_PERMISSIONS_LOCK = "favorite-page-permissions";
     /** Seconds after the repair commits before the permission cache is cleared a second time. */
     private static final long PERMISSION_CACHE_RECLEAR_SECONDS = 30;
@@ -151,11 +154,11 @@ public class ContentTypeInitializer implements DotInitializer {
      * Makes favorite pages readable and editable only by their owner. The content type gets CMS
      * Owner permissions for itself and a row its contentlets inherit, since favorites are saved on
      * the System Host and inherit from their content type. When either row is missing, or another
-     * role has a row on the type, the type's permissions are replaced with those two rows. When the
-     * row the contentlets inherit was missing, which is the state before this repair first ran, the
-     * favorites' own rows are also reset so they inherit them, in the same transaction; later
-     * repairs leave rows added to individual favorites alone. Every repair queues the type's
-     * favorites for reindex. If any step of the repair fails, the whole repair rolls back,
+     * role has a row on the type, the type's permissions are replaced with those two rows. The first
+     * repair on an install also resets the favorites' own rows so they inherit them, and records
+     * that in the system table under {@link #FAVORITE_PAGE_PERMISSIONS_RESET_KEY}, in the same
+     * transaction; later repairs leave rows added to individual favorites alone. Every repair
+     * queues the type's favorites for reindex. If any step of the repair fails, the whole repair rolls back,
      * including the type's rows, the error is logged and the next start tries again. Each repair
      * is logged. Runs on every start, so it also repairs an existing install. Turned off with
      * {@code DO_DEFAULT_PAGE_PERMISSIONS=false}. The check and the repair run in one transaction
@@ -239,27 +242,26 @@ public class ContentTypeInitializer implements DotInitializer {
         final int permissionType = PermissionAPI.PERMISSION_USE | PermissionAPI.PERMISSION_EDIT |
                 PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
         final Role backendRole = APILocator.getRoleAPI().loadCMSOwnerRole();
-        final boolean contentletsInherit = this.contentletsInheritPermission(savedContentType, permissionType, backendRole);
-        if (APILocator.getPermissionAPI().doesRoleHavePermission(savedContentType, permissionType, backendRole)
-                && contentletsInherit
+        // Until the favorites have been reset once they may carry the old grants. After that a
+        // favorite's own rows were added on purpose, so later repairs fix the type only. The type
+        // rows cannot tell the two apart: the previous initializer also wrote both owner rows.
+        final boolean resetFavorites = !this.favoritesWereReset();
+        if (!resetFavorites
+                && APILocator.getPermissionAPI().doesRoleHavePermission(savedContentType, permissionType, backendRole)
+                && this.contentletsInheritPermission(savedContentType, permissionType, backendRole)
                 && this.onlyRoleHasRows(savedContentType, backendRole)) {
 
             return null;
         }
 
-        // Only a type this repair has not run on yet lacks the row favorites inherit;
-        // its favorites may carry the old grants. Once it has run, a favorite's own
-        // rows were added on purpose, so later repairs fix the type only.
-        final boolean resetFavorites = !contentletsInherit;
         final int favoritesWithOwnRows = resetFavorites ? this.countFavoritesWithOwnRows(savedContentType) : 0;
         final List<Permission> newSetOfPermissions = new ArrayList<>();
         // this is the individual permission
         newSetOfPermissions.add(new Permission(savedContentType.getPermissionId(), backendRole.getId(), permissionType, true));
         // this is the inheritance permission
         newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), savedContentType.getPermissionId(),  backendRole.getId(), permissionType, true));
-        // same transaction as the check: if anything below fails, the type rows roll back too
-        // and the next start repairs it again. Committing the type rows on their own would make
-        // contentletsInherit true, so a failed favorites reset would never be retried.
+        // same transaction as the check: if anything below fails, the type rows and the marker
+        // roll back too and the next start repairs it again, favorites included.
         // removePermissions also queues every favorite of the type for reindex, so the index
         // picks up the new rows whether or not resetFavorites is set; the caller queues them
         // again after it clears the permission cache, in case this reindex reads cached old rows.
@@ -269,6 +271,7 @@ public class ContentTypeInitializer implements DotInitializer {
         // request user and has none at startup
         if (resetFavorites) {
             APILocator.getPermissionAPI().resetPermissionsUnder(savedContentType);
+            APILocator.getSystemAPI().getSystemTable().set(FAVORITE_PAGE_PERMISSIONS_RESET_KEY, "true");
         }
         return resetFavorites
                 ? "Favorite pages: reset the content type permissions to CMS Owner only and removed the own permissions of "
@@ -293,6 +296,21 @@ public class ContentTypeInitializer implements DotInitializer {
         new DotConnect().setSQL("SELECT pg_advisory_xact_lock(hashtext(?))")
                 .addParam(FAVORITE_PAGE_PERMISSIONS_LOCK)
                 .loadObjectResults();
+    }
+
+    /**
+     * Tells whether a repair has already reset the favorites' own permission rows, which happens
+     * once per install. Reads the system table row directly rather than through its cache, so a
+     * node waiting on the repair lock sees the marker another node's repair committed.
+     *
+     * @return {@code true} if the favorites were reset by an earlier repair
+     * @throws DotDataException if the system table cannot be read
+     */
+    private boolean favoritesWereReset() throws DotDataException {
+
+        // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- static SQL, the key is bound
+        return new DotConnect().setSQL("select count(*) as total from system_table where key = ?")
+                .addParam(FAVORITE_PAGE_PERMISSIONS_RESET_KEY).getInt("total") > 0;
     }
 
     /**
