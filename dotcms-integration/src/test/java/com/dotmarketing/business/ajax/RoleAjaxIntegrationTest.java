@@ -1,5 +1,6 @@
 package com.dotmarketing.business.ajax;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -14,7 +15,10 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.lang.reflect.Field;
@@ -39,6 +43,7 @@ public class RoleAjaxIntegrationTest {
     private static WebContextFactory.WebContextBuilder previousWebContextBuilder;
     private static final List<Role> rolesToClean = new ArrayList<>();
     private static final List<User> usersToClean = new ArrayList<>();
+    private static final List<Layout> layoutsToClean = new ArrayList<>();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -53,6 +58,13 @@ public class RoleAjaxIntegrationTest {
         usersToClean.forEach(UserDataGen::remove);
         Collections.reverse(rolesToClean);
         rolesToClean.forEach(RoleDataGen::remove);
+        for (final Layout layout : layoutsToClean) {
+            try {
+                APILocator.getLayoutAPI().removeLayout(APILocator.getLayoutAPI().findLayout(layout.getId()));
+            } catch (final Exception e) {
+                Logger.warn(RoleAjaxIntegrationTest.class, "Unable to delete test layout: " + e.getMessage());
+            }
+        }
         // the deletions cleared the global role cache; warm the back-end role again for the
         // next suite class
         roleAPI.loadBackEndUserRole();
@@ -127,5 +139,53 @@ public class RoleAjaxIntegrationTest {
 
         assertTrue(usersByRole.get(role.getId()).stream()
                 .anyMatch(map -> member.getUserId().equals(map.get("userId"))));
+    }
+
+    /**
+     * Method to test: {@link RoleAjax#getRole(String)}, through the Roles portlet check in
+     * {@link DwrUtil#validateRolesPortletPermissions(User)}
+     * Given Scenario: a back-end user whose only portlet is {@code roles} reads a role
+     * ExpectedResult: the role comes back. This is the baseline for the {@code roles-legacy} case
+     * below.
+     */
+    @Test
+    public void getRole_rolesPortletHolder_returnsTheRole() throws Exception {
+        final Role role = track(new RoleDataGen().nextPersisted());
+
+        callAs(backendUserWithOnly(PortletID.ROLES.toString()));
+
+        assertEquals(role.getId(), new RoleAjax().getRole(role.getId()).get("id"));
+    }
+
+    /**
+     * Method to test: {@link RoleAjax#getRole(String)}, through the Roles portlet check in
+     * {@link DwrUtil#validateRolesPortletPermissions(User)}
+     * Given Scenario: a back-end user whose only portlet is the old Roles &amp; Tools screen, kept as
+     * {@code roles-legacy} after the Angular portlet took over {@code roles}, reads a role
+     * ExpectedResult: the role comes back, exactly as for a holder of {@code roles}, so a role that
+     * kept the old screen can still use it
+     */
+    @Test
+    public void getRole_rolesLegacyPortletHolder_returnsTheRole() throws Exception {
+        final Role role = track(new RoleDataGen().nextPersisted());
+
+        callAs(backendUserWithOnly(PortletID.ROLES_LEGACY.toString()));
+
+        assertEquals(role.getId(), new RoleAjax().getRole(role.getId()).get("id"));
+    }
+
+    /**
+     * Creates a back-end user whose only portlet is the given one, through a layout and role of
+     * their own, all tracked for clean-up.
+     *
+     * @param portletId the id of the only portlet the user will hold
+     * @return the persisted {@link User}
+     * @throws DotDataException if the back-end role cannot be loaded
+     */
+    private static User backendUserWithOnly(final String portletId) throws DotDataException {
+        final Layout layout = new LayoutDataGen().portletIds(portletId).nextPersisted();
+        layoutsToClean.add(layout);
+        final Role portletRole = track(new RoleDataGen().layout(layout).nextPersisted());
+        return track(new UserDataGen().roles(roleAPI.loadBackEndUserRole(), portletRole).nextPersisted());
     }
 }
