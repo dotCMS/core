@@ -894,7 +894,13 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
      * order to prevent potential hacking attacks. The time that the user will have to wait is based on
      * a specific delay strategy. It defaults to raising the {@code defaultSeed} value to the power of
      * 2.
-     * 
+     *
+     * <p>A strategy with a literal parameter ({@code TIME_MILLS:2000}, {@code TIME_SEC:30}, {@code
+     * TIME_MIN:5}) treats it as a per-unit rate rather than a flat total: the literal is multiplied by
+     * {@code defaultSeed}, the same way the default strategy raises {@code defaultSeed} to a power,
+     * so every strategy scales with how paced the attempt actually is instead of sleeping the same
+     * fixed amount regardless of it.
+     *
      * @param defaultSeed - The default time seed in case the delay strategy does not specify one.
      */
     private void delayRequest(int defaultSeed) {
@@ -905,7 +911,8 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         try {
             strategy = (UtilMethods.isSet(stratParams[0])) ? DelayStrategy.valueOf(stratParams[0].toUpperCase()) : DelayStrategy.POW;
             if (stratParams.length > 1) {
-                seed = ConversionUtils.toInt(stratParams[1], defaultSeed);
+                final int unitsPerSeed = ConversionUtils.toInt(stratParams[1], 1);
+                seed = unitsPerSeed * defaultSeed;
             }
 
             Logger.debug(this, "Doing a delay request, with seed: " + seed + ", defaultSeed: " + defaultSeed + ", strategy: " + strategy);

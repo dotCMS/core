@@ -1227,4 +1227,35 @@ public class LoginLockoutTest {
             cleanUp(third);
         }
     }
+
+    /**
+     * Given: an account, with the delay strategy configured as a literal per-unit value ({@code
+     *        TIME_MILLS:500})
+     * When: 3 wrong passwords arrive from one address at the same moment
+     * Then: they do not all take the same flat delay — the literal unit scales by each attempt's own
+     *       atomically-counted position, the same way the default ("pow") strategy already does
+     */
+    @Test
+    public void test_concurrent_wrong_logins_get_escalating_delays_with_literal_strategy() throws Exception {
+        final Object strategyBefore = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true);
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "TIME_MILLS:500");
+        final User user = newUser();
+        try {
+            final List<Long> elapsed = timedInParallel(3, ADDRESS, () -> login(user, "wrong-in-parallel"));
+            final long max = elapsed.stream().mapToLong(Long::longValue).max().orElseThrow();
+            // Today, the configured "500" always replaces the computed seed outright, so every concurrent
+            // attempt sleeps the same flat 500ms regardless of its attempt number. Once the literal value
+            // scales by each attempt's own atomically-counted position (1, 2, 3) instead of replacing it, the
+            // slowest sleeps 3 * 500 = 1500ms. An absolute floor is used for the same reason as the "pow"
+            // version of this test: thread-pool and connection jitter alone could satisfy a relative
+            // comparison.
+            assertTrue("slowest of " + elapsed + "ms should reflect a scaled delay, not a flat one",
+                    max >= 1_200L);
+        } finally {
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, false);
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, strategyBefore);
+            cleanUp(user);
+        }
+    }
 }
