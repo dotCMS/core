@@ -752,9 +752,9 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         try {
             this.runCustomOnFailureHandlers(companyId, login, byEmailAddress);
             if (refused) {
-                this.delayFailedLogin(user, login);
+                this.delayFailedLogin(user, login, attempt);
             } else {
-                this.handleFailedLoginAttempt(user, login, companyId, byEmailAddress);
+                this.handleFailedLoginAttempt(user, login, companyId, byEmailAddress, attempt);
             }
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when handling failed login for User '%s': " +
@@ -797,16 +797,18 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
      * @param companyId      The current Company ID.
      * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
      *                       done via User ID, set to {@code false}.
+     * @param attempt        The login lockout attempt for this login; see {@link LoginLockout#begin(String, String)}.
      *
      * @throws SystemException User failed attempts data could not be saved.
      * @throws AuthException   An error occurred when executing the handlers for maximum failed loin attempts.
      */
     private void handleFailedLoginAttempt(final User user, final String login, final String companyId,
-                                          final boolean byEmailAddress) throws SystemException, AuthException {
+                                          final boolean byEmailAddress, final LoginLockout.Attempt attempt)
+            throws SystemException, AuthException {
         int failedLoginAttempts = user.getFailedLoginAttempts();
         Logger.debug(this, String.format("Current failed login attempts for user '%s' is %s", login,
                 failedLoginAttempts));
-        this.delayFailedLogin(user, login);
+        this.delayFailedLogin(user, login, attempt);
         user.setFailedLoginAttempts(++failedLoginAttempts);
         Logger.debug(this, String.format("Setting failed login attempts for user '%s' to %s", login,
                 user.getFailedLoginAttempts()));
@@ -828,38 +830,46 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
     }
 
     /**
-     * Applies the login-delaying strategy for a failed login, based on the User's current failed login count.
+     * Applies the login-delaying strategy for a failed login, based on the login lockout attempt's pacing seed.
      *
-     * @param user  The {@link User} that failed to log in.
-     * @param login The User's email or ID.
+     * @param user    The {@link User} that failed to log in.
+     * @param login   The User's email or ID.
+     * @param attempt The login lockout attempt for this login; see {@link LoginLockout#begin(String, String)}.
      */
-    private void delayFailedLogin(final User user, final String login) {
+    private void delayFailedLogin(final User user, final String login, final LoginLockout.Attempt attempt) {
         if (Config.getBooleanProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true)) {
             Logger.debug(this, String.format("Delaying login attempts for user '%s'", login));
-            this.delayRequest(this.delaySeed(user));
+            this.delayRequest(this.delaySeed(user, attempt));
         }
     }
 
     /**
-     * Returns the failed login count that paces the delay. With login lockout on, the count starts over at the
-     * limit, so a larger stored value can only be left from before lockout (it used to reset only on a successful
-     * login). Such a value is capped below the limit here rather than reset in the database, so the first failed
-     * login of a dormant account does not sleep for the square of an old count.
+     * Returns the count that paces the delay. With login lockout on, this is {@link LoginLockout#pacingSeed}:
+     * each attempt's own atomically-counted position, or the source's total recent failures across every
+     * account, whichever is larger, so the delay is paced whichever way the failures are concentrated. It is
+     * capped below the limit here rather than reset in the database, so the first failed login of a dormant
+     * account does not sleep for the square of an old count. With lockout off, the legacy per-user
+     * failed-attempts count is used instead, since no lockout attempt is being tracked.
      *
-     * @param user The {@link User} that failed to log in.
+     * @param user    The {@link User} that failed to log in.
+     * @param attempt The login lockout attempt for this login; see {@link LoginLockout#begin(String, String)}.
      *
      * @return The seed for {@link #delayRequest(int)}.
      */
-    private int delaySeed(final User user) {
+    private int delaySeed(final User user, final LoginLockout.Attempt attempt) {
         final int maxFailures = LoginLockout.maxFailures();
         return LoginLockout.getInstance().isEnabled(maxFailures)
-                ? Math.min(user.getFailedLoginAttempts(), maxFailures - 1)
+                ? Math.min(LoginLockout.getInstance().pacingSeed(attempt), maxFailures - 1)
                 : user.getFailedLoginAttempts();
     }
 
     /**
      * Executes the list of custom failure handlers when the maximum number of login attempts has been reached. It can
      * be specified via the following property: {@link PropsUtil#AUTH_MAX_FAILURES}.
+     *
+     * <p>The default handler, {@link com.liferay.portal.auth.LoginMaxFailures}, does nothing: this is an
+     * extension point for a deployment's own custom logic, not where account lockout is decided. That happens
+     * independently in {@link LoginLockout}.
      *
      * @param login          The user's email or ID.
      * @param companyId      The current Company ID.

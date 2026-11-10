@@ -224,6 +224,41 @@ public class LoginLockoutTest {
         }
     }
 
+    /**
+     * Same as {@link #inParallel}, but returns how long each thread's task took in milliseconds instead of its
+     * result. Used to show that concurrent failed logins do not all take the same (minimum) delay.
+     */
+    private static List<Long> timedInParallel(final int threads, final String address, final Callable<?> task)
+            throws Exception {
+        final ExecutorService pool = Executors.newFixedThreadPool(threads);
+        final CountDownLatch start = new CountDownLatch(1);
+        try {
+            final List<Future<Long>> futures = new ArrayList<>();
+            for (int i = 0; i < threads; i++) {
+                futures.add(pool.submit(() -> {
+                    from(address);
+                    start.await();
+                    final long began = System.currentTimeMillis();
+                    try {
+                        task.call();
+                        return System.currentTimeMillis() - began;
+                    } finally {
+                        DbConnectionFactory.closeSilently();
+                        HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+                    }
+                }));
+            }
+            start.countDown();
+            final List<Long> elapsed = new ArrayList<>();
+            for (final Future<Long> future : futures) {
+                elapsed.add(future.get(2, TimeUnit.MINUTES));
+            }
+            return elapsed;
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
     private static int failedLoginAttempts(final User user) throws Exception {
         return APILocator.getUserAPI().loadUserById(user.getUserId()).getFailedLoginAttempts();
     }
@@ -1048,6 +1083,82 @@ public class LoginLockoutTest {
             assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
         } finally {
             Config.setProperty(LoginLockout.LOCKOUT_ENABLED, enabledBefore);
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: two different accounts, each failing logins from the same address
+     * When: the source's aggregate failure count is read
+     * Then: it reflects the combined total across both accounts, not just one
+     *
+     * Covers failures spread across many different accounts from one address building a rising total here,
+     * even though each account's own count starts over at 1.
+     */
+    @Test
+    public void test_source_failures_aggregates_across_accounts() throws Exception {
+        final User first = newUser();
+        final User second = newUser();
+        try {
+            failLogins(first, 2);
+            failLogins(second, 3);
+            assertEquals(5, LoginLockout.getInstance().sourceFailures(ADDRESS));
+        } finally {
+            cleanUp(first);
+            cleanUp(second);
+        }
+    }
+
+    /**
+     * Given: one account that has already failed several times from an address
+     * When: a second, fresh account fails once from the same address
+     * Then: its pacing seed reflects the source's accumulated history, not just its own fresh count of 1
+     *
+     * Without this, failures spread across many different accounts from one address never see the delay
+     * escalate, because each account's own attempt count resets to 1.
+     */
+    @Test
+    public void test_pacing_seed_escalates_across_different_accounts_from_one_source() throws Exception {
+        final User first = newUser();
+        final User second = newUser();
+        try {
+            failLogins(first, 3);
+            final LoginLockout.Attempt secondAttempt = LoginLockout.getInstance().begin(second.getUserId(), ADDRESS);
+            final int seed = LoginLockout.getInstance().pacingSeed(secondAttempt);
+            assertTrue("pacing seed " + seed + " should exceed the fresh account's own count of "
+                    + secondAttempt.number(), seed > secondAttempt.number());
+        } finally {
+            cleanUp(first);
+            cleanUp(second);
+        }
+    }
+
+    /**
+     * Given: an account, with the default ("pow") delay strategy enabled
+     * When: 3 wrong passwords arrive from one address at the same moment
+     * Then: they do not all take the same (minimum) delay — each is paced by its own atomically-counted attempt
+     *       number, which {@link #begin} already assigns before any password is checked, rather than by a
+     *       per-node field a race can leave identical, or unset, for all of them
+     */
+    @Test
+    public void test_concurrent_wrong_logins_get_escalating_delays() throws Exception {
+        final Object strategyBefore = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true);
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
+        final User user = newUser();
+        try {
+            final List<Long> elapsed = timedInParallel(3, ADDRESS, () -> login(user, "wrong-in-parallel"));
+            final long max = elapsed.stream().mapToLong(Long::longValue).max().orElseThrow();
+            // Today, every concurrent attempt reads the same fresh (unset) count and sleeps for POW(0) = 0s, so
+            // the slowest of the three finishes in well under a second. Once paced by each attempt's own
+            // atomically-counted position (1, 2, 3), the slowest sleeps POW(3) = 9s. A relative spread between
+            // threads is not used here, since thread-pool and connection jitter alone can produce one: this bound
+            // is only clearable by an attempt actually having slept for several seconds.
+            assertTrue("slowest of " + elapsed + "ms should reflect a real escalating sleep, not jitter alone",
+                    max >= 3_000L);
+        } finally {
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, false);
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, strategyBefore);
             cleanUp(user);
         }
     }
