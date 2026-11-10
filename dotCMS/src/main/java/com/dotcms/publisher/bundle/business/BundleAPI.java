@@ -190,7 +190,7 @@ public interface BundleAPI {
 	 *
 	 * @param assetId  identifier of the asset to remove
 	 * @param bundleId identifier of the bundle
-	 * @param user     the user making the change
+	 * @param user     {@link User} making the change
 	 * @throws DotDataException     when the bundle does not exist or the data layer fails
 	 * @throws DotSecurityException when the user may not change the bundle
 	 */
@@ -202,7 +202,7 @@ public interface BundleAPI {
 	 * Administrator may change any bundle; any other user only the bundles they own.
 	 *
 	 * @param bundle the bundle to change
-	 * @param user   the user making the change
+	 * @param user   {@link User} making the change
 	 * @throws DotDataException     when the user's roles cannot be read
 	 * @throws DotSecurityException when the user is missing, or is neither a CMS Administrator nor
 	 *                              the owner of the bundle
