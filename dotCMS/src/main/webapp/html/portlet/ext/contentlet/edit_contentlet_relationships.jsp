@@ -225,13 +225,16 @@
 				}
 
 				/**
-				 * Returns the text of a value that may carry markup, without its tags. A space follows each
-				 * block or line break, so adjacent paragraphs stay as separate words.
+				 * Returns the text of a value that may carry markup, without its tags. A space surrounds each
+				 * block or line break, so neighbouring and nested blocks stay as separate words.
 				 */
 				function <%= relationJsName%>TextOf(value) {
 					var doc = new DOMParser().parseFromString(String(value), 'text/html');
 					doc.body.querySelectorAll('br, p, div, li, h1, h2, h3, h4, h5, h6, blockquote, pre, tr, td, th')
-						.forEach(function (node) { node.after(doc.createTextNode(' ')); });
+						.forEach(function (node) {
+							node.before(doc.createTextNode(' '));
+							node.after(doc.createTextNode(' '));
+						});
 					return (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
 				}
 		<%String lastIdentifier = "";

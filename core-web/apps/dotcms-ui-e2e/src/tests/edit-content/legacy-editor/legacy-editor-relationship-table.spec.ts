@@ -14,10 +14,10 @@ import { uniqueSuffix } from '@utils/utils';
 const PLAIN_VALUE = '<admin> &copy; Smith';
 
 /**
- * A WYSIWYG value: the table has to show its words, not its tags, and two paragraphs written
- * back to back are two words, not one.
+ * A WYSIWYG value: the table has to show its words, not its tags, and words in neighbouring or
+ * nested blocks (`</p><div>`, `big<div>`) stay separate words instead of running together.
  */
-const WYSIWYG_VALUE = '<p>Hello</p><p><b>world</b> &amp; co</p>';
+const WYSIWYG_VALUE = '<p>Hello</p><div>big<div><b>world</b> &amp; co</div></div>';
 
 const RELATIONSHIP_VARIABLE = 'related';
 
@@ -142,7 +142,7 @@ test.describe('Legacy editor — relationship field table', () => {
         await expect(row).toContainText(PLAIN_VALUE);
 
         // WYSIWYG field: the words kept apart, without the tags and with the entity decoded once.
-        await expect(row).toContainText('Hello world & co');
+        await expect(row).toContainText('Hello big world & co');
         await expect(row).not.toContainText('<p>');
         await expect(row).not.toContainText('<b>');
     });
