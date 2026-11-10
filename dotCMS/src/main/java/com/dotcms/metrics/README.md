@@ -63,8 +63,9 @@ Aggregate and region gauges share one current provider snapshot for `metrics.cac
 (default: 30 seconds), then refresh on the next read. H22 SQL/missing-shard failures and Redis
 collection failures mark the snapshot unavailable rather than returning healthy empty totals.
 Providers that throw or return null remain in the collection as unavailable; they are not silently
-dropped. Redis membership lookups and key scans now signal a missing/closed connection instead
-of silently returning an empty result. Other cache read/write fallback behavior is unchanged.
+dropped. Statistics use strict Redis membership lookups and key scans that signal a missing/closed
+connection. Existing storage/cache callers retain their empty-set/no-op fallbacks during outages,
+so Redis failures do not prevent later providers in a storage chain from receiving writes.
 Missing regions or failed collections report
 `NaN`, not stale or zero values. Overall hit rate is request-weighted from native Caffeine/Guava
 hit and request counts, never inferred from provider-specific "loads". Providers without native

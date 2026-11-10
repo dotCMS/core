@@ -1,7 +1,6 @@
 package com.dotcms.cache.lettuce;
 
 import com.dotcms.util.DotCloneable;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
@@ -289,7 +288,7 @@ public class RedisCache extends CacheProvider {
             return counts;
         }
         try {
-            this.getClient().scanKeys(this.REDIS_PREFIX_KEY + "." + StringPool.STAR,
+            this.getClient().scanKeysOrThrow(this.REDIS_PREFIX_KEY + "." + StringPool.STAR,
                     this.keyBatchingSize, keys -> {
                         for (final String key : keys) {
                             // Preserve prefix matching for dotted/overlapping group names.
@@ -328,10 +327,8 @@ public class RedisCache extends CacheProvider {
         // Keep the legacy stats-screen rows on discovery failure; metrics use availability metadata.
         Set<String> currentGroups;
         try {
-            if (getClient() instanceof NullLettuceClient<?, ?>) {
-                throw new DotStateException("Redis client unavailable for cache statistics");
-            }
-            currentGroups = getGroups();
+            currentGroups = getClient().getMembersOrThrow(REDIS_GROUP_KEY).stream()
+                    .filter(Objects::nonNull).map(Object::toString).collect(Collectors.toSet());
         } catch (final Exception e) {
             Logger.warnAndDebug(RedisCache.class, "Unable to list Redis groups: " + e.getMessage(), e);
             cacheProviderStats.markUnavailable();

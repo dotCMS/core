@@ -1,12 +1,14 @@
 package com.dotcms.cache.lettuce;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.never;
@@ -16,6 +18,11 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.metrics.binders.CacheMetrics;
+import com.dotcms.storage.Chainable404StorageCache;
+import com.dotcms.storage.ChainableStoragePersistenceAPI;
+import com.dotcms.storage.ObjectWriterDelegate;
+import com.dotcms.storage.RedisStoragePersistenceAPI;
+import com.dotcms.storage.StoragePersistenceAPI;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
@@ -24,6 +31,7 @@ import io.lettuce.core.api.StatefulRedisConnection;
 import io.lettuce.core.api.sync.RedisCommands;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.vavr.Lazy;
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +66,8 @@ class RedisCacheStatsTest {
         mocks = MockitoAnnotations.openMocks(this);
         cache = new RedisCache(Lazy.of(() -> client));
         when(client.getMembers("GROUP_KEY")).thenReturn(Set.of("foo", "foo.bar", "other", "empty"));
+        when(client.getMembersOrThrow(anyString())).thenCallRealMethod();
+        doCallRealMethod().when(client).scanKeysOrThrow(anyString(), anyInt(), any());
         doAnswer(invocation -> {
             final String prefix = ((String) invocation.getArgument(0)).replaceFirst("\\*$", "");
             final Consumer<Collection<String>> consumer = invocation.getArgument(2);
@@ -160,6 +170,41 @@ class RedisCacheStatsTest {
         final RedisCache unavailableCache = new RedisCache(Lazy.of(NullLettuceClient::new));
 
         assertUnavailableMetrics(unavailableCache.getStats());
+    }
+
+    /** Existing membership callers keep their empty-set fallback during connection acquisition failure. */
+    @Test
+    void legacyMembershipLookup_preservesUnavailableFallback() {
+        doReturn(null).when(concreteClient).getConn();
+
+        assertEquals(Set.of(), assertDoesNotThrow(() -> concreteClient.getMembers("GROUP_KEY")));
+    }
+
+    /** Existing key-list callers keep their no-op fallback without receiving invented batches. */
+    @Test
+    void legacyKeyScan_preservesUnavailableFallback() {
+        doReturn(null).when(concreteClient).getConn();
+        final RedisCache unavailableCache = new RedisCache(Lazy.of(() -> concreteClient));
+
+        assertEquals(Set.of(), assertDoesNotThrow(() -> unavailableCache.getKeys("group")));
+    }
+
+    /** A cold Redis group lookup must not prevent a later durable provider from receiving the write. */
+    @Test
+    void storageChain_redisOutageStillReachesDurableProvider() throws Exception {
+        doReturn(null).when(concreteClient).getConn();
+        final RedisStoragePersistenceAPI redisStorage = new RedisStoragePersistenceAPI();
+        final Field field = RedisStoragePersistenceAPI.class.getDeclaredField("redisCache");
+        field.setAccessible(true);
+        field.set(redisStorage, new RedisCache(Lazy.of(() -> concreteClient)));
+        final StoragePersistenceAPI durable = mock(StoragePersistenceAPI.class);
+        final ObjectWriterDelegate writer = mock(ObjectWriterDelegate.class);
+        final ChainableStoragePersistenceAPI chain = new ChainableStoragePersistenceAPI(
+                writer, List.of(redisStorage, durable), mock(Chainable404StorageCache.class)) {};
+
+        assertDoesNotThrow(() -> chain.pushObject("cold-group", "object", writer, "value", Map.of()));
+
+        verify(durable).pushObject("cold-group", "object", writer, "value", Map.of());
     }
 
     /** Internal collection failures stay visible as unknown rather than healthy empty totals. */

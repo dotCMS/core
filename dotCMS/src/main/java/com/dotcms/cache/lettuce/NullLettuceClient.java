@@ -1,5 +1,6 @@
 package com.dotcms.cache.lettuce;
 
+import com.dotmarketing.business.DotStateException;
 import io.lettuce.core.api.StatefulConnection;
 import org.apache.commons.lang3.concurrent.ConcurrentUtils;
 
@@ -11,8 +12,8 @@ import java.util.concurrent.Future;
 import java.util.function.Consumer;
 
 /**
- * Null Object implementation of {@link RedisClient}: every operation is a no-op that returns a safe,
- * non-null default. Used when Redis is unavailable/disabled so callers never NPE on Futures or collections.
+ * Null Object implementation of {@link RedisClient}: legacy operations return safe, non-null defaults.
+ * Strict collection operations report unavailability instead of inventing an empty Redis cache.
  */
 @SuppressWarnings("deprecation") // implements deprecated (but retained) RedisClient methods
 public class NullLettuceClient<K, V> implements RedisClient {
@@ -85,6 +86,12 @@ public class NullLettuceClient<K, V> implements RedisClient {
     @Override
     public Set getMembers(Object key) {
         return Collections.emptySet();
+    }
+
+    /** Strict collection cannot succeed when Redis is disabled or unavailable. */
+    @Override
+    public Set<V> getMembersOrThrow(final Object key) {
+        throw new DotStateException("Redis client unavailable for set membership lookup");
     }
 
     @Override
@@ -186,6 +193,14 @@ public class NullLettuceClient<K, V> implements RedisClient {
     @Override
     public void scanKeys(String matchesPattern, int keyBatchingSize, Consumer keyConsumer) {
 
+    }
+
+    /** Strict collection cannot succeed when Redis is disabled or unavailable. */
+    @Override
+    @SuppressWarnings("rawtypes") // Matches the legacy raw RedisClient implementation.
+    public void scanKeysOrThrow(final String matchesPattern, final int keyBatchingSize,
+            final Consumer keyConsumer) {
+        throw new DotStateException("Redis client unavailable for key scan");
     }
 
 }
