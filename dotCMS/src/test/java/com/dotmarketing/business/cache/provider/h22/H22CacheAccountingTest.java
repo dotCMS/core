@@ -1,7 +1,6 @@
 package com.dotmarketing.business.cache.provider.h22;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -98,6 +97,10 @@ public class H22CacheAccountingTest {
         final CacheStats region = cache.getStats().getStats().get(0);
         assertEquals(UtilMethods.prettyByteify(expectedBytes), region.getStatValue(BYTES_WRITTEN));
         assertEquals(UtilMethods.prettyByteify(expectedBytes / 2), region.getStatValue(AVERAGE_SIZE));
+        assertEquals(region.getStatValue(BYTES_WRITTEN),
+                region.getStatValue(CacheStats.REGION_MEM_TOTAL_PRETTY));
+        assertEquals(region.getStatValue(AVERAGE_SIZE),
+                region.getStatValue(CacheStats.REGION_MEM_PER_OBJECT));
         assertTrue(counter("totalSize") > firstSize);
     }
 
@@ -129,7 +132,7 @@ public class H22CacheAccountingTest {
         }
     }
 
-    /** New regions report zero without presenting write totals as cache memory usage. */
+    /** New regions report zero in explicit write columns and backward-compatible aliases. */
     @Test
     public void testEmptyRegionHasZeroSerializedSizeAndExplicitWriteColumns() {
         final CacheStats region = cache.getStats().getStats().get(0);
@@ -137,8 +140,10 @@ public class H22CacheAccountingTest {
         assertEquals(UtilMethods.prettyByteify(0), region.getStatValue(BYTES_WRITTEN));
         assertEquals(UtilMethods.prettyByteify(0), region.getStatValue(AVERAGE_SIZE));
         assertEquals("0", region.getStatValue(CacheStats.REGION_SIZE));
-        assertNull(region.getStatValue(CacheStats.REGION_MEM_TOTAL_PRETTY));
-        assertNull(region.getStatValue(CacheStats.REGION_MEM_PER_OBJECT));
+        assertEquals(region.getStatValue(BYTES_WRITTEN),
+                region.getStatValue(CacheStats.REGION_MEM_TOTAL_PRETTY));
+        assertEquals(region.getStatValue(AVERAGE_SIZE),
+                region.getStatValue(CacheStats.REGION_MEM_PER_OBJECT));
     }
 
     /** Exercises the real private upsert path without widening production visibility. */

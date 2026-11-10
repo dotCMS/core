@@ -20,9 +20,9 @@ public class CacheStats {
   public final static String REGION_MEM_TOTAL_PRETTY="cache.stats.region.mem.total.pretty";
   public final static String REGION_MEM_PER_OBJECT="cache.stats.region.mem.per.object";
   public final static String REGION_MEM_PER_OBJECT_PRETTY="cache.stats.region.mem.per.object";
-  /** Cumulative serialized bytes written, including replacements; not resident cache size. */
+  /** Serialized bytes written since initialization/full flush, including replacements; not memory. */
   public final static String REGION_BYTES_WRITTEN="cache.stats.region.bytes.written";
-  /** Write-weighted average serialized size, not retained Java heap size. */
+  /** Write-weighted serialized size since initialization/full flush, not retained Java heap size. */
   public final static String REGION_AVG_SERIALIZED_SIZE="cache.stats.region.serialized.size.avg";
   public final static String REGION_AVG_LOAD_TIME="cache.stats.region.load.time.avg";
   public final static String REGION_EVICTIONS="cache.stats.region.evictions";

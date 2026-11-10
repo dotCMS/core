@@ -411,8 +411,8 @@ public class H22Cache extends CacheProvider {
 	}
 
     /**
-     * Reports current row counts and cumulative, write-weighted serialized sizes, not heap usage.
-     * Counter samples are approximate while writes are in progress.
+     * Reports current row counts and write-weighted serialized sizes since initialization or the
+     * last full cache flush, not heap usage. Samples are approximate while writes are in progress.
      */
     @Override
     public CacheProviderStats getStats() {
@@ -431,6 +431,11 @@ public class H22Cache extends CacheProvider {
             stats.addStat(CacheStats.REGION, group);
             stats.addStat(CacheStats.REGION_BYTES_WRITTEN, UtilMethods.prettyByteify(bytesWritten));
             stats.addStat(CacheStats.REGION_AVG_SERIALIZED_SIZE, UtilMethods.prettyByteify(perObject));
+            // Legacy REST aliases: these are serialized write statistics, not resident memory.
+            stats.addStat(CacheStats.REGION_MEM_TOTAL_PRETTY,
+                    stats.getStatValue(CacheStats.REGION_BYTES_WRITTEN));
+            stats.addStat(CacheStats.REGION_MEM_PER_OBJECT,
+                    stats.getStatValue(CacheStats.REGION_AVG_SERIALIZED_SIZE));
             
             try {
               stats.addStat(CacheStats.REGION_SIZE,  _getGroupCount(group));
