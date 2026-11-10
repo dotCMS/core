@@ -1,8 +1,11 @@
 package com.dotmarketing.servlets.ajax;
 
+import com.dotcms.auth.BasicAuthentication;
+import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import java.io.IOException;
@@ -33,7 +36,28 @@ public abstract class AjaxAction {
 		this.webResource = webResource;
 	}
 
-	public void init(HttpServletRequest request, HttpServletResponse response){
+	/**
+	 * Authenticates before dispatch, resolving explicitly enabled legacy aliases before the strict
+	 * user check. The normal SSL, authentication and action permission checks remain in place.
+	 *
+	 * @param request incoming request
+	 * @param response outgoing response
+	 */
+	public void init(final HttpServletRequest request, final HttpServletResponse response){
+        if (BasicAuthentication.allowUrlCredentials()
+                && BasicAuthentication.mode() == BasicAuthentication.Mode.ALL) {
+            setURIParams(request);
+            final String username = params.getOrDefault("u", params.get("user"));
+            final String password = params.getOrDefault("p", params.get("passwd"));
+            if (UtilMethods.isSet(username) && UtilMethods.isSet(password)) {
+                final Map<String, String> credentials = new HashMap<>(params);
+                credentials.put("user", username);
+                credentials.put("password", password);
+                this.user = webResource.initWithMap(credentials, request, response,
+                        AnonymousAccess.NONE, null).getUser();
+                return;
+            }
+        }
 		setUser( request);
 		setURIParams(request);
 	}

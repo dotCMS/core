@@ -143,7 +143,7 @@ public class TestResource {
                                @FormParam ("type") String type,
                                @FormParam ("callback") String callback ) throws IOException, JSONException {
 
-        InitDataObject initData = webResource.init("user/" + user + "/password/" + password, request, response, true, null);
+        InitDataObject initData = webResource.initWithFormCredentials(user, password, request, response, null);
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "param1", param1 );

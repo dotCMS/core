@@ -1,6 +1,7 @@
 package com.dotcms.auth;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Config;
@@ -31,6 +32,16 @@ public final class BasicAuthentication {
         } catch (IllegalArgumentException e) {
             return Mode.NONE;
         }
+    }
+
+    /**
+     * Returns whether legacy URL username/credential login is explicitly enabled (default: false).
+     * This opt-in does not relax {@code ALLOW_BASIC_AUTH} or affect header, session or JSON login.
+     *
+     * @return true only when URL credentials are enabled by configuration
+     */
+    public static boolean allowUrlCredentials() {
+        return Config.getStrictBooleanProperty(FeatureFlagName.ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS, false);
     }
 
     /**

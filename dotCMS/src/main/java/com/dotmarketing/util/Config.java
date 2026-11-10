@@ -782,6 +782,34 @@ public class Config {
     }
 
     /**
+     * Reads a strict boolean opt-in without normalizing a malformed value into an enabled setting.
+     * Environment overrides retain precedence even when invalid, followed by the system table
+     * and properties. Only a single {@code true} value (ignoring case and whitespace) enables it;
+     * malformed, empty or multi-valued settings return false rather than using a lower-priority source.
+     * Existing boolean and array getters are unchanged.
+     *
+     * @param name configuration property name
+     * @param defaultValue value to return only when the property is absent from every source
+     * @return the resolved boolean, or false for an invalid explicit value
+     */
+    public static boolean getStrictBooleanProperty(final String name, final boolean defaultValue) {
+        final String envKey = envKey(name);
+        _refreshProperties();
+        String value = null;
+        if (!environmentSetKeys.contains(envKey) && !environmentSetKeys.contains(name)) {
+            value = getSystemTableValue(envKey, name);
+        }
+        if (value == null) {
+            final String propertyKey = props.containsKey(envKey) ? envKey : name;
+            if (!props.containsKey(propertyKey)) {
+                return defaultValue;
+            }
+            value = String.join(StringPool.COMMA, props.getStringArray(propertyKey));
+        }
+        return Boolean.parseBoolean(value.trim());
+    }
+
+    /**
      * @param key
      * @param value
      */

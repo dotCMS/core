@@ -53,6 +53,7 @@ public class WebResourceAuthenticationTest extends UnitTestBase {
     private final String mode;
     private final String transport;
     private String previousMode;
+    private String previousUrlCredentials;
     private String previousPrincipal;
 
     /**
@@ -81,6 +82,8 @@ public class WebResourceAuthenticationTest extends UnitTestBase {
     @Before
     public void saveState() {
         previousMode = Config.getStringProperty("ALLOW_BASIC_AUTH", null);
+        previousUrlCredentials = Config.getStringProperty("ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS", null);
+        Config.setProperty("ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS", true);
         previousPrincipal = PrincipalThreadLocal.getName();
         Config.setProperty("ALLOW_BASIC_AUTH", mode);
     }
@@ -89,6 +92,7 @@ public class WebResourceAuthenticationTest extends UnitTestBase {
     @After
     public void restoreState() {
         Config.setProperty("ALLOW_BASIC_AUTH", previousMode);
+        Config.setProperty("ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS", previousUrlCredentials);
         PrincipalThreadLocal.setName(previousPrincipal);
     }
 

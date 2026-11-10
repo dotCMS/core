@@ -123,6 +123,44 @@ across rollback. Block password-based Basic/DOTAUTH and legacy credential access
 gateway, or use a binary that supports the policy. Call the default-change and this rollback
 limitation out in the release notes.
 
+## URL Credential Login — Upgrade Note
+
+`ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS` defaults to `false`, including when the setting is
+absent. Username/password authentication through legacy URL path or query parameters is ignored;
+this also applies to API JWTs passed as the password. The opt-in uses
+`Config.getStrictBooleanProperty`: only an unambiguous `true` enables it. An invalid, empty or
+multi-valued setting at the winning environment, system-table or property-file source stays
+disabled rather than falling back to a lower-priority `true`. Other configuration getters retain
+their existing behavior. Without another valid authentication source,
+protected endpoints return their existing unauthorized response. Public endpoints retain their
+existing anonymous-access rules. Authorization headers, DOTAUTH headers, existing sessions and
+designated JSON/body login endpoints are unchanged. Legacy configuration forms and the example
+POST form authenticate their explicitly body-bound credentials separately from URL parameters,
+while retaining the existing Basic policy, SSL, lockout and portlet permission checks.
+
+The bundled property is commented out intentionally: the Java getter supplies the false default.
+This lets a single `true` in `dotcms-config-cluster.properties` opt in without merging with a shipped
+false into the ambiguous value `false,true`. Multiple explicit values still fail closed.
+
+Migrate clients to an `Authorization: Bearer` header or the designated login endpoint. For temporary
+legacy compatibility, set `ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS=true` (environment variable:
+`DOT_ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS=true`). This opt-in remains subordinate to
+`ALLOW_BASIC_AUTH`: `NONE` still rejects credentials, `JWT_TOKEN` permits API JWTs only, and `ALL`
+also permits passwords. Legacy Ajax password/session fallbacks require both this opt-in and `ALL`;
+their existing permission and lockout checks are unchanged. Ajax aliases are authenticated before
+strict servlet initialization can reject the request; existing back-office path restrictions still
+apply, and this setting does not allow-list any additional Ajax paths. Their merged path/query/form parameter
+maps share the same gate; this does not disable the designated body-based login endpoints.
+
+**Secrets in URLs remain unsafe:** accepting or rejecting a request does not redact the incoming
+URL from Tomcat, reverse-proxy or other access logs. Stop sending secrets in URLs; rotate exposed
+credentials and handle affected logs according to your security procedures. This setting does not
+add URL logging or change access-log configuration.
+
+**Rollback:** an older binary without this setting ignores even an explicit `false` override and
+restores its previous URL-login behavior. Keep clients migrated and block legacy URL credentials
+at an upstream gateway if the hardened posture must survive a binary rollback.
+
 ## Configuration Documentation Pattern
 When adding new properties, include:
 ```properties

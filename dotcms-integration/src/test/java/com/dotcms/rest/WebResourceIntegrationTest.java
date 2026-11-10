@@ -68,6 +68,7 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
   private final List<HttpServletRequest> authenticationRequests = new ArrayList<>();
   private final String authenticationPassword = UUIDGenerator.generateUuid();
   private String previousBasicAuth;
+  private String previousUrlCredentials;
   private String previousAnonymousAccess;
   private String previousForceSsl;
   private String previousPrincipal;
@@ -77,6 +78,7 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
   @Before
   public void saveAuthenticationState() {
     previousBasicAuth = Config.getStringProperty("ALLOW_BASIC_AUTH", null);
+    previousUrlCredentials = Config.getStringProperty("ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS", null);
     previousAnonymousAccess = Config.getStringProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, null);
     previousForceSsl = Config.getStringProperty("FORCE_SSL_ON_RESP_API", null);
     previousPrincipal = PrincipalThreadLocal.getName();
@@ -104,6 +106,7 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
       }
     } finally {
       Config.setProperty("ALLOW_BASIC_AUTH", previousBasicAuth);
+      Config.setProperty("ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS", previousUrlCredentials);
       Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, previousAnonymousAccess);
       Config.setProperty("FORCE_SSL_ON_RESP_API", previousForceSsl);
       PrincipalThreadLocal.setName(previousPrincipal);
@@ -275,9 +278,26 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
     }
   }
 
-  /** DOTAUTH and the live user/password path parameters must obey the same policy as Basic. */
+  /** Valid account passwords and persisted API JWTs cannot log in through URL paths by default. */
+  @Test
+  public void url_credentials_require_explicit_opt_in() throws Exception {
+    final User user = authenticationUser();
+    final String jwt = apiJwt(authenticationToken(user, null));
+    for (final String enabled : new String[]{null, "false"}) {
+      Config.setProperty("ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS", enabled);
+      for (final String mode : new String[]{"JWT_TOKEN", "ALL"}) {
+        Config.setProperty("ALLOW_BASIC_AUTH", mode);
+        assertCredentialDenied("params", loginName(user), authenticationPassword);
+        assertCredentialDenied("params", loginName(user), jwt);
+        assertCredentialUser(user, "Basic", jwt);
+      }
+    }
+  }
+
+  /** Explicitly enabled URL credentials and DOTAUTH remain subject to the Basic policy. */
   @Test
   public void legacy_header_and_url_credentials_obey_authentication_mode() throws Exception {
+    Config.setProperty("ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS", true);
     final User user = authenticationUser();
     final String jwt = apiJwt(authenticationToken(user, null));
     for (final String transport : new String[]{"DOTAUTH", "params"}) {
