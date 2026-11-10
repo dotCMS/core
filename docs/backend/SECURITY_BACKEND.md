@@ -150,6 +150,26 @@ use `DOT_IMPORT_API_TOKEN`; the legacy `DOT_IMPORT_USERNAME_PASSWORD` option req
 **remote** server to opt into `ALL`. Unrelated outbound Basic used for OAuth/search providers
 is not controlled by this setting.
 
+### Login token lifetime
+
+A login sets a login token (JWT) cookie whose only use is to log the browser back in when its
+HTTP session is gone (session timeout, node restart). Its lifetime depends on "remember me":
+
+| Login | Cookie | Token lifetime | Property |
+|---|---|---|---|
+| Without "remember me" | Browser session | 60 minutes, renewed while the user works | `json.web.token.session.max.age.minutes` (default `60`) |
+| With "remember me" (opt-in) | Persistent | 14 days, not renewed | `json.web.token.days.max.age` (default `14`) |
+
+A session login token is renewed once half its lifetime has passed, on the next back-end
+request (`/api/`, `/dotAdmin`, `/html/`, `/c/`, `/dwr/`) that carries the cookie
+(`DefaultAutoLoginWebInterceptor`). An active user therefore keeps a valid cookie, and a browser
+left idle for longer than the lifetime must log in again. Site pages and assets never receive a
+renewed cookie. Setting the minutes to `1440` restores the earlier one-day lifetime.
+
+The "remember me" token is a separate, opt-in lifetime. Deployments that want a shorter limit
+for it can lower `json.web.token.days.max.age`. API tokens (`/api/v1/apitoken`) have their own
+expiry and are not affected by either property.
+
 ### Authentication Check Pattern
 ```java
 public Response secureEndpoint(HttpServletRequest request, HttpServletResponse response) {

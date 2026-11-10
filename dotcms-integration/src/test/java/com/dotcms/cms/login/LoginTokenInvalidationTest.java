@@ -7,8 +7,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -22,12 +24,14 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.UserCache;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.WebKeys;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
@@ -37,12 +41,14 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 /**
  * A login token (the JWT set as the login cookie, also accepted as a Bearer header) must stop
  * working once its user logs out or has the password changed, while a token issued afterwards keeps
  * working. Each test drives the real logout and password APIs and then asks the token API whether
- * the earlier token still resolves to a user.
+ * the earlier token still resolves to a user. A login without "remember me" issues a token that
+ * expires after the configured session token lifetime.
  */
 public class LoginTokenInvalidationTest {
 
@@ -340,6 +346,92 @@ public class LoginTokenInvalidationTest {
 
         assertNotEquals(tokenIdBefore, userAPI.loadUserById(user.getUserId()).getRememberMeToken());
         assertFalse("token issued before logout must be rejected", resolves(token));
+    }
+
+    /**
+     * A login without "remember me" sets a session cookie whose token expires after the default
+     * session token lifetime (60 minutes) and schedules its renewal on the session.
+     */
+    @Test
+    public void test_sessionLogin_tokenExpiresAfterSessionLifetime() throws Exception {
+        final HttpServletRequest request =
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/authentication").request();
+        request.getSession(); // a login always has its HTTP session by the time the cookie is set
+        final long before = System.currentTimeMillis();
+
+        final Cookie cookie = loginCookie(request, newUser(), false);
+
+        assertEquals("the session cookie has no max age", -1, cookie.getMaxAge());
+        assertExpiresIn(cookie, before, TimeUnit.MINUTES.toMillis(
+                LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT));
+        final Object renewAt =
+                request.getSession().getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT);
+        assertTrue("renewal must be scheduled within the token lifetime", renewAt instanceof Long
+                && (Long) renewAt > before && (Long) renewAt < expiryMillis(cookie));
+    }
+
+    /**
+     * The session token lifetime follows its configuration property.
+     */
+    @Test
+    public void test_sessionLogin_tokenLifetimeIsConfigurable() throws Exception {
+        Config.setProperty(LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES, 15);
+        try {
+            final long before = System.currentTimeMillis();
+            final Cookie cookie = loginCookie(new MockHttpRequestIntegrationTest("localhost",
+                    "/api/v1/authentication").request(), newUser(), false);
+            assertExpiresIn(cookie, before, TimeUnit.MINUTES.toMillis(15));
+        } finally {
+            Config.setProperty(LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES,
+                    LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT);
+        }
+    }
+
+    /**
+     * A "remember me" login keeps its persistent cookie and a token that lasts the configured
+     * number of days, and clears any renewal scheduled on the session.
+     */
+    @Test
+    public void test_rememberMeLogin_keepsDaysLifetime() throws Exception {
+        final HttpServletRequest request =
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/authentication").request();
+        request.getSession().setAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT, 0L);
+        final long before = System.currentTimeMillis();
+
+        final Cookie cookie = loginCookie(request, newUser(), true);
+
+        assertTrue("the remember-me cookie is persistent", cookie.getMaxAge() > 0);
+        assertExpiresIn(cookie, before,
+                TimeUnit.DAYS.toMillis(LoginServiceAPI.JWT_TOKEN_MAX_AGE_DAYS.get()));
+        assertNull(request.getSession().getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
+    }
+
+    /**
+     * Issues the login cookie for the user through the login service and returns it.
+     */
+    private static Cookie loginCookie(final HttpServletRequest request, final User user,
+            final boolean rememberMe) {
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        APILocator.getLoginServiceAPI().doRememberMe(request, response, user, rememberMe);
+        final ArgumentCaptor<Cookie> cookie = ArgumentCaptor.forClass(Cookie.class);
+        verify(response).addCookie(cookie.capture());
+        assertEquals(CookieKeys.REMEMBER_ME_COOKIE.get(), cookie.getValue().getName());
+        return cookie.getValue();
+    }
+
+    private static long expiryMillis(final Cookie cookie) {
+        return JsonWebTokenFactory.getInstance().getJsonWebTokenService()
+                .parseToken(cookie.getValue()).getExpiresDate().getTime();
+    }
+
+    /**
+     * Asserts the cookie's token expires the given lifetime after {@code before}, within a minute.
+     */
+    private static void assertExpiresIn(final Cookie cookie, final long before, final long lifetime) {
+        final long expiresIn = expiryMillis(cookie) - before;
+        assertTrue("token lifetime was " + expiresIn + " ms, expected about " + lifetime + " ms",
+                expiresIn >= lifetime - TimeUnit.MINUTES.toMillis(1)
+                        && expiresIn <= lifetime + TimeUnit.MINUTES.toMillis(1));
     }
 
     /**

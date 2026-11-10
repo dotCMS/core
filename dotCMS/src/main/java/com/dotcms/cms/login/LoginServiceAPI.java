@@ -41,6 +41,25 @@ public interface LoginServiceAPI extends Serializable {
      */
     public static final int JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS_DEFAULT = 365;
 
+    /**
+     * Lifetime, in minutes, of the login token set as a browser-session cookie when the user logs
+     * in without "remember me". While the user keeps working in the back end the token is renewed
+     * before it runs out, so this is in effect how long an idle browser can recover a lost HTTP
+     * session without logging in again. Defaults to
+     * {@link #JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT}; tokens set by "remember me" use
+     * {@link #JSON_WEB_TOKEN_DAYS_MAX_AGE} instead.
+     */
+    public static final String JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES = "json.web.token.session.max.age.minutes";
+
+    /** Value used for {@link #JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES} when the property is not set. */
+    public static final int JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT = 60;
+
+    /**
+     * HTTP session attribute holding the time (epoch millis) after which the session's login token
+     * cookie is renewed. It is only present on sessions whose cookie holds a session login token.
+     */
+    public static final String SESSION_LOGIN_TOKEN_RENEW_AT = "com.dotcms.SESSION_LOGIN_TOKEN_RENEW_AT";
+
     public final static Lazy<Integer> JWT_TOKEN_MAX_AGE_DAYS = Lazy.of(() -> Config.getIntProperty(
             JSON_WEB_TOKEN_DAYS_MAX_AGE,
             JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT));

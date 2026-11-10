@@ -16,6 +16,7 @@ import io.jsonwebtoken.SignatureException;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -91,17 +92,30 @@ public class JsonWebTokenUtils {
      */
     public String createUserToken(final User user, int jwtMaxAge) {
 
-        // private UserToken(String id, String subject, Date modificationDate, long ttlMillis, final String skinId) {
+        return createUserToken(user, jwtMaxAge > 0 ? DateUtil.daysToMillis(jwtMaxAge) : jwtMaxAge);
+    }
+
+    /**
+     * Creates a login token for the user that expires the given duration from now.
+     *
+     * @param user     the user the token logs in
+     * @param lifetime how long the token stays valid
+     * @return the signed token
+     */
+    public String createUserToken(final User user, final Duration lifetime) {
+
+        return createUserToken(user, lifetime.toMillis());
+    }
+
+    private String createUserToken(final User user, final long ttlMillis) {
+
         return this.jsonWebTokenService.generateUserToken(
                 new UserToken.Builder().id(user.getRememberMeToken())
                         .subject(PublicEncryptionFactory.encryptString(user.getUserId()))
                         .modificationDate(user.getModificationDate())
-                        .expiresDate(jwtMaxAge > 0 ?
-                                DateUtil.daysToMillis(jwtMaxAge) :
-                                jwtMaxAge).build()
+                        .expiresDate(ttlMillis).build()
         );
-
-    } // getUserIdFromJsonWebToken
+    }
 
     /**
      * When a Invalid JSON Web Token is found this method handles the error

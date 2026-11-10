@@ -63,6 +63,7 @@ import io.vavr.Lazy;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -607,29 +608,41 @@ public class LoginServiceAPIFactory implements Serializable {
 
 
 
+        /**
+         * Sets the login token cookie. With "remember me" the cookie is persistent and its token
+         * lasts {@link LoginServiceAPI#JSON_WEB_TOKEN_DAYS_MAX_AGE} days; otherwise it is a
+         * browser-session cookie holding a session login token (see
+         * {@link #setSessionLoginTokenCookie}).
+         */
         @Override
         public void doRememberMe(final HttpServletRequest req,
                                  final HttpServletResponse res,
                                  final User user,
                                  final boolean rememberMe) {
 
-
-            if(!rememberMe && !SET_JWT_SESSION_COOKIE.get()) {
+            if (!rememberMe) {
+                if (SET_JWT_SESSION_COOKIE.get()) {
+                    this.setSessionLoginTokenCookie(req, res, user);
+                }
                 return;
             }
 
-            // if rememberMe is false, the cookie will be created just for the session.
-            int cookieMaxAge = rememberMe ? JWT_TOKEN_MAX_AGE_DAYS.get() : 0;
-
-            // token is valid for one day
-            int tokenMaxAge = rememberMe ? JWT_TOKEN_MAX_AGE_DAYS.get() : 1;
-
-            final String rememberMeToken = this.jsonWebTokenUtils.createUserToken(user, tokenMaxAge);
-            createJsonWebTokenCookie(req, res, rememberMeToken, Optional.of(cookieMaxAge));
+            final HttpSession session = req.getSession(false);
+            if (null != session) {
+                session.removeAttribute(SESSION_LOGIN_TOKEN_RENEW_AT);
+            }
+            final int maxAgeDays = JWT_TOKEN_MAX_AGE_DAYS.get();
+            final String rememberMeToken = this.jsonWebTokenUtils.createUserToken(user, maxAgeDays);
+            createJsonWebTokenCookie(req, res, rememberMeToken, Optional.of(maxAgeDays));
 
         } // doRememberMe.
 
-
+        /**
+         * Sets the login token cookie for the given number of days, capped at
+         * {@link LoginServiceAPI#JSON_WEB_TOKEN_DAYS_MAX_AGE}. When the result is a browser-session
+         * cookie (one day or less, or persistent cookies turned off) it holds a session login
+         * token instead (see {@link #setSessionLoginTokenCookie}).
+         */
         @Override
         public void doRememberMe(final HttpServletRequest req,
                                  final HttpServletResponse res,
@@ -640,6 +653,10 @@ public class LoginServiceAPIFactory implements Serializable {
             final int cookieMaxAge = SET_JWT_SESSION_COOKIE.get() == true && maxAge>1 ? maxAge : 0;
             try {
 
+                if (cookieMaxAge == 0) {
+                    this.setSessionLoginTokenCookie(req, res, user);
+                    return;
+                }
                 final String rememberMeToken = this.jsonWebTokenUtils.createUserToken(user, tokenMaxAge);
                 createJsonWebTokenCookie(req, res, rememberMeToken, Optional.of(cookieMaxAge));
             } catch (Exception e) {
@@ -647,6 +664,28 @@ public class LoginServiceAPIFactory implements Serializable {
                 Logger.debug(this, e.getMessage(), e);
             }
         } // doRememberMe.
+
+        /**
+         * Sets a browser-session login cookie whose token expires after
+         * {@link LoginServiceAPI#JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES} minutes, and records on the
+         * HTTP session the time, half way through that lifetime, after which a back-end request
+         * renews it (see {@code DefaultAutoLoginWebInterceptor}).
+         */
+        private void setSessionLoginTokenCookie(final HttpServletRequest req,
+                                                final HttpServletResponse res,
+                                                final User user) {
+
+            final Duration lifetime = Duration.ofMinutes(Config.getIntProperty(
+                    JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES, JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT));
+            final String sessionToken = this.jsonWebTokenUtils.createUserToken(user, lifetime);
+            createJsonWebTokenCookie(req, res, sessionToken, Optional.of(0));
+
+            final HttpSession session = req.getSession(false);
+            if (null != session) {
+                session.setAttribute(SESSION_LOGIN_TOKEN_RENEW_AT,
+                        System.currentTimeMillis() + lifetime.toMillis() / 2);
+            }
+        }
 
         @CloseDBIfOpened
         @Override
