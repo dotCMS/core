@@ -664,10 +664,16 @@ public final class LoginLockout {
      * account. Taking the larger of the two means the delay escalates whichever way the failures are
      * concentrated: on one account, or spread across many from the same source.
      *
+     * <p>{@value #UNKNOWN_SOURCE} is excluded from the cross-account total: it is a shared fallback for every
+     * login that has no resolvable client address, not a real source, so unrelated accounts that happen to
+     * share it must not inflate each other's delay.
+     *
      * @return the pacing seed for {@code attempt}
      */
     public int pacingSeed(final Attempt attempt) {
-        return Math.max(attempt.number, sourceFailures(attempt.source));
+        return UNKNOWN_SOURCE.equals(attempt.source)
+                ? attempt.number
+                : Math.max(attempt.number, sourceFailures(attempt.source));
     }
 
     /**

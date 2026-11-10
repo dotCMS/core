@@ -1199,4 +1199,32 @@ public class LoginLockoutTest {
             cleanUp(user);
         }
     }
+
+    /**
+     * Given: two different accounts, each failing logins with no resolvable address ({@link
+     *        LoginLockout#UNKNOWN_SOURCE})
+     * When: a third, fresh account fails once, also with no resolvable address
+     * Then: its pacing seed reflects only its own count, not the other two accounts' failures
+     *
+     * {@code UNKNOWN_SOURCE} is a shared fallback bucket for callers without a real client address, not a real
+     * network origin, so failures recorded under it must not escalate each other's delay the way failures from
+     * one real address do.
+     */
+    @Test
+    public void test_pacing_seed_ignores_other_accounts_under_unknown_source() throws Exception {
+        final User first = newUser();
+        final User second = newUser();
+        final User third = newUser();
+        try {
+            LoginLockout.getInstance().begin(first.getUserId(), LoginLockout.UNKNOWN_SOURCE);
+            LoginLockout.getInstance().begin(second.getUserId(), LoginLockout.UNKNOWN_SOURCE);
+            final LoginLockout.Attempt thirdAttempt =
+                    LoginLockout.getInstance().begin(third.getUserId(), LoginLockout.UNKNOWN_SOURCE);
+            assertEquals(thirdAttempt.number(), LoginLockout.getInstance().pacingSeed(thirdAttempt));
+        } finally {
+            cleanUp(first);
+            cleanUp(second);
+            cleanUp(third);
+        }
+    }
 }
