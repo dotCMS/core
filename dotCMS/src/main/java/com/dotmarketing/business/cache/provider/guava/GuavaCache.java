@@ -173,6 +173,7 @@ public class GuavaCache extends CacheProvider {
         return keys;
     }
 
+    /** Snapshots every logical region while counting shared physical caches only once in aggregates. */
     @Override
     public CacheProviderStats getStats () {
         CacheStats providerStats = new CacheStats();
@@ -180,9 +181,10 @@ public class GuavaCache extends CacheProvider {
         Set<String> currentGroups = new HashSet<>();
         currentGroups.addAll(getGroups());
 
-        Cache defaultCache = getCache(DEFAULT_CACHE);
-        for ( String group : currentGroups ) {
-          Cache foundCache = getCache(group);
+        getCache(DEFAULT_CACHE);
+        final Set<Cache<String, Object>> counted = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (final String group : currentGroups) {
+          final Cache<String, Object> foundCache = getCache(group);
           
           boolean isDefault = (Config.getIntProperty("cache." + group + ".size", -1) == -1);
 
@@ -195,7 +197,10 @@ public class GuavaCache extends CacheProvider {
           
           
           com.google.common.cache.CacheStats guavaStats = foundCache.stats();
-          CacheStats stats = new CacheStats(guavaStats.hitCount(), guavaStats.requestCount());
+          final CacheStats stats = new CacheStats(guavaStats.hitCount(), guavaStats.requestCount());
+          if (!counted.add(foundCache)) {
+              stats.excludeFromAggregates();
+          }
           
           NumberFormat nf = DecimalFormat.getInstance();
           DecimalFormat pf = new DecimalFormat("##.##%");

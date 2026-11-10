@@ -33,6 +33,7 @@ public class CacheStats {
     // Native counters are metadata, not UI columns; REGION_LOAD has provider-specific meanings.
     private final Long hitCount;
     private final Long requestCount;
+    private boolean aggregateSource = true;
 
     public CacheStats() {
         hitCount = null;
@@ -53,6 +54,16 @@ public class CacheStats {
     /** Returns native total requests, or empty when this provider does not report them. */
     public OptionalLong getRequestCount() {
         return requestCount == null ? OptionalLong.empty() : OptionalLong.of(requestCount);
+    }
+
+    /** Returns whether this row contributes distinct backing-cache facts to aggregate metrics. */
+    public boolean isAggregateSource() {
+        return aggregateSource;
+    }
+
+    /** Keeps alias display rows intact while preventing repeated backing-cache facts in totals. */
+    public void excludeFromAggregates() {
+        aggregateSource = false;
     }
 
     public CacheStats addStat(String statName, String value) {

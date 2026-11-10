@@ -317,7 +317,8 @@ public class CacheMetrics implements MeterBinder {
 
     /** Sums an already collected stat without scanning the providers again. */
     private double sumStats(final CacheSnapshot snapshot, final String key) {
-        return snapshot.regions().values().stream().mapToDouble(stats -> getStatDoubleValue(stats, key)).sum();
+        return snapshot.regions().values().stream().filter(CacheStats::isAggregateSource)
+                .mapToDouble(stats -> getStatDoubleValue(stats, key)).sum();
     }
 
     /** Uses native request counters: provider-specific "loads" are not a reliable miss count. */
@@ -325,6 +326,9 @@ public class CacheMetrics implements MeterBinder {
         double totalHits = 0;
         double totalRequests = 0;
         for (final CacheStats region : snapshot.regions().values()) {
+            if (!region.isAggregateSource()) {
+                continue;
+            }
             final OptionalLong hits = region.getHitCount();
             final OptionalLong requests = region.getRequestCount();
             if (hits.isPresent() && requests.isPresent()) {

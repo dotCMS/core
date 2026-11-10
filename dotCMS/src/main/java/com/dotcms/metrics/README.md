@@ -70,6 +70,8 @@ Missing regions or failed collections report
 `NaN`, not stale or zero values. Overall hit rate is request-weighted from native Caffeine/Guava
 hit and request counts, never inferred from provider-specific "loads". Providers without native
 counters are excluded from that rate; no observed requests produces `NaN`.
+Guava region aliases retain their individual gauges and labels, but shared backing-cache counters
+and sizes contribute only once to aggregate rates and totals.
 Region identities are registered at startup; discovering regions created later still requires a restart.
 Provider-formatted numeric statistics use the JVM formatting locale, including grouped counts and
 fractional percentages and locale-specific percent signs. H22 discovers and counts all regions

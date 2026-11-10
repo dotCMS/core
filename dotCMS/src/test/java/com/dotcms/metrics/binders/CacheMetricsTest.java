@@ -15,6 +15,7 @@ import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.business.cache.provider.caffine.CaffineCache;
 import com.dotmarketing.business.cache.provider.guava.GuavaCache;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.simple.SimpleConfig;
@@ -149,6 +150,53 @@ class CacheMetricsTest {
         } finally {
             guavaRegistry.close();
             cache.removeAll();
+        }
+    }
+
+    /** Shared Guava aliases retain their region gauges without multiplying physical-cache totals. */
+    @Test
+    void guavaAggregates_countSharedBackingCachesOnce() {
+        final String key = "cache.separate.caches.for.non.defined.regions";
+        final String previous = Config.getStringProperty(key, null);
+        final GuavaCache cache = new GuavaCache();
+        final SimpleMeterRegistry guavaRegistry = new SimpleMeterRegistry();
+        final String suffix = UUID.randomUUID().toString();
+        final String shared = "alias-" + suffix;
+        final String alias = "second-alias-" + suffix;
+        final String independent = "livecache-" + suffix;
+        try {
+            Config.setProperty(key, false);
+            cache.put(shared, "present", "value");
+            for (int i = 0; i < 9; i++) {
+                cache.get(shared, "present");
+            }
+            cache.get(alias, "missing");
+            cache.put(independent, "present", "value");
+            cache.get(independent, "present");
+            for (int i = 0; i < 9; i++) {
+                cache.get(independent, "missing");
+            }
+            snapshots.set(List.of(cache.getStats()));
+            new CacheMetrics().bindTo(guavaRegistry);
+
+            org.junit.jupiter.api.Assertions.assertAll(
+                    () -> assertEquals(50.0, guavaRegistry.get("dotcms.cache.hit_rate.overall")
+                            .gauge().value(), 0.001),
+                    () -> assertEquals(10.0, guavaRegistry.get("dotcms.cache.hits.total")
+                            .gauge().value(), 0.001),
+                    () -> assertEquals(2.0, guavaRegistry.get("dotcms.cache.size.total")
+                            .gauge().value(), 0.001),
+                    () -> assertEquals(4.0, guavaRegistry.get("dotcms.cache.regions.total")
+                            .gauge().value(), 0.001));
+            for (final String region : List.of(shared, alias, "default")) {
+                assertEquals(9.0, guavaRegistry.get("dotcms.cache.region.hits")
+                        .tag("provider", "guava_memory_cache").tag("region", region.replace("-", "_"))
+                        .gauge().value(), 0.001);
+            }
+        } finally {
+            guavaRegistry.close();
+            cache.removeAll();
+            Config.setProperty(key, previous);
         }
     }
 
