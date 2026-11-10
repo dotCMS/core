@@ -38,12 +38,15 @@ The dotCMS metrics system provides deep observability into all aspects of your d
 #### **`DatabaseMetrics`** - Database Health & Connection Pool
 ```java
 // Key Metrics:
-dotcms_database_connection_available          // Database connectivity (1=up, 0=down)
+dotcms_database_health_available              // Managed cached status (1=healthy, 0=unhealthy, NaN=unknown)
 dotcms_database_hikari_connections_active     // Active connections
 dotcms_database_hikari_connections_max        // Max pool size
 dotcms_database_hikari_threads_awaiting       // Threads waiting for connections
-dotcms_database_health_query_test             // Query execution health
 ```
+
+Database health reads the existing health manager's cached result. Scrapes never construct a
+standalone database health check or borrow/validate a database connection; missing/unknown health
+state reports `NaN` until the background health system publishes a result.
 
 #### **`CacheMetrics`** - Cache Performance & Memory
 ```java
@@ -76,8 +79,10 @@ Region identities are registered at startup; discovering regions created later s
 Provider-formatted numeric statistics use the JVM formatting locale, including grouped counts and
 fractional percentages and locale-specific percent signs. H22 discovers and counts all regions
 with one grouped query per shard table (18 queries with the default layout), not a query per
-region/table pair. Redis region sizes use one cluster-scoped, streamed keyspace scan per
-snapshot collection, not one full scan per region. This still costs a keyspace traversal per TTL;
+region/table pair. Lettuce Redis region sizes use one cluster-scoped, streamed keyspace scan per
+snapshot collection, not one full scan per region. The legacy Jedis provider collects with one
+borrowed connection, explicit `INFO memory`, and one cursor pass over cache keys, without blocking
+`KEYS` or nested group/key lookups that hide failures. This still costs a keyspace traversal per TTL;
 collection is not constant-time, and Redis size counts remain approximate during concurrent writes.
 H22 serialized-write totals are deliberately excluded from memory gauges because they are not
 resident-memory measurements.

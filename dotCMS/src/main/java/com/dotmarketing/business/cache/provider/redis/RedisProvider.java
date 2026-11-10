@@ -19,17 +19,19 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.apache.commons.collections.map.LRUMap;
-import redis.clients.jedis.Connection;
 import redis.clients.jedis.Jedis;
 import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.Protocol;
+import redis.clients.jedis.params.ScanParams;
+import redis.clients.jedis.resps.ScanResult;
 
 /**
  * @author Jonathan Gamba
@@ -362,40 +364,39 @@ public class RedisProvider extends CacheProvider {
         return currentGroups;
     }
 
+    /** Collects legacy display stats on one connection, preserving failures as unavailable metadata. */
     @Override
     public CacheProviderStats getStats () {
-        CacheStats providerStats = new CacheStats();
-        CacheProviderStats ret = new CacheProviderStats(providerStats,getName());
-        try ( Jedis jedis = readPool.getResource() ) {
+        final CacheProviderStats ret = new CacheProviderStats(new CacheStats(), getName());
+        try (Jedis jedis = readPool.getResource()) {
+            final String memoryUsageString = getRedisProperty(jedis.info("memory"), "used_memory");
+            long memoryUsage = memoryUsageString == null ? -1 : Long.parseLong(memoryUsageString);
+            final Map<String, Long> counts = new HashMap<>();
+            final ScanParams scan = new ScanParams().count(1000);
+            String cursor = "0";
+            do {
+                final ScanResult<String> page = jedis.scan(cursor, scan);
+                for (final String key : page.getResult()) {
+                    final int separator = key.indexOf(delimit);
+                    if (separator > 0) {
+                        counts.merge(key.substring(0, separator), 1L, Long::sum);
+                    }
+                }
+                cursor = page.getCursor();
+            } while (!"0".equals(cursor));
 
-            //Getting some stats from redis
-            final Connection connection = jedis.getClient();
-            String memoryStats = connection.getBulkReply();
-
-            //Read the total memory usage
-            int memoryUsage = -1;
-            String memoryUsageString = getRedisProperty(memoryStats, "used_memory");
-            if ( memoryUsageString != null ) {
-                memoryUsage = Integer.valueOf(memoryUsageString);
-            }
-            NumberFormat nf = DecimalFormat.getInstance();
-            //Getting the list of groups
-            Set<String> currentGroups = getGroups();
-
-            for ( String group : currentGroups ) {
-                CacheStats stats = new CacheStats();
-                stats.addStat(CacheStats.REGION, group);
-                stats.addStat(CacheStats.REGION_SIZE, nf.format(getKeys(group).size()));
+            final NumberFormat nf = DecimalFormat.getInstance();
+            for (final Map.Entry<String, Long> group : counts.entrySet()) {
+                final CacheStats stats = new CacheStats();
+                stats.addStat(CacheStats.REGION, group.getKey());
+                stats.addStat(CacheStats.REGION_SIZE, nf.format(group.getValue()));
                 stats.addStat(CacheStats.REGION_CONFIGURED_SIZE, nf.format(memoryUsage));
-                /*
-                Show the complete memory usage just one time,
-                the cache stats page needs improvements (html/portlet/ext/cmsmaintenance/cachestats_guava.jsp), that page was not
-                created in caches that does not rely on groups
-                 */
+                // Preserve the legacy UI convention of displaying provider memory on one row only.
                 memoryUsage = 0;
                 ret.addStatRecord(stats);
             }
-        } catch ( Exception e ) {
+        } catch (Exception e) {
+            ret.markUnavailable();
             Logger.error(this, "Error generating Stats for Redis", e);
         }
         return ret;
