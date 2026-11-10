@@ -97,6 +97,8 @@ public class DotAuthResource {
 
     /** Sentinel path value representing the SYSTEM_HOST row (the global default). */
     public static final String SYSTEM_HOST_SENTINEL = "SYSTEM_HOST";
+    /** SAML app field holding the extra accepted assertion consumer URLs. */
+    private static final String SAML_ADDITIONAL_ACS_URLS_KEY = "additionalAcsUrls";
     private static final int OIDC_DISCOVERY_MAX_RESPONSE_BYTES = 1024 * 1024;
     private static final int SAML_METADATA_MAX_RESPONSE_BYTES = 5 * 1024 * 1024;
     /** Redirects followed by the metadata/discovery proxy; each hop is validated before it is requested. */
@@ -247,15 +249,20 @@ public class DotAuthResource {
                 final ProtocolConfig config = ownConfig.get();
                 ssoProtocol = config.protocol;
                 ssoConfigured = true;
-                // Re-resolve the active protocol with System Host fallback so the response
-                // reflects the effective values the runtime actually sees (per-site keys
-                // override; System Host keys fill in any gaps). This lets administrators
-                // audit inherited settings — e.g. additionalAcsUrls — that a per-site row
-                // would otherwise hide, even though the runtime continues to honour them.
-                final ProtocolHandler activeHandler = handlers.get(config.protocol);
-                ssoValues = appsAPI.getSecrets(activeHandler.appKey(), true, host, user)
-                        .map(activeHandler::maskedValues)
-                        .orElse(config.values);
+                // The runtime resolves each SAML property per key, so a site row without
+                // additionalAcsUrls still accepts the System Host's list. Show that effective
+                // list so an administrator can see what is accepted. Only this one key is merged
+                // in: copying every inherited value would expose System Host extras and, on the
+                // next save, pin them into this site's row.
+                final Map<String, Object> effectiveValues = new LinkedHashMap<>(config.values);
+                if (config.protocol == DotAuthProtocol.SAML) {
+                    final ProtocolHandler activeHandler = handlers.get(config.protocol);
+                    appsAPI.getSecrets(activeHandler.appKey(), true, host, user)
+                            .map(activeHandler::maskedValues)
+                            .map(values -> values.get(SAML_ADDITIONAL_ACS_URLS_KEY))
+                            .ifPresent(urls -> effectiveValues.put(SAML_ADDITIONAL_ACS_URLS_KEY, urls));
+                }
+                ssoValues = effectiveValues;
             }
 
             if (!ssoConfigured && !host.isSystemHost()) {

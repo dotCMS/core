@@ -91,7 +91,12 @@ optional properties and database permissions:
   endpoint, such as `/api/v1/dotsaml/benchmark/<site id>`, need that full URL in the SAML app's
   **Additional Assertion Consumer URLs** field (`additionalAcsUrls`, comma-separated, editable in
   Apps and dotAuth). URLs match exactly after lower-casing scheme and host and dropping a default
-  port or trailing slash; there is no prefix or wildcard matching.
+  port or trailing slash; there is no prefix or wildcard matching. Like every SAML property, a site
+  without its own `additionalAcsUrls` inherits the System Host's list. A site that saves the field
+  with an empty value (both screens do this when it is left blank) accepts no additional URLs and
+  does not inherit; the dotAuth screen shows the effective list for the site. Saving a site's
+  configuration there stores that list on the site, even if it was not edited, so later changes to
+  the System Host's list no longer reach that site.
 - **Legacy signatures:** `allow.sha1.signatures` defaults to `false`. Configure the IdP
   to use RSA or ECDSA with SHA-256/384/512 and SHA-256/384/512 digests. Only as a
   temporary compatibility measure, set `allow.sha1.signatures=true` for an IdP still

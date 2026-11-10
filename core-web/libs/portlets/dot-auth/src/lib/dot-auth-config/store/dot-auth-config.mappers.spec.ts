@@ -632,7 +632,7 @@ describe('dot-auth-config.mappers', () => {
             expect(vals['sPEndpointHostname']).toBeUndefined();
         });
 
-        it('serializes additionalAcsUrls trimmed, and omits it when blank', () => {
+        it('serializes additionalAcsUrls trimmed, and sends an empty value when blank', () => {
             const config = clone(DEFAULT_CONFIG);
             config.protocol = 'saml';
             config.saml.additionalAcsUrls = '  https://a.example/acs, https://b.example/acs  ';
@@ -647,7 +647,7 @@ describe('dot-auth-config.mappers', () => {
                 (toPayload(config, 'test-site-id').values as Record<string, unknown>)[
                     'additionalAcsUrls'
                 ]
-            ).toBeUndefined();
+            ).toBe('');
         });
 
         it('serializes signRequests so the toggle persists', () => {
