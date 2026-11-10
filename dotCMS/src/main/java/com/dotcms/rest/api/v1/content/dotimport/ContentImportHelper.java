@@ -4,6 +4,7 @@ import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobListView;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.job.JobState;
@@ -123,142 +124,53 @@ public class ContentImportHelper {
     }
 
     /**
-     * gets a job
+     * Gets a job for the user making the request. Only the job's creator and CMS Administrators
+     * can read it.
      *
      * @param jobId The ID of the job
-     * @return Job
-     * @throws DotDataException if there's an error fetching the job
+     * @param user  The {@link User} making the request
+     * @return the job
+     * @throws DoesNotExistException if there is no such job, or the user may not read it
+     * @throws DotDataException      if there's an error fetching the job
      */
-    Job getJob(final String jobId) throws DotDataException {
-        return jobQueueManagerAPI.getJob(jobId);
+    Job getJob(final String jobId, final User user) throws DotDataException {
+        return JobResponseUtil.forResponse(jobQueueManagerAPI.getJob(jobId, user));
     }
 
     /**
-     * Retrieves a list of jobs.
+     * Retrieves one page of a content import job listing for the user making the request. CMS
+     * Administrators see every user's import jobs; anyone else sees only the ones they created.
      *
+     * @param view     The listing to read
+     * @param user     The {@link User} making the request
      * @param page     The page number
      * @param pageSize The number of jobs per page
-     * @return A result object containing the list of jobs and pagination information.
+     * @return the page of jobs, or an empty result if the jobs could not be read
      */
-    JobPaginatedResult getJobs(int page, int pageSize) {
+    JobPaginatedResult getJobs(final JobListView view, final User user, final int page,
+            final int pageSize) {
         try {
-            return jobQueueManagerAPI.getJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page, pageSize);
+            return JobResponseUtil.forResponse(jobQueueManagerAPI.getJobs(view,
+                    IMPORT_CONTENTLETS_QUEUE_NAME, user, page, pageSize));
         } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching content import jobs", e);
         }
-        return JobPaginatedResult.builder().build();
+        return JobPaginatedResult.builder().jobs(List.of()).total(0).page(page)
+                .pageSize(pageSize).build();
     }
 
     /**
-     * Retrieves a list of active content import jobs.
-     *
-     * @param page     The page number
-     * @param pageSize The number of jobs per page
-     * @return JobPaginatedResult
-     */
-    JobPaginatedResult getActiveJobs(int page, int pageSize) {
-        try {
-            return jobQueueManagerAPI.getActiveJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page, pageSize);
-        } catch (DotDataException e) {
-            Logger.error(this.getClass(), "Error fetching active content import jobs", e);
-        }
-        return JobPaginatedResult.builder().build();
-    }
-
-
-    /**
-     * Retrieves a list of completed content import jobs.
-     *
-     * @param page     The page number
-     * @param pageSize The number of jobs per page
-     * @return JobPaginatedResult
-     */
-    JobPaginatedResult getCompletedJobs(int page, int pageSize) {
-        try {
-            return jobQueueManagerAPI.getCompletedJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page,
-                    pageSize);
-        } catch (DotDataException e) {
-            Logger.error(this.getClass(), "Error fetching active content import jobs", e);
-        }
-        return JobPaginatedResult.builder().build();
-    }
-
-    /**
-     * Retrieves a list of completed content import jobs.
-     *
-     * @param page     The page number
-     * @param pageSize The number of jobs per page
-     * @return JobPaginatedResult
-     */
-    JobPaginatedResult getCanceledJobs(int page, int pageSize) {
-        try {
-            return jobQueueManagerAPI.getCanceledJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page,
-                    pageSize);
-        } catch (DotDataException e) {
-            Logger.error(this.getClass(), "Error fetching canceled content import jobs", e);
-        }
-        return JobPaginatedResult.builder().build();
-    }
-
-    /**
-     * Retrieves a list of failed content import jobs.
-     *
-     * @param page     The page number
-     * @param pageSize The number of jobs per page
-     * @return JobPaginatedResult
-     */
-    JobPaginatedResult getFailedJobs(int page, int pageSize) {
-        try {
-            return jobQueueManagerAPI.getFailedJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page, pageSize);
-        } catch (DotDataException e) {
-            Logger.error(this.getClass(), "Error fetching failed content import jobs", e);
-        }
-        return JobPaginatedResult.builder().build();
-    }
-
-    /**
-     * Retrieves a list of abandoned content import jobs.
-     *
-     * @param page     The page number
-     * @param pageSize The number of jobs per page
-     * @return JobPaginatedResult
-     */
-    JobPaginatedResult getAbandonedJobs(int page, int pageSize) {
-        try {
-            return jobQueueManagerAPI.getAbandonedJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page,
-                    pageSize);
-        } catch (DotDataException e) {
-            Logger.error(this.getClass(), "Error fetching abandoned content import jobs", e);
-        }
-        return JobPaginatedResult.builder().build();
-    }
-
-    /**
-     * Retrieves a list of successful content import jobs.
-     *
-     * @param page     The page number
-     * @param pageSize The number of jobs per page
-     * @return JobPaginatedResult
-     */
-    JobPaginatedResult getSuccessfulJobs(int page, int pageSize) {
-        try {
-            return jobQueueManagerAPI.getSuccessfulJobs(IMPORT_CONTENTLETS_QUEUE_NAME, page,
-                    pageSize);
-        } catch (DotDataException e) {
-            Logger.error(this.getClass(), "Error fetching abandoned content import jobs", e);
-        }
-        return JobPaginatedResult.builder().build();
-    }
-
-    /**
-     * cancels a job
+     * Cancels a job for the user making the request. Only the job's creator and CMS
+     * Administrators can cancel it.
      *
      * @param jobId The ID of the job
-     * @throws DotDataException if there's an error cancelling the job
+     * @param user  The {@link User} making the request
+     * @throws DoesNotExistException if there is no such job, or the user may not cancel it
+     * @throws DotDataException      if there's an error cancelling the job
      */
-    void cancelJob(String jobId) throws DotDataException {
+    void cancelJob(final String jobId, final User user) throws DotDataException {
         try {
-            jobQueueManagerAPI.cancelJob(jobId);
+            jobQueueManagerAPI.cancelJob(jobId, user);
         } catch (JobProcessorNotFoundException e) {
             Logger.error(this.getClass(), "Error cancelling job", e);
             throw new DoesNotExistException(e.getMessage());

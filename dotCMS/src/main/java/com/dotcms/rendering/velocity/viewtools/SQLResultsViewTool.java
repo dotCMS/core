@@ -1,27 +1,20 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.RoleAPI;
-import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.liferay.portal.model.User;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * The SQL ViewTool ({@code $sql}) allows any dotCMS user with proper permissions to run SQL statements from frontend
@@ -40,16 +33,19 @@ import java.util.regex.Pattern;
  */
 public class SQLResultsViewTool implements ViewTool {
 
-    private static final UserAPI userAPI = APILocator.getUserAPI();
-    private static final RoleAPI roleAPI = APILocator.getRoleAPI();
-    Context ctx;
     ArrayList<HashMap<String, String>> errorResults;
-    private InternalContextAdapterImpl ica;
 
-    private static final boolean RESPECT_FRONT_END_ROLES = Boolean.TRUE;
     private static final String HAS_DOT_CONNECT_SQL_ERROR = "hasDotConnectSQLError";
     private static final String DOT_CONNECT_SQL_ERROR = "dotConnectSQLError";
-    private static final String DEFAULT_DATASOURCE = "default";
+    static final String DEFAULT_DATASOURCE = "default";
+    static final String ALLOW_DOTCMS_DB_ACCESS = "ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB";
+
+    /** The request the tool was initialised with; it carries the author of the rendered code. */
+    private HttpServletRequest request;
+
+    /** Debug line for a refused query; the author is on the request, not in the query text. */
+    private static final String FORBIDDEN_QUERY_DEBUG =
+            "Check the content whose code called the sql ViewTool";
 
     /**
      * Default ViewTool constructor.
@@ -58,7 +54,7 @@ public class SQLResultsViewTool implements ViewTool {
      */
     public void init(final Object obj) {
         final ViewContext context = (ViewContext) obj;
-        this.ctx = context.getVelocityContext();
+        this.request = context.getRequest();
         this.errorResults = new ArrayList<>();
     }
 
@@ -102,6 +98,11 @@ public class SQLResultsViewTool implements ViewTool {
 
     /**
      * Executes the specified SQL query, based on the information specified by the user/developer.
+     * <p>
+     * The data source must be {@code "default"} or a name in the local naming context. Whatever name is used, a query
+     * against the dotCMS database runs only when {@code ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB} is enabled. The
+     * {@code "default"} name uses the internal connection pool; any other name is queried through the data source it
+     * names.
      *
      * @param dataSource    The database that the SQL query will run against.
      * @param sql           The SQL query.
@@ -109,24 +110,18 @@ public class SQLResultsViewTool implements ViewTool {
      * @param startRow      The initial paginated record included in the result set.
      * @param maxRow        The final paginated record included in the result set.
      *
-     * @return The results returned by the SQL query.
+     * @return The results returned by the SQL query, or a single error row.
      */
     @CloseDBIfOpened
     private ArrayList<HashMap<String, String>> getResults(final String dataSource, final String sql, final
     ArrayList<Object> parameterList, int startRow, int maxRow) {
-        if (dataSource.equals(DEFAULT_DATASOURCE) && !Config.getBooleanProperty
-                ("ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB", false)) {
-            return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool failed to execute " +
-                    "query on default connection pool because ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false" +
-                    ".")), "ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false.");
+        if (!DbConnectionFactory.isLocalJndiName(dataSource)) {
+            return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "Failed to call the SQLResultsViewTool. " +
+                    "Invalid Data Source.")));
         }
         if (!UtilMethods.isSet(sql)) {
             // SQL Query is not Set. So, return an empty list
             return new ArrayList<>();
-        }
-        if (!UtilMethods.isSet(dataSource)) {
-            return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "Failed to call the SQLResultsViewTool. " +
-                    "Invalid Data Source.")));
         }
         if (startRow < 0) {
             startRow = 0;
@@ -135,12 +130,36 @@ public class SQLResultsViewTool implements ViewTool {
             maxRow = 0;
         }
         try {
-            final Contentlet contentlet = getDbAccessorContentlet();
-            if (null == contentlet || !UtilMethods.isSet(contentlet.getIdentifier())) {
+            if (!callerMayQueryTheDatabase()) {
                 return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "Failed to call the SQLResultsViewTool" +
                         ". User failed to execute SQL queries.")));
             }
-            if (!isSQLValid(sql, contentlet)) {
+            if (!DEFAULT_DATASOURCE.equals(dataSource)) {
+                try {
+                    DbConnectionFactory.getDataSource(dataSource);
+                } catch (final Exception e) {
+                    return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "Failed to call the " +
+                            "SQLResultsViewTool. Invalid Data Source.")), "The data source could not be resolved: " +
+                            e.getClass().getSimpleName());
+                }
+            }
+            // The data source only needs to be checked when queries on the dotCMS database are not allowed.
+            if (!Config.getBooleanProperty(ALLOW_DOTCMS_DB_ACCESS, false)) {
+                final boolean dotcmsDatabase;
+                try {
+                    dotcmsDatabase = isDotcmsDatabase(dataSource);
+                } catch (final Exception e) {
+                    return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "Failed to call the " +
+                            "SQLResultsViewTool. Invalid Data Source.")), "The data source could not be resolved: " +
+                            e.getClass().getSimpleName());
+                }
+                if (dotcmsDatabase) {
+                    return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool failed to " +
+                            "execute query on default connection pool because ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB " +
+                            "is set to false.")), "ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false.");
+                }
+            }
+            if (!isSQLValid(sql)) {
                 return this.errorResults;
             }
             final DotConnect dc = new DotConnect().setSQL(sql).setStartRow(startRow).setMaxRows(maxRow);
@@ -152,14 +171,15 @@ public class SQLResultsViewTool implements ViewTool {
                             " is different from the params list size.")));
                 }
                 for (final Object parameter : parameterList) {
-                    if (isSQLValid(parameter.toString(), contentlet)) {
+                    if (isSQLValid(parameter.toString())) {
                         dc.addParam(parameter);
                     } else {
                         return this.errorResults;
                     }
                 }
             }
-            if (dataSource.equals(DEFAULT_DATASOURCE)) {
+            // Only "default" names the internal pool; any other name is queried through the data source it names.
+            if (DEFAULT_DATASOURCE.equals(dataSource)) {
                 return dc.loadResults();
             }
             return dc.getResults(dataSource);
@@ -170,64 +190,60 @@ public class SQLResultsViewTool implements ViewTool {
     }
 
     /**
-     * Verifies that the piece of content (usually a Widget) that is calling this {@code sql} ViewTool was modified by a
-     * {@link User} which has the expected {@code Scripting Developer} Role. If it does, then return such a piece of
-     * content.
+     * Tells whether a data source name points to the dotCMS database: either the {@code "default"} name, or any name
+     * that {@link DbConnectionFactory#isDefaultDatabase(String)} recognises as leading to it.
      *
-     * @return If the User who created/modified the content that calls this ViewTool has the expected Role, returns such
-     * a Contentlet. Otherwise, or if an error occurs, returns {@code null}.
+     * @param dataSource A data source name already accepted by {@link DbConnectionFactory#isLocalJndiName(String)}.
+     *
+     * @return {@code true} if a query on this name would run against the dotCMS database.
+     *
+     * @throws com.dotmarketing.exception.DotRuntimeException If the name cannot be resolved, or the data source behind
+     *                                                         it cannot be checked.
      */
-    protected Contentlet getDbAccessorContentlet() {
-        this.ica = new InternalContextAdapterImpl(this.ctx);
-        final String fieldResourceName = this.ica.getCurrentTemplateName();
-        try {
-            final Pattern pattern = Pattern.compile("[^/LIVE][^/WORKING][^/EDIT_MODE][^/PREVIEW_MODE][^/ADMIN_MODE](.*?)(?=\\/)");
-            final Matcher matcher = pattern.matcher(fieldResourceName);
-            if (matcher.find()) {
-                final String contentletInode = matcher.group(0);
-                final Contentlet contentlet = APILocator.getContentletAPI().find(contentletInode, userAPI
-                        .getSystemUser(), RESPECT_FRONT_END_ROLES);
-                if (null != contentlet && UtilMethods.isSet(contentlet.getIdentifier())) {
-                    final User modUser = userAPI.loadUserById(contentlet.getModUser(), APILocator.getUserAPI()
-                            .getSystemUser(), RESPECT_FRONT_END_ROLES);
-                    final boolean hasRequiredRole = roleAPI.doesUserHaveRole(modUser, roleAPI.loadRoleByKey
-                            ("Scripting Developer"));
-                    return hasRequiredRole ? contentlet : null;
-                } else {
-                    Logger.warn(this.getClass(), String.format("Contentlet with Inode '%s' was not found!",
-                            contentletInode));
-                }
-            }
-        } catch (final Exception e) {
-            Logger.warn(this.getClass(), "An error occurred when calling the Scripting Tool: " + e);
-        }
-        return null;
+    static boolean isDotcmsDatabase(final String dataSource) {
+        return DEFAULT_DATASOURCE.equals(dataSource)
+                || DbConnectionFactory.isDefaultDatabase(dataSource);
     }
 
     /**
-     * Analyzes the words contained in the SQL query specified by the user/developer, and reports back when an invalid
-     * keyword or forbidden table is referenced.
+     * Verifies that the user who last modified the content whose code is calling this {@code sql}
+     * ViewTool holds the {@code Scripting Developer} Role.
      *
-     * @param sql        The SQL query.
-     * @param contentlet The Contentlet containing the SQL code.
+     * <p>That author is reported on the request by whoever renders the content, which is the only
+     * party that knows what content it is. It used to be derived from the current Velocity
+     * resource name, which the calling code chooses for itself through {@code #parse}: pointing
+     * that name at content a Scripting Developer once saved made this check pass for a caller
+     * without the Role.
      *
-     * @return If the SQL query contains no dangerous code, returns {@code true}. Otherwise, returns {@code false}.
+     * @return {@code true} when the author of the calling code may query the database
      */
-    protected boolean isSQLValid(final String sql, final Contentlet contentlet) {
+    protected boolean callerMayQueryTheDatabase() {
+        return RestrictedViewToolAccess.renderingAuthorHasAccess(this.request);
+    }
+
+    /**
+     * Checks the query text against what this ViewTool refuses to run: the user and role tables,
+     * and the statements {@link com.dotmarketing.common.util.SQLUtil} treats as dangerous.
+     *
+     * @param sql the query the calling code asked to run
+     *
+     * @return {@code true} when the query may run
+     */
+    protected boolean isSQLValid(final String sql) {
         final String lowerCasedSql = sql.toLowerCase();
         if (lowerCasedSql.contains("user_")) {
             reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool access to user_ table is " +
-                    "forbidden.")), "Check content with id: " + contentlet.getIdentifier());
+                    "forbidden.")), FORBIDDEN_QUERY_DEBUG);
             return Boolean.FALSE;
         }
         if (lowerCasedSql.contains("cms_role")) {
             reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool access to cms_role table is " +
-                    "forbidden.")), "Check content with id: " + contentlet.getIdentifier());
+                    "forbidden.")), FORBIDDEN_QUERY_DEBUG);
             return Boolean.FALSE;
         }
         if (SQLUtil.containsEvilSqlWords(lowerCasedSql)) {
             reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool is trying to execute a " +
-                    "forbidden query.")), "Check content with id: " + contentlet.getIdentifier());
+                    "forbidden query.")), FORBIDDEN_QUERY_DEBUG);
             return Boolean.FALSE;
         }
         return Boolean.TRUE;

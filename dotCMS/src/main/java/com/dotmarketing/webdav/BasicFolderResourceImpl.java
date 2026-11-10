@@ -87,6 +87,9 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
                 final IFileAsset iFileAsset = this.dotDavHelper.loadFile(this.path + newName, user);
                 final Resource fileResource = new FileResourceImpl(iFileAsset, iFileAsset.getFileName());
                 return fileResource;
+            } catch (final IllegalArgumentException e) {
+                // the name was refused (for example a blocked extension); the client gets a 400
+                throw new BadRequestException(this, e.getMessage());
             } catch (Exception e) {
 
             	Logger.warn(this, "An error occurred while creating new file: " +

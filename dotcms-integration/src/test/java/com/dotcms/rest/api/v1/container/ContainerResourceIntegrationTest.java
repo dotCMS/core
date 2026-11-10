@@ -2,10 +2,16 @@ package com.dotcms.rest.api.v1.container;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rest.InitDataObject;
@@ -14,7 +20,10 @@ import com.dotcms.rest.RestUtilTest;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.pagination.OrderDirection;
+import com.dotcms.util.pagination.PaginationException;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -56,34 +65,37 @@ public class ContainerResourceIntegrationTest {
     private final HttpServletRequest request = mock(HttpServletRequest.class);
     private final ShortyIdAPI shortyAPI = mock(ShortyIdAPI.class);
     private final ContentletAPI contentletAPI = mock(ContentletAPI.class);
-    private final User user = mock(User.class);
+    private User user;
     private final HttpServletResponse response = mock(HttpServletResponse.class);
     private final ChainedContext context = mock(ChainedContext.class);
     private final HttpSession session = mock(HttpSession.class);
     private final Contentlet formContent = mock(Contentlet.class);
 
     private final String containerId = "1";
-    private final String formId = "2";
+    private String formId;
     private final Container container = mock(Container.class);
     private final ShortyId shortyId = new ShortyId("2", "1234567", ShortType.IDENTIFIER, ShortType.IDENTIFIER);
 
     @Before
     public void init() throws Exception, SecurityException {
+        IntegrationTestInitService.getInstance().init();
+        // The form endpoints load the form as the caller, so both are real.
+        user = TestUserUtils.getAdminUser();
+        formId = TestDataUtils.getFormLikeContentType().id();
+
         final InitDataObject initData = mock(InitDataObject.class);
 
         when(request.getSession()).thenReturn(session);
         when(initData.getUser()).thenReturn(user);
-        when(webResource.init(request, response, true)).thenReturn(initData);
+        when(webResource.init(any(WebResource.InitBuilder.class))).thenReturn(initData);
         when(velocityUtil.getContext(request, response)).thenReturn(context);
-        when(formAPI.getFormContent(formId)).thenReturn(formContent);
+        when(formAPI.getFormContent(formId, user)).thenReturn(formContent);
         when(shortyAPI.getShorty(containerId)).thenReturn(Optional.of(shortyId));
         when(container.getIdentifier()).thenReturn(containerId);
         when(formContent.getIdentifier()).thenReturn(formId);
 
         containerResource = new ContainerResource(webResource, paginationUtil, formAPI, containerAPI, versionableAPI,
                 velocityUtil, shortyAPI, contentletAPI, mock(ContainerDependenciesHelper.class));
-
-        IntegrationTestInitService.getInstance().init();
     }
 
     @Test
@@ -135,6 +147,51 @@ public class ContainerResourceIntegrationTest {
         } catch(ParseErrorException e) {
             assertEquals(exception, e);
         }
+    }
+
+
+    /**
+     * Method to test: {@link ContainerResource#getContainers}
+     * Given Scenario: The containers are filtered by a content type the user cannot read, so the paginator
+     * fails with a {@link DotSecurityException}.
+     * Expected Result: 403 Forbidden.
+     */
+    @Test
+    public void getContainers_contentTypeNotReadable_returnsForbidden() {
+        givenContainerPageFails(new DotSecurityException("READ permission on the content type is required"));
+
+        final Response result = containerResource.getContainers(request, response, null, 1, 10, "title", "ASC",
+                null, false, false, "someContentType");
+
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), result.getStatus());
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#getContainers}
+     * Given Scenario: The containers are filtered by a content type that does not exist, so the paginator
+     * fails with a {@link NotFoundInDbException}.
+     * Expected Result: 404 Not Found.
+     */
+    @Test
+    public void getContainers_unknownContentType_returnsNotFound() {
+        givenContainerPageFails(new NotFoundInDbException("Content type not found"));
+
+        final Response result = containerResource.getContainers(request, response, null, 1, 10, "title", "ASC",
+                null, false, false, "unknownContentType");
+
+        assertEquals(Response.Status.NOT_FOUND.getStatusCode(), result.getStatus());
+    }
+
+    /**
+     * Makes the containers page fail the way {@code ContainerPaginator} does: the cause is wrapped in a
+     * {@link PaginationException}.
+     */
+    private void givenContainerPageFails(final Exception cause) {
+        final InitDataObject initData = mock(InitDataObject.class);
+        when(initData.getUser()).thenReturn(user);
+        when(webResource.init(null, request, response, true, null)).thenReturn(initData);
+        when(paginationUtil.getPage(any(), any(), any(), anyInt(), anyInt(), anyString(),
+                any(OrderDirection.class), anyMap())).thenThrow(new PaginationException(cause));
     }
 
 }

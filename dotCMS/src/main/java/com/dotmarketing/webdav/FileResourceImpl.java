@@ -5,6 +5,7 @@ import com.bradmcevoy.http.CollectionResource;
 import com.bradmcevoy.http.FileItem;
 import com.bradmcevoy.http.FileResource;
 import com.bradmcevoy.http.HttpManager;
+import com.bradmcevoy.http.exceptions.BadRequestException;
 import com.bradmcevoy.http.LockInfo;
 import com.bradmcevoy.http.LockResult;
 import com.bradmcevoy.http.LockTimeout;
@@ -51,7 +52,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 
 	}
 
-	public void copyTo(CollectionResource collRes, String name) throws DotRuntimeException {
+	public void copyTo(CollectionResource collRes, String name) throws DotRuntimeException, BadRequestException {
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(collRes instanceof TempFolderResourceImpl){
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
@@ -68,6 +69,9 @@ public class FileResourceImpl implements FileResource, LockableResource {
 				if(!p.endsWith("/"))
 					p = p + "/";
 				dotDavHelper.copyResource(this.getPath(), p+name, user, isAutoPub);
+			} catch (final IllegalArgumentException e) {
+				// the destination name was refused (for example a blocked extension); the client gets a 400
+				throw new BadRequestException(this, e.getMessage());
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
 				throw new DotRuntimeException(e.getMessage(), e);
@@ -175,7 +179,7 @@ public class FileResourceImpl implements FileResource, LockableResource {
 
 	}
 
-	public void moveTo(CollectionResource collRes, String name) throws RuntimeException {
+	public void moveTo(CollectionResource collRes, String name) throws RuntimeException, BadRequestException {
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(!name.contains(".")){
 			// so far there are no indications of problems moving files without extension
@@ -199,6 +203,9 @@ public class FileResourceImpl implements FileResource, LockableResource {
 					p = p + "/";
 				try {
 					dotDavHelper.move(this.getPath(), p + name, user, isAutoPub);
+				} catch (final IllegalArgumentException e) {
+					// the destination name was refused (for example a blocked extension); the client gets a 400
+					throw new BadRequestException(this, e.getMessage());
 				} catch (DotDataException e) {
 					Logger.error(FileResourceImpl.class,e.getMessage(),e);
 					throw new DotRuntimeException(e.getMessage(), e);

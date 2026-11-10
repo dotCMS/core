@@ -1,5 +1,6 @@
 package com.dotmarketing.cms.login.factories;
 
+import com.dotcms.auth.LoginLockout;
 import com.dotcms.cms.login.PreventSessionFixationUtil;
 import com.dotcms.concurrent.lock.DotKeyLockManager;
 import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
@@ -9,6 +10,8 @@ import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DuplicateUserException;
+import com.dotmarketing.business.Role;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -179,10 +182,10 @@ public class LoginFactory {
 	            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
 	            }
 
-				// if we do not get the user from LDAP, does not make sense to sync the password.
+				// a login that skips the directory check leaves the local password alone
 				if (!skipPasswordCheck) {
 
-					syncPassword(user);
+					resetDirectoryPassword(user, auth);
 				}
 
 				// if it is the skip password on true and the user is not null, means the user exists on our db and the login is ok (usually it is the case for cookie login)
@@ -191,7 +194,16 @@ public class LoginFactory {
 					auth = Authenticator.SUCCESS;
 				}
 
-    			match = auth == Authenticator.SUCCESS;
+    			match = auth == Authenticator.SUCCESS
+    					&& (skipPasswordCheck || !isLockedOut(user, LoginLockout.clientAddress(request)));
+    			if (!skipPasswordCheck && null != user) {
+    				// LDAP checked the password; the result still counts toward the login lockout
+    				if (auth != Authenticator.SUCCESS) {
+    					LoginLockout.getInstance().countFailure(user.getUserId(), LoginLockout.clientAddress(request));
+    				} else if (match) {
+    					LoginLockout.getInstance().succeeded(user.getUserId(), LoginLockout.clientAddress(request));
+    				}
+    			}
         	} else {
 	            if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
 	            	user = APILocator.getUserAPI().loadByUserByEmail(userName, APILocator.getUserAPI().getSystemUser(), false);
@@ -213,8 +225,10 @@ public class LoginFactory {
 	            }
 	            match = true;
 	            if (!skipPasswordCheck) {
-	            // Validate password and rehash when is needed
-	            match = passwordMatch(password, user);
+	            // Validate password and rehash when is needed. Refused while a lockout applies to this
+	            // address or account; a failure counts toward the lock.
+	            match = LoginLockout.getInstance().passwordMatch(password, user,
+	            		LoginLockout.clientAddress(request), (secret, candidate) -> false);
 	            }
 
 	            if (match) {
@@ -225,9 +239,6 @@ public class LoginFactory {
 
 	            } else {
 
-					match = false;
-					user.setFailedLoginAttempts(user.getFailedLoginAttempts()+1);
-					APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 					SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " from IP: " + request.getRemoteAddr());
 
 	            }
@@ -267,24 +278,44 @@ public class LoginFactory {
         return false;
     }
 
-	private static void syncPassword(User user) {
+	/**
+	 * LDAP checked the password; a login that a lockout applies to (this address, or the whole account)
+	 * is still refused.
+	 */
+	private static boolean isLockedOut(final User user, final String source) {
+		return null != user
+				&& LoginLockout.getInstance().check(user.getUserId(), source) == LoginLockout.Status.LOCKED;
+	}
+
+	/**
+	 * When directory passwords are not copied into dotCMS ({@code auth.impl.ldap.syncPassword}
+	 * is off), replaces the local password of a directory user with the hash of a random
+	 * secret, so the account can only sign in through the directory. Does nothing unless the
+	 * directory accepted the login.
+	 *
+	 * @param user       the {@link User} that tried to sign in
+	 * @param authResult the directory's answer, one of the {@link Authenticator} results
+	 */
+	@VisibleForTesting
+	static void resetDirectoryPassword(final User user, final int authResult) {
+
+		if (authResult != Authenticator.SUCCESS || BaseAuthenticator.SYNC_PASSWORD) {
+			return;
+		}
+
 		try {
 
-            final boolean SYNC_PASSWORD = BaseAuthenticator.SYNC_PASSWORD;
-            if (!SYNC_PASSWORD) {
+			final Role directoryRole = APILocator.getRoleAPI().loadRoleByKey(LDAPImpl.LDAP_USER_ROLE);
+			if (APILocator.getRoleAPI().doesUserHaveRole(user, directoryRole)) {
 
-                String roleName = LDAPImpl.LDAP_USER_ROLE;
+				user.setPassword(PasswordFactoryProxy.generateRandomHash());
+				user.setPasswordEncrypted(true);
+				APILocator.getUserAPI().save(user, APILocator.getUserAPI().getSystemUser(), false);
+			}
+		} catch (Exception e) {
 
-                if (APILocator.getRoleAPI().doesUserHaveRole(user, roleName)) {
-
-                    user.setPassword(DotCustomLoginPostAction.FAKE_PASSWORD);
-                    APILocator.getUserAPI().save(user, APILocator.getUserAPI().getSystemUser(), false);
-                }
-            }
-        } catch (Exception e) {
-
-            Logger.debug(LoginFactory.class, "syncPassword not set or unable to load user", e);
-        }
+			Logger.debug(LoginFactory.class, "Unable to update the local password of a directory user", e);
+		}
 	}
 
 	private static int getLDAPAuth(final String userName,
@@ -306,10 +337,14 @@ public class LoginFactory {
 
 
 	/**
+    * Checks a user's credentials without creating a session. When the directory authenticator
+    * is configured as the pre-authenticator it decides the result, and the local password is
+    * only updated after the directory accepts the login; otherwise the password is checked
+    * against the one stored in dotCMS.
     *
-    * @param userName
-    * @param password
-    * @return
+    * @param userName the email address or user id, depending on the company's authentication type
+    * @param password the password typed by the user
+    * @return {@code true} if the credentials are valid, {@code false} otherwise
     */
     public static boolean doLogin(String userName, String password) throws NoSuchUserException {
         try {
@@ -351,20 +386,17 @@ public class LoginFactory {
  	            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
  	            }
 
-    			try{
-    				boolean SYNC_PASSWORD = BaseAuthenticator.SYNC_PASSWORD;
-    				if(!SYNC_PASSWORD){
-    					String roleName = LDAPImpl.LDAP_USER_ROLE;
-    					if(com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user, roleName)){
-    						user.setPassword(DotCustomLoginPostAction.FAKE_PASSWORD);
-    						APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
-    					}
-    				}
-    			}catch (Exception e) {
-    				Logger.debug(LoginFactory.class, "syncPassword not set or unable to load user", e);
-    			}
+    			resetDirectoryPassword(user, auth);
 
-    			match = auth == Authenticator.SUCCESS;
+    			match = auth == Authenticator.SUCCESS && !isLockedOut(user, LoginLockout.clientAddress());
+    			if (null != user) {
+    				// LDAP checked the password; the result still counts toward the login lockout
+    				if (auth != Authenticator.SUCCESS) {
+    					LoginLockout.getInstance().countFailure(user.getUserId(), LoginLockout.clientAddress());
+    				} else if (match) {
+    					LoginLockout.getInstance().succeeded(user.getUserId(), LoginLockout.clientAddress());
+    				}
+    			}
         	} else {
         	    // Liferay authentication
  	            if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
@@ -386,11 +418,8 @@ public class LoginFactory {
  	            	return false;
  	            }
 
-                match = passwordMatch(password, user);
-                if (match == false) {
-                    user.setFailedLoginAttempts(user.getFailedLoginAttempts() + 1);
-                    APILocator.getUserAPI().save(user, APILocator.getUserAPI().getSystemUser(), false);
-                }
+                // Refused while a lockout applies to this address or account; a failure counts toward the lock.
+                match = LoginLockout.getInstance().passwordMatch(password, user);
         	}
 
             // if passwords match
@@ -423,26 +452,38 @@ public class LoginFactory {
     }
 
     /**
-     * This method validates legacy, clear and new passwords. When identifies a
-     * clear or legacy password it will validate and then change it to a
-     * stronger hash then save it into the system.
-     * 
-     * @param password
-     *            string entered by the user
-     * @param user
-     *            MUST be loaded from db with all the information because we are
-     *            going to save this object if rehash process required
-     * @return
+     * Checks whether the password a user typed matches the one stored for that user. The typed
+     * password is always hashed before it is compared: against the stored secure hash, or, for
+     * values stored in the older digest format, against the digest of the typed password. A
+     * stored value is never compared directly with the typed text. When an older format matches,
+     * the stored value is upgraded to a secure hash and saved.
+     *
+     * <p>The value {@link DotCustomLoginPostAction#FAKE_PASSWORD} is reserved for accounts that
+     * authenticate against a directory service and never matches.</p>
+     *
+     * @param password the password typed by the user
+     * @param user     the {@link User}, loaded from the database with all its information,
+     *                 because it is saved again when its stored password needs upgrading
+     * @return {@code true} if the password matches, {@code false} otherwise
      */
     public static boolean passwordMatch(final String password, final User user) {
+        if (DotCustomLoginPostAction.FAKE_PASSWORD.equals(password)) {
+            return false;
+        }
+
+        if (!UtilMethods.isSet(user.getPassword())) {
+            // Nothing to verify against. The hash verifier rejects a null or empty stored
+            // value with an unchecked exception, which would surface as a server error
+            // rather than as failed credentials.
+            return false;
+        }
+
         boolean needsToRehashPassword = false;
 
         try {
             if (PasswordFactoryProxy.isUnsecurePasswordHash(user.getPassword())) {
-                // This is the legacy functionality that we will replace with
-                // the new hash library
-                final boolean match = user.getPassword().equals(password)
-                        || user.getPassword().equals(PublicEncryptionFactory.digestString(password));
+                // Older digest format: only the digest of the typed password can match it
+                final boolean match = user.getPassword().equals(PublicEncryptionFactory.digestString(password));
 
                 // Bad credentials
                 if (!match) {

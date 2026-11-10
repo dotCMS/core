@@ -21,6 +21,7 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.rest.EmptyHttpResponse;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Permission;
@@ -34,12 +35,12 @@ import com.liferay.portal.model.User;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.UUID;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.containing;
@@ -64,6 +65,9 @@ import static org.junit.Assert.assertTrue;
  * @author hassandotcms
  */
 public class AiRetrievalPermissionTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static final int DIMENSIONS = 1536;
     private static final float THRESHOLD = .25f;
@@ -212,13 +216,13 @@ public class AiRetrievalPermissionTest {
         return new JSONObject((String) response.getEntity());
     }
 
+    /** Builds a credential-only request carrying the given {@link User}'s API token. */
     private static HttpServletRequest requestFor(final User user) {
         final MockHeaderRequest request = new MockHeaderRequest(new MockSessionRequest(
                 new MockAttributeRequest(
                         new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request());
-        request.setHeader("Authorization", "Basic " + Base64.getEncoder()
-                .encodeToString((user.getEmailAddress() + ":" + PASSWORD).getBytes()));
+        request.setHeader("Authorization", TOKEN_UTILS.bearerHeader(user));
         return request;
     }
 

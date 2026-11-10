@@ -35,7 +35,6 @@ import com.dotmarketing.image.vips.VipsResizePhotoIntegrationTest;
 import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.cmsmaintenance.action.ViewCMSMaintenanceActionTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
-import com.dotmarketing.portlets.structure.action.EditStructureActionSaveTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -80,9 +79,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.contenttype.ContentTypeResourceUpdateMetadataTest.class,
         com.dotcms.rest.api.v2.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v3.contenttype.FieldResourceTest.class,
-        EditStructureActionSaveTest.class,
         com.dotcms.rest.api.v3.contenttype.MoveFieldFormTest.class,
         com.dotcms.rest.api.CorsFilterTest.class,
+        com.dotmarketing.webdav.DotWebdavHelperAuthorizePrincipalTest.class,
         com.dotcms.rest.elasticsearch.ESContentResourcePortletTest.class,
         com.dotcms.filters.VanityUrlFilterTest.class,
         com.dotcms.vanityurl.business.VanityUrlAPITest.class,
@@ -96,6 +95,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ContainerStructureFinderStrategyResolverTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletAPITest.class,
         com.dotmarketing.portlets.contentlet.model.ContentletIntegrationTest.class,
+        com.dotcms.rest.api.v1.authentication.AuthenticationResourceStoredPasswordTest.class,
         com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformerTest.class,
         com.dotcms.content.elasticsearch.business.ContentletPermissionReplacementIntegrationTest.class,
         com.dotmarketing.portlets.contentlet.transform.ContentletTransformerTest.class,
@@ -112,12 +112,14 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.workflows.model.WorkflowSearcherTest.class,
         com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionIntegrationTest.class,
         com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMappingTest.class,
+        com.dotcms.rest.api.v1.authentication.ForgotPasswordResourceIntegrationTest.class,
         com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.SaveContentActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.SaveContentActionletWithTagsTest.class,
         com.dotmarketing.portlets.workflows.actionlet.CopyActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletTest.class,
         com.dotcms.rest.api.v1.page.PageResourceReadAccessTest.class,
+        com.dotcms.rest.api.v1.user.PasswordPolicyIntegrationTest.class,
         com.dotmarketing.portlets.personas.business.PersonaAPITest.class,
         com.dotmarketing.portlets.personas.business.DeleteMultiTreeUsedPersonaTagJobTest.class,
         com.dotcms.rest.api.v1.maintenance.MaintenanceToolsAccessIntegrationTest.class,
@@ -125,10 +127,12 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.links.factories.LinkFactoryTest.class,
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
         com.dotmarketing.filters.FiltersTest.class,
+        com.dotcms.rest.IntegrityResourceTest.class,
         InterceptorHandlerTest.class,
         com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcherTest.class,
         com.dotcms.rest.AuditPublishingResourceTest.class,
         com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPIImplTest.class,
+        com.dotmarketing.cms.login.factories.LoginFactoryTest.class,
         com.dotcms.cms.login.LoginTokenInvalidationTest.class,
         MaintenanceResourceIntegrationTest.class,
         FolderHandlerTest.class,
@@ -146,7 +150,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.cluster.ClusterNodesResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.system.ConfigurationHelperTest.class,
         com.dotcms.rest.api.v1.container.ContainerResourceDependenciesIntegrationTest.class,
-        com.dotmarketing.startup.runonce.Task261023RemoveContainersLegacyPortletFromLayoutsTest.class,
+        com.dotmarketing.startup.runonce.Task261103RemoveContainersLegacyPortletFromLayoutsTest.class,
         com.dotmarketing.portlets.templates.business.TemplateAPIFindUsingContainerTest.class,
         com.dotmarketing.startup.runonce.Task261028RemoveSearchLegacyPortletsFromLayoutsTest.class,
         UserDeletionCacheInvalidationTest.class,
@@ -162,6 +166,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.security.multipart.MultiPartRequestSecurityWebInterceptorTest.class,
         com.dotcms.rest.api.v1.temp.TempFileNamingTest.class,
         com.dotcms.content.elasticsearch.business.ESContentletAPIImplTrailingBackslashQueryTest.class,
+        com.dotmarketing.webdav.DotWebdavHelperTest.class,
         com.dotcms.enterprise.publishing.remote.handler.UserHandlerTest.class,
         com.dotcms.contenttype.business.StoryBlockReferenceAccessTest.class
 })

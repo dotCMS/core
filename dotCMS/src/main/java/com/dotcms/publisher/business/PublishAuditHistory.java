@@ -113,11 +113,11 @@ public class PublishAuditHistory implements Serializable {
 		}
 	}
 	
-	static XStream xstream = XStreamHandler.newXStreamInstance();
+	static final XStreamHandler.Cached xstream = new XStreamHandler.Cached(null, null);
 	public String getSerialized() {
 
 
-        String xml=xstream.toXML(this);
+        String xml=xstream.get().toXML(this);
         return xml;
 	}
 	
@@ -125,7 +125,7 @@ public class PublishAuditHistory implements Serializable {
 		PublishAuditHistory ret = null;
 		if(UtilMethods.isSet(serializedString)){
 			try{
-				return (PublishAuditHistory) xstream.fromXML(serializedString);
+				return (PublishAuditHistory) xstream.get().fromXML(serializedString);
 			}
 			catch(Exception e){
 				Logger.error(PublishAuditHistory.class, e.getMessage(), e);

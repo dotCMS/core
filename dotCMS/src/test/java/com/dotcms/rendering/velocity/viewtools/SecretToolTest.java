@@ -1,6 +1,8 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -11,13 +13,19 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppConfig;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
+import java.util.Optional;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.context.Context;
@@ -28,6 +36,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
 public class SecretToolTest {
@@ -36,12 +45,14 @@ public class SecretToolTest {
     private Context velocityContext;
     private HttpServletRequest request;
     private ViewContext viewContext;
+    private Contentlet scriptingFile;
 
     private MockedStatic<APILocator> mockedApiLocator;
     private MockedStatic<WebAPILocator> mockedWebApiLocator;
     private MockedStatic<Config> mockedConfig;
 
     private RoleAPI roleAPI;
+    private UserAPI userAPI;
     private UserWebAPI userWebAPI;
 
     @BeforeEach
@@ -59,9 +70,11 @@ public class SecretToolTest {
         mockedConfig = mockStatic(Config.class);
 
         roleAPI = mock(RoleAPI.class);
+        userAPI = mock(UserAPI.class);
         userWebAPI = mock(UserWebAPI.class);
 
         mockedApiLocator.when(APILocator::getRoleAPI).thenReturn(roleAPI);
+        mockedApiLocator.when(APILocator::getUserAPI).thenReturn(userAPI);
         mockedWebApiLocator.when(WebAPILocator::getUserWebAPI).thenReturn(userWebAPI);
 
         mockedConfig.when(() -> Config.getBooleanProperty(eq("secrets.scripting.enabled"), any(Boolean.class))).thenReturn(true); // Enabled by default
@@ -192,5 +205,204 @@ public class SecretToolTest {
         when(roleAPI.doesUserHaveRole(user, scriptingRole)).thenReturn(false);
 
         assertThrows(SecurityException.class, () -> secretTool.canUserEvaluate());
+    }
+
+    /**
+     * An anonymous request to a file-based scripting endpoint passes when the file's last editor
+     * has the Scripting Developer role.
+     */
+    @Test
+    public void canUserEvaluate_AnonymousRequestAndScriptingFileEditorHasRole_Success() throws Exception {
+        final Role scriptingRole = anonymousRequestWithScriptingFileEditedBy("scripter");
+        final User scripter = mock(User.class);
+        when(userAPI.loadUserById(eq("scripter"), any(), eq(true))).thenReturn(scripter);
+        when(roleAPI.doesUserHaveRole(scripter, scriptingRole)).thenReturn(true);
+
+        assertDoesNotThrow(() -> secretTool.canUserEvaluate());
+    }
+
+    /**
+     * An anonymous request to a file-based scripting endpoint fails when the file's last editor
+     * lacks the Scripting Developer role.
+     */
+    @Test
+    public void canUserEvaluate_AnonymousRequestAndScriptingFileEditorHasNoRole_ThrowsException() throws Exception {
+        final Role scriptingRole = anonymousRequestWithScriptingFileEditedBy("editor");
+        final User editor = mock(User.class);
+        when(userAPI.loadUserById(eq("editor"), any(), eq(true))).thenReturn(editor);
+        when(roleAPI.doesUserHaveRole(editor, scriptingRole)).thenReturn(false);
+
+        assertThrows(SecurityException.class, () -> secretTool.canUserEvaluate());
+    }
+
+    /**
+     * Mutating a loaded file after Java binds it must not let a non-scripting editor borrow a
+     * Scripting Developer's authority.
+     */
+    @Test
+    public void canUserEvaluate_MutatedScriptingFileEditor_DoesNotGainRole() throws Exception {
+        final Role scriptingRole = anonymousRequestWithScriptingFileEditedBy("editor");
+        final User scripter = mock(User.class);
+        when(userAPI.loadUserById(eq("scripter"), any(), eq(true))).thenReturn(scripter);
+        when(roleAPI.doesUserHaveRole(scripter, scriptingRole)).thenReturn(true);
+        when(scriptingFile.getModUser()).thenReturn("scripter");
+
+        assertThrows(SecurityException.class, () -> secretTool.canUserEvaluate());
+        verify(userAPI, never()).loadUserById(eq("scripter"), any(), any(Boolean.class));
+    }
+
+    /**
+     * Without a scripting file recorded by Java code the request user still decides, even when a
+     * script has placed a raw Contentlet under the attribute name.
+     */
+    @Test
+    public void canUserEvaluate_AnonymousRequestWithoutScriptingFile_ThrowsException() throws Exception {
+        final User anonymousUser = mock(User.class);
+        when(anonymousUser.isAnonymousUser()).thenReturn(true);
+        when(userWebAPI.getUser(request)).thenReturn(anonymousUser);
+        when(roleAPI.loadRoleByKey(Role.SCRIPTING_DEVELOPER)).thenReturn(mock(Role.class));
+        final Contentlet spoofed = mock(Contentlet.class);
+        when(spoofed.getModUser()).thenReturn("scripter");
+        when(request.getAttribute(ScriptingFileAttribute.ATTRIBUTE)).thenReturn(spoofed);
+
+        assertThrows(SecurityException.class, () -> secretTool.canUserEvaluate());
+        verify(userAPI, never()).loadUserById(any(), any(), any(Boolean.class));
+    }
+
+    /**
+     * When a renderer announced the author of the code being run, that author decides even if a
+     * scripting file was also recorded for the request: a container parsed from inside a script
+     * file is judged by whoever saved the container.
+     */
+    @Test
+    public void canUserEvaluate_AnnouncedAuthorWins_IgnoresScriptingFile() throws Exception {
+        final Role scriptingRole = anonymousRequestWithScriptingFileEditedBy("scripter");
+        final User scripter = mock(User.class);
+        when(userAPI.loadUserById(eq("scripter"), any(), eq(true))).thenReturn(scripter);
+        when(roleAPI.doesUserHaveRole(scripter, scriptingRole)).thenReturn(true);
+
+        final User editor = mock(User.class);
+        when(userAPI.loadUserById(eq("editor"), any(), eq(true))).thenReturn(editor);
+        when(roleAPI.doesUserHaveRole(editor, scriptingRole)).thenReturn(false);
+        announceRenderingAuthor("editor");
+
+        assertThrows(SecurityException.class, () -> secretTool.canUserEvaluate());
+        verify(userAPI, never()).loadUserById(eq("scripter"), any(), any(Boolean.class));
+    }
+
+    /**
+     * A nested evaluation such as {@code $render.eval} inside a scripting file runs with an
+     * announced author of nobody, so it does not inherit the file's last editor.
+     */
+    @Test
+    public void canUserEvaluate_NestedEvalInScriptingFile_IgnoresScriptingFile() throws Exception {
+        anonymousRequestWithScriptingFileEditedBy("scripter");
+        // what RenderTool.eval announces around the string it evaluates
+        announceRenderingAuthor(null);
+
+        assertThrows(SecurityException.class, () -> secretTool.canUserEvaluate());
+        verify(userAPI, never()).loadUserById(eq("scripter"), any(), any(Boolean.class));
+    }
+
+    /** Caller-supplied host parameters and later file mutations cannot change a script's secret site. */
+    @Test
+    public void secretReads_ScriptingFileSiteCannotBeOverridden() throws Exception {
+        final Role scriptingRole = anonymousRequestWithScriptingFileEditedBy("scripter");
+        final User scripter = mock(User.class);
+        when(userAPI.loadUserById(eq("scripter"), any(), eq(true))).thenReturn(scripter);
+        when(roleAPI.doesUserHaveRole(scripter, scriptingRole)).thenReturn(true);
+        when(request.getParameter("host_id")).thenReturn("other-site");
+        when(request.getParameter("host")).thenReturn("other-site");
+        when(scriptingFile.getHost()).thenReturn("other-site");
+
+        final Host scriptSite = mock(Host.class);
+        final HostAPI hostAPI = mock(HostAPI.class);
+        mockedApiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
+        when(hostAPI.find(eq("script-site"), any(), eq(false))).thenReturn(scriptSite);
+        final DotVelocitySecretAppConfig scriptConfig = mock(DotVelocitySecretAppConfig.class);
+        final DotVelocitySecretAppConfig callerConfig = mock(DotVelocitySecretAppConfig.class);
+        when(scriptConfig.getStringOrNull("key")).thenReturn("script-secret");
+        when(scriptConfig.getCharArrayOrNull("key")).thenReturn("script-secret".toCharArray());
+        when(callerConfig.getStringOrNull("key")).thenReturn("other-site-secret");
+        try (MockedStatic<DotVelocitySecretAppConfig> configs = mockStatic(DotVelocitySecretAppConfig.class)) {
+            configs.when(() -> DotVelocitySecretAppConfig.config(request)).thenReturn(Optional.of(callerConfig));
+            configs.when(() -> DotVelocitySecretAppConfig.config(scriptSite)).thenReturn(Optional.of(scriptConfig));
+
+            assertEquals("script-secret", secretTool.get("key"));
+            assertArrayEquals("script-secret".toCharArray(), secretTool.getCharArray("key"));
+            when(hostAPI.find(eq("script-site"), any(), eq(false))).thenReturn(null);
+            assertThrows(SecurityException.class, () -> secretTool.get("key"));
+            configs.verify(() -> DotVelocitySecretAppConfig.config(request), never());
+        }
+    }
+
+    /** Missing file-site provenance must fail closed, not fall back to a caller-selected site. */
+    @Test
+    public void scriptingFileWithoutSiteCannotSelectRequestSite() {
+        final Contentlet file = mock(Contentlet.class);
+        ScriptingFileAttribute.set(request, file);
+        final ArgumentCaptor<Object> attribute = ArgumentCaptor.forClass(Object.class);
+        verify(request).setAttribute(eq(ScriptingFileAttribute.ATTRIBUTE), attribute.capture());
+        when(request.getAttribute(ScriptingFileAttribute.ATTRIBUTE)).thenReturn(attribute.getValue());
+
+        assertThrows(SecurityException.class, () -> ScriptingFileAttribute.getSiteId(request));
+    }
+
+    /** Ordinary page and workflow contexts retain their existing request-scoped site lookup. */
+    @Test
+    public void secretReads_WithoutScriptingFileStillUseRequestSite() throws Exception {
+        final User user = mock(User.class);
+        final Role scriptingRole = mock(Role.class);
+        when(userWebAPI.getUser(request)).thenReturn(user);
+        when(roleAPI.loadRoleByKey(Role.SCRIPTING_DEVELOPER)).thenReturn(scriptingRole);
+        when(roleAPI.doesUserHaveRole(user, scriptingRole)).thenReturn(true);
+        final DotVelocitySecretAppConfig config = mock(DotVelocitySecretAppConfig.class);
+        when(config.getStringOrNull("key")).thenReturn("request-secret");
+        try (MockedStatic<DotVelocitySecretAppConfig> configs = mockStatic(DotVelocitySecretAppConfig.class)) {
+            configs.when(() -> DotVelocitySecretAppConfig.config(request)).thenReturn(Optional.of(config));
+            assertEquals("request-secret", secretTool.get("key"));
+        }
+    }
+
+    /**
+     * Announces a rendering author on the mocked request the way a renderer does, and stubs the
+     * request to hand that announcement back. The announcement is an opaque value only
+     * {@link RestrictedViewToolAccess} creates, so it cannot be built here by hand.
+     *
+     * @param authorId id of the author to announce, {@code null} for code that has no author of
+     *                 its own, such as an evaluated string
+     */
+    private void announceRenderingAuthor(final String authorId) {
+        RestrictedViewToolAccess.announceRenderingAuthor(request, authorId);
+        final ArgumentCaptor<Object> announcement = ArgumentCaptor.forClass(Object.class);
+        verify(request).setAttribute(eq(RestrictedViewToolAccess.RENDERING_AUTHOR_ID),
+                announcement.capture());
+        when(request.getAttribute(RestrictedViewToolAccess.RENDERING_AUTHOR_ID))
+                .thenReturn(announcement.getValue());
+    }
+
+    /**
+     * Sets up an anonymous request whose scripting file, recorded through
+     * {@link ScriptingFileAttribute#set}, was last edited by the given user id.
+     *
+     * @param modUserId id of the file's last editor
+     * @return the mocked Scripting Developer role
+     */
+    private Role anonymousRequestWithScriptingFileEditedBy(final String modUserId) throws Exception {
+        final User anonymousUser = mock(User.class);
+        when(anonymousUser.isAnonymousUser()).thenReturn(true);
+        when(userWebAPI.getUser(request)).thenReturn(anonymousUser);
+        final Role scriptingRole = mock(Role.class);
+        when(roleAPI.loadRoleByKey(Role.SCRIPTING_DEVELOPER)).thenReturn(scriptingRole);
+
+        final Contentlet file = mock(Contentlet.class);
+        scriptingFile = file;
+        when(file.getModUser()).thenReturn(modUserId);
+        when(file.getHost()).thenReturn("script-site");
+        ScriptingFileAttribute.set(request, file);
+        final ArgumentCaptor<Object> attribute = ArgumentCaptor.forClass(Object.class);
+        verify(request).setAttribute(eq(ScriptingFileAttribute.ATTRIBUTE), attribute.capture());
+        when(request.getAttribute(ScriptingFileAttribute.ATTRIBUTE)).thenReturn(attribute.getValue());
+        return scriptingRole;
     }
 }

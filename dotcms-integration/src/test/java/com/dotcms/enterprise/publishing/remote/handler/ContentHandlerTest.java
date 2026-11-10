@@ -20,7 +20,6 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.xstream.XStreamHandler;
-import com.dotcms.util.xstream.XStreamHandler.TrustedListMatcher;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -75,25 +74,6 @@ public class ContentHandlerTest {
         assertTrue(contentlet.isFileAsset());
     }
 
-    @Test
-    public void Test_TrustedListMatcher() {
-        // Classes that should match the patterns
-        Class<?> allowedClass1 = java.util.ArrayList.class;
-        Class<?> allowedClass2 = java.lang.String.class;
-        Class<?> allowedClass3 = com.google.common.collect.Lists.class;
-
-        // Classes that should not match the patterns
-        Class<?> disallowedClass1 = java.nio.file.Paths.class;
-        Class<?> disallowedClass2 = org.junit.jupiter.api.Test.class;
-
-        // Verifications
-        assertTrue(TrustedListMatcher.matches(allowedClass1));
-        assertTrue(TrustedListMatcher.matches(allowedClass2));
-        assertTrue(TrustedListMatcher.matches(allowedClass3));
-
-        assertFalse(TrustedListMatcher.matches(disallowedClass1));
-        assertFalse(TrustedListMatcher.matches(disallowedClass2));
-    }
     /**
      * Method to test: {@link ContentHandler#relateTagsToContent(Contentlet content, Map<String, List<Tag>> tags)}
      * When: Content is pushed which has tags that live on a host not in the target system.

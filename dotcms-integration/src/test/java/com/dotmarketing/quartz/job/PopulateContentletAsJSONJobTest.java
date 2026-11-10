@@ -8,8 +8,11 @@ import io.vavr.control.Try;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.quartz.SchedulerException;
+import org.quartz.JobExecutionContext;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
@@ -59,7 +62,29 @@ public class PopulateContentletAsJSONJobTest extends IntegrationTestBase {
         assertNotNull(jobDetail);
     }
 
-    private static void deleteJob() throws SchedulerException {
-        PopulateContentletAsJSONJob.removeJob();
+    /**
+     * Removes the job once it is no longer running. The test's trigger fires immediately, and
+     * this job is stateful: a run that is in progress saves the job again when it finishes, and a
+     * trigger that is being picked up cannot be deleted. So the cleanup pauses the job, waits until
+     * no run is in progress, deletes it, and repeats until the job is really gone.
+     */
+    private static void deleteJob() {
+        final var scheduler = QuartzUtils.getScheduler();
+        final String jobName = PopulateContentletAsJSONJob.getJobName();
+        final String groupName = PopulateContentletAsJSONJob.getJobGroupName();
+        await().atMost(1, TimeUnit.MINUTES)
+                .pollInterval(250, TimeUnit.MILLISECONDS)
+                .ignoreExceptions()
+                .until(() -> {
+                    scheduler.pauseJob(jobName, groupName);
+                    final boolean running = ((List<?>) scheduler.getCurrentlyExecutingJobs()).stream()
+                            .map(JobExecutionContext.class::cast)
+                            .anyMatch(context -> jobName.equals(context.getJobDetail().getName()));
+                    if (running) {
+                        return false;
+                    }
+                    PopulateContentletAsJSONJob.removeJob();
+                    return null == scheduler.getJobDetail(jobName, groupName);
+                });
     }
 }

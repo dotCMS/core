@@ -210,15 +210,16 @@ export function listenBlockEditorInlineEvent() {
  * Provides visual placeholders so editors can identify and interact with empty areas.
  *
  * The empty-container label is read from the dotCMS i18n cache in localStorage
- * (`dotMessagesKeys`). Falls back to 'Empty container' if the cache is unavailable
+ * (`dotMessagesBundle`). Falls back to 'Empty container' if the cache is unavailable
  * (e.g. headless pages on a different origin).
  */
 export function injectEmptyStateStyles(): void {
     let emptyContainerLabel = 'Empty container';
 
     try {
-        const messages = JSON.parse(localStorage.getItem('dotMessagesKeys') ?? '{}');
-        emptyContainerLabel = messages['editpage.container.is.empty'] ?? emptyContainerLabel;
+        const bundle = JSON.parse(localStorage.getItem('dotMessagesBundle') ?? 'null');
+        const label = bundle?.messages?.['editpage.container.is.empty'];
+        if (typeof label === 'string') emptyContainerLabel = label;
     } catch {
         // localStorage unavailable or JSON malformed — use default
     }
