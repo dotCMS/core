@@ -793,7 +793,7 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
      *                  by MockSession.invalidate()), the endpoint returns "Session invalidated"
      */
     @Test
-    public void test_killSession_validToken_invalidatesTarget() {
+    public void test_killSession_validToken_invalidatesTarget() throws DotDataException {
         final HttpSession target = newPlantedAdminSession("1.2.3.4");
         final HttpServletRequest request = createAdminRequest();
         request.getSession().setAttribute(WebKeys.USER_ID, adminUser.getUserId());
@@ -818,7 +818,7 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
      * Expected result: BadRequestException — self-invalidation is forbidden
      */
     @Test(expected = BadRequestException.class)
-    public void test_killSession_ownToken_throwsBadRequest() {
+    public void test_killSession_ownToken_throwsBadRequest() throws DotDataException {
         final HttpServletRequest request = createAdminRequest();
         final HttpSession callerSession = request.getSession();
         callerSession.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
@@ -838,7 +838,7 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
      * Expected result: ForbiddenException — there is no CSRF secret on the caller's session
      */
     @Test(expected = ForbiddenException.class)
-    public void test_killSession_missingCsrf_throwsForbidden() {
+    public void test_killSession_missingCsrf_throwsForbidden() throws DotDataException {
         final HttpServletRequest request = createAdminRequest();
         resource.killSession(request, mockResponse, "any-token");
     }
@@ -848,7 +848,7 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
      * Expected result: ForbiddenException — exceeds the 15-minute expiry window
      */
     @Test(expected = ForbiddenException.class)
-    public void test_killSession_expiredCsrf_throwsForbidden() {
+    public void test_killSession_expiredCsrf_throwsForbidden() throws DotDataException {
         final HttpServletRequest request = createAdminRequest();
         final HttpSession callerSession = request.getSession();
         callerSession.setAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE, "stale-csrf");
@@ -864,7 +864,7 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
      * Expected result: NotFoundException
      */
     @Test(expected = NotFoundException.class)
-    public void test_killSession_unknownToken_throwsNotFound() {
+    public void test_killSession_unknownToken_throwsNotFound() throws DotDataException {
         final HttpServletRequest request = createAdminRequest();
         resource.listSessions(request, mockResponse);
         final String unknown = SessionTokenUtil.obfuscateSessionId(
@@ -878,7 +878,7 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
      * Expected result: SecurityException — the auth gate runs before any session lookup
      */
     @Test(expected = SecurityException.class)
-    public void test_killSession_asNonAdmin_throwsSecurity() {
+    public void test_killSession_asNonAdmin_throwsSecurity() throws DotDataException {
         resource.killSession(createRequestForUser(nonAdminUser), mockResponse, "tok");
     }
 
