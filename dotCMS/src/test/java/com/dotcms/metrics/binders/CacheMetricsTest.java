@@ -14,6 +14,7 @@ import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
 import com.dotmarketing.business.cache.provider.caffine.CaffineCache;
+import com.dotmarketing.business.cache.provider.guava.GuavaCache;
 import com.dotmarketing.util.UtilMethods;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.simple.SimpleConfig;
@@ -117,6 +118,37 @@ class CacheMetricsTest {
             } else {
                 assertEquals(100.0 * counts[0] / requests, actual, 0.001);
             }
+        }
+    }
+
+    /** The actual Guava builder must record activity before its counters can supply accurate gauges. */
+    @Test
+    void guavaGauges_recordNativeHitsAndRequests() {
+        final GuavaCache cache = new GuavaCache();
+        final String group = "guava-metrics-" + UUID.randomUUID();
+        final SimpleMeterRegistry guavaRegistry = new SimpleMeterRegistry();
+        try {
+            cache.put(group, "present", "value");
+            cache.get(group, "present");
+            cache.get(group, "present");
+            cache.get(group, "present");
+            cache.get(group, "missing");
+            final CacheProviderStats provider = cache.getStats();
+            snapshots.set(List.of(provider));
+            new CacheMetrics().bindTo(guavaRegistry);
+
+            org.junit.jupiter.api.Assertions.assertAll(
+                    () -> assertEquals(75.0, guavaRegistry.get("dotcms.cache.hit_rate.overall")
+                            .gauge().value(), 0.001),
+                    () -> assertEquals(3.0, guavaRegistry.get("dotcms.cache.region.hits")
+                            .tag("provider", "guava_memory_cache")
+                            .tag("region", group.replace("-", "_")).gauge().value(), 0.001),
+                    () -> assertEquals(75.0, guavaRegistry.get("dotcms.cache.region.hit_rate")
+                            .tag("provider", "guava_memory_cache")
+                            .tag("region", group.replace("-", "_")).gauge().value(), 0.001));
+        } finally {
+            guavaRegistry.close();
+            cache.removeAll();
         }
     }
 

@@ -222,6 +222,7 @@ public class GuavaCache extends CacheProvider {
         isInitialized = false;
     }
 
+    /** Returns or builds a region cache with counters enabled for cache-statistics consumers. */
     private Cache<String, Object> getCache ( String cacheName ) {
 
         if ( cacheName == null ) {
@@ -266,10 +267,11 @@ public class GuavaCache extends CacheProvider {
                         }
 
                         Logger.info(this.getClass(), "***\t Building Cache : " + cacheName + ", size:" + size + ",Concurrency:" + Config.getIntProperty("cache.concurrencylevel", 32));
-                        CacheBuilder<Object, Object> cb = CacheBuilder
+                        final CacheBuilder<Object, Object> cb = CacheBuilder
                                 .newBuilder()
                                 .maximumSize(size)
-                                .concurrencyLevel(Config.getIntProperty("cache.concurrencylevel", 32));
+                                .concurrencyLevel(Config.getIntProperty("cache.concurrencylevel", 32))
+                                .recordStats();
 
 
                         cache = cb.build();
