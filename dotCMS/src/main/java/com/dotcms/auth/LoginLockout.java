@@ -61,8 +61,7 @@ import java.util.function.LongSupplier;
  * <p>The main login flow ({@code UserManagerImpl#authenticate}) uses {@link #begin},
  * {@link #succeeded} and {@link #failed} directly. Other places that check a password (WebDAV, the
  * legacy {@code LoginFactory.doLogin} methods, Login As and the current-password check on a user update)
- * go through {@link #passwordMatch(String, User, String, BiPredicate)}. Passwords checked by an external
- * authenticator such as LDAP are counted with {@link #countFailure(String, String)}.
+ * go through {@link #passwordMatch(String, User, String, BiPredicate)}.
  *
  * <p>Configuration:
  * <ul>
@@ -503,15 +502,6 @@ public final class LoginLockout {
         } catch (final DotDataException | RuntimeException e) {
             Logger.error(this, "Unable to record failed login for user " + attempt.userId + ": " + e.getMessage(), e);
         }
-    }
-
-    /**
-     * Counts a failed login whose password was checked by an external authenticator, such as LDAP or a
-     * WebDAV pre-authenticator, rather than by dotCMS. Same effect as a wrong password through
-     * {@link #begin} and {@link #failed}; nothing is counted while a lock is in force.
-     */
-    public void countFailure(final String userId, final String source) {
-        failed(begin(userId, source));
     }
 
     /**

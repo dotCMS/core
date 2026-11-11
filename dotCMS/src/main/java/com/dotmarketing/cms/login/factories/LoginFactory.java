@@ -4,14 +4,10 @@ import com.dotcms.auth.LoginLockout;
 import com.dotcms.cms.login.PreventSessionFixationUtil;
 import com.dotcms.concurrent.lock.DotKeyLockManager;
 import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
-import com.dotcms.enterprise.BaseAuthenticator;
-import com.dotcms.enterprise.LDAPImpl;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DuplicateUserException;
-import com.dotmarketing.business.Role;
-import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -22,12 +18,9 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
-import com.liferay.portal.auth.AuthException;
-import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
-import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.Validator;
 
 import io.vavr.control.Try;
@@ -42,13 +35,6 @@ import javax.servlet.http.HttpSession;
  */
 @Deprecated
 public class LoginFactory {
-
-	/**
-	 * The authenticator named by {@code auth.pipeline.pre} as it stood when this class was loaded.
-	 * Kept because it is part of this class's published surface; the login paths read the property
-	 * through {@link #preAuthenticator()} instead, so a change takes effect without a restart.
-	 */
-	public static final String PRE_AUTHENTICATOR = PropsUtil.get(PropsUtil.AUTH_PIPELINE_PRE);
 
 
     private static final String LOCK_PREFIX = "UserIdLogin:";
@@ -144,9 +130,7 @@ public class LoginFactory {
 	 *
 	 * <p>The password stored in dotCMS is checked unless {@code skipPasswordCheck} is set, which is
 	 * how a login that already proved the identity some other way, such as the cookie login, signs
-	 * the user in. When the directory authenticator is configured as the pre-authenticator it has
-	 * to accept the login as well; its answer alone is not taken as proof of the password, see
-	 * {@link #directoryLoginAccepted(int, String, User, String)}.</p>
+	 * the user in.</p>
 	 *
 	 * @param userName          the email address or user id, depending on the company's authentication type
 	 * @param password          the password typed by the user, ignored when the check is skipped
@@ -178,85 +162,43 @@ public class LoginFactory {
 				}
 			}
 
-        	if (directoryPreAuthenticatorConfigured()) {
+            if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
+            	user = APILocator.getUserAPI().loadByUserByEmail(userName, APILocator.getUserAPI().getSystemUser(), false);
+            } else {
+            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
+            }
 
-				int auth = Authenticator.DNE;
+            if ((user == null) || (!UtilMethods.isSet(user.getEmailAddress()))) {
+        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login or no email set for " + userName + " from IP: " + request.getRemoteAddr());
 
-				// if skipPasswordCheck is in true, means we do not have to check the user on LDAP just our DB
-				if (!skipPasswordCheck) {
+            	throw new NoSuchUserException();
+            }
 
-					auth = getLDAPAuth(userName, password, comp);
-				}
+            if (user.isNew() ||
+            		(!Config.getBooleanProperty("ALLOW_INACTIVE_ACCOUNTS_TO_LOGIN", false) && !user.isActive())) {
+        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login to an inactive account as " + userName + " from IP: " + request.getRemoteAddr());
 
-    			if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
-	            	user = APILocator.getUserAPI().loadByUserByEmail(userName, APILocator.getUserAPI().getSystemUser(), false);
-	            } else {
-	            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
-	            }
+            	return false;
+            }
+            match = true;
+            if (!skipPasswordCheck) {
+            // Validate password and rehash when is needed. Refused while a lockout applies to this
+            // address or account; a failure counts toward the lock.
+            match = LoginLockout.getInstance().passwordMatch(password, user,
+            		LoginLockout.clientAddress(request), (secret, candidate) -> false);
+            }
 
-				if (isRefusedAccount(user)) {
-					SecurityLogger.logInfo(LoginFactory.class, "An invalid attempt to login to an inactive account as "
-							+ userName + " from IP: " + request.getRemoteAddr());
+            if (match) {
 
-					return false;
-				}
+            	user.setLastLoginDate(new java.util.Date());
+				user.setLastLoginIP(request.getRemoteAddr());
+            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 
-				if (skipPasswordCheck) {
+            } else {
 
-					// the user exists on our db and the login is ok (usually it is the case for cookie login),
-					// and a login that skips the directory check leaves the local password alone
-					match = null != user;
-				} else {
+				SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " from IP: " + request.getRemoteAddr());
 
-					match = directoryLoginAccepted(auth, password, user, LoginLockout.clientAddress(request));
-					if (!match && null != user && auth != Authenticator.SUCCESS) {
-						// the directory refused the login; a wrong local password is counted on its own
-						LoginLockout.getInstance().countFailure(user.getUserId(), LoginLockout.clientAddress(request));
-					}
-
-					// the directory stores the password it accepted in dotCMS, so the local password is
-					// only replaced once it has been checked
-					resetDirectoryPassword(user, auth);
-				}
-        	} else {
-	            if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
-	            	user = APILocator.getUserAPI().loadByUserByEmail(userName, APILocator.getUserAPI().getSystemUser(), false);
-	            } else {
-	            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
-	            }
-
-	            if ((user == null) || (!UtilMethods.isSet(user.getEmailAddress()))) {
-	        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login or no email set for " + userName + " from IP: " + request.getRemoteAddr());
-
-	            	throw new NoSuchUserException();
-	            }
-
-	            if (user.isNew() ||
-	            		(!Config.getBooleanProperty("ALLOW_INACTIVE_ACCOUNTS_TO_LOGIN", false) && !user.isActive())) {
-	        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login to an inactive account as " + userName + " from IP: " + request.getRemoteAddr());
-
-	            	return false;
-	            }
-	            match = true;
-	            if (!skipPasswordCheck) {
-	            // Validate password and rehash when is needed. Refused while a lockout applies to this
-	            // address or account; a failure counts toward the lock.
-	            match = LoginLockout.getInstance().passwordMatch(password, user,
-	            		LoginLockout.clientAddress(request), (secret, candidate) -> false);
-	            }
-
-	            if (match) {
-
-	            	user.setLastLoginDate(new java.util.Date());
-					user.setLastLoginIP(request.getRemoteAddr());
-	            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
-
-	            } else {
-
-					SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " from IP: " + request.getRemoteAddr());
-
-	            }
-        	}
+            }
 
             // if passwords match
             if (match) {
@@ -292,131 +234,10 @@ public class LoginFactory {
         return false;
     }
 
-	/**
-	 * @return the authenticator configured as {@code auth.pipeline.pre}, read for every login the
-	 * way {@code UserManagerImpl#authenticate} reads it, so the two paths agree on whether a
-	 * pre-authenticator is in place
-	 */
-	@VisibleForTesting
-	static String preAuthenticator() {
-
-		return PropsUtil.get(PropsUtil.AUTH_PIPELINE_PRE);
-	}
-
-	/**
-	 * @return {@code true} when the pre-authenticator in force is the directory authenticator this
-	 * class knows how to call, which is the only case where the login is answered by a directory
-	 */
-	private static boolean directoryPreAuthenticatorConfigured() {
-
-		final String preAuthenticator = preAuthenticator();
-		return UtilMethods.isSet(preAuthenticator)
-				&& preAuthenticator.equals(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION"));
-	}
-
-	/**
-	 * Says whether an account must be refused whatever the credentials are, which is the check the
-	 * login against dotCMS and {@code UserManagerImpl#checkUserStatus} both apply: an account that
-	 * was never finished, or a deactivated one, unless {@code ALLOW_INACTIVE_ACCOUNTS_TO_LOGIN}
-	 * says otherwise.
-	 *
-	 * @param user the {@link User} the login names, {@code null} when dotCMS has no such account
-	 * @return {@code true} when the login must be refused
-	 */
-	private static boolean isRefusedAccount(final User user) {
-
-		return null != user && (user.isNew()
-				|| (!Config.getBooleanProperty("ALLOW_INACTIVE_ACCOUNTS_TO_LOGIN", false) && !user.isActive()));
-	}
-
-	/**
-	 * Decides a login that the directory service answered for.
-	 *
-	 * <p>The bundled directory authenticator answers {@link Authenticator#SUCCESS} both for a user
-	 * it authenticated and for one it knows nothing about: {@code BaseAuthenticator} falls back to
-	 * that answer for any account it did not find in the directory, where it only means "this is
-	 * not mine to decide". The password stored in dotCMS is therefore still required, the way
-	 * {@code UserManagerImpl#authenticate} requires it for the REST, Basic and WebDAV logins. A
-	 * user the bundled authenticator did authenticate is not kept out by that check, because
-	 * {@code BaseAuthenticator} stores the password it accepted in dotCMS before this runs. An
-	 * authenticator that implements {@link Authenticator} without doing that has to keep the local
-	 * password in step itself, as {@code UserManagerImpl#authenticate} already requires.</p>
-	 *
-	 * <p>The password check is the one that applies the login lockout, so a wrong password counts
-	 * as a failed login and is refused while a lock is in force.</p>
-	 *
-	 * @param authResult the directory's answer, one of the {@link Authenticator} results
-	 * @param password   the password typed by the user
-	 * @param user       the {@link User} the login names, {@code null} when dotCMS has no such account
-	 * @param source     what the attempt is counted under, usually the client address
-	 * @return {@code true} when the login is accepted
-	 */
-	@VisibleForTesting
-	static boolean directoryLoginAccepted(final int authResult, final String password, final User user,
-			final String source) {
-
-		if (authResult != Authenticator.SUCCESS || null == user) {
-			return false;
-		}
-
-		return LoginLockout.getInstance().passwordMatch(password, user, source,
-				(secret, candidate) -> false);
-	}
-
-	/**
-	 * When directory passwords are not copied into dotCMS ({@code auth.impl.ldap.syncPassword}
-	 * is off), replaces the local password of a directory user with the hash of a random
-	 * secret, so the account can only sign in through the directory. Does nothing unless the
-	 * directory accepted the login.
-	 *
-	 * @param user       the {@link User} that tried to sign in
-	 * @param authResult the directory's answer, one of the {@link Authenticator} results
-	 */
-	@VisibleForTesting
-	static void resetDirectoryPassword(final User user, final int authResult) {
-
-		if (authResult != Authenticator.SUCCESS || BaseAuthenticator.SYNC_PASSWORD) {
-			return;
-		}
-
-		try {
-
-			final Role directoryRole = APILocator.getRoleAPI().loadRoleByKey(LDAPImpl.LDAP_USER_ROLE);
-			if (APILocator.getRoleAPI().doesUserHaveRole(user, directoryRole)) {
-
-				user.setPassword(PasswordFactoryProxy.generateRandomHash());
-				user.setPasswordEncrypted(true);
-				APILocator.getUserAPI().save(user, APILocator.getUserAPI().getSystemUser(), false);
-			}
-		} catch (Exception e) {
-
-			Logger.debug(LoginFactory.class, "Unable to update the local password of a directory user", e);
-		}
-	}
-
-	private static int getLDAPAuth(final String userName,
-								   final String password,
-								   final Company comp) throws ClassNotFoundException, InstantiationException, IllegalAccessException, AuthException {
-
-		int auth = Authenticator.DNE;
-		final Class ldap_auth_impl_class = Class.forName
-                (Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION"));
-		final Authenticator ldap_auth_impl = (Authenticator) ldap_auth_impl_class.newInstance();
-
-		if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
-            auth = ldap_auth_impl.authenticateByEmailAddress(comp.getCompanyId(), userName, password);
-        } else {
-            auth = ldap_auth_impl.authenticateByUserId(comp.getCompanyId(), userName, password);
-        }
-		return auth;
-	}
-
 
 	/**
     * Checks a user's credentials without creating a session. The password stored in dotCMS is
-    * always checked; when the directory authenticator is configured as the pre-authenticator it
-    * has to accept the login as well, and the local password of a directory user is only
-    * replaced once that check has run.
+    * always checked, under the same login lockout as a login that does create a session.
     *
     * @param userName the email address or user id, depending on the company's authentication type
     * @param password the password typed by the user
@@ -442,42 +263,6 @@ public class LoginFactory {
  				}
  			}
 
-        	// LDAP Authentication
-        	if (directoryPreAuthenticatorConfigured()) {
-        		Class ldap_auth_impl_class = Class.forName(Config.getStringProperty("LDAP_FRONTEND_AUTH_IMPLEMENTATION"));
-        		Authenticator ldap_auth_impl = (Authenticator) ldap_auth_impl_class.getDeclaredConstructor().newInstance();
-        		int auth = 0;
-
-    			if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
-    				auth = ldap_auth_impl.authenticateByEmailAddress(comp.getCompanyId(), userName, password);
- 				} else {
- 					auth = ldap_auth_impl.authenticateByUserId(comp.getCompanyId(), userName, password);
- 				}
-
-    			if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
- 	            	user = APILocator.getUserAPI().loadByUserByEmail(userName, APILocator.getUserAPI().getSystemUser(), false);
- 	            } else {
- 	            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
- 	            }
-
-    			if (isRefusedAccount(user)) {
- 					SecurityLogger.logInfo(LoginFactory.class, "An invalid attempt to login as " + userName
- 							+ " has been made  - user is marked inactive");
-
- 					return false;
- 				}
-
-    			match = directoryLoginAccepted(auth, password, user, LoginLockout.clientAddress());
-    			if (!match && null != user && auth != Authenticator.SUCCESS) {
-    				// the directory refused the login; a wrong local password is counted on its own
-    				LoginLockout.getInstance().countFailure(user.getUserId(), LoginLockout.clientAddress());
-    			}
-
-    			// the directory stores the password it accepted in dotCMS, so the local password is
-    			// only replaced once it has been checked
-    			resetDirectoryPassword(user, auth);
-        	} else {
-        	    // Liferay authentication
  	            if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
  	            	user = APILocator.getUserAPI().loadByUserByEmail(userName, APILocator.getUserAPI().getSystemUser(), false);
  	            } else {
@@ -499,7 +284,6 @@ public class LoginFactory {
 
                 // Refused while a lockout applies to this address or account; a failure counts toward the lock.
                 match = LoginLockout.getInstance().passwordMatch(password, user);
-        	}
 
             // if passwords match
             if (match) {
@@ -537,8 +321,9 @@ public class LoginFactory {
      * stored value is never compared directly with the typed text. When an older format matches,
      * the stored value is upgraded to a secure hash and saved.
      *
-     * <p>The value {@link DotCustomLoginPostAction#FAKE_PASSWORD} is reserved for accounts that
-     * authenticate against a directory service and never matches.</p>
+     * <p>The value {@link DotCustomLoginPostAction#FAKE_PASSWORD} is what older versions stored
+     * for accounts synced from an external directory. Nothing writes it any more, and it never
+     * matches, so a row left holding it cannot be signed in to.</p>
      *
      * @param password the password typed by the user
      * @param user     the {@link User}, loaded from the database with all its information,
