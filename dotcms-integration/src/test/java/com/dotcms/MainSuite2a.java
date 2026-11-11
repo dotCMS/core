@@ -3,6 +3,7 @@ package com.dotcms;
 import com.dotcms.analytics.ContentAnalyticsPersistenceModeIT;
 import com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyResourceIntegrationTest;
 import com.dotcms.business.interceptor.InterceptorHandlerTest;
+import com.dotcms.content.elasticsearch.business.ContentletCheckinDestinationPermissionTest;
 import com.dotcms.enterprise.publishing.remote.handler.FolderHandlerTest;
 import com.dotcms.enterprise.rules.RulesAPIImplParentChecksIntegrationTest;
 import com.dotcms.inference.rest.ChatCompletionsStreamingTest;
@@ -28,6 +29,7 @@ import com.dotcms.rest.api.v1.content.ContentRelationshipsResourceIntegrationTes
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
 import com.dotcms.rest.api.v1.sites.ruleengine.RuleRefusedActionsIntegrationTest;
 import com.dotcms.rest.api.v1.sites.ruleengine.RuleResourcesAccessIntegrationTest;
+import com.dotcms.variant.VariantPromotePermissionTest;
 import com.dotmarketing.business.UserDeletionCacheInvalidationTest;
 import com.dotmarketing.image.vips.VipsResizeImageFilterIntegrationTest;
 import com.dotmarketing.image.vips.VipsResizeOrientationIntegrationTest;
@@ -81,7 +83,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v3.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v3.contenttype.MoveFieldFormTest.class,
         com.dotcms.rest.api.CorsFilterTest.class,
-        com.dotmarketing.webdav.DotWebdavHelperAuthorizePrincipalTest.class,
         com.dotcms.rest.elasticsearch.ESContentResourcePortletTest.class,
         com.dotcms.filters.VanityUrlFilterTest.class,
         com.dotcms.vanityurl.business.VanityUrlAPITest.class,
@@ -124,6 +125,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.personas.business.DeleteMultiTreeUsedPersonaTagJobTest.class,
         com.dotcms.rest.api.v1.maintenance.MaintenanceToolsAccessIntegrationTest.class,
         com.dotmarketing.portlets.links.business.MenuLinkAPITest.class,
+        com.dotcms.rest.api.v1.linkchecker.LinkCheckerResourceIntegrationTest.class,
         com.dotmarketing.portlets.links.factories.LinkFactoryTest.class,
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
         com.dotmarketing.filters.FiltersTest.class,
@@ -169,7 +171,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ESContentletAPIImplTrailingBackslashQueryTest.class,
         com.dotmarketing.webdav.DotWebdavHelperTest.class,
         com.dotcms.enterprise.publishing.remote.handler.UserHandlerTest.class,
-        com.dotcms.contenttype.business.StoryBlockReferenceAccessTest.class
+        com.dotcms.contenttype.business.StoryBlockReferenceAccessTest.class,
+        ContentletCheckinDestinationPermissionTest.class,
+        VariantPromotePermissionTest.class
 })
 public class MainSuite2a {
 

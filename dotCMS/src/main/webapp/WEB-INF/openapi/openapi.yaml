@@ -12985,6 +12985,102 @@ paths:
       summary: Replace the ordered tools of a navigation section
       tags:
       - Administration
+  /v1/link-checker/_run:
+    post:
+      description: "Queues one run of the link-check job, which refreshes the broken\
+        \ links stored for the contentlets. Nothing is queued when the caller is refused.\
+        \ Requires an authenticated back-end user with access to the link-checker\
+        \ tool; CMS Administrators included."
+      operationId: runLinkCheck
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Link check queued
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - authentication required, or the caller is not\
+            \ a back-end user"
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - the caller has no access to the link-checker tool
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Run the link check now
+      tags:
+      - Administration
+  /v1/link-checker/broken-links:
+    get:
+      description: "Returns one page of the broken links the link-check job found\
+        \ in the contentlets of the given content type. Only the rows whose contentlet\
+        \ the caller can read are returned, and total counts those same rows. Paging\
+        \ uses offset (0 or greater) and limit (1 to 100). The last editor appears\
+        \ by full name only. An unknown content type, or one with no broken links,\
+        \ answers an empty list with total 0. Requires an authenticated back-end user\
+        \ with access to the link-checker tool; CMS Administrators included."
+      operationId: listBrokenLinks
+      parameters:
+      - description: Id of the content type whose broken links are listed; an id that
+          matches no content type answers an empty list
+        example: 2a3e91e4-fbbf-4876-8c5b-2233c1739b05
+        in: query
+        name: contentType
+        required: true
+        schema:
+          type: string
+      - description: Zero-based index of the first row to return
+        example: 0
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int64
+          default: 0
+          minimum: 0
+      - description: "Maximum number of rows to return, 1 to 100"
+        example: 25
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int64
+          default: 25
+          maximum: 100
+          minimum: 1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBrokenLinksView"
+          description: Broken links retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: "Bad request - blank content type, offset not a whole number\
+            \ of 0 or more, or limit not a whole number between 1 and 100"
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - authentication required, or the caller is not\
+            \ a back-end user"
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - the caller has no access to the link-checker tool
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: List broken links of a content type
+      tags:
+      - Administration
   /v1/logger:
     get:
       operationId: getLoggers
@@ -26560,6 +26656,62 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TemplateLayoutRowView"
+    BrokenLinkView:
+      type: object
+      description: A broken link found in a contentlet the requesting user can read
+      properties:
+        contentTitle:
+          type: string
+          description: Title of the contentlet
+          example: Sample title
+        contentType:
+          type: string
+          description: Name of the contentlet's content type
+          example: Blog
+        field:
+          type: string
+          description: Name of the field that holds the link
+          example: Body
+        inode:
+          type: string
+          description: Inode of the contentlet that holds the link
+          example: 6a8a1f2c-3b4d-4e5f-8a9b-0c1d2e3f4a5b
+        linkTitle:
+          type: string
+          description: Title of the link
+          example: Read more
+        modDate:
+          type: string
+          description: "Last modification date, formatted as MM/dd/yyyy hh:mm a"
+          example: 03/14/2026 09:30 AM
+        modUserName:
+          type: string
+          description: Full name of the last editor; empty when the editor cannot
+            be resolved
+          example: Jane Doe
+        status:
+          type: string
+          description: "Contentlet status: archived, live, working or empty"
+          example: live
+        url:
+          type: string
+          description: URL of the link
+          example: https://example.com/page
+    BrokenLinksView:
+      type: object
+      description: A page of broken links and the total number of rows the requesting
+        user can read
+      properties:
+        list:
+          type: array
+          description: Rows of the requested page
+          items:
+            $ref: "#/components/schemas/BrokenLinkView"
+        total:
+          type: integer
+          format: int32
+          description: Number of rows the requesting user can read across all pages
+          example: 42
     BrowserQueryForm:
       type: object
       properties:
@@ -34625,6 +34777,29 @@ components:
       properties:
         entity:
           type: boolean
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityBrokenLinksView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/BrokenLinksView"
         errors:
           type: array
           items:
