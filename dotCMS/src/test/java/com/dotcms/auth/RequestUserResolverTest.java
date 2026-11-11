@@ -38,7 +38,10 @@ public class RequestUserResolverTest {
     @Test
     public void test_open_scope_is_the_source_and_the_request_is_not_read() {
         final HttpServletRequest request = org.mockito.Mockito.mock(HttpServletRequest.class);
-        try (SystemUserScope ignored = SystemUserScope.open()) {
+        try (org.mockito.MockedStatic<com.dotmarketing.business.APILocator> locator =
+                     org.mockito.Mockito.mockStatic(com.dotmarketing.business.APILocator.class);
+             SystemUserScope ignored = SystemUserScope.open()) {
+            locator.when(com.dotmarketing.business.APILocator::systemUser).thenReturn(user(UserAPI.SYSTEM_USER_ID));
             final User resolved = RequestUserResolver.resolveRequestUser(request);
             assertEquals(UserAPI.SYSTEM_USER_ID, resolved.getUserId());
         }

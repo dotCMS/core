@@ -401,25 +401,7 @@ public class PortalUtil {
   }
 
   public static User getUser(HttpServletRequest req) {
-    User user = (User) req.getAttribute(WebKeys.USER);
-    if (user == null) {
-      user = getUser(req.getSession(false));
-    }
-    if (user == null) {
-      String userId = PortalUtil.getUserId(req);
-      if (userId != null) {
-        user = Try.of(() -> UserLocalManagerUtil.getUserById(userId)).getOrNull();
-      }
-    }
-    if (user == null) {
-      user = getUserFromAuthHeader(req);
-    }
-    if (user == null) {
-      return null;
-    }
-    req.setAttribute(WebKeys.USER, user);
-    req.setAttribute(WebKeys.USER_ID, user.getUserId());
-    return user;
+    return com.dotcms.auth.RequestUserResolver.resolveRequestUser(req);
   }
 
   public static User getUserFromAuthHeader(HttpServletRequest req) {
@@ -437,19 +419,7 @@ public class PortalUtil {
 
 
   public static User getUser(HttpSession session) {
-    User user = null;
-    if (session != null) {
-      user = (User) session.getAttribute(WebKeys.USER);
-      if (user == null) {
-        String userId = PortalUtil.getUserId(session);
-        if (userId == null) {
-          return null;
-        }
-        user = Try.of(() -> UserLocalManagerUtil.getUserById(userId)).getOrNull();
-        session.setAttribute(WebKeys.USER, user);
-      }
-    }
-    return user;
+    return com.dotcms.auth.RequestUserResolver.resolveSessionUser(session);
   }
 
   public static User getUser(ActionRequest req) {
@@ -467,19 +437,11 @@ public class PortalUtil {
   }
 
   public static String getUserId(HttpSession ses) {
-    if (ses != null && ses.getAttribute(WebKeys.USER_ID) != null) {
-      return (String) ses.getAttribute(WebKeys.USER_ID);
-    } else {
-      return null;
-    }
+    return com.dotcms.auth.RequestUserResolver.resolveSessionUserId(ses);
   }
 
   public static String getUserId(HttpServletRequest req) {
-
-    String userId = (String) req.getAttribute(WebKeys.USER_ID);
-    userId = (userId != null) ? userId : getUserId(req.getSession(false));
-    req.setAttribute(WebKeys.USER_ID, userId);
-    return userId;
+    return com.dotcms.auth.RequestUserResolver.resolveRequestUserId(req);
   }
 
   public static String getUserId(ActionRequest req) {

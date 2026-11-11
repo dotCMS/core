@@ -45,6 +45,19 @@ public final class InteractiveUserPolicy {
     }
 
     /**
+     * Same rule as {@link #isEligible(User)} when only the account id is known.
+     *
+     * @param userId the account id, may be null
+     * @return {@code false} for null and for the built-in account's id while the rule is on
+     */
+    public static boolean isEligibleUserId(final String userId) {
+        if (userId == null) {
+            return false;
+        }
+        return !isRuleOn() || !UserAPI.SYSTEM_USER_ID.equalsIgnoreCase(userId);
+    }
+
+    /**
      * Returns the account when it is eligible and {@code null} ("no user") when it is not. Never writes to
      * the request or the session.
      *
