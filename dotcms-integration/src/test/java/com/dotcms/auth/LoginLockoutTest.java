@@ -1134,6 +1134,34 @@ public class LoginLockoutTest {
     }
 
     /**
+     * Given: an account with no attempts yet
+     * When: {@code LIMIT} wrong passwords are counted from one address at the same moment, before any of their
+     *       passwords are checked
+     * Then: every one of them — not only whichever happened to be counted last — is paced by the full count
+     *       the burst reached, not by its own position alone
+     *
+     * Unlike a timed, end-to-end check through the real login path, this reads {@link #pacingSeed} only after
+     * every concurrent {@link #begin} call has already returned, so there is no race between one attempt
+     * reading the source's total and another attempt's count still being written: whichever one of them is
+     * read first, all {@code LIMIT} counts are already in place.
+     */
+    @Test
+    public void test_pacing_seed_reflects_the_full_burst_for_every_concurrent_attempt() throws Exception {
+        final User user = newUser();
+        try {
+            final List<LoginLockout.Attempt> attempts = inParallel(LIMIT, ADDRESS,
+                    () -> LoginLockout.getInstance().begin(user.getUserId(), ADDRESS));
+            for (final LoginLockout.Attempt attempt : attempts) {
+                final int seed = LoginLockout.getInstance().pacingSeed(attempt);
+                assertEquals("attempt #" + attempt.number() + " should be paced by the full burst of " + LIMIT
+                        + ", not just its own position", LIMIT, seed);
+            }
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
      * Given: an account, with the default ("pow") delay strategy enabled
      * When: 3 wrong passwords arrive from one address at the same moment
      * Then: every one of them is paced by a real escalated count, not only whichever happens to be slowest —
