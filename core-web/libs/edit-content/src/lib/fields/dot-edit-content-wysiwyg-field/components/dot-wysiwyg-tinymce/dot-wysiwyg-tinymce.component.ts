@@ -88,6 +88,10 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
     $editorConfig = computed<RawEditorOptions>(() => {
         const config: RawEditorOptions = {
             ...DEFAULT_TINYMCE_CONFIG,
+            // Browse buttons in the image and link dialogs. Before the configs below so they can
+            // still narrow `file_picker_types`; the callback itself is a function, which no JSON
+            // config can express or override.
+            ...this.#dotWysiwygPluginService.filePickerOptions(),
             ...(this.$wideConfig() || {}),
             ...this.$customPropsContentField(),
             // TinyMCE renders into an iframe, which no label outside can name. Two surfaces need
