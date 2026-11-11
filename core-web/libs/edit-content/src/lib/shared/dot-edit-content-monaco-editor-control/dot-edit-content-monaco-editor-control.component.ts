@@ -104,18 +104,24 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
      *
      * This property merges default Monaco editor configurations with custom ones and sets the editor's language.
      *
+     * The language is chosen in this order: the `forceLanguage` input, then `language` in the
+     * field's `monacoOptions` variable, then the language detected from the content.
      */
     $monacoOptions = computed(() => {
+        const customProps = this.$customPropsContentField();
+
         return {
             ...DEFAULT_MONACO_CONFIG,
-            ...this.$customPropsContentField(),
+            ...customProps,
             // Monaco owns its DOM, so `<label for>` cannot reach the surface it renders. Its own
             // ariaLabel option is where the field name belongs; without it the editor announces
             // itself with Monaco's generic default and the author cannot tell which field they are
             // in. Set after the spreads, like `language`, so it is not silently dropped by custom
             // monacoOptions.
             ariaLabel: this.$field()?.name,
-            language: this.$forcedLanguage() || this.$language()
+            // A language configured in monacoOptions pins the editor, so content whose words look
+            // like another language (issue #37996) is not re-detected and checked as that language.
+            language: this.$forcedLanguage() || customProps?.language || this.$language()
         };
     });
 
