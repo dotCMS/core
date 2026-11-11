@@ -20,9 +20,10 @@
             jdk.internal.reflect,
             java.lang.reflect</Property>
         <Property name="stack.filter">${env:CMS_LOG4J_STACK_FILTER:-${DEFAULT_STACK_FILTER}}</Property>
-        <!-- Control characters other than tab and line ends, written as "?" in messages and
-             exception text. %ex{none} keeps log4j from appending a second, unfiltered trace. -->
-        <Property name="CONTROL_CHARS">[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\u2028\u2029]</Property>
+        <!-- Control characters other than tab and line ends (a carriage return counts as a line
+             end only before a line feed), written as "?" in messages and exception text.
+             %ex{none} keeps log4j from appending a second, unfiltered trace. -->
+        <Property name="CONTROL_CHARS">[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\u2028\u2029]|\r(?!\n)</Property>
         <Property name="DEFAULT_CONSOLE_PATTERN">%d{HH:mm:ss.SSS}  %-5level %logger{2}{nolookups} - %replace{%enc{%msg{nolookups}}{CRLF}}{${CONTROL_CHARS}}{?}%n%replace{%xEx{filters(${stack.filter})}}{${CONTROL_CHARS}}{?}%ex{none}</Property>
         <Property name="CONSOLE_PATTERN">${env:CMS_LOG4J_CONSOLE_PATTERN:-${DEFAULT_CONSOLE_PATTERN}}</Property>
     </Properties>

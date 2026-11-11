@@ -9,8 +9,12 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
@@ -22,6 +26,9 @@ import org.apache.logging.log4j.core.impl.Log4jLogEvent;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.apache.logging.log4j.message.SimpleMessage;
 import org.junit.jupiter.api.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 /**
  * Checks the log layouts dotCMS ships: the webapp {@code log4j2.xml} and the default patterns the
@@ -36,6 +43,9 @@ class LogLayoutPatternTest {
             new File("src/main/docker/original/ROOT/srv/35-set-logging-defaults.sh");
 
     private static final String MESSAGE = "first part\r\nsecond part";
+    private static final File EXAMPLE_CONFIG =
+            new File("src/main/webapp/WEB-INF/log4j/log4j2-example.xml");
+    private static final String CR_EXCEPTION_TEXT = "cause\rnext";
     private static final String CONTROL_MESSAGE =
             "a\u001b[2Kb\u0007c\u2028d\u2029e\u0085f col1\tcol2 \u00e9\u65e5\u672c";
 
@@ -134,6 +144,78 @@ class LogLayoutPatternTest {
         }
     }
 
+    /**
+     * Given the console layout from the webapp log4j2.xml,
+     * When the exception text holds a carriage return that is not part of a line end,
+     * Then it is written as {@code ?}.
+     */
+    @Test
+    void webappConsolePattern_writesBareCarriageReturnInExceptionTextAsPlaceholder()
+            throws IOException {
+        assertBareCarriageReturnReplaced(format(webappConsoleLayout(),
+                event("failure", new IllegalStateException(CR_EXCEPTION_TEXT))));
+    }
+
+    /**
+     * Given the default console and file patterns the Docker image exports,
+     * When the exception text holds a carriage return that is not part of a line end,
+     * Then it is written as {@code ?}.
+     */
+    @Test
+    void dockerDefaultPatterns_writeBareCarriageReturnInExceptionTextAsPlaceholder()
+            throws Exception {
+        for (final String pattern : dockerDefaultPatterns()) {
+            assertBareCarriageReturnReplaced(format(layout(pattern),
+                    event("failure", new IllegalStateException(CR_EXCEPTION_TEXT))));
+        }
+    }
+
+    /**
+     * Given the four message patterns in log4j2-example.xml,
+     * When a message or exception text holds control characters,
+     * Then each one is written as {@code ?}, and the stack trace is printed once.
+     */
+    @Test
+    void examplePatterns_writeControlCharactersAsPlaceholders() throws Exception {
+        for (final String pattern : examplePatterns()) {
+            assertControlCharactersReplaced(format(layout(pattern), event(CONTROL_MESSAGE, null)));
+            assertExceptionTextReplaced(format(layout(pattern), event("failure", controlException())));
+            assertBareCarriageReturnReplaced(format(layout(pattern),
+                    event("failure", new IllegalStateException(CR_EXCEPTION_TEXT))));
+        }
+    }
+
+    private static void assertBareCarriageReturnReplaced(final String output) {
+        assertTrue(output.contains("IllegalStateException: cause?next"),
+                () -> "output: " + visible(output));
+        assertStackTraceFrames(output.replace("cause?next", "cause"));
+    }
+
+    /**
+     * Reads the message patterns from log4j2-example.xml, with {@code ${CONTROL_CHARS}} resolved.
+     */
+    private static List<String> examplePatterns() throws Exception {
+        final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        final Document document = factory.newDocumentBuilder().parse(EXAMPLE_CONFIG);
+        final NodeList nodes = document.getElementsByTagName("Property");
+        final Map<String, String> properties = new HashMap<>();
+        for (int i = 0; i < nodes.getLength(); i++) {
+            final Element property = (Element) nodes.item(i);
+            properties.put(property.getAttribute("name"), property.getTextContent());
+        }
+        final List<String> patterns = new ArrayList<>();
+        for (final String name : List.of("PATTERN", "CONSOLE_PATTERN", "MESSAGE_PATTERN",
+                "MDC_MESSAGE_PATTERN")) {
+            assertTrue(properties.containsKey(name), () -> "missing property " + name);
+            final String pattern = properties.get(name)
+                    .replace("${CONTROL_CHARS}", properties.getOrDefault("CONTROL_CHARS", ""));
+            assertFalse(pattern.contains("${"), () -> name + " still has a property: " + pattern);
+            patterns.add(pattern);
+        }
+        return patterns;
+    }
+
     private static IllegalStateException controlException() {
         return new IllegalStateException("cause\u001b[1Aend");
     }
@@ -196,7 +278,12 @@ class LogLayoutPatternTest {
             final XmlConfiguration configuration =
                     new XmlConfiguration(context, new ConfigurationSource(in, WEBAPP_CONFIG));
             configuration.initialize();
-            return configuration.getAppender("Console").getLayout();
+            // The default pattern, not ${CONSOLE_PATTERN}: that one takes CMS_LOG4J_CONSOLE_PATTERN
+            // from the environment when it is set.
+            return PatternLayout.newBuilder()
+                    .withConfiguration(configuration)
+                    .withPattern(configuration.getStrSubstitutor().replace("${DEFAULT_CONSOLE_PATTERN}"))
+                    .build();
         }
     }
 
