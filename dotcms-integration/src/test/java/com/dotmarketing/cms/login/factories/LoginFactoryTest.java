@@ -2,24 +2,19 @@ package com.dotmarketing.cms.login.factories;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
-import com.dotcms.datagen.UserDataGen;
-import com.dotcms.enterprise.BaseAuthenticator;
-import com.dotcms.enterprise.LDAPImpl;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.PasswordFactoryProxy.AuthenticationStatus;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portal.struts.DotCustomLoginPostAction;
@@ -28,20 +23,18 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PropsUtil;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import com.liferay.portal.util.PropsUtil;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Integration tests for {@link LoginFactory#passwordMatch(String, User)} and for how a directory
- * login updates the local password ({@link LoginFactory#resetDirectoryPassword(User, int)}).
+ * Integration tests for native login and {@link LoginFactory#passwordMatch(String, User)}.
  *
  * <p>Each test writes {@code user_.password_} directly so it controls exactly which stored
  * format the comparison sees, then reloads the user through {@code UserAPI} the same way the
@@ -49,17 +42,14 @@ import org.junit.Test;
  *
  * <p>The last tests drive {@link LoginFactory#doLogin(String, String)} and
  * {@link LoginFactory#doLogin(String, String, boolean, HttpServletRequest, HttpServletResponse)}
- * with a pre-authenticator that answers {@link Authenticator#SUCCESS} without checking anything,
- * which is what the bundled directory authenticator does for an account it did not find in the
- * directory.</p>
+ * with stale legacy hooks configured to an authenticator that answers
+ * {@link Authenticator#SUCCESS} without checking anything. Native login must ignore those hooks
+ * and still require the local password and an active account.</p>
  */
 public class LoginFactoryTest extends IntegrationTestBase {
 
     private static final String PASSWORD = "Str0ng-Test-Passw0rd!";
     private static final String DIRECTORY_IMPLEMENTATION = "LDAP_FRONTEND_AUTH_IMPLEMENTATION";
-
-    private static boolean originalSyncPassword;
-    private static Role createdDirectoryRole;
 
     private final List<User> createdUsers = new ArrayList<>();
 
@@ -69,7 +59,6 @@ public class LoginFactoryTest extends IntegrationTestBase {
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
-        originalSyncPassword = BaseAuthenticator.SYNC_PASSWORD;
     }
 
     @Before
@@ -82,16 +71,8 @@ public class LoginFactoryTest extends IntegrationTestBase {
     public void cleanup() {
         Config.setProperty(PropsUtil.AUTH_PIPELINE_PRE, originalPreAuthenticator);
         Config.setProperty(DIRECTORY_IMPLEMENTATION, originalDirectoryImplementation);
-        BaseAuthenticator.SYNC_PASSWORD = originalSyncPassword;
         createdUsers.forEach(UserDataGen::remove);
         createdUsers.clear();
-    }
-
-    @AfterClass
-    public static void removeDirectoryRole() {
-        if (createdDirectoryRole != null) {
-            RoleDataGen.remove(createdDirectoryRole);
-        }
     }
 
     /**
@@ -197,104 +178,68 @@ public class LoginFactoryTest extends IntegrationTestBase {
         assertTrue(LoginFactory.passwordMatch(PASSWORD, user));
     }
 
-    /**
-     * Given: a directory user, with directory passwords not copied into dotCMS.
-     * When:  the directory rejects the login.
-     * Then:  the stored password is left untouched.
-     */
     @Test
-    public void test_resetDirectoryPassword_directoryRejected_keepsStoredPassword() throws Exception {
-        BaseAuthenticator.SYNC_PASSWORD = false;
-        final String stored = PasswordFactoryProxy.generateHash(PASSWORD);
-        final User user = directoryUserWithStoredPassword(stored);
+    public void test_doLogin_nativePassword_acceptsCorrectPassword() throws Exception {
+        final User user = userWithStoredPassword(PasswordFactoryProxy.generateHash(PASSWORD));
 
-        LoginFactory.resetDirectoryPassword(user, Authenticator.FAILURE);
+        assertTrue(LoginFactory.doLogin(loginName(user), PASSWORD));
+    }
 
-        assertEquals(stored, loadStoredPassword(user));
+    @Test
+    public void test_doLogin_nativePassword_rejectsWrongPassword() throws Exception {
+        final User user = userWithStoredPassword(PasswordFactoryProxy.generateHash(PASSWORD));
+
+        assertFalse(LoginFactory.doLogin(loginName(user), PASSWORD + "-wrong"));
+    }
+
+    private String loginName(final User user) {
+        return com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany().getAuthType()
+                .equals(com.liferay.portal.model.Company.AUTH_TYPE_EA)
+                ? user.getEmailAddress() : user.getUserId();
     }
 
     /**
-     * Given: a directory user, with directory passwords not copied into dotCMS.
-     * When:  the directory accepts the login.
-     * Then:  the stored password is replaced with a new secure hash, and the old password no
-     *        longer matches it.
-     */
-    @Test
-    public void test_resetDirectoryPassword_directoryAccepted_storesNewSecureHash() throws Exception {
-        BaseAuthenticator.SYNC_PASSWORD = false;
-        final String stored = PasswordFactoryProxy.generateHash(PASSWORD);
-        final User user = directoryUserWithStoredPassword(stored);
-
-        LoginFactory.resetDirectoryPassword(user, Authenticator.SUCCESS);
-
-        final String updated = loadStoredPassword(user);
-        assertNotEquals(stored, updated);
-        assertFalse(PasswordFactoryProxy.isUnsecurePasswordHash(updated));
-        assertEquals(AuthenticationStatus.NOT_AUTHENTICATED,
-                PasswordFactoryProxy.authPassword(PASSWORD, updated));
-    }
-
-    /**
-     * Given: a user who does not belong to the directory.
-     * When:  the login is accepted.
-     * Then:  the stored password is left untouched.
-     */
-    @Test
-    public void test_resetDirectoryPassword_localUser_keepsStoredPassword() throws Exception {
-        BaseAuthenticator.SYNC_PASSWORD = false;
-        final String stored = PasswordFactoryProxy.generateHash(PASSWORD);
-        final User user = userWithStoredPassword(stored);
-
-        LoginFactory.resetDirectoryPassword(user, Authenticator.SUCCESS);
-
-        assertEquals(stored, loadStoredPassword(user));
-    }
-
-    /**
-     * Given: a pre-authenticator that answers SUCCESS for anyone, which is what the bundled
-     *        directory authenticator does for an account the directory does not hold.
+     * Given: stale legacy hooks configured to an authenticator that accepts any password.
      * When:  the credentials-only login is tried with a password that is not the stored one.
-     * Then:  the login is refused: the pre-authenticator's answer is not a password check.
+     * Then:  native login ignores the hooks and refuses the login.
      */
     @Test
-    public void test_doLogin_preAuthenticatorSuccess_refusesAnotherPassword() throws Exception {
+    public void test_doLogin_staleLegacyHooks_refusesAnotherPassword() throws Exception {
         final User user = userWithStoredPassword(PasswordFactoryProxy.generateHash(PASSWORD));
         usePreAuthenticator(AcceptsAnyoneAuthenticator.class);
 
-        assertFalse(LoginFactory.doLogin(user.getEmailAddress(), PASSWORD + "-wrong"));
+        assertFalse(LoginFactory.doLogin(loginName(user), PASSWORD + "-wrong"));
     }
 
     /**
-     * Given: the same pre-authenticator that answers SUCCESS for anyone.
+     * Given: the same stale legacy hooks.
      * When:  the credentials-only login is tried with the stored password.
-     * Then:  the login is accepted, so requiring the stored password does not shut out a user
-     *        the directory did authenticate, whose password it stores in dotCMS first.
+     * Then:  native login accepts the password despite the obsolete configuration.
      */
     @Test
-    public void test_doLogin_preAuthenticatorSuccess_acceptsTheStoredPassword() throws Exception {
+    public void test_doLogin_staleLegacyHooks_acceptsTheStoredPassword() throws Exception {
         final User user = userWithStoredPassword(PasswordFactoryProxy.generateHash(PASSWORD));
         usePreAuthenticator(AcceptsAnyoneAuthenticator.class);
 
-        assertTrue(LoginFactory.doLogin(user.getEmailAddress(), PASSWORD));
+        assertTrue(LoginFactory.doLogin(loginName(user), PASSWORD));
     }
 
     /**
-     * Given: the same pre-authenticator, and an account that was deactivated.
+     * Given: the same stale legacy hooks, and an account that was deactivated.
      * When:  the login is tried with the stored password.
-     * Then:  the login is refused, the way the login against dotCMS and the REST login already
-     *        refuse a deactivated account.
+     * Then:  native login refuses the inactive account.
      */
     @Test
-    public void test_doLogin_preAuthenticatorSuccess_refusesDeactivatedAccount() throws Exception {
+    public void test_doLogin_staleLegacyHooks_refusesDeactivatedAccount() throws Exception {
         final User user = userWithStoredPassword(PasswordFactoryProxy.generateHash(PASSWORD));
         deactivate(user);
         usePreAuthenticator(AcceptsAnyoneAuthenticator.class);
 
-        assertFalse(LoginFactory.doLogin(user.getEmailAddress(), PASSWORD));
+        assertFalse(LoginFactory.doLogin(loginName(user), PASSWORD));
     }
 
     /**
-     * Given: the same pre-authenticator.
+     * Given: the same stale legacy hooks.
      * When:  the login that establishes a session is tried with a password that is not the
      *        stored one, and then with the stored one.
      * Then:  only the stored password signs the user in.
@@ -304,23 +249,38 @@ public class LoginFactoryTest extends IntegrationTestBase {
      * is.</p>
      */
     @Test
-    public void test_doLoginWithSession_preAuthenticatorSuccess_requiresTheStoredPassword() throws Exception {
+    public void test_doLoginWithSession_staleLegacyHooks_requiresTheStoredPassword() throws Exception {
         final User user = userWithStoredPassword(PasswordFactoryProxy.generateHash(PASSWORD));
         APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadFrontEndUserRole(), user);
         usePreAuthenticator(AcceptsAnyoneAuthenticator.class);
         final HttpServletRequest request = requestWithSession();
         final HttpServletResponse response = mock(HttpServletResponse.class);
 
-        assertFalse(LoginFactory.doLogin(user.getEmailAddress(), PASSWORD + "-wrong", false, request,
+        assertFalse(LoginFactory.doLogin(loginName(user), PASSWORD + "-wrong", false, request,
                 response));
-        assertTrue(LoginFactory.doLogin(user.getEmailAddress(), PASSWORD, false, request, response));
+        assertTrue(LoginFactory.doLogin(loginName(user), PASSWORD, false, request, response));
     }
 
     /**
-     * Points {@code auth.pipeline.pre} and the directory implementation at the given
-     * authenticator, which is how a login reaches the directory branch.
+     * Given: stale legacy hooks and an inactive account with the front-end role.
+     * When:  the session login is tried with the correct local password.
+     * Then:  native login refuses the inactive account despite the configured hooks.
+     */
+    @Test
+    public void test_doLoginWithSession_staleLegacyHooks_refusesDeactivatedAccount() throws Exception {
+        final User user = userWithStoredPassword(PasswordFactoryProxy.generateHash(PASSWORD));
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadFrontEndUserRole(), user);
+        deactivate(user);
+        usePreAuthenticator(AcceptsAnyoneAuthenticator.class);
+
+        assertFalse(LoginFactory.doLogin(loginName(user), PASSWORD, false, requestWithSession(),
+                mock(HttpServletResponse.class)));
+    }
+
+    /**
+     * Configures obsolete authentication hooks that native login must ignore.
      *
-     * @param authenticator the {@link Authenticator} the login should consult
+     * @param authenticator the {@link Authenticator} named by the stale configuration
      */
     private static void usePreAuthenticator(final Class<? extends Authenticator> authenticator) {
         Config.setProperty(PropsUtil.AUTH_PIPELINE_PRE, authenticator.getName());
@@ -352,9 +312,8 @@ public class LoginFactoryTest extends IntegrationTestBase {
     }
 
     /**
-     * A pre-authenticator that answers {@link Authenticator#SUCCESS} without checking anything,
-     * standing for the branch of the bundled directory authenticator that answers for an account
-     * the directory does not hold.
+     * A synthetic legacy hook that accepts anyone. Configuring it must not bypass native
+     * password validation or inactive-account checks.
      */
     public static class AcceptsAnyoneAuthenticator implements Authenticator {
 
@@ -371,35 +330,6 @@ public class LoginFactoryTest extends IntegrationTestBase {
         }
     }
 
-    /**
-     * Creates a user with the given stored password and gives it the directory role.
-     *
-     * @param storedPassword the value to place in {@code user_.password_}
-     * @return the reloaded {@link User}
-     */
-    private User directoryUserWithStoredPassword(final String storedPassword) throws Exception {
-        final User user = userWithStoredPassword(storedPassword);
-        APILocator.getRoleAPI().addRoleToUser(directoryRole(), user);
-        return user;
-    }
-
-    /**
-     * Returns the role that marks directory users, creating it when the test database does not
-     * have it yet. A role created here is removed after the class runs.
-     *
-     * @return the directory {@link Role}
-     */
-    private static Role directoryRole() throws Exception {
-        final Role existing = APILocator.getRoleAPI().loadRoleByKey(LDAPImpl.LDAP_USER_ROLE);
-        if (existing != null) {
-            return existing;
-        }
-        createdDirectoryRole = new RoleDataGen()
-                .key(LDAPImpl.LDAP_USER_ROLE)
-                .name(LDAPImpl.LDAP_USER_ROLE)
-                .nextPersisted();
-        return createdDirectoryRole;
-    }
 
     /**
      * Creates a user, overwrites its stored password directly in the database, and reloads it

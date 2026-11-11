@@ -141,6 +141,15 @@ public class LoginLockoutTest {
         }
     }
 
+    private static int loginByEmail(final User user, final String password) throws Exception {
+        try {
+            return UserManagerUtil.authenticateByEmailAddress(
+                    PublicCompanyFactory.getDefaultCompany().getCompanyId(), user.getEmailAddress(), password);
+        } finally {
+            DbConnectionFactory.closeSilently();
+        }
+    }
+
     /**
      * The legacy login used by the publishing and maintenance ajax endpoints, as one request.
      */
@@ -277,6 +286,61 @@ public class LoginLockoutTest {
     private static void cleanUp(final User user) {
         LoginLockout.getInstance().clear(user.getUserId());
         UserDataGen.remove(user);
+    }
+
+    /**
+     * Given: a native user with a stored password
+     * When: the correct password is used to authenticate by email
+     * Then: login succeeds without recording a lockout failure
+     */
+    @Test
+    public void test_native_email_login_accepts_correct_password() throws Exception {
+        final User user = newUser();
+        try {
+            assertEquals(Authenticator.SUCCESS, loginByEmail(user, PASSWORD));
+            assertEquals(LoginLockout.Status.NONE, LoginLockout.getInstance().status(user.getUserId(), ADDRESS));
+            assertEquals(0, failedLoginAttempts(user));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: a native user with a stored password
+     * When: a wrong password is used to authenticate by email
+     * Then: login fails and both the lockout state and the user's failure count record the attempt
+     */
+    @Test
+    public void test_native_email_login_rejects_wrong_password() throws Exception {
+        final User user = newUser();
+        try {
+            assertEquals(Authenticator.FAILURE, loginByEmail(user, "wrong-email-password"));
+            assertEquals(LoginLockout.Status.RECORDED, LoginLockout.getInstance().status(user.getUserId(), ADDRESS));
+            assertEquals(1, failedLoginAttempts(user));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: a user with persisted failed login attempts below the lockout limit
+     * When: the user logs in with the correct password
+     * Then: a fresh load of the user shows that the failure count was reset to zero
+     */
+    @Test
+    public void test_success_resets_persisted_failure_count() throws Exception {
+        final User user = newUser();
+        try {
+            failLogins(user, 2);
+            CacheLocator.getUserCache().remove(user.getUserId());
+            assertEquals(2, failedLoginAttempts(user));
+
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
+            CacheLocator.getUserCache().remove(user.getUserId());
+            assertEquals(0, failedLoginAttempts(user));
+        } finally {
+            cleanUp(user);
+        }
     }
 
     /**
