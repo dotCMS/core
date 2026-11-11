@@ -3,6 +3,7 @@ package com.dotcms.graphql;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotcms.filters.interceptor.dotcms.DefaultAutoLoginWebInterceptor;
 import com.dotcms.mock.request.DotCMSMockRequest;
 import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotcms.mock.request.HttpRequestReaderWrapper;
@@ -133,6 +134,11 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         // AutoLoginFilter runs later; let it resolve remember-me-only callers before authenticating.
         if (UtilMethods.getCookie(requestIn.getCookies(), CookieKeys.REMEMBER_ME_COOKIE.get()) != null
                 && PortalUtil.getUser(requestIn) == null) {
+            return Result.NEXT;
+        }
+        // A cache hit ends the chain before AutoLoginFilter, so a due login cookie renewal runs
+        // on an uncached request instead.
+        if (DefaultAutoLoginWebInterceptor.isSessionLoginTokenRenewalDue(requestIn)) {
             return Result.NEXT;
         }
         final HttpRequestReaderWrapper wrapper = new HttpRequestReaderWrapper(requestIn);

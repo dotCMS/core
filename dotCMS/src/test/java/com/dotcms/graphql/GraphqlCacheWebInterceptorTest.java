@@ -15,6 +15,7 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.mock.request.DotCMSMockRequest;
@@ -29,6 +30,7 @@ import java.util.Optional;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
@@ -98,6 +100,35 @@ public class GraphqlCacheWebInterceptorTest {
             verify(cache, never()).get(anyString());
             verify(request, never()).getReader();
             assertEquals(body, request.getReader().readLine());
+        }
+    }
+
+    /**
+     * A request whose session is due to renew its login cookie is not answered from the cache, so
+     * it reaches AutoLoginFilter, where the renewal happens.
+     */
+    @Test
+    public void dueLoginCookieRenewalSkipsTheCache() throws Exception {
+        final GraphQLCache cache = mock(GraphQLCache.class);
+        final LicenseManager license = mock(LicenseManager.class);
+        when(license.isEnterprise()).thenReturn(true);
+        final DotCMSMockRequest request = spy(new DotCMSMockRequest());
+        request.setMethod("POST");
+        request.setContent("{\"query\":\"{ content { title } }\"}");
+        final HttpSession session = mock(HttpSession.class);
+        when(session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT))
+                .thenReturn(System.currentTimeMillis() - 1_000L);
+        when(request.getSession(false)).thenReturn(session);
+        when(cache.get(anyString())).thenReturn(Optional.of("{\"data\":\"cached\"}"));
+
+        try (MockedStatic<CacheLocator> caches = mockStatic(CacheLocator.class);
+             MockedStatic<LicenseManager> licenses = mockStatic(LicenseManager.class)) {
+            caches.when(CacheLocator::getGraphQLCache).thenReturn(cache);
+            licenses.when(LicenseManager::getInstance).thenReturn(license);
+
+            assertSame(Result.NEXT, new GraphqlCacheWebInterceptor().intercept(request,
+                    mock(HttpServletResponse.class)));
+            verify(cache, never()).get(anyString());
         }
     }
 
