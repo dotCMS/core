@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -89,6 +90,35 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
         interceptor.intercept(request, response);
 
         verify(loginServiceAPI).issueSessionLoginToken(request, response, cookieOwner, TOKEN_ID);
+    }
+
+    /**
+     * A response that carries a renewed cookie is marked as not to be stored before the request
+     * goes on, so a page rendered in live mode further down (a GraphQL GET, which would otherwise
+     * set the page's max-age) cannot make it cacheable.
+     */
+    @Test
+    public void renewedCookieResponse_isMarkedNotToBeStored() {
+        cookieOwnedBy(cookieOwner);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        interceptor.intercept(request("/api/v1/graphql", session(pastRenewal()), true), response);
+
+        verify(response).setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    }
+
+    /**
+     * A request that renews nothing leaves the response's cache headers to the endpoint.
+     */
+    @Test
+    public void responseWithoutRenewal_keepsItsCacheHeaders() {
+        cookieOwnedBy(cookieOwner);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        interceptor.intercept(request("/api/v1/graphql",
+                session(System.currentTimeMillis() + 60_000L), true), response);
+
+        verify(response, never()).setHeader(eq("Cache-Control"), anyString());
     }
 
     /**

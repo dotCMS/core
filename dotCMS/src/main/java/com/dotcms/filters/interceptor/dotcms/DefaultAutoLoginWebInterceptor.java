@@ -6,6 +6,7 @@ import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
+import com.dotcms.rest.annotation.HeaderFilter;
 import com.dotcms.util.security.Encryptor;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.business.APILocator;
@@ -173,7 +174,8 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
      * login cookie renew it, so site pages and assets never set a cookie; a session without a
      * renewal time (a "remember me" login, or a request authenticated by a header) is left alone.
      * Two requests that pass the check together each issue a valid token, so either cookie works.
-     * The new token carries the id of the token that was validated.
+     * The new token carries the id of the token that was validated, and the response that carries
+     * it is marked as not to be stored by any cache.
      * A due renewal that cannot happen (no cookie, or a cookie that is not valid for the session's
      * user) is removed from the session, so later requests do not read the cookie again. An
      * unexpected error while loading the cookie's owner or issuing the new token is logged and the
@@ -201,6 +203,10 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
         if (null != cookieOwner && null != sessionUserId
                 && cookieOwner.user().getUserId().equals(sessionUserId)) {
             try {
+                // Set before the endpoint runs: a page rendered in live mode (a GraphQL GET, for
+                // example) only sets its max-age when no Cache-Control header is present, so a
+                // shared cache cannot keep this response and the new login cookie with it.
+                response.setHeader(HeaderFilter.CACHE_CONTROL, HeaderFilter.NO_CACHE_CONTROL);
                 // The validated token's id, not the one on the loaded user, which a concurrent
                 // logout or password change may have replaced since.
                 this.loginServiceAPI.issueSessionLoginToken(request, response, cookieOwner.user(),
