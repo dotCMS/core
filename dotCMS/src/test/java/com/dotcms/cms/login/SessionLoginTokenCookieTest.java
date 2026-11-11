@@ -71,11 +71,39 @@ public class SessionLoginTokenCookieTest extends UnitTestBase {
     }
 
     /**
+     * A renewal issues the token with the id it was given, not the id the user holds by then, which
+     * a logout or password change may have replaced.
+     */
+    @Test
+    public void issueSessionLoginToken_usesGivenTokenId() throws Exception {
+        final User user = new User();
+        user.setRememberMeToken("id-set-by-password-change");
+
+        loginService().issueSessionLoginToken(request, response, user, "validated-token-id");
+
+        verify(jsonWebTokenUtils).createSessionLoginToken(eq(user), eq("validated-token-id"), any(Duration.class));
+        verify(response).addCookie(any(Cookie.class));
+    }
+
+    /**
+     * A login without "remember me" issues the token with the id the user holds.
+     */
+    @Test
+    public void loginWithoutRememberMe_usesUsersTokenId() throws Exception {
+        final User user = new User();
+        user.setRememberMeToken("current-id");
+
+        loginService().doRememberMe(request, response, user, false);
+
+        verify(jsonWebTokenUtils).createSessionLoginToken(eq(user), eq("current-id"), any(Duration.class));
+    }
+
+    /**
      * A login service built on a new factory, so the session cookie setting is read again.
      */
     private LoginServiceAPI loginService() throws Exception {
         when(request.getSession(false)).thenReturn(session);
-        when(jsonWebTokenUtils.createSessionLoginToken(any(User.class), any(Duration.class))).thenReturn("a.b.c");
+        when(jsonWebTokenUtils.createSessionLoginToken(any(User.class), any(), any(Duration.class))).thenReturn("a.b.c");
 
         final Constructor<LoginServiceAPIFactory> factoryConstructor =
                 LoginServiceAPIFactory.class.getDeclaredConstructor();

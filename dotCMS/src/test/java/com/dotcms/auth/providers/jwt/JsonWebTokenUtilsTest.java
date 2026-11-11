@@ -1,18 +1,26 @@
 package com.dotcms.auth.providers.jwt;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.auth.providers.jwt.beans.JWToken;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenService;
+import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.liferay.portal.model.User;
+import java.time.Duration;
 import java.util.Optional;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
 /**
@@ -52,6 +60,47 @@ public class JsonWebTokenUtilsTest {
         when(inactive.getId()).thenReturn("token-id");
         when(inactive.getActiveUser()).thenReturn(Optional.empty());
         assertNull(getUser(Optional.of(inactive)));
+    }
+
+    /**
+     * The owner of a validated token comes back with the token's own id.
+     */
+    @Test
+    public void getLoginTokenOwner_returnsUserWithValidatedTokenId() {
+        final User user = user("token-id");
+        final Optional<JWToken> validated = token("token-id", user);
+        final ApiTokenAPI apiTokenAPI = mock(ApiTokenAPI.class);
+        when(apiTokenAPI.fromJwt(JWT, IP)).thenReturn(validated);
+        try (MockedStatic<APILocator> apis = mockStatic(APILocator.class)) {
+            apis.when(APILocator::getApiTokenAPI).thenReturn(apiTokenAPI);
+
+            final JsonWebTokenUtils.LoginTokenOwner owner =
+                    new JsonWebTokenUtils(mock(JsonWebTokenService.class)).getLoginTokenOwner(JWT, IP).orElseThrow();
+
+            assertSame(user, owner.user());
+            assertEquals("token-id", owner.tokenId());
+        }
+    }
+
+    /**
+     * A session login token created with an explicit id carries that id, whatever the user holds.
+     */
+    @Test
+    public void createSessionLoginToken_carriesGivenTokenId() {
+        final JsonWebTokenService service = mock(JsonWebTokenService.class);
+        final User user = user("id-set-by-password-change");
+
+        try (MockedStatic<PublicEncryptionFactory> encryption = mockStatic(PublicEncryptionFactory.class);
+                MockedStatic<ClusterFactory> cluster = mockStatic(ClusterFactory.class)) {
+            encryption.when(() -> PublicEncryptionFactory.encryptString(any())).thenReturn("encrypted-user-id");
+            cluster.when(ClusterFactory::getClusterId).thenReturn("cluster-id");
+            new JsonWebTokenUtils(service).createSessionLoginToken(user, "validated-token-id", Duration.ofMinutes(5));
+        }
+
+        final ArgumentCaptor<UserToken> issued = ArgumentCaptor.forClass(UserToken.class);
+        verify(service).generateUserToken(issued.capture());
+        assertEquals("validated-token-id", issued.getValue().getId());
+        assertEquals(Boolean.TRUE, issued.getValue().getClaims().get(JsonWebTokenUtils.CLAIM_SESSION_LOGIN));
     }
 
     private static User getUser(final Optional<JWToken> validated) {

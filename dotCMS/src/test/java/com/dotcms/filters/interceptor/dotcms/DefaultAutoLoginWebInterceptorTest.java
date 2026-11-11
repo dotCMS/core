@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.auth.providers.jwt.JsonWebTokenUtils.LoginTokenOwner;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.filters.interceptor.Result;
@@ -27,6 +28,7 @@ import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.WebKeys;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -41,6 +43,8 @@ import org.junit.Test;
 public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
 
     private static final String LOGIN_COOKIE_VALUE = "a.b.c";
+    /** The id carried by the validated login cookie. */
+    private static final String TOKEN_ID = "validated-token-id";
 
     private final LoginServiceAPI loginServiceAPI = mock(LoginServiceAPI.class);
     private final JsonWebTokenUtils jsonWebTokenUtils = mock(JsonWebTokenUtils.class);
@@ -63,7 +67,28 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
 
         assertEquals(Result.SKIP, interceptor.intercept(request, response));
 
-        verify(loginServiceAPI).doRememberMe(request, response, cookieOwner, false);
+        verify(loginServiceAPI).issueSessionLoginToken(request, response, cookieOwner, TOKEN_ID);
+    }
+
+    /**
+     * A password change that writes a new token id onto the shared user after the cookie was
+     * validated does not reach the renewed token: it carries the validated id, so it stops
+     * validating along with the old cookie.
+     */
+    @Test
+    public void renewedToken_carriesValidatedId_whenUserIdChangesAfterValidation() {
+        cookieOwner.setRememberMeToken(TOKEN_ID);
+        when(jsonWebTokenUtils.getLoginTokenOwner(any(), any())).thenAnswer(call -> {
+            final Optional<LoginTokenOwner> validated = owned(cookieOwner);
+            cookieOwner.setRememberMeToken("id-set-by-password-change");
+            return validated;
+        });
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final HttpServletRequest request = request("/api/v1/users/current", session(pastRenewal()), true);
+
+        interceptor.intercept(request, response);
+
+        verify(loginServiceAPI).issueSessionLoginToken(request, response, cookieOwner, TOKEN_ID);
     }
 
     /**
@@ -192,7 +217,7 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
         interceptor.intercept(request("/api/v1/a", session, true), mock(HttpServletResponse.class));
         interceptor.intercept(request("/api/v1/b", session, true), mock(HttpServletResponse.class));
 
-        verify(jsonWebTokenUtils, times(1)).getUser(any(), any());
+        verify(jsonWebTokenUtils, times(1)).getLoginTokenOwner(any(), any());
         verify(session).removeAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT);
         verifyNoRenewal();
     }
@@ -240,15 +265,15 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
         doAnswer(call -> {
             session.setAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT, nextRenewal);
             return null;
-        }).when(loginServiceAPI).doRememberMe(any(HttpServletRequest.class),
-                any(HttpServletResponse.class), any(User.class), anyBoolean());
+        }).when(loginServiceAPI).issueSessionLoginToken(any(HttpServletRequest.class),
+                any(HttpServletResponse.class), any(User.class), anyString());
         final HttpServletResponse response = mock(HttpServletResponse.class);
 
         assertEquals(Result.SKIP, interceptor.intercept(request("/api/v1/a", session, true), response));
         assertEquals(Result.SKIP, interceptor.intercept(request("/api/v1/b", session, true), response));
 
-        verify(loginServiceAPI, times(1)).doRememberMe(any(HttpServletRequest.class),
-                any(HttpServletResponse.class), any(User.class), anyBoolean());
+        verify(loginServiceAPI, times(1)).issueSessionLoginToken(any(HttpServletRequest.class),
+                any(HttpServletResponse.class), any(User.class), anyString());
         assertEquals(nextRenewal, session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
     }
 
@@ -261,9 +286,9 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
     public void errorLoadingCookieOwner_keepsRenewalForTheNextRequest() {
         final Long renewAt = pastRenewal();
         final HttpSession session = statefulSession(renewAt);
-        when(jsonWebTokenUtils.getUser(any(), any()))
+        when(jsonWebTokenUtils.getLoginTokenOwner(any(), any()))
                 .thenThrow(new IllegalStateException("user load failed"))
-                .thenReturn(cookieOwner);
+                .thenReturn(owned(cookieOwner));
         final HttpServletResponse response = mock(HttpServletResponse.class);
 
         final HttpServletRequest first = request("/api/v1/a", session, true);
@@ -273,7 +298,7 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
 
         final HttpServletRequest second = request("/api/v1/b", session, true);
         assertEquals(Result.SKIP, interceptor.intercept(second, response));
-        verify(loginServiceAPI).doRememberMe(second, response, cookieOwner, false);
+        verify(loginServiceAPI).issueSessionLoginToken(second, response, cookieOwner, TOKEN_ID);
     }
 
     /**
@@ -287,8 +312,8 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
         final HttpSession session = statefulSession(renewAt);
         doAnswer(call -> {
             throw new IllegalStateException("user load failed");
-        }).when(loginServiceAPI).doRememberMe(any(HttpServletRequest.class),
-                any(HttpServletResponse.class), any(User.class), anyBoolean());
+        }).when(loginServiceAPI).issueSessionLoginToken(any(HttpServletRequest.class),
+                any(HttpServletResponse.class), any(User.class), anyString());
 
         assertEquals(Result.SKIP, interceptor.intercept(request("/api/v1/a", session, true),
                 mock(HttpServletResponse.class)));
@@ -390,7 +415,7 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
             final HttpServletRequest request = request(uri, session(pastRenewal()), true);
             final HttpServletResponse response = mock(HttpServletResponse.class);
             interceptor.intercept(request, response);
-            verify(loginServiceAPI).doRememberMe(request, response, cookieOwner, false);
+            verify(loginServiceAPI).issueSessionLoginToken(request, response, cookieOwner, TOKEN_ID);
         }
     }
 
@@ -410,7 +435,7 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
 
         assertEquals(Result.SKIP, interceptor.intercept(request, response));
 
-        verify(loginServiceAPI).doRememberMe(request, response, cookieOwner, false);
+        verify(loginServiceAPI).issueSessionLoginToken(request, response, cookieOwner, TOKEN_ID);
     }
 
     private static JWToken token(final Map<String, Object> claims) {
@@ -420,12 +445,18 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
     }
 
     private void verifyNoRenewal() {
+        verify(loginServiceAPI, never()).issueSessionLoginToken(any(HttpServletRequest.class),
+                any(HttpServletResponse.class), any(User.class), anyString());
         verify(loginServiceAPI, never()).doRememberMe(any(HttpServletRequest.class),
                 any(HttpServletResponse.class), any(User.class), anyBoolean());
     }
 
     private void cookieOwnedBy(final User owner) {
-        when(jsonWebTokenUtils.getUser(any(), any())).thenReturn(owner);
+        when(jsonWebTokenUtils.getLoginTokenOwner(any(), any())).thenReturn(owned(owner));
+    }
+
+    private static Optional<LoginTokenOwner> owned(final User owner) {
+        return Optional.ofNullable(owner).map(user -> new LoginTokenOwner(user, TOKEN_ID));
     }
 
     private static User user(final String userId) {

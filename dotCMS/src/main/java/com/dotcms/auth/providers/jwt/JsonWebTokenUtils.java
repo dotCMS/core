@@ -18,6 +18,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import static com.dotcms.exception.ExceptionUtil.causedBy;
@@ -60,6 +61,14 @@ public class JsonWebTokenUtils {
     private final JsonWebTokenService jsonWebTokenService;
 
     /**
+     * The owner of a validated login token together with the token's id.
+     *
+     * @param user    the active user the token belongs to
+     * @param tokenId the id carried by the validated token
+     */
+    public record LoginTokenOwner(User user, String tokenId) {}
+
+    /**
      * Returns the active user a login token belongs to. The user is loaded again after the token
      * is validated, so it must still hold the token's id: a logout or password change that lands
      * in between makes the token invalid here too.
@@ -71,11 +80,27 @@ public class JsonWebTokenUtils {
      */
     public User getUser(final String jwtAccessToken, final String ipAddress) {
 
+        return getLoginTokenOwner(jwtAccessToken, ipAddress).map(LoginTokenOwner::user).orElse(null);
+    } // getUser
+
+    /**
+     * Validates a login token as {@link #getUser(String, String)} does and returns its owner with
+     * the token's id. The loaded user can be the cached instance other threads share, and a logout
+     * or password change writes the new id onto it, so a token issued to replace this one must
+     * carry the id returned here rather than the id read from the user later.
+     *
+     * @param jwtAccessToken the signed login token
+     * @param ipAddress      the address the request came from
+     * @return the owner and token id, or empty when {@link #getUser(String, String)} would return
+     *         {@code null}
+     */
+    public Optional<LoginTokenOwner> getLoginTokenOwner(final String jwtAccessToken, final String ipAddress) {
+
         return APILocator.getApiTokenAPI().fromJwt(jwtAccessToken, ipAddress)
                 .flatMap(token -> token.getActiveUser()
-                        .filter(user -> null != token.getId() && token.getId().equals(user.getRememberMeToken())))
-                .orElse(null);
-    } // getUser
+                        .filter(user -> null != token.getId() && token.getId().equals(user.getRememberMeToken()))
+                        .map(user -> new LoginTokenOwner(user, token.getId())));
+    }
 
 
 
@@ -115,18 +140,33 @@ public class JsonWebTokenUtils {
      */
     public String createSessionLoginToken(final User user, final Duration lifetime) {
 
-        return createUserToken(user, lifetime.toMillis(), Map.of(CLAIM_SESSION_LOGIN, true));
+        return createSessionLoginToken(user, user.getRememberMeToken(), lifetime);
+    }
+
+    /**
+     * Creates a session login token as {@link #createSessionLoginToken(User, Duration)} does, but
+     * with the given token id instead of the one the user holds now.
+     *
+     * @param user     the user the token logs in
+     * @param tokenId  the id the token carries; it validates only while the user still holds it
+     * @param lifetime how long the token stays valid
+     * @return the signed token
+     */
+    public String createSessionLoginToken(final User user, final String tokenId, final Duration lifetime) {
+
+        return createUserToken(user, tokenId, lifetime.toMillis(), Map.of(CLAIM_SESSION_LOGIN, true));
     }
 
     private String createUserToken(final User user, final long ttlMillis) {
 
-        return createUserToken(user, ttlMillis, Map.of());
+        return createUserToken(user, user.getRememberMeToken(), ttlMillis, Map.of());
     }
 
-    private String createUserToken(final User user, final long ttlMillis, final Map<String, Object> claims) {
+    private String createUserToken(final User user, final String tokenId, final long ttlMillis,
+                                   final Map<String, Object> claims) {
 
         return this.jsonWebTokenService.generateUserToken(
-                new UserToken.Builder().id(user.getRememberMeToken())
+                new UserToken.Builder().id(tokenId)
                         .subject(PublicEncryptionFactory.encryptString(user.getUserId()))
                         .modificationDate(user.getModificationDate())
                         .expiresDate(ttlMillis)

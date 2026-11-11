@@ -1,6 +1,7 @@
 package com.dotcms.filters.interceptor.dotcms;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.auth.providers.jwt.JsonWebTokenUtils.LoginTokenOwner;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.filters.interceptor.Result;
@@ -172,6 +173,7 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
      * login cookie renew it, so site pages and assets never set a cookie; a session without a
      * renewal time (a "remember me" login, or a request authenticated by a header) is left alone.
      * Two requests that pass the check together each issue a valid token, so either cookie works.
+     * The new token carries the id of the token that was validated.
      * A due renewal that cannot happen (no cookie, or a cookie that is not valid for the session's
      * user) is removed from the session, so later requests do not read the cookie again. An
      * unexpected error while loading the cookie's owner or issuing the new token is logged and the
@@ -186,19 +188,23 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
         }
         final Cookie loginCookie = UtilMethods.getCookie(request.getCookies(), CookieKeys.REMEMBER_ME_COOKIE.get());
         final String sessionUserId = sessionUserId(session);
-        final User cookieOwner;
+        final LoginTokenOwner cookieOwner;
         try {
             cookieOwner = null == loginCookie ? null
-                    : this.jsonWebTokenUtils.getUser(loginCookie.getValue(), request.getRemoteAddr());
+                    : this.jsonWebTokenUtils.getLoginTokenOwner(loginCookie.getValue(), request.getRemoteAddr())
+                            .orElse(null);
         } catch (final RuntimeException e) {
             Logger.warnAndDebug(DefaultAutoLoginWebInterceptor.class, String.format("Could not load the owner of the login cookie for user '%s'; "
                     + "the session login token renewal is kept for the next request", sessionUserId), e);
             return;
         }
         if (null != cookieOwner && null != sessionUserId
-                && cookieOwner.getUserId().equals(sessionUserId)) {
+                && cookieOwner.user().getUserId().equals(sessionUserId)) {
             try {
-                this.loginServiceAPI.doRememberMe(request, response, cookieOwner, false);
+                // The validated token's id, not the one on the loaded user, which a concurrent
+                // logout or password change may have replaced since.
+                this.loginServiceAPI.issueSessionLoginToken(request, response, cookieOwner.user(),
+                        cookieOwner.tokenId());
             } catch (final RuntimeException e) {
                 Logger.warnAndDebug(DefaultAutoLoginWebInterceptor.class, String.format("Could not renew the session login token for user '%s'; "
                         + "the renewal is kept for the next request", sessionUserId), e);

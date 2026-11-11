@@ -621,12 +621,7 @@ public class LoginServiceAPIFactory implements Serializable {
                                  final boolean rememberMe) {
 
             if (!rememberMe) {
-                if (SET_JWT_SESSION_COOKIE.get()) {
-                    this.setSessionLoginTokenCookie(req, res, user);
-                } else {
-                    // session cookies are turned off, so nothing is left to renew
-                    clearSessionLoginTokenRenewal(req);
-                }
+                this.issueSessionLoginToken(req, res, user, user.getRememberMeToken());
                 return;
             }
 
@@ -636,6 +631,24 @@ public class LoginServiceAPIFactory implements Serializable {
             createJsonWebTokenCookie(req, res, rememberMeToken, Optional.of(maxAgeDays));
 
         } // doRememberMe.
+
+        /**
+         * Sets a session login token cookie carrying the given token id. With session cookies
+         * turned off ({@code SET_JWT_SESSION_COOKIE=false}) no cookie is set and any pending
+         * renewal is removed, since nothing is left to renew.
+         */
+        @Override
+        public void issueSessionLoginToken(final HttpServletRequest req,
+                                           final HttpServletResponse res,
+                                           final User user,
+                                           final String tokenId) {
+
+            if (SET_JWT_SESSION_COOKIE.get()) {
+                this.setSessionLoginTokenCookie(req, res, user, tokenId);
+            } else {
+                clearSessionLoginTokenRenewal(req);
+            }
+        }
 
         /**
          * Sets the login token cookie for the given number of days, capped at
@@ -654,7 +667,7 @@ public class LoginServiceAPIFactory implements Serializable {
             try {
 
                 if (cookieMaxAge == 0) {
-                    this.setSessionLoginTokenCookie(req, res, user);
+                    this.setSessionLoginTokenCookie(req, res, user, user.getRememberMeToken());
                     return;
                 }
                 clearSessionLoginTokenRenewal(req);
@@ -676,10 +689,11 @@ public class LoginServiceAPIFactory implements Serializable {
          */
         private void setSessionLoginTokenCookie(final HttpServletRequest req,
                                                 final HttpServletResponse res,
-                                                final User user) {
+                                                final User user,
+                                                final String tokenId) {
 
             final Duration lifetime = LoginServiceAPI.sessionLoginTokenLifetime();
-            final String sessionToken = this.jsonWebTokenUtils.createSessionLoginToken(user, lifetime);
+            final String sessionToken = this.jsonWebTokenUtils.createSessionLoginToken(user, tokenId, lifetime);
             createJsonWebTokenCookie(req, res, sessionToken, Optional.of(0));
 
             if (!SET_JWT_SESSION_COOKIE.get()) {

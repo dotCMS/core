@@ -146,6 +146,22 @@ public interface LoginServiceAPI extends Serializable {
                       final boolean rememberMe);
 
     /**
+     * Sets a browser-session login cookie whose token carries the given token id, and schedules
+     * its renewal. A renewal passes the id of the login token it just validated rather than the id
+     * read from the user, which a logout or password change may have replaced in the meantime, so
+     * the new token stops validating together with the old one.
+     *
+     * @param req     the current request
+     * @param res     the response the cookie is set on
+     * @param user    the user the token logs in
+     * @param tokenId the id the new token carries
+     */
+    void issueSessionLoginToken(final HttpServletRequest req,
+                                final HttpServletResponse res,
+                                final User user,
+                                final String tokenId);
+
+    /**
      * Do the remember me, usually a cookie approach with a specific strategy such as JWT
      *
      * @param req {@link HttpServletRequest}
