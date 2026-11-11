@@ -24,9 +24,6 @@
 <script type='text/javascript' src='/dwr/interface/FileAssetAjax.js'></script>
 <script type='text/javascript' src='/dwr/interface/TagAjax.js'></script>
 
-<!-- AChecker support -->
-<script type='text/javascript' src='/dwr/interface/ACheckerDWR.js'></script>
-
 <script src="/html/js/ace-builds-1.2.3/src-noconflict/ace.js" type="text/javascript"></script>
 <script type="text/javascript" src="/html/js/tinymce/js/tinymce/tinymce.min.js"></script>
 
@@ -49,11 +46,11 @@
     		"advlist autolink lists link image charmap print preview hr anchor pagebreak",
     		"searchreplace wordcount visualblocks visualchars code fullscreen",
     		"insertdatetime media nonbreaking save table contextmenu directionality",
-    		"emoticons template paste textcolor colorpicker validation textpattern dotimageclipboard"
+		"emoticons template paste textcolor colorpicker textpattern dotimageclipboard"
 		],
 		languages : '<%= usera.getLanguageId().substring(0,2) %>',
 		toolbar1: "insertfile undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image",
-		toolbar2: "print preview | validation media | forecolor dotimageclipboard backcolor emoticons",
+		toolbar2: "print preview | media | forecolor dotimageclipboard backcolor emoticons",
 		image_advtab: true,
 		file_picker_callback: function(callback, value, meta) {
 			cmsFileBrowser(callback, value, meta);

@@ -66,14 +66,6 @@
     <create creator="new" javascript="FileAssetAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.fileassets.ajax.FileAssetAjax"/>
     </create>
-    <create creator="new" javascript="ACheckerDWR">
-      <param name="class" value="com.dotcms.enterprise.achecker.tinymce.ACheckerDWR" />
-    </create>
-    <convert converter="bean" match="com.dotcms.enterprise.achecker.ACheckerResponse"/>
-    <convert converter="bean" match="com.dotcms.enterprise.achecker.AccessibilityResult"/>
-    <convert converter="bean" match="com.dotcms.enterprise.achecker.CheckBean"/>
-    <convert converter="enum" match="com.dotcms.enterprise.achecker.Confidence"/>
-    <convert converter="bean" match="com.dotcms.enterprise.achecker.model.GuideLineBean"/>
     <!-- Don't ever delete the following comment tags, it will break the plugin system -->
 	<!-- BEGIN PLUGINS -->
 	<!-- END PLUGINS -->
