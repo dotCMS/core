@@ -1,14 +1,15 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { tapResponse } from '@ngrx/operators';
 import { format, subDays } from 'date-fns';
-import { EMPTY, Observable, of } from 'rxjs';
+import { combineLatest, EMPTY, Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { catchError, finalize, mergeMap, switchMap } from 'rxjs/operators';
+import { catchError, finalize, map, mergeMap, switchMap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { SiteService } from '@dotcms/dotcms-js';
 
 import { CdnDateFilter } from './dot-cdn-filters/dot-cdn-filters.component';
 import {
@@ -32,6 +33,7 @@ const DEFAULT_FILTER: CdnDateFilter = {
 export class DotCDNStore extends ComponentStore<DotCDNState> {
     private readonly dotCdnService = inject(DotCDNService);
     private readonly httpErrorManager = inject(DotHttpErrorManagerService);
+    private readonly siteService = inject(SiteService);
 
     constructor() {
         super({
@@ -91,15 +93,23 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
         })
     );
 
+    /**
+     * Loads the statistics for the latest filter and the selected site, and again whenever
+     * either changes. A newer request cancels an older one still in flight, so a slow earlier
+     * response cannot overwrite the charts or clear the loading flag of the current one.
+     */
     loadStats = this.effect((filter$: Observable<CdnDateFilter>): Observable<DotCDNStats> => {
-        return filter$.pipe(
-            mergeMap((filter: CdnDateFilter) => {
+        const hostId$ = this.siteService.getCurrentSite().pipe(map((site) => site.identifier));
+
+        return combineLatest([filter$, hostId$]).pipe(
+            switchMap(([filter, hostId]: [CdnDateFilter, string]) => {
                 this.dispatchLoading({
                     loadingState: LoadingState.LOADING,
                     loader: Loader.CHART
                 });
 
                 const request: StatsRequest = {
+                    hostId,
                     dateFrom: filter.dateFrom,
                     dateTo: filter.dateTo,
                     hourly: filter.hourly
@@ -350,12 +360,14 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
     }
 
     /**
-     * Format for daily data: "Apr 1"
+     * Format for daily data: "Apr 1". Daily buckets start at UTC midnight, so they are read in
+     * UTC; in local time a viewer west of UTC would see every day labelled as the one before.
      */
     private static formatDayLabel(key: string): string {
         return new Date(key).toLocaleDateString('en-US', {
             month: 'short',
-            day: 'numeric'
+            day: 'numeric',
+            timeZone: 'UTC'
         });
     }
 }
