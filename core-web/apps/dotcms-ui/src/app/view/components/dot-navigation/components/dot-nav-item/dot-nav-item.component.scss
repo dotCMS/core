@@ -14,7 +14,9 @@
         position: relative;
         transition: background-color $basic-speed ease;
 
-        &:hover {
+        &:hover,
+        &:focus-within,
+        &:has(dot-sub-nav.dot-nav-sub--flyout-open) {
             background-color: colors.$color-palette-white-op-10;
 
             dot-sub-nav {

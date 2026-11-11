@@ -118,6 +118,7 @@ export class DotToolsService {
     #toCustomPortletForm(form: DotToolsToolForm): {
         portletId: string;
         portletName: string;
+        parent?: string;
         baseTypes: string;
         contentTypes: string;
         dataViewMode: DotToolsDataViewMode;
@@ -125,6 +126,7 @@ export class DotToolsService {
         return {
             portletId: form.portletId,
             portletName: form.portletName,
+            parent: form.parent,
             baseTypes: form.baseTypes.join(','),
             contentTypes: form.contentTypes.join(','),
             dataViewMode: form.dataViewMode
@@ -133,16 +135,18 @@ export class DotToolsService {
 
     /**
      * `POST` / `PUT /v1/portlet/custom` return only `{ entity: { portlet: id } }`
-     * (`PortletResource.java:230` / `:387`), not the full config. We fetch the
-     * config so the catalog entry carries the resolved title and id.
+     * rather than a full catalog row. Re-read the catalog for its localized parent and title.
      */
     #catalogEntryFor(portletId: string): Observable<DotToolsCatalogEntry> {
-        return this.getCustomTool(portletId).pipe(
-            map((config) => ({
-                id: config.portletId,
-                title: config.portletName,
-                isCustom: true
-            }))
+        return this.getCatalog().pipe(
+            map((entries) => {
+                const entry = entries.find((item) => item.id === portletId);
+                if (!entry) {
+                    throw new Error('The saved tool was not returned by the tools catalog.');
+                }
+
+                return entry;
+            })
         );
     }
 }

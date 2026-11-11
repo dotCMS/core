@@ -27,6 +27,7 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import java.util.HashMap;
 import java.util.List;
@@ -206,7 +207,7 @@ public class RoleAjaxTest {
     /**
      * Given: a back-end user with the Roles portlet who is not a CMS administrator
      * When: getAllLayouts is called
-     * Then: every layout is returned with its portlet titles
+     * Then: every layout is returned with its portlet titles and translated navigation parents
      */
     @Test
     public void getAllLayouts_allowsRolesPortletHolder() throws Exception {
@@ -221,6 +222,9 @@ public class RoleAjaxTest {
         final WebContext webContext = mock(WebContext.class);
         when(webContext.getHttpServletRequest()).thenReturn(request);
         final UserWebAPI userWebAPI = mock(UserWebAPI.class);
+        final PortletAPI portletAPI = mock(PortletAPI.class);
+        when(portletAPI.findPortlet("roles")).thenReturn(new Portlet("roles",
+                "com.liferay.portlet.JSPPortlet", Map.of("parent", "Identity-Access")));
 
         try (MockedStatic<DwrUtil> dwrUtil = mockStatic(DwrUtil.class);
                 MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class);
@@ -234,12 +238,43 @@ public class RoleAjaxTest {
             when(userWebAPI.getLoggedInUser(request)).thenReturn(user);
             languageUtil.when(() -> LanguageUtil.get(user, "com.dotcms.repackage.javax.portlet.title.roles"))
                     .thenReturn("Roles");
+            languageUtil.when(() -> LanguageUtil.get(user, "Identity-Access")).thenReturn("Identity Access");
 
-            final List<Map<String, Object>> layouts = newRoleAjax().getAllLayouts();
+            final List<Map<String, Object>> layouts = new RoleAjax(mock(SystemEventsAPI.class),
+                    portletAPI, userWebAPI).getAllLayouts();
 
             assertEquals(1, layouts.size());
             assertEquals("layout-id", layouts.get(0).get("id"));
-            assertEquals(List.of("Roles"), layouts.get(0).get("portletTitles"));
+            assertEquals(List.of("Identity Access › Roles"), layouts.get(0).get("portletTitles"));
+        }
+    }
+
+    /** The legacy tool picker shows qualified titles without altering the selected portlet ids. */
+    @Test
+    public void getAllAvailablePortletInfoList_includesTranslatedParent() throws Exception {
+        final PortletAPI portletAPI = mock(PortletAPI.class);
+        final UserWebAPI userWebAPI = mock(UserWebAPI.class);
+        final User user = new User();
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Portlet users = new Portlet("users", "com.liferay.portlet.JSPPortlet",
+                Map.of("parent", "Identity-Access"));
+        final Portlet templates = new Portlet("templates", "com.liferay.portlet.JSPPortlet", Map.of());
+        when(portletAPI.findAllPortlets()).thenReturn(List.of(templates, users));
+        when(portletAPI.canAddPortletToLayout(any(Portlet.class))).thenReturn(true);
+        when(userWebAPI.getLoggedInUser(request)).thenReturn(user);
+
+        try (MockedStatic<DwrUtil> dwrUtil = mockStatic(DwrUtil.class);
+                MockedStatic<LanguageUtil> languageUtil = mockStatic(LanguageUtil.class)) {
+            dwrUtil.when(DwrUtil::getHttpServletRequest).thenReturn(request);
+            languageUtil.when(() -> LanguageUtil.get(user, "com.dotcms.repackage.javax.portlet.title.users"))
+                    .thenReturn("Users");
+            languageUtil.when(() -> LanguageUtil.get(user, "com.dotcms.repackage.javax.portlet.title.templates"))
+                    .thenReturn("Templates");
+            languageUtil.when(() -> LanguageUtil.get(user, "Identity-Access")).thenReturn("Identity Access");
+
+            final RoleAjax roleAjax = new RoleAjax(mock(SystemEventsAPI.class), portletAPI, userWebAPI);
+            assertEquals(List.of(Map.of("id", "users", "title", "Identity Access › Users"),
+                    Map.of("id", "templates", "title", "Templates")), roleAjax.getAllAvailablePortletInfoList());
         }
     }
 }

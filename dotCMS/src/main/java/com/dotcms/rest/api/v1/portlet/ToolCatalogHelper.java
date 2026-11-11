@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -94,7 +95,9 @@ public class ToolCatalogHelper {
                 .map(portlet -> new ToolCatalogEntryView(
                         portlet.getPortletId(),
                         title(user, portlet),
-                        portletApi.isCustomContentPortlet(portlet)))
+                        portletApi.isCustomContentPortlet(portlet),
+                        Objects.requireNonNullElse(initParam(portlet, "parent"), "").trim(),
+                        label(user, portlet.getPortletId(), portlet)))
                 .sorted(Comparator.comparing((ToolCatalogEntryView row) -> row.title().toLowerCase())
                         .thenComparing(ToolCatalogEntryView::id))
                 .collect(Collectors.toList());
@@ -103,23 +106,53 @@ public class ToolCatalogHelper {
     }
 
     /**
-     * Resolves a tool's title: the translation for the caller's language, else the name the tool
-     * was registered with, else its id. The raw translation key is never returned.
+     * Resolves a tool's management label, prefixed by its translated navigation parent when set.
+     * Missing portlets retain their translated title or id so stored section entries stay readable.
+     *
+     * @param user the {@link User} whose language decides the label
+     * @param portletId the tool id
+     * @return the qualified label, for example {@code Identity Access › Users}
      */
-    private String title(final User user, final Portlet portlet) {
-        final String key = TITLE_KEY_PREFIX + portlet.getPortletId();
+    public String title(final User user, final String portletId) {
+        return title(user, portletId, portletApi.findPortlet(portletId));
+    }
+
+    /**
+     * Resolves the same label from an already loaded portlet, without another registry lookup.
+     *
+     * @param user the {@link User} whose language decides the label
+     * @param portlet the registered {@link Portlet}
+     * @return the qualified management label
+     */
+    public String title(final User user, final Portlet portlet) {
+        return title(user, portlet.getPortletId(), portlet);
+    }
+
+    /** Resolves a child label with the registered-name and id fallbacks, without a parent prefix. */
+    private String label(final User user, final String portletId, final Portlet portlet) {
+        final String key = TITLE_KEY_PREFIX + portletId;
         final String translated = titleResolver.apply(user, key);
-        if (UtilMethods.isSet(translated) && !key.equals(translated)) {
-            return translated;
-        }
         final String registeredName = initParam(portlet, NAME_INIT_PARAM);
-        return UtilMethods.isSet(registeredName) ? registeredName : portlet.getPortletId();
+        return UtilMethods.isSet(translated) && !key.equals(translated)
+                ? translated : UtilMethods.isSet(registeredName) ? registeredName : portletId;
+    }
+
+    /** Resolves the title and optional parent while retaining the registered-name and id fallbacks. */
+    private String title(final User user, final String portletId, final Portlet portlet) {
+        final String toolTitle = label(user, portletId, portlet);
+        final String parent = initParam(portlet, "parent");
+        if (parent == null || parent.trim().isEmpty()) {
+            return toolTitle;
+        }
+        final String parentKey = parent.trim();
+        final String parentTitle = titleResolver.apply(user, parentKey);
+        return (UtilMethods.isSet(parentTitle) ? parentTitle : parentKey) + " › " + toolTitle;
     }
 
     /**
      * Maps a custom content tool to its editable configuration. The comma-separated base and
-     * content types the tool is stored with become lists; the data view mode is returned as
-     * stored.
+     * content types the tool is stored with become lists; the data view mode and parent label
+     * are returned as stored. A missing parent is returned as an empty string.
      *
      * @param portlet a portlet for which {@link PortletAPI#isCustomContentPortlet(Portlet)} is true
      * @return the configuration view
@@ -130,11 +163,13 @@ public class ToolCatalogHelper {
                 initParam(portlet, NAME_INIT_PARAM),
                 splitList(initParam(portlet, BASE_TYPES_INIT_PARAM)),
                 splitList(initParam(portlet, CONTENT_TYPES_INIT_PARAM)),
-                initParam(portlet, Portlet.DATA_VIEW_MODE_KEY));
+                initParam(portlet, Portlet.DATA_VIEW_MODE_KEY),
+                Objects.requireNonNullElse(initParam(portlet, "parent"), ""));
     }
 
+    /** Reads an init-param, returning null for an absent portlet or parameter map. */
     private static String initParam(final Portlet portlet, final String name) {
-        final Map<String, String> initParams = portlet.getInitParams();
+        final Map<String, String> initParams = null == portlet ? null : portlet.getInitParams();
         return null == initParams ? null : initParams.get(name);
     }
 

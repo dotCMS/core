@@ -33,13 +33,14 @@ const MOCK_CONTENT_TYPES = [
 
 const MOCK_TOOL: DotToolsCatalogEntry = {
     id: 'c_press-releases',
-    title: 'Press Releases',
+    title: 'Identity Access › Press Releases',
     isCustom: true
 };
 
 const MOCK_PREFILL: DotToolsCustomToolConfig = {
     portletId: 'c_press-releases',
     portletName: 'Press Releases',
+    parent: 'Identity-Access',
     baseTypes: [DotCMSBaseTypesContentTypes.CONTENT],
     contentTypes: ['Blog'],
     dataViewMode: 'card'
@@ -68,6 +69,7 @@ describe('DotToolsToolDialogComponent', () => {
                     getContentTypes: vi.fn().mockReturnValue(of(MOCK_CONTENT_TYPES))
                 }),
                 mockProvider(DotHttpErrorManagerService),
+                mockProvider(DotToolsService),
                 mockProvider(DotToolsStore, { createCustomTool: createCustomToolSpy })
             ]
         });
@@ -112,6 +114,7 @@ describe('DotToolsToolDialogComponent', () => {
             spectator.component['form'].patchValue({
                 portletName: 'Press Releases',
                 portletId: 'press-releases',
+                parent: 'Identity-Access',
                 baseTypes: [DotCMSBaseTypesContentTypes.CONTENT],
                 contentTypes: ['Blog'],
                 dataViewMode: 'card'
@@ -120,11 +123,27 @@ describe('DotToolsToolDialogComponent', () => {
             expect(createCustomToolSpy).toHaveBeenCalledWith({
                 portletName: 'Press Releases',
                 portletId: 'press-releases',
+                parent: 'Identity-Access',
                 baseTypes: [DotCMSBaseTypesContentTypes.CONTENT],
                 contentTypes: ['Blog'],
                 dataViewMode: 'card'
             });
             expect(mockRef.close).toHaveBeenCalledWith(true);
+        });
+
+        it('allows an empty parent and gives its input an accessible label and hint', () => {
+            const input = spectator.query<HTMLInputElement>(byTestId('tools-tool-parent-input'));
+            expect(input.labels[0].htmlFor).toBe(input.id);
+            expect(input.getAttribute('aria-describedby')).toBe('tools-tool-parent-hint');
+            expect(input.required).toBe(false);
+            spectator.component['form'].patchValue({
+                portletName: 'Flat tool',
+                portletId: 'flat-tool'
+            });
+            spectator.component['onSubmit']();
+            expect(createCustomToolSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ parent: '' })
+            );
         });
 
         it('renders inline server error on 400 and keeps the dialog open', () => {
@@ -223,6 +242,7 @@ describe('DotToolsToolDialogComponent', () => {
                     getContentTypes: vi.fn().mockReturnValue(of(MOCK_CONTENT_TYPES))
                 }),
                 mockProvider(DotHttpErrorManagerService),
+                mockProvider(DotToolsService),
                 mockProvider(DotToolsStore, { updateCustomTool: updateCustomToolSpy })
             ]
         });
@@ -237,6 +257,7 @@ describe('DotToolsToolDialogComponent', () => {
             expect(spectator.component['form'].getRawValue()).toEqual({
                 portletName: 'Press Releases',
                 portletId: 'c_press-releases',
+                parent: 'Identity-Access',
                 baseTypes: [DotCMSBaseTypesContentTypes.CONTENT],
                 contentTypes: ['Blog'],
                 dataViewMode: 'card'
@@ -255,11 +276,30 @@ describe('DotToolsToolDialogComponent', () => {
             expect(updateCustomToolSpy).toHaveBeenCalledWith({
                 portletName: 'Press Releases',
                 portletId: 'c_press-releases',
+                parent: 'Identity-Access',
                 baseTypes: [DotCMSBaseTypesContentTypes.CONTENT],
                 contentTypes: ['Blog'],
                 dataViewMode: 'card'
             });
             expect(mockRef.close).toHaveBeenCalledWith(true);
+        });
+
+        it('lets the user edit or clear the raw parent without changing the tool name', () => {
+            const input = spectator.query<HTMLInputElement>(byTestId('tools-tool-parent-input'));
+            expect(input.value).toBe('Identity-Access');
+            spectator.typeInElement('Content-tools', input);
+            spectator.component['onSubmit']();
+            expect(updateCustomToolSpy).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    parent: 'Content-tools',
+                    portletName: 'Press Releases'
+                })
+            );
+            spectator.typeInElement('', input);
+            spectator.component['onSubmit']();
+            expect(updateCustomToolSpy).toHaveBeenLastCalledWith(
+                expect.objectContaining({ parent: '' })
+            );
         });
 
         it('renders the id input as readonly so it cannot be retargeted to another tool', () => {
@@ -329,6 +369,7 @@ describe('DotToolsToolDialogComponent', () => {
             // we assert the final patched state matches the prefill.
             expect(spectator.component['form'].getRawValue().portletName).toBe('Press Releases');
             expect(spectator.component['form'].getRawValue().portletId).toBe('c_press-releases');
+            expect(spectator.component['form'].getRawValue().parent).toBe('Identity-Access');
         });
 
         it('clears $prefillLoading once the fetch resolves', () => {

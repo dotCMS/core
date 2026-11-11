@@ -65,9 +65,10 @@ import static com.liferay.util.StringPool.BLANK;
  * It manages <b>custom content portlets</b> (tools an admin creates to list the content of
  * given base types or content types): create, update and delete under {@code /custom}, plus a
  * single read of one tool's editable configuration under {@code /custom/{portletId}}. Those
- * operations accept a back-end user who holds the {@code roles}, {@code tools} or
- * {@code tools-beta} portlet, or a CMS Administrator; the read and the catalog require
- * {@code tools} or {@code tools-beta}. The delete refuses anything that is not a custom content
+ * writes accept a back-end user who holds the {@code roles}, {@code roles-legacy} or
+ * {@code tools} portlet, or a CMS Administrator; {@code roles-legacy} is the old Roles &amp; Tools
+ * screen, whose Tools tab writes custom tools through them. The read and the catalog require
+ * {@code tools}. The delete refuses anything that is not a custom content
  * tool, so tools shipped with the product cannot be removed through it.
  * <p>
  * It also serves the <b>tools catalog</b> ({@code /_catalog}): every portlet that can be placed
@@ -85,6 +86,13 @@ public class PortletResource implements Serializable {
     private final ToolCatalogHelper toolCatalogHelper;
 
     private static final String JSON_RESPONSE_PORTLET_ATTR = "portlet";
+
+    /**
+     * Portlets that may create, update and delete custom content tools: the Roles portlet, the old
+     * Roles &amp; Tools screen (whose Tools tab does these writes) and the Tools portlet.
+     */
+    private static final String[] CUSTOM_TOOL_WRITE_PORTLET_IDS = {
+            PortletID.ROLES.toString(), PortletID.ROLES_LEGACY.toString(), PortletID.TOOLS.toString()};
 
     /**
      * Default class constructor.
@@ -111,7 +119,7 @@ public class PortletResource implements Serializable {
      * Lists every tool that can be placed in a navigation section, for the Tools portlet's
      * Available Tools panel. Applies the same inclusion rules as the legacy Roles &amp; Tools
      * picker and sorts by title ignoring letter case. Requires an authenticated back-end user
-     * with access to the {@code tools} or {@code tools-beta} portlet, or the CMS Administrator
+     * with access to the {@code tools} portlet, or the CMS Administrator
      * role; anyone else gets 401.
      *
      * @param request  the current request
@@ -126,7 +134,7 @@ public class PortletResource implements Serializable {
                     + "Languages tool is omitted while FEATURE_FLAG_LOCALES_HIDE_OLD_LANGUAGES_PORTLET is on. "
                     + "Sorted by title ignoring letter case. Each row carries the id, the localized title and "
                     + "an isCustom flag that is true only for tools an admin created through New Tool. "
-                    + "Requires an authenticated back-end user with access to the tools or tools-beta portlet, "
+                    + "Requires an authenticated back-end user with access to the tools portlet, "
                     + "or the CMS Administrator role."
     )
     @ApiResponses(value = {
@@ -135,8 +143,8 @@ public class PortletResource implements Serializable {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityToolCatalogView.class))),
             @ApiResponse(responseCode = "401",
-                    description = "Unauthorized - no authenticated back-end user, or the caller holds neither "
-                            + "the tools nor the tools-beta portlet and is not a CMS Administrator",
+                    description = "Unauthorized - no authenticated back-end user, or the caller does not "
+                            + "hold the tools portlet and is not a CMS Administrator",
                     content = @Content(mediaType = "application/json"))
     })
     @GET
@@ -151,7 +159,7 @@ public class PortletResource implements Serializable {
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .requiredPortlet(PortletID.TOOLS.toString(), PortletID.TOOLS_BETA.toString())
+                .requiredPortlet(PortletID.TOOLS.toString())
                 .init().getUser();
 
         return Response.ok(new ResponseEntityToolCatalogView(toolCatalogHelper.catalog(user))).build();
@@ -159,8 +167,8 @@ public class PortletResource implements Serializable {
 
     /**
      * Creates a custom dotCMS Portlet for a given Base Type or Content Type. Requires an
-     * authenticated back-end user with access to the {@code roles}, {@code tools} or
-     * {@code tools-beta} portlet, or the CMS Administrator role.
+     * authenticated back-end user with access to the {@code roles}, {@code roles-legacy}
+     * or {@code tools} portlet, or the CMS Administrator role.
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param formData The {@link CustomPortletForm} containing the information for the new
@@ -172,7 +180,8 @@ public class PortletResource implements Serializable {
             operationId = "saveNew",
             summary = "Create a custom content tool",
             description = "Creates a custom content tool that lists the given base types and/or content types. "
-                    + "Requires an authenticated back-end user with access to the roles, tools or tools-beta "
+                    + "The optional parent is a navigation label or language key; empty means no parent. "
+                    + "Requires an authenticated back-end user with access to the roles, roles-legacy or tools "
                     + "portlet, or the CMS Administrator role."
     )
     @ApiResponses(value = {
@@ -185,7 +194,7 @@ public class PortletResource implements Serializable {
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401",
                     description = "Unauthorized - no authenticated back-end user, or the caller holds none of the "
-                            + "roles, tools or tools-beta portlets and is not a CMS Administrator",
+                            + "roles, roles-legacy or tools portlets and is not a CMS Administrator",
                     content = @Content(mediaType = "application/json"))
     })
     @POST
@@ -201,7 +210,7 @@ public class PortletResource implements Serializable {
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
-                .requiredPortlet(PortletID.ROLES.toString(), PortletID.TOOLS.toString(), PortletID.TOOLS_BETA.toString())
+                .requiredPortlet(CUSTOM_TOOL_WRITE_PORTLET_IDS)
                 .init();
         String portletId = BLANK;
         try {
@@ -221,6 +230,7 @@ public class PortletResource implements Serializable {
                     .putInitParam("baseTypes", formData.baseTypes)
                     .putInitParam("contentTypes", formData.contentTypes)
                     .putInitParam(DATA_VIEW_MODE_KEY, formData.dataViewMode)
+                    .putInitParam("parent", formData.parent == null ? BLANK : formData.parent)
                     .build();
 
 
@@ -239,7 +249,7 @@ public class PortletResource implements Serializable {
      * Reads one custom content tool's editable configuration, for the Tools portlet's Edit
      * dialog. Answers 404 for an unknown id and for a tool shipped with the product, which has no
      * custom configuration to edit. Requires an authenticated back-end user with access to the
-     * {@code tools} or {@code tools-beta} portlet, or the CMS Administrator role.
+     * {@code tools} portlet, or the CMS Administrator role.
      *
      * @param request   the current request
      * @param response  the current response
@@ -249,9 +259,9 @@ public class PortletResource implements Serializable {
     @Operation(
             operationId = "getCustomTool",
             summary = "Read one custom content tool's configuration",
-            description = "Returns the editable configuration of a custom content tool: id, name, base types, "
+            description = "Returns the editable configuration of a custom content tool: id, name, navigation parent, base types, "
                     + "content types and data view mode. Requires an authenticated back-end user with access to "
-                    + "the tools or tools-beta portlet, or the CMS Administrator role."
+                    + "the tools portlet, or the CMS Administrator role."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
@@ -259,8 +269,8 @@ public class PortletResource implements Serializable {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityCustomToolView.class))),
             @ApiResponse(responseCode = "401",
-                    description = "Unauthorized - no authenticated back-end user, or the caller holds neither "
-                            + "the tools nor the tools-beta portlet and is not a CMS Administrator",
+                    description = "Unauthorized - no authenticated back-end user, or the caller does not "
+                            + "hold the tools portlet and is not a CMS Administrator",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404",
                     description = "No portlet has this id, or it is a tool shipped with the product and has no "
@@ -281,7 +291,7 @@ public class PortletResource implements Serializable {
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .requiredPortlet(PortletID.TOOLS.toString(), PortletID.TOOLS_BETA.toString())
+                .requiredPortlet(PortletID.TOOLS.toString())
                 .init().getUser();
 
         final Portlet portlet = portletApi.findPortlet(portletId);
@@ -311,19 +321,22 @@ public class PortletResource implements Serializable {
      * identifier of the tool. Only custom content tools can be rewritten: an id that belongs to
      * a tool shipped with the product (Language Variables included) or to no tool is answered
      * with 404 and nothing changes. Requires an authenticated back-end user with access to the
-     * {@code roles}, {@code tools} or {@code tools-beta} portlet, or the CMS Administrator role.
+     * {@code roles}, {@code roles-legacy} or {@code tools} portlet, or the CMS Administrator role.
      *
      * @param request  the current request
-     * @param formData the full definition to store; every field is replaced
+     * @param formData the definition to store; an omitted parent preserves its existing value,
+     *                 while an empty parent clears the navigation grouping
      * @return the stored portlet id
      */
     @Operation(
             operationId = "updatePortlet",
             summary = "Update a custom content tool",
             description = "Replaces the name, base types, content types and data view mode of an existing custom "
-                    + "content tool. Refuses, with 404 and no change, an id that is not a custom content tool: "
+                    + "content tool, and its navigation parent when supplied. An empty parent clears grouping; "
+                    + "an omitted parent preserves the existing value. Refuses, with 404 and no change, an id "
+                    + "that is not a custom content tool: "
                     + "tools shipped with the product cannot be rewritten this way. Requires an authenticated "
-                    + "back-end user with access to the roles, tools or tools-beta portlet, or the CMS "
+                    + "back-end user with access to the roles, roles-legacy or tools portlet, or the CMS "
                     + "Administrator role."
     )
     @ApiResponses(value = {
@@ -333,7 +346,7 @@ public class PortletResource implements Serializable {
                             schema = @Schema(implementation = ResponseEntityMapStringStringView.class))),
             @ApiResponse(responseCode = "401",
                     description = "Unauthorized - no authenticated back-end user, or the caller holds none of the "
-                            + "roles, tools or tools-beta portlets and is not a CMS Administrator",
+                            + "roles, roles-legacy or tools portlets and is not a CMS Administrator",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404",
                     description = "No portlet has the given id, or it is a tool shipped with the product",
@@ -351,7 +364,7 @@ public class PortletResource implements Serializable {
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
-                .requiredPortlet(PortletID.ROLES.toString(), PortletID.TOOLS.toString(), PortletID.TOOLS_BETA.toString())
+                .requiredPortlet(CUSTOM_TOOL_WRITE_PORTLET_IDS)
                 .init();
 
         Response response = null;
@@ -378,6 +391,8 @@ public class PortletResource implements Serializable {
                     .putInitParam("baseTypes", formData.baseTypes)
                     .putInitParam("contentTypes", formData.contentTypes)
                     .putInitParam(DATA_VIEW_MODE_KEY, formData.dataViewMode)
+                    .putInitParam("parent", formData.parent == null
+                            ? existing.getInitParams().getOrDefault("parent", BLANK) : formData.parent)
                     .build();
 
 
@@ -482,7 +497,7 @@ public class PortletResource implements Serializable {
      * it; open admin sessions are notified. Only custom content tools can be deleted here: an id
      * that belongs to a tool shipped with the product (Language Variables included) or to no tool
      * at all is answered with 404 and nothing changes. Requires an authenticated back-end user
-     * with access to the {@code roles}, {@code tools} or {@code tools-beta} portlet, or the CMS
+     * with access to the {@code roles}, {@code roles-legacy} or {@code tools} portlet, or the CMS
      * Administrator role.
      *
      * @param request   the current request
@@ -495,7 +510,7 @@ public class PortletResource implements Serializable {
             description = "Removes the custom content tool and takes it out of every navigation section that "
                     + "contained it. Refuses, with 404 and no change, any id that is not a custom content tool: "
                     + "tools shipped with the product cannot be removed this way. Requires an authenticated "
-                    + "back-end user with access to the roles, tools or tools-beta portlet, or the CMS "
+                    + "back-end user with access to the roles, roles-legacy or tools portlet, or the CMS "
                     + "Administrator role."
     )
     @ApiResponses(value = {
@@ -505,7 +520,7 @@ public class PortletResource implements Serializable {
                             schema = @Schema(implementation = ResponseEntityMapStringStringView.class))),
             @ApiResponse(responseCode = "401",
                     description = "Unauthorized - no authenticated back-end user, or the caller holds none of the "
-                            + "roles, tools or tools-beta portlets and is not a CMS Administrator",
+                            + "roles, roles-legacy or tools portlets and is not a CMS Administrator",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "404",
                     description = "No portlet has this id, or it is a tool shipped with the product",
@@ -526,7 +541,7 @@ public class PortletResource implements Serializable {
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
-                .requiredPortlet(PortletID.ROLES.toString(), PortletID.TOOLS.toString(), PortletID.TOOLS_BETA.toString())
+                .requiredPortlet(CUSTOM_TOOL_WRITE_PORTLET_IDS)
                 .init();
         final User user = initData.getUser();
 

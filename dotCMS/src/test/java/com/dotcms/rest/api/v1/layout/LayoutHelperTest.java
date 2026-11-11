@@ -23,6 +23,7 @@ import java.sql.SQLException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -99,6 +100,21 @@ public class LayoutHelperTest {
         titles.put(TITLE_PREFIX + "templates", "Templates");
 
         assertEquals("Templates", helper.title(user, "templates"));
+    }
+
+    /** Section labels include the same translated parent shown by the available-tools catalog. */
+    @Test
+    public void toView_includesParentInToolTitles() {
+        final Portlet users = registered("users", "Users");
+        users.getInitParams().put("parent", "Identity-Access");
+        titles.put("Identity-Access", "Identity Access");
+        titles.put(TITLE_PREFIX + "users", "Users");
+        registered("templates", "Templates");
+        final SectionView view = helper.toView(
+                layout("section", "System", "settings", 1, "users", "templates"), user);
+
+        assertEquals(List.of("users", "templates"), view.portletIds());
+        assertEquals(List.of("Identity Access › Users", "Templates"), view.portletTitles());
     }
 
     /**
@@ -407,6 +423,51 @@ public class LayoutHelperTest {
     public void validateToolIds_acceptsLanguages_whenRegisteredAndPlaceable() {
         placeable("languages");
         assertEquals(List.of("languages"), helper.validateToolIds(List.of("languages")));
+    }
+
+    /** Retired tools already in the target layout do not block a reorder or valid additions. */
+    @Test
+    public void validateToolIds_preservesLegacyEntriesInTargetLayout() {
+        placeable("templates", "plugins", "users");
+        final List<String> current = List.of("templates", "dynamic-plugins", "plugins");
+        final List<String> reordered = List.of("plugins", "dynamic-plugins", "templates", "users");
+        assertEquals(reordered, helper.validateToolIds(reordered, current));
+    }
+
+    /** An existing tool can be retained even after the product marks it no longer placeable. */
+    @Test
+    public void validateToolIds_preservesExistingNonPlaceableEntries() {
+        registered("my-account", null);
+        when(portletApi.canAddPortletToLayout("my-account")).thenReturn(false);
+        assertEquals(List.of("my-account"), helper.validateToolIds(List.of("my-account"), List.of("my-account")));
+    }
+
+    /** Preservation is not an exemption for unknown or non-placeable new additions. */
+    @Test
+    public void validateToolIds_rejectsInvalidAdditionsBesideLegacyEntries() {
+        registered("my-account", null);
+        final List<String> current = List.of("dynamic-plugins");
+        assertThrows(BadRequestException.class,
+                () -> helper.validateToolIds(List.of("dynamic-plugins", "unknown"), current));
+        assertThrows(BadRequestException.class,
+                () -> helper.validateToolIds(List.of("dynamic-plugins", "my-account"), current));
+    }
+
+    /** Every submitted id is checked for duplication and blanks, including preserved entries. */
+    @Test
+    public void validateToolIds_rejectsDuplicateOrBlankExistingEntries() {
+        assertThrows(BadRequestException.class, () -> helper.validateToolIds(
+                List.of("dynamic-plugins", "dynamic-plugins"), List.of("dynamic-plugins")));
+        assertThrows(BadRequestException.class, () -> helper.validateToolIds(List.of(" "), List.of(" ")));
+    }
+
+    /** Removing legacy entries is allowed when requested; validation never silently prunes them. */
+    @Test
+    public void validateToolIds_allowsExplicitLegacyRemoval() {
+        placeable("plugins");
+        final List<String> current = List.of("dynamic-plugins", "plugins");
+        assertEquals(List.of("plugins"), helper.validateToolIds(List.of("plugins"), current));
+        assertEquals(List.of(), helper.validateToolIds(List.of(), current));
     }
 
     // ==================== US4: reorder validation and positions ====================

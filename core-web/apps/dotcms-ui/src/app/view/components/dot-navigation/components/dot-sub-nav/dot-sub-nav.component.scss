@@ -20,19 +20,31 @@ a {
 }
 
 .dot-nav-sub__link {
-    display: block;
+    color: colors.$white;
+    cursor: pointer;
     padding: spacing.$spacing-1 spacing.$spacing-1 spacing.$spacing-1 56px;
     transition: background-color $basic-speed ease;
     width: $navigation-width;
 
-    &:hover {
+    &:hover,
+    &:focus-visible {
         background-color: colors.$color-palette-white-op-10;
     }
 
     &--active,
-    &--active:hover {
+    &--active:hover,
+    &--active:focus-visible {
         background-color: colors.$color-palette-primary;
     }
+}
+
+.dot-nav-sub__link--flyout {
+    padding: spacing.$spacing-1 spacing.$spacing-4;
+}
+
+.dot-nav-sub__flyout {
+    font-size: fonts.$font-size-md;
+    line-height: 1.5;
 }
 
 .dot-nav-sub__item {

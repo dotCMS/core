@@ -64,6 +64,7 @@ export class DotToolsToolDialogComponent implements OnInit {
     protected readonly form = this.#fb.nonNullable.group({
         portletName: ['', Validators.required],
         portletId: ['', Validators.required],
+        parent: [''],
         baseTypes: [<DotCMSBaseTypesContentTypes[]>[DotCMSBaseTypesContentTypes.CONTENT]],
         contentTypes: [<string[]>[]],
         dataViewMode: [<DotToolsDataViewMode>'list', Validators.required]
@@ -104,6 +105,7 @@ export class DotToolsToolDialogComponent implements OnInit {
             this.form.patchValue({
                 portletName: injectedPrefill?.portletName ?? tool.title,
                 portletId: injectedPrefill?.portletId ?? tool.id,
+                parent: injectedPrefill?.parent ?? '',
                 baseTypes: injectedPrefill?.baseTypes ?? [DotCMSBaseTypesContentTypes.CONTENT],
                 contentTypes: injectedPrefill?.contentTypes ?? [],
                 dataViewMode: injectedPrefill?.dataViewMode ?? 'list'
@@ -264,6 +266,7 @@ export class DotToolsToolDialogComponent implements OnInit {
                 this.form.patchValue({
                     portletName: config.portletName,
                     portletId: config.portletId,
+                    parent: config.parent ?? '',
                     baseTypes: config.baseTypes,
                     contentTypes: config.contentTypes,
                     dataViewMode: config.dataViewMode

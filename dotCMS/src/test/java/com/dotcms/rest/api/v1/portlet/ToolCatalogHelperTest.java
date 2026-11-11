@@ -159,6 +159,72 @@ public class ToolCatalogHelperTest {
         assertFalse(byId.values().stream().anyMatch(t -> t.startsWith(TITLE_PREFIX)));
     }
 
+    /** A configured parent and its child title are both localized in management labels. */
+    @Test
+    public void catalog_prefixesTranslatedParent() throws Exception {
+        allPortlets(portlet("users", Map.of("parent", " Identity-Access ")));
+        titles.put("Identity-Access", "Identität und Zugriff");
+        titles.put(TITLE_PREFIX + "users", "Benutzer");
+
+        final ToolCatalogEntryView entry = helper.catalog(user).get(0);
+        assertEquals("users", entry.id());
+        assertEquals("Identität und Zugriff › Benutzer", entry.title());
+        assertEquals("Identity-Access", entry.parent());
+        assertEquals("Benutzer", entry.label());
+    }
+
+    /** Structured metadata keeps literal separators in names and normalizes absent or blank parents. */
+    @Test
+    public void catalog_preservesLiteralNamesWithoutInferringParents() throws Exception {
+        allPortlets(portlet("c_literal", Map.of("name", "News › Archive")),
+                portlet("c_blank", Map.of("name", "Flat", "parent", " \t ")));
+        for (final ToolCatalogEntryView entry : helper.catalog(user)) {
+            assertEquals("", entry.parent());
+            assertEquals(entry.title(), entry.label());
+        }
+        assertEquals("News › Archive", helper.catalog(user).stream()
+                .filter(entry -> entry.id().equals("c_literal")).findFirst().orElseThrow().label());
+    }
+
+    /** Unknown parent translations use the key, matching the navigation flyout fallback. */
+    @Test
+    public void title_missingParentTranslationUsesKeyAndKeepsToolFallbacks() {
+        assertEquals("Custom-parent › Registered name", helper.title(user,
+                portlet("c_custom", Map.of("parent", "Custom-parent", "name", "Registered name"))));
+        assertEquals("Custom-parent › bare", helper.title(user,
+                portlet("bare", Map.of("parent", "Custom-parent"))));
+    }
+
+    /** Blank parent values do not introduce empty groups or separators. */
+    @Test
+    public void title_blankParentsKeepFlatTitle() {
+        titles.put(TITLE_PREFIX + "users", "Users");
+        for (final String parent : List.of("", " ", "\t")) {
+            assertEquals("Users", helper.title(user, portlet("users", Map.of("parent", parent))));
+        }
+    }
+
+    /** Missing portlets retain a translated label or their id for existing layout references. */
+    @Test
+    public void title_missingPortletKeepsTranslationOrId() {
+        titles.put(TITLE_PREFIX + "removed", "Removed tool");
+        assertEquals("Removed tool", helper.title(user, "removed"));
+        assertEquals("unknown", helper.title(user, "unknown"));
+    }
+
+    /** Catalog ordering and searching use the qualified labels administrators see. */
+    @Test
+    public void catalog_sortsByQualifiedTitle() throws Exception {
+        allPortlets(portlet("users", Map.of("parent", "Identity-Access")),
+                portlet("templates"), portlet("roles", Map.of("parent", "Identity-Access")));
+        titles.put("Identity-Access", "Identity Access");
+        titles.put(TITLE_PREFIX + "users", "Users");
+        titles.put(TITLE_PREFIX + "roles", "Roles & Tools");
+        titles.put(TITLE_PREFIX + "templates", "Templates");
+
+        assertEquals(List.of("roles", "users", "templates"), ids(helper.catalog(user)));
+    }
+
     /**
      * Given Scenario: the API classifies one portlet as custom and another as shipped.
      * Expected Result: the flag on each row is exactly what the API answered.
@@ -179,18 +245,19 @@ public class ToolCatalogHelperTest {
 
     /**
      * Given Scenario: a catalog row is serialized with the REST object mapper.
-     * Expected Result: the JSON keys are exactly {@code id}, {@code title}, {@code isCustom}, the
-     * names the frontend model expects.
+     * Expected Result: the existing keys and explicit parent/child-label metadata match the frontend model.
      */
     @Test
     public void catalogEntry_serializesIsCustomKey() throws Exception {
         final JsonNode json = DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
-                .valueToTree(new ToolCatalogEntryView("c_x", "X", true));
+                .valueToTree(new ToolCatalogEntryView("c_x", "Group › X", true, "Group", "X"));
 
         assertEquals("c_x", json.get("id").asText());
-        assertEquals("X", json.get("title").asText());
+        assertEquals("Group › X", json.get("title").asText());
         assertTrue(json.get("isCustom").asBoolean());
-        assertEquals(3, json.size());
+        assertEquals("Group", json.get("parent").asText());
+        assertEquals("X", json.get("label").asText());
+        assertEquals(5, json.size());
     }
 
     /**
@@ -243,6 +310,17 @@ public class ToolCatalogHelperTest {
 
         assertEquals(List.of(), view.baseTypes());
         assertEquals(List.of(), view.contentTypes());
+    }
+
+    /** The editor receives the raw parent key, with an empty string for old or cleared definitions. */
+    @Test
+    public void customView_returnsEditableParent() {
+        final Portlet tool = customTool("CONTENT", "", "list");
+        assertEquals("", helper.toCustomToolView(tool).parent());
+        tool.getInitParams().put("parent", "Identity-Access");
+        assertEquals("Identity-Access", helper.toCustomToolView(tool).parent());
+        tool.getInitParams().put("parent", "");
+        assertEquals("", helper.toCustomToolView(tool).parent());
     }
 
     /**

@@ -1,12 +1,19 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { Subject } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
-import { CdkDragMove } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragMove, CdkDropList } from '@angular/cdk/drag-drop';
 import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
+import { Splitter } from 'primeng/splitter';
+import { Tooltip } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -59,7 +66,10 @@ function createStoreStub() {
         sections: signal<DotToolsSection[]>(SECTIONS),
         selectedSection: signal<DotToolsSection | null>(SITE),
         selectedSectionId: signal<string | null>('site'),
-        selectedSectionTools: signal<DotToolsCatalogEntry[]>([]),
+        selectedSectionTools: signal<DotToolsCatalogEntry[]>([
+            { id: 'pages', title: 'Pages', isCustom: false },
+            { id: 'browser', title: 'Browser', isCustom: false }
+        ]),
         selectedSectionToolIds: signal<Set<string>>(new Set(['pages', 'browser'])),
         catalog: signal<DotToolsCatalogEntry[]>([]),
         paginatedCatalog: signal<DotToolsCatalogEntry[]>([]),
@@ -166,7 +176,9 @@ describe('DotToolsPageComponent', () => {
                     'tools.confirm.delete-tool.section-count.single': '1 section',
                     'tools.confirm.delete-tool.section-count.multi': '{0} sections',
                     'tools.menu.edit': 'Edit',
-                    'tools.menu.delete': 'Delete'
+                    'tools.menu.delete': 'Delete',
+                    'Identity-Access': 'Identity Access',
+                    'Another-Identity': 'Identity Access'
                 })
             }
         ]
@@ -181,6 +193,299 @@ describe('DotToolsPageComponent', () => {
         const toast = spectator.inject(MessageService, true);
         (toast.add as Mock).mockClear();
         (toast.clear as Mock).mockClear();
+    });
+
+    it('uses the Roles initial split and minimum sizes with a keyboard-focusable divider', () => {
+        spectator.detectChanges();
+
+        const splitter = spectator.query(Splitter);
+        expect(splitter.panelSizes).toEqual([22, 78]);
+        expect(splitter.minSizes).toEqual([15, 40]);
+        expect(spectator.query(byTestId('tools-sections-panel'))).toBeTruthy();
+        expect(spectator.query(byTestId('tools-available-panel'))).toBeTruthy();
+        expect(spectator.query(byTestId('tools-splitter-handle')).getAttribute('tabindex')).toBe(
+            '0'
+        );
+    });
+
+    it('resizes both panels by dragging the divider without reordering tools or sections', () => {
+        spectator.detectChanges();
+
+        const splitter = spectator.query(Splitter);
+        const root = spectator.query(byTestId('tools-splitter'));
+        const gutter = spectator.query(byTestId('tools-splitter-gutter'));
+        const treePanel = gutter.previousElementSibling as HTMLElement;
+        const catalogPanel = gutter.nextElementSibling as HTMLElement;
+        // happy-dom has no layout; model a 1000 px splitter at the initial 22/78 split.
+        Object.defineProperty(root, 'offsetWidth', { value: 1000 });
+        Object.defineProperty(treePanel, 'offsetWidth', { value: 220 });
+        Object.defineProperty(catalogPanel, 'offsetWidth', { value: 780 });
+        root.style.padding = '0px';
+        root.style.borderWidth = '0px';
+        treePanel.style.margin = '0px';
+        catalogPanel.style.margin = '0px';
+
+        // happy-dom leaves pageX at zero even when clientX is supplied.
+        const start = new MouseEvent('mousedown', { bubbles: true });
+        const move = new MouseEvent('mousemove');
+        Object.defineProperty(start, 'pageX', { value: 220 });
+        Object.defineProperty(move, 'pageX', { value: 320 });
+        gutter.dispatchEvent(start);
+        document.dispatchEvent(move);
+        document.dispatchEvent(new MouseEvent('mouseup'));
+
+        expect(splitter.panelSizes).toEqual([32, 68]);
+        expect(treePanel.style.flexBasis).toContain('32%');
+        expect(catalogPanel.style.flexBasis).toContain('68%');
+        expect(store.reorderSections).not.toHaveBeenCalled();
+        expect(store.reorderSelectedSectionTools).not.toHaveBeenCalled();
+    });
+
+    it('shows qualified parent labels and overflow tooltips without changing ids', () => {
+        const entry: DotToolsCatalogEntry = {
+            id: 'users',
+            title: 'Identity Access › Users',
+            isCustom: false
+        };
+        const section: DotToolsSection = {
+            ...SITE,
+            id: 'system',
+            name: 'System',
+            portletIds: [entry.id],
+            portletTitles: [entry.title]
+        };
+        store.sections.set([section]);
+        store.selectedSection.set(section);
+        store.selectedSectionId.set(section.id);
+        store.selectedSectionTools.set([entry]);
+        store.selectedSectionToolIds.set(new Set([entry.id]));
+        store.paginatedCatalog.set([entry]);
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('tools-catalog-row-users')).textContent).toContain(
+            entry.title
+        );
+        expect(spectator.query(byTestId('tools-section-tools-system')).textContent).toContain(
+            entry.title
+        );
+        const tooltip = spectator
+            .getDebugElement(byTestId('tools-section-tool-title-users'))
+            .injector.get(Tooltip);
+        expect(tooltip.content).toBe(entry.title);
+        expect(tooltip.showOnEllipsis).toBe(true);
+        expect(tooltip.tooltipPosition).toBe('right');
+
+        spectator.click(byTestId('tools-section-tool-remove-users'));
+        expect(store.removeToolFromSelectedSection).toHaveBeenCalledWith('users');
+    });
+
+    describe('grouped tool tree', () => {
+        const tools: DotToolsCatalogEntry[] = [
+            {
+                id: 'users',
+                title: 'Identity Access › Users',
+                label: 'Users',
+                parent: 'Identity-Access',
+                isCustom: false
+            },
+            { id: 'sites', title: 'Sites', isCustom: false },
+            {
+                id: 'roles',
+                title: 'Identity Access › Roles & Tools',
+                label: 'Roles & Tools',
+                parent: 'Identity-Access',
+                isCustom: false
+            },
+            { id: 'dynamic-plugins', title: 'dynamic-plugins', isCustom: false },
+            {
+                id: 'custom',
+                title: 'Other › Custom',
+                label: 'Custom',
+                parent: 'Other',
+                isCustom: true
+            }
+        ];
+
+        function showTools(entries = tools) {
+            const section = {
+                ...SITE,
+                portletIds: entries.map((tool) => tool.id),
+                portletTitles: entries.map((tool) => tool.title)
+            };
+            store.sections.set([section]);
+            store.selectedSection.set(section);
+            store.selectedSectionTools.set(entries);
+            store.paginatedCatalog.set(entries);
+            spectator.detectChanges();
+        }
+
+        it('groups by the raw parent at its first child and keeps the catalog qualified', () => {
+            showTools();
+            expect(
+                spectator.component['$toolEntries']().map((entry) =>
+                    entry.tools.map((tool) => tool.id)
+                )
+            ).toEqual([['users', 'roles'], ['sites'], ['dynamic-plugins'], ['custom']]);
+            expect(spectator.query(byTestId('tools-parent-Identity-Access')).textContent).toContain(
+                'Identity Access'
+            );
+            expect(
+                spectator.query(byTestId('tools-section-tool-title-users')).textContent.trim()
+            ).toBe('Users');
+            expect(
+                spectator.query(byTestId('tools-section-tool-title-roles')).textContent.trim()
+            ).toBe('Roles & Tools');
+            expect(spectator.query(byTestId('tools-catalog-row-users')).textContent).toContain(
+                'Identity Access › Users'
+            );
+        });
+
+        it('keeps child drags in their own parent list, separate from whole-group dragging', () => {
+            showTools();
+            const children = spectator
+                .getDebugElement(byTestId('tools-parent-children-Identity-Access'))
+                .injector.get(CdkDropList);
+            const root = spectator
+                .getDebugElement(byTestId('tools-section-tools-site'))
+                .injector.get(CdkDropList);
+            const child = spectator
+                .getDebugElement(byTestId('tools-section-tool-row-users'))
+                .injector.get(CdkDrag);
+            const group = spectator
+                .getDebugElement(byTestId('tools-parent-Identity-Access'))
+                .injector.get(CdkDrag);
+            expect(child.dropContainer).toBe(children);
+            expect(group.dropContainer).toBe(root);
+            expect(children.connectedTo).toEqual([]);
+            expect(root.getSortedItems()).toHaveLength(4);
+            expect(children.getSortedItems()).toHaveLength(2);
+        });
+
+        it('does not merge distinct keys with the same translation or infer parents from title text', () => {
+            showTools([
+                ...tools,
+                {
+                    id: 'other',
+                    title: 'Identity Access › Other',
+                    label: 'Other',
+                    parent: 'Another-Identity',
+                    isCustom: false
+                },
+                { id: 'literal', title: 'Identity Access › Literal', isCustom: true }
+            ]);
+            expect(
+                spectator.component['$toolEntries']()
+                    .filter((entry) => entry.parent)
+                    .map((entry) => entry.parent)
+            ).toEqual(['Identity-Access', 'Other', 'Another-Identity']);
+            expect(spectator.component['$toolEntries']().at(-1)).toEqual({
+                tools: [{ id: 'literal', title: 'Identity Access › Literal', isCustom: true }]
+            });
+        });
+
+        it('reorders children within one parent and preserves every flat id, including legacy entries', () => {
+            showTools();
+            spectator.component['$childDrop'].set({ parent: 'Identity-Access', index: 2 });
+            spectator.component['onChildDragEnded']('Identity-Access', 0);
+            expect(store.reorderSelectedSectionTools).toHaveBeenCalledWith([
+                'roles',
+                'users',
+                'sites',
+                'dynamic-plugins',
+                'custom'
+            ]);
+            expect(store.selectedSectionTools()).toEqual(tools);
+        });
+
+        it('moves a parent as one block without changing its child order', () => {
+            showTools();
+            spectator.component['$toolDropIndex'].set(4);
+            spectator.component['onToolDragEnded'](0);
+            expect(store.reorderSelectedSectionTools).toHaveBeenCalledWith([
+                'sites',
+                'dynamic-plugins',
+                'custom',
+                'users',
+                'roles'
+            ]);
+            expect(store.selectedSectionTools()).toEqual(tools);
+        });
+
+        it('ignores a child drop from another parent or a parent that no longer exists', () => {
+            showTools();
+            spectator.component['$childDrop'].set({ parent: 'Other', index: 1 });
+            spectator.component['onChildDragEnded']('Identity-Access', 0);
+            spectator.component['$childDrop'].set({ parent: 'removed-parent', index: 1 });
+            spectator.component['onChildDragEnded']('removed-parent', 0);
+            expect(store.reorderSelectedSectionTools).not.toHaveBeenCalled();
+            expect(spectator.component['$childDrop']()).toBeNull();
+        });
+
+        it('does not save a no-op child move and cancels targets when selecting another section', () => {
+            showTools();
+            spectator.component['$childDrop'].set({ parent: 'Identity-Access', index: 1 });
+            spectator.component['onChildDragEnded']('Identity-Access', 0);
+            expect(store.reorderSelectedSectionTools).not.toHaveBeenCalled();
+            spectator.component['$childDrop'].set({ parent: 'Identity-Access', index: 2 });
+            spectator.component['$toolDropIndex'].set(4);
+            spectator.component['onSelectSection']('content');
+            expect(spectator.component['$childDrop']()).toBeNull();
+            expect(spectator.component['$toolDropIndex']()).toBeNull();
+        });
+
+        it('supports child and whole-group reordering with the keyboard', () => {
+            showTools();
+            const child = spectator.query(byTestId('tools-child-handle-users'));
+            child.dispatchEvent(
+                new KeyboardEvent('keydown', {
+                    key: 'ArrowDown',
+                    code: 'ArrowDown',
+                    bubbles: true,
+                    cancelable: true
+                })
+            );
+            expect(store.reorderSelectedSectionTools).toHaveBeenLastCalledWith([
+                'roles',
+                'users',
+                'sites',
+                'dynamic-plugins',
+                'custom'
+            ]);
+            showTools([tools[2], tools[0], tools[1], tools[3], tools[4]]);
+            const group = spectator.query(byTestId('tools-row-handle-Identity-Access'));
+            group.dispatchEvent(
+                new KeyboardEvent('keydown', {
+                    key: 'ArrowDown',
+                    code: 'ArrowDown',
+                    bubbles: true,
+                    cancelable: true
+                })
+            );
+            expect(store.reorderSelectedSectionTools).toHaveBeenLastCalledWith([
+                'sites',
+                'roles',
+                'users',
+                'dynamic-plugins',
+                'custom'
+            ]);
+        });
+
+        it('keeps keyboard moves inside the current parent bounds', () => {
+            showTools();
+            spectator.component['onToolReorderKey'](
+                new KeyboardEvent('keydown'),
+                0,
+                -1,
+                'Identity-Access'
+            );
+            spectator.component['onToolReorderKey'](
+                new KeyboardEvent('keydown'),
+                1,
+                1,
+                'Identity-Access'
+            );
+            expect(store.reorderSelectedSectionTools).not.toHaveBeenCalled();
+        });
     });
 
     describe('drag drop-index math', () => {
@@ -203,6 +508,15 @@ describe('DotToolsPageComponent', () => {
             // All rows end at y=120; pointer at 200 is past the end.
             spectator.component['onSectionDragMoved'](dragEventAt(200), list);
             expect(spectator.component['$sectionDropIndex']()).toBe(3);
+        });
+
+        it('does not count nested child rows as section or top-level tool rows', () => {
+            const list = buildListEl(2);
+            list.firstElementChild.appendChild(buildListEl(3));
+            spectator.component['onSectionDragMoved'](dragEventAt(100), list);
+            spectator.component['onToolDragMoved'](dragEventAt(100), list);
+            expect(spectator.component['$sectionDropIndex']()).toBe(2);
+            expect(spectator.component['$toolDropIndex']()).toBe(2);
         });
 
         it('empty list → gap 0 (no rows to probe)', () => {
