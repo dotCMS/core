@@ -127,4 +127,42 @@ class ContentletAjaxStagedBinaryTest {
         // Then nothing is returned
         assertFalse(find("binary1", "../binary2/" + FILE_NAME).isPresent());
     }
+
+    @Test
+    void stagedFile_fileNameWithBackslashes_isEmpty() throws IOException {
+        // Given a file under <userId>/binary1 whose name is made of backslash-separated segments,
+        // which is a single file name where the backslash is not a separator
+        final String name = "..\\binary2\\" + FILE_NAME;
+        final Path dir = Files.createDirectories(tmpRoot.resolve(USER_ID).resolve("binary1"));
+        try {
+            Files.writeString(dir.resolve(name), "content");
+        } catch (final IOException | java.nio.file.InvalidPathException e) {
+            // the platform cannot hold such a file; the lookup must still return nothing
+        }
+
+        // Then nothing is returned: a file name has no separator of any platform
+        assertFalse(find("binary1", name).isPresent());
+    }
+
+    @Test
+    void stagedFile_parentOrCurrentFolderAsFileName_isEmpty() throws IOException {
+        // Given a file staged for binary1
+        stage("binary1");
+
+        // Then the folder references are not file names
+        assertFalse(find("binary1", "..").isPresent());
+        assertFalse(find("binary1", ".").isPresent());
+        assertFalse(find("binary1", "").isPresent());
+    }
+
+    @Test
+    void stagedFile_linkToAFileOutsideTheColumnFolder_isEmpty() throws IOException {
+        // Given <userId>/binary1/report.pdf that is a link to a file outside that folder
+        final Path outside = Files.writeString(tmpRoot.resolve("outside.pdf"), "content");
+        final Path dir = Files.createDirectories(tmpRoot.resolve(USER_ID).resolve("binary1"));
+        Files.createSymbolicLink(dir.resolve(FILE_NAME), outside);
+
+        // Then nothing is returned: the file has to really live in the column's folder
+        assertFalse(find("binary1", FILE_NAME).isPresent());
+    }
 }

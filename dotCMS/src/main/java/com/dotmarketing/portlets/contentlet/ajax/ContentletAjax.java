@@ -98,6 +98,7 @@ import org.jetbrains.annotations.NotNull;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -1837,16 +1838,47 @@ public class ContentletAjax {
 	 * @param userId   the id of the user saving the content
 	 * @param column   the name of the form field; only a binary column has a folder
 	 * @param fileName the name of the file, without any folder
-	 * @return the file, or empty when the field is not a binary column or has no such file
+	 * @return the file, or empty when the field is not a binary column, the name is not a plain
+	 *         file name, or no such file sits directly in the column's folder
 	 */
 	static Optional<File> stagedBinary(final File tmpRoot, final String userId, final String column,
 			final String fileName) {
-		if (column == null || !BINARY_COLUMN.matcher(column).matches()
-				|| fileName == null || !new File(fileName).getName().equals(fileName)) {
+		if (column == null || !BINARY_COLUMN.matcher(column).matches() || !isPlainFileName(fileName)) {
 			return Optional.empty();
 		}
-		final File staged = new File(new File(new File(tmpRoot, userId), column), fileName);
-		return staged.isFile() ? Optional.of(staged) : Optional.empty();
+		final File columnFolder = new File(new File(tmpRoot, userId), column);
+		final File staged = new File(columnFolder, fileName);
+		return staged.isFile() && isDirectlyInside(columnFolder, staged)
+				? Optional.of(staged) : Optional.empty();
+	}
+
+	/**
+	 * Tells whether a value is a file name and nothing else: no slash or backslash, whatever the
+	 * platform treats as a separator, and not a reference to the current or parent folder.
+	 *
+	 * @param fileName the value to check
+	 * @return true when the value names a single file
+	 */
+	private static boolean isPlainFileName(final String fileName) {
+		return UtilMethods.isSet(fileName)
+				&& fileName.indexOf('/') < 0 && fileName.indexOf('\\') < 0
+				&& !".".equals(fileName) && !"..".equals(fileName);
+	}
+
+	/**
+	 * Tells whether a file really lives in a folder once links and relative segments are
+	 * resolved, so a name that leads somewhere else is not accepted.
+	 *
+	 * @param folder the folder the file must be in
+	 * @param file   the file to check
+	 * @return true when the folder is the file's real parent; false also when it cannot be resolved
+	 */
+	private static boolean isDirectlyInside(final File folder, final File file) {
+		try {
+			return folder.getCanonicalFile().equals(file.getCanonicalFile().getParentFile());
+		} catch (final IOException e) {
+			return false;
+		}
 	}
 
 	/**
