@@ -125,3 +125,4 @@ Release-25.07.10 LTS
 119. https://github.com/dotCMS/private-issues/issues/689 : Excessive user data exposed to low-privileged back-end users #38145 #689
 120. https://github.com/dotCMS/private-issues/issues/706 : Non-admin Scripting User reads and publishes any content as CMS Administrator via bound Velocity viewtool #38108 #38100 #38282 #706
 121. https://github.com/dotCMS/private-issues/issues/707 : Widget REST double-evaluation SSTI + anonymous disclosure of administrator credential material #38108 #38100 #38282 #707
+122. https://github.com/dotCMS/private-issues/issues/752 : [GLM AI Scanner] Anonymous SSTI toolbox chain: credential disclosure ($config), system-user content access ($filetool), filesystem enumeration ($macro) + LinkChecker internal-network SSRF (no subnet guard) #38085 #752

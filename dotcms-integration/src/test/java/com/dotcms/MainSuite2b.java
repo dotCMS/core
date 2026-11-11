@@ -402,6 +402,7 @@ import com.dotcms.ai.rest.EmbeddingsResourceAuthTest;
         com.dotmarketing.business.IdentifierFactoryTest.class,
         com.dotmarketing.business.IdentifierAPITest.class,
         com.dotmarketing.business.CommitListenerCacheWrapperTest.class,
+        com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccessTest.class,
         com.dotmarketing.business.RoleAPITest.class,
         com.dotmarketing.business.IdentifierConsistencyIntegrationTest.class,
         com.dotmarketing.business.LayoutAPITest.class,
