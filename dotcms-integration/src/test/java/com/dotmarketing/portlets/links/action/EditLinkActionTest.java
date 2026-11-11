@@ -56,7 +56,11 @@ import org.junit.jupiter.api.Test;
  */
 public class EditLinkActionTest {
 
-    private static final String REFERER = "/c/portal/layout?p_l_id=test-layout&p_p_id=site-browser";
+    /** What the Site Browser's referer arrives as: its own query parameters are cut off. */
+    private static final String REFERER = "/c/portal/layout?p_l_id=test-layout";
+    /** The referer plus the parameters that reopen the Site Browser portlet maximized. */
+    private static final String SITE_BROWSER_RETURN =
+            REFERER + "&p_p_state=maximized&p_p_id=site-browser&p_p_action=1";
 
     private static User systemUser;
     private static Host site;
@@ -98,7 +102,7 @@ public class EditLinkActionTest {
      * Method to test: {@link EditLinkAction#processAction}
      * Given Scenario: A link is locked by another user; the caller can read and write it and
      * opens it with {@code cmd=edit} from the Site Browser
-     * ExpectedResult: The caller is sent back to the referer with the "locked" message, and the
+     * ExpectedResult: The caller is sent back to the Site Browser with the "locked" message, and the
      * link is still locked by the other user
      */
     @Test
@@ -110,7 +114,7 @@ public class EditLinkActionTest {
 
         final EditRun run = edit(caller, link, REFERER);
 
-        assertEquals(List.of(REFERER), run.redirects);
+        assertEquals(List.of(SITE_BROWSER_RETURN), run.redirects);
         assertTrue(SessionMessages.contains(run.session, "custommessage"),
                 "the \"locked\" message is kept in the session for the referer page");
         assertEquals(Optional.of(lockHolder.getUserId()), lockedBy(link));
@@ -120,7 +124,7 @@ public class EditLinkActionTest {
      * Method to test: {@link EditLinkAction#processAction}
      * Given Scenario: A link is locked by another user; the caller can only read it and opens it
      * with {@code cmd=edit} from the Site Browser
-     * ExpectedResult: The caller is sent back to the referer, and the link is still locked by the
+     * ExpectedResult: The caller is sent back to the Site Browser, and the link is still locked by the
      * other user
      */
     @Test
@@ -131,7 +135,7 @@ public class EditLinkActionTest {
 
         final EditRun run = edit(caller, link, REFERER);
 
-        assertEquals(List.of(REFERER), run.redirects);
+        assertEquals(List.of(SITE_BROWSER_RETURN), run.redirects);
         assertEquals(Optional.of(lockHolder.getUserId()), lockedBy(link));
     }
 

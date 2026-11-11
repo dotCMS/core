@@ -139,8 +139,8 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 			} catch (Exception ae) {
 				if (WebKeys.EDIT_ASSET_EXCEPTION.equals(ae.getMessage()) && UtilMethods.isSet(referer)) {
 					// Locked by another user: the "locked" message is already in the session,
-					// so send the user back to the page they came from, where it is shown
-					_sendToReferral(req, res, referer);
+					// so send the user back to the Site Browser, where it is shown
+					_sendToReferral(req, res, referer + "&p_p_state=" + WindowState.MAXIMIZED + "&p_p_id=site-browser&p_p_action=1");
 					return;
 				}
 				_handleException(ae, req);
