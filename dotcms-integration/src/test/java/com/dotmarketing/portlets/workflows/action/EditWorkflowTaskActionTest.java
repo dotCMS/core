@@ -23,6 +23,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowComment;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.portlets.workflows.struts.WorkflowTaskForm;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
@@ -49,15 +50,18 @@ import org.junit.Test;
  * asks it for every write command, and refuses without touching the task. Deleting the guard
  * leaves {@code WorkflowTaskAccessTest} green and these red.</p>
  *
- * <p><b>What these tests do not cover.</b> The {@code view} command is not exercised: it sits
- * above the guard on purpose, so that a user who can open the screen keeps being able to, and a
- * test for it would only restate the ordering. Neither is the attach/remove file work itself —
- * the refusal happens before any of it runs, which is the point.</p>
+ * <p>{@code view} is exercised here too. It is asked for the way the admin's task dialog asks
+ * for it — the task named by {@code taskId}, with no {@code inode} — because a guard that read
+ * the task from {@code inode} would refuse every real caller while still looking correct.</p>
+ *
+ * <p><b>What these tests do not cover.</b> The screen itself. These tests end at the forward, so
+ * they say which page the action chose, never what that page then reads or renders.</p>
  */
 public class EditWorkflowTaskActionTest {
 
     private static final String ERROR_FORWARD = Constants.COMMON_ERROR;
     private static final String DONE_FORWARD = "portlet.ext.workflows.edit_workflow_task";
+    private static final String VIEW_FORWARD = "portlet.ext.workflows.view_workflow_task";
 
     private static WorkflowAPI workflowAPI;
     private static PermissionAPI permissionAPI;
@@ -214,6 +218,45 @@ public class EditWorkflowTaskActionTest {
     }
 
     /**
+     * Method to test: {@link EditWorkflowTaskAction#processAction}
+     * Given Scenario: A back-end user with no permission on the task's contentlet asks for
+     *   {@code cmd=view} on it, naming the task with {@code taskId} the way the admin's task
+     *   dialog does
+     * Expected Result: The request is forwarded to the error page, so the screen never renders
+     */
+    @Test
+    public void processAction_view_userWithoutRead_isRefused() throws Exception {
+        final WorkflowTask task = workflowAPI.findTaskByContentlet(content);
+        final ActionRequestImpl request = viewRequest(userWithoutAccess, task.getId());
+
+        new EditWorkflowTaskAction().processAction(null, new WorkflowTaskForm(), null, request,
+                mock(ActionResponseImpl.class));
+
+        assertEquals("A refused view must land on the error page", ERROR_FORWARD,
+                request.getAttribute(WebKeys.PORTLET_STRUTS_FORWARD));
+    }
+
+    /**
+     * Method to test: {@link EditWorkflowTaskAction#processAction}
+     * Given Scenario: A back-end user who holds READ on the task's contentlet asks for
+     *   {@code cmd=view} the same way, with {@code taskId} and no {@code inode}
+     * Expected Result: The task screen is forwarded to. This is the request the admin's dialog
+     *   actually sends, so a guard that looked the task up under {@code inode} would refuse every
+     *   legitimate caller and fail here
+     */
+    @Test
+    public void processAction_view_userWithRead_rendersTheScreen() throws Exception {
+        final WorkflowTask task = workflowAPI.findTaskByContentlet(content);
+        final ActionRequestImpl request = viewRequest(reader, task.getId());
+
+        new EditWorkflowTaskAction().processAction(null, new WorkflowTaskForm(), null, request,
+                mock(ActionResponseImpl.class));
+
+        assertEquals("A caller who can read the content must get the screen", VIEW_FORWARD,
+                request.getAttribute(WebKeys.PORTLET_STRUTS_FORWARD));
+    }
+
+    /**
      * Reads the comments currently stored on the given task.
      *
      * @param task the {@link WorkflowTask} to read
@@ -262,6 +305,20 @@ public class EditWorkflowTaskActionTest {
                 .thenAnswer(call -> requestAttributes.get(call.<String>getArgument(0)));
         doAnswer(call -> requestAttributes.put(call.getArgument(0), call.getArgument(1)))
                 .when(request).setAttribute(anyString(), any());
+        return request;
+    }
+
+    /**
+     * Builds the request the admin's task dialog sends to open a task: the {@code view} command
+     * and the task named by {@code taskId}, with no {@code inode} parameter at all.
+     *
+     * @param user   the {@link User} opening the screen
+     * @param taskId the id of the {@link WorkflowTask} being opened
+     * @return the request to hand to {@code processAction}
+     */
+    private static ActionRequestImpl viewRequest(final User user, final String taskId) {
+        final ActionRequestImpl request = taskRequest(user, Constants.VIEW, null, null);
+        when(request.getParameter("taskId")).thenReturn(taskId);
         return request;
     }
 

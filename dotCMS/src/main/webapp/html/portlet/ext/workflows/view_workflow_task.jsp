@@ -1,6 +1,8 @@
 <%@ page import="com.liferay.util.Xss" %><%@page import="org.apache.commons.codec.digest.DigestUtils"%>
 <%@page import="com.dotmarketing.beans.WebAsset"%>
 <%@include file="/html/portlet/ext/workflows/init.jsp"%>
+<%request.setAttribute("requiredPortletAccess", "workflow"); %>
+<%@include file="/html/common/uservalidation.jsp"%>
 
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.PermissionAPI"%>
@@ -13,6 +15,7 @@
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure" %>
 <%@page import="com.dotmarketing.portlets.workflows.actionlet.PushPublishActionlet"%>
+<%@page import="com.dotmarketing.portlets.workflows.action.WorkflowTaskAccess"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.*"%>
 <%@page import="com.dotmarketing.util.DateUtil" %>
 <%@page import="com.dotmarketing.util.Logger" %>
@@ -57,8 +60,12 @@ public String getGravatar(String postedBy){
 <%
     WorkflowTask task = APILocator.getWorkflowAPI().findTaskById(request.getParameter("taskId"));
 
-    //Search for the contentlet (Using the same way the view_tasks_list use to find the contentlet on each WorkflowTask and show it in the list)
-    Contentlet contentlet = APILocator.getContentletAPI().search( "+identifier: " + task.getWebasset() + " +languageId:" + task.getLanguageId(), 0, -1, null, APILocator.getUserAPI().getSystemUser(), true ).get( 0 );
+    // The task id above comes from the request, so it names a task of the caller's choosing. A
+    // task carries no permissions of its own: they live on the contentlet it was opened for, and
+    // resolving that contentlet as the calling user is therefore the check for this whole screen.
+    // Everything below -- the task's content, its roles, its comment and change history -- is
+    // rendered only once this lookup has answered.
+    Contentlet contentlet = WorkflowTaskAccess.contentletFor( task, user ).orElse( null );
     if ( contentlet == null ) {
         out.println( LanguageUtil.get( pageContext, "the-selected-content-cannot-be-found" ) );
         return;
