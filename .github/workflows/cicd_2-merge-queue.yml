@@ -27,6 +27,7 @@ jobs:
     with:
       cleanup-runner: false
     secrets:
+      NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: ${{ secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN }}
       # Read-write: the merge queue is a trusted ref and is the primary cache
       # populator — its builds are PR-shaped, so what it writes is what the next
       # merge-queue build can reuse.
@@ -64,6 +65,7 @@ jobs:
       opensearch_phase: ${{ needs.test-matrix.outputs.opensearch_phase }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
+      NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: ${{ secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN }}
   finalize:
     name: Finalize
     if: always()

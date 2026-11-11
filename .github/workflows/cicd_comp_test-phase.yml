@@ -60,6 +60,9 @@ on:
     secrets:
       DOTCMS_LICENSE:
         required: true
+      NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN:
+        description: 'Nx remote cache token. Only pass from trusted build refs, never pull requests.'
+        required: false
 
 env:
   ARTIFACT_RUN_ID: ${{ inputs.artifact-run-id || github.run_id }}
@@ -209,6 +212,11 @@ jobs:
 
       - name: Run ${{ matrix.name }}
         uses: ./.github/actions/core-cicd/maven-job
+        env:
+          # Only the frontend job needs cache credentials; missing credentials disable HTTP caching.
+          NX_SELF_HOSTED_REMOTE_CACHE_SERVER: >-
+            ${{ matrix.test_type == 'frontend' && vars.BUILD_CACHE_DISABLED != 'true' && secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN != '' && vars.NX_SELF_HOSTED_REMOTE_CACHE_SERVER || '' }}
+          NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: ${{ matrix.test_type == 'frontend' && secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN || '' }}
         with:
           stage-name: ${{ matrix.stage_name }}
           maven-args: ${{ matrix.maven_args }}

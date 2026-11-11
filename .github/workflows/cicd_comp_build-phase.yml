@@ -84,6 +84,9 @@ on:
         type: boolean
         default: true
     secrets:
+      NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN:
+        description: 'Nx remote cache token. Only pass from trusted build refs, never pull requests.'
+        required: false
       # Remote build cache (S3). Absent secrets simply disable the cache, so any
       # caller that does not pass these -- every release workflow -- builds from
       # scratch exactly as it does today.
@@ -185,6 +188,11 @@ jobs:
       # Run the Maven build job
       - id: maven-build
         uses: ./.github/actions/core-cicd/maven-job
+        env:
+          # No token (PRs/forks) means no HTTP cache, even when the server variable is set.
+          NX_SELF_HOSTED_REMOTE_CACHE_SERVER: >-
+            ${{ vars.BUILD_CACHE_DISABLED != 'true' && secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN != '' && vars.NX_SELF_HOSTED_REMOTE_CACHE_SERVER || '' }}
+          NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: ${{ secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN }}
         with:
           stage-name: "Initial Artifact Build"
           # No -Dgithub.event.name: its only effect was activating core-web's is_pr profile,

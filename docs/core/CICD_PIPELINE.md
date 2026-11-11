@@ -281,6 +281,27 @@ zero tests for weeks (#38336).
     cache-dependency-path: 'core-web/pnpm-lock.yaml'
 ```
 
+### Nx Remote Cache
+
+Maven invokes Nx for frontend builds and tests. The shared build/test workflows use:
+
+- Organization/repository variable `NX_SELF_HOSTED_REMOTE_CACHE_SERVER`: the HTTPS cache server URL.
+- Organization/repository secret `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN`: its access token.
+
+Organization settings must grant this repository access to both. The token is explicitly forwarded
+through reusable workflow calls, not placed in Maven arguments or committed files.
+
+Remote reads and writes are enabled for merge-queue builds, trunk runs on `main`/`master`, nightly
+runs from `main`, and LTS runs on protected `release-*` branches. Only the frontend test matrix job
+receives the credentials. Pull requests, feature-branch dispatches, and arbitrary-ref deployment/
+release workflows receive no token, so they cannot poison the shared cache. PR remote caching would
+require a separate server-enforced read-only credential and a security review.
+
+Without either setting, Nx continues without the HTTP remote cache. Set `BUILD_CACHE_DISABLED=true`
+to disable both Maven and Nx remote caching. Nx still checks its local cache first.
+
+Workflow wiring regression checks: `bash .github/workflows/tests/nx-remote-cache.test.sh`.
+
 ### Docker Cache
 ```yaml
 - name: Build Docker image

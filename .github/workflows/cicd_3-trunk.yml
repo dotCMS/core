@@ -72,6 +72,8 @@ jobs:
       maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
       artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
     secrets:
+      NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: >-
+        ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN || '' }}
       # Read-write: trunk is trusted.
       build-cache-access-key: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_ACCESS_KEY }}
       build-cache-secret-key: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_SECRET_KEY }}
@@ -118,6 +120,8 @@ jobs:
       artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
+      NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: >-
+        ${{ (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') && secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN || '' }}
     permissions:
       contents: read
       packages: write
