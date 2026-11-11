@@ -20,7 +20,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -567,7 +566,6 @@ public class WebAssetFactory {
 
 	public static void unArchiveAsset(final WebAsset currWebAsset) throws DotDataException, DotStateException, DotSecurityException {
 
-		RefreshMenus.deleteMenu(currWebAsset);
 		final Identifier ident=APILocator.getIdentifierAPI().find(currWebAsset);
 		CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());
 		// gets the identifier for this asset
@@ -865,7 +863,6 @@ public class WebAssetFactory {
 				((WebAsset)asset).setShowOnMenu(true);
 			}
 			((WebAsset)asset).setSortOrder(newValue);
-			RefreshMenus.deleteMenu(((WebAsset)asset));
 		}
 		Identifier ident=APILocator.getIdentifierAPI().find(asset);
 		CacheLocator.getNavToolCache().removeNavByPath(ident.getHostId(), ident.getParentPath());

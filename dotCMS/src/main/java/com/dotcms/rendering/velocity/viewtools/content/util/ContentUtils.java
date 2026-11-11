@@ -16,7 +16,6 @@ import com.dotmarketing.common.model.ImmutableContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.calendar.business.RecurrenceUtil;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -88,26 +87,13 @@ public class ContentUtils {
 			final Optional<String> timeMachineDate = TimeMachineUtil.getTimeMachineDate();
 			return find(inodeOrIdentifier, user, timeMachineDate.orElse(null), EDIT_OR_PREVIEW_MODE, sessionLang);
 		}
-
-	    private static Contentlet fixRecurringDates(Contentlet contentlet, String[] recDates) {
-	        if( null == contentlet || !contentlet.isCalendarEvent() || recDates==null || recDates.length!=2) {
-	            return contentlet;
-	        }
-            if(UtilMethods.isSet(recDates[0]) && UtilMethods.isSet(recDates[1])){
-                contentlet.setDateProperty("startDate", new Date(Long.parseLong(recDates[0])));
-                contentlet.setDateProperty("endDate", new Date(Long.parseLong(recDates[1])));
-            }
-            
-            return contentlet;
-	    }
-
 	/**
 	 * Pulls a single piece of content based on its Inode or Identifier. It will always try to retrieve the live
 	 * content unless the process calling this method is in EDIT or PREVIEW Mode in the back-end of dotCMS when
 	 * passing in an Identifier. If it is an Inode, this is ignored. This method will return {@code null} if the
 	 * Contentlet is not found.
 	 *
-	 * @param inodeOrIdentifierIn  The Inode or Identifier of the {@link Contentlet} being requested.
+	 * @param inodeOrIdentifier  The Inode or Identifier of the {@link Contentlet} being requested.
 	 * @param user                 The {@link User} used to retrieve the Contentlet's data.
 	 * @param tmDate               Optional, the specific date for retrieving a specific Time Machine version.
 	 * @param EDIT_OR_PREVIEW_MODE If the current access mode is EDIT or PREVIEW, set this to {@code true}.
@@ -115,11 +101,9 @@ public class ContentUtils {
 	 *
 	 * @return The requested {@link Contentlet} object.
 	 */
-	public static Contentlet find(final String inodeOrIdentifierIn, final User user,
+	public static Contentlet find(final String inodeOrIdentifier, final User user,
 			final String tmDate, final boolean EDIT_OR_PREVIEW_MODE,
 			final long sessionLang) {
-		final String inodeOrIdentifier = RecurrenceUtil.getBaseEventIdentifier(inodeOrIdentifierIn);
-		final String[] recDates = RecurrenceUtil.getRecurrenceDates(inodeOrIdentifier);
 		try {
 			final PageMode pageMode = PageMode.get();
 			// Test by inode
@@ -132,7 +116,7 @@ public class ContentUtils {
 							VariantAPI.DEFAULT_VARIANT.name(),
 							ffdate, user, pageMode.respectAnonPerms);
 					if (futureContent.isPresent()) {
-						return fixRecurringDates(futureContent.get(), recDates);
+						return futureContent.get();
 					}
 				}
 			}
@@ -144,14 +128,14 @@ public class ContentUtils {
 						inodeOrIdentifier, sessionLang, VariantAPI.DEFAULT_VARIANT.name(),
 						ffdate, user, pageMode.respectAnonPerms);
 				if (futureContent.isPresent()) {
-					return fixRecurringDates(futureContent.get(), recDates);
+					return futureContent.get();
 				}
 			}
 
 			// if We ran out of possibilities retrieving the contentlet via time machine we fall back on the current or present live contentlet
 			// if we already had one found by inode this is the one We should return
 			if (null != contentlet) {
-				return fixRecurringDates(contentlet, recDates);
+				return contentlet;
 			}
             // Fallbacks from here on...
 			//If not we try to get the contentlet by the identifier
@@ -165,7 +149,7 @@ public class ContentUtils {
 							: contentletVersionInfoByFallback.getLiveInode();
 
 			contentlet = conAPI.find(contentletInode, user, true);
-			return fixRecurringDates(contentlet, recDates);
+			return contentlet;
 		} catch (final Exception e) {
 			String msg = e.getMessage();
 			msg = (msg.contains("\n")) ? msg.substring(0, msg.indexOf("\n")) : msg;
@@ -652,7 +636,6 @@ public class ContentUtils {
 
         final boolean selfRelated = APILocator.getRelationshipAPI().sameParentAndChild(relationship);
         final String relationshipName = relationship.getRelationTypeValue();
-        contentletIdentifier = RecurrenceUtil.getBaseEventIdentifier(contentletIdentifier);
 
         try {
             final Contentlet contentlet = conAPI

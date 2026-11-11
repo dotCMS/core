@@ -968,17 +968,7 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                                 dijit.byId("selectStructureDiv").show();
 				return;
 			}
-          else if(structureInode == '<%=calendarEventInode %>'){
-                var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
-                href += "<portlet:param name='struts_action' value='/ext/calendar/edit_event' />";
-                href += "<portlet:param name='cmd' value='new' />";
-                href += "<portlet:param name='referer' value='<%=java.net.URLDecoder.decode(referer, "UTF-8")%>' />";
-                href += "<portlet:param name='inode' value='' />";
-                href += "</portlet:actionURL>";
-                href += "&selectedStructure=" + structureInode ;
-                href += "&lang=" + getSelectedLanguageId();
-                dispatchCreateContentletEvent(href, contentType);
-          }else{
+          else{
                 var href = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
                 href += "<portlet:param name='struts_action' value='/ext/contentlet/edit_contentlet' />";
                 href += "<portlet:param name='cmd' value='new' />";

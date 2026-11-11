@@ -372,7 +372,6 @@ public final class WebKeys {
     public static final String USER_COMMENTS_VIEW = "com.dotmarketing.portlets.usercomments.view_user_comments";
 
 	//USER CLICKS
-    public static final String USER_CLICKS_VIEW = "com.dotmarketing.portlets.userclicks.view_user_clicks";
 
     //USER FILTERS
     public static final String USER_FILTER_LIST_VIEW_PORTLET = "com.dotmarketing.userfilter.view.portlet";

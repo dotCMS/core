@@ -38,7 +38,7 @@ import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.PreviewFactory;
+
 import com.dotmarketing.portal.struts.StrutsPathAccess;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.user.business.UserUtil;
@@ -514,7 +514,7 @@ public class PortalRequestProcessor extends TilesRequestProcessor {
 					return null;
 				}
 
-				PreviewFactory.setVelocityURLS(req, layout);
+
 
 				PageMode.setPageMode(req, PageMode.PREVIEW_MODE);
 

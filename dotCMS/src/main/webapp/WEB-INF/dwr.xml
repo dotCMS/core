@@ -28,9 +28,6 @@
     <create creator="new" javascript="RoleAjax" scope="application">
       <param name="class" value="com.dotmarketing.business.ajax.RoleAjax"/>
     </create>
-    <create creator="new" javascript="CalendarAjax" scope="application">
-      <param name="class" value="com.dotmarketing.portlets.calendar.ajax.CalendarAjax"/>
-    </create>
     <create creator="new" javascript="LanguageAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.languagesmanager.ajax.LanguageAjax"/>
     </create>
@@ -60,9 +57,6 @@
     <create creator="new" javascript="ImportContentletAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.contentlet.ajax.ImportContentletAjax"/>
     </create>
-    <create creator="new" javascript="DashboardAjax" scope="application">
-      <param name="class" value="com.dotcms.enterprise.priv.DashboardAjax"/>
-    </create>
     <create creator="new" javascript="AutoUpdaterAjax" scope="application">
       <param name="class" value="com.dotmarketing.business.ajax.AutoUpdaterAjax"/>
     </create>
@@ -89,8 +83,6 @@
 	<convert converter="bean" match="com.dotmarketing.tag.model.TagInode"/>
 	<convert converter="bean" match="com.dotmarketing.portlets.languagesmanager.model.LanguageKey"/>
 	<convert converter="bean" match="com.dotmarketing.portlets.htmlpageviews.factories.HTMLPageViewFactory$StatisticBetweenDates"/>
-	<convert converter="bean" match="com.dotmarketing.portlets.dashboard.model.DashboardSummaryVisits"/>
-	<convert converter="bean" match="com.dotmarketing.portlets.dashboard.model.DashboardSummaryPeriod"/>
 	<convert match="java.lang.Exception" converter="exception">
 	  <param name='include' value='message,lineNumber'/>
 	</convert>

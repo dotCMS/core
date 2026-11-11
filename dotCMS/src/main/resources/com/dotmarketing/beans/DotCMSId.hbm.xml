@@ -471,144 +471,14 @@
 
     <!-- Dashboard -->
 
-	<class name="com.dotmarketing.portlets.dashboard.model.DashboardWorkStream" table="analytic_summary_workstream">
-	    <id name="id" column="id" type="long" unsaved-value="0">
-			<generator class="native"/>
-	    </id>
-	    <property column="inode" name="inode" length="255" type="string" />
-	  	<property column="asset_type" name="assetType" length="255" type="string" />
-	  	<property name="modUserId" type="string" not-null="true">
-			<column name="mod_user_id" length="255" index="idx_dashboard_workstream_1" />
-		</property>
-		<property name="hostId" type="string" not-null="true">
-			<column name="host_id" length="36" index="idx_dashboard_workstream_2" />
-		</property>
-		<property name="modDate" type="java.util.Date" not-null="true">
-			<column name="mod_date" index="idx_dashboard_workstream_3" />
-		</property>
-	  	<property column="action" name="action" length="255" type="string" />
-	  	<property column="name" name="name" length="255" type="string" />
-	</class>
 
-	<class name="com.dotmarketing.portlets.dashboard.model.DashboardSummaryPeriod" table="analytic_summary_period">
-	    <id name="id" column="id" type="long" unsaved-value="0">
-			<generator class="native"/>
-	    </id>
-	  	<property name="fullDate" type="java.util.Date" not-null="true" >
-			<column name="full_date" unique-key="idx_analytic_summary_period_1" />
-		</property>
-	  	<property name="day" type="integer" not-null="true" >
-			<column name="day" index="idx_analytic_summary_period_2" />
-		</property>
-		<property name="week" type="integer" not-null="true" >
-			<column name="week" index="idx_analytic_summary_period_3" />
-		</property>
-		<property name="month" type="integer" not-null="true">
-			<column name="month" index="idx_analytic_summary_period_4" />
-		</property>
-		<property name="year" length="255" type="string" not-null="true">
-			<column name="year" index="idx_analytic_summary_period_5" />
-		</property>
-	  	<property column="dayName" name="dayName" length="50" type="string" not-null="true" />
-	  	<property column="monthName" name="monthName" length="50" type="string" not-null="true" />
-	</class>
 
-	<class name="com.dotmarketing.portlets.dashboard.model.DashboardSummaryVisits" table="analytic_summary_visits">
-	    <id name="id" column="id" type="long" unsaved-value="0">
-		    <generator class="native"/>
-	    </id>
-		<many-to-one name="summaryPeriod" class="com.dotmarketing.portlets.dashboard.model.DashboardSummaryPeriod" column="summary_period_id" not-null="true"/>
-		<property name="hostId" type="string" not-null="true">
-			<column name="host_id" length="36" index="idx_analytic_summary_visits_1" />
-		</property>
-		<property name="visitTime" type="java.util.Date">
-			<column name="visit_time" index="idx_analytic_summary_visits_2" />
-		</property>
-		<property column="visits" name="visits" type="long" />
-	</class>
 
-    <class name="com.dotmarketing.portlets.dashboard.model.DashboardSummary404" table="analytic_summary_404">
-	    <id name="id" column="id" type="long" unsaved-value="0">
-			<generator class="native"/>
-	    </id>
-	  	<many-to-one name="summaryPeriod" class="com.dotmarketing.portlets.dashboard.model.DashboardSummaryPeriod" column="summary_period_id" not-null="true"/>
-	    <property name="hostId" type="string" not-null="true">
-			<column name="host_id" length="36" index="idx_analytic_summary_404_1" />
-		</property>
-		<property column="uri" name="uri" length="255" type="string" />
-		<property column="referer_uri" name="refererUri" length="255" type="string" />
-		<set name="userPreferences" cascade="all" inverse="true">
-             <key column="summary_404_id"/>
-             <one-to-many class="com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences"/>
-        </set>
-	</class>
 
-	<class name="com.dotmarketing.portlets.dashboard.model.DashboardUserPreferences" table="dashboard_user_preferences">
-	    <id name="id" column="id" type="long" unsaved-value="0">
-			<generator class="native"/>
-	    </id>
-	  	<many-to-one name="summary404" class="com.dotmarketing.portlets.dashboard.model.DashboardSummary404" column="summary_404_id"/>
-	    <property name="userId" type="string" not-null="true">
-			<column name="user_id" length="255" index="idx_dashboard_prefs_2" />
-		</property>
-		<property column="ignored" name="ignored" type="boolean" />
-		<property column="mod_date" name="modDate" type="java.util.Date" />
-	</class>
 
-	<class name="com.dotmarketing.portlets.dashboard.model.DashboardSummary" table="analytic_summary">
-	    <id name="id" column="id" type="long" unsaved-value="0">
-			<generator class="native"/>
-	    </id>
-	  	<many-to-one name="summaryPeriod" class="com.dotmarketing.portlets.dashboard.model.DashboardSummaryPeriod">
-	     	<column name="summary_period_id" not-null="true" unique-key="summary_key"/>
-	  	</many-to-one>
-		<property name="hostId" type="string" not-null="true">
-			<column name="host_id" length="36" not-null="true" index="idx_analytic_summary_1" unique-key="summary_key"/>
-		</property>
-		<property name="visits" type="long">
-			<column name="visits" index="idx_analytic_summary_2" />
-		</property>
-		<property name="pageViews" type="long">
-			<column name="page_views" index="idx_analytic_summary_3" />
-		</property>
-		<property column="unique_visits" name="uniqueVisits" type="long" />
-		<property column="new_visits" name="newVisits" type="long" />
-		<property column="direct_traffic" name="directTraffic" type="long" />
-		<property column="referring_sites" name="referringSites" type="long" />
-		<property column="search_engines" name="searchEngines" type="long" />
-		<property column="bounce_rate" name="bounceRate" type="int" />
-		<property column="avg_time_on_site" name="avgTimeOnSite" type="java.util.Date" />
-	</class>
 
-	<class name="com.dotmarketing.portlets.dashboard.model.DashboardSummaryReferer" table="analytic_summary_referer">
-	   	<id name="id" column="id" type="long" unsaved-value="0">
-			<generator class="native"/>
-	    </id>
-		<many-to-one name="summary" class="com.dotmarketing.portlets.dashboard.model.DashboardSummary" column="summary_id" not-null="true"/>
-		<property column="hits" name="hits" type="long" />
-		<property column="uri" name="uri" length="255" type="string" />
-	</class>
 
-    <class name="com.dotmarketing.portlets.dashboard.model.DashboardSummaryPage" table="analytic_summary_pages">
-	   	<id name="id" column="id" type="long" unsaved-value="0">
-			<generator class="native"/>
-	    </id>
-		<many-to-one name="summary" class="com.dotmarketing.portlets.dashboard.model.DashboardSummary" column="summary_id" not-null="true"/>
-		<property column="inode" name="inode" length="255" type="string" />
-		<property column="hits" name="hits" type="long" />
-		<property column="uri" name="uri" length="255" type="string" />
-	</class>
 
-	<class name="com.dotmarketing.portlets.dashboard.model.DashboardSummaryContent" table="analytic_summary_content">
-	   	<id name="id" column="id" type="long" unsaved-value="0">
-			<generator class="native"/>
-	    </id>
-		<many-to-one name="summary" class="com.dotmarketing.portlets.dashboard.model.DashboardSummary" column="summary_id" not-null="true"/>
-		<property column="inode" name="inode" length="255" type="string" />
-		<property column="hits" name="hits" type="long" />
-		<property column="uri" name="uri" length="255" type="string" />
-		<property column="title" name="title" length="255" type="string" />
-	</class>
 
 	<!-- Dashboard -->
     <class name="com.dotmarketing.portlets.templates.model.TemplateVersionInfo" table="template_version_info">

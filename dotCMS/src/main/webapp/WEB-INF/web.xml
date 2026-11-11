@@ -269,9 +269,6 @@
 	<listener>
 		<listener-class>com.dotmarketing.listeners.ContextLifecycleListener</listener-class>
 	</listener>
-	<listener>
-	    <listener-class>com.dotmarketing.listeners.ClickstreamListener</listener-class>
-	</listener>
     <listener>
         <listener-class>org.apache.felix.http.proxy.impl.ProxyServletContextListener</listener-class>
     </listener>

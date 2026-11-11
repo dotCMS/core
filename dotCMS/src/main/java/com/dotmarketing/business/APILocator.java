@@ -136,8 +136,6 @@ import com.dotmarketing.image.focalpoint.FocalPointAPI;
 import com.dotmarketing.image.focalpoint.FocalPointAPIImpl;
 import com.dotmarketing.plugin.business.PluginAPI;
 import com.dotmarketing.plugin.business.PluginAPIImpl;
-import com.dotmarketing.portlets.calendar.business.EventAPI;
-import com.dotmarketing.portlets.calendar.business.EventAPIImpl;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.business.CategoryAPIImpl;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
@@ -146,8 +144,6 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPIInterceptor;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPIImpl;
-import com.dotmarketing.portlets.dashboard.business.DashboardAPI;
-import com.dotmarketing.portlets.dashboard.business.DashboardAPIImpl;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImpl;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -387,14 +383,7 @@ public class APILocator extends Locator<APIIndex> {
 		return (LoginAsAPI) getInstance(APIIndex.LOGIN_AS_USER_API);
 	}
 
-	/**
-	 * Creates a single instance of the {@link EventAPI} class.
-	 *
-	 * @return The {@link EventAPI} class.
-	 */
-	public static EventAPI getEventAPI() {
-		return (EventAPI)getInstance(APIIndex.EVENT_API);
-	}
+
 	
     public static DotPubSubProvider getDotPubSubProvider() {
         return (DotPubSubProvider) DotPubSubProviderLocator.provider.get();
@@ -625,14 +614,6 @@ public class APILocator extends Locator<APIIndex> {
 		return (MenuLinkAPI) getInstance(APIIndex.MENULINK_API);
 	}
 
-	/**
-	 * Creates a single instance of the {@link DashboardAPI} class.
-	 *
-	 * @return The {@link DashboardAPI} class.
-	 */
-	public static DashboardAPI getDashboardAPI(){
-		return (DashboardAPI) getInstance(APIIndex.DASHBOARD_API);
-	}
 
 	/**
 	 * Creates a single instance of the {@link SiteSearchAPI} class.
@@ -1354,7 +1335,6 @@ enum APIIndex
 	CONTENTLET_API,
 	CONTENTLET_API_INTERCEPTER,
 	REINDEX_QUEUE_API,
-	EVENT_API,
 	EVENT_RECURRENCE_API,
 	PERMISSION_API,
 	ROLE_API,
@@ -1381,7 +1361,6 @@ enum APIIndex
 	FILE_API,
 	HTMLPAGE_API,
 	MENULINK_API,
-	DASHBOARD_API,
 	SITESEARCH_API,
 	VERSIONABLE_API,
 	FILEASSET_API,
@@ -1462,7 +1441,6 @@ enum APIIndex
     		case USER_API: return new UserAPIImpl();
     		case LOGIN_AS_USER_API: return LoginAsAPIImpl.getInstance();
     		case LOGIN_SERVICE_API: return LoginServiceAPIFactory.getInstance().getLoginService();
-    		case EVENT_API: return new EventAPIImpl();
     		case CATEGORY_API: return new CategoryAPIImpl();
     		case CONTENTLET_API: return new  ESContentletAPIImpl();
     		case CONTENTLET_API_INTERCEPTER: return new ContentletAPIInterceptor();
@@ -1483,7 +1461,6 @@ enum APIIndex
     		case HOST_VARIABLE_API : return new HostVariableAPIImpl();
     		case FORM_API: return new FormAPIImpl();
     		case MENULINK_API: return new MenuLinkAPIImpl();
-    		case DASHBOARD_API: return new DashboardAPIImpl();
     		case SITESEARCH_API: return new SiteSearchAPIImpl();
     		case FILEASSET_API: return new FileAssetAPIImpl();
     		case VERSIONABLE_API: return new VersionableAPIImpl();

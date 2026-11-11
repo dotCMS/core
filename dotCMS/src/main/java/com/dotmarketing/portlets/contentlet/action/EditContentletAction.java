@@ -55,8 +55,6 @@ import com.dotmarketing.factories.EmailFactory;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portal.struts.DotPortletActionInterface;
-import com.dotmarketing.portlets.calendar.business.EventAPI;
-import com.dotmarketing.portlets.calendar.model.Event;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -71,7 +69,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.ResourceLink;
 import com.dotmarketing.portlets.contentlet.struts.ContentletForm;
-import com.dotmarketing.portlets.contentlet.struts.EventAwareContentletForm;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
@@ -132,8 +129,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static com.dotmarketing.portlets.calendar.action.EventFormUtils.editEvent;
-import static com.dotmarketing.portlets.calendar.action.EventFormUtils.setEventDefaults;
 import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isNewFieldTypeAllowedOnImportExport;
 
 /**
@@ -161,7 +156,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	private NotificationAPI notificationAPI;
 	private UserAPI userAPI;
 	private RoleAPI roleAPI;
-	private EventAPI eventAPI;
 
 	private final boolean DONT_RESPECT_FRONTEND_ROLES = Boolean.FALSE;
 
@@ -177,8 +171,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		APILocator.getTagAPI(),
 		APILocator.getNotificationAPI(),
 		APILocator.getUserAPI(),
-		APILocator.getRoleAPI(),
-		APILocator.getEventAPI());
+		APILocator.getRoleAPI());
 	}
 	
 	@VisibleForTesting
@@ -190,8 +183,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 						 final TagAPI tagAPI,
 						 final NotificationAPI notificationAPI,
                          final UserAPI userAPI,
-						 final RoleAPI roleAPI,
-						 final EventAPI eventAPI) {
+						 final RoleAPI roleAPI) {
 		this.catAPI = catAPI;
 		this.perAPI = perAPI;
 		this.conAPI = conAPI;
@@ -201,7 +193,6 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 		this.notificationAPI = notificationAPI;
         this.userAPI = userAPI;
 		this.roleAPI = roleAPI;
-		this.eventAPI = eventAPI;
 	}
 
 	/**
@@ -1273,15 +1264,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			req.setAttribute("is_rel_tab", req.getParameter("is_rel_tab"));
 		}
 
-		if(contentlet.isCalendarEvent() && form instanceof EventAwareContentletForm){
-			final EventAwareContentletForm eventForm = (EventAwareContentletForm) form;
-			if(UtilMethods.isSet(contentlet.getInode())){
-				final Event ev = eventAPI.findbyInode(contentlet.getInode(), user, false);
-				editEvent(ev, eventForm);
-			} else {
-				setEventDefaults(eventForm);
-			}
-		}
+
 
 	}
 

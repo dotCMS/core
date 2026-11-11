@@ -35,9 +35,6 @@
 		 <form-bean name="SchedulerForm" type="com.dotmarketing.portlets.scheduler.struts.SchedulerForm"></form-bean>
       <form-bean name="ReportForm" type="com.dotmarketing.portlets.report.struts.ReportForm"></form-bean>
 
-      <!-- Events Calendar
-      <form-bean name="CalendarEventForm" type="com.dotmarketing.portlets.contentlet.struts.EventForm"></form-bean>
-      -->
 
       <!-- Product -->
       <form-bean name="ProductForm" type="com.dotmarketing.portlets.merchant.product.struts.ProductForm"></form-bean>
@@ -201,13 +198,6 @@
       </action>
       <!-- HMTLPage View Reporting -->
 
-      <!-- User Click Reporting -->
-      <action path="/ext/userclicks/view_user_clicks" type="com.dotmarketing.portlets.userclicks.action.ViewUserClicksAction">
-         <forward name="portlet.ext.userclicks.view_user_clicks" path="portlet.ext.userclicks.view_user_clicks" />
-         <forward name="portlet.ext.userclicks.view" path="portlet.ext.userclicks.view" />
-         <forward name="portlet.ext.userclicks.detail_user_clicks" path="portlet.ext.userclicks.detail_user_clicks" />
-      </action>
-      <!-- User Click Reporting -->
 
 
 
@@ -289,32 +279,12 @@
       </action>
       <!-- Schedulers Management -->
       
-      <!-- Events Calendar Manager -->
-      <action path="/ext/calendar/view_calendar" type="com.dotmarketing.portlets.calendar.action.ViewCalendarAction">
-         <forward name="portlet.ext.calendar.view" path="portlet.ext.calendar.view" />
-         <forward name="portlet.ext.calendar.view_calendar" path="portlet.ext.calendar.view_calendar" />
-      </action>
-
-      <action path="/ext/calendar/edit_event" type="com.dotmarketing.portlets.contentlet.action.EditContentletAction" name="ContentletForm" input="portlet.ext.contentlet.edit_contentlet" validate="false" scope="request">
-         <forward name="portlet.ext.contentlet.edit_contentlet" path="portlet.ext.contentlet.edit_contentlet"></forward>
-      </action>
-
-      <!-- Events Calendar Manager   -->
 
       <!-- Host Admin -->
       <action path="/ext/hostadmin/view_hosts" type="com.dotmarketing.portlets.hostadmin.action.ViewHostsAction" name="" validate="false" scope="request">
          <forward name="portlet.ext.hostadmin.view_hosts" path="portlet.ext.hostadmin.view_hosts" />
       </action>
 
-      <!-- Dashboard -->
-      <action path="/ext/dashboard/view_dashboard" type="com.dotmarketing.portlets.dashboard.action.ViewDashboardAction" name="" validate="false" scope="request">
-         <forward name="portlet.ext.dashboard.view_dashboard" path="portlet.ext.dashboard.view_dashboard" />
-         <forward name="portlet.ext.dashboard.view_host_report" path="portlet.ext.dashboard.view_host_report" />
-         <forward name="portlet.ext.dashboard.view_workstream" path="portlet.ext.dashboard.view_workstream" />
-         <forward name="portlet.ext.browser.view_browser" path="portlet.ext.browser.view_browser" />
-         <forward name="portlet.ext.htmlpages.view_htmlpages" path="portlet.ext.htmlpages.view_htmlpages" />
-         <forward name="portlet.ext.files.view_files" path="portlet.ext.files.view_files" />
-      </action>
 
 	<!-- Escalation -->
 	<action path="/ext/escalation/viewJobEsc" type="com.dotcms.escalation.business.ManualExpiryJobLaunchAction">

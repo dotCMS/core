@@ -260,8 +260,6 @@
 	boolean relationshipsTabFieldExists = false;
 
 	/* Events code only */
-	Field startDateField = null;
-	Field endDateField = null;
 	Field locationField = null;
 	/* End of Events code only */
 
@@ -568,38 +566,7 @@
 						request.setAttribute("counter", catCounter.toString());
                     %>
 
-                    <%if(contentlet.isCalendarEvent()){
-						final String velocityVarName = f.getVelocityVarName();
-
-						if ("startDate".equals(velocityVarName) || "endDate".equals(velocityVarName)) {
-
-								if ("startDate".equals(velocityVarName)) {
-									startDateField = f;
-									%>
-
-									<%if(contentlet.isNew()){%>
-									   <jsp:include page="/html/portlet/ext/calendar/edit_event_start_date_field.jsp" />
-									<%}else{%>
-									   <jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
-									<%}%>
-									<%
-								}
-
-								if ("endDate".equals(velocityVarName)) {
-									endDateField = f;
-									%>
-								    <jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
-									<%
-								}
-                                if (startDateField != null && endDateField != null){%>
-                                    <%@ include file="/html/portlet/ext/calendar/edit_event_recurrence_inc.jsp" %>
-                                <%}
-						} else {
-								%>
-								<jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
-								<%
-						}
-                    } else if (!f.getFieldType().equals(Field.FieldType.CONSTANT.toString())) { %>
+                    <%if (!f.getFieldType().equals(Field.FieldType.CONSTANT.toString())) { %>
 						<jsp:include page="/html/portlet/ext/contentlet/field/edit_field.jsp" />
 					<% } %>
 
@@ -615,9 +582,6 @@
 	</div>
 	<!-- END TABS -->
 
-    <%if(contentlet.isCalendarEvent()){%>
-	  <%@include file="/html/portlet/ext/calendar/edit_event_js_inc.jsp" %>
-	<%}%>
 
 	<!-- Relationships -->
 	<% if(legacyRelationshipRecords != null && legacyRelationshipRecords.size() > 0 && !relationshipsTabFieldExists){
