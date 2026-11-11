@@ -265,6 +265,28 @@ public class Task261110PromoteUsersRolesToolsPortletsTest {
     }
 
     /**
+     * Method to test: {@link Task261110PromoteUsersRolesToolsPortlets#addToolsAfterRoles(String, int)}
+     * Given Scenario: two nodes start together and both read this layout as "Roles without Tools";
+     * the other node has already inserted Tools when this one gets to the layout
+     * ExpectedResult: this node does nothing: no error (which would stop its startup), no second
+     * Tools row and no position changes
+     */
+    @Test
+    public void addToolsAfterRoles_toolsAddedSinceTheRead_isANoOp() throws Exception {
+        final String layoutId = newLayout("race");
+        insert(layoutId, ROLES, 1);
+        insert(layoutId, TOOLS, 2);
+        insert(layoutId, "maintenance", 3);
+        final Map<String, Integer> before = portletOrder(layoutId);
+
+        final boolean inserted = new Task261110PromoteUsersRolesToolsPortlets().addToolsAfterRoles(layoutId, 1);
+
+        assertFalse(inserted);
+        assertEquals(before, portletOrder(layoutId));
+        assertEquals(1, countInLayout(layoutId, TOOLS));
+    }
+
+    /**
      * Creates an empty layout for one test and records it for clean-up.
      *
      * @param label a short label that makes the layout name readable in the database

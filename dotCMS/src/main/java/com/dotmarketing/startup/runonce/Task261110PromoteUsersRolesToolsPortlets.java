@@ -15,6 +15,7 @@ import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -193,29 +194,44 @@ public class Task261110PromoteUsersRolesToolsPortlets implements StartupTask {
                 continue;
             }
             final int rolesOrder = Integer.parseInt(Objects.toString(row.get("portlet_order"), "0"));
-            final int toolsOrder = rolesOrder + 1;
-
-            try {
-                LocalTransaction.wrap(() -> {
-                    new DotConnect()
-                            .setSQL(SQL_SHIFT_ORDER)
-                            .addParam(layoutId)
-                            .addParam(toolsOrder)
-                            .loadResult();
-                    new DotConnect()
-                            .setSQL(SQL_INSERT)
-                            .addParam(UUIDUtil.uuid())
-                            .addParam(layoutId)
-                            .addParam(TOOLS.toString())
-                            .addParam(toolsOrder)
-                            .loadResult();
-                });
-            } catch (final DotSecurityException e) {
-                throw new DotDataException(e.getMessage(), e);
+            if (addToolsAfterRoles(layoutId, rolesOrder)) {
+                inserted++;
             }
-            Logger.info(this, "Added the 'tools' portlet at position " + toolsOrder + " in layout: " + layoutId);
-            inserted++;
         }
         return inserted;
+    }
+
+    /**
+     * Inserts Tools right after Roles in one layout, moving the rows below Roles down one place,
+     * in its own transaction.
+     *
+     * @param layoutId   the layout that receives Tools
+     * @param rolesOrder the position of Roles in that layout
+     * @return {@code true} when Tools was inserted
+     * @throws DotDataException if the layout cannot be written
+     */
+    @VisibleForTesting
+    boolean addToolsAfterRoles(final String layoutId, final int rolesOrder) throws DotDataException {
+        final int toolsOrder = rolesOrder + 1;
+        try {
+            LocalTransaction.wrap(() -> {
+                new DotConnect()
+                        .setSQL(SQL_SHIFT_ORDER)
+                        .addParam(layoutId)
+                        .addParam(toolsOrder)
+                        .loadResult();
+                new DotConnect()
+                        .setSQL(SQL_INSERT)
+                        .addParam(UUIDUtil.uuid())
+                        .addParam(layoutId)
+                        .addParam(TOOLS.toString())
+                        .addParam(toolsOrder)
+                        .loadResult();
+            });
+        } catch (final DotSecurityException e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
+        Logger.info(this, "Added the 'tools' portlet at position " + toolsOrder + " in layout: " + layoutId);
+        return true;
     }
 }
