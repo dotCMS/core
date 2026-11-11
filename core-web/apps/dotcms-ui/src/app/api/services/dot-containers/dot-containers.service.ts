@@ -10,6 +10,7 @@ import {
     DotActionBulkResult,
     DotCMSResponse,
     DotContainer,
+    DotContainerDependencies,
     DotContainerEntity,
     DotContainerPayload
 } from '@dotcms/dotcms-models';
@@ -120,6 +121,28 @@ export class DotContainersService {
                     this.handleError<DotContainerEntity>(error)
                 )
             );
+    }
+
+    /**
+     * Get the templates that use each of the given containers, in a single request. A container's
+     * `templates` list is empty when nothing uses it.
+     * @param {string[]} containerIds identifiers, inodes or folder paths of the containers
+     * @returns Observable<DotContainerDependencies[] | null> one entry per container, in the order
+     * asked; `null` when the request failed (the error is already shown)
+     * @memberof DotContainersService
+     */
+    getDependencies(containerIds: string[]): Observable<DotContainerDependencies[] | null> {
+        const query = containerIds
+            .map((containerId) => `containerId=${encodeURIComponent(containerId)}`)
+            .join('&');
+        const url = `${CONTAINER_API_URL}dependencies?${query}`;
+
+        return this.http.get<DotCMSResponse<DotContainerDependencies[]>>(url).pipe(
+            map((response) => response.entity),
+            catchError((error: HttpErrorResponse) =>
+                this.handleError<DotContainerDependencies[]>(error)
+            )
+        );
     }
 
     /**

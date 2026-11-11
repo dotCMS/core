@@ -167,6 +167,40 @@ public class BoundedMultipartReaderTest {
      * The negative control for the test above: it confirms the new bound is the configured ceiling
      * and not something this reader invented, so the default installation behaves exactly as it did.
      */
+    /**
+     * Method to test: {@link BoundedMultipartReader#read}
+     * <p>
+     * Given scenario: The staging layer refuses one part's name before reading it (the file
+     * extension check in {@code TempFileAPI.createEmptyTempFile}), with and without a per-file
+     * ceiling configured.
+     * <p>
+     * Expected result: The refusal reaches the caller unchanged, naming the file, so the resource
+     * answers 400; everything staged before it is reclaimed and nothing is left on the volume.
+     * The refusal is not mistaken for a ceiling crossing.
+     */
+    @Test
+    public void test_read_surfacesARefusedName_andReclaimsWhatWasStaged() {
+        for (final long perFileCeiling : new long[] {-1L, 50L}) {
+            final FakeBatchStaging staging = new FakeBatchStaging().refuseName("sample-2.bin");
+            final BoundedMultipartReader reader =
+                    new BoundedMultipartReader(staging, 100, 1_000_000L, perFileCeiling);
+            final List<UploadPart> parts = new ArrayList<>();
+            parts.add(new UploadPart("sample-1.bin", new ByteArrayInputStream(new byte[10])));
+            parts.add(new UploadPart("sample-2.bin", new ByteArrayInputStream(new byte[10])));
+            parts.add(new UploadPart("sample-3.bin", new ByteArrayInputStream(new byte[10])));
+
+            final IllegalArgumentException refusal = assertThrows(IllegalArgumentException.class,
+                    () -> reader.read(parts));
+
+            assertTrue("the message names the refused file",
+                    refusal.getMessage().contains("sample-2.bin"));
+            assertEquals("the part before the refusal was staged, and nothing after it",
+                    List.of("temp_sample-1.bin"), staging.staged());
+            assertTrue("and it was reclaimed, because the read did not complete",
+                    staging.leaked().isEmpty());
+        }
+    }
+
     @Test
     public void test_read_appliesNoPerFileCeiling_whenNoneIsConfigured() {
         final FakeBatchStaging staging = new FakeBatchStaging();

@@ -10,7 +10,6 @@ public enum PortletID {
 
     CALENDAR,
     CATEGORIES,
-    CATEGORIES_LEGACY("categories-legacy"),
     CONFIGURATION, 
     CONFIGURATION_BETA("configuration-beta"),
     CONTAINERS,
@@ -22,7 +21,6 @@ public enum PortletID {
     PLUGINS,
     PLUGINS_LEGACY("plugins-legacy"),
     ES_SEARCH,
-    ES_SEARCH_LEGACY("es-search-legacy"),
     EVENTS,
     EVENTS_APPROVAL,
     /** The Experiments tool; also gates the Variants REST resource that serves it. */
@@ -41,7 +39,6 @@ public enum PortletID {
     PUBLISHING_QUEUE,
     PUBLISHING_QUEUE_LEGACY("publishing-queue-legacy"),
     QUERY_TOOL,
-    QUERY_TOOL_LEGACY("query-tool-legacy"),
     TAGS,
     TAGS_LEGACY("tags-legacy"),
     TEMPLATES,

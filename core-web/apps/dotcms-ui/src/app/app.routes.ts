@@ -377,6 +377,7 @@ export const appRoutes: Routes = [
     {
         path: 'fromCore',
         canActivate: [AuthGuardService],
+        canActivateChild: [AuthGuardService],
         children: [
             {
                 path: 'rules',
@@ -393,6 +394,7 @@ export const appRoutes: Routes = [
     {
         path: '',
         canActivate: [AuthGuardService],
+        canActivateChild: [AuthGuardService],
         component: MainComponentLegacyComponent,
         children: [...PORTLETS_IFRAME, ...PORTLETS_ANGULAR]
     },

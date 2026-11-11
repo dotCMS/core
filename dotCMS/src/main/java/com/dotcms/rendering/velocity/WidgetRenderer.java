@@ -12,6 +12,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess;
 import com.dotmarketing.util.VelocityUtil;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
@@ -87,8 +88,8 @@ public class WidgetRenderer {
     }
 
     /**
-     * Renders the given widget and tells whether its field values were left as text. Contentlets
-     * whose type is not a Widget render as an empty string.
+     * Renders the given widget and tells whether its field values were left as text. A null
+     * contentlet, and one whose type is not a Widget, render as an empty string.
      *
      * @param request  the current request, used to build the web context
      * @param response the current response, used to build the web context
@@ -97,6 +98,10 @@ public class WidgetRenderer {
      */
     public Rendering renderWithDetails(final HttpServletRequest request, final HttpServletResponse response,
             final Contentlet widget) {
+
+        if (null == widget) {
+            return new Rendering("", false);
+        }
 
         final Structure contStructure = widget.getStructure();
         if (contStructure.getStructureType() != Structure.STRUCTURE_TYPE_WIDGET) {
@@ -142,15 +147,24 @@ public class WidgetRenderer {
             widgetExecuteCode.append(fval).append("\n");
         }
 
-        VelocityUtil.getEngine().evaluate(context, firstEval, "", widgetExecuteCode.toString());
-        final String firstPass = firstEval.toString();
-        if (!rendersFieldVelocity(widget)) {
-            return new Rendering(firstPass, fieldValuesHoldVelocity(widget));
-        }
+        // The widget's own code is about to run, so say who wrote it: the view tools it calls
+        // decide from this and not from the Velocity resource name, which the code itself
+        // chooses through #parse.
+        final Object previousAuthor = RestrictedViewToolAccess.announceRenderingAuthor(request,
+                widget.getModUser());
+        try {
+            VelocityUtil.getEngine().evaluate(context, firstEval, "", widgetExecuteCode.toString());
+            final String firstPass = firstEval.toString();
+            if (!rendersFieldVelocity(widget)) {
+                return new Rendering(firstPass, fieldValuesHoldVelocity(widget));
+            }
 
-        final StringWriter secondEval = new StringWriter();
-        VelocityUtil.getEngine().evaluate(context, secondEval, "", firstPass);
-        return new Rendering(secondEval.toString(), false);
+            final StringWriter secondEval = new StringWriter();
+            VelocityUtil.getEngine().evaluate(context, secondEval, "", firstPass);
+            return new Rendering(secondEval.toString(), false);
+        } finally {
+            RestrictedViewToolAccess.restoreRenderingAuthor(request, previousAuthor);
+        }
     }
 
     /**

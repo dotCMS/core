@@ -2,6 +2,7 @@ package com.dotcms.contenttype.business;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.liferay.portal.model.User;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.LinkedHashMap;
@@ -30,25 +31,28 @@ public interface StoryBlockAPI {
     /**
      * Contains the types of Contentlets that can be added to a Story Block field
      */
-    Set<String> allowedTypes = new ImmutableSet.Builder<String>().add("dotContent", "dotImage", "dotVideo").build();
+    Set<String> allowedTypes = new ImmutableSet.Builder<String>().add("dotContent", "dotImage", "dotVideo", "dotAudio").build();
 
     /**
-     * Updates all Contentlets referenced in every {@link com.dotcms.contenttype.model.field.StoryBlockField}  of the
-     * specified Contentlet with the latest field values and properties from their respective live version. This allows
-     * the Story Block field to reflect the appropriate values of the Contentlets in it without having to manually
-     * publish the parent Contentlet.
+     * Updates all Contentlets referenced in every {@link com.dotcms.contenttype.model.field.StoryBlockField} of the
+     * specified Contentlet with the latest field values and properties of the version the page mode of the current
+     * request selects (live or working). This allows the Story Block field to reflect the appropriate values of the
+     * Contentlets in it without having to manually publish the parent Contentlet.
+     * <p>The referenced Contentlets are read on behalf of the user of the current request, or the anonymous user
+     * when there is none. See {@link #refreshReferences(Contentlet, User, boolean)} for what a reference that user
+     * cannot read becomes.</p>
      *
      * @param contentlet The Contentlet containing the Story Block field(s).
      *
      * @return The {@link StoryBlockReferenceResult} object containing the final result of the refreshing process.
-     * Encapsulates the allowed types for contentlets on the story block
      */
-
     StoryBlockReferenceResult refreshReferences(final Contentlet contentlet);
 
     /**
      * Takes the actual JSON value of a given {@link com.dotcms.contenttype.model.field.StoryBlockField} and refreshes
-     * any Contentlet references in it, if applicable.
+     * any Contentlet references in it, if applicable. The referenced Contentlets are read on behalf of the user of the
+     * current request, or the anonymous user when there is none; use
+     * {@link #refreshStoryBlockValueReferences(Object, String, User, boolean)} to read them for another user.
      *
      * @param storyBlockValue The actual value of the Story Block field.
      * @param parentContentletIdentifier String identifier of the parent contentlet
@@ -56,6 +60,126 @@ public interface StoryBlockAPI {
      * @return An instance of {@link StoryBlockReferenceResult} containing the result of the refresh process.
      */
     StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue, final String parentContentletIdentifier);
+
+    /**
+     * Same as {@link #refreshReferences(Contentlet)}, but the referenced Contentlets are looked up
+     * on behalf of the given user instead of the user of the current request. A reference that
+     * cannot be read and refreshed for that user is kept in the document with only the keys that
+     * identify it ({@code identifier} and {@code languageId}) in its data map.
+     * <p>The {@link com.dotmarketing.util.PageMode} of the current request still decides which
+     * version of each referenced Contentlet is read (live or working) and how its related content
+     * is loaded, so the given user should be the user of that request or one with the same
+     * access.</p>
+     *
+     * @param contentlet           The Contentlet containing the Story Block field(s).
+     * @param user                 The user on whose behalf the referenced Contentlets are read.
+     * @param respectFrontendRoles If {@code true}, front-end roles are taken into account when
+     *                             reading the referenced Contentlets.
+     *
+     * @return The {@link StoryBlockReferenceResult} object containing the final result of the refreshing process.
+     */
+    StoryBlockReferenceResult refreshReferences(final Contentlet contentlet, final User user,
+                                                final boolean respectFrontendRoles);
+
+    /**
+     * Checks the Contentlets referenced in every Story Block field of the given Contentlet against
+     * the READ permission of the user of the current request (the logged-in user, or the
+     * anonymous user when nobody is logged in), without refreshing them from the Contentlets they
+     * point to. For each reference:
+     * <ul>
+     *     <li>If the user can read the version the page mode selects (live or working), the data
+     *     stored with the reference is kept. Content embedded in that data (related Contentlets,
+     *     references in its own Story Block fields) is kept only where the user can read it too.</li>
+     *     <li>Otherwise, or when the page mode selects no version, the reference stays in the
+     *     document with only the keys that identify it ({@code identifier} and
+     *     {@code languageId}).</li>
+     * </ul>
+     * This is the counterpart of {@link #refreshReferences(Contentlet)} for reads that do not
+     * refresh references, such as cached reads when {@code REFRESH_BLOCK_EDITOR_REFERENCES} is
+     * disabled.
+     * <p>Nothing is changed when there is no current request (no reader to check), inside a
+     * database transaction, or when the Content Type has no Story Block fields.</p>
+     *
+     * @param contentlet The Contentlet containing the Story Block field(s). It is modified in place,
+     *                   so it must not be an instance shared with other readers (such as a cached
+     *                   one).
+     *
+     * @return The {@link StoryBlockReferenceResult} with the given Contentlet; it is marked as
+     * refreshed when any Story Block field changed.
+     */
+    StoryBlockReferenceResult limitReferencesToReader(final Contentlet contentlet);
+
+    /**
+     * Same as {@link #limitReferencesToReader(Contentlet)} for the given reader, and applied
+     * whether or not there is a request or an open transaction. Meant for returning a Contentlet
+     * just saved to the user who saved it: the saved Contentlet holds every reference with the
+     * data stored with it.
+     *
+     * @param contentlet           The Contentlet whose Story Block fields are processed, modified
+     *                             in place.
+     * @param user                 The reader.
+     * @param respectFrontendRoles If {@code true}, front-end roles are taken into account.
+     *
+     * @return The {@link StoryBlockReferenceResult} with the given Contentlet.
+     */
+    StoryBlockReferenceResult limitReferencesToReader(final Contentlet contentlet, final User user,
+                                                      final boolean respectFrontendRoles);
+
+    /**
+     * Returns a copy of a Story Block value in which every Contentlet reference, at any level of
+     * the document, keeps only the keys that identify it ({@code identifier} and
+     * {@code languageId}). The result is the same for every user, so it can be kept where
+     * different users will read it, such as code cached for a page. A value that is not a Story
+     * Block document is returned as it is.
+     *
+     * @param storyBlockValue The Story Block value, as a JSON String or a Map. It is not modified.
+     *
+     * @return The reduced copy, of the same kind as the given value (JSON String or Map).
+     */
+    Object withReferenceKeysOnly(final Object storyBlockValue);
+
+    /**
+     * Fills back the references of a submitted Story Block value that arrive with only the keys
+     * that identify them ({@code identifier} and {@code languageId}), taking the data stored with
+     * the same reference (same identifier and language) in the value currently saved. An editor
+     * gets references reduced like that when it cannot read them, and sends them back as it got
+     * them; without this, saving would replace the data stored with them for every reader.
+     * <p>
+     * References that arrive with data are kept as submitted, and a reduced reference with no
+     * stored data to take stays reduced. Nothing is read for any user: the data only comes from
+     * the saved value, and readers still get it according to their permissions.
+     *
+     * @param submittedValue The Story Block value being saved, as a JSON String or a Map. It is
+     *                       not modified.
+     * @param storedValue    Supplies the Story Block value currently saved for the same field, or
+     *                       {@code null} if there is none. Only called when a submitted reference
+     *                       carries nothing but its keys.
+     *
+     * @return The submitted value, or, when any reference was filled back, a copy of it as a JSON
+     * String.
+     */
+    Object restoreReferenceData(final Object submittedValue, final Supplier<Object> storedValue);
+
+    /**
+     * Same as {@link #refreshStoryBlockValueReferences(Object, String)}, but the referenced
+     * Contentlets are looked up on behalf of the given user instead of the user of the current
+     * request. A reference that cannot be read and refreshed for that user is kept in the document
+     * with only the keys that identify it ({@code identifier} and {@code languageId}) in its data
+     * map. As in {@link #refreshReferences(Contentlet, User, boolean)}, the page mode of the
+     * current request still decides which version is read and how related content is loaded.
+     *
+     * @param storyBlockValue            The actual value of the Story Block field.
+     * @param parentContentletIdentifier String identifier of the parent contentlet
+     * @param user                       The user on whose behalf the referenced Contentlets are read.
+     * @param respectFrontendRoles       If {@code true}, front-end roles are taken into account when
+     *                                   reading the referenced Contentlets.
+     *
+     * @return An instance of {@link StoryBlockReferenceResult} containing the result of the refresh process.
+     */
+    StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue,
+                                                               final String parentContentletIdentifier,
+                                                               final User user,
+                                                               final boolean respectFrontendRoles);
 
     /**
      * Traverses every {@link com.dotcms.contenttype.model.field.StoryBlockField} in the specified Contentlet, and

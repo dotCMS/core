@@ -27,7 +27,7 @@ public class SamlProtocolHandlerTest {
     public void secretKeys_match_dotsaml_config_yml_params() {
         assertEquals(
                 List.of("enable", "idpName", "sPIssuerURL", "sPEndpointHostname",
-                        "signatureValidationType", "idPMetadataFile", "publicCert",
+                        "additionalAcsUrls", "signatureValidationType", "idPMetadataFile", "publicCert",
                         "privateKey", "buttonParam"),
                 handler.secretKeys());
     }
@@ -233,6 +233,35 @@ public class SamlProtocolHandlerTest {
                 Optional.of(existingKeypair()));
 
         assertEquals("assertion", result.getSecrets().get("signatureValidationType").getString());
+    }
+
+    @Test
+    public void buildSecrets_stores_additional_acs_urls() {
+        final String urls = "https://a.example.com/api/v1/dotsaml/benchmark/x, https://b.example.com:8443/acs";
+        final AppSecrets result = handler.buildSecrets(
+                Map.of("privateKey", "****", "publicCert", "stored-CERT", "additionalAcsUrls", urls),
+                Optional.of(existingKeypair()));
+
+        assertEquals(urls, result.getSecrets().get("additionalAcsUrls").getString());
+    }
+
+    @Test
+    public void buildSecrets_rejects_additional_acs_url_that_is_not_an_absolute_http_url() {
+        for (final String invalid : List.of("/api/v1/dotsaml/benchmark/x", "a.example.com/acs",
+                "ftp://a.example.com/acs", "https://a.example.com/acs,javascript:alert(1)")) {
+            assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                    Map.of("privateKey", "****", "publicCert", "stored-CERT", "additionalAcsUrls", invalid),
+                    Optional.of(existingKeypair())), invalid);
+        }
+    }
+
+    @Test
+    public void buildSecrets_rejects_wildcard_additional_acs_url() {
+        for (final String wildcard : List.of("https://a.example.com/acs/*", "https://*.example.com/acs")) {
+            assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                    Map.of("privateKey", "****", "publicCert", "stored-CERT", "additionalAcsUrls", wildcard),
+                    Optional.of(existingKeypair())), wildcard);
+        }
     }
 
     private static AppSecrets existingKeypair() {

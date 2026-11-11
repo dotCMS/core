@@ -29,6 +29,18 @@ public interface FeatureFlagName {
      */
     String FEATURE_FLAG_EXPERIMENTS_PORTLET = "FEATURE_FLAG_EXPERIMENTS_PORTLET";
 
+    /**
+     * Lets a template hand {@code $xslttool} a URL as the XML to transform, instead of a document
+     * stored in dotCMS. Off by default: the tool is meant to transform content that already lives
+     * in the instance, and the remote fetch is deprecated.
+     *
+     * <p>When it is turned on the download is performed by the platform's outbound HTTP client
+     * ({@link com.dotcms.http.CircuitBreakerUrl}) and follows its network policy, timeouts and size
+     * limits. Turning this off does not affect stylesheets or XML files that are stored in dotCMS,
+     * which is how the tool is normally used.
+     */
+    String FEATURE_FLAG_XSLT_REMOTE_XML = "FEATURE_FLAG_XSLT_REMOTE_XML";
+
     String FEATURE_FLAG_TELEMETRY_CORE_ENABLED = "FEATURE_FLAG_TELEMETRY_CORE_ENABLED";
 
     String FEATURE_FLAG_CONTENT_ANALYTICS = "FEATURE_FLAG_CONTENT_ANALYTICS";
@@ -90,8 +102,6 @@ public interface FeatureFlagName {
     String FEATURE_FLAG_UVE_STYLE_EDITOR = "FEATURE_FLAG_UVE_STYLE_EDITOR";
 
     String FEATURE_FLAG_PAGE_SCANNER = "FEATURE_FLAG_PAGE_SCANNER";
-
-    String FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION = "FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION";
 
     /**
      * Controls the active ES → OpenSearch migration phase (integer ordinal 0–3).
@@ -192,4 +202,21 @@ public interface FeatureFlagName {
      * the credential fields cleared.
      */
     String FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES = "FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES";
+
+    /**
+     * Also sends the dotCMS version headers ({@code X-DotCMS-Version}, {@code X-DotCMS-Min-SDK})
+     * and the {@code x-dot-server} node header on requests that carry no valid credentials. Off by
+     * default: those headers go only to requests with a logged-in session or a valid bearer token,
+     * which is what the {@code @dotcms/client} SDK sends. Turn it on to restore the earlier
+     * behavior of sending them on every response.
+     *
+     * <p>Does not override {@code RESPONSE_HEADER_ADD_NODE_ID=false}, which still removes
+     * {@code x-dot-server} from every response, nor the {@code ?nodeid=true} request parameter,
+     * which still requests it on a single response.
+     *
+     * @see com.dotcms.filters.interceptor.meta.SdkVersionWebInterceptor
+     * @see com.dotcms.filters.interceptor.meta.ResponseMetaDataWebInterceptor
+     */
+    String FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS =
+            "FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS";
 }

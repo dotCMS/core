@@ -25,6 +25,7 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.model.ImmutableContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
@@ -304,6 +305,10 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 	 * Adds the permission filter to a raw query for every non-administrator user, combining it
 	 * with the query the caller sent. Administrators are left untouched.
 	 *
+	 * <p>The filter holds the read-permission clause and the category read clause, the same two
+	 * clauses the Lucene and OpenSearch searches append, so content tagged with a category the
+	 * user's roles cannot read is left out of the results.</p>
+	 *
 	 * <p>The filter is built on the server side from the user's roles. Nothing in the request
 	 * body takes part in the decision, so a caller cannot influence whether it is applied.</p>
 	 *
@@ -334,7 +339,9 @@ public class ESSearchAPIImpl implements ESSeachAPI {
          */
 		StringBuffer perms = new StringBuffer();
 		if (!isAdmin) {
-			APILocator.getContentletAPIImpl().addPermissionsToQuery(perms, user, roles, respectFrontendRoles);
+			final ContentletAPI contentletAPI = APILocator.getContentletAPIImpl();
+			contentletAPI.addPermissionsToQuery(perms, user, roles, respectFrontendRoles);
+			contentletAPI.addCategoryPermissionsToQuery(perms, user, roles, respectFrontendRoles);
 		}
 
         //Verify if we have permissions to apply

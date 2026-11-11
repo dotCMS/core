@@ -353,7 +353,7 @@
                   "script": {
                     "exec": [
                       "pm.test(\"Response text contains the expected error message\", function () {",
-                      "    pm.expect(pm.response.text()).to.include(\"CONTENT_APIS_ALLOW_ANONYMOUS permission exceeded - system set to READ but WRITE was required\");",
+                      "    pm.expect(pm.response.text()).to.include(\"CONTENT_APIS_ALLOW_ANONYMOUS permission denied\");",
                       "});",
                       ""
                     ],
@@ -1305,7 +1305,7 @@
                     "exec": [
                       "// Test to check for the response text",
                       "pm.test(\"Response text is as expected\", function () {",
-                      "    pm.expect(pm.response.text()).to.include(\"CONTENT_APIS_ALLOW_ANONYMOUS permission exceeded - system set to READ but WRITE was required\");",
+                      "    pm.expect(pm.response.text()).to.include(\"CONTENT_APIS_ALLOW_ANONYMOUS permission denied\");",
                       "});"
                     ],
                     "type": "text/javascript",
@@ -2209,7 +2209,10 @@
                   "listen": "prerequest",
                   "script": {
                     "packages": {},
-                    "type": "text/javascript"
+                    "type": "text/javascript",
+                    "exec": [
+                      ""
+                    ]
                   }
                 }
               ],
@@ -2825,16 +2828,11 @@
               ],
               "request": {
                 "auth": {
-                  "type": "basic",
-                  "basic": [
+                  "type": "bearer",
+                  "bearer": [
                     {
-                      "key": "username",
-                      "value": "admin@dotcms.com",
-                      "type": "string"
-                    },
-                    {
-                      "key": "password",
-                      "value": "admin",
+                      "key": "token",
+                      "value": "{{jwt}}",
                       "type": "string"
                     }
                   ]
@@ -3388,44 +3386,7 @@
             "packages": {},
             "exec": [
               "if (!pm.environment.get('jwt')) {",
-              "    console.log(\"generating....\")",
-              "    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
-              "    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
-              "",
-              "    if (!pm.environment.get('jwt')) {",
-              "        const username = pm.environment.get(\"user\");",
-              "        const password = pm.environment.get(\"password\");",
-              "        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
-              "",
-              "        const requestOptions = {",
-              "            url: apiUrl,",
-              "            method: \"POST\",",
-              "            header: {",
-              "                \"accept\": \"*/*\",",
-              "                \"content-type\": \"application/json\",",
-              "                \"Authorization\": `Basic ${basicAuth}`",
-              "            },",
-              "            body: {",
-              "                mode: \"raw\",",
-              "                raw: JSON.stringify({",
-              "                    \"expirationSeconds\": 7200,",
-              "                    \"userId\": \"dotcms.org.1\",",
-              "                    \"network\": \"0.0.0.0/0\",",
-              "                    \"claims\": {\"label\": \"postman-tests\"}",
-              "                })",
-              "            }",
-              "        };",
-              "",
-              "        pm.sendRequest(requestOptions, function (err, response) {",
-              "            if (err) {",
-              "                console.log(err);",
-              "            } else {",
-              "                const jwt = response.json().entity.jwt;",
-              "                pm.environment.set('jwt', jwt);",
-              "                console.log(jwt);",
-              "            }",
-              "        });",
-              "    }",
+              "    throw new Error('Set environment jwt to a pre-issued dotCMS API token, or use the Node runner.');",
               "}",
               ""
             ]
@@ -4180,44 +4141,7 @@
         "packages": {},
         "exec": [
           "if (!pm.environment.get('jwt')) {",
-          "    console.log(\"generating....\")",
-          "    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
-          "    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
-          "",
-          "    if (!pm.environment.get('jwt')) {",
-          "        const username = pm.environment.get(\"user\");",
-          "        const password = pm.environment.get(\"password\");",
-          "        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
-          "",
-          "        const requestOptions = {",
-          "            url: apiUrl,",
-          "            method: \"POST\",",
-          "            header: {",
-          "                \"accept\": \"*/*\",",
-          "                \"content-type\": \"application/json\",",
-          "                \"Authorization\": `Basic ${basicAuth}`",
-          "            },",
-          "            body: {",
-          "                mode: \"raw\",",
-          "                raw: JSON.stringify({",
-          "                    \"expirationSeconds\": 7200,",
-          "                    \"userId\": \"dotcms.org.1\",",
-          "                    \"network\": \"0.0.0.0/0\",",
-          "                    \"claims\": {\"label\": \"postman-tests\"}",
-          "                })",
-          "            }",
-          "        };",
-          "",
-          "        pm.sendRequest(requestOptions, function (err, response) {",
-          "            if (err) {",
-          "                console.log(err);",
-          "            } else {",
-          "                const jwt = response.json().entity.jwt;",
-          "                pm.environment.set('jwt', jwt);",
-          "                console.log(jwt);",
-          "            }",
-          "        });",
-          "    }",
+          "    throw new Error('Set environment jwt to a pre-issued dotCMS API token, or use the Node runner.');",
           "}",
           ""
         ]

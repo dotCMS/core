@@ -159,19 +159,7 @@ public final class WebKeys {
 	public static final String PARENT_FOLDER = "com.dotmarketing.webasset.parent_folder";
 
     public static final String CONTAINER_EDIT = "com.dotmarketing.containers.edit";
-    public static final String CONTAINERS_VIEW = "com.dotmarketing.containers.view";
-    public static final String CONTAINERS_VIEW_COUNT = "com.dotmarketing.containers.view.count";
-    public static final String CONTAINER_VIEW_PORTLET = "com.dotmarketing.containers.view.portlet";
-    public static final String CONTAINER_FORM_EDIT = "com.dotmarketing.containers.form";
-    public static final String CONTAINER_VERSIONS = "com.dotmarketing.containers.versions";
-    public static final String CONTAINER_PARENT = "com.dotmarketing.container.parent";
-    public static final String CONTAINER_RELATED_ASSETS = "com.dotmarketing.containers.related.assets";
-    public static final String CONTAINER_QUERY = "com.dotmarketing.container.query";
-    public static final String CONTAINER_SHOW_DELETED = "com.dotmarketing.container.show_deleted";
-    public static final String CONTAINER_HOST_CHANGED = "com.dotmarketing.container.host_changed";
     public static final String CONTAINER_INODE = "com.dotmarketing.containers.inode";
-    public static final String CONTAINER_CAN_ADD = "com.dotmarketing.container.can.add.container";
-    public static final String CONTAINER_HOSTS = "com.dotmarketing.container.hosts";
 
     public static final String TEMPLATE_EDIT = "com.dotmarketing.templates.edit";
     public static final String TEMPLATES_VIEW = "com.dotmarketing.templates.view";

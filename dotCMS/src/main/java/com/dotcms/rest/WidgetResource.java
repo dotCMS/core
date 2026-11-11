@@ -2,6 +2,7 @@ package com.dotcms.rest;
 
 import com.dotcms.rendering.velocity.WidgetRenderer;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -36,6 +37,19 @@ public class WidgetResource {
 
     private final WebResource webResource = new WebResource();
 
+    /**
+     * Renders the widget addressed by the path parameters and returns its text.
+     *
+     * <p>The path carries the lookup in dotCMS's {@code /key/value} form, so {@code /id/<identifier>}
+     * reads the live version and {@code /id/<identifier>/live/false} the working one, which only an
+     * authenticated {@link User} may ask for. When no widget matches, the response is a 404.</p>
+     *
+     * @param request  the current request
+     * @param response the current response, which carries the field-scripting header when set
+     * @param params   the {@code /key/value} path segments addressing the widget
+     * @return the rendered widget text
+     * @throws DoesNotExistException when no widget matches the requested id or inode
+     */
     @GET
 	@Path("/{params:.*}")
 	@Produces("text/plain; charset=UTF-8")
@@ -84,6 +98,11 @@ public class WidgetResource {
 			widget = APILocator.getContentletAPI().findContentletByIdentifier(id, live, language, user, true);
 
 		}
+
+        if (null == widget) {
+            // The lookup returns null when the id or inode has no version the caller may read
+            throw new DoesNotExistException("No widget matches the requested id or inode");
+        }
 
         final WidgetRenderer.Rendering rendering = WidgetRenderer.getInstance()
                 .renderWithDetails(request, response, widget);

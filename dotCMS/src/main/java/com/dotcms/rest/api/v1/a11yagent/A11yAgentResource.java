@@ -6,6 +6,7 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.pagescanner.PageScannerServiceUrl;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
@@ -652,9 +653,12 @@ public class A11yAgentResource {
      * Reads {@code apiUrl} and {@code apiAuthToken} from the Page Scanner App secrets
      * (same keys the scanner uses). The agent runs on the same host as the scanner,
      * so {@code apiUrl} is the shared base — we append {@code /agents/a11y} to reach
-     * the agent routes.
+     * the agent routes. The base must be accepted by
+     * {@link PageScannerServiceUrl#validate(String)}; a refused one counts as not configured,
+     * so callers stop before any token is created.
      *
-     * @return array {@code [agentBaseUrl, apiAuthToken]}, or empty if not configured
+     * @param request the originating request, used to find the current site
+     * @return array {@code [agentBaseUrl, apiAuthToken]}, or empty if not configured or refused
      */
     private Optional<String[]> resolveAgentConfig(final HttpServletRequest request) {
         final Host currentHost = Try.<Host>of(
@@ -685,8 +689,8 @@ public class A11yAgentResource {
             return Optional.empty();
         }
 
-        final String base = apiUrl.endsWith("/") ? apiUrl.substring(0, apiUrl.length() - 1) : apiUrl;
-        return Optional.of(new String[]{ base + "/agents/a11y", apiAuthToken });
+        return PageScannerServiceUrl.validate(apiUrl)
+                .map(base -> new String[]{ base + "/agents/a11y", apiAuthToken });
     }
 
     /**

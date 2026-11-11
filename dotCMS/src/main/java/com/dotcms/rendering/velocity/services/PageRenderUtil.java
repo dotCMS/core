@@ -31,6 +31,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.PageTreeReadFilter;
 import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -261,7 +262,8 @@ public class PageRenderUtil implements Serializable {
                 .getPageMultiTrees(htmlPage, currentVariantId, live);
         final Set<String> personalizationsForPage = multiTreeAPI.getPersonalizationsForPage(htmlPage, currentVariantId);
         final List<ContainerRaw> rawContainers  = Lists.newArrayList();
-        final String includeContentFor = this.getPersonaTagToIncludeContent(request, personalizationsForPage);
+        final String includeContentFor = this.getPersonaTagToIncludeContent(request, personalizationsForPage,
+                pageContents, currentVariantId);
 
         for (final String containerId : pageContents.rowKeySet()) {
 
@@ -881,7 +883,24 @@ public class PageRenderUtil implements Serializable {
         return this.containersRaw;
     }
 
-    private String getPersonaTagToIncludeContent(final HttpServletRequest request, final Set<String> personalizationsForPage) {
+    /**
+     * Returns the personalization whose content the page shows: the visitor's persona when the page
+     * is personalized for it and, in edit and preview mode, the user can see some of that persona's
+     * content (see {@link PageTreeReadFilter#forRender}), otherwise the default personalization. In
+     * the other modes the page renders only when the user can read all of its content, so the
+     * persona's rows are enough.
+     *
+     * @param request                 the current request, holding the visitor and its persona
+     * @param personalizationsForPage the personalizations the page has rows for
+     * @param pageContents            the page's tree
+     * @param variantName             the variant the tree was loaded for
+     * @return the personalization tag to render
+     * @throws DotDataException if the permissions of the persona's content cannot be loaded
+     */
+    private String getPersonaTagToIncludeContent(final HttpServletRequest request,
+            final Set<String> personalizationsForPage,
+            final Table<String, String, Set<PersonalizedContentlet>> pageContents,
+            final String variantName) throws DotDataException {
         IPersona iPersona = null;
 
         if (request != null) {
@@ -892,7 +911,11 @@ public class PageRenderUtil implements Serializable {
         final String currentPersonaTag = iPersona == null ? MultiTree.DOT_PERSONALIZATION_DEFAULT
                 : Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + iPersona.getKeyTag();
 
-        final boolean hasPersonalizations = personalizationsForPage.contains(currentPersonaTag);
+        final boolean hasPersonalizations = personalizationsForPage.contains(currentPersonaTag)
+                && (MultiTree.DOT_PERSONALIZATION_DEFAULT.equals(currentPersonaTag)
+                    || !PageTreeReadFilter.appliesTo(this.mode)
+                    || PageTreeReadFilter.forRender(this.user, this.mode)
+                            .hasReadableContent(pageContents, currentPersonaTag, variantName));
 
         return hasPersonalizations ? currentPersonaTag : MultiTree.DOT_PERSONALIZATION_DEFAULT;
     }

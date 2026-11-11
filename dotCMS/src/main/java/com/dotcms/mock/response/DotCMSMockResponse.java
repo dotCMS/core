@@ -1,6 +1,5 @@
 package com.dotcms.mock.response;
 
-import com.dotcms.ema.proxy.MockPrintWriter;
 import com.liferay.util.servlet.NullServletOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;

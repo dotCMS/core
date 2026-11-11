@@ -70,7 +70,7 @@ build-test-core-web:
 
 # Runs a comprehensive test suite including core integration and postman tests, suitable for final validation
 build-test-full:
-    ./mvnw clean install -Dcoreit.test.skip=false -Dpostman.test.skip=false -Dkarate.test.skip=false
+    ./mvnw clean install -Dcoreit.test.skip=false -Dpostman.test.skip=false
 
 # Builds a specified module without its dependencies, defaulting to the core server (dotcms-core)
 build-select-module module="dotcms-core":
@@ -216,9 +216,6 @@ test-postman collections='ai':
 postman-stop:
     ./mvnw -pl :dotcms-postman -Pdocker-stop -Dpostman.test.skip=false
 
-test-karate collections='KarateCITests#defaults':
-    ./mvnw -pl :dotcms-test-karate verify -Dkarate.test.skip=false -Pdebug -Dit.test={{ collections }}
-
 # Median CI runtime of each MainSuite* across the most recent successful PR Check runs.
 # New integration-test coverage goes in the suite this names, never in a remembered one.
 # Usage: just suite-timings [SAMPLES]   (default: 3, the documented minimum)
@@ -228,6 +225,11 @@ suite-timings samples='3':
 # Runs all integration tests
 test-integration:
     ./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false
+
+# Registers an integration test in a CI suite at its name-derived position (never append by hand)
+# Usage: just add-it-test <TestClass> <Suite>   e.g. `just add-it-test FooIntegrationTest MainSuite2a`
+add-it-test test_class suite='':
+    python3 scripts/it-suites.py add {{ test_class }} {{ suite }}
 
 # Runs only the open-search integration tests
 test-integration-open-search:
@@ -293,9 +295,6 @@ test-integration-stop:
 
 test-postman-ide:
     ./mvnw -pl :dotcms-test-postman pre-integration-test -Dpostman.test.skip=false -Dtomcat.port=8080
-
-test-karate-ide:
-    ./mvnw -pl :dotcms-test-karate pre-integration-test -Dkarate.test.skip=false -Dtomcat.port=8080
 
 # Executes Playwright E2E tests
 # Removes any leftover container from compose or a previous run so Maven can create it
