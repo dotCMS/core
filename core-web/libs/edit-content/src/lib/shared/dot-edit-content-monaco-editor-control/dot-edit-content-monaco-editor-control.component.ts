@@ -195,24 +195,25 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
      * `@materia-ui/ngx-monaco-editor` registers itself as a form validator and returns a `monaco`
      * error whenever the editor shows any marker, of any severity. Angular calls that validator
      * through the instance (`c => validator.validate(c)`), so replacing `validate` here takes
-     * effect for every later check. If markers were already reported before this ran, the control
-     * is re-validated to clear the error.
+     * effect for every later check. The replacement reads `syntaxErrorsBlockSave` on each check,
+     * so a later change to the input applies from the next validation. The library runs `init`
+     * once per component instance, so the original is never wrapped twice.
      */
     private applySyntaxErrorPolicy(): void {
-        if (this.$syntaxErrorsBlockSave()) {
-            return;
-        }
-
         const editorComponent = this.$monacoEditorComponentRef();
         if (!editorComponent) {
             return;
         }
 
+        const libraryValidate = editorComponent.validate.bind(editorComponent);
         // Typed as Angular's `Validator`, whose `validate` may return null ("valid"); the
         // library's own declaration omits the null.
         const editorValidator: Validator = editorComponent;
-        editorValidator.validate = () => null;
+        editorValidator.validate = () => (this.$syntaxErrorsBlockSave() ? libraryValidate() : null);
 
+        // Clears a `monaco` error recorded before the replacement above. Real Monaco computes
+        // markers after `init`, so this matters mainly for the test mock, which reports its
+        // marker synchronously while the editor is being created.
         const control = this.formControl;
         if (control?.hasError('monaco')) {
             control.updateValueAndValidity();

@@ -172,5 +172,16 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
 
             expect(control()?.errors).toEqual({ monaco: { value: ['Simulated error'] } });
         });
+
+        it('should honor a change to syntaxErrorsBlockSave made after the editor starts', () => {
+            spectator.detectChanges();
+            expect(control()?.errors).toBeNull();
+
+            spectator.hostComponent.syntaxErrorsBlockSave = true;
+            spectator.detectChanges();
+            control()?.updateValueAndValidity();
+
+            expect(control()?.errors).toEqual({ monaco: { value: ['Simulated error'] } });
+        });
     });
 });
