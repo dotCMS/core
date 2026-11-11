@@ -2,13 +2,9 @@ package com.dotcms.rest.api.v1.system.websocket;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
-import com.dotcms.business.LazyUserAPIWrapper;
 import com.google.common.annotations.VisibleForTesting;
 import org.glassfish.jersey.server.ContainerRequest;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.UserAPI;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -34,23 +30,25 @@ public class DotCmsWebSocketConfigurator extends Configurator {
 
 	private final WebSocketContainerAPI webSocketContainerAPI;
 	private final JsonWebTokenAuthCredentialProcessor authCredentialProcessor;
-	private final UserAPI userAPI;
 
 	public DotCmsWebSocketConfigurator() {
 
 		this(APILocator.getWebSocketContainerAPI(),
-				JsonWebTokenAuthCredentialProcessorImpl.getInstance(),
-				new LazyUserAPIWrapper());
+				JsonWebTokenAuthCredentialProcessorImpl.getInstance());
 	}
 
+	/**
+	 * Creates a configurator on the given collaborators, for tests.
+	 *
+	 * @param webSocketContainerAPI   keeps the single instance of each endpoint
+	 * @param authCredentialProcessor resolves a user from a JWT {@code Authorization} header
+	 */
 	@VisibleForTesting
 	protected DotCmsWebSocketConfigurator(final WebSocketContainerAPI webSocketContainerAPI,
-			 							  final JsonWebTokenAuthCredentialProcessor authCredentialProcessor,
-										  final UserAPI userAPI) {
+										  final JsonWebTokenAuthCredentialProcessor authCredentialProcessor) {
 
 		this.webSocketContainerAPI   = webSocketContainerAPI;
 		this.authCredentialProcessor = authCredentialProcessor;
-		this.userAPI				 = userAPI;
 	}
 
 	@Override
@@ -58,6 +56,17 @@ public class DotCmsWebSocketConfigurator extends Configurator {
 		return this.webSocketContainerAPI.getEndpointInstance(endpointClass);
 	}
 
+	/**
+	 * Puts the user and the session id of the handshake request on the endpoint's user
+	 * properties. The user is the one the HTTP session resolves to through
+	 * {@link PortalUtil#getUser(HttpSession)}, which checks the user's current status as every
+	 * request does; a session that yields no user there yields no user here either. Without a
+	 * session user, a JWT {@code Authorization} header is tried.
+	 *
+	 * @param serverEndpointConfig the endpoint configuration receiving the user properties
+	 * @param request              the handshake request, with the HTTP session and headers
+	 * @param response             the handshake response
+	 */
 	@Override
 	public void modifyHandshake(final ServerEndpointConfig serverEndpointConfig,
 								final HandshakeRequest request,
@@ -78,12 +87,7 @@ public class DotCmsWebSocketConfigurator extends Configurator {
 
 				httpSession = HttpSession.class.cast(session);
 				sessionId   = httpSession.getId();
-				user = (User) PortalUtil.getUser(httpSession);
-
-				if (!UtilMethods.isSet(user)) {
-
-					user = this.getUserFromId(httpSession);
-				}
+				user = PortalUtil.getUser(httpSession);
 			} catch (Exception e) {
 
 				if (Logger.isErrorEnabled(this.getClass())) {
@@ -121,19 +125,5 @@ public class DotCmsWebSocketConfigurator extends Configurator {
 			}
 		}
 	} // modifyHandshake.
-
-	private User getUserFromId(final HttpSession httpSession) throws DotSecurityException, DotDataException {
-
-		User user = null;
-		final String userId = (String) httpSession.getAttribute
-				(com.liferay.portal.util.WebKeys.USER_ID);
-
-		if (UtilMethods.isSet(userId)) {
-
-			user = this.userAPI.loadUserById(userId);
-		}
-
-		return user;
-	} // getUserFromId.
 
 } // DotCmsWebSocketConfigurator.
