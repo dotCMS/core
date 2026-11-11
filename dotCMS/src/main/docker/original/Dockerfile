@@ -53,10 +53,11 @@ COPY --from=container-base /usr/local/libvips /usr/local/libvips
 COPY --from=container-base /etc/ld.so.conf.d/libvips.conf /etc/ld.so.conf.d/libvips.conf
 
 # When archive.ubuntu.com does not resolve (Canonical's nameservers stopped answering on
-# 2026-11-11, dotCMS/core#38547), point apt at a mirror whose DNS does not depend on them. apt still verifies the
-# Release signatures with the image's Ubuntu keyring, so the mirror cannot alter packages.
-# Plain HTTP because ca-certificates is not installed yet. The rewritten sources file is
-# used by every apt step below. Builds where the name resolves are unchanged.
+# 2026-11-11, dotCMS/core#38547), point apt at a mirror whose DNS does not depend on them.
+# apt still verifies the Release signatures with the image's Ubuntu keyring, so the mirror
+# cannot alter packages. Plain HTTP because ca-certificates is not installed yet. The
+# rewritten sources file is used by every apt step below. Builds where the name resolves
+# are unchanged.
 ARG APT_FALLBACK_MIRROR="http://mirrors.edge.kernel.org/ubuntu/"
 
 # Install basic packages and tini
