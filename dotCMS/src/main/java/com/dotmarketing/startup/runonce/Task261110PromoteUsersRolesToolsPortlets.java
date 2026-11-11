@@ -86,13 +86,15 @@ public class Task261110PromoteUsersRolesToolsPortlets implements StartupTask {
             + "  AND existing.portlet_id = ?) "
             + "ORDER BY roles.layout_id";
 
+    // the inserted row itself stays where it is
     private static final String SQL_SHIFT_ORDER =
             "UPDATE cms_layouts_portlets SET portlet_order = portlet_order + 1 "
-            + "WHERE layout_id = ? AND portlet_order >= ?";
+            + "WHERE layout_id = ? AND portlet_order >= ? AND id <> ?";
 
+    // another node may have added the row since the layout was read
     private static final String SQL_INSERT =
             "INSERT INTO cms_layouts_portlets(id, layout_id, portlet_id, portlet_order) "
-            + "VALUES (?, ?, ?, ?)";
+            + "VALUES (?, ?, ?, ?) ON CONFLICT (layout_id, portlet_id) DO NOTHING";
 
     /**
      * Tells whether a beta row is left anywhere, or a layout has Roles but no Tools.
@@ -204,34 +206,41 @@ public class Task261110PromoteUsersRolesToolsPortlets implements StartupTask {
     /**
      * Inserts Tools right after Roles in one layout, moving the rows below Roles down one place,
      * in its own transaction.
+     * <p>
+     * Run-always tasks are not serialized across nodes, so another node starting at the same time
+     * may add Tools to this layout after it was read. The insert then does nothing and the other
+     * rows are left alone, instead of failing on the one-portlet-per-layout constraint, which would
+     * stop this node's startup.
      *
      * @param layoutId   the layout that receives Tools
      * @param rolesOrder the position of Roles in that layout
-     * @return {@code true} when Tools was inserted
+     * @return {@code true} when Tools was inserted, {@code false} when the layout already had it
      * @throws DotDataException if the layout cannot be written
      */
     @VisibleForTesting
     boolean addToolsAfterRoles(final String layoutId, final int rolesOrder) throws DotDataException {
         final int toolsOrder = rolesOrder + 1;
+        final String rowId = UUIDUtil.uuid();
+        final boolean inserted;
         try {
-            LocalTransaction.wrap(() -> {
-                new DotConnect()
-                        .setSQL(SQL_SHIFT_ORDER)
-                        .addParam(layoutId)
-                        .addParam(toolsOrder)
-                        .loadResult();
-                new DotConnect()
-                        .setSQL(SQL_INSERT)
-                        .addParam(UUIDUtil.uuid())
-                        .addParam(layoutId)
-                        .addParam(TOOLS.toString())
-                        .addParam(toolsOrder)
-                        .loadResult();
+            inserted = LocalTransaction.wrapReturn(() -> {
+                final DotConnect dotConnect = new DotConnect();
+                if (dotConnect.executeUpdate(SQL_INSERT, rowId, layoutId, TOOLS.toString(), toolsOrder) == 0) {
+                    return false;
+                }
+                dotConnect.executeUpdate(SQL_SHIFT_ORDER, layoutId, toolsOrder, rowId);
+                return true;
             });
-        } catch (final DotSecurityException e) {
+        } catch (final DotDataException e) {
+            throw e;
+        } catch (final Exception e) {
             throw new DotDataException(e.getMessage(), e);
         }
-        Logger.info(this, "Added the 'tools' portlet at position " + toolsOrder + " in layout: " + layoutId);
-        return true;
+        if (inserted) {
+            Logger.info(this, "Added the 'tools' portlet at position " + toolsOrder + " in layout: " + layoutId);
+        } else {
+            Logger.info(this, "Layout " + layoutId + " already has the 'tools' portlet; left as is");
+        }
+        return inserted;
     }
 }
