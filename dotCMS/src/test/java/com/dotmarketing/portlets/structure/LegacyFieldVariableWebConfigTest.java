@@ -39,6 +39,7 @@ class LegacyFieldVariableWebConfigTest {
         factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
         // dwr.xml declares a DOCTYPE; do not fetch its DTD
         factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        factory.setExpandEntityReferences(false);
         final Document document = factory.newDocumentBuilder().parse(new File(DWR_XML_PATH));
 
         final NodeList creates = document.getElementsByTagName("create");
