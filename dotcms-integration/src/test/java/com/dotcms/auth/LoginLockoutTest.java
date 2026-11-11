@@ -1260,6 +1260,35 @@ public class LoginLockoutTest {
     }
 
     /**
+     * Given: an address already locked out of an account, and a literal delay strategy ({@code
+     *        TIME_MILLS:500})
+     * When: one more wrong password is tried from that same, now-locked address
+     * Then: it still sleeps close to the configured delay, not next to nothing — a locked-out attempt is
+     *       never counted, and the lock itself resets the address's own failure count to 0, so pacing by
+     *       the raw count alone would scale the literal value down to zero instead of up
+     */
+    @Test
+    public void test_delay_does_not_collapse_when_an_attempt_is_refused_by_a_lock() throws Exception {
+        final Object strategyBefore = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "TIME_MILLS:500");
+        final User user = newUser();
+        try {
+            lockByFailedLogins(user);
+
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true);
+            final long start = System.currentTimeMillis();
+            assertEquals(Authenticator.FAILURE, login(user, "wrong-while-locked"));
+            final long elapsed = System.currentTimeMillis() - start;
+            assertTrue("failed login while locked took only " + elapsed + "ms, should reflect the configured delay",
+                    elapsed >= 400L);
+        } finally {
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, false);
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, strategyBefore);
+            cleanUp(user);
+        }
+    }
+
+    /**
      * Given: lockout switched off, an account whose stored failed-login count is far above the limit, and a
      *        delay strategy with a literal per-unit rate
      * When: one more wrong password is tried

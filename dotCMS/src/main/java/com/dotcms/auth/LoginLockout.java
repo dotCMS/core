@@ -668,9 +668,17 @@ public final class LoginLockout {
      * login that has no resolvable client address, not a real source, so unrelated accounts that happen to
      * share it must not inflate each other's delay.
      *
+     * <p>An attempt refused by a lock ({@link Attempt#isLockedOut()}) is paced at {@link #maxFailures()}
+     * instead: it is never counted, so its own position is always 0, and the lock that refused it also
+     * reset its source's recorded failures to 0 -- left alone, both would pace it at 0 instead of at the
+     * cap a caller applies to every other attempt.
+     *
      * @return the pacing seed for {@code attempt}
      */
     public int pacingSeed(final Attempt attempt) {
+        if (attempt.isLockedOut()) {
+            return maxFailures();
+        }
         return UNKNOWN_SOURCE.equals(attempt.source)
                 ? attempt.number
                 : Math.max(attempt.number, sourceFailures(attempt.source));
