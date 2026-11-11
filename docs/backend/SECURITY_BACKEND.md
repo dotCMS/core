@@ -164,16 +164,17 @@ A session login token is renewed once half its lifetime has passed, on the next 
 request that carries the cookie (`DefaultAutoLoginWebInterceptor`): `/api/`, the `/dotAdmin`
 entry page, `/c/`, `/dotAdmin/c/` and `/dwr/call/`. Static files (`/html/`, the admin bundles,
 DWR scripts) never receive a renewed cookie, since a cache may keep them by file type; a GraphQL
-request that is due to renew skips the GraphQL cache for that one request. An active user therefore keeps a valid cookie, and a browser
-left idle for longer than the lifetime must log in again. The effective idle limit is therefore
-set by this lifetime: the Tomcat `session-timeout` (30 minutes in `web.xml`) only decides when the
-cookie has to step in and log the browser back in. Because renewal waits until half the lifetime
-has passed, the idle time a browser can recover from is between half the lifetime and the full
-lifetime (30 to 60 minutes by default), depending on when its last renewal happened. Site pages and assets never receive a
-renewed cookie. The cookie is renewed only for its own owner, when that owner is the session's
-user and still active, and never while an administrator is logged in as another user. Setting the
-minutes to `1440` sets a one-day lifetime, still renewed while the user works; a value below 1 is
-ignored and the default used. `SET_JWT_SESSION_COOKIE=false` still turns the session cookie off
+request that is due to renew skips the GraphQL cache for that one request. An active user
+therefore keeps a valid cookie, and a browser left idle for longer than the lifetime must log in
+again. The effective idle limit is therefore set by this lifetime: the Tomcat `session-timeout`
+(30 minutes in `web.xml`) only decides when the cookie has to step in and log the browser back
+in. Because renewal waits until half the lifetime has passed, the idle time a browser can recover
+from is between half the lifetime and the full lifetime (30 to 60 minutes by default), depending
+on when its last renewal happened. Site pages and assets never receive a renewed cookie. The
+cookie is renewed only for its own owner, when that owner is the session's user and still
+active, and never while an administrator is logged in as another user. Setting the minutes to
+`1440` sets a one-day lifetime, still renewed while the user works; a value below 1 is ignored
+and the default used. `SET_JWT_SESSION_COOKIE=false` still turns the session cookie off
 for interactive logins. A renewal that cannot happen (the cookie expired, or was replaced by a
 logout or password change) is dropped for that session rather than retried; an unexpected error
 while checking the cookie keeps it for the next request. A session login token carries a signed

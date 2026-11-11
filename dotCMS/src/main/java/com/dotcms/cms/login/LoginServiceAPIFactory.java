@@ -670,7 +670,9 @@ public class LoginServiceAPIFactory implements Serializable {
          * Sets a browser-session login cookie whose token expires after
          * {@link LoginServiceAPI#JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES} minutes, and records on the
          * HTTP session the time, half way through that lifetime, after which a back-end request
-         * renews it (see {@code DefaultAutoLoginWebInterceptor}).
+         * renews it (see {@code DefaultAutoLoginWebInterceptor}). With session cookies turned off
+         * ({@code SET_JWT_SESSION_COOKIE=false}) a renewal could issue nothing, so none is
+         * scheduled and the cookie, set here by a plugin login, lasts its one lifetime.
          */
         private void setSessionLoginTokenCookie(final HttpServletRequest req,
                                                 final HttpServletResponse res,
@@ -680,6 +682,10 @@ public class LoginServiceAPIFactory implements Serializable {
             final String sessionToken = this.jsonWebTokenUtils.createSessionLoginToken(user, lifetime);
             createJsonWebTokenCookie(req, res, sessionToken, Optional.of(0));
 
+            if (!SET_JWT_SESSION_COOKIE.get()) {
+                clearSessionLoginTokenRenewal(req);
+                return;
+            }
             final HttpSession session = req.getSession(false);
             if (null != session) {
                 session.setAttribute(SESSION_LOGIN_TOKEN_RENEW_AT,

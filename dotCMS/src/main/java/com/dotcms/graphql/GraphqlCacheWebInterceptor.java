@@ -118,7 +118,8 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
     /**
      * Authenticates before looking up cached GraphQL data, so current credential and anonymous
      * access policies also apply to cache hits and background refresh requests. Remember-me-only
-     * requests bypass caching so the later AutoLoginFilter can establish their identity.
+     * requests bypass caching so the later AutoLoginFilter can establish their identity. A request
+     * whose session is due to renew its login cookie is run uncached, so it reaches that renewal.
      *
      * @param requestIn the incoming GraphQL request
      * @param response the response receiving cached data or an authentication error

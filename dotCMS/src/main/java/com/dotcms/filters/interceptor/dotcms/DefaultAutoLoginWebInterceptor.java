@@ -188,7 +188,7 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
             cookieOwner = null == loginCookie ? null
                     : this.jsonWebTokenUtils.getUser(loginCookie.getValue(), request.getRemoteAddr());
         } catch (final RuntimeException e) {
-            Logger.warn(this, String.format("Could not load the owner of the login cookie for user '%s'; "
+            Logger.warnAndDebug(DefaultAutoLoginWebInterceptor.class, String.format("Could not load the owner of the login cookie for user '%s'; "
                     + "the session login token renewal is kept for the next request", sessionUserId), e);
             return;
         }
@@ -197,7 +197,7 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
             try {
                 this.loginServiceAPI.doRememberMe(request, response, cookieOwner, false);
             } catch (final RuntimeException e) {
-                Logger.warn(this, String.format("Could not renew the session login token for user '%s'; "
+                Logger.warnAndDebug(DefaultAutoLoginWebInterceptor.class, String.format("Could not renew the session login token for user '%s'; "
                         + "the renewal is kept for the next request", sessionUserId), e);
             }
             return;
@@ -231,6 +231,9 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
         return cmsUser instanceof User ? ((User) cmsUser).getUserId() : null;
     }
 
+    /**
+     * Whether the path is a dynamic back-end path on which a due login cookie is renewed.
+     */
     private static boolean isBackEndApplicationPath(final String uri) {
 
         return null != uri && (ADMIN_APPLICATION_ENTRY.contains(uri)
