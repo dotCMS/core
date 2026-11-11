@@ -391,7 +391,8 @@ public class LayoutResource implements Serializable {
 
     /**
      * Replaces the ordered tools of one section from a full ordered list of tool ids. This covers
-     * adding, removing and reordering tools in one call.
+     * adding, removing and reordering tools in one call. Existing entries may be retained even
+     * when their portlets are no longer registered; only new additions require placeability.
      *
      * @param request  the current request
      * @param response the current response
@@ -405,9 +406,11 @@ public class LayoutResource implements Serializable {
             operationId = "setNavigationSectionTools",
             summary = "Replace the ordered tools of a navigation section",
             description = "Replaces the section's tools with the full ordered list sent, which covers adding, "
-                    + "removing and reordering in one call. Every id must name a registered portlet the product "
-                    + "allows in a section and may appear once; otherwise the request is rejected naming the id and "
-                    + "the section is unchanged. Registered tools the tools catalog hides are accepted. An empty "
+                    + "removing and reordering in one call. Existing entries may be retained even when their "
+                    + "portlets are no longer registered or placeable, preserving legacy and rollback entries. "
+                    + "New additions must name registered portlets the product allows in a section. Blank or "
+                    + "repeated ids are rejected and the section is unchanged. Registered tools the tools catalog "
+                    + "hides are accepted. An empty "
                     + "list is accepted for every section except Getting Started. Requires a CMS Administrator who "
                     + "also holds the tools or tools-beta portlet."
     )
@@ -417,7 +420,7 @@ public class LayoutResource implements Serializable {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntitySectionListView.class))),
             @ApiResponse(responseCode = "400",
-                    description = "Bad request - an id is unregistered, not placeable or repeated, or the list "
+                    description = "Bad request - a new id is unregistered or not placeable, an id is blank or repeated, or the list "
                             + "would empty the Getting Started section",
                     content = @Content(mediaType = "application/json")),
             @ApiResponse(responseCode = "401",
@@ -454,7 +457,7 @@ public class LayoutResource implements Serializable {
         if (portletIds.isEmpty() && helper.isGettingStarted(layout)) {
             throw new BadRequestException("The Getting Started section must keep at least one tool");
         }
-        helper.validateToolIds(portletIds);
+        helper.validateToolIds(portletIds, layout.getPortletIds());
         layoutApi.setPortletIdsToLayout(layout, portletIds);
         logWrite(user, OP_SET_TOOLS, layoutId);
         return Response.ok(new ResponseEntitySectionListView(helper.toViews(layoutApi.findAllLayouts(), user))).build();

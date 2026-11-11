@@ -12937,12 +12937,13 @@ paths:
   /v1/layouts/{layoutId}/portlets:
     put:
       description: "Replaces the section's tools with the full ordered list sent,\
-        \ which covers adding, removing and reordering in one call. Every id must\
-        \ name a registered portlet the product allows in a section and may appear\
-        \ once; otherwise the request is rejected naming the id and the section is\
-        \ unchanged. Registered tools the tools catalog hides are accepted. An empty\
-        \ list is accepted for every section except Getting Started. Requires a CMS\
-        \ Administrator who also holds the tools or tools-beta portlet."
+        \ which covers adding, removing and reordering in one call. Existing entries\
+        \ may be retained even when their portlets are no longer registered or placeable,\
+        \ preserving legacy and rollback entries. New additions must name registered\
+        \ portlets the product allows in a section. Blank or repeated ids are rejected\
+        \ and the section is unchanged. Registered tools the tools catalog hides are\
+        \ accepted. An empty list is accepted for every section except Getting Started.\
+        \ Requires a CMS Administrator who also holds the tools or tools-beta portlet."
       operationId: setNavigationSectionTools
       parameters:
       - description: Navigation section id
@@ -12968,8 +12969,9 @@ paths:
         "400":
           content:
             application/json: {}
-          description: "Bad request - an id is unregistered, not placeable or repeated,\
-            \ or the list would empty the Getting Started section"
+          description: "Bad request - a new id is unregistered or not placeable, an\
+            \ id is blank or repeated, or the list would empty the Getting Started\
+            \ section"
         "401":
           content:
             application/json: {}

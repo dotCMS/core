@@ -243,6 +243,20 @@ public class LayoutHelper {
      * @throws BadRequestException naming the first offending id
      */
     public List<String> validateToolIds(final List<String> portletIds) {
+        return validateToolIds(portletIds, List.of());
+    }
+
+    /**
+     * Validates additions while retaining existing section entries, including retired portlets
+     * deliberately kept for rollback compatibility. Blank and duplicate ids are always rejected.
+     *
+     * @param portletIds the requested ordered tool ids
+     * @param existingPortletIds the target section's current ids, loaded from the server
+     * @return the requested list, unchanged
+     * @throws BadRequestException if an id is blank, duplicated, or an invalid new addition
+     */
+    public List<String> validateToolIds(final List<String> portletIds, final List<String> existingPortletIds) {
+        final Set<String> existing = new HashSet<>(existingPortletIds);
         final Set<String> seen = new HashSet<>();
         for (final String portletId : portletIds) {
             if (!UtilMethods.isSet(portletId)) {
@@ -250,6 +264,9 @@ public class LayoutHelper {
             }
             if (!seen.add(portletId)) {
                 throw new BadRequestException("Tool '" + portletId + "' appears more than once");
+            }
+            if (existing.contains(portletId)) {
+                continue;
             }
             final Portlet portlet = portletApi.findPortlet(portletId);
             if (null == portlet || !UtilMethods.isSet(portlet.getPortletId())) {
