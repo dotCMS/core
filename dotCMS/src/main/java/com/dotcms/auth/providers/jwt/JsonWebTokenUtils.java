@@ -17,7 +17,6 @@ import io.jsonwebtoken.SignatureException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.time.Duration;
-import java.util.Optional;
 import java.util.UUID;
 
 import static com.dotcms.exception.ExceptionUtil.causedBy;
@@ -58,15 +57,17 @@ public class JsonWebTokenUtils {
     private final JsonWebTokenService jsonWebTokenService;
 
     /**
-     * Gets from the json web access token, the user.
+     * Returns the active user a login token belongs to.
      *
-     * @param jwtAccessToken String
-     * @return String returns the User, if the user does not exists or is invalid will return null;
+     * @param jwtAccessToken the signed login token
+     * @param ipAddress      the address the request came from
+     * @return the user, or {@code null} when the token does not validate or its user does not
+     *         exist or is inactive
      */
     public User getUser(final String jwtAccessToken, final String ipAddress) {
 
-        final Optional<JWToken> token = APILocator.getApiTokenAPI().fromJwt(jwtAccessToken, ipAddress);
-        return (token.isPresent()) ? token.get().getActiveUser().get() : null;
+        return APILocator.getApiTokenAPI().fromJwt(jwtAccessToken, ipAddress)
+                .flatMap(JWToken::getActiveUser).orElse(null);
     } // getUser
 
 

@@ -19,7 +19,6 @@ import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.CookieUtil;
 import io.jsonwebtoken.Claims;
-import io.vavr.control.Try;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -156,7 +155,9 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
      * renewal time (a "remember me" login, or a request authenticated by a header) is left alone.
      * Two requests that pass the check together each issue a valid token, so either cookie works.
      * A due renewal that cannot happen (no cookie, or a cookie that is not valid for the session's
-     * user) is removed from the session, so later requests do not read the cookie again.
+     * user) is removed from the session, so later requests do not read the cookie again. An
+     * unexpected error while loading the cookie's owner is logged and the renewal is kept, so the
+     * next back-end request tries again.
      */
     private void renewSessionLoginTokenIfDue(final HttpServletRequest request,
                                              final HttpServletResponse response) {
@@ -171,9 +172,16 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
             return;
         }
         final Cookie loginCookie = UtilMethods.getCookie(request.getCookies(), CookieKeys.REMEMBER_ME_COOKIE.get());
-        final User cookieOwner = null == loginCookie ? null : Try.of(() -> this.jsonWebTokenUtils.getUser(
-                loginCookie.getValue(), request.getRemoteAddr())).getOrNull();
         final Object sessionUserId = session.getAttribute(WebKeys.USER_ID);
+        final User cookieOwner;
+        try {
+            cookieOwner = null == loginCookie ? null
+                    : this.jsonWebTokenUtils.getUser(loginCookie.getValue(), request.getRemoteAddr());
+        } catch (final RuntimeException e) {
+            Logger.warn(this, String.format("Could not load the owner of the login cookie for user '%s'; "
+                    + "the session login token renewal is kept for the next request", sessionUserId), e);
+            return;
+        }
         if (null != cookieOwner && null != sessionUserId
                 && cookieOwner.getUserId().equals(sessionUserId.toString())) {
             this.loginServiceAPI.doRememberMe(request, response, cookieOwner, false);
@@ -182,7 +190,7 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
         // The cookie cannot become valid again by itself, so the renewal is dropped rather than
         // retried on every request; the next login schedules a new one.
         session.removeAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT);
-        Logger.debug(this, () -> String.format("Session login token not renewed for user '%s': the request "
+        Logger.info(this, () -> String.format("Session login token not renewed for user '%s': the request "
                 + "carries %s", sessionUserId, null == loginCookie ? "no login cookie"
                 : "a login cookie that is not valid for this user"));
     }

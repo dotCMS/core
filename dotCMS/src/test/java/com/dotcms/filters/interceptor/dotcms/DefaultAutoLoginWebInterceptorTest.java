@@ -231,22 +231,51 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
     }
 
     /**
-     * Two back-end requests in a row after the renewal time both stay logged in: each may renew
-     * the cookie, and the session is neither invalidated nor stripped of its user.
+     * A renewal moves the session's renewal time forward, as the login service does when it sets
+     * the new cookie, so a second back-end request right after it does not renew again.
      */
     @Test
-    public void twoDueRequestsInARow_keepTheSession() {
+    public void secondRequestAfterRenewal_doesNotRenewAgain() {
         cookieOwnedBy(cookieOwner);
-        final HttpSession session = session(pastRenewal());
+        final HttpSession session = statefulSession(pastRenewal());
+        final long nextRenewal = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(30);
+        doAnswer(call -> {
+            session.setAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT, nextRenewal);
+            return null;
+        }).when(loginServiceAPI).doRememberMe(any(HttpServletRequest.class),
+                any(HttpServletResponse.class), any(User.class), anyBoolean());
         final HttpServletResponse response = mock(HttpServletResponse.class);
 
         assertEquals(Result.SKIP, interceptor.intercept(request("/api/v1/a", session, true), response));
         assertEquals(Result.SKIP, interceptor.intercept(request("/api/v1/b", session, true), response));
 
-        verify(loginServiceAPI, times(2)).doRememberMe(any(HttpServletRequest.class),
+        verify(loginServiceAPI, times(1)).doRememberMe(any(HttpServletRequest.class),
                 any(HttpServletResponse.class), any(User.class), anyBoolean());
-        verify(session, never()).invalidate();
-        verify(session, never()).removeAttribute(WebKeys.USER);
+        assertEquals(nextRenewal, session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
+    }
+
+    /**
+     * An unexpected error while loading the cookie's owner (a database error, for example) is not
+     * read as a cookie that no longer validates: the renewal stays on the session and the next
+     * back-end request tries again.
+     */
+    @Test
+    public void errorLoadingCookieOwner_keepsRenewalForTheNextRequest() {
+        final Long renewAt = pastRenewal();
+        final HttpSession session = statefulSession(renewAt);
+        when(jsonWebTokenUtils.getUser(any(), any()))
+                .thenThrow(new IllegalStateException("user load failed"))
+                .thenReturn(cookieOwner);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        final HttpServletRequest first = request("/api/v1/a", session, true);
+        assertEquals(Result.SKIP, interceptor.intercept(first, response));
+        verifyNoRenewal();
+        assertEquals(renewAt, session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
+
+        final HttpServletRequest second = request("/api/v1/b", session, true);
+        assertEquals(Result.SKIP, interceptor.intercept(second, response));
+        verify(loginServiceAPI).doRememberMe(second, response, cookieOwner, false);
     }
 
     /**
@@ -316,7 +345,7 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
     }
 
     /**
-     * A session whose attributes are kept in a map, so a removal is seen by later requests.
+     * A session whose attributes are kept in a map, so a change is seen by later requests.
      */
     private HttpSession statefulSession(final Long renewAt) {
         final Map<String, Object> attributes = new HashMap<>();
@@ -327,6 +356,8 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
         when(session.getAttribute(anyString())).thenAnswer(call -> attributes.get(call.<String>getArgument(0)));
         doAnswer(call -> attributes.remove(call.<String>getArgument(0)))
                 .when(session).removeAttribute(anyString());
+        doAnswer(call -> attributes.put(call.getArgument(0), call.getArgument(1)))
+                .when(session).setAttribute(anyString(), any());
         return session;
     }
 
