@@ -200,7 +200,16 @@
                                             class="material-symbols-outlined cursor-grab text-base! leading-none! text-gray-400 opacity-0 group-hover/tool:opacity-100 active:cursor-grabbing">
                                             drag_indicator
                                         </span>
-                                        <span class="flex-1 truncate">{{ tool.title }}</span>
+                                        <span
+                                            class="flex-1 truncate"
+                                            [pTooltip]="tool.title"
+                                            [showOnEllipsis]="true"
+                                            tooltipPosition="right"
+                                            [attr.data-testid]="
+                                                'tools-section-tool-title-' + tool.id
+                                            ">
+                                            {{ tool.title }}
+                                        </span>
                                         <p-button
                                             icon="pi pi-times"
                                             size="small"

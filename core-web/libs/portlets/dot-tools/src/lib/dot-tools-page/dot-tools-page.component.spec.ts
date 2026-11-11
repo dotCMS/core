@@ -12,6 +12,7 @@ import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
+import { Tooltip } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -188,7 +189,7 @@ describe('DotToolsPageComponent', () => {
         (toast.clear as Mock).mockClear();
     });
 
-    it('shows the qualified parent label in the catalog and included tools without changing ids', () => {
+    it('shows qualified parent labels and overflow tooltips without changing ids', () => {
         const entry: DotToolsCatalogEntry = {
             id: 'users',
             title: 'Identity Access › Users',
@@ -215,6 +216,13 @@ describe('DotToolsPageComponent', () => {
         expect(spectator.query(byTestId('tools-section-tools-system')).textContent).toContain(
             entry.title
         );
+        const tooltip = spectator
+            .getDebugElement(byTestId('tools-section-tool-title-users'))
+            .injector.get(Tooltip);
+        expect(tooltip.content).toBe(entry.title);
+        expect(tooltip.showOnEllipsis).toBe(true);
+        expect(tooltip.tooltipPosition).toBe('right');
+
         spectator.click(byTestId('tools-section-tool-remove-users'));
         expect(store.removeToolFromSelectedSection).toHaveBeenCalledWith('users');
     });

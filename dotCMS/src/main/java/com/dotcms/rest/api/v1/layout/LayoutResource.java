@@ -457,7 +457,8 @@ public class LayoutResource implements Serializable {
         if (portletIds.isEmpty() && helper.isGettingStarted(layout)) {
             throw new BadRequestException("The Getting Started section must keep at least one tool");
         }
-        helper.validateToolIds(portletIds, layout.getPortletIds());
+        // findSectionOrThrow returns metadata only; loadLayout also populates the stored tool ids.
+        helper.validateToolIds(portletIds, layoutApi.loadLayout(layoutId).getPortletIds());
         layoutApi.setPortletIdsToLayout(layout, portletIds);
         logWrite(user, OP_SET_TOOLS, layoutId);
         return Response.ok(new ResponseEntitySectionListView(helper.toViews(layoutApi.findAllLayouts(), user))).build();

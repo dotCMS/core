@@ -43,7 +43,7 @@ public class LayoutResourceToolsTest {
     private Layout layout;
     private LayoutResource resource;
 
-    /** Loads an authoritative target section containing a deliberately retained legacy tool. */
+    /** Distinguishes metadata-only lookup from loading the target's persisted tool membership. */
     @Before
     public void setUp() throws Exception {
         layoutAPI = mock(LayoutAPI.class);
@@ -63,12 +63,17 @@ public class LayoutResourceToolsTest {
         layout.setName("System");
         layout.setDescription("settings");
         layout.setPortletIds(List.of("templates", "dynamic-plugins", "plugins"));
-        when(layoutAPI.findLayout("target")).thenReturn(layout);
+        final Layout metadata = new Layout();
+        metadata.setId(layout.getId());
+        metadata.setName(layout.getName());
+        when(layoutAPI.findLayout("target")).thenReturn(metadata);
+        when(layoutAPI.loadLayout("target")).thenReturn(layout);
         when(layoutAPI.findAllLayouts()).thenReturn(List.of(layout));
         doAnswer(call -> {
             final Layout target = call.getArgument(0);
             final List<String> ids = call.getArgument(1);
             target.setPortletIds(List.copyOf(ids));
+            layout.setPortletIds(List.copyOf(ids));
             return null;
         }).when(layoutAPI).setPortletIdsToLayout(any(Layout.class), anyList());
         resource = new LayoutResource(webResource, layoutAPI, portletAPI, roleAPI);
@@ -82,12 +87,13 @@ public class LayoutResourceToolsTest {
         }
     }
 
-    /** Reordering an existing legacy entry succeeds and returns the requested order unchanged. */
+    /** Reordering loads tool membership omitted by findLayout and retains the legacy entry. */
     @Test
     public void reorder_retainsUnregisteredLegacyTool() throws Exception {
         final List<String> order = List.of("plugins", "dynamic-plugins", "templates");
         final Response response = setTools(order);
         assertEquals(200, response.getStatus());
+        verify(layoutAPI).loadLayout("target");
         verify(layoutAPI).setPortletIdsToLayout(layout, order);
         assertEquals(order, ((ResponseEntitySectionListView) response.getEntity()).getEntity().get(0).portletIds());
     }
@@ -158,6 +164,7 @@ public class LayoutResourceToolsTest {
         assertThrows(DotSecurityException.class,
                 () -> setTools(List.of("plugins", "dynamic-plugins", "templates")));
         verify(layoutAPI, never()).findLayout("target");
+        verify(layoutAPI, never()).loadLayout("target");
         verify(layoutAPI, never()).setPortletIdsToLayout(any(Layout.class), anyList());
     }
 }
