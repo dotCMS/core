@@ -36,6 +36,7 @@ import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TabDividerField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -1597,9 +1598,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return search;
     }
 
+    /**
+     * Appends to the given query the clauses that keep a caller from seeing content they cannot
+     * read: the owner clause, one clause per role the caller holds and, for callers who are not
+     * back-end users, the clauses that limit the results to live content on the default variant.
+     * The clauses are appended as text, so the query is first balanced to make sure it cannot
+     * escape the separator that precedes them.
+     *
+     * <p>The variant clause is imposed rather than defaulted: it is appended whatever the caller's
+     * query already says, so a query naming another variant resolves to nothing instead of to that
+     * variant's content. Which variant a caller resolves on is decided here, never by the query.
+     *
+     * @param buffy the query being built, modified in place
+     * @param user the {@link User} the query is run for, or {@code null} for an anonymous caller
+     * @param roles the {@link Role}s held by that user; empty for an anonymous caller
+     * @param respectFrontendRoles whether the anonymous and logged-in-site roles grant read as well
+     */
     @Override
-    public void addPermissionsToQuery(StringBuffer buffy, User user, List<Role> roles,
-            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+    public void addPermissionsToQuery(final StringBuffer buffy, final User user,
+            final List<Role> roles, final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+        // Every clause appended below is separated from the query by a single space, which a
+        // query ending in an unbalanced escape would consume, so balance the escape first.
+        balanceTrailingEscape(buffy);
+
         if (user != null) {
             buffy.append(" +((+owner:" + user.getUserId() + " +ownerCanRead:true) ");
         } else {
@@ -1623,11 +1645,44 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         buffy.append(")");
 
+        // A variant is a version axis of a content item, like its language and its live/working
+        // state: which version a caller reads is the server's to decide, not the query's. The
+        // clause is appended rather than used as a default, so a query naming another variant
+        // resolves to nothing instead of to that variant. It belongs here, beside the live clause
+        // and under the same predicate, because every search path reaches this method - the
+        // OpenSearch one included - and a per-endpoint clause would only cover the endpoints
+        // someone remembered.
         if (user == null || !user.isBackendUser()) {
             buffy.append(" +live:true ");
+            // Lowercased with the same call the indexer applies to every String value it writes
+            // (ESMappingAPIImpl), because variant is a keyword field with no normalizer and the
+            // raw-search paths inject this clause without passing it through query translation.
+            buffy.append(" +").append(ESMappingConstants.VARIANT).append(":")
+                    .append(VariantAPI.DEFAULT_VARIANT.name().toLowerCase()).append(" ");
         }
 
 
+    }
+
+    /**
+     * Keeps the query from escaping the separator that precedes the clauses appended by
+     * {@link #addPermissionsToQuery(StringBuffer, User, List, boolean)} and
+     * {@link #addCategoryPermissionsToQuery(StringBuffer, User, List, boolean)}. A run of
+     * backslashes at the end of the query is an escape sequence only when its length is odd, so in
+     * that case one more backslash is appended; the run then stands for a literal backslash and
+     * the separator survives. A query that does not end in an unbalanced escape is left alone.
+     *
+     * @param buffy the query being built, modified in place when it ends in an unbalanced escape
+     */
+    @VisibleForTesting
+    static void balanceTrailingEscape(final StringBuffer buffy) {
+        int trailing = 0;
+        for (int i = buffy.length() - 1; i >= 0 && buffy.charAt(i) == '\\'; i--) {
+            trailing++;
+        }
+        if (trailing % 2 != 0) {
+            buffy.append('\\');
+        }
     }
 
     /**
@@ -1637,11 +1692,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * <strong>SECURITY NOTE:</strong> This method MUST be called on any query before
      * passing it to Elasticsearch to ensure proper permission filtering.
      * </p>
+     * <p>
+     * The query is normalized for every caller before anything is appended, so that it means the
+     * same thing whatever the caller's roles are. An administrator therefore gets the query back
+     * normalized but with no clause added.
      *
      * @param luceneQuery The original lucene query string
      * @param user The user making the request (required if not respecting frontend roles)
      * @param respectFrontendRoles Whether to respect frontend roles
-     * @return The query with permissions clauses added
+     * @return the normalized query, with the permission clauses appended unless the caller is an
+     *         administrator
      * @throws DotSecurityException If user is null and not respecting frontend roles
      * @throws DotDataException If there's an error loading roles
      */
@@ -1666,13 +1726,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        // If admin, return query unchanged
+        // Normalize the query for every caller, administrators included, so that it keeps the
+        // same meaning whatever the caller's roles are: the clauses below are appended as text
+        // and an unbalanced escape at the end of the query would otherwise consume the separator
+        // that precedes them.
+        final StringBuffer buffy = new StringBuffer(luceneQuery);
+        balanceTrailingEscape(buffy);
+
+        // An administrator reads everything, so no clause is appended
         if (isAdmin) {
-            return luceneQuery;
+            return buffy.toString();
         }
 
         // Apply permissions
-        final StringBuffer buffy = new StringBuffer(luceneQuery);
         addPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
         addCategoryPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
 
@@ -1722,14 +1788,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    /**
+     * Appends the secondary category-permission clause to the given query, so results are narrowed
+     * by the category read permissions the caller's roles hold. The clause is appended as text, so
+     * the query is normalized first, the same way {@link #addPermissionsToQuery} does it: in the
+     * call order used today the query has already been normalized by then, but this method is part
+     * of {@link ContentletAPI} and can be called on its own.
+     *
+     * @param buffy the query being built, modified in place
+     * @param user the {@link User} the query is run for, or {@code null} for an anonymous caller
+     * @param roles the {@link Role}s held by that user; empty for an anonymous caller
+     * @param respectFrontendRoles whether the anonymous role is taken into account as well
+     */
     @Override
-    public void addCategoryPermissionsToQuery(StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles) {
+    public void addCategoryPermissionsToQuery(final StringBuffer buffy, final User user,
+            final List<Role> roles, final boolean respectFrontendRoles) {
         if (!Config.getBooleanProperty("PERMISSION_SECONDARY_CATEGORY_CHECK", true)) {
             return;
         }
         if (user != null && user.isAdmin()) {
             return;
         }
+
+        // Nothing is appended above this line, so the query is only normalized when it has to be
+        balanceTrailingEscape(buffy);
 
         buffy.append(" +(");
 
@@ -3166,10 +3248,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     .deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, user);
 
             // Remove Rules with this contentlet as Parent.
+            // the parent's rules are removed with it; the caller's permission on the parent was checked above
+            // (canLock + PUBLISH filter in internalDestroy and validateAndFilterContentletsToDelete).
             try {
 
                 APILocator.getRulesAPI()
-                        .deleteRulesByParent(contentlet, user, respectFrontendRoles);
+                        .deleteRulesByParent(contentlet, APILocator.systemUser(), false);
             } catch (InvalidLicenseException ilexp) {
 
                 Logger.warn(this, "An enterprise license is required to delete rules under pages.");
@@ -5430,7 +5514,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final Contentlet contentletReturned = checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, false);
 
-        this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+        this.handlePermissions(permissions, user, contentletReturned);
 
         return contentletReturned;
     }
@@ -5472,7 +5556,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true,
                 false);
 
-        this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+        this.handlePermissions(permissions, user, contentletReturned);
 
         return contentletReturned;
     }
@@ -5495,7 +5579,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final Contentlet contentletReturned = checkin(contentlet, relationshipsData, cats, user, respectFrontendRoles, false,
                 false);
 
-        this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+        this.handlePermissions(permissions, user, contentletReturned);
 
         return contentletReturned;
     }
@@ -6061,6 +6145,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             contentlet = applyNullProperties(contentlet);
             contentlet = SET_DEFAULT_VALUES.get() && isNewContent? setDefaultValues(contentlet):contentlet;
+            if (!isNewContent) {
+                restoreStoryBlockReferenceData(contentlet, contentType, workingContentletInode);
+            }
 
             //This is executed first hand to create the inode-contentlet relationship.
             if (InodeUtils.isSet(existingInode)) {
@@ -9261,6 +9348,37 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
+     * Fills back the Story Block references that arrive with only the keys that identify them,
+     * taking their data from the version being replaced. An editor gets references like that when
+     * it cannot read them, and saving the document as it got it must not drop the data stored with
+     * them. See
+     * {@link com.dotcms.contenttype.business.StoryBlockAPI#restoreReferenceData(Object, Supplier)}.
+     *
+     * @param contentlet    The Contentlet being saved, modified in place.
+     * @param contentType   The Contentlet's content type.
+     * @param previousInode The inode of the version being replaced; it is only read from the
+     *                      database when a reference needs it.
+     */
+    private void restoreStoryBlockReferenceData(final Contentlet contentlet, final ContentType contentType,
+                                                final String previousInode) {
+        if (!contentType.hasStoryBlockFields() || !InodeUtils.isSet(previousInode)) {
+            return;
+        }
+        final Lazy<Optional<Contentlet>> previous = Lazy.of(() -> contentFactory.findInDb(previousInode, true));
+        for (final com.dotcms.contenttype.model.field.Field field : contentType.fields(StoryBlockField.class)) {
+            final Object submitted = contentlet.get(field.variable());
+            if (null == submitted) {
+                continue;
+            }
+            final Object restored = APILocator.getStoryBlockAPI().restoreReferenceData(submitted,
+                    () -> previous.get().map(stored -> stored.get(field.variable())).orElse(null));
+            if (restored != submitted) {
+                contentlet.setProperty(field.variable(), restored);
+            }
+        }
+    }
+
+    /**
      * @param content
      * @return
      * @throws DotSecurityException
@@ -10524,7 +10642,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     final Contentlet contentletReturned = checkin(contentlet, contentletRelationships, cats,
                             user, respectFrontendRoles, false, false);
 
-                    this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+                    this.handlePermissions(permissions, user, contentletReturned);
                     return contentletReturned;
                 } else {
                     final String workingInode = working.getInode();
@@ -10534,7 +10652,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     final Contentlet contentletReturned =  checkin(contentlet, contentletRelationships, cats,
                             user, respectFrontendRoles, false, false);
 
-                    this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+                    this.handlePermissions(permissions, user, contentletReturned);
                     return contentletReturned;
                 }
             }
@@ -10673,31 +10791,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return findContentRelationships(contentlet);
     }
 
+    /**
+     * Counts the documents in the index that match the given query and that the caller is allowed
+     * to read.
+     * <p>
+     * The query is narrowed by {@link #applyPermissionsToQuery(String, User, boolean)}, the same
+     * method the search path uses, so the count and the search agree on what the caller may see.
+     *
+     * @param luceneQuery the query written by the caller
+     * @param user the {@link User} the count is run for, or {@code null} for an anonymous caller
+     * @param respectFrontendRoles whether the anonymous and logged-in-site roles grant read as well
+     * @return how many documents match the query and are readable by the caller
+     * @throws DotDataException if the count cannot be read from the index
+     * @throws DotSecurityException if no user is given and front-end roles are not respected
+     */
     @Override
-    public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles)
-            throws DotDataException, DotSecurityException {
-        boolean isAdmin = false;
-        List<Role> roles = new ArrayList<>();
-        if (user == null && !respectFrontendRoles) {
-            throw new DotSecurityException(
-                    "You must specify a user if you are not respecting frontend roles");
-        }
-        if (user != null) {
-            if (!APILocator.getRoleAPI()
-                    .doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())) {
-                roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
-            } else {
-                isAdmin = true;
-            }
-        }
-        StringBuffer buffy = new StringBuffer(luceneQuery);
-
-        // Permissions in the query
-        if (!isAdmin) {
-            addPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
-        }
-
-        return contentFactory.indexCount(buffy.toString());
+    public long indexCount(final String luceneQuery, final User user,
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        return contentFactory.indexCount(
+                applyPermissionsToQuery(luceneQuery, user, respectFrontendRoles));
     }
 
     @CloseDBIfOpened
@@ -10865,47 +10977,43 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final Contentlet contentletReturned = checkin(contentlet, contentRelationships, cats, user,
                 respectFrontendRoles, true, generateSystemEvent);
 
-        handlePermissions(selectedPermissions, user, respectFrontendRoles, contentletReturned);
+        handlePermissions(selectedPermissions, user, contentletReturned);
 
         return contentletReturned;
     }
 
+    /**
+     * Replaces the individual permissions of a saved contentlet with the permissions sent along
+     * with it. Whether the user may change them is decided right away, before anything is removed:
+     * a user who may not edit the contentlet's permissions can only send its current permissions,
+     * which leaves them as they are; any other list is refused. An allowed replacement runs after
+     * the transaction commits or, without a transaction, immediately.
+     *
+     * @param selectedPermissions the permissions sent with the contentlet, may be empty
+     * @param user                the user saving the contentlet
+     * @param contentlet          the saved contentlet
+     * @throws DotDataException     if the current permissions cannot be read
+     * @throws DotSecurityException if the user may not edit the contentlet's permissions and the
+     *                              list differs from the current one
+     */
     private void handlePermissions(final List<Permission> selectedPermissions,
                                    final User user,
-                                   final boolean respectFrontendRoles,
-                                   final Contentlet contentlet) {
+                                   final Contentlet contentlet)
+            throws DotDataException, DotSecurityException {
 
         if (InodeUtils.isSet(contentlet.getInode()) && UtilMethods.isSet(
                 selectedPermissions)) {
 
-            final Runnable savePermissions = () -> {
+            final Optional<Runnable> replacement = ESContentletAPIHelper.INSTANCE.permissionReplacement(
+                    this.permissionAPI, contentlet, selectedPermissions, user, APILocator.systemUser());
 
-                try {
+            if (replacement.isPresent()) {
 
-                    Logger.debug(this,
-                            () -> "Removing the permissions for: " + contentlet.getTitle() +
-                                    ", id: " + contentlet.getIdentifier());
-                    this.permissionAPI.removePermissions(contentlet);
-                    Logger.debug(this,
-                            () -> "Saving the permissions for: " + contentlet.getTitle() +
-                                    ", id: " + contentlet.getIdentifier());
-                    this.permissionAPI.save(selectedPermissions.stream()
-                                    .map(permission -> new Permission(contentlet.getPermissionId(),
-                                            permission.getRoleId(), permission.getPermission()))
-                                    .collect(Collectors.toList()), contentlet, user,
-                            respectFrontendRoles);
-                } catch (Exception e) {
-
-                    Logger.error(this,
-                            "Could not save the permissions for: " + contentlet.getTitle() +
-                                    ", id: " + contentlet.getIdentifier() + ", msg: "
-                                    + e.getMessage(), e);
-                }
-            };
-
-            FunctionUtils.ifOrElse(DbConnectionFactory.inTransaction(),
-                    () -> HibernateUtil.addCommitListener(contentlet.getInode(), savePermissions),
-                    () -> savePermissions.run());
+                final Runnable task = replacement.get();
+                FunctionUtils.ifOrElse(DbConnectionFactory.inTransaction(),
+                        () -> HibernateUtil.addCommitListener(contentlet.getInode(), task),
+                        task::run);
+            }
         }
     }
 

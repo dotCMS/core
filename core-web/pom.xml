@@ -396,6 +396,9 @@
                             <directory>${project.basedir}/dist/libs/edit-content-bridge</directory>
                             <filtering>false</filtering>
                             <targetPath>html/js/legacy_custom_field_bridge</targetPath>
+                            <includes>
+                                <include>**/*.js</include>
+                            </includes>
                         </resource>
                     </webResources>
                 </configuration>

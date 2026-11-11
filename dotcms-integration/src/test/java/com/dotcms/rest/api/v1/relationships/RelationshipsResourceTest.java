@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.relationships;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -28,7 +31,6 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import java.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -36,6 +38,9 @@ import org.junit.Test;
  * @author nollymar
  */
 public class RelationshipsResourceTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static ContentTypeAPI contentTypeAPI;
     private static RelationshipAPI relationshipAPI;
@@ -112,6 +117,11 @@ public class RelationshipsResourceTest {
         assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
     }
 
+    /**
+     * Builds an admin request authenticated with a Bearer API token.
+     *
+     * @return the request
+     */
     private static HttpServletRequest getHttpRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(
                 (
@@ -121,7 +131,7 @@ public class RelationshipsResourceTest {
         );
 
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+                TOKEN_UTILS.adminBearerHeader());
 
         return request;
     }

@@ -1,11 +1,14 @@
 package com.dotmarketing.business;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.LoginLockout;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
+import com.dotcms.util.PasswordRejectionReason;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -17,6 +20,7 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.DuplicateUserEmailAddressException;
@@ -42,6 +46,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
 
 import static com.dotmarketing.business.UserHelper.validateMaximumLength;
 import static com.dotmarketing.business.UserHelper.validateName;
@@ -467,6 +472,13 @@ public class UserAPIImpl implements UserAPI {
         APILocator.getRoleAPI().getUserRole(userToSave);
     }
 
+    /**
+     * Saves the user. When {@code validatePassword} is true the password on {@code userToSave} is a
+     * new plain-text password: it is checked against the password policy and hashed, and after the
+     * save {@link #invalidateLoginTokens(String)} runs in the same transaction, so login tokens
+     * issued before the change stop working.
+     */
+    @WrapInTransaction
     @Override
     public void save(User userToSave, User user, boolean validatePassword,
             boolean respectFrontEndRoles) throws DotDataException,
@@ -478,6 +490,7 @@ public class UserAPIImpl implements UserAPI {
             try {
                 if (!passwordTracker.isValidPassword(userToSave.getUserId(),
                         pwd)) {
+                    logPasswordRejection(userToSave.getUserId(), user, pwd);
                     // Get the first validation error and display it
                     throw new DotDataException(passwordTracker
                             .getValidationErrors().get(0).toString(),"User-Info-Save-Password-Failed");
@@ -490,12 +503,20 @@ public class UserAPIImpl implements UserAPI {
             // Use new password hash method
             try {
                 userToSave.setPassword(PasswordFactoryProxy.generateHash(pwd));
+                // flag it as hashed so EncryptPlainPasswordsJob doesn't hash the hash
+                userToSave.setPasswordEncrypted(true);
             } catch (PasswordException e) {
                 Logger.error(UserAPIImpl.class, "An error occurred generating the hashed password for userId: " + userToSave.getUserId(), e);
                 throw new DotDataException("An error occurred generating the hashed password.");
             }
+            userToSave.setFailedLoginAttempts(0);
         }
         save(userToSave, user, respectFrontEndRoles);
+        if (validatePassword) {
+            // A new password set by an administrator (or the user) unlocks an account locked out by failed logins
+            LoginLockout.getInstance().clear(userToSave.getUserId());
+            userToSave.setRememberMeToken(invalidateLoginTokens(userToSave.getUserId()));
+        }
     }
 
     @Override
@@ -663,9 +684,45 @@ public class UserAPIImpl implements UserAPI {
         return roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole());
     }
 
+    /**
+     * Writes one security log entry for a rejected password: the target user, the acting user, the
+     * entry point of the request (or {@code internal} when there is none) and the rule that failed.
+     * The password, its length and anything derived from it are never written. The client address
+     * is added by {@link SecurityLogger} itself. A failure to log never changes the outcome of the
+     * rejection.
+     *
+     * @param targetUserId the user whose password was refused
+     * @param actingUser the user making the change, may be {@code null}
+     * @param password the rejected password, used only to tell which rule it breaks
+     */
+    private void logPasswordRejection(final String targetUserId, final User actingUser, final String password) {
+        try {
+            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+            final String entryPoint = null != request
+                    ? request.getMethod() + " " + request.getRequestURI() : "internal";
+            final PasswordRejectionReason reason = PasswordRejectionReason.classify(password,
+                    PropsUtil.get(PropsUtil.PASSWORDS_REGEXPTOOLKIT_PATTERN));
+            final String actingUserId = null != actingUser ? actingUser.getUserId() : "unknown";
+            SecurityLogger.logWarn(UserAPIImpl.class, () -> "Password rejected: target="
+                    + PasswordRejectionReason.sanitizeForLog(targetUserId)
+                    + ", actor=" + PasswordRejectionReason.sanitizeForLog(actingUserId)
+                    + ", entry=" + PasswordRejectionReason.sanitizeForLog(entryPoint)
+                    + ", rule=" + reason);
+        } catch (final RuntimeException e) {
+            Logger.debug(UserAPIImpl.class, "Could not log the rejected password: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Sets a new password on the user and saves it. After the save,
+     * {@link #invalidateLoginTokens(String)} runs in the same transaction, so login tokens issued
+     * before the change stop working.
+     */
+    @WrapInTransaction
     @Override
     public void updatePassword(User user, String newpass, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotInvalidPasswordException, DotSecurityException {
         if(!PwdToolkitUtil.validate(newpass)) {
+            logPasswordRejection(null != user ? user.getUserId() : null, currentUser, newpass);
             throw new DotInvalidPasswordException("Invalid password");
         }
 
@@ -680,8 +737,25 @@ public class UserAPIImpl implements UserAPI {
         user.setIcqId("");
         user.setPasswordReset(GetterUtil.getBoolean(
                 PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
+        user.setFailedLoginAttempts(0);
         save(user, currentUser, respectFrontEndRoles);
+        // A new password (reset token flow or set by an administrator) unlocks an account locked out by failed logins
+        LoginLockout.getInstance().clear(user.getUserId());
+        user.setRememberMeToken(invalidateLoginTokens(user.getUserId()));
+    }
 
+    /**
+     * Stores a new random UUID as the user's login token id, with a single-column update that
+     * leaves the other user fields untouched. A random UUID works because a login JWT is accepted
+     * only while its id matches the stored value, and no token issued so far carries the new one;
+     * {@link UserAPI#invalidateLoginTokens(String)} has the full contract.
+     */
+    @WrapInTransaction
+    @Override
+    public String invalidateLoginTokens(final String userId) throws DotDataException {
+        final String rememberMeToken = UUIDGenerator.uuid();
+        userFactory.updateRememberMeToken(userId, rememberMeToken);
+        return rememberMeToken;
     }
 
     @WrapInTransaction

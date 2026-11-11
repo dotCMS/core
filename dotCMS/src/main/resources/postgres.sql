@@ -1530,6 +1530,8 @@ create index idx_user_clickstream13 on clickstream (first_page_id);
 create index idx_user_clickstream14 on clickstream (operating_system);
 create index idx_user_clickstream17 on clickstream (remote_address);
 create index idx_multitree_1 on multi_tree (relation_type);
+create index idx_multitree_parent1_variant on multi_tree (parent1, variant_id);
+create index idx_multitree_parent2_variant on multi_tree (parent2, variant_id);
 create index idx_workflow_6 on workflow_task (language_id);
 create index idx_workflow_4 on workflow_task (webasset);
 create index idx_workflow_5 on workflow_task (created_by);
@@ -2471,6 +2473,19 @@ CREATE TABLE system_event_cursor (
     mod_date        TIMESTAMPTZ  NOT NULL,
     CONSTRAINT pk_system_event_cursor PRIMARY KEY (server_id)
 );
+
+-- Login attempt counts and locks per account and source (client address, 'webdav:' + address, or
+-- '*' for the account-wide count), shared by every node of a cluster.
+CREATE TABLE login_lockout (
+    user_id      VARCHAR(100) NOT NULL,
+    source       VARCHAR(100) NOT NULL,
+    failures     INT          NOT NULL,
+    window_start BIGINT       NOT NULL,
+    locked_until BIGINT       NOT NULL,
+    mod_date     TIMESTAMPTZ  NOT NULL,
+    CONSTRAINT pk_login_lockout PRIMARY KEY (user_id, source)
+);
+CREATE INDEX idx_login_lockout_window ON login_lockout (window_start);
 
 --Content Types improvement
 CREATE INDEX idx_lower_structure_name ON structure (LOWER(velocity_var_name));

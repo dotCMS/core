@@ -16,6 +16,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.auth.LoginLockout;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -59,6 +60,7 @@ public class LoginFactoryPasswordMigrationTest {
     private MockedStatic<PublicCompanyFactory> companies;
     private MockedStatic<PropsUtil> props;
     private MockedStatic<SecurityLogger> securityLogger;
+    private String previousLockoutEnabled;
 
     /** Runs each persistence scenario for email-address and user-ID authentication. */
     @Parameterized.Parameters(name = "{0}")
@@ -77,9 +79,11 @@ public class LoginFactoryPasswordMigrationTest {
         }
     }
 
-    /** Isolates account lookup and records only successful persistence calls. */
+    /** Isolates account lookup and persistence, keeping database-backed lockout out of these tests. */
     @Before
     public void setUp() throws Exception {
+        previousLockoutEnabled = Config.getStringProperty(LoginLockout.LOCKOUT_ENABLED, null);
+        Config.setProperty(LoginLockout.LOCKOUT_ENABLED, "false");
         user = new User();
         user.setUserId("hash-migration-user");
         user.setEmailAddress("hash-migration@example.com");
@@ -114,9 +118,10 @@ public class LoginFactoryPasswordMigrationTest {
         securityLogger = mockStatic(SecurityLogger.class);
     }
 
-    /** Releases all thread-local static mocks after each parameterized scenario. */
+    /** Restores lockout configuration and releases static mocks after each parameterized scenario. */
     @After
     public void tearDown() {
+        Config.setProperty(LoginLockout.LOCKOUT_ENABLED, previousLockoutEnabled);
         if (securityLogger != null) {
             securityLogger.close();
         }
@@ -170,7 +175,6 @@ public class LoginFactoryPasswordMigrationTest {
             assertEquals(original, storedPassword.get());
             assertEquals(original, user.getPassword());
             assertTrue(storedEncrypted);
-            assertEquals(1, user.getFailedLoginAttempts());
         }
         verifyLoginSelector();
     }

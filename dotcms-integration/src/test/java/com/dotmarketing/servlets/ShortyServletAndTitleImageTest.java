@@ -7,11 +7,21 @@ import com.dotcms.contenttype.model.field.ImmutableImageField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.datagen.VariantDataGen;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.mock.request.MockParameterRequest;
+import com.dotcms.mock.request.MockServletPathRequest;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -36,9 +46,16 @@ import java.io.File;
 import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.junit.Assert.assertTrue;
 
 @ApplicationScoped
@@ -403,4 +420,119 @@ public class ShortyServletAndTitleImageTest {
 
     }
 
+    /**
+     * Method to test: {@link ShortyServlet#service(HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: a published file asset that also has a published version on a named variant, requested
+     * by identifier by a caller who is not logged into the back end and who puts the variant name in the URL.
+     * ExpectedResult: the servlet forwards to the inode of the default-variant version. The variant name in
+     * the URL is the only thing distinguishing this request, so it must not pick the version served.
+     * <p>
+     * The assertion reads the path the servlet forwards to, which is where it has already resolved the
+     * version; the request dispatcher is a mock that returns null, so nothing is actually forwarded.
+     */
+    @Test
+    public void test_service_callerWithoutBackEndAccess_forwardsToTheDefaultVariantInode()
+            throws Exception {
+        final File pngFile = File.createTempFile("variant-shorty-", ".png");
+        Files.write(pngFile.toPath(), pngPixel);
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Contentlet onDefaultVariant = new FileAssetDataGen(host, pngFile)
+                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        ContentletDataGen.publish(onDefaultVariant);
+        final Contentlet onNamedVariant = ContentletDataGen.createNewVersion(onDefaultVariant,
+                variant, null);
+        ContentletDataGen.publish(onNamedVariant);
+
+        assertNotEquals("fixture problem: both versions share an inode, so the assertion below could "
+                        + "not tell them apart",
+                onDefaultVariant.getInode(), onNamedVariant.getInode());
+
+        final String uri = "/dA/" + onDefaultVariant.getIdentifier() + "/fileAsset";
+        final HttpServletRequest request = new MockParameterRequest(
+                new MockAttributeRequest(new MockSessionRequest(new MockServletPathRequest(
+                        new MockHttpRequestIntegrationTest("localhost", uri).request(),
+                        "/dA")).request()).request(),
+                Map.of(VariantAPI.VARIANT_KEY, variant.name()));
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        try {
+            new ShortyServlet().service(request, response);
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+        }
+
+        final Object forwardPath = request.getAttribute(ShortyServlet.SHORTY_SERVLET_FORWARD_PATH);
+        assertNotNull("the servlet resolved nothing to forward to", forwardPath);
+        assertTrue("a caller without back-end access must not be able to choose the version the "
+                        + "servlet resolves by naming a variant in the URL, but it forwarded to "
+                        + forwardPath,
+                String.valueOf(forwardPath).contains("/" + onDefaultVariant.getInode() + "/"));
+        assertFalse("the servlet forwarded to the named variant's version: " + forwardPath,
+                String.valueOf(forwardPath).contains("/" + onNamedVariant.getInode() + "/"));
+    }
+
+    /**
+     * Method to test: {@link ShortyServlet#service(HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: the same fixture, but the request names the inode of the version that lives on the
+     * named variant, by a caller who is not logged into the back end. An inode names one exact version, so
+     * the servlet resolves no variant of its own here and the request carries no variant name at all.
+     * ExpectedResult: nothing is served and the request is answered as a miss. The control runs first: the
+     * inode of the default-variant version is served through the very same call, so a failure below is about
+     * the variant and not about inodes being unreachable.
+     */
+    @Test
+    public void test_service_callerWithoutBackEndAccess_namingAVariantInode_isAnsweredNotFound()
+            throws Exception {
+        final File pngFile = File.createTempFile("variant-shorty-inode-", ".png");
+        Files.write(pngFile.toPath(), pngPixel);
+
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Contentlet onDefaultVariant = new FileAssetDataGen(host, pngFile)
+                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        ContentletDataGen.publish(onDefaultVariant);
+        final Contentlet onNamedVariant = ContentletDataGen.createNewVersion(onDefaultVariant,
+                variant, null);
+        ContentletDataGen.publish(onNamedVariant);
+
+        final HttpServletResponse servedResponse = mock(HttpServletResponse.class);
+        final Object servedForwardPath = forwardPathFor(onDefaultVariant.getInode(), servedResponse);
+        assertNotNull("fixture problem: a version is not reachable by inode at all, so refusing another "
+                + "one proves nothing", servedForwardPath);
+
+        final HttpServletResponse refusedResponse = mock(HttpServletResponse.class);
+        final Object refusedForwardPath = forwardPathFor(onNamedVariant.getInode(), refusedResponse);
+
+        assertNull("a caller without back-end access must not reach a version on another variant by "
+                + "naming its inode, but the servlet forwarded to " + refusedForwardPath,
+                refusedForwardPath);
+        verify(refusedResponse).sendError(HttpServletResponse.SC_NOT_FOUND);
+    }
+
+    /**
+     * Runs a short-URL request for the given inode as a caller that is not logged into the back end, and
+     * returns the path the servlet resolved to forward to.
+     *
+     * @param inode the version's inode
+     * @param response the response the servlet writes to
+     * @return the forward path the servlet set on the request, null when it resolved nothing
+     * @throws Exception if the request fails
+     */
+    private Object forwardPathFor(final String inode, final HttpServletResponse response)
+            throws Exception {
+        final String uri = "/dA/" + inode + "/fileAsset";
+        final HttpServletRequest request = new MockAttributeRequest(new MockSessionRequest(
+                new MockServletPathRequest(
+                        new MockHttpRequestIntegrationTest("localhost", uri).request(),
+                        "/dA")).request()).request();
+
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        try {
+            new ShortyServlet().service(request, response);
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+        }
+        return request.getAttribute(ShortyServlet.SHORTY_SERVLET_FORWARD_PATH);
+    }
 }

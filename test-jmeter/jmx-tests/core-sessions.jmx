@@ -319,15 +319,6 @@
               <boolProp name="RegexExtractor.default_empty_value">false</boolProp>
             </RegexExtractor>
             <hashTree/>
-            <RegexExtractor guiclass="RegexExtractorGui" testclass="RegexExtractor" testname="Extract x-dot-server" enabled="true">
-              <stringProp name="RegexExtractor.useHeaders">true</stringProp>
-              <stringProp name="RegexExtractor.refname">xdotserver</stringProp>
-              <stringProp name="RegexExtractor.regex">x-dot-server:\s(.*?)\s</stringProp>
-              <stringProp name="RegexExtractor.template">$1$</stringProp>
-              <stringProp name="RegexExtractor.default">NOT_FOUND</stringProp>
-              <boolProp name="RegexExtractor.default_empty_value">false</boolProp>
-            </RegexExtractor>
-            <hashTree/>
           </hashTree>
           <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="app menu" enabled="true">
             <boolProp name="HTTPSampler.postBodyRaw">false</boolProp>

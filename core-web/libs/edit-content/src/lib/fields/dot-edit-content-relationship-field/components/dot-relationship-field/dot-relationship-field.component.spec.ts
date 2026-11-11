@@ -334,6 +334,33 @@ describe('DotRelationshipFieldComponent', () => {
             );
         });
 
+        it('opens the centered dialog with the edit-content dialog settings, headed with the content type to create', async () => {
+            const dialogService = spectator.inject(DialogService);
+            (dialogService.open as Mock).mockClear();
+
+            await spectator.component.showCreateNewContentDialog();
+
+            const [, config] = (dialogService.open as Mock).mock.calls[0];
+            expect(config).toEqual({
+                appendTo: 'body',
+                baseZIndex: 10000,
+                closable: true,
+                closeOnEscape: true,
+                draggable: false,
+                keepInViewport: true,
+                modal: true,
+                resizable: true,
+                position: 'center',
+                width: '95%',
+                height: '95%',
+                maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content',
+                style: { 'max-width': '1400px', 'max-height': '900px' },
+                data: expect.objectContaining({ mode: 'new', contentTypeId: 'ct-1' }),
+                // The i18n mock returns the key.
+                header: 'contenttypes.content.create.contenttype'
+            });
+        });
+
         it('opens the create-new content in the side panel when the flag is on', async () => {
             const dialogService = spectator.inject(DialogService);
             (dialogService.open as Mock).mockClear();

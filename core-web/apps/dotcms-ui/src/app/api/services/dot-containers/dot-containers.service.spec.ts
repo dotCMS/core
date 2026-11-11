@@ -169,6 +169,48 @@ describe('DotContainersService', () => {
             entity: mockContainer
         });
     });
+    it('should get the templates that use a container', () => {
+        const dependencies = {
+            inode: 'inode-1',
+            identifier: 'testId01',
+            title: 'Container',
+            templates: [
+                {
+                    inode: 'tpl-inode',
+                    identifier: 'tpl-id',
+                    title: 'Template',
+                    siteName: 'demo.dotcms.com'
+                }
+            ]
+        };
+
+        let result;
+        service.getDependencies(['testId01']).subscribe((deps) => (result = deps));
+
+        const req = httpMock.expectOne(`${CONTAINER_API_URL}dependencies?containerId=testId01`);
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: [dependencies] });
+
+        expect(result).toEqual([dependencies]);
+    });
+    it('should ask for several containers in one request', () => {
+        service.getDependencies(['first', 'second', 'third']).subscribe();
+
+        const req = httpMock.expectOne(
+            `${CONTAINER_API_URL}dependencies?containerId=first&containerId=second&containerId=third`
+        );
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: [] });
+    });
+    it('should encode the container ids when getting their dependencies', () => {
+        service.getDependencies(['/application/containers/a b/']).subscribe();
+
+        const req = httpMock.expectOne(
+            `${CONTAINER_API_URL}dependencies?containerId=${encodeURIComponent('/application/containers/a b/')}`
+        );
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: [] });
+    });
     it('should delete a container', () => {
         service.delete(['testId01']).subscribe();
         const req = httpMock.expectOne(`${CONTAINER_API_URL}_bulkdelete`);

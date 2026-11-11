@@ -5,8 +5,11 @@ import com.dotcms.util.pagination.PaginatorOrdered;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.PageTreeReadFilter;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -41,6 +44,21 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
 
   }
 
+  /**
+   * Returns the personas of the site, each flagged with whether the page has content personalized
+   * for it that the user can read (see {@link PageTreeReadFilter}). The page is looked up by
+   * identifier in any language, archived versions included.
+   *
+   * @param user        the user making the request
+   * @param filter      text to narrow the personas by
+   * @param limit       maximum number of personas to return
+   * @param offset      number of personas to skip
+   * @param orderBy     field to order by
+   * @param direction   sort direction
+   * @param extraParams must hold the page identifier, the site identifier and whether to respect
+   *                    front-end roles
+   * @return one page of personas with their personalization flag
+   */
   @Override
   public PaginatedArrayList<PersonalizationPersonaPageView> getItems(final User user, final String filter, int limit, int offset,
       final String orderBy, final OrderDirection direction, final Map<String, Object> extraParams) {
@@ -60,10 +78,10 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
           offset, orderByString, user, respectFrontEndRoles);
 
       final IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(
-              APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId));
+              APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId, true));
 
       final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
-      final Set<String> personaTagPerPage = this.multiTreeAPI.getPersonalizationsForPage(page, currentVariantId);
+      final Set<String> personaTagPerPage = readablePersonalizations(page, currentVariantId, user);
       final List<PersonalizationPersonaPageView> personalizationPersonaPageViews = new ArrayList<>();
 
       final Language foundLanguage = Try.of(
@@ -94,6 +112,23 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
       Logger.error(this, e.getMessage(), e);
       throw new DotRuntimeException(e);
     }
+  }
+
+  /**
+   * Collects the personalizations of the page's tree rows whose contentlet the user can read.
+   *
+   * @param page        the page
+   * @param variantName the variant whose tree is read
+   * @param user        the user making the request
+   * @return the personalization tags of the readable rows
+   * @throws DotDataException     if the tree or the permissions cannot be loaded
+   * @throws DotSecurityException if the tree cannot be loaded for the page
+   */
+  private Set<String> readablePersonalizations(final IHTMLPage page, final String variantName, final User user)
+      throws DotDataException, DotSecurityException {
+
+    return new PageTreeReadFilter(user).readablePersonalizations(
+        this.multiTreeAPI.getPageMultiTrees(page, variantName, false), variantName);
   }
 
 }
