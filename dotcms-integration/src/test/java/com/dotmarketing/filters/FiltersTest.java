@@ -65,6 +65,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionContext;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -79,12 +80,23 @@ public class FiltersTest {
     private static User user;
     private static long defaultLanguageId;
     private static FiltersUtil filtersUtil;
+    private static ServletContext originalContext;
 
+    /**
+     * Initializes the web app environment and installs a mock {@link ServletContext} in
+     * {@link Config#CONTEXT}. The {@code startsWith("/")} stubs below only work on a bare mock: the
+     * shared test context already stubs {@code getRealPath} and rejects the matcher's placeholder
+     * argument. The original context is restored in {@link #cleanup()}.
+     */
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         LicenseTestUtil.getLicense();
+        originalContext = Config.CONTEXT;
+        Config.CONTEXT = Mockito.mock(ServletContext.class);
+        // Page rendering resolves the company from this init parameter, same value as the shared test context
+        when(Config.CONTEXT.getInitParameter("company_id")).thenReturn("dotcms.org");
         when(Config.CONTEXT.getRealPath(startsWith("/"))).thenAnswer(new Answer<String>() {
             @Override
             public String answer(InvocationOnMock invocation) throws Throwable {
@@ -165,6 +177,14 @@ public class FiltersTest {
                         TestUserUtils.getOrCreateIntranetRole().getId(),
                         PermissionAPI.PERMISSION_READ),
                 intranetIndexPage, APILocator.systemUser(), false);
+    }
+
+    /**
+     * Puts back the {@link Config#CONTEXT} that was in place before this class ran.
+     */
+    @AfterClass
+    public static void cleanup() {
+        Config.CONTEXT = originalContext;
     }
 
     @Test
