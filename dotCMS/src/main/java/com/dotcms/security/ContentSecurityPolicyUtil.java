@@ -275,24 +275,33 @@ public class ContentSecurityPolicyUtil {
 
     /**
      * Reads one of the back-end policy switches. These are read on every back-end request, and
-     * {@link Config#getBooleanProperty(String, boolean)} throws when a properties file holds a value
-     * it cannot read as a boolean (a typo such as {@code flase}). Instead of failing the request,
-     * this uses the given default, which keeps the policy enforced, and logs a warning at most
-     * once a minute per property.
+     * the raw string is checked here rather than through
+     * {@link Config#getBooleanProperty(String, boolean)}, because that method throws for a bad
+     * value from a properties file or environment variable but silently reads a bad value from
+     * the system table (a typo such as {@code flase}) as false. Reading the string gives all
+     * three sources the same rule: a missing or blank value is the default, {@code true} or
+     * {@code false} (any case, surrounding spaces ignored) is used, and anything else uses the
+     * default, which keeps the policy enforced, and logs a warning at most once a minute per
+     * property. The request never fails.
      *
      * @param name     the property name
-     * @param fallback the value to use when the property cannot be read
-     * @return the configured value, or {@code fallback} when it cannot be read
+     * @param fallback the value to use when the property is missing or cannot be read
+     * @return the configured value, or {@code fallback} when it is missing or cannot be read
      */
     private static boolean readBackendFlag(final String name, final boolean fallback) {
-        try {
-            return Config.getBooleanProperty(name, fallback);
-        } catch (final RuntimeException e) {
-            Logger.warnEvery(ContentSecurityPolicyUtil.class, name,
-                    name + " is not true or false; using " + fallback + ": " + e.getMessage(),
-                    60_000);
+        final String value = Config.getStringProperty(name, null);
+        if (!UtilMethods.isSet(value)) {
             return fallback;
         }
+        if ("true".equalsIgnoreCase(value.trim())) {
+            return true;
+        }
+        if ("false".equalsIgnoreCase(value.trim())) {
+            return false;
+        }
+        Logger.warnEvery(ContentSecurityPolicyUtil.class, name,
+                name + " is not true or false; using " + fallback, 60_000);
+        return fallback;
     }
 
     /**

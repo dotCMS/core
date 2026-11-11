@@ -485,9 +485,9 @@ not in individual servlets or REST resources, so every path gets the same behavi
 |---|---|
 | `Strict-Transport-Security` | Tomcat's filter, sent on HTTPS requests. `max-age` comes from the `HSTS_MAX_AGE_SECONDS` property (default `31536000`, one year; env `DOT_HSTS_MAX_AGE_SECONDS`), read once at startup. `includeSubDomains` is the `hstsIncludeSubDomains` init-param in `web.xml`. |
 | `X-Frame-Options` | The `antiClickJackingOption` init-param in `web.xml` (`SAMEORIGIN`). |
-| `Content-Security-Policy` on `/dotAdmin`, `/api`, `/html` and the portal pages under `/c` | `ContentSecurityPolicyUtil.addBackendHeader`, called by the filter, and by `MainServlet` for `/c`. Configured by the three properties below. |
+| `Content-Security-Policy` on `/dotAdmin`, `/api`, `/html` and the portal pages under `/c` | `ContentSecurityPolicyUtil.addBackendHeader`, called by the filter, by `MainServlet` for `/c`, and by `DefaultBackEndLoginRequiredWebInterceptor` for the 401 page it returns to an unauthenticated `/c` request. Configured by the three properties below. |
 
-The back-end policy is read on every request, so changing these properties needs no restart:
+The back-end policy is read on every request, so changing these properties needs no restart. The two switches accept `true` or `false` in any case; a missing or blank value, or anything else (a typo such as `flase`), uses the default and logs a warning at most once a minute, whether it comes from a properties file, an environment variable or the system table.
 
 - `CONTENT_SECURITY_POLICY_BACKEND_ENABLED` (default `true`) turns the header on or off.
 - `CONTENT_SECURITY_POLICY_BACKEND_HEADER` (default `frame-ancestors 'self'; object-src 'none'`)
