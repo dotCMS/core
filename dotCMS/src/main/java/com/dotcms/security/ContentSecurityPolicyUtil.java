@@ -94,8 +94,8 @@ public class ContentSecurityPolicyUtil {
 
     /**
      * Turns the back-end policy on or off. On by default: responses on the back-end paths carry
-     * {@value #BACKEND_POLICY} (or {@link #DEFAULT_BACKEND_POLICY}). Off: they carry no policy
-     * header. Site pages are not affected either way.
+     * the policy set in {@value #BACKEND_POLICY}, or {@link #DEFAULT_BACKEND_POLICY} when it is
+     * not set. Off: they carry no policy header. Site pages are not affected either way.
      */
     public static final String BACKEND_ENABLED = "CONTENT_SECURITY_POLICY_BACKEND_ENABLED";
 
@@ -107,7 +107,11 @@ public class ContentSecurityPolicyUtil {
 
     /**
      * When true, the back-end policy is sent as {@code Content-Security-Policy-Report-Only}, so
-     * browsers report what it would block without blocking it. Off by default.
+     * browsers report what it would block without blocking it. Off by default. A report-only
+     * trial mainly previews {@code object-src} and any fetch directives an override adds.
+     * Browsers differ on whether they report {@code frame-ancestors} in report-only mode, and the
+     * default policy has no {@code report-to}, so a quiet console does not show that a framing
+     * change is safe.
      */
     public static final String BACKEND_REPORT_ONLY = "CONTENT_SECURITY_POLICY_BACKEND_REPORT_ONLY";
 
