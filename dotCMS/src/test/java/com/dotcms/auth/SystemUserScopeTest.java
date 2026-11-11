@@ -70,4 +70,71 @@ public class SystemUserScopeTest {
         }
         assertFalse(SystemUserScope.isActive());
     }
+
+    /**
+     * A task wrapped while the scope is active runs inside the scope on the thread that executes it, and
+     * leaves nothing behind there once it ends.
+     */
+    @Test
+    public void test_wrapped_runnable_carries_the_scope_to_another_thread() throws Exception {
+        final AtomicBoolean activeInside = new AtomicBoolean(false);
+        final Runnable task;
+        try (SystemUserScope ignored = SystemUserScope.open()) {
+            task = SystemUserScope.wrap(() -> activeInside.set(SystemUserScope.isActive()));
+        }
+        final AtomicBoolean activeAfter = new AtomicBoolean(true);
+        final Thread worker = new Thread(() -> {
+            task.run();
+            activeAfter.set(SystemUserScope.isActive());
+        });
+        worker.start();
+        worker.join();
+        assertTrue("scope was not carried to the executing thread", activeInside.get());
+        assertFalse("scope leaked on the executing thread", activeAfter.get());
+    }
+
+    /**
+     * A task wrapped when no scope is active does not open one, even if it runs while the dispatching
+     * thread is inside a scope.
+     */
+    @Test
+    public void test_wrapped_task_without_a_scope_does_not_open_one() throws Exception {
+        final AtomicBoolean activeInside = new AtomicBoolean(true);
+        final Runnable task = SystemUserScope.wrap(() -> activeInside.set(SystemUserScope.isActive()));
+        try (SystemUserScope ignored = SystemUserScope.open()) {
+            final Thread worker = new Thread(task);
+            worker.start();
+            worker.join();
+        }
+        assertFalse(activeInside.get());
+    }
+
+    /**
+     * The Callable variant carries the scope, returns the value and propagates exceptions, closing the scope
+     * on the way out.
+     */
+    @Test
+    public void test_wrapped_callable_carries_the_scope_returns_and_propagates() throws Exception {
+        final java.util.concurrent.Callable<Boolean> ok;
+        final java.util.concurrent.Callable<Boolean> failing;
+        try (SystemUserScope ignored = SystemUserScope.open()) {
+            ok = SystemUserScope.wrap(SystemUserScope::isActive);
+            failing = SystemUserScope.wrap(() -> {
+                throw new IllegalStateException("boom");
+            });
+        }
+        final java.util.concurrent.ExecutorService pool = java.util.concurrent.Executors.newSingleThreadExecutor();
+        try {
+            assertTrue(pool.submit(ok).get());
+            try {
+                pool.submit(failing).get();
+                fail("exception was swallowed");
+            } catch (final java.util.concurrent.ExecutionException expected) {
+                assertTrue(expected.getCause() instanceof IllegalStateException);
+            }
+            assertFalse("scope leaked on the pool thread", pool.submit(SystemUserScope::isActive).get());
+        } finally {
+            pool.shutdownNow();
+        }
+    }
 }
