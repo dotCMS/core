@@ -273,6 +273,46 @@ class SessionUserResolverTest {
         verify(session, never()).setAttribute(any(), any());
     }
 
+    /**
+     * When the administrator behind a Login As session cannot be read (a lookup error, not a
+     * missing or inactive user), the session is not signed out: the ids stay so the next request
+     * checks again, and only the cached copy of the session user is dropped for this call.
+     */
+    @Test
+    void loginAsSession_principalLookupError_keepsTheSessionForARetry() throws DotDataException, DotSecurityException {
+        when(session.getAttribute(WebKeys.USER)).thenReturn(user(USER_ID, true));
+        when(session.getAttribute(WebKeys.USER_ID)).thenReturn(USER_ID);
+        when(session.getAttribute(WebKeys.PRINCIPAL_USER_ID)).thenReturn("admin_a");
+        when(userAPI.loadUserById(USER_ID)).thenReturn(user(USER_ID, true));
+        when(userAPI.loadUserById("admin_a")).thenThrow(new DotDataException("lookup failed"));
+
+        final Optional<User> resolved = resolver.resolve(session);
+
+        assertFalse(resolved.isPresent());
+        verify(session).removeAttribute(WebKeys.USER);
+        verify(session, never()).removeAttribute(WebKeys.USER_ID);
+        verify(session, never()).removeAttribute(WebKeys.PRINCIPAL_USER_ID);
+        verify(session, never()).removeAttribute(LoginAsSession.SESSION_KEY);
+        verify(session, never()).setAttribute(any(), any());
+    }
+
+    /**
+     * A session that holds only the {@link WebKeys#USER} copy, with no user id attribute, keeps
+     * that copy when the lookup fails: it is the only thing that identifies the session, and the
+     * next request checks again.
+     */
+    @Test
+    void cachedUserOnly_lookupError_keepsTheCachedCopy() throws DotDataException, DotSecurityException {
+        when(session.getAttribute(WebKeys.USER)).thenReturn(user(USER_ID, true));
+        when(userAPI.loadUserById(USER_ID)).thenThrow(new DotDataException("lookup failed"));
+
+        final Optional<User> resolved = resolver.resolve(session);
+
+        assertFalse(resolved.isPresent());
+        verify(session, never()).removeAttribute(any());
+        verify(session, never()).setAttribute(any(), any());
+    }
+
     @Test
     void loginAsSession_principalNotActiveAnyMore_resolvesToNoUser() throws DotDataException, DotSecurityException {
         when(session.getAttribute(WebKeys.USER_ID)).thenReturn(USER_ID);

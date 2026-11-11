@@ -404,24 +404,32 @@ public class PortalUtil {
   /**
    * Returns the user making the request: the one already resolved for this request, else the
    * user of the request's session, else the user whose id was set on the request, else the user
-   * of a {@code Bearer} login token. A user taken from the session or from a user id must
-   * currently exist and be active (see {@link SessionUserResolver}); otherwise the next source is
-   * tried, except that a session user refused by that check is not looked up again from the
-   * session's user id. The result is stored on the request for the rest of its processing.
+   * of a {@code Bearer} login token. The result is stored on the request for the rest of its
+   * processing.
+   * <p>
+   * A user taken from the session or from a user id must currently exist and be active (see
+   * {@link SessionUserResolver}); otherwise the next source is tried. The one exception is a user
+   * id on the request that is the session's own id: the front controller copies it there before
+   * the user is resolved, so once the session user has been refused that copy is not tried again,
+   * and it is removed from the request.
    *
    * @param req the current request
    * @return the current {@link User}, or {@code null} when the request has none
    */
   public static User getUser(HttpServletRequest req) {
     User user = (User) req.getAttribute(WebKeys.USER);
+    // read before the session user is resolved: a refused session loses its user id
+    final String sessionUserId = getUserId(req.getSession(false));
     if (user == null) {
       user = getUser(req.getSession(false));
     }
     if (user == null) {
       // a user id set on the request itself, e.g. by a login filter; the session's own id was
-      // already checked above and is not tried again
+      // already checked above and is not tried again, even as a copy on the request
       final Object userId = req.getAttribute(WebKeys.USER_ID);
-      if (userId instanceof String) {
+      if (userId instanceof String && ((String) userId).equalsIgnoreCase(sessionUserId)) {
+        req.removeAttribute(WebKeys.USER_ID);
+      } else if (userId instanceof String) {
         user = SessionUserResolver.getInstance().resolveActive((String) userId).orElse(null);
       }
     }

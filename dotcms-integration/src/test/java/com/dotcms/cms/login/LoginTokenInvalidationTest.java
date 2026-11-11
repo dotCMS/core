@@ -33,6 +33,7 @@ import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import java.util.ArrayList;
 import java.util.List;
@@ -487,6 +488,34 @@ public class LoginTokenInvalidationTest {
         assertNotNull(session);
         assertEquals(user.getUserId(), session.getAttribute(WebKeys.USER_ID));
         assertTrue("the session must be listed right after the login", isTracked(session.getId()));
+    }
+
+    /**
+     * The front controller copies the session's user id onto the request before the user is
+     * resolved. When the session is refused because the administrator behind a Login As session is
+     * no longer active, that copy names the refused session user and is not used as a second
+     * source: the request ends up with no user and the copy is removed from the request.
+     */
+    @Test
+    public void test_getUser_requestIdCopiedFromARejectedLoginAsSession_isNotUsed() throws Exception {
+        final User admin = newUser();
+        final User target = newUser();
+        final User inactiveAdmin = (User) userAPI.loadUserById(admin.getUserId()).clone();
+        inactiveAdmin.setActive(false);
+        userAPI.save(inactiveAdmin, APILocator.systemUser(), false);
+
+        final HttpServletRequest request =
+                new MockHttpRequestIntegrationTest("localhost", "/c/portal/layout").request();
+        request.getSession().setAttribute(WebKeys.USER_ID, target.getUserId());
+        request.getSession().setAttribute(WebKeys.PRINCIPAL_USER_ID, admin.getUserId());
+        request.setAttribute(WebKeys.USER_ID, target.getUserId());
+
+        assertNull("the refused session user must not come back through the request's copy",
+                PortalUtil.getUser(request));
+        assertNull("the copied id must be removed from the request",
+                request.getAttribute(WebKeys.USER_ID));
+        assertNull("the refused session no longer names the user",
+                request.getSession().getAttribute(WebKeys.USER_ID));
     }
 
     /**

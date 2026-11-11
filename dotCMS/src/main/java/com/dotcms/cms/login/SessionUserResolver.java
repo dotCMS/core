@@ -92,11 +92,14 @@ public class SessionUserResolver {
      *   the Login As attributes are removed) and the result is empty; the person logs in again
      *   when the account is usable again;</li>
      *   <li>the lookup fails for another reason: the result is empty for this call and the cached
-     *   copy is removed, while the user id stays, so the next request checks again.</li>
+     *   copy is removed, while the user id stays, so the next request checks again. The copy is
+     *   kept when the session holds no user id, as it is then the only thing that identifies the
+     *   session.</li>
      * </ul>
      * A Login As session holds the impersonated user as its user and the administrator behind it
      * under {@link WebKeys#PRINCIPAL_USER_ID}; both must exist and be active for the session to
-     * yield a user.
+     * yield a user. When the administrator's record cannot be read, the session is kept for a
+     * retry as well: only the cached copy is dropped and the result is empty for this call.
      *
      * @param session the HTTP session, may be {@code null}
      * @return the current {@link User} record, or empty when the session has no usable user
@@ -123,7 +126,10 @@ public class SessionUserResolver {
             Logger.error(this, "Could not read the status of the session user '" + userId
                     + "', treating the session as having no user for this request: "
                     + e.getMessage(), e);
-            session.removeAttribute(WebKeys.USER);
+            // the copy stays when it is the only thing that identifies the session
+            if (null != session.getAttribute(WebKeys.USER_ID)) {
+                session.removeAttribute(WebKeys.USER);
+            }
             return Optional.empty();
         }
 
@@ -132,9 +138,16 @@ public class SessionUserResolver {
             signOut(session);
             return Optional.empty();
         }
-        if (!principalIsUsable(session, userId)) {
+        final Status principal = principalStatus(session, userId);
+        if (principal == Status.NOT_USABLE) {
             Logger.debug(this, () -> "The user behind a Login As session is not usable; the session is signed out");
             signOut(session);
+            return Optional.empty();
+        }
+        if (principal == Status.UNKNOWN) {
+            Logger.debug(this, () -> "The user behind a Login As session could not be read; "
+                    + "the session keeps its user id for the next request");
+            session.removeAttribute(WebKeys.USER);
             return Optional.empty();
         }
         if (cachedUser != currentUser && !sameRecord(cachedUser, currentUser)) {
@@ -196,17 +209,48 @@ public class SessionUserResolver {
     }
 
     /**
-     * In a Login As session, the administrator behind the impersonated user must also exist and
-     * be active. Any other session has no principal, or the principal is the session user itself,
-     * and passes.
+     * What the check of the administrator behind a Login As session found: the record exists and
+     * is active ({@link #USABLE}), it is missing or inactive ({@link #NOT_USABLE}), or it could
+     * not be read for this request ({@link #UNKNOWN}).
      */
-    private boolean principalIsUsable(final HttpSession session, final String userId) {
+    private enum Status {
+        USABLE,
+        NOT_USABLE,
+        UNKNOWN
+    }
+
+    /**
+     * Checks the administrator behind a Login As session, who must also exist and be active for
+     * the session to yield a user. A session with no principal, or whose principal is the session
+     * user itself, is not a Login As session and is {@link Status#USABLE} without a lookup. A
+     * principal whose record cannot be read is {@link Status#UNKNOWN}, so the caller can keep the
+     * session for a retry instead of signing it out.
+     *
+     * @param session the HTTP session, holding the principal under
+     *                {@link WebKeys#PRINCIPAL_USER_ID} when it is a Login As session
+     * @param userId  the id of the session user, which a principal equal to it (any letter case)
+     *                is not checked against
+     * @return {@link Status#USABLE} when there is no principal to check or it exists and is
+     *         active, {@link Status#NOT_USABLE} when it is missing or inactive, and
+     *         {@link Status#UNKNOWN} when its record could not be read
+     */
+    private Status principalStatus(final HttpSession session, final String userId) {
         final Object principalId = session.getAttribute(WebKeys.PRINCIPAL_USER_ID);
         if (!(principalId instanceof String) || !UtilMethods.isSet((String) principalId)
                 || ((String) principalId).equalsIgnoreCase(userId)) {
-            return true;
+            return Status.USABLE;
         }
-        return resolveActive((String) principalId).isPresent();
+        try {
+            final User principal = this.userAPI.get().loadUserById((String) principalId);
+            return isUsable(principal) ? Status.USABLE : Status.NOT_USABLE;
+        } catch (final NoSuchUserException e) {
+            return Status.NOT_USABLE;
+        } catch (final DotDataException | DotSecurityException | DotRuntimeException e) {
+            Logger.error(this, "Could not read the status of the user '" + principalId
+                    + "' behind a Login As session, treating the session as having no user for"
+                    + " this request: " + e.getMessage(), e);
+            return Status.UNKNOWN;
+        }
     }
 
     /**
