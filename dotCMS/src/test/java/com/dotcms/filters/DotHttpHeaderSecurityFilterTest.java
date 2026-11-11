@@ -224,8 +224,8 @@ public class DotHttpHeaderSecurityFilterTest extends UnitTestBase {
 
     /**
      * Method to test: {@link DotHttpHeaderSecurityFilter#doFilter}
-     * Given scenario: nothing configured; requests for the back-end UI, the REST API, the legacy
-     * JSP pages and the portal servlet, with the path split between servlet path and path info
+     * Given scenario: nothing configured; requests for the back-end UI, the REST API and the legacy
+     * JSP pages, with the path split between servlet path and path info
      * the way the container maps each of them
      * Expected result: every response carries the default back-end policy
      */
@@ -235,8 +235,6 @@ public class DotHttpHeaderSecurityFilterTest extends UnitTestBase {
         assertEquals(DEFAULT_BACKEND_POLICY, cspHeaderFor("/dotAdmin/index.html", null));
         assertEquals(DEFAULT_BACKEND_POLICY, cspHeaderFor("/api", "/v1/users/current"));
         assertEquals(DEFAULT_BACKEND_POLICY, cspHeaderFor("/html/portlet/ext/contentlet/view.jsp", null));
-        assertEquals(DEFAULT_BACKEND_POLICY, cspHeaderFor("/c", "/portal/layout"));
-        assertEquals(DEFAULT_BACKEND_POLICY, cspHeaderFor("/c", null));
     }
 
     /**
@@ -250,6 +248,22 @@ public class DotHttpHeaderSecurityFilterTest extends UnitTestBase {
         for (final String path : new String[]{"/", "/about-us/index", "/dotAdminX", "/application/x",
                 "/contentAsset/raw-data/abc/fileAsset", "/dA/abc", "/cars", "/htmlpages/x"}) {
             final HttpServletResponse response = filter(path, null);
+            verify(response, never()).setHeader(eq(CSP_HEADER), anyString());
+            verify(response, never()).setHeader(eq(CSP_REPORT_ONLY_HEADER), anyString());
+        }
+    }
+
+    /**
+     * Method to test: {@link DotHttpHeaderSecurityFilter#doFilter}
+     * Given scenario: nothing configured; requests mapped to the portal servlet ({@code /c}), which
+     * may be a site page under a root folder named {@code c} that CMSFilter serves
+     * Expected result: the filter writes no policy; the portal servlet writes it on its own
+     * responses (see {@code MainServletTest})
+     */
+    @Test
+    public void testDoFilter_whenPortalServletPath_shouldLeaveItToTheServlet() throws Exception {
+        for (final String pathInfo : new String[]{null, "/", "/about/index", "/portal/layout"}) {
+            final HttpServletResponse response = filter("/c", pathInfo);
             verify(response, never()).setHeader(eq(CSP_HEADER), anyString());
             verify(response, never()).setHeader(eq(CSP_REPORT_ONLY_HEADER), anyString());
         }

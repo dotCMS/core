@@ -76,8 +76,9 @@ import java.util.function.Function;
  * Where <code>random nonce value</code> is a random string encode with Base 64 algorithm.
  *
  * <p>Separately from site pages, {@link #addBackendHeader(HttpServletRequest, HttpServletResponse)}
- * writes a fixed policy on the back-end paths ({@code /dotAdmin}, {@code /api}, {@code /html} and
- * {@code /c}). It is configured by {@value #BACKEND_ENABLED}, {@value #BACKEND_POLICY} and
+ * writes a fixed policy on the back-end paths ({@code /dotAdmin}, {@code /api} and {@code /html}),
+ * and {@link #addBackendHeader(HttpServletResponse)} writes it on the portal servlet's responses under
+ * {@code /c}. It is configured by {@value #BACKEND_ENABLED}, {@value #BACKEND_POLICY} and
  * {@value #BACKEND_REPORT_ONLY}, and does not use the nonce placeholders.
  */
 public class ContentSecurityPolicyUtil {
@@ -124,7 +125,7 @@ public class ContentSecurityPolicyUtil {
      */
     public static final String DEFAULT_BACKEND_POLICY = "frame-ancestors 'self'; object-src 'none'";
 
-    private static final List<String> BACKEND_PATH_PREFIXES = List.of("/dotAdmin", "/api", "/html", "/c");
+    private static final List<String> BACKEND_PATH_PREFIXES = List.of("/dotAdmin", "/api", "/html");
 
     static {
         contentSecurityPolicyResolvers = Map.of(
@@ -232,18 +233,34 @@ public class ContentSecurityPolicyUtil {
 
     /**
      * Writes the back-end policy to the response when the request is for a back-end path
-     * ({@code /dotAdmin}, {@code /api}, {@code /html} or {@code /c}, or anything below them) and
-     * the policy is enabled. The path is read from the servlet path and path info, which the
+     * ({@code /dotAdmin}, {@code /api} or {@code /html}, or anything below them) and the policy is
+     * enabled. The path is read from the servlet path and path info, which the
      * container has already decoded and normalized, so an encoded spelling of a back-end path is
      * matched too. Any other request is left untouched, so site pages keep the policy configured
      * by {@code ContentSecurityPolicy.header}.
+     *
+     * <p>{@code /c} is not matched here: a site may have a root folder named {@code c}, and
+     * {@code CMSFilter} serves its pages before the portal servlet mapped to {@code /c/*} is
+     * reached. The portal servlet calls {@link #addBackendHeader(HttpServletResponse)} instead.
      *
      * @param request  the current request
      * @param response the response to write the header to
      */
     public static void addBackendHeader(final HttpServletRequest request,
             final HttpServletResponse response) {
-        if (!isBackendPath(request) || !Config.getBooleanProperty(BACKEND_ENABLED, true)) {
+        if (isBackendPath(request)) {
+            addBackendHeader(response);
+        }
+    }
+
+    /**
+     * Writes the back-end policy to the response when it is enabled, without looking at the
+     * path. For code that only ever produces back-end responses, such as the portal servlet.
+     *
+     * @param response the response to write the header to
+     */
+    public static void addBackendHeader(final HttpServletResponse response) {
+        if (!Config.getBooleanProperty(BACKEND_ENABLED, true)) {
             return;
         }
         final String policy = Config.getStringProperty(BACKEND_POLICY, DEFAULT_BACKEND_POLICY);
@@ -259,7 +276,7 @@ public class ContentSecurityPolicyUtil {
      * Tells whether the request's path is one of the back-end prefixes or lies below one.
      *
      * @param request the current request
-     * @return true for {@code /c} and {@code /c/portal/layout}, false for {@code /cars}
+     * @return true for {@code /api} and {@code /api/v1/sites}, false for {@code /application}
      */
     private static boolean isBackendPath(final HttpServletRequest request) {
         final String path = (request.getServletPath() == null ? "" : request.getServletPath())
