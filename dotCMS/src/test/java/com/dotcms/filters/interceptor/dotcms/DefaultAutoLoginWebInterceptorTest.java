@@ -277,6 +277,26 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
     }
 
     /**
+     * An error while issuing the new token does not fail the request, and the renewal stays on the
+     * session for the next back-end request.
+     */
+    @Test
+    public void errorIssuingRenewedToken_keepsRequestAndRenewal() {
+        cookieOwnedBy(cookieOwner);
+        final Long renewAt = pastRenewal();
+        final HttpSession session = statefulSession(renewAt);
+        doAnswer(call -> {
+            throw new IllegalStateException("user load failed");
+        }).when(loginServiceAPI).doRememberMe(any(HttpServletRequest.class),
+                any(HttpServletResponse.class), any(User.class), anyBoolean());
+
+        assertEquals(Result.SKIP, interceptor.intercept(request("/api/v1/a", session, true),
+                mock(HttpServletResponse.class)));
+
+        assertEquals(renewAt, session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
+    }
+
+    /**
      * A token carrying the session login claim is a session login token.
      */
     @Test

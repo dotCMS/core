@@ -60,17 +60,21 @@ public class JsonWebTokenUtils {
     private final JsonWebTokenService jsonWebTokenService;
 
     /**
-     * Returns the active user a login token belongs to.
+     * Returns the active user a login token belongs to. The user is loaded again after the token
+     * is validated, so it must still hold the token's id: a logout or password change that lands
+     * in between makes the token invalid here too.
      *
      * @param jwtAccessToken the signed login token
      * @param ipAddress      the address the request came from
-     * @return the user, or {@code null} when the token does not validate or its user does not
-     *         exist or is inactive
+     * @return the user, or {@code null} when the token does not validate, its user does not
+     *         exist or is inactive, or its id was replaced
      */
     public User getUser(final String jwtAccessToken, final String ipAddress) {
 
         return APILocator.getApiTokenAPI().fromJwt(jwtAccessToken, ipAddress)
-                .flatMap(JWToken::getActiveUser).orElse(null);
+                .flatMap(token -> token.getActiveUser()
+                        .filter(user -> null != token.getId() && token.getId().equals(user.getRememberMeToken())))
+                .orElse(null);
     } // getUser
 
 

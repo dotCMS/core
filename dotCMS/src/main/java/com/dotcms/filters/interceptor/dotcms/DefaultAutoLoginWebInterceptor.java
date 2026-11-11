@@ -167,8 +167,8 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
      * Two requests that pass the check together each issue a valid token, so either cookie works.
      * A due renewal that cannot happen (no cookie, or a cookie that is not valid for the session's
      * user) is removed from the session, so later requests do not read the cookie again. An
-     * unexpected error while loading the cookie's owner is logged and the renewal is kept, so the
-     * next back-end request tries again.
+     * unexpected error while loading the cookie's owner or issuing the new token is logged and the
+     * renewal is kept, so the next back-end request tries again and the request itself goes on.
      */
     private void renewSessionLoginTokenIfDue(final HttpServletRequest request,
                                              final HttpServletResponse response) {
@@ -191,7 +191,12 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
         }
         if (null != cookieOwner && null != sessionUserId
                 && cookieOwner.getUserId().equals(sessionUserId)) {
-            this.loginServiceAPI.doRememberMe(request, response, cookieOwner, false);
+            try {
+                this.loginServiceAPI.doRememberMe(request, response, cookieOwner, false);
+            } catch (final RuntimeException e) {
+                Logger.warn(this, String.format("Could not renew the session login token for user '%s'; "
+                        + "the renewal is kept for the next request", sessionUserId), e);
+            }
             return;
         }
         // The cookie cannot become valid again by itself, so the renewal is dropped rather than
