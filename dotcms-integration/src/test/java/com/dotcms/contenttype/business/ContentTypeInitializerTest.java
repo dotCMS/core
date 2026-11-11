@@ -6,6 +6,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -17,6 +18,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.workflow.WorkflowResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.workflow.form.FireActionForm;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
@@ -476,6 +478,67 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
                 new Permission(contentType.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true),
                 new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
                         cmsOwner.getId(), OWNER_BITS, true)));
+    }
+
+    /**
+     * Method to test: {@link ContentTypeInitializer#init()}
+     * Given Scenario: The favorites have not been reset yet, and a favorite saved on a site
+     * through the API, not the dialog, has its own rows granting CMS Owner only. The site passes
+     * CMS Anonymous READ to its contentlets, and a favorite on a site inherits from the site
+     * rather than from the content type.
+     * ExpectedResult: The first repair leaves the favorite with its own CMS Owner rows, so it does
+     * not start inheriting from the site and cannot be read anonymously.
+     */
+    @Test
+    public void test_first_init_keeps_a_favorite_on_a_site_readable_only_by_its_owner() throws Exception {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME);
+        permissionAPI.removePermissions(contentType);
+        permissionAPI.assignPermissions(List.of(
+                new Permission(contentType.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true),
+                new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
+                        cmsOwner.getId(), OWNER_BITS, true)),
+                contentType, APILocator.systemUser(), false);
+        APILocator.getSystemAPI().getSystemTable().delete(ContentTypeInitializer.FAVORITE_PAGE_PERMISSIONS_RESET_KEY);
+
+        final Host site = new SiteDataGen().nextPersisted();
+        Contentlet favorite = null;
+        try {
+
+            permissionAPI.assignPermissions(List.of(
+                    new Permission(Contentlet.class.getCanonicalName(), site.getPermissionId(),
+                            APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                            PermissionAPI.PERMISSION_READ, true)),
+                    site, APILocator.systemUser(), false);
+            favorite = new ContentletDataGen(contentType).host(site).setPolicy(IndexPolicy.WAIT_FOR)
+                    .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                    .nextPersisted();
+            permissionAPI.assignPermissions(List.of(
+                    new Permission(favorite.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true)),
+                    favorite, APILocator.systemUser(), false);
+
+            new ContentTypeInitializer().init();
+
+            final String cmsOwnerId = cmsOwner.getId();
+            Assert.assertTrue("A favorite on a site must keep its own CMS Owner rows: "
+                            + describePermissions(favorite, "favorite"),
+                    permissionAPI.getPermissions(favorite, true, true).stream()
+                            .anyMatch(permission -> cmsOwnerId.equals(permission.getRoleId())));
+            Assert.assertFalse("A favorite on a site must not be readable anonymously: "
+                            + describePermissions(favorite, "favorite"),
+                    permissionAPI.doesUserHavePermission(favorite, PermissionAPI.PERMISSION_READ,
+                            APILocator.getUserAPI().getAnonymousUser(), true));
+        } finally {
+
+            if (null != favorite) {
+                ContentletDataGen.destroy(favorite);
+            }
+            APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
+            APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+        }
     }
 
     /**

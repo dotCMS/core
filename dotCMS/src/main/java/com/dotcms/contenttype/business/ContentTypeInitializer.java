@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -157,7 +158,9 @@ public class ContentTypeInitializer implements DotInitializer {
      * role has a row on the type, the type's permissions are replaced with those two rows. The first
      * repair on an install also resets the favorites' own rows so they inherit them, and records
      * that in the system table under {@link #FAVORITE_PAGE_PERMISSIONS_RESET_KEY}, in the same
-     * transaction; later repairs leave rows added to individual favorites alone. Every repair
+     * transaction; favorites not on the System Host, which inherit from their site or folder rather
+     * than the type, get their own CMS Owner rows in that reset. Later repairs leave rows added to
+     * individual favorites alone. Every repair
      * queues the type's favorites for reindex. If any step of the repair fails, the whole repair rolls back,
      * including the type's rows, the error is logged and the next start tries again. Each repair
      * is logged. Runs on every start, so it also repairs an existing install. Turned off with
@@ -269,14 +272,55 @@ public class ContentTypeInitializer implements DotInitializer {
         APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, savedContentType, APILocator.systemUser(), false);
         // reset here rather than through ResetPermissionsJob, which needs a logged-in
         // request user and has none at startup
+        int favoritesOffSystemHost = 0;
         if (resetFavorites) {
             APILocator.getPermissionAPI().resetPermissionsUnder(savedContentType);
+            favoritesOffSystemHost = this.giveOwnerRowsToFavoritesOffSystemHost(savedContentType, permissionType, backendRole);
             APILocator.getSystemAPI().getSystemTable().set(FAVORITE_PAGE_PERMISSIONS_RESET_KEY, "true");
         }
         return resetFavorites
-                ? "Favorite pages: reset the content type permissions to CMS Owner only and removed the own permissions of "
-                        + favoritesWithOwnRows + " favorite(s)"
+                ? "Favorite pages: reset the content type permissions to CMS Owner only, removed the own permissions of "
+                        + favoritesWithOwnRows + " favorite(s) and gave " + favoritesOffSystemHost
+                        + " favorite(s) outside the System Host their own CMS Owner permissions"
                 : "Favorite pages: reset the content type permissions to CMS Owner only; favorites kept their own permissions";
+    }
+
+    /**
+     * Gives every favorite that is not on the System Host its own CMS Owner rows. The dialog saves
+     * favorites on the System Host, where they inherit from the content type, but an API call can
+     * save one on a site or in a folder, and then it inherits from that site or folder instead.
+     * Once the reset has removed its own rows, such a favorite would take the site's permissions,
+     * which can let anyone read it; its own rows keep it readable only by its owner.
+     *
+     * @param contentType    the favorite page content type
+     * @param permissionType the permission bits to give CMS Owner
+     * @param role           the CMS Owner role
+     * @return how many favorites were given their own rows
+     * @throws DotDataException     if the favorites cannot be read or their permissions saved
+     * @throws DotSecurityException if the permissions cannot be saved
+     */
+    private int giveOwnerRowsToFavoritesOffSystemHost(final ContentType contentType, final int permissionType,
+                                                      final Role role) throws DotDataException, DotSecurityException {
+
+        // The statement is three string literals; every value is bound.
+        final List<Map<String, Object>> rows = new DotConnect().setSQL( // nosemgrep
+                        "select distinct i.id from identifier i join contentlet c on c.identifier = i.id"
+                        + " where c.structure_inode = ? and (i.host_inode <> ? or i.parent_path <> ?)")
+                .addParam(contentType.inode()).addParam(Host.SYSTEM_HOST).addParam("/")
+                .loadObjectResults();
+        int count = 0;
+        for (final Map<String, Object> row : rows) {
+
+            final Contentlet favorite = APILocator.getContentletAPI()
+                    .findContentletByIdentifierAnyLanguage(String.valueOf(row.get("id")), true);
+            if (null != favorite) {
+                APILocator.getPermissionAPI().assignPermissions(List.of(
+                        new Permission(favorite.getPermissionId(), role.getId(), permissionType, true)),
+                        favorite, APILocator.systemUser(), false);
+                count++;
+            }
+        }
+        return count;
     }
 
     /**
