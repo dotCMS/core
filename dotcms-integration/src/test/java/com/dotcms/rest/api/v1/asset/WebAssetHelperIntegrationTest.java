@@ -666,8 +666,8 @@ public class WebAssetHelperIntegrationTest {
         AssetView assetView = assetVersionsView.versions().get(0);
         Assert.assertEquals(contentlet.getIdentifier(), assetView.identifier());
 
-        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), false);
-        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), true);
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), false, contentlet.getIdentifier());
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), true, contentlet.getIdentifier());
 
         contentletAPI.archive(contentlet, APILocator.systemUser(), false);
 
@@ -679,7 +679,7 @@ public class WebAssetHelperIntegrationTest {
         //Test at least one version is neither live nor working. This is an obvious scenario since we have several version of the same asset
         Assert.assertTrue(allVersions.stream().anyMatch(c-> Try.of(()->!c.isWorking() && !c.isLive()).getOrElse(false)));
         //Now this should generate a new version (obviously unarchived) and should succeed
-        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), true);
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), true, contentlet.getIdentifier());
         //Test nothing remains archived
         //We can still use the same collection of versions since the archive method is calculated on the fly
         Assert.assertTrue(allVersions.stream().noneMatch(c-> Try.of(c::isArchived).getOrElse(false)));
@@ -697,6 +697,18 @@ public class WebAssetHelperIntegrationTest {
      * @throws DotSecurityException
      */
     private static void pushFileForLanguageThenValidate(final File newTestFile, final String path, final String langString, final boolean live) throws IOException, DotDataException, DotSecurityException {
+        pushFileForLanguageThenValidate(newTestFile, path, langString, live, null);
+    }
+
+    /**
+     * Same as {@link #pushFileForLanguageThenValidate(File, String, String, boolean)}, but when the
+     * save fails the failure message looks the asset up by the given identifier. A path lookup does
+     * not find an asset that is archived, which is the state the save leaves behind in the archive
+     * then update test.
+     *
+     * @param identifier the identifier of the asset, or null to look it up by path
+     */
+    private static void pushFileForLanguageThenValidate(final File newTestFile, final String path, final String langString, final boolean live, final String identifier) throws IOException, DotDataException, DotSecurityException {
         final FormDataContentDisposition formDataContentDisposition = getFormDataContentDisposition(newTestFile);
         try(final InputStream inputStream = Files.newInputStream(newTestFile.toPath())){
             final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
@@ -711,7 +723,7 @@ public class WebAssetHelperIntegrationTest {
             try {
                 assetInfo = webAssetHelper.saveUpdateAsset(request, form, APILocator.systemUser());
             } catch (RuntimeException e) {
-                throw new AssertionError(describeWorkflowState(path, e), e);
+                throw new AssertionError(describeWorkflowState(path, identifier, e), e);
             }
             Assert.assertNotNull(assetInfo);
             Assert.assertTrue(assetInfo instanceof AssetView);
@@ -730,11 +742,14 @@ public class WebAssetHelperIntegrationTest {
      * the FileAsset content type show whether another test left a scheme or step assigned to it.
      * It is only called once the save has already failed.
      *
-     * @param path    the path of the asset that was being saved
-     * @param failure the exception thrown by the save
+     * @param path       the path of the asset that was being saved
+     * @param identifier the identifier of the asset, or null to look it up by path (which cannot
+     *                   find an archived asset)
+     * @param failure    the exception thrown by the save
      * @return the failure message
      */
-    private static String describeWorkflowState(final String path, final RuntimeException failure) {
+    private static String describeWorkflowState(final String path, final String identifier,
+            final RuntimeException failure) {
 
         final StringBuilder message = new StringBuilder("Saving the asset at [").append(path)
                 .append("] failed with: ").append(failure);
@@ -746,12 +761,12 @@ public class WebAssetHelperIntegrationTest {
                     .map(scheme -> scheme.getName() + "/" + scheme.getId())
                     .collect(Collectors.toList()));
 
-            final AssetVersionsView versionsView = (AssetVersionsView) WebAssetHelper.newInstance()
-                    .getAssetInfo(path, systemUser);
-            final String identifier = versionsView.versions().get(0).identifier();
+            final String assetIdentifier = null != identifier ? identifier
+                    : ((AssetVersionsView) WebAssetHelper.newInstance().getAssetInfo(path, systemUser))
+                            .versions().get(0).identifier();
             final Set<Long> languagesSeen = new HashSet<>();
             for (final Contentlet version : APILocator.getContentletAPI()
-                    .findAllVersions(new Identifier(identifier), systemUser, false)) {
+                    .findAllVersions(new Identifier(assetIdentifier), systemUser, false)) {
 
                 message.append("; version inode=").append(version.getInode())
                         .append(" languageId=").append(version.getLanguageId())
@@ -770,7 +785,7 @@ public class WebAssetHelperIntegrationTest {
 
     /**
      * Appends the workflow state of one language of an asset to the failure message built by
-     * {@link #describeWorkflowState(String, RuntimeException)}: the task row in the database, the
+     * {@link #describeWorkflowState(String, String, RuntimeException)}: the task row in the database, the
      * task and steps returned by the workflow API, and the actions of the steps involved.
      *
      * @param message     the message being built
