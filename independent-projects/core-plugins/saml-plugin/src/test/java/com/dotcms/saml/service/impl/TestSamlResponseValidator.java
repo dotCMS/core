@@ -54,6 +54,8 @@ public class TestSamlResponseValidator {
     private static final String SP_ENTITY_ID  = "https://dotcms.example.com/dotAdmin";
     private static final String CONFIG_ID     = "48190c8c-42c4-46af-8d1a-0cd5db894797";
     private static final String ACS_URL       = "https://dotcms.example.com/dotsaml/login/" + CONFIG_ID;
+    private static final String PLUGIN_ACS_PATH = "/api/v1/dotsaml/benchmark/" + CONFIG_ID;
+    private static final String PLUGIN_ACS_URL  = "https://dotcms.example.com" + PLUGIN_ACS_PATH;
     // real time: the replay cache storage expires entries against the system clock
     private static final long   NOW           = System.currentTimeMillis();
 
@@ -238,6 +240,56 @@ public class TestSamlResponseValidator {
 
         assertRejected("Destination", () -> this.validator.validate(response, assertion(requestId),
                 requestWithState(requestId), responseCapturing(new ArrayList<>()), idp()));
+    }
+
+    @Test
+    public void additionalAssertionConsumerUrlIsAccepted() {
+
+        this.optionalProperties.put(SamlConstants.ADDITIONAL_ACS_URLS,
+                "https://other.example.com/acs , https://DOTCMS.example.com:443" + PLUGIN_ACS_PATH + "/");
+
+        final String requestId = newId();
+        final Response response = response(requestId);
+        response.setDestination(PLUGIN_ACS_URL);
+        final Assertion assertion = assertion(requestId);
+        confirmationData(assertion).setRecipient(PLUGIN_ACS_URL);
+
+        this.validator.validate(response, assertion, requestWithState(requestId), responseCapturing(new ArrayList<>()), idp());
+    }
+
+    @Test
+    public void defaultAssertionConsumerUrlIsStillAcceptedWithAdditionalUrls() {
+
+        this.optionalProperties.put(SamlConstants.ADDITIONAL_ACS_URLS, PLUGIN_ACS_URL);
+
+        final String requestId = newId();
+        validate(requestId, assertion(requestId));
+    }
+
+    @Test
+    public void destinationNotInAdditionalUrlsIsRejectedAndNamesTheSetting() {
+
+        this.optionalProperties.put(SamlConstants.ADDITIONAL_ACS_URLS, PLUGIN_ACS_URL);
+
+        final String requestId = newId();
+        final Response response = response(requestId);
+        // only exact URLs are accepted: a longer path under a listed URL is not
+        response.setDestination(PLUGIN_ACS_URL + "/extra");
+
+        assertRejected(SamlConstants.ADDITIONAL_ACS_URLS, () -> this.validator.validate(response, assertion(requestId),
+                requestWithState(requestId), responseCapturing(new ArrayList<>()), idp()));
+    }
+
+    @Test
+    public void recipientNotInAdditionalUrlsIsRejectedAndNamesTheSetting() {
+
+        this.optionalProperties.put(SamlConstants.ADDITIONAL_ACS_URLS, PLUGIN_ACS_URL);
+
+        final String requestId = newId();
+        final Assertion assertion = assertion(requestId);
+        confirmationData(assertion).setRecipient("https://dotcms.example.com/api/v1/dotsaml/other/" + CONFIG_ID);
+
+        assertRejected(SamlConstants.ADDITIONAL_ACS_URLS, () -> validate(requestId, assertion));
     }
 
     @Test
