@@ -51,9 +51,9 @@ import org.junit.jupiter.api.Test;
 /**
  * Integration tests for {@link DirectorAction#processAction} on the {@code editLink},
  * {@code editFile}, {@code editTemplate} and {@code editHTMLPage} commands: a {@code subcmd}
- * parameter does not change who holds the edit lock on the asset, while the rest of each command
- * keeps working as before. The caller is a back-end user who can read the test site and
- * everything in it, which is what any back-end user working on the site can do.
+ * parameter does not change who holds the edit lock on the asset, and {@code editLink} releases
+ * a lock held by the caller who last saved the link. The caller is a back-end user with READ on
+ * the test site and everything in it.
  */
 public class DirectorActionTest {
 
@@ -173,7 +173,7 @@ public class DirectorActionTest {
      * Method to test: {@link DirectorAction#processAction}
      * Given Scenario: A back-end user last saved a link and holds its lock, and opens it through
      * {@code cmd=editLink} with no {@code subcmd}, as the Links editor does when the link is locked
-     * ExpectedResult: The lock is released and the user is sent on to the editor, as before
+     * ExpectedResult: The lock is released
      */
     @Test
     void test_processAction_editLinkLockedByCaller_releasesLock() throws Exception {

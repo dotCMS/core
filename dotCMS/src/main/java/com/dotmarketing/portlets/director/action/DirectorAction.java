@@ -105,8 +105,7 @@ public class DirectorAction extends DotPortletAction {
 	 *            - The configuration of the portlet that triggered the request.
 	 * @param req
 	 *            - The HTTP request object. Contains important information such
-	 *            as the command and/or sub-command to execute, the referrer
-	 *            page, etc.
+	 *            as the command to execute, the referrer page, etc.
 	 * @param res
 	 *            - The HTTP response object.
 	 * @throws Exception
