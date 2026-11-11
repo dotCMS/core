@@ -1269,8 +1269,11 @@ public class ContentHandler implements IHandler {
 	 * @param relationship The relationship to check.
 	 *
 	 * @return If the originating field is on the parent type, returns {@code true}.
+	 *
+	 * @throws DotDataException The parent Content Type couldn't be read. The bundle fails instead
+	 *                          of applying the relationship with the wrong side limited.
 	 */
-	private static boolean isOriginatingFieldOnParent(final Relationship relationship) {
+	private static boolean isOriginatingFieldOnParent(final Relationship relationship) throws DotDataException {
 		final String relationType = relationship.getRelationTypeValue();
 		final int separator = null == relationType ? -1 : relationType.indexOf('.');
 		if (separator < 0) {
@@ -1279,12 +1282,21 @@ public class ContentHandler implements IHandler {
 		final String typeVariable = relationType.substring(0, separator);
 		final String fieldVariable = relationType.substring(separator + 1);
 		if (!relationship.getParentStructureInode().equals(relationship.getChildStructureInode())) {
-			final String parentVariable = Try.of(() -> APILocator.getContentTypeAPI(APILocator.systemUser())
-					.find(relationship.getParentStructureInode()).variable()).getOrNull();
+			final String parentVariable;
+			try {
+				parentVariable = APILocator.getContentTypeAPI(APILocator.systemUser())
+						.find(relationship.getParentStructureInode()).variable();
+			} catch (final DotSecurityException e) {
+				throw new DotDataException(e);
+			}
 			return typeVariable.equalsIgnoreCase(parentVariable);
 		}
-		return fieldVariable.equals(relationship.getChildRelationName())
-				&& !fieldVariable.equals(relationship.getParentRelationName());
+		// For a type related to itself, deleting the originating field clears its relation name
+		// but keeps the relationship, so a cleared child relation name next to a different parent
+		// one still means the originating field was on the parent
+		return !fieldVariable.equals(relationship.getParentRelationName())
+				&& (fieldVariable.equals(relationship.getChildRelationName())
+						|| null == relationship.getChildRelationName());
 	}
 
 	private static final String OTHER_CHILDREN_SQL =
