@@ -1438,16 +1438,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
     }
 
 
-    function viewHTMLPageStatistics (objId, referer) {
-        var userId = '<%=user.getUserId()%>';
-        var loc='<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpageviews/view_htmlpage_views" /></portlet:renderURL>&htmlpage=' + objId  + '&userId=' + userId + '&referer=' + referer;
-        if(inFrame){
-            window.location = loc;
-        }else{
-            top.location = loc;
-        }
-    }
-
     function unlockHTMLPage (objId, referer) {
         //top.location='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/edit_htmlpage" /><portlet:param name="cmd" value="unlock" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
         BrowserAjax.unlockAsset(objId, unlockHTMLPageCallback);
