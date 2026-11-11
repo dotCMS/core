@@ -204,4 +204,24 @@ public interface FeatureFlagName {
      */
     String FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS =
             "FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS";
+
+    /**
+     * Opt-in protection against the scheduled publish job re-publishing content that someone
+     * deliberately unpublished. Off by default.
+     *
+     * <p>The publish job normally skips not-live content whose publish date it already covered in
+     * an earlier run. When it cannot tell when it last ran (typically its first run after a
+     * restart), it publishes every not-live item whose publish date has passed. With this flag on,
+     * it instead skips any such item that was modified after its publish date, which is what a
+     * manual unpublish leaves behind, and logs each skip. Content last saved before its publish
+     * date is still published.
+     *
+     * <p>Has no effect on runs where the previous run time is known, and is overridden by
+     * {@code PUBLISH_JOB_QUEUE_FORCE_INCLUDE_PAST_CONTENT=true}.
+     *
+     * @see com.dotcms.enterprise.publishing.PublishDateUpdater#shouldPublishContent(
+     *      com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Date, boolean)
+     */
+    String FEATURE_FLAG_PUBLISH_JOB_QUEUE_PROTECT_UNPUBLISHED_CONTENT =
+            "FEATURE_FLAG_PUBLISH_JOB_QUEUE_PROTECT_UNPUBLISHED_CONTENT";
 }

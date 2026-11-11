@@ -368,6 +368,80 @@ public class PublishDateUpdaterTest {
         verify(processor).process(third, systemUser);
     }
 
+    /**
+     * Customer scenario from #37157: content unpublished long after its publish date passed, seen
+     * on a run that cannot tell when the job last ran. With protection on it must stay unpublished.
+     */
+    @Test
+    public void protectedSkipsContentModifiedAfterPublishDateWhenPreviousRunUnknown() {
+        givenPublishAndModDates(minutesBefore(FIRE_TIME, 60), minutesBefore(FIRE_TIME, 5));
+
+        assertFalse(PublishDateUpdater.shouldPublishContent(contentlet, null, true));
+    }
+
+    /**
+     * A genuine scheduled publish (saved before its publish date) is still published when the
+     * previous run time is unknown, e.g. its date passed while the server was down.
+     */
+    @Test
+    public void protectedPublishesPendingScheduledContentWhenPreviousRunUnknown() {
+        givenPublishAndModDates(minutesBefore(FIRE_TIME, 5), minutesBefore(FIRE_TIME, 60));
+
+        assertTrue(PublishDateUpdater.shouldPublishContent(contentlet, null, true));
+    }
+
+    /**
+     * Without a mod date there is nothing to compare, so protection falls back to publishing.
+     */
+    @Test
+    public void protectedPublishesWhenPreviousRunUnknownAndModDateMissing() {
+        givenPublishAndModDates(minutesBefore(FIRE_TIME, 60), null);
+
+        assertTrue(PublishDateUpdater.shouldPublishContent(contentlet, null, true));
+    }
+
+    /**
+     * With the flag off (the default) the unknown-previous-run fallback still publishes, exactly
+     * as before the fix.
+     */
+    @Test
+    public void unprotectedKeepsPublishingWhenPreviousRunUnknown() {
+        givenPublishAndModDates(minutesBefore(FIRE_TIME, 60), minutesBefore(FIRE_TIME, 5));
+
+        assertTrue(PublishDateUpdater.shouldPublishContent(contentlet, null, false));
+    }
+
+    /**
+     * When the previous run time is known, the mod date plays no part: content whose publish date
+     * falls after the previous run is published even if it was modified after that date.
+     */
+    @Test
+    public void protectedIgnoresModDateWhenPreviousRunKnown() {
+        givenPublishAndModDates(minutesBefore(FIRE_TIME, 1), FIRE_TIME);
+
+        assertTrue(PublishDateUpdater.shouldPublishContent(contentlet,
+                minutesBefore(FIRE_TIME, 2), true));
+    }
+
+    /**
+     * Stubs the mocked contentlet with a content type whose publish date field holds
+     * {@code publishDate}, and with the given mod date.
+     */
+    private void givenPublishAndModDates(final Date publishDate, final Date modDate) {
+        final ContentType contentType = mock(ContentType.class);
+        when(contentType.publishDateVar()).thenReturn("publishDate");
+        when(contentlet.getContentType()).thenReturn(contentType);
+        when(contentlet.get("publishDate")).thenReturn(publishDate);
+        when(contentlet.getModDate()).thenReturn(modDate);
+    }
+
+    /**
+     * Returns the instant {@code minutes} minutes before {@code date}.
+     */
+    private static Date minutesBefore(final Date date, final int minutes) {
+        return new Date(date.getTime() - minutes * 60_000L);
+    }
+
     private PublishDateUpdater.Publisher publisher(final WorkflowResolutionConfig config) {
         return new PublishDateUpdater.Publisher(contentletAPI, workflowAPI, config);
     }
