@@ -18,8 +18,11 @@ set -e
 DEFAULT_STACK_FILTER='org.apache.catalina,org.apache.coyote,org.apache.tomcat,javax.servlet,org.tuckey,io.vavr,graphql.execution,graphql.kickstart,graphql.GraphQL,java.util.concurrent,java.lang.Thread,sun.nio.ch,jdk.internal.reflect,java.lang.reflect'
 export CMS_LOG4J_STACK_FILTER="${CMS_LOG4J_STACK_FILTER:-$DEFAULT_STACK_FILTER}"
 
-DEFAULT_CONSOLE_PATTERN='%d{HH:mm:ss.SSS}  %-5level %logger{2} - %enc{%msg}{CRLF}%n%xEx{filters('"$CMS_LOG4J_STACK_FILTER"')}'
-DEFAULT_MESSAGE_PATTERN='[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %enc{%m}{CRLF}%n%xEx{filters('"$CMS_LOG4J_STACK_FILTER"')}'
+## Control characters other than tab and line ends are written as "?" in messages and exception
+## text; %ex{none} keeps log4j from appending a second, unfiltered trace.
+CONTROL_CHARS='[\x00-\x08\x0B\x0C\x0E-\x1F\x7F-\x9F\u2028\u2029]'
+DEFAULT_CONSOLE_PATTERN='%d{HH:mm:ss.SSS}  %-5level %logger{2} - %replace{%enc{%msg}{CRLF}}{'"$CONTROL_CHARS"'}{?}%n%replace{%xEx{filters('"$CMS_LOG4J_STACK_FILTER"')}}{'"$CONTROL_CHARS"'}{?}%ex{none}'
+DEFAULT_MESSAGE_PATTERN='[%d{dd/MM/yy HH:mm:ss:SSS z}] %5p %c{2}: %replace{%enc{%m}{CRLF}}{'"$CONTROL_CHARS"'}{?}%n%replace{%xEx{filters('"$CMS_LOG4J_STACK_FILTER"')}}{'"$CONTROL_CHARS"'}{?}%ex{none}'
 
 export CMS_LOG4J_CONSOLE_PATTERN="${CMS_LOG4J_CONSOLE_PATTERN:-$DEFAULT_CONSOLE_PATTERN}"
 export CMS_LOG4J_MESSAGE_PATTERN="${CMS_LOG4J_MESSAGE_PATTERN:-$DEFAULT_MESSAGE_PATTERN}"

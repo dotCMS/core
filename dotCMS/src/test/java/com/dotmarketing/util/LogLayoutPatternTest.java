@@ -26,7 +26,8 @@ import org.junit.jupiter.api.Test;
 /**
  * Checks the log layouts dotCMS ships: the webapp {@code log4j2.xml} and the default patterns the
  * Docker image exports. A line break inside a log message is written as text, so every message
- * stays on its own line, while stack traces keep one frame per line.
+ * stays on its own line, while stack traces keep one frame per line. Other control characters in
+ * a message or in exception text are written as {@code ?}.
  */
 class LogLayoutPatternTest {
 
@@ -35,6 +36,8 @@ class LogLayoutPatternTest {
             new File("src/main/docker/original/ROOT/srv/35-set-logging-defaults.sh");
 
     private static final String MESSAGE = "first part\r\nsecond part";
+    private static final String CONTROL_MESSAGE =
+            "a\u001b[2Kb\u0007c\u2028d\u2029e\u0085f col1\tcol2 \u00e9\u65e5\u672c";
 
     /**
      * Given the console layout from the webapp log4j2.xml,
@@ -83,6 +86,94 @@ class LogLayoutPatternTest {
             assertStackTraceFrames(format(layout(pattern),
                     event("failure", new IllegalStateException("cause"))));
         }
+    }
+
+    /**
+     * Given the console layout from the webapp log4j2.xml,
+     * When a message holds terminal control characters and Unicode line separators,
+     * Then each one is written as {@code ?}, while tabs and non-ASCII letters are kept.
+     */
+    @Test
+    void webappConsolePattern_writesControlCharactersAsPlaceholders() throws IOException {
+        assertControlCharactersReplaced(format(webappConsoleLayout(), event(CONTROL_MESSAGE, null)));
+    }
+
+    /**
+     * Given the console layout from the webapp log4j2.xml,
+     * When the exception text holds a terminal control character,
+     * Then it is written as {@code ?} and the stack trace is printed once, one frame per line.
+     */
+    @Test
+    void webappConsolePattern_writesControlCharactersInExceptionTextAsPlaceholders()
+            throws IOException {
+        assertExceptionTextReplaced(format(webappConsoleLayout(), event("failure", controlException())));
+    }
+
+    /**
+     * Given the default console and file patterns the Docker image exports,
+     * When a message holds terminal control characters and Unicode line separators,
+     * Then each one is written as {@code ?}, while tabs and non-ASCII letters are kept.
+     */
+    @Test
+    void dockerDefaultPatterns_writeControlCharactersAsPlaceholders() throws Exception {
+        for (final String pattern : dockerDefaultPatterns()) {
+            assertControlCharactersReplaced(format(layout(pattern), event(CONTROL_MESSAGE, null)));
+        }
+    }
+
+    /**
+     * Given the default console and file patterns the Docker image exports,
+     * When the exception text holds a terminal control character,
+     * Then it is written as {@code ?} and the stack trace is printed once, one frame per line.
+     */
+    @Test
+    void dockerDefaultPatterns_writeControlCharactersInExceptionTextAsPlaceholders()
+            throws Exception {
+        for (final String pattern : dockerDefaultPatterns()) {
+            assertExceptionTextReplaced(format(layout(pattern), event("failure", controlException())));
+        }
+    }
+
+    private static IllegalStateException controlException() {
+        return new IllegalStateException("cause\u001b[1Aend");
+    }
+
+    private static void assertControlCharactersReplaced(final String output) {
+        assertNoControlCharacters(output);
+        assertTrue(output.contains("a?[2Kb?c?d?e?f"), () -> "output: " + visible(output));
+        assertTrue(output.contains("col1\tcol2"), () -> "output: " + visible(output));
+        assertTrue(output.contains("\u00e9\u65e5\u672c"), () -> "output: " + visible(output));
+    }
+
+    private static void assertExceptionTextReplaced(final String output) {
+        assertNoControlCharacters(output);
+        assertTrue(output.contains("IllegalStateException: cause?[1Aend"),
+                () -> "output: " + visible(output));
+        assertEquals(1, output.split("IllegalStateException", -1).length - 1,
+                () -> "the stack trace is printed once: " + visible(output));
+        assertStackTraceFrames(output.replace("cause?[1Aend", "cause"));
+    }
+
+    /** Fails on any character a terminal could act on, other than tab and line ends. */
+    private static void assertNoControlCharacters(final String output) {
+        for (final char c : output.toCharArray()) {
+            final boolean allowed = c == '\t' || c == '\n' || c == '\r';
+            assertFalse(!allowed && (Character.isISOControl(c) || c == '\u2028' || c == '\u2029'),
+                    () -> "output: " + visible(output));
+        }
+    }
+
+    /** Shows control characters as their code point, so a failure message is readable. */
+    private static String visible(final String output) {
+        final StringBuilder builder = new StringBuilder();
+        for (final char c : output.toCharArray()) {
+            if (c != '\n' && c != '\t' && (Character.isISOControl(c) || c == '\u2028' || c == '\u2029')) {
+                builder.append(String.format("<U+%04X>", (int) c));
+            } else {
+                builder.append(c);
+            }
+        }
+        return builder.toString();
     }
 
     private static void assertMessageOnOneLine(final String output) {
