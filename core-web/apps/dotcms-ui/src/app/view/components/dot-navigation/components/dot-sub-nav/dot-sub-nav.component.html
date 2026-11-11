@@ -26,24 +26,26 @@
     ) {
         <li class="dot-nav-sub__item" role="presentation">
             @if (entry.parent) {
-                <button
+                <a
                     cdkMenuItem
                     dotNavMenuTrigger
                     [cdkMenuTriggerFor]="flyout"
                     #parentMenu="dotNavMenuTrigger"
+                    [routerLink]="entry.items[0].menuLink"
+                    [state]="{ menuId: data.id }"
+                    (click)="onItemClick($event, entry.items[0])"
                     (mouseenter)="cancelFlyoutClose(); parentMenu.open()"
                     (mouseleave)="scheduleFlyoutClose(parentMenu)"
                     (cdkMenuOpened)="cancelFlyoutClose(); $flyoutOpen.set(true)"
                     (cdkMenuClosed)="cancelFlyoutClose(); $flyoutOpen.set(false)"
                     [class.dot-nav-sub__link--active]="entry.active"
                     [attr.data-testid]="'nav-sub-parent-' + entry.parent"
-                    class="dot-nav-sub__link flex items-center justify-between gap-2 border-0 bg-transparent text-left font-[inherit]"
-                    type="button">
+                    class="dot-nav-sub__link flex items-center justify-between gap-2 border-0 bg-transparent text-left font-[inherit]">
                     {{ entry.parent | dm }}
                     <span class="material-symbols-outlined text-base" aria-hidden="true">
                         chevron_right
                     </span>
-                </button>
+                </a>
                 <ng-template #flyout>
                     <ul
                         cdkMenu

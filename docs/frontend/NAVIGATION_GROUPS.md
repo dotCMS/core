@@ -29,7 +29,7 @@ Users, Roles, Tools, dotAuth, Users (Legacy), and Roles & Tools (Legacy) use thi
 - The parent appears at the first child's position; children keep their existing relative order. Portlets without a parent, including blank/whitespace-only values, stay flat.
 - Groups contain only the portlets supplied by the existing menu API. A parent does not add portlets to a layout, grant permissions, or expose a new route.
 - A parent with one child remains a group. No parent appears when none of its children are present.
-- Hovering or clicking a parent opens its flyout. Keyboard users can reach the menu with Tab, move with arrow keys, and open a parent with Right Arrow or activation. Escape closes the flyout and restores focus; clicking outside also closes it.
+- Hovering a parent opens its flyout without navigating. Clicking the parent opens the flyout and navigates to its first available child in the current order, using that child's existing route and layout context. Keyboard users can reach the menu with Tab, move with arrow keys, and open a parent with Right Arrow without navigating. Enter follows the parent link. Escape closes the flyout and restores focus; clicking outside also closes it.
 - Clicking an open parent does not toggle it closed. Clicking a child still navigates normally but leaves the flyout open, like the main navigation flyout.
 - Leaving the parent or its flyout starts a 300 ms close delay. Entering either cancels the delay, allowing the pointer to cross between them without dismissing the flyout.
 - Grouping works with both expanded and collapsed navigation. The active child's parent is highlighted.

@@ -170,6 +170,7 @@ describe('DotSubNavComponent', () => {
         const parentSelector = byTestId('nav-sub-parent-Identity-Access');
 
         beforeEach(() => {
+            vi.spyOn(spectator.inject(Router), 'navigateByUrl').mockResolvedValue(true);
             spectator.setInput('data', {
                 ...data,
                 isOpen: true,
@@ -178,7 +179,7 @@ describe('DotSubNavComponent', () => {
         });
 
         it('groups non-adjacent siblings at the first child and translates the parent', () => {
-            const parent = spectator.query<HTMLButtonElement>(parentSelector);
+            const parent = spectator.query<HTMLAnchorElement>(parentSelector);
             const link = spectator.query(byTestId('nav-sub-link-other'));
             expect(parent.textContent).toContain('Identity Access');
             expect(
@@ -194,7 +195,7 @@ describe('DotSubNavComponent', () => {
         });
 
         it('opens on hover and retains child order, routes and active state', () => {
-            const parent = spectator.query<HTMLButtonElement>(parentSelector);
+            const parent = spectator.query<HTMLAnchorElement>(parentSelector);
             parent.dispatchEvent(new MouseEvent('mouseenter'));
             spectator.detectChanges();
 
@@ -231,7 +232,72 @@ describe('DotSubNavComponent', () => {
                 spectator.click(parent);
                 expect(spectator.query(byTestId('nav-sub-flyout'), { root: true })).toBe(flyout);
                 expect(parent.getAttribute('aria-expanded')).toBe('true');
-                expect(emit).not.toHaveBeenCalled();
+                expect(emit).toHaveBeenCalledTimes(2);
+                expect(emit).toHaveBeenLastCalledWith({
+                    originalEvent: expect.any(MouseEvent),
+                    data: users
+                });
+            }
+        );
+
+        it.each([false, true])(
+            'navigates to the first child with the layout state (collapsed: %s)',
+            (collapsed) => {
+                spectator.setInput('collapsed', collapsed);
+                const emit = vi.spyOn(spectator.component.itemClick, 'emit');
+                const navigate = vi.mocked(spectator.inject(Router).navigateByUrl);
+                const parent = spectator.query<HTMLAnchorElement>(parentSelector);
+                expect(parent.tagName).toBe('A');
+                expect(parent.getAttribute('href')).toContain(users.menuLink);
+                parent.dispatchEvent(new MouseEvent('mouseenter'));
+                spectator.detectChanges();
+                expect(navigate).not.toHaveBeenCalled();
+                spectator.click(parent);
+                expect(emit).toHaveBeenCalledWith({
+                    originalEvent: expect.any(MouseEvent),
+                    data: users
+                });
+                expect(navigate).toHaveBeenCalledTimes(1);
+                expect(navigate.mock.calls[0][0].toString()).toContain(users.menuLink);
+                expect(navigate.mock.calls[0][1]?.state).toEqual({ menuId: data.id });
+                expect(parent.getAttribute('aria-expanded')).toBe('true');
+            }
+        );
+
+        it('follows the current first child after reordering or permission filtering', () => {
+            const emit = vi.spyOn(spectator.component.itemClick, 'emit');
+            const navigate = vi.mocked(spectator.inject(Router).navigateByUrl);
+            spectator.setInput('data', { ...data, isOpen: true, menuItems: [roles, other, users] });
+            spectator.click(parentSelector);
+            expect(emit).toHaveBeenLastCalledWith({
+                originalEvent: expect.any(MouseEvent),
+                data: roles
+            });
+            expect(navigate.mock.calls.at(-1)?.[0].toString()).toContain(roles.menuLink);
+            spectator.setInput('data', { ...data, isOpen: true, menuItems: [users] });
+            spectator.click(parentSelector);
+            expect(emit).toHaveBeenLastCalledWith({
+                originalEvent: expect.any(MouseEvent),
+                data: users
+            });
+            expect(navigate.mock.calls.at(-1)?.[0].toString()).toContain(users.menuLink);
+        });
+
+        it.each([{ ctrlKey: true }, { metaKey: true }])(
+            'preserves native modified clicks on parent links (modifiers: %j)',
+            (modifiers) => {
+                const event = new MouseEvent('click', {
+                    bubbles: true,
+                    cancelable: true,
+                    ...modifiers
+                });
+                event.preventDefault();
+                const parent = spectator.query<HTMLAnchorElement>(parentSelector);
+                parent.dispatchEvent(event);
+                spectator.detectChanges();
+                expect(spectator.inject(Router).navigateByUrl).not.toHaveBeenCalled();
+                expect(parent.getAttribute('href')).toContain(users.menuLink);
+                expect(parent.getAttribute('aria-expanded')).toBe('true');
             }
         );
 
@@ -247,11 +313,11 @@ describe('DotSubNavComponent', () => {
             'emits the original child without closing the flyout (modifiers: %j)',
             (modifiers) => {
                 const emit = vi.spyOn(spectator.component.itemClick, 'emit');
-                const navigate = vi
-                    .spyOn(spectator.inject(Router), 'navigateByUrl')
-                    .mockResolvedValue(true);
+                const navigate = vi.mocked(spectator.inject(Router).navigateByUrl);
                 spectator.click(parentSelector);
                 const flyout = spectator.query(byTestId('nav-sub-flyout'), { root: true });
+                navigate.mockClear();
+                emit.mockClear();
                 const event = new MouseEvent('click', {
                     bubbles: true,
                     cancelable: true,
@@ -274,7 +340,7 @@ describe('DotSubNavComponent', () => {
         );
 
         it('supports keyboard opening, Escape dismissal and focus restoration', () => {
-            const parent = spectator.query<HTMLButtonElement>(parentSelector);
+            const parent = spectator.query<HTMLAnchorElement>(parentSelector);
             parent.focus();
             parent.dispatchEvent(
                 new KeyboardEvent('keydown', {
@@ -289,6 +355,7 @@ describe('DotSubNavComponent', () => {
                 { root: true }
             );
             expect(document.activeElement).toBe(firstLink);
+            expect(spectator.inject(Router).navigateByUrl).not.toHaveBeenCalled();
             firstLink.dispatchEvent(
                 new KeyboardEvent('keydown', {
                     key: 'Escape',
