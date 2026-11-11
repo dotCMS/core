@@ -20,6 +20,26 @@ public interface FeatureFlagName {
     // Unique Fields
     String FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = "FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION";
 
+    /**
+     * Master switch for the Velocity tool hardening on this LTS: the read-only {@code $cmsuser}
+     * profiles, the removal of the API accessors from the bound tools and the Scripting Developer
+     * rule for Velocity inside widget field values over REST. Off by default on the LTS, so
+     * templates and widgets keep behaving as they did.
+     * Turn it on to close the template privilege escalation; the two flags below then fine-tune
+     * the widget and {@code $cmsuser} parts.
+     */
+    String FEATURE_FLAG_VELOCITY_TOOL_HARDENING = "FEATURE_FLAG_VELOCITY_TOOL_HARDENING";
+
+    /**
+     * Kill switch for widget field scripting over REST ({@code /api/widget},
+     * {@code /api/content?render=true} and {@code _search} with {@code render}), read only when
+     * {@link #FEATURE_FLAG_VELOCITY_TOOL_HARDENING} is on. On by default:
+     * Velocity found in a widget's field values is evaluated when the widget was last modified by
+     * a user holding the Scripting Developer role, and rendered as text otherwise. Off: field
+     * values render as text for every widget. Pages are not affected either way.
+     */
+    String FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER = "FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER";
+
     // others
     String FULLSCREEN_FIELD_FEATURE_FLAG = "content.edit.ui.fullscreen";
 
@@ -111,4 +131,15 @@ public interface FeatureFlagName {
      */
     String FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION =
             "FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION";
+
+    /**
+     * With {@link #FEATURE_FLAG_VELOCITY_TOOL_HARDENING} on, makes the {@code $cmsuser} Velocity
+     * tool's lookups ({@code getUserByEmail},
+     * {@code getUserByUserId}, {@code getAllUsersInGroup}) return read-only
+     * {@code UserProfile} objects. On by default: when the flag is not set, it is treated as
+     * {@code true}. Turn it off only for installations whose templates pass looked-up accounts to
+     * methods that require a {@code User}; lookups then return detached {@code User} copies with
+     * the credential fields cleared.
+     */
+    String FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES = "FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES";
 }

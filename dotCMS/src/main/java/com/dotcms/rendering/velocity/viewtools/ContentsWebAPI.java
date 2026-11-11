@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import com.dotcms.rendering.velocity.viewtools.util.ToolHardening;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotmarketing.beans.Identifier;
@@ -68,20 +69,32 @@ public class ContentsWebAPI implements ViewTool {
 		}
 	}
 
+	/**
+	 * Returns the API for Java callers. Templates get {@code null} while the Velocity tool hardening
+	 * is on, because the API methods take the authorizing user as a parameter.
+	 */
 	public CategoryAPI getCategoryAPI() {
-		return categoryAPI;
+		return ToolHardening.isEnabled() ? null : categoryAPI;
 	}
 
 	public void setCategoryAPI(CategoryAPI categoryAPI) {
-		this.categoryAPI = categoryAPI;
+		if (!ToolHardening.isEnabled()) {
+			this.categoryAPI = categoryAPI;
+		}
 	}
 
+	/**
+	 * Returns the API for Java callers. Templates get {@code null} while the Velocity tool hardening
+	 * is on, because the API methods take the authorizing user as a parameter.
+	 */
 	public ContentletAPI getContentletAPI() {
-		return conAPI;
+		return ToolHardening.isEnabled() ? null : conAPI;
 	}
 
 	public void setContentletAPI(ContentletAPI conAPI) {
-		this.conAPI = conAPI;
+		if (!ToolHardening.isEnabled()) {
+			this.conAPI = conAPI;
+		}
 	}
 
 

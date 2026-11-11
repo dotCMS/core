@@ -46,6 +46,8 @@ import com.dotmarketing.util.HashBuilderTest;
 import com.dotmarketing.util.TestConfig;
 import com.liferay.portal.language.LanguageUtilTest;
 import org.apache.felix.framework.OSGIUtilTest;
+import com.dotcms.rendering.js.viewtools.UserJsViewToolTest;
+import com.dotcms.rendering.velocity.viewtools.CMSUserToolTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 import com.dotcms.enterprise.rules.RulesAPIImplParentChecksIntegrationTest;
@@ -128,7 +130,11 @@ import com.dotmarketing.portlets.structure.action.EditStructureActionSaveTest;
     com.dotcms.cms.login.LoginTokenInvalidationTest.class,
     com.dotmarketing.portlets.cmsmaintenance.action.ViewCMSMaintenanceActionTest.class,
     com.dotmarketing.webdav.DotWebdavHelperTest.class,
-    EditStructureActionSaveTest.class
+    EditStructureActionSaveTest.class,
+    com.dotcms.rendering.velocity.WidgetRendererTest.class,
+    UserJsViewToolTest.class,
+    CMSUserToolTest.class,
+    com.dotmarketing.portlets.contentlet.transform.ContentMapWidgetFieldRenderTest.class
 })
 public class MainSuite2a {
 

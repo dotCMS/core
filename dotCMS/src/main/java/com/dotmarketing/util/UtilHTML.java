@@ -29,6 +29,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
+import com.dotcms.rendering.velocity.viewtools.util.ToolHardening;
 import io.vavr.control.Try;
 
 public class UtilHTML {
@@ -540,11 +541,17 @@ public class UtilHTML {
 		return fixme;
 	}
 
+	/**
+	 * Returns the API for Java callers. Templates get {@code null} while the Velocity tool hardening
+	 * is on, because the API methods take the authorizing user as a parameter.
+	 */
 	public static CategoryAPI getCategoryAPI() {
-		return categoryAPI;
+		return ToolHardening.isEnabled() ? null : categoryAPI;
 	}
 
 	public static void setCategoryAPI(CategoryAPI categoryAPI) {
-		UtilHTML.categoryAPI = categoryAPI;
+		if (!ToolHardening.isEnabled()) {
+			UtilHTML.categoryAPI = categoryAPI;
+		}
 	}
 }

@@ -6171,6 +6171,7 @@ paths:
               filter:
                 query: ""
                 types: "Blog,Activity"
+                sites: "demo.dotcms.com,SYSTEM_HOST"
               page: 1
               perPage: 10
               orderBy: name
@@ -6182,7 +6183,7 @@ paths:
 
           | Property |  Type  | Description |
           |----------|--------|-------------|
-          | `filter`   | JSON Object | Contains two properties: <table><tr><td>`query`</td><td>A simple query returning full or partial matches.</td></tr><tr><td>`types`</td><td>A comma-separated list of specific content type variables.</td></tr></table> |
+          | `filter`   | JSON Object | Contains three properties: <table><tr><td>`query`</td><td>A simple query returning full or partial matches.</td></tr><tr><td>`types`</td><td>A comma-separated list of specific content type variables.</td></tr><tr><td>`sites`</td><td>A comma-separated list of site identifiers or keys.</td></tr></table> |
           | `page` | Integer | Which page of results to show. Defaults to `1`. |
           | `perPage`   | Integer | Number of results to display per page. Defaults to `10`. |
           | `orderBy`   | String | Sorting parameter: `name` (default), `velocity_var_name`, `mod_date`, or `sort_order`. |
@@ -7079,6 +7080,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointsView"
           description: Collection of environments.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenException"
+          description: If the user is not an admin and has no access to the Configuration
+            portlet.
       summary: Returns the endpoints
       tags:
       - Environment
@@ -7128,6 +7136,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointsView"
           description: Collection of environments.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenException"
+          description: If the user is not an admin and has no access to the Configuration
+            portlet.
       summary: Returns the endpoints
       tags:
       - Environment
@@ -7147,6 +7162,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointView"
           description: Collection of environments.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenException"
+          description: If the user is not an admin and has no access to the Configuration
+            portlet.
       summary: Returns the endpoint by id
       tags:
       - Environment
@@ -11557,50 +11579,6 @@ paths:
           description: default response
       tags:
       - Internationalization
-  /v1/system/request-draining-test/long-request:
-    get:
-      operationId: longRunningRequest
-      parameters:
-      - in: query
-        name: duration
-        schema:
-          type: integer
-          format: int64
-          default: 5000
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
-  /v1/system/request-draining-test/simulate-active-requests:
-    get:
-      operationId: simulateActiveRequests
-      parameters:
-      - in: query
-        name: count
-        schema:
-          type: integer
-          format: int32
-          default: 1
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
-  /v1/system/request-draining-test/status:
-    get:
-      operationId: getShutdownStatus
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
   /v1/system/ruleengine/actionlets:
     get:
       operationId: list_10
@@ -21141,15 +21119,6 @@ components:
       properties:
         address:
           type: string
-        authKey:
-          type: object
-          properties:
-            empty:
-              type: boolean
-            length:
-              type: integer
-              format: int32
-              writeOnly: true
         enabled:
           type: boolean
         groupId:
@@ -23018,6 +22987,8 @@ components:
         priority:
           type: integer
           format: int32
+      required:
+      - operator
     RestConditionValue:
       type: object
       properties:
@@ -23350,6 +23321,16 @@ components:
         resultsSize:
           type: integer
           format: int64
+        warnings:
+          type: array
+          description: "Notes about how the contentlets were rendered, such as widget\
+            \ field values returned as text because widget field scripting is off.\
+            \ Empty when there is nothing to report."
+          items:
+            type: string
+            description: "Notes about how the contentlets were rendered, such as widget\
+              \ field values returned as text because widget field scripting is off.\
+              \ Empty when there is nothing to report."
     SecretForm:
       type: object
     SelectField:
@@ -25347,6 +25328,10 @@ components:
     WorkflowTimelineItemView:
       type: object
       properties:
+        action:
+          type: object
+          additionalProperties:
+            type: string
         commentDescription:
           type: string
         createdDate:
@@ -25356,6 +25341,10 @@ components:
           type: string
         roleId:
           type: string
+        step:
+          type: object
+          additionalProperties:
+            type: string
         taskId:
           type: string
         type:

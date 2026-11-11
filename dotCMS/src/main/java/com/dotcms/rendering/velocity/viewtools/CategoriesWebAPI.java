@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import com.dotcms.rendering.velocity.viewtools.util.ToolHardening;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -40,12 +41,18 @@ public class CategoriesWebAPI implements ViewTool {
 	Context ctx;
 	User user = null;
 
+	/**
+	 * Returns the API for Java callers. Templates get {@code null} while the Velocity tool hardening
+	 * is on, because the API methods take the authorizing user as a parameter.
+	 */
 	public CategoryAPI getCategoryAPI() {
-		return categoryAPI;
+		return ToolHardening.isEnabled() ? null : categoryAPI;
 	}
 
 	public void setCategoryAPI(CategoryAPI categoryAPI) {
-		this.categoryAPI = categoryAPI;
+		if (!ToolHardening.isEnabled()) {
+			this.categoryAPI = categoryAPI;
+		}
 	}
 
 	public void init(Object obj) {
@@ -616,4 +623,4 @@ public class CategoriesWebAPI implements ViewTool {
                 inodes.add("");
         return inodes;
     }
-}
+}

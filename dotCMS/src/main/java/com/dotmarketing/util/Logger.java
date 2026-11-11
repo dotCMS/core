@@ -212,6 +212,32 @@ public class Logger {
         warnEveryAndDebug(cl.getName(), message, ex, warnEveryMillis);
     }
 
+    /**
+     * Prints the message at WARN level at most once per interval for the given key, so a template
+     * that triggers the same warning on every request does not flood the log.
+     *
+     * @param cl              the class that logs
+     * @param messageKey      identifies the warning; messages with the same key share the interval
+     * @param message         the text to log
+     * @param warnEveryMillis the minimum time between two logged messages for the key
+     */
+    public static void warnEvery(final Class cl, final String messageKey, final String message,
+            final int warnEveryMillis) {
+
+        if (UtilMethods.isEmpty(messageKey)) {
+            return;
+        }
+        final org.apache.logging.log4j.Logger logger = loadLogger(cl);
+
+        final Long hash = Long.valueOf(Objects.hashCode(messageKey.intern()));
+        final Long expireWhen = logMap.get().get(hash);
+
+        if (expireWhen == null || expireWhen < System.currentTimeMillis()) {
+            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis, true);
+            logger.warn(message + " (log every " + warnEveryMillis + "ms)");
+        }
+    }
+
 
     /**
      * this method will print the message at WARN level every millis set and print the message plus

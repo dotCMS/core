@@ -11,6 +11,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.rendering.velocity.WidgetRenderer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.JsonUtil;
@@ -64,6 +65,11 @@ import java.util.stream.Collectors;
  * @author jsanca
  */
 public class ContentHelper {
+
+    /**
+     * Property added next to {@code parsedCode} when a widget's field values were returned as text.
+     */
+    public static final String PARSED_CODE_WARNING = "parsedCodeWarning";
 
     private final MapToContentletPopulator mapToContentletPopulator;
     private final IdentifierAPI identifierAPI;
@@ -285,7 +291,29 @@ public class ContentHelper {
 
         final long queryTook = afterAPISearchPull - startAPISearchPull;
         final long contentTook = afterAPIPull - startAPIPull;
-        return new SearchView(resultsSize, queryTook, contentTook, new JsonObjectView(resultJson));
+        return new SearchView(resultsSize, queryTook, contentTook, new JsonObjectView(resultJson),
+                renderWarnings(resultJson));
+    }
+
+    /**
+     * Collects the warnings worth reporting once for a whole search result: at the moment, that
+     * some widget had its field values returned as text.
+     *
+     * @param resultJson the {@code contentlets} JSON built by {@link #getJSONObject}
+     * @return the warnings, empty when there is nothing to report
+     */
+    private List<String> renderWarnings(final JSONObject resultJson) {
+        final JSONArray contentlets = resultJson.optJSONArray("contentlets");
+        if (contentlets == null) {
+            return Collections.emptyList();
+        }
+        for (int i = 0; i < contentlets.length(); i++) {
+            final JSONObject contentlet = contentlets.optJSONObject(i);
+            if (contentlet != null && contentlet.has(PARSED_CODE_WARNING)) {
+                return List.of(WidgetRenderer.FIELD_SCRIPTING_OFF_WARNING);
+            }
+        }
+        return Collections.emptyList();
     }
 
 
@@ -441,7 +469,12 @@ public class ContentHelper {
         }
         if (BaseContentType.WIDGET.equals(type.baseType()) && "true".equalsIgnoreCase(render)) {
             final HttpServletRequestImpersonator impersonator = HttpServletRequestImpersonator.newInstance();
-            jsonObject.put("parsedCode", WidgetResource.parseWidget(impersonator.request(), response, contentlet));
+            final WidgetRenderer.Rendering rendering = WidgetRenderer.getInstance()
+                    .renderWithDetails(impersonator.request(), response, contentlet);
+            jsonObject.put("parsedCode", rendering.text());
+            if (rendering.fieldScriptingSkipped()) {
+                jsonObject.put(PARSED_CODE_WARNING, WidgetRenderer.FIELD_SCRIPTING_OFF_WARNING);
+            }
         }
 
         if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
