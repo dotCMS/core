@@ -21,7 +21,7 @@ Define the parent label in the language bundle:
 Identity-Access=Identity Access
 ```
 
-Users, Roles & Tools, dotAuth, Users (Beta), Roles (Beta), and Tools (Beta) use this group by default. Custom portlets can use the same key or declare another key. Missing translations display the key itself.
+Users, Roles, Tools, dotAuth, Users (Legacy), and Roles & Tools (Legacy) use this group by default. Custom portlets can use the same key or declare another key. Missing translations display the key itself.
 
 ## Behavior
 
@@ -33,8 +33,8 @@ Users, Roles & Tools, dotAuth, Users (Beta), Roles (Beta), and Tools (Beta) use 
 - Clicking an open parent does not toggle it closed. Clicking a child still navigates normally but leaves the flyout open, like the main navigation flyout.
 - Leaving the parent or its flyout starts a 300 ms close delay. Entering either cancels the delay, allowing the pointer to cross between them without dismissing the flyout.
 - Grouping works with both expanded and collapsed navigation. The active child's parent is highlighted.
-- Legacy Roles & Tools shows qualified labels such as `Identity Access › Users`. Tools (Beta) keeps qualified labels in its catalog and nests included children beneath their parent heading, matching navigation. Catalogs can be searched by the translated parent label. Placement and removal still use unchanged portlet IDs.
-- Tools (Beta) uses the same resizable divider and initial 22%/78% panel split as Roles (Beta). Drag the divider, or focus its handle and use the arrow keys, to change the tree and catalog widths. Names that still overflow reveal their full label in a tooltip on hover.
+- Roles & Tools (Legacy) shows qualified labels such as `Identity Access › Users`. Tools keeps qualified labels in its catalog and nests included children beneath their parent heading, matching navigation. Catalogs can be searched by the translated parent label. Placement and removal still use unchanged portlet IDs.
+- Tools uses the same resizable divider and initial 22%/78% panel split as Roles. Drag the divider, or focus its handle and use the arrow keys, to change the tree and catalog widths. Names that still overflow reveal their full label in a tooltip on hover.
 - Existing portlet routes, layout IDs, bookmarks, and dynamic Angular module loading are unchanged. `/api/v1/menu` stays flat and carries the parent key through its existing `initParams` map.
 
 ## Configuration scope
@@ -45,7 +45,7 @@ This is one optional grouping level, not a recursive portlet hierarchy. The pare
 
 Older sections may retain retired tool IDs such as `dynamic-plugins` for rollback compatibility. Reordering or editing a section may keep those existing entries without registering them again. Only newly added tools must be registered and placeable; existing entries cannot be duplicated or blank, and an unregistered tool cannot be copied from another section. Reordering never silently removes legacy entries.
 
-## Ordering groups and children in Tools (Beta)
+## Ordering groups and children in Tools
 
 The included-tools tree places a parent where its first child occurs and preserves relative child order, just like navigation. Drag a parent to move all its children as one block; drag a child to reorder it within that parent. Focus a drag handle and use Up/Down Arrow for keyboard reordering. Children cannot be dropped into a different parent: change a custom tool's Parent through Edit Tool instead.
 
@@ -53,7 +53,7 @@ Grouping uses the catalog's explicit `parent` key and unqualified `label`, never
 
 ## Custom tools
 
-Tools (Beta)'s New Tool and Edit Tool dialogs include an optional **Parent** field. The legacy Roles & Tools New Tool dialog also includes it. Enter a label or a language key, such as `Identity-Access`. The raw value is stored in the custom tool's `parent` init-param; it is translated only when displayed. Empty or whitespace-only input means no parent. Clearing an existing parent returns the tool to the flat navigation list.
+Tools' New Tool and Edit Tool dialogs include an optional **Parent** field. The Roles & Tools (Legacy) New Tool dialog also includes it. Enter a label or a language key, such as `Identity-Access`. The raw value is stored in the custom tool's `parent` init-param; it is translated only when displayed. Empty or whitespace-only input means no parent. Clearing an existing parent returns the tool to the flat navigation list.
 
 The custom-tool API accepts `parent` on `POST` / `PUT /api/v1/portlet/custom`. Values are trimmed. On create, an omitted value means no parent. On update, omission preserves the existing parent for older clients; an explicit empty string clears it. `GET /api/v1/portlet/custom/{id}` returns the raw `parent`, or `""` when none is configured.
 

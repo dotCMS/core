@@ -12729,7 +12729,7 @@ paths:
         \ the ordered ids of its tools and one localized title per tool id, aligned\
         \ with portletIds. Sections holding tools the tools catalog hides are still\
         \ returned as stored. Requires an authenticated back-end user with access\
-        \ to the tools or tools-beta portlet, or the CMS Administrator role."
+        \ to the tools portlet, or the CMS Administrator role."
       operationId: listNavigationSections
       responses:
         "200":
@@ -12741,8 +12741,8 @@ paths:
         "401":
           content:
             application/json: {}
-          description: "Unauthorized - authentication required, or the caller holds\
-            \ neither the tools nor the tools-beta portlet and is not a CMS Administrator"
+          description: "Unauthorized - authentication required, or the caller does\
+            \ not hold the tools portlet and is not a CMS Administrator"
         "500":
           content:
             application/json: {}
@@ -12755,7 +12755,7 @@ paths:
         \ placed after every existing section and holds no tools. The name is trimmed,\
         \ must be present, at most 255 characters and unique among sections; the icon\
         \ is at most 255 characters and may be empty. Requires a CMS Administrator\
-        \ who also holds the tools or tools-beta portlet."
+        \ who also holds the tools portlet."
       operationId: createNavigationSection
       requestBody:
         content:
@@ -12779,8 +12779,7 @@ paths:
         "401":
           content:
             application/json: {}
-          description: "Unauthorized - authentication required, or no tools / tools-beta\
-            \ portlet"
+          description: "Unauthorized - authentication required, or no tools portlet"
         "403":
           content:
             application/json: {}
@@ -12799,7 +12798,7 @@ paths:
         \ once; a missing, unknown or repeated id is rejected and no position changes.\
         \ Positions are written strictly increasing in the order sent, in one transaction,\
         \ and open sessions receive a single refresh. Requires a CMS Administrator\
-        \ who also holds the tools or tools-beta portlet."
+        \ who also holds the tools portlet."
       operationId: reorderNavigationSections
       requestBody:
         content:
@@ -12823,8 +12822,7 @@ paths:
         "401":
           content:
             application/json: {}
-          description: "Unauthorized - authentication required, or no tools / tools-beta\
-            \ portlet"
+          description: "Unauthorized - authentication required, or no tools portlet"
         "403":
           content:
             application/json: {}
@@ -12842,7 +12840,7 @@ paths:
         \ role or a user, so users who reached a tool only through this section lose\
         \ it from their menu. The Getting Started section cannot be deleted. Returns\
         \ the remaining sections in navigation order. Requires a CMS Administrator\
-        \ who also holds the tools or tools-beta portlet."
+        \ who also holds the tools portlet."
       operationId: deleteNavigationSection
       parameters:
       - description: Navigation section id
@@ -12865,8 +12863,7 @@ paths:
         "401":
           content:
             application/json: {}
-          description: "Unauthorized - authentication required, or no tools / tools-beta\
-            \ portlet"
+          description: "Unauthorized - authentication required, or no tools portlet"
         "403":
           content:
             application/json: {}
@@ -12886,7 +12883,7 @@ paths:
       description: Changes a section's name and icon together; its position and its
         tools are untouched. Same name and icon rules as create. Getting Started may
         be renamed and re-iconed. Requires a CMS Administrator who also holds the
-        tools or tools-beta portlet.
+        tools portlet.
       operationId: updateNavigationSection
       parameters:
       - description: Navigation section id
@@ -12917,8 +12914,7 @@ paths:
         "401":
           content:
             application/json: {}
-          description: "Unauthorized - authentication required, or no tools / tools-beta\
-            \ portlet"
+          description: "Unauthorized - authentication required, or no tools portlet"
         "403":
           content:
             application/json: {}
@@ -12943,7 +12939,7 @@ paths:
         \ portlets the product allows in a section. Blank or repeated ids are rejected\
         \ and the section is unchanged. Registered tools the tools catalog hides are\
         \ accepted. An empty list is accepted for every section except Getting Started.\
-        \ Requires a CMS Administrator who also holds the tools or tools-beta portlet."
+        \ Requires a CMS Administrator who also holds the tools portlet."
       operationId: setNavigationSectionTools
       parameters:
       - description: Navigation section id
@@ -12975,8 +12971,7 @@ paths:
         "401":
           content:
             application/json: {}
-          description: "Unauthorized - authentication required, or no tools / tools-beta\
-            \ portlet"
+          description: "Unauthorized - authentication required, or no tools portlet"
         "403":
           content:
             application/json: {}
@@ -15705,7 +15700,7 @@ paths:
         \ is on. Sorted by title ignoring letter case. Each row carries the id, the\
         \ localized title and an isCustom flag that is true only for tools an admin\
         \ created through New Tool. Requires an authenticated back-end user with access\
-        \ to the tools or tools-beta portlet, or the CMS Administrator role."
+        \ to the tools portlet, or the CMS Administrator role."
       operationId: getToolsCatalog
       responses:
         "200":
@@ -15718,8 +15713,7 @@ paths:
           content:
             application/json: {}
           description: "Unauthorized - no authenticated back-end user, or the caller\
-            \ holds neither the tools nor the tools-beta portlet and is not a CMS\
-            \ Administrator"
+            \ does not hold the tools portlet and is not a CMS Administrator"
       summary: List the tools that can be placed in a navigation section
       tags:
       - Portlets
@@ -15728,7 +15722,7 @@ paths:
       description: "Creates a custom content tool that lists the given base types\
         \ and/or content types. The optional parent is a navigation label or language\
         \ key; empty means no parent. Requires an authenticated back-end user with\
-        \ access to the roles, tools or tools-beta portlet, or the CMS Administrator\
+        \ access to the roles, roles-legacy or tools portlet, or the CMS Administrator\
         \ role."
       operationId: saveNew
       requestBody:
@@ -15752,8 +15746,8 @@ paths:
           content:
             application/json: {}
           description: "Unauthorized - no authenticated back-end user, or the caller\
-            \ holds none of the roles, tools or tools-beta portlets and is not a CMS\
-            \ Administrator"
+            \ holds none of the roles, roles-legacy or tools portlets and is not a\
+            \ CMS Administrator"
       summary: Create a custom content tool
       tags:
       - Portlets
@@ -15763,8 +15757,8 @@ paths:
         \ An empty parent clears grouping; an omitted parent preserves the existing\
         \ value. Refuses, with 404 and no change, an id that is not a custom content\
         \ tool: tools shipped with the product cannot be rewritten this way. Requires\
-        \ an authenticated back-end user with access to the roles, tools or tools-beta\
-        \ portlet, or the CMS Administrator role."
+        \ an authenticated back-end user with access to the roles, roles-legacy or\
+        \ tools portlet, or the CMS Administrator role."
       operationId: updatePortlet
       requestBody:
         content:
@@ -15782,8 +15776,8 @@ paths:
           content:
             application/json: {}
           description: "Unauthorized - no authenticated back-end user, or the caller\
-            \ holds none of the roles, tools or tools-beta portlets and is not a CMS\
-            \ Administrator"
+            \ holds none of the roles, roles-legacy or tools portlets and is not a\
+            \ CMS Administrator"
         "404":
           content:
             application/json: {}
@@ -15798,7 +15792,7 @@ paths:
         \ section that contained it. Refuses, with 404 and no change, any id that\
         \ is not a custom content tool: tools shipped with the product cannot be removed\
         \ this way. Requires an authenticated back-end user with access to the roles,\
-        \ tools or tools-beta portlet, or the CMS Administrator role."
+        \ roles-legacy or tools portlet, or the CMS Administrator role."
       operationId: deleteCustomPortlet
       parameters:
       - description: "Stored id of the custom tool, c_ prefix included"
@@ -15818,8 +15812,8 @@ paths:
           content:
             application/json: {}
           description: "Unauthorized - no authenticated back-end user, or the caller\
-            \ holds none of the roles, tools or tools-beta portlets and is not a CMS\
-            \ Administrator"
+            \ holds none of the roles, roles-legacy or tools portlets and is not a\
+            \ CMS Administrator"
         "404":
           content:
             application/json: {}
@@ -15830,8 +15824,8 @@ paths:
     get:
       description: "Returns the editable configuration of a custom content tool: id,\
         \ name, navigation parent, base types, content types and data view mode. Requires\
-        \ an authenticated back-end user with access to the tools or tools-beta portlet,\
-        \ or the CMS Administrator role."
+        \ an authenticated back-end user with access to the tools portlet, or the\
+        \ CMS Administrator role."
       operationId: getCustomTool
       parameters:
       - description: "Stored id of the custom tool, c_ prefix included"
@@ -15851,8 +15845,7 @@ paths:
           content:
             application/json: {}
           description: "Unauthorized - no authenticated back-end user, or the caller\
-            \ holds neither the tools nor the tools-beta portlet and is not a CMS\
-            \ Administrator"
+            \ does not hold the tools portlet and is not a CMS Administrator"
         "404":
           content:
             application/json: {}

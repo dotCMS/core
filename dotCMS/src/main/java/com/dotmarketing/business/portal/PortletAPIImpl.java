@@ -79,8 +79,17 @@ public class PortletAPIImpl implements PortletAPI {
         return hasRights;
     }
 
-    public boolean hasUserAdminRights(User user) {
-        return hasPortletRights(user, "users");
+    /**
+     * Tells whether the user can administer users: they hold the Users portlet or the old Users
+     * screen kept as {@code users-legacy}.
+     *
+     * @param user the {@link User} to check
+     * @return {@code true} when the user holds either portlet
+     */
+    @Override
+    public boolean hasUserAdminRights(final User user) {
+        return hasPortletRights(user, PortletID.USERS.toString())
+                || hasPortletRights(user, PortletID.USERS_LEGACY.toString());
     }
 
     public boolean hasContainerManagerRights(User user) {
