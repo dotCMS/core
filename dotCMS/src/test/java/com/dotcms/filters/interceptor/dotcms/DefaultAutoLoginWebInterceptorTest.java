@@ -111,7 +111,7 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
      */
     @Test
     public void keepsSessionLoginToken_withoutLoginCookie() {
-        final HttpServletRequest request = request("/dotAdmin/", session(pastRenewal()), false);
+        final HttpServletRequest request = request("/api/v1/users/current", session(pastRenewal()), false);
 
         assertEquals(Result.SKIP, interceptor.intercept(request, mock(HttpServletResponse.class)));
 
@@ -124,7 +124,7 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
     @Test
     public void keepsRememberMeCookie_whenSessionHasNoRenewalTime() {
         cookieOwnedBy(cookieOwner);
-        final HttpServletRequest request = request("/dotAdmin/", session(null), true);
+        final HttpServletRequest request = request("/api/v1/users/current", session(null), true);
 
         assertEquals(Result.SKIP, interceptor.intercept(request, mock(HttpServletResponse.class)));
 
@@ -335,14 +335,15 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
     /**
      * Static files are never sent a renewed cookie, since a cache may keep them by file type:
      * {@code /html/} (whose common CSS and script pages are sent with public cache headers), the
-     * admin application's bundles and the DWR scripts.
+     * admin application's entry page and bundles, and the DWR scripts.
      */
     @Test
     public void keepsSessionLoginToken_onStaticFiles() {
         cookieOwnedBy(cookieOwner);
 
         for (final String uri : new String[]{"/html/common/css.jsp", "/html/js/dojo/dojo.js",
-                "/dotAdmin/main-ABC123.js", "/dwr/engine.js", "/dwr/interface/UserAjax.js"}) {
+                "/dotAdmin", "/dotAdmin/", "/dotAdmin/main-ABC123.js", "/dwr/engine.js",
+                "/dwr/interface/UserAjax.js"}) {
             interceptor.intercept(request(uri, session(pastRenewal()), true), mock(HttpServletResponse.class));
         }
 
@@ -350,13 +351,41 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
     }
 
     /**
-     * The admin application's entry page, legacy portal actions and DWR calls renew a due cookie.
+     * A VTL endpoint's response is written by a site developer's script, which may mark it as
+     * publicly cacheable, so it is never sent a renewed cookie.
+     */
+    @Test
+    public void keepsSessionLoginToken_onScriptedVtlEndpoint() {
+        cookieOwnedBy(cookieOwner);
+
+        interceptor.intercept(request("/api/vtl/products/list", session(pastRenewal()), true),
+                mock(HttpServletResponse.class));
+
+        verifyNoRenewal();
+    }
+
+    /**
+     * A JavaScript endpoint's response is written by a site developer's script, which may mark it
+     * as publicly cacheable, so it is never sent a renewed cookie.
+     */
+    @Test
+    public void keepsSessionLoginToken_onScriptedJsEndpoint() {
+        cookieOwnedBy(cookieOwner);
+
+        interceptor.intercept(request("/api/js/products/list", session(pastRenewal()), true),
+                mock(HttpServletResponse.class));
+
+        verifyNoRenewal();
+    }
+
+    /**
+     * REST calls, legacy portal actions and DWR calls renew a due cookie.
      */
     @Test
     public void renewsSessionLoginToken_onDynamicBackEndPaths() {
         cookieOwnedBy(cookieOwner);
 
-        for (final String uri : new String[]{"/dotAdmin", "/dotAdmin/", "/c/portal/layout",
+        for (final String uri : new String[]{"/api/v1/users/current", "/c/portal/layout",
                 "/dotAdmin/c/portal/layout", "/dwr/call/plaincall/UserAjax.getUserById.dwr"}) {
             final HttpServletRequest request = request(uri, session(pastRenewal()), true);
             final HttpServletResponse response = mock(HttpServletResponse.class);

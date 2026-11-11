@@ -24,7 +24,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -39,13 +38,17 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
 
     /**
      * Dynamic back-end paths whose responses are never cached. Static files (the admin
-     * application's scripts, {@code /html/} and the DWR scripts) are left out: some are sent with
-     * public cache headers, and a cache may keep any of them by file type, cookie included.
+     * application, {@code /html/} and the DWR scripts) are left out: some are sent with public
+     * cache headers, and a cache may keep any of them by file type, cookie included. The admin
+     * application calls {@code /api/} as soon as it loads, so its next request renews the cookie.
      */
     private static final List<String> BACK_END_APPLICATION_PREFIXES =
             List.of("/api/", "/c/", "/dotAdmin/c/", "/dwr/call/");
-    /** The admin application's entry page. */
-    private static final Set<String> ADMIN_APPLICATION_ENTRY = Set.of("/dotAdmin", "/dotAdmin/");
+    /**
+     * Paths under {@code /api/} whose responses are written by site developers' scripts, which may
+     * mark them as publicly cacheable.
+     */
+    private static final List<String> SCRIPTED_API_PREFIXES = List.of("/api/vtl/", "/api/js/");
 
     private final JsonWebTokenUtils jsonWebTokenUtils;
     private final LoginServiceAPI loginServiceAPI;
@@ -236,8 +239,8 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
      */
     private static boolean isBackEndApplicationPath(final String uri) {
 
-        return null != uri && (ADMIN_APPLICATION_ENTRY.contains(uri)
-                || BACK_END_APPLICATION_PREFIXES.stream().anyMatch(uri::startsWith));
+        return null != uri && BACK_END_APPLICATION_PREFIXES.stream().anyMatch(uri::startsWith)
+                && SCRIPTED_API_PREFIXES.stream().noneMatch(uri::startsWith);
     }
 
 

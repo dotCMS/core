@@ -161,10 +161,13 @@ HTTP session is gone (session timeout, node restart). Its lifetime depends on "r
 | With "remember me" (opt-in) | Persistent | 14 days, not renewed | `json.web.token.days.max.age` (default `14`) |
 
 A session login token is renewed once half its lifetime has passed, on the next back-end
-request that carries the cookie (`DefaultAutoLoginWebInterceptor`): `/api/`, the `/dotAdmin`
-entry page, `/c/`, `/dotAdmin/c/` and `/dwr/call/`. Static files (`/html/`, the admin bundles,
-DWR scripts) never receive a renewed cookie, since a cache may keep them by file type; a GraphQL
-request that is due to renew skips the GraphQL cache for that one request. An active user
+request that carries the cookie (`DefaultAutoLoginWebInterceptor`): `/api/`, `/c/`,
+`/dotAdmin/c/` and `/dwr/call/`. Static files (`/html/`, the admin application, DWR scripts)
+never receive a renewed cookie, since a cache may keep them by file type, and neither do
+`/api/vtl/` and `/api/js/`, whose responses are written by site scripts that may mark them as
+publicly cacheable. The admin application calls `/api/` as soon as it loads, so its next request
+renews the cookie. A GraphQL request that is due to renew skips the GraphQL cache for that one
+request. An active user
 therefore keeps a valid cookie, and a browser left idle for longer than the lifetime must log in
 again. The effective idle limit is therefore set by this lifetime: the Tomcat `session-timeout`
 (30 minutes in `web.xml`) only decides when the cookie has to step in and log the browser back

@@ -95,8 +95,8 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
             LOCKS[i] = new Object();
         }
     }
-    private static final String GRAPHQL_BYPASS_CACHE = "GRAPHQL_BYPASS_CACHE";
-    private static final String GRAPHQL_CACHE_CREDENTIALED = "GRAPHQL_CACHE_CREDENTIALED";
+    static final String GRAPHQL_BYPASS_CACHE = "GRAPHQL_BYPASS_CACHE";
+    static final String GRAPHQL_CACHE_CREDENTIALED = "GRAPHQL_CACHE_CREDENTIALED";
     static final int INVALIDATE_CACHE = -1;
 
     private final GraphQLCache graphCache = CacheLocator.getGraphQLCache();
