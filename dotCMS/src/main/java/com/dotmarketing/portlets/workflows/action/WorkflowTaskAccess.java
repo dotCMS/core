@@ -53,9 +53,13 @@ public final class WorkflowTaskAccess {
      * screens that show it.
      *
      * <p>The lookup is the permission check: a user who may not read the contentlet gets nothing
-     * back, and a screen with no contentlet has nothing of the task to render. Callers are meant
-     * to use what comes back rather than look the contentlet up again, so that what is shown and
-     * what was authorized are the same object.</p>
+     * back, and a screen with no contentlet has nothing of the task to render. A screen shows
+     * what this returns, so that what is rendered and what was checked are the same object.</p>
+     *
+     * <p>A screen that can be reached without going through its action, as the legacy task screen
+     * can, calls this for itself even when the action has already decided. The repeated lookup is
+     * the point: the screen must not depend on an answer left on the request by someone else.
+     * Callers that only need the decision and render nothing use {@link #canAccess} instead.</p>
      *
      * @param task the {@link WorkflowTask} whose contentlet is wanted
      * @param user the {@link User} making the request; {@code null} is refused
