@@ -1221,14 +1221,16 @@ public class ContentHandler implements IHandler {
 
 	/**
 	 * Checks whether saving the specified {@code tree} row would give its parent or its child more
-	 * related items than the relationship allows: one child per parent for {@code ONE_TO_ONE}, and
-	 * one parent per child for {@code ONE_TO_MANY}, {@code MANY_TO_ONE} and {@code ONE_TO_ONE}.
+	 * related items than the relationship allows: one child per parent and one parent per child for
+	 * {@code ONE_TO_ONE}, one parent per child for {@code ONE_TO_MANY}, and, for
+	 * {@code MANY_TO_ONE}, one related item per content of the type that holds the field the
+	 * relationship was created from.
 	 * <p>
-	 * A many-to-one Relationships Field is stored with the related ("one") type as the parent and
-	 * the field's type as the child. Its stored cardinality is {@code ONE_TO_MANY} when the field is
-	 * created, but existing installs can have it stored as {@code MANY_TO_ONE} with the same sides.
-	 * Either way, the child can have one parent only, while the parent can have any number of
-	 * children (<a href="https://github.com/dotCMS/core/issues/38538">#38538</a>).
+	 * A {@code MANY_TO_ONE} relationship can be stored with the field on either side. A field created
+	 * as many-to-one is stored with the related ("one") type as the parent and the field's type as
+	 * the child, so the child can have one parent only. A field on the parent whose cardinality is
+	 * changed to many-to-one keeps its sides, so the parent can have one child only
+	 * (<a href="https://github.com/dotCMS/core/issues/38538">#38538</a>).
 	 *
 	 * @param tree The {@code tree} row to check.
 	 *
@@ -1243,14 +1245,38 @@ public class ContentHandler implements IHandler {
 			return false;
 		}
 		final RELATIONSHIP_CARDINALITY cardinality = RELATIONSHIP_CARDINALITY.fromOrdinal(relationship.getCardinality());
-		final boolean oneChildPerParent = cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
-		final boolean oneParentPerChild = cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_MANY
-				|| cardinality == RELATIONSHIP_CARDINALITY.MANY_TO_ONE
-				|| cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
+		final boolean manyToOneFromParent = cardinality == RELATIONSHIP_CARDINALITY.MANY_TO_ONE
+				&& isOriginatingFieldOnParent(relationship);
+		final boolean oneChildPerParent = cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE || manyToOneFromParent;
+		final boolean oneParentPerChild = cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
+				|| cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_MANY
+				|| (cardinality == RELATIONSHIP_CARDINALITY.MANY_TO_ONE && !manyToOneFromParent);
 		return (oneChildPerParent && this.hasOtherRelated(OTHER_CHILDREN_SQL, tree.getParent(), tree.getChild(),
 						tree.getRelationType()))
 				|| (oneParentPerChild && this.hasOtherRelated(OTHER_PARENTS_SQL, tree.getChild(), tree.getParent(),
 						tree.getRelationType()));
+	}
+
+	/**
+	 * Checks whether the field the relationship was created from, named in its
+	 * {@code <Content Type>.<field>} relation type, is on the parent type. A field on the parent type
+	 * is stored as the child relation name, and a field on the child type as the parent relation
+	 * name. A relationship that wasn't created from a field, or whose field can't be matched, is
+	 * treated as having it on the child, as a field created as many-to-one is stored.
+	 *
+	 * @param relationship The relationship to check.
+	 *
+	 * @return If the originating field is on the parent type, returns {@code true}.
+	 */
+	private static boolean isOriginatingFieldOnParent(final Relationship relationship) {
+		final String relationType = relationship.getRelationTypeValue();
+		final int separator = null == relationType ? -1 : relationType.indexOf('.');
+		if (separator < 0) {
+			return false;
+		}
+		final String fieldVariable = relationType.substring(separator + 1);
+		return fieldVariable.equals(relationship.getChildRelationName())
+				&& !fieldVariable.equals(relationship.getParentRelationName());
 	}
 
 	private static final String OTHER_CHILDREN_SQL =

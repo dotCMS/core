@@ -503,6 +503,79 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
+     * Given scenario: The Article's field to the Author was created as one-to-many and changed to
+     * many-to-one, so the relationship is stored as {@code MANY_TO_ONE} with the Article, which
+     * holds the field, as the parent (one Author per Article, any number of Articles per Author).
+     * The receiver has Article A related to Jane. In the sender, a new Article B is also related to
+     * Jane, and only Article B is pushed with a filter that sets {@code relationships: false}, with
+     * the receiver's {@code PUSH_PUBLISHING_SYNC_RELATIONSHIPS} property set to {@code true}.
+     * Expected result: Article B is created in the receiver related to Jane, who keeps Article A too.
+     */
+    @Test
+    public void test_newParent_pushedWithManyToOneFieldOnParent_isRelatedToChildSharedWithAnotherParent()
+            throws Exception {
+        final TestData data = createRelatedContentStoredAsManyToOneFromParent();
+        final Contentlet articleB = new ContentletDataGen(data.article.getContentTypeId()).host(host)
+                .setProperty("title", "article-b-" + UUIDGenerator.shorty()).nextPersisted();
+        // In the sender, Jane is the Author of both Articles
+        relate(articleB, data.author, data.relationship);
+        final PreparedBundle bundle = generateBundleFor(articleB, createFilterWithoutRelationships());
+
+        // In the receiver, Article B doesn't exist yet, and Jane is related to Article A only
+        LocalTransaction.wrap(() -> {
+            articleB.setIndexPolicy(IndexPolicy.FORCE);
+            APILocator.getContentletAPI().destroy(articleB, adminUser, false);
+        });
+        assertEquals("Jane was not related to Article A only; the scenario under test is not in place",
+                List.of(data.article.getIdentifier()), findRelatedIds(data.author, data.relationship));
+
+        processBundleWithSync(bundle);
+
+        assertEquals("Article B must be related to Jane, who can be the Author of any number of Articles",
+                List.of(data.author.getIdentifier()), findRelatedIds(articleB, data.relationship));
+        assertEquals("Jane must be related to both Articles",
+                Set.of(data.article.getIdentifier(), articleB.getIdentifier()),
+                Set.copyOf(findRelatedIds(data.author, data.relationship)));
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
+     * Given scenario: Same many-to-one relationship stored with the Article, which holds the field,
+     * as the parent. The receiver has an Article related to Author Jane. In the sender, the
+     * Article's Author is changed to a new Author, Maria, and only Maria is pushed with a filter
+     * that sets {@code relationships: false}.
+     * Expected result: Maria is created in the receiver, but isn't related to the Article, which
+     * keeps Jane as its only Author.
+     */
+    @Test
+    public void test_newChild_pushedWithManyToOneFieldOnParent_isNotRelatedToParentWithItsOnlyChild()
+            throws Exception {
+        final TestData data = createRelatedContentStoredAsManyToOneFromParent();
+        final Contentlet maria = new ContentletDataGen(data.authorType).host(host)
+                .setProperty("title", "maria-" + UUIDGenerator.shorty()).nextPersisted();
+        // In the sender, the Article's only Author is now Maria
+        moveRelationship(data.author, maria, data.article, data.relationship);
+        final PreparedBundle bundle = generateBundleFor(maria, createFilterWithoutRelationships());
+
+        // In the receiver, Maria doesn't exist yet, and the Article's only Author is still Jane
+        LocalTransaction.wrap(() -> {
+            maria.setIndexPolicy(IndexPolicy.FORCE);
+            APILocator.getContentletAPI().destroy(maria, adminUser, false);
+        });
+        relate(data.article, data.author, data.relationship);
+        assertEquals("The Article was not related to Jane only; the scenario under test is not in place",
+                List.of(data.author.getIdentifier()), findRelatedIds(data.article, data.relationship));
+
+        processBundle(bundle);
+
+        assertNotNull("Maria must have been created from the bundle", APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguage(maria.getIdentifier()));
+        assertEquals("The Article allows one Author only, so it must keep the one it has in the receiver",
+                List.of(data.author.getIdentifier()), findRelatedIds(data.article, data.relationship));
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
      * Given scenario: With a many-to-one relationship stored as {@code MANY_TO_ONE}, the receiver
      * has an Article related to Author Jane. In the sender, the Article's Author is changed to a
      * new Author, Maria, and only Maria is pushed with a filter that sets {@code relationships:
@@ -725,6 +798,28 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
                 RELATIONSHIP_CARDINALITY.MANY_TO_ONE.ordinal(), relationship.getCardinality());
         assertEquals("The Author type isn't the parent of the relationship; the scenario under test is not "
                 + "in place", data.authorType.id(), relationship.getParentStructureInode());
+        return new TestData(data.authorType, relationship, data.article, data.author);
+    }
+
+    /**
+     * Creates an Article type whose Relationships Field to the Author type was created as
+     * one-to-many and then changed to many-to-one. The relationship keeps the Article type, which
+     * holds the field, as the parent and the Author type as the child, with a {@code MANY_TO_ONE}
+     * cardinality: one Author per Article, any number of Articles per Author.
+     */
+    private TestData createRelatedContentStoredAsManyToOneFromParent() throws Exception {
+        final TestData data = createRelatedContent(RELATIONSHIP_CARDINALITY.ONE_TO_MANY);
+        new DotConnect().setSQL("update relationship set cardinality = ? where relation_type_value = ?")
+                .addParam(RELATIONSHIP_CARDINALITY.MANY_TO_ONE.ordinal())
+                .addParam(data.relationship.getRelationTypeValue())
+                .loadResult();
+        CacheLocator.getRelationshipCache().clearCache();
+        final Relationship relationship = APILocator.getRelationshipAPI()
+                .byTypeValue(data.relationship.getRelationTypeValue());
+        assertEquals("The relationship isn't stored as MANY_TO_ONE; the scenario under test is not in place",
+                RELATIONSHIP_CARDINALITY.MANY_TO_ONE.ordinal(), relationship.getCardinality());
+        assertEquals("The Article type isn't the parent of the relationship; the scenario under test is not "
+                + "in place", data.article.getContentTypeId(), relationship.getParentStructureInode());
         return new TestData(data.authorType, relationship, data.article, data.author);
     }
 
