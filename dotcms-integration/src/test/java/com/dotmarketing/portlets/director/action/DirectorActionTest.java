@@ -53,7 +53,8 @@ import org.junit.jupiter.api.Test;
  * {@code editFile}, {@code editTemplate} and {@code editHTMLPage} commands: a {@code subcmd}
  * parameter does not change who holds the edit lock on the asset, and {@code editLink} releases
  * a lock held by the caller who last saved the link. The caller is a back-end user with READ on
- * the test site and everything in it.
+ * the test site and everything in it; in the {@code editLink} release test it can also save links
+ * in a folder of its own.
  */
 public class DirectorActionTest {
 
