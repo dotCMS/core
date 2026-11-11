@@ -1,12 +1,10 @@
 package com.dotcms.publisher.endpoint.ajax;
 
-import com.dotcms.auth.BasicAuthentication;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
-import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.PublishingEndPointValidationException;
@@ -48,24 +46,6 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 		try{
 			// Check permissions if the user has access to the CMS Maintenance Portlet
 			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
-				String userName = map.get("u") !=null
-					? map.get("u")
-						: map.get("user") !=null
-							? map.get("user")
-								: null;
-
-				String password = map.get("p") !=null
-					? map.get("p")
-							: map.get("passwd") !=null
-								? map.get("passwd")
-									: null;
-
-
-
-				// Only the compatibility mode may exchange URI credentials for a session.
-				if (BasicAuthentication.mode() == BasicAuthentication.Mode.ALL) {
-					LoginFactory.doLogin(userName, password, false, request, response);
-				}
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
 				if(user==null) {
 				    setUser(request);

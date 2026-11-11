@@ -1,6 +1,5 @@
 package com.dotcms.publisher.ajax;
 
-import com.dotcms.auth.BasicAuthentication;
 import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -37,7 +36,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -129,22 +127,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
 		try{
 			// Check permissions if the user has access to the CMS Maintenance Portlet
 			if (user == null) {
-				String userName = map.get("u") !=null
-					? map.get("u")
-						: map.get("user") !=null
-							? map.get("user")
-								: null;
-
-				String password = map.get("p") !=null
-					? map.get("p")
-							: map.get("passwd") !=null
-								? map.get("passwd")
-									: null;
-
-				// Only the compatibility mode may exchange URI credentials for a session.
-				if (BasicAuthentication.mode() == BasicAuthentication.Mode.ALL) {
-					LoginFactory.doLogin(userName, password, false, request, response);
-				}
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
                 //Set the logged user in order to make it available from this action using the getUser() method
                 if ( user != null ) {
