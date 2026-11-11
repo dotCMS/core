@@ -29,6 +29,7 @@ import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
+import { SplitterModule } from 'primeng/splitter';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -64,6 +65,7 @@ interface ContextMenuLike {
         InputTextModule,
         ContextMenuModule,
         ProgressSpinnerModule,
+        SplitterModule,
         TooltipModule,
         DotMessagePipe,
         DotStatusToastComponent
@@ -75,6 +77,11 @@ interface ContextMenuLike {
 })
 export class DotToolsPageComponent {
     protected readonly store = inject(DotToolsStore);
+    protected readonly splitterPt = {
+        root: { class: 'border-0! rounded-none!' },
+        gutter: { 'data-testid': 'tools-splitter-gutter' },
+        gutterHandle: { 'data-testid': 'tools-splitter-handle' }
+    };
 
     readonly #dialogService = inject(DialogService);
     readonly #confirmationService = inject(ConfirmationService);

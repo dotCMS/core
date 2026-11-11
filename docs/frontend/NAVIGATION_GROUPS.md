@@ -34,7 +34,7 @@ Users, Roles & Tools, dotAuth, Users (Beta), Roles (Beta), and Tools (Beta) use 
 - Leaving the parent or its flyout starts a 300 ms close delay. Entering either cancels the delay, allowing the pointer to cross between them without dismissing the flyout.
 - Grouping works with both expanded and collapsed navigation. The active child's parent is highlighted.
 - Roles & Tools and Tools (Beta) show qualified labels such as `Identity Access › Users` in available-tool pickers and included-tools lists. Their catalogs can be searched by the translated parent label. Tools without a parent keep their original labels; placement and removal still use the unchanged portlet IDs.
-- The Tools (Beta) tree uses a wider, non-shrinking panel to make qualified labels readable. Names that still overflow reveal their full label in a tooltip on hover.
+- Tools (Beta) uses the same resizable divider and initial 22%/78% panel split as Roles (Beta). Drag the divider, or focus its handle and use the arrow keys, to change the tree and catalog widths. Names that still overflow reveal their full label in a tooltip on hover.
 - Existing portlet routes, layout IDs, bookmarks, and dynamic Angular module loading are unchanged. `/api/v1/menu` stays flat and carries the parent key through its existing `initParams` map.
 
 ## Configuration scope

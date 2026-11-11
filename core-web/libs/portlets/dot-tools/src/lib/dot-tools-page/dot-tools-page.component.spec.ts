@@ -12,6 +12,7 @@ import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
+import { Splitter } from 'primeng/splitter';
 import { Tooltip } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -187,6 +188,52 @@ describe('DotToolsPageComponent', () => {
         const toast = spectator.inject(MessageService, true);
         (toast.add as Mock).mockClear();
         (toast.clear as Mock).mockClear();
+    });
+
+    it('uses the Roles initial split and minimum sizes with a keyboard-focusable divider', () => {
+        spectator.detectChanges();
+
+        const splitter = spectator.query(Splitter);
+        expect(splitter.panelSizes).toEqual([22, 78]);
+        expect(splitter.minSizes).toEqual([15, 40]);
+        expect(spectator.query(byTestId('tools-sections-panel'))).toBeTruthy();
+        expect(spectator.query(byTestId('tools-available-panel'))).toBeTruthy();
+        expect(spectator.query(byTestId('tools-splitter-handle')).getAttribute('tabindex')).toBe(
+            '0'
+        );
+    });
+
+    it('resizes both panels by dragging the divider without reordering tools or sections', () => {
+        spectator.detectChanges();
+
+        const splitter = spectator.query(Splitter);
+        const root = spectator.query(byTestId('tools-splitter'));
+        const gutter = spectator.query(byTestId('tools-splitter-gutter'));
+        const treePanel = gutter.previousElementSibling as HTMLElement;
+        const catalogPanel = gutter.nextElementSibling as HTMLElement;
+        // happy-dom has no layout; model a 1000 px splitter at the initial 22/78 split.
+        Object.defineProperty(root, 'offsetWidth', { value: 1000 });
+        Object.defineProperty(treePanel, 'offsetWidth', { value: 220 });
+        Object.defineProperty(catalogPanel, 'offsetWidth', { value: 780 });
+        root.style.padding = '0px';
+        root.style.borderWidth = '0px';
+        treePanel.style.margin = '0px';
+        catalogPanel.style.margin = '0px';
+
+        // happy-dom leaves pageX at zero even when clientX is supplied.
+        const start = new MouseEvent('mousedown', { bubbles: true });
+        const move = new MouseEvent('mousemove');
+        Object.defineProperty(start, 'pageX', { value: 220 });
+        Object.defineProperty(move, 'pageX', { value: 320 });
+        gutter.dispatchEvent(start);
+        document.dispatchEvent(move);
+        document.dispatchEvent(new MouseEvent('mouseup'));
+
+        expect(splitter.panelSizes).toEqual([32, 68]);
+        expect(treePanel.style.flexBasis).toContain('32%');
+        expect(catalogPanel.style.flexBasis).toContain('68%');
+        expect(store.reorderSections).not.toHaveBeenCalled();
+        expect(store.reorderSelectedSectionTools).not.toHaveBeenCalled();
     });
 
     it('shows qualified parent labels and overflow tooltips without changing ids', () => {
