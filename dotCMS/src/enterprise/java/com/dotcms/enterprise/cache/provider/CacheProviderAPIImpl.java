@@ -131,31 +131,26 @@ public class CacheProviderAPIImpl implements CacheProviderAPI, CacheOSGIService 
     }
 
 
-    /**
-     * Determines whether all Cache Providers are distributed
-     */
-    public boolean isDistributed() {
-        return determineDistributed( getAllProviders() );
+    @Override
+    public boolean isCacheSharedByCluster() {
+        return allShareCacheAcrossCluster(getAllProviders());
+    }
+
+    @Override
+    public boolean isGroupCacheSharedByCluster(final String group) {
+        return allShareCacheAcrossCluster(getProvidersForRegion(group));
     }
 
     /**
-     * Determines whether all Cache Providers registered for the given region are distributed
-     *
-     * @param group
-     */
-    public boolean isGroupDistributed( String group ) {
-        return determineDistributed( getProvidersForRegion(group) );
-    }
-
-    /**
-     * Returns true only when there is at least one provider and every provider is distributed.
-     * An empty list means no provider is known yet, for example right after a flush, so it does
-     * not prove the cache is distributed and callers must still notify the cluster.
+     * Returns true only when there is at least one provider and every provider reports
+     * {@link CacheProvider#isDistributed()}, meaning its store is shared by the whole cluster. An
+     * empty list means no provider is known yet, for example right after a flush, so it does not
+     * prove the cache is shared and callers must still notify the cluster.
      *
      * @param providers the providers to check
      * @return whether the providers invalidate themselves across the cluster
      */
-    private boolean determineDistributed(List<CacheProvider> providers) {
+    private boolean allShareCacheAcrossCluster(final List<CacheProvider> providers) {
 
         return !providers.isEmpty() && providers.stream().allMatch(CacheProvider::isDistributed);
     }

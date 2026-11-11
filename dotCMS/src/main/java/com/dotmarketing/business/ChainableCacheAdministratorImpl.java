@@ -194,20 +194,20 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
     }
 
     /**
-     * Flushes every cache region on this node and, unless every provider in use is distributed,
-     * tells the other cluster nodes to do the same by sending {@code 0:root}.
+     * Flushes every cache region on this node and, unless every provider in use is shared by the
+     * cluster, tells the other cluster nodes to do the same by sending {@code 0:root}.
      * <p>
      * Whether to broadcast is decided before the local flush, because the flush clears the
-     * provider registry that {@link CacheProviderAPI#isDistributed()} reads.
+     * provider registry that {@link CacheProviderAPI#isCacheSharedByCluster()} reads.
      */
     @Override
     public void flushAll() {
 
-        final boolean distributed = cacheProviderAPI.isDistributed();
+        final boolean sharedByCluster = cacheProviderAPI.isCacheSharedByCluster();
 
         flushAlLocalOnly(false);
 
-        if (!distributed) {
+        if (!sharedByCluster) {
 
             try {
                 getTransport().send("0:" + ROOT_GOUP);
@@ -236,7 +236,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
         // Distributed caches invalidate themselves we need to
         // invalidate the other nodes in the cluster if any non distributed cache
         // The group is not distributed if any of the caches is not distributed
-        if (!cacheProviderAPI.isGroupDistributed(group)) {
+        if (!cacheProviderAPI.isGroupCacheSharedByCluster(group)) {
             try {
                 getTransport().send("0:" + group);
             } catch (Exception e) {
@@ -312,7 +312,7 @@ public class ChainableCacheAdministratorImpl implements DotCacheAdministrator {
         String g = group.toLowerCase();
         removeLocalOnly(k, g, false);
 
-        if (!cacheProviderAPI.isGroupDistributed(group)) {
+        if (!cacheProviderAPI.isGroupCacheSharedByCluster(group)) {
             if (getTransport() != null) {
                 try {
                     getTransport().send(k + ":" + g);
