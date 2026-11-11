@@ -73,4 +73,20 @@ class CDNInterceptorTest {
         verify(request).getHeader("Accept");
         verify(request, never()).getHeader("Authorization");
     }
+
+    /**
+     * The DOTAUTH header carries credentials that REST resources accept, so it must be redacted
+     * like Authorization, whatever case the client sends it in.
+     */
+    @Test
+    void intercept_debugSwitchOnWithTheParameter_redactsDotAuthHeader() {
+        Config.setProperty(DEBUG_HEADERS, true);
+        when(request.getParameter("recordDotHeaders")).thenReturn("true");
+        when(request.getHeaderNames())
+                .thenReturn(Collections.enumeration(java.util.List.of("DOTAUTH", "dotauth")));
+
+        interceptor.intercept(request, response);
+
+        verify(request, never()).getHeader(anyString());
+    }
 }

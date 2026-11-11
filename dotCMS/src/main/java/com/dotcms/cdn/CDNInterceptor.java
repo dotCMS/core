@@ -13,8 +13,8 @@ public class CDNInterceptor implements WebInterceptor {
 
     private static final long serialVersionUID = 1L;
     private static final List<String> SENSITIVE_HEADERS = List.of(
-            "authorization", "cookie", "proxy-authorization", "set-cookie", "x-csrf-token",
-            "x-xsrf-token");
+            "authorization", "dotauth", "cookie", "proxy-authorization", "set-cookie",
+            "x-csrf-token", "x-xsrf-token");
 
     @Override
     public String[] getFilters() {
