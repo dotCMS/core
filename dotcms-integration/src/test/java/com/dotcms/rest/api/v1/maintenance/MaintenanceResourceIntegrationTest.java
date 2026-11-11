@@ -8,6 +8,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.AdditionalAnswers.delegatesTo;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -940,6 +941,36 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
         assertFalse("the principal's token must be rejected", resolves(principalToken));
     }
 
+    /**
+     * Given scenario: an administrator ends a Login As session, and the login tokens of the
+     *                 principal behind it cannot be invalidated (the user API fails for that user)
+     * Expected result: the failure reaches the caller, the session is left as it was, and the
+     *                  impersonated user's login token still works: the two invalidations are one
+     *                  unit, so the first is undone when the second fails
+     */
+    @Test
+    public void test_killSession_loginAsSession_principalInvalidationFails_keepsTheUsersLoginToken() throws Exception {
+        final User impersonated = newUser();
+        final User principal = newUser();
+        final String impersonatedToken = loginToken(impersonated);
+        final HttpSession loginAsSession = newPlantedSession(impersonated, "2.3.4.6");
+        loginAsSession.setAttribute(WebKeys.PRINCIPAL_USER_ID, principal.getUserId());
+        final MaintenanceResource failing = resourceFailingToInvalidateTokensOnlyOf(principal.getUserId());
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession caller = request.getSession();
+        caller.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(caller);
+        failing.listSessions(request, mockResponse);
+        final String csrf = (String) caller.getAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE);
+        final String token = SessionTokenUtil.obfuscateSessionId(loginAsSession.getId(), csrf);
+
+        assertThrows(DotDataException.class, () -> failing.killSession(request, mockResponse, token));
+
+        assertEquals("the session must still be signed in",
+                impersonated.getUserId(), loginAsSession.getAttribute(WebKeys.USER_ID));
+        assertTrue("the impersonated user's token must still work", resolves(impersonatedToken));
+    }
+
     // ==================== GET /_systemJobs ====================
 
     /**
@@ -1377,6 +1408,18 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
     private static MaintenanceResource resourceFailingToInvalidateTokensOf(final String userId)
             throws DotDataException {
         final UserAPI userAPI = mock(UserAPI.class);
+        doThrow(new DotDataException("the login tokens could not be invalidated"))
+                .when(userAPI).invalidateLoginTokens(userId);
+        return new MaintenanceResource(new WebResource(), () -> userAPI);
+    }
+
+    /**
+     * A resource whose user API behaves as the real one, except that invalidating the login
+     * tokens of the given user fails.
+     */
+    private static MaintenanceResource resourceFailingToInvalidateTokensOnlyOf(final String userId)
+            throws DotDataException {
+        final UserAPI userAPI = mock(UserAPI.class, delegatesTo(APILocator.getUserAPI()));
         doThrow(new DotDataException("the login tokens could not be invalidated"))
                 .when(userAPI).invalidateLoginTokens(userId);
         return new MaintenanceResource(new WebResource(), () -> userAPI);

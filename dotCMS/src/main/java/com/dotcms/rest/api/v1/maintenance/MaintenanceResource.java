@@ -25,9 +25,11 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
@@ -97,6 +99,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1295,7 +1298,7 @@ public class MaintenanceResource implements Serializable {
      * no login token, and its row must not be touched by a session kill.
      */
     private static Set<String> sessionUserIds(final HttpSession session) {
-        final Set<String> userIds = new HashSet<>();
+        final Set<String> userIds = new LinkedHashSet<>();
         sessionUserId(session).ifPresent(userIds::add);
         sessionAttribute(session, com.liferay.portal.util.WebKeys.PRINCIPAL_USER_ID).ifPresent(userIds::add);
         userIds.removeIf(UserAPI.CMS_ANON_USER_ID::equalsIgnoreCase);
@@ -1318,14 +1321,23 @@ public class MaintenanceResource implements Serializable {
      * Invalidates the login tokens issued so far to the given users, so that a client whose
      * session is about to be ended cannot sign in again with a login token it already holds. The
      * kill tools call this before ending a session, so a session is only ended once the tokens of
-     * its users are gone.
+     * its users are gone. The users are handled as one unit: when the tokens of one of them cannot
+     * be invalidated, none of the others is changed either, so a failed kill leaves every user as
+     * they were and the kill can be tried again.
      *
      * @param userIds the users whose login tokens to invalidate
-     * @throws DotDataException the tokens of one of the users could not be invalidated
+     * @throws DotDataException the tokens of one of the users could not be invalidated; nothing
+     *                          was changed
      */
     private void invalidateLoginTokens(final Set<String> userIds) throws DotDataException {
-        for (final String userId : userIds) {
-            this.userAPI.get().invalidateLoginTokens(userId);
+        try {
+            LocalTransaction.wrap(() -> {
+                for (final String userId : userIds) {
+                    this.userAPI.get().invalidateLoginTokens(userId);
+                }
+            });
+        } catch (final DotSecurityException e) {
+            throw new DotDataException(e.getMessage(), e);
         }
     }
 

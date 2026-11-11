@@ -402,10 +402,10 @@ public class PortalUtil {
   }
 
   /**
-   * Returns the user making the request: the one already resolved for this request, else the
-   * user of the request's session, else the user whose id was set on the request, else the user
-   * of a {@code Bearer} login token. The result is stored on the request for the rest of its
-   * processing.
+   * Returns the user making the request: the one already resolved for this request, returned
+   * without reading the session again, else the user of the request's session, else the user
+   * whose id was set on the request, else the user of a {@code Bearer} login token. The result is
+   * stored on the request for the rest of its processing.
    * <p>
    * A user taken from the session or from a user id must currently exist and be active (see
    * {@link SessionUserResolver}); otherwise the next source is tried. The one exception is a user
@@ -417,12 +417,14 @@ public class PortalUtil {
    * @return the current {@link User}, or {@code null} when the request has none
    */
   public static User getUser(HttpServletRequest req) {
-    User user = (User) req.getAttribute(WebKeys.USER);
+    final Object resolved = req.getAttribute(WebKeys.USER);
+    if (resolved instanceof User) {
+      req.setAttribute(WebKeys.USER_ID, ((User) resolved).getUserId());
+      return (User) resolved;
+    }
     // read before the session user is resolved: a refused session loses its user id
     final String sessionUserId = getUserId(req.getSession(false));
-    if (user == null) {
-      user = getUser(req.getSession(false));
-    }
+    User user = getUser(req.getSession(false));
     if (user == null) {
       // a user id set on the request itself, e.g. by a login filter; the session's own id was
       // already checked above and is not tried again, even as a copy on the request
