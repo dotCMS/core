@@ -288,11 +288,6 @@
 	    <class>com.dotcms.rendering.velocity.viewtools.navigation.NavTool</class>
 	</tool>
 	<tool>
-		<key>CASTool</key>
-		<scope>application</scope>
-		<class>com.dotcms.rendering.velocity.viewtools.CASTool</class>
-	</tool>
-	<tool>
 		<key>estool</key>
 		<scope>request</scope>
 		<class>com.dotcms.rendering.velocity.viewtools.ESContentTool</class>
