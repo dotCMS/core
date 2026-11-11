@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.user;
 
+import com.dotcms.auth.InteractiveUserPolicy;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -210,6 +211,10 @@ public class UserResourceHelper implements Serializable {
 		if (loginAsUserId.equalsIgnoreCase(currentUser.getUserId())) {
 			throw new DotDataException("Current user [" + currentUser.getUserId() + "] trying to log in as himself.",
 					"loginas.error.selfloginas");
+		}
+		if (!InteractiveUserPolicy.isEligible(currentUser)) {
+			throw new DotSecurityException("User [" + currentUser.getUserId()
+					+ "] is not eligible for interactive use and cannot Login As another user.");
 		}
 		checkLoginAsRole(currentUser);
 		final User systemUser = this.userAPI.getSystemUser();

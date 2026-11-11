@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.system.websocket;
 
+import com.dotcms.auth.InteractiveUserPolicy;
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.business.LazyUserAPIWrapper;
@@ -128,9 +129,9 @@ public class DotCmsWebSocketConfigurator extends Configurator {
 		final String userId = (String) httpSession.getAttribute
 				(com.liferay.portal.util.WebKeys.USER_ID);
 
-		if (UtilMethods.isSet(userId)) {
+		if (UtilMethods.isSet(userId) && InteractiveUserPolicy.isEligibleUserId(userId)) {
 
-			user = this.userAPI.loadUserById(userId);
+			user = InteractiveUserPolicy.refuseIfNotEligible(this.userAPI.loadUserById(userId), null, null);
 		}
 
 		return user;

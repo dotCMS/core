@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.jwt.services;
 
+import com.dotcms.auth.InteractiveUserPolicy;
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
@@ -89,7 +90,8 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
             final HttpSession session, final String ipAddress) {
 
         final Optional<JWToken> jwToken = internalProcessAuthHeaderFromJWT(authorizationHeader, ipAddress, false);
-        final User user = jwToken.isPresent() ? jwToken.get().getActiveUser().get() : null;
+        final User user = InteractiveUserPolicy.refuseIfNotEligible(
+                jwToken.isPresent() ? jwToken.get().getActiveUser().get() : null, null, null);
 
         if (user != null && null != session) {
             session.setAttribute(WebKeys.CMS_USER, user);
@@ -106,7 +108,8 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
 
         final Optional<JWToken> jwToken = internalProcessAuthHeaderFromJWT(authentication, request.getRemoteAddr(), false);
-        final User user = jwToken.isPresent() ? jwToken.get().getActiveUser().get() : null;
+        final User user = InteractiveUserPolicy.refuseIfNotEligible(
+                jwToken.isPresent() ? jwToken.get().getActiveUser().get() : null, null, null);
 
         if(user != null) {
 
@@ -124,8 +127,13 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
         // Extract authentication credentials
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
         final Optional<JWToken> jwToken = internalProcessAuthHeaderFromJWT(authentication, request.getRemoteAddr(), false);
-        final User user = jwToken.isPresent()  && jwToken.get().getActiveUser().isPresent() ?
-                jwToken.get().getActiveUser().get() : null;
+        final User user = InteractiveUserPolicy.refuseIfNotEligible(
+                jwToken.isPresent() && jwToken.get().getActiveUser().isPresent()
+                        ? jwToken.get().getActiveUser().get() : null, null, null);
+
+        if (jwToken.isPresent() && jwToken.get().getActiveUser().isPresent() && user == null) {
+            return Optional.empty();
+        }
 
         if(user != null) {
 

@@ -89,7 +89,13 @@ public class OpenAIImageAPIImplInteractiveUserTest {
         };
         final JSONObject json = new JSONObject();
         json.put("prompt", "Hello World!");
-        service.sendRequest(json);
+        // The scope answers with APILocator.systemUser(), which needs a database; stub it for the unit test.
+        try (org.mockito.MockedStatic<com.dotmarketing.business.APILocator> locator =
+                     org.mockito.Mockito.mockStatic(com.dotmarketing.business.APILocator.class)) {
+            locator.when(com.dotmarketing.business.APILocator::systemUser)
+                    .thenReturn(user(UserAPI.SYSTEM_USER_ID));
+            service.sendRequest(json);
+        }
         return resolved.get();
     }
 

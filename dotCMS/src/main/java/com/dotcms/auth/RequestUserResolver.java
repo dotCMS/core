@@ -2,6 +2,7 @@ package com.dotcms.auth;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.util.PortalUtil;
@@ -121,7 +122,10 @@ public final class RequestUserResolver {
     }
 
     private static User systemUser() {
-        return Try.of(() -> APILocator.systemUser()).getOrNull();
+        return Try.of(() -> APILocator.systemUser())
+                .onFailure(e -> Logger.error(RequestUserResolver.class,
+                        "Unable to load the system user: " + e.getMessage(), e))
+                .getOrNull();
     }
 
     private static User eligible(final User user) {

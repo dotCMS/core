@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.auth.InteractiveUserPolicy;
 import com.dotcms.auth.BasicAuthentication;
 import com.dotcms.auth.BasicAuthentication.Mode;
 import com.dotcms.auth.dotAuth.rest.DotAuthSessionCredentialProcessor;
@@ -650,11 +651,13 @@ public  class WebResource {
         if(null == user) {
             // dotAuth session-ref bearer — short-circuits when the credential carries the
             // `dsr_` prefix; returns null for any other bearer so the JWT processor runs next.
-            user = this.dotAuthSessionCredentialProcessor.processAuthHeaderFromSessionRef(request);
+            user = InteractiveUserPolicy.refuseIfNotEligible(
+                    this.dotAuthSessionCredentialProcessor.processAuthHeaderFromSessionRef(request), request, null);
         }
 
         if(null == user) {
-            user = this.jsonWebTokenAuthCredentialProcessor.processAuthHeaderFromJWT(request);
+            user = InteractiveUserPolicy.refuseIfNotEligible(
+                    this.jsonWebTokenAuthCredentialProcessor.processAuthHeaderFromJWT(request), request, null);
         }
 
         /*
@@ -665,11 +668,13 @@ public  class WebResource {
 
 
         if(user == null ) {
-            user = getBackUserFromRequest(request, userWebAPI);
+            user = InteractiveUserPolicy.refuseIfNotEligible(
+                    getBackUserFromRequest(request, userWebAPI), request, null);
         }
 
         if(user == null) {
-            user = getFrontEndUserFromRequest(request, userWebAPI);
+            user = InteractiveUserPolicy.refuseIfNotEligible(
+                    getFrontEndUserFromRequest(request, userWebAPI), request, null);
         }
         
         if(user==null) {
