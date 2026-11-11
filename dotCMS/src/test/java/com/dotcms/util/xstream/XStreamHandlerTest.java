@@ -14,8 +14,10 @@ import com.dotcms.repackage.probe.RepackagedProbe;
 import com.dotcms.publishing.XMLSerializerUtil;
 import com.dotcms.publishing.manifest.CSVManifestBuilder;
 import com.thoughtworks.xstream.XStream;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.SecurityLogger;
+import org.apache.commons.lang3.mutable.MutableBoolean;
 import com.thoughtworks.xstream.security.ForbiddenClassException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -378,6 +380,39 @@ public class XStreamHandlerTest {
 
             securityLogger.verify(() -> SecurityLogger.logWarn(eq(XStreamHandler.class),
                     contains("java.beans.EventHandler")), times(2));
+        }
+    }
+
+    /**
+     * A refused type does not always reach the reader as itself. A contentlet's property map is
+     * a {@code ConcurrentHashMap}, which XStream reads with its {@code SerializableConverter};
+     * that converter calls the map's own {@code readObject} and wraps whatever comes out of it
+     * in a {@code ConversionException}. The refusal is then a cause rather than the exception
+     * thrown, and this is the shape a real bundle takes, because a bundle names most of its
+     * types as values inside that map rather than as a document's root element.
+     *
+     * <p>{@code MutableBoolean} is the probe because it is outside the trusted list and outside
+     * what XStream's own defaults admit. A type the defaults already cover, such as
+     * {@code java.io.File}, reads back fine and would prove nothing here.
+     */
+    @Test
+    public void testFromXML_whenRefusedTypeIsNestedInAContentletMap_shouldStillRecordTheRefusal() {
+        final XStream xstream = XStreamHandler.newXStreamInstance();
+        final Contentlet contentlet = new Contentlet();
+        contentlet.getMap().put("probe", new MutableBoolean(true));
+        final String xml = xstream.toXML(contentlet);
+
+        try (MockedStatic<SecurityLogger> securityLogger = mockStatic(SecurityLogger.class)) {
+            try {
+                xstream.fromXML(xml);
+                fail("Expected org.apache.commons.lang3.mutable.MutableBoolean to be refused");
+            } catch (final RuntimeException e) {
+                //Expected. What this test asserts on is what the refusal recorded, not the
+                //exception's own type, which belongs to whichever converter wrapped it.
+            }
+
+            securityLogger.verify(() -> SecurityLogger.logWarn(eq(XStreamHandler.class),
+                    contains("org.apache.commons.lang3.mutable.MutableBoolean")));
         }
     }
 
