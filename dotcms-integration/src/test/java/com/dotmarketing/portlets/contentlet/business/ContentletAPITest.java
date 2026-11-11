@@ -4526,7 +4526,9 @@ public class ContentletAPITest extends ContentletBaseTest {
             assertEquals(dateFormat.format(d4),
                     dateFormat.format(c21.getDateProperty(expireField.variable())));
 
-            // also it should be in the index update with the new dates
+            // also it should be in the index update with the new dates. On failure the message
+            // tells apart a missing document, one indexed with the old dates (stale identifier
+            // while c1 was reindexed) and one that only arrived late.
             String q = "+structureName:" + testContentType.variable() +
                     " +inode:" + c11.getInode() +
                     " +" + testContentType.variable() + "." + publishField.variable() + ":"
@@ -4537,7 +4539,22 @@ public class ContentletAPITest extends ContentletBaseTest {
                     .toLuceneDateTime(d4);
 
             final long count = APILocator.getContentletAPI().indexCount(q, user, false);
-            assertEquals(1, count);
+            if (count != 1) {
+                final String prefix = "+inode:" + c11.getInode() + " +" + testContentType.variable() + ".";
+                final ContentletAPI api = APILocator.getContentletAPI();
+                fail(String.format("Expected 1 index document for sibling %s with the new dates, found %d. "
+                                + "Now: documents for the inode: %d, with the old dates: %d, "
+                                + "with the new dates: %d; cached identifier dates: %s",
+                        c11.getInode(), count,
+                        api.indexCount("+inode:" + c11.getInode(), user, false),
+                        api.indexCount(prefix + publishField.variable() + ":" + DateUtil.toLuceneDateTime(d1)
+                                + " +" + testContentType.variable() + "." + expireField.variable() + ":"
+                                + DateUtil.toLuceneDateTime(d2), user, false),
+                        api.indexCount(q, user, false),
+                        Optional.ofNullable(APILocator.getIdentifierAPI().loadFromCache(c1.getIdentifier()))
+                                .map(i -> i.getSysPublishDate() + " / " + i.getSysExpireDate())
+                                .orElse("not cached")));
+            }
         } finally {
             ContentletTransformer.setUniquePublishExpireDatePerLanguages(
                     uniquePublishExpireDatePerLanguages);
