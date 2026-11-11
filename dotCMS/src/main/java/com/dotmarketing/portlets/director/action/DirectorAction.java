@@ -244,23 +244,6 @@ public class DirectorAction extends DotPortletAction {
 				_sendToReferral(req, res, af);
 				return;
 			}
-			if (cmd!=null && cmd.equals("viewStatistics")) {
-
-				Logger.debug(DirectorAction.class, "Director :: editHTMLPage");
-
-				IHTMLPage htmlPage = loadPage(req.getParameter("htmlPage"), user);
-
-
-				java.util.Map params = new java.util.HashMap();
-				params.put("struts_action",new String[] {"/ext/htmlpageviews/view_htmlpage_views"});
-				params.put("htmlpage",new String[] { htmlPage.getInode() + "" });
-				params.put("referer",new String[] { referer });
-
-				String af = com.dotmarketing.util.PortletURLUtil.getRenderURL(httpReq,WindowState.MAXIMIZED.toString(),params);
-
-				_sendToReferral(req, res, af);
-				return;
-			}
 
 			if (cmd!=null && cmd.equals("editFile")) {
 
