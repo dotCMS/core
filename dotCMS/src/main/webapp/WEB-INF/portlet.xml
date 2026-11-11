@@ -268,16 +268,6 @@
         </security-role-ref>
     </portlet>
 
-    <portlet>
-        <portlet-name>link-checker</portlet-name>
-        <display-name>Broken Links</display-name>
-        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
-        <init-param>
-            <name>view-jsp</name>
-            <value>/portlet/ext/linkchecker/view_broken_links.jsp</value>
-        </init-param>
-    </portlet>
-
     <!-- ESContentResource Portlets -->
 
     <portlet>

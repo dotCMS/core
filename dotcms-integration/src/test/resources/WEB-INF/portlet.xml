@@ -417,18 +417,6 @@
     </portlet>
 
     <portlet>
-        <portlet-name>link-checker</portlet-name>
-        <display-name>Broken Links</display-name>
-        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
-        <init-param>
-            <name>view-jsp</name>
-            <value>/portlet/ext/linkchecker/view_broken_links.jsp</value>
-        </init-param>
-    </portlet>
-
-
-
-    <portlet>
         <portlet-name>es-search</portlet-name>
         <display-name>ES Query Tool</display-name>
         <portlet-class>com.dotcms.rest.elasticsearch.ESContentResourcePortlet</portlet-class>

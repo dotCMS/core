@@ -62,7 +62,6 @@ import com.dotcms.enterprise.ServerActionAPIImplProxy;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
 import com.dotcms.enterprise.cluster.action.business.ServerActionAPI;
-import com.dotcms.enterprise.linkchecker.LinkCheckerAPIImpl;
 import com.dotcms.enterprise.priv.ESSearchProxy;
 import com.dotcms.enterprise.publishing.sitesearch.ESSiteSearchAPI;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchAPIImpl;
@@ -156,7 +155,6 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRend
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPIImpl;
-import com.dotmarketing.portlets.linkchecker.business.LinkCheckerAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPI;
 import com.dotmarketing.portlets.links.business.MenuLinkAPIImpl;
 import com.dotmarketing.portlets.personas.business.PersonaAPI;
@@ -744,15 +742,6 @@ public class APILocator extends Locator<APIIndex> {
 	 */
 	public static PublisherAPI getPublisherAPI() {
 	    return (PublisherAPI) getInstance(APIIndex.PUBLISHER_API);
-	}
-
-	/**
-	 * Creates a single instance of the {@link LinkCheckerAPI} class.
-	 *
-	 * @return The {@link LinkCheckerAPI} class.
-	 */
-	public static LinkCheckerAPI getLinkCheckerAPI() {
-	    return (LinkCheckerAPI) getInstance(APIIndex.LINKCHECKER_API);
 	}
 
 	/**
@@ -1362,7 +1351,6 @@ enum APIIndex
 	CONTENLET_INDEX_API,
 	PUBLISHER_API,
 	ES_INDEX_API,
-	LINKCHECKER_API,
 	TIME_MACHINE_API,
 	PUBLISHER_ENDPOINT_API,
 	STRUCTURE_API,
@@ -1462,7 +1450,6 @@ enum APIIndex
     		case ES_INDEX_API: return new IndexAPIImpl();
     		case PUBLISHER_API: return new PublisherAPIImpl();
     		case TIME_MACHINE_API: return new TimeMachineAPIImpl();
-    		case LINKCHECKER_API: return new LinkCheckerAPIImpl();
     		case PUBLISHER_ENDPOINT_API: return new PublishingEndPointAPIImpl(FactoryLocator.getPublisherEndPointFactory());
     		case STRUCTURE_API: return new StructureAPIImpl();
     		case SITE_SEARCH_AUDIT_API: return new SiteSearchAuditAPIImpl();

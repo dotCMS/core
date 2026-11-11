@@ -21,7 +21,6 @@ import com.dotcms.enterprise.RulesFactoryProxy;
 import com.dotcms.enterprise.ServerActionFactoryImplProxy;
 import com.dotcms.enterprise.cluster.ServerFactoryImpl;
 import com.dotcms.enterprise.cluster.action.business.ServerActionFactory;
-import com.dotcms.enterprise.linkchecker.LinkCheckerFactoryImpl;
 import com.dotcms.enterprise.rules.RulesFactory;
 import com.dotcms.experiments.business.ExperimentsFactory;
 import com.dotcms.experiments.business.ExperimentsFactoryImpl;
@@ -60,7 +59,6 @@ import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableFactory;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableFactoryImpl;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageFactory;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageFactoryImpl;
-import com.dotmarketing.portlets.linkchecker.business.LinkCheckerFactory;
 import com.dotmarketing.portlets.links.business.MenuLinkFactory;
 import com.dotmarketing.portlets.links.business.MenuLinkFactoryImpl;
 import com.dotmarketing.portlets.personas.business.PersonaFactory;
@@ -178,10 +176,6 @@ public class FactoryLocator extends Locator<FactoryIndex>{
     }
     public static IndiciesFactory getIndiciesFactory(){
         return (IndiciesFactory) getInstance(FactoryIndex.INDICIES_FACTORY);
-    }
-
-    public static LinkCheckerFactory getLinkCheckerFactory() {
-        return (LinkCheckerFactory) getInstance(FactoryIndex.LINKCHECKER_FACTORY);
     }
 
     public static PublishingEndPointFactory getPublisherEndPointFactory(){
@@ -354,7 +348,6 @@ enum FactoryIndex
 	FOLDER_FACTORY,
 	WORKFLOWS_FACTORY,
 	INDICIES_FACTORY,
-	LINKCHECKER_FACTORY,
 	PUBLISHER_END_POINT_FACTORY,
 	ENVIRONMENT_FACTORY,
 	BUNDLE_FACTORY,
@@ -397,7 +390,6 @@ enum FactoryIndex
             case FOLDER_FACTORY : return new FolderFactoryImpl();
             case WORKFLOWS_FACTORY :return new WorkflowFactoryImpl();
             case INDICIES_FACTORY: return new IndiciesFactory();
-            case LINKCHECKER_FACTORY: return new LinkCheckerFactoryImpl();
             case PUBLISHER_END_POINT_FACTORY: return new PublishingEndPointFactoryImpl();
             case ENVIRONMENT_FACTORY: return new EnvironmentFactoryImpl();
             case BUNDLE_FACTORY: return new BundleFactoryImpl();
