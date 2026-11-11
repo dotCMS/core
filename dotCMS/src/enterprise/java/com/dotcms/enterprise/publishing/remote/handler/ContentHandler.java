@@ -1221,8 +1221,14 @@ public class ContentHandler implements IHandler {
 
 	/**
 	 * Checks whether saving the specified {@code tree} row would give its parent or its child more
-	 * related items than the relationship allows: one child per parent for {@code MANY_TO_ONE} and
-	 * {@code ONE_TO_ONE}, and one parent per child for {@code ONE_TO_MANY} and {@code ONE_TO_ONE}.
+	 * related items than the relationship allows: one child per parent for {@code ONE_TO_ONE}, and
+	 * one parent per child for {@code ONE_TO_MANY}, {@code MANY_TO_ONE} and {@code ONE_TO_ONE}.
+	 * <p>
+	 * A many-to-one Relationships Field is stored with the related ("one") type as the parent and
+	 * the field's type as the child. Its stored cardinality is {@code ONE_TO_MANY} when the field is
+	 * created, but existing installs can have it stored as {@code MANY_TO_ONE} with the same sides.
+	 * Either way, the child can have one parent only, while the parent can have any number of
+	 * children (<a href="https://github.com/dotCMS/core/issues/38538">#38538</a>).
 	 *
 	 * @param tree The {@code tree} row to check.
 	 *
@@ -1237,9 +1243,9 @@ public class ContentHandler implements IHandler {
 			return false;
 		}
 		final RELATIONSHIP_CARDINALITY cardinality = RELATIONSHIP_CARDINALITY.fromOrdinal(relationship.getCardinality());
-		final boolean oneChildPerParent = cardinality == RELATIONSHIP_CARDINALITY.MANY_TO_ONE
-				|| cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
+		final boolean oneChildPerParent = cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
 		final boolean oneParentPerChild = cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_MANY
+				|| cardinality == RELATIONSHIP_CARDINALITY.MANY_TO_ONE
 				|| cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
 		return (oneChildPerParent && this.hasOtherRelated(OTHER_CHILDREN_SQL, tree.getParent(), tree.getChild(),
 						tree.getRelationType()))
