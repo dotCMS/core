@@ -52,8 +52,20 @@ LABEL com.dotcms.contact="support@dotcms.com" \
 COPY --from=container-base /usr/local/libvips /usr/local/libvips
 COPY --from=container-base /etc/ld.so.conf.d/libvips.conf /etc/ld.so.conf.d/libvips.conf
 
+# Temporary (dotCMS/core#38547): when archive.ubuntu.com does not resolve, point apt at a
+# mirror whose DNS does not depend on Canonical's nameservers. apt still verifies the
+# Release signatures with the image's Ubuntu keyring, so the mirror cannot alter packages.
+# Plain HTTP because ca-certificates is not installed yet. The rewritten sources file is
+# used by every apt step below. Builds where the name resolves are unchanged.
+ARG APT_FALLBACK_MIRROR="http://mirrors.edge.kernel.org/ubuntu/"
+
 # Install basic packages and tini
-RUN apt update && \
+RUN if ! getent hosts archive.ubuntu.com > /dev/null; then \
+        echo "archive.ubuntu.com does not resolve; using apt mirror ${APT_FALLBACK_MIRROR}" && \
+        sed -i -E "s#http://(archive|security)\.ubuntu\.com/ubuntu/?#${APT_FALLBACK_MIRROR}#" \
+            /etc/apt/sources.list.d/ubuntu.sources; \
+    fi && \
+    apt update && \
     apt upgrade -y && \
     apt install -y --no-install-recommends \
         wget \
