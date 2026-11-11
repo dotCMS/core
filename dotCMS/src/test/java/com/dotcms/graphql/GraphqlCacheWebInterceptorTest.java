@@ -105,7 +105,8 @@ public class GraphqlCacheWebInterceptorTest {
 
     /**
      * A request whose session is due to renew its login cookie is not answered from the cache, so
-     * it reaches AutoLoginFilter, where the renewal happens.
+     * it reaches AutoLoginFilter, where the renewal happens. It is still authenticated and marked
+     * as uncached, so its response is not stored either.
      */
     @Test
     public void dueLoginCookieRenewalSkipsTheCache() throws Exception {
@@ -122,13 +123,19 @@ public class GraphqlCacheWebInterceptorTest {
         when(cache.get(anyString())).thenReturn(Optional.of("{\"data\":\"cached\"}"));
 
         try (MockedStatic<CacheLocator> caches = mockStatic(CacheLocator.class);
-             MockedStatic<LicenseManager> licenses = mockStatic(LicenseManager.class)) {
+             MockedStatic<LicenseManager> licenses = mockStatic(LicenseManager.class);
+             MockedConstruction<DotGraphQLContextBuilder> contexts = mockConstruction(
+                     DotGraphQLContextBuilder.class)) {
             caches.when(CacheLocator::getGraphQLCache).thenReturn(cache);
             licenses.when(LicenseManager::getInstance).thenReturn(license);
 
-            assertSame(Result.NEXT, new GraphqlCacheWebInterceptor().intercept(request,
-                    mock(HttpServletResponse.class)));
+            final Result result = new GraphqlCacheWebInterceptor().intercept(request,
+                    mock(HttpServletResponse.class));
+
+            assertFalse(Result.SKIP_NO_CHAIN == result);
             verify(cache, never()).get(anyString());
+            verify(contexts.constructed().get(0)).build(any(HttpServletRequest.class),
+                    any(HttpServletResponse.class));
         }
     }
 

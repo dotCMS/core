@@ -297,6 +297,21 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
     }
 
     /**
+     * A renewal left on a session that is logged in as another user is not due, since nothing is
+     * renewed there; otherwise the GraphQL cache would be skipped for the whole of that session.
+     */
+    @Test
+    public void renewalIsNotDue_whileLoggedInAsAnotherUser() {
+        final HttpSession session = session(pastRenewal());
+        final HttpServletRequest request = request("/api/v1/graphql", session, true);
+        assertTrue(DefaultAutoLoginWebInterceptor.isSessionLoginTokenRenewalDue(request));
+
+        when(session.getAttribute(WebKeys.PRINCIPAL_USER_ID)).thenReturn("administrator");
+
+        assertFalse(DefaultAutoLoginWebInterceptor.isSessionLoginTokenRenewalDue(request));
+    }
+
+    /**
      * A token carrying the session login claim is a session login token.
      */
     @Test

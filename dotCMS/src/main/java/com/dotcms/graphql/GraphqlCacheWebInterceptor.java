@@ -136,11 +136,6 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
                 && PortalUtil.getUser(requestIn) == null) {
             return Result.NEXT;
         }
-        // A cache hit ends the chain before AutoLoginFilter, so a due login cookie renewal runs
-        // on an uncached request instead.
-        if (DefaultAutoLoginWebInterceptor.isSessionLoginTokenRenewalDue(requestIn)) {
-            return Result.NEXT;
-        }
         final HttpRequestReaderWrapper wrapper = new HttpRequestReaderWrapper(requestIn);
 
         final Optional<String> query = wrapper.getRawRequest();
@@ -155,7 +150,10 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         final String syncKey = cacheKey.value();
 
         final int cacheTTL = getCacheTTL(requestIn);
+        // A cache hit ends the chain before AutoLoginFilter, so a request on which the login
+        // cookie renewal is due is run uncached and reaches it.
         final boolean bypassCache = cacheTTL <= 0
+                || DefaultAutoLoginWebInterceptor.isSessionLoginTokenRenewalDue(requestIn)
                 || query.get().contains(INTROSPECTION_OPERATION_NAME)
                 || isMutation(query.get());
 

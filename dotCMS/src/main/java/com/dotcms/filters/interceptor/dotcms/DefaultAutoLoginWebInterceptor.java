@@ -143,7 +143,9 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
     }
 
     /**
-     * Whether the request's HTTP session has a session login token renewal whose time has passed.
+     * Whether the request's HTTP session has a session login token renewal whose time has passed
+     * and that can run now. While the session is logged in as another user nothing is renewed, so
+     * a renewal left on such a session is not due.
      *
      * @param request the current request
      * @return {@code true} when the next back-end request should renew the login cookie
@@ -151,8 +153,10 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
     public static boolean isSessionLoginTokenRenewalDue(final HttpServletRequest request) {
 
         final HttpSession session = request.getSession(false);
-        final Object renewAt = null == session ? null
-                : session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT);
+        if (null == session || isLoggedInAsAnotherUser(session)) {
+            return false;
+        }
+        final Object renewAt = session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT);
         return renewAt instanceof Long && System.currentTimeMillis() >= (Long) renewAt;
     }
 
@@ -174,8 +178,7 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
                                              final HttpServletResponse response) {
 
         final HttpSession session = request.getSession(false);
-        if (null == session || isLoggedInAsAnotherUser(session) || !isSessionLoginTokenRenewalDue(request)
-                || !isBackEndApplicationPath(request.getRequestURI())) {
+        if (!isSessionLoginTokenRenewalDue(request) || !isBackEndApplicationPath(request.getRequestURI())) {
             return;
         }
         final Cookie loginCookie = UtilMethods.getCookie(request.getCookies(), CookieKeys.REMEMBER_ME_COOKIE.get());
