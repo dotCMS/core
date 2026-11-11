@@ -57,16 +57,45 @@ public interface CacheProviderAPI {
     void init () throws Exception;
 
     /**
-     * Determines whether all Cache Providers are distributed
+     * Tells whether every cache provider in use keeps its entries in a store the whole cluster
+     * shares (Redis, for example), so a removal on one node is already seen by the others and no
+     * invalidation message needs to be sent. Returns false when no provider is registered.
+     *
+     * @return true when the cache is shared by the cluster
      */
-    boolean isDistributed();
+    boolean isCacheSharedByCluster();
 
     /**
-     * Determines whether all Cache Providers registered for the given region are distributed
+     * Use {@link #isCacheSharedByCluster()}.
      *
-     * @param group
+     * @return the same value as {@link #isCacheSharedByCluster()}
+     * @deprecated renamed to {@link #isCacheSharedByCluster()}, which says what it checks
      */
-    boolean isGroupDistributed ( String group );
+    @Deprecated
+    default boolean isDistributed() {
+        return isCacheSharedByCluster();
+    }
+
+    /**
+     * Tells whether every cache provider registered for the given region keeps its entries in a
+     * store the whole cluster shares, so no invalidation message needs to be sent for it.
+     *
+     * @param group the cache region
+     * @return true when that region's cache is shared by the cluster
+     */
+    boolean isGroupCacheSharedByCluster(String group);
+
+    /**
+     * Use {@link #isGroupCacheSharedByCluster(String)}.
+     *
+     * @param group the cache region
+     * @return the same value as {@link #isGroupCacheSharedByCluster(String)}
+     * @deprecated renamed to {@link #isGroupCacheSharedByCluster(String)}
+     */
+    @Deprecated
+    default boolean isGroupDistributed(final String group) {
+        return isGroupCacheSharedByCluster(group);
+    }
 
     /**
      * Adds the given content to the given region and for a given key to
