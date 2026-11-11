@@ -1,4 +1,4 @@
-import { Observable, Subject, forkJoin, of } from 'rxjs';
+import { EMPTY, Observable, Subject, forkJoin, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -74,6 +74,9 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
 
     /** What the server last gave us, to diff the pending edits against. */
     #stored = signal<DotFieldVariable[]>([]);
+
+    /** True once the field's stored variables are in the table; the editor waits for it. */
+    protected readonly $loaded = signal(false);
 
     /** True while a save is in flight, so the button cannot be pressed twice. */
     #saving = signal(false);
@@ -290,17 +293,31 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
         });
     }
 
+    /**
+     * Loads the field's stored variables into the table. The editor stays hidden until
+     * they arrive: the loaded list replaces the editor's own, so a pair added before the
+     * load answered would otherwise disappear.
+     */
     private initTableData(): void {
         if (!this.field?.contentTypeId || !this.field?.id) {
             this.$fieldVariables.set([]);
             this.#stored.set([]);
+            this.$loaded.set(true);
 
             return;
         }
 
+        this.$loaded.set(false);
         this.fieldVariablesService
             .load(this.field)
-            .pipe(takeUntil(this.destroy$))
+            .pipe(
+                catchError((err: HttpErrorResponse) => {
+                    this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
+
+                    return EMPTY;
+                }),
+                takeUntil(this.destroy$)
+            )
             .subscribe(($fieldVariables: DotFieldVariable[]) => {
                 const visible = $fieldVariables.filter((item) => {
                     const fieldBlackList = this.blackList[this.field.clazz];
@@ -313,6 +330,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
 
                 this.$fieldVariables.set(visible);
                 this.#stored.set(visible);
+                this.$loaded.set(true);
                 this.#emitDialogActions();
             });
     }
