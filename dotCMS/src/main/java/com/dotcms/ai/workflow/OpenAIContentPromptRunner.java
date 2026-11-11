@@ -1,5 +1,6 @@
 package com.dotcms.ai.workflow;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.ContentToStringUtil;
@@ -131,13 +132,16 @@ public class OpenAIContentPromptRunner implements Runnable {
 
     private String openAIRequest(final Contentlet workingContentlet) throws Exception {
 
-        final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
-        final String parsedPrompt = VelocityUtil.eval(prompt, ctx);
-        final Host host = Try.of(() -> APILocator.getHostAPI().find(workingContentlet.getHost(), user, false)).getOrNull();
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
-        final JSONObject openAIResponse = APILocator.getDotAIAPI()
-                .getCompletionsAPI(appConfig)
-                .raw(buildRequest(parsedPrompt), user.getUserId());
+        final JSONObject openAIResponse;
+        try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
+            final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
+            final String parsedPrompt = VelocityUtil.eval(prompt, ctx);
+            final Host host = Try.of(() -> APILocator.getHostAPI().find(workingContentlet.getHost(), user, false)).getOrNull();
+            final AppConfig appConfig = ConfigService.INSTANCE.config(host);
+            openAIResponse = APILocator.getDotAIAPI()
+                    .getCompletionsAPI(appConfig)
+                    .raw(buildRequest(parsedPrompt), user.getUserId());
+        }
 
         try {
             return openAIResponse

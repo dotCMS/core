@@ -1,5 +1,6 @@
 package com.dotcms.ai.workflow;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.ContentToStringUtil;
@@ -130,6 +131,7 @@ public class OpenAIAutoTagRunner implements Runnable {
     }
 
     private String openAIRequest(final Contentlet workingContentlet, final String contentToTag) throws Exception {
+        try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
         final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
         final String systemPrompt = this.limitTags ? SYSTEM_PROMPT_TAGGING_CONSTRAIN : SYSTEM_PROMPT_TAGGING_FREEFORM;
         final Set<String> constrainTags = this.limitTags ? APILocator.getTagAPI().findTopTags(workingContentlet.getHost()) : Set.of();
@@ -144,6 +146,7 @@ public class OpenAIAutoTagRunner implements Runnable {
                 .prompt(parsedSystemPrompt, parsedContentPrompt, null, 0f, 2000, user.getUserId());
 
         return openAIResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
+        }
     }
 
     private JSONArray parseJsonResponse(final String responseIn) {

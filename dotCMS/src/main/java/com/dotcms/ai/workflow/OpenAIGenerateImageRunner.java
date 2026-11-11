@@ -1,5 +1,6 @@
 package com.dotcms.ai.workflow;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.ai.api.ImageAPI;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.VelocityContextFactory;
@@ -102,7 +103,7 @@ public class OpenAIGenerateImageRunner implements Runnable {
         }
 
         boolean setRequest = false;
-        try {
+        try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
             final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
             if (HttpServletRequestThreadLocal.INSTANCE.getRequest() == null) {
                 setRequest = true;

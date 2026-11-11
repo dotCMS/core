@@ -14,7 +14,10 @@ public final class SystemUserScope implements AutoCloseable {
 
     private static final ThreadLocal<Integer> DEPTH = ThreadLocal.withInitial(() -> 0);
 
-    private SystemUserScope() {
+    private final boolean opened;
+
+    private SystemUserScope(final boolean opened) {
+        this.opened = opened;
     }
 
     /**
@@ -24,7 +27,22 @@ public final class SystemUserScope implements AutoCloseable {
      */
     public static SystemUserScope open() {
         DEPTH.set(DEPTH.get() + 1);
-        return new SystemUserScope();
+        return new SystemUserScope(true);
+    }
+
+    /**
+     * Opens a scope only when the acting user is the built-in system user; for any other user the returned
+     * object does nothing, so a call site can use one try-with-resources whoever the user is.
+     *
+     * @param actingUser the user server code is acting as, may be null
+     * @return a scope to be closed in a try-with-resources
+     */
+    public static SystemUserScope openIfSystemUser(final com.liferay.portal.model.User actingUser) {
+        if (actingUser != null
+                && com.dotmarketing.business.UserAPI.SYSTEM_USER_ID.equalsIgnoreCase(actingUser.getUserId())) {
+            return open();
+        }
+        return new SystemUserScope(false);
     }
 
     /**
@@ -72,6 +90,9 @@ public final class SystemUserScope implements AutoCloseable {
 
     @Override
     public void close() {
+        if (!opened) {
+            return;
+        }
         final int depth = DEPTH.get() - 1;
         if (depth <= 0) {
             DEPTH.remove();

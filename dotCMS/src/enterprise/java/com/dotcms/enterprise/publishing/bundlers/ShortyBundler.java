@@ -9,6 +9,7 @@
 
 package com.dotcms.enterprise.publishing.bundlers;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockServletPathRequest;
@@ -354,7 +355,9 @@ public class ShortyBundler implements IBundler {
 
                 response = new MockHttpCaptureResponse(response, outputStream).response();
 
-                this.binaryServlet.doGet(request, response);
+                try (SystemUserScope ignored = SystemUserScope.open()) {
+                    this.binaryServlet.doGet(request, response);
+                }
             }
         } else {
             Logger.warn(ShortyBundler.class,

@@ -1,5 +1,6 @@
 package com.dotcms.ai.api;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.AppKeys;
@@ -188,7 +189,11 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
         }
 
         final Context ctx = VelocityContextFactory.getMockContext(contentlet);
-        final String textToEmbed = Try.of(() -> VelocityUtil.eval(velocityTemplate, ctx)).getOrNull();
+        final String textToEmbed = Try.of(() -> {
+            try (SystemUserScope ignored = SystemUserScope.open()) {
+                return VelocityUtil.eval(velocityTemplate, ctx);
+            }
+        }).getOrNull();
 
         if (UtilMethods.isEmpty(textToEmbed)) {
             return false;

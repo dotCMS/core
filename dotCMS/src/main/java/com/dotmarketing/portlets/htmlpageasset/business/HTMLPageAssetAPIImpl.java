@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.htmlpageasset.business;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
@@ -860,7 +861,9 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             requestProxy.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER, user);
             requestProxy.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
             requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
-            return VelocityModeHandler.modeHandler(mode, requestProxy, responseProxy).eval();
+            try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
+                return VelocityModeHandler.modeHandler(mode, requestProxy, responseProxy).eval();
+            }
 
         } catch (Exception e1) {
             Logger.error(this, e1.getMessage(), e1);

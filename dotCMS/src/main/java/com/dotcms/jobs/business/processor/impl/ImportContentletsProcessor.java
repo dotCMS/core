@@ -1,5 +1,6 @@
 package com.dotcms.jobs.business.processor.impl;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -443,7 +444,9 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
                 .stopOnError(stopOnError)
                 .commitGranularityOverride(commitGranularity)
                 .build();
-        return ImportUtil.importFileResult(importFileParams);
+        try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
+            return ImportUtil.importFileResult(importFileParams);
+        }
     }
 
     /**
