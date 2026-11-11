@@ -375,10 +375,15 @@ public class CompletionsResource {
         return Response.status(Response.Status.BAD_REQUEST).entity(Map.of(AiKeys.ERROR, "query required")).build();
     }
 
+    /**
+     * Attaches the authenticated user to the form and, for non-admins, forces the site's
+     * configured model. The user is never null here, so retrieval always filters by that user's
+     * READ permission.
+     */
     private static CompletionsForm resolveForm(final HttpServletRequest request,
                                                final HttpServletResponse response,
                                                final CompletionsForm formIn) {
-        // get user if we have one (this allows anon)
+        // back-end or front-end user required; an unauthenticated call is rejected with 401
         final User user = new WebResource
                 .InitBuilder(request, response)
                 .requiredBackendUser(true)

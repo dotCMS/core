@@ -153,6 +153,34 @@ public interface FileMetadataAPI {
     Map<String, Set<String>> removeVersionMetadata(Contentlet contentlet);
 
     /**
+     * Works out now which metadata {@link #removeMetadata(Contentlet)} would remove, and returns
+     * the removal of exactly that, to be run later.
+     * <p>
+     * A destroy uses it to wait for its transaction to commit before removing anything: by then
+     * the content type may be gone and the binary directory already deleted, and both are needed
+     * to find the metadata. This default only defers the call, so an implementation that does
+     * not override it finds the metadata when the removal runs, as before.
+     *
+     * @param contentlet the version whose metadata will be removed
+     * @return the removal, which never throws for a missing entry
+     */
+    default Runnable prepareMetadataRemoval(final Contentlet contentlet) {
+        return () -> removeMetadata(contentlet);
+    }
+
+    /**
+     * Works out now which metadata {@link #removeVersionMetadata(Contentlet)} would remove, and
+     * returns the removal of exactly that, to be run later. See
+     * {@link #prepareMetadataRemoval(Contentlet)} for why.
+     *
+     * @param contentlet the version whose own metadata will be removed
+     * @return the removal, which never throws for a missing entry
+     */
+    default Runnable prepareVersionMetadataRemoval(final Contentlet contentlet) {
+        return () -> removeVersionMetadata(contentlet);
+    }
+
+    /**
      * Given a binary file this will rely on the metadata generator to read the file and get the full md associated
      * As a fallback we can also pass the contentlet in case of read md failure
      * @param binary

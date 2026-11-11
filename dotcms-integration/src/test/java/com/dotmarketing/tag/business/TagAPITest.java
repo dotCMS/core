@@ -15,6 +15,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -28,6 +29,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -37,6 +39,7 @@ import org.junit.Test;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
@@ -1459,6 +1462,134 @@ public class TagAPITest extends IntegrationTestBase {
 	/**
 	 * Helper method to create a test contentlet for permission tests
 	 */
+	/**
+	 * Method to test: {@link TagAPI#deleteTagInodesByInode(User, String)}
+	 * Given scenario: A user without EDIT permission on the contentlet removes the contentlet's tags
+	 * Expected result: Returns false and the tags stay on the contentlet
+	 */
+	@Test
+	public void deleteTagInodesByInode_WithoutPermission_ShouldReturnFalse() throws Exception {
+		final Role limitedRole = new RoleDataGen().nextPersisted();
+		final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
+		Contentlet contentAsset = null;
+		Tag tag = null;
+
+		try {
+			contentAsset = createTestContentlet();
+			final String tagName = "inodedenied" + System.currentTimeMillis();
+			tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+			tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
+
+			assertFalse("The user should not be able to remove the contentlet tags",
+					tagAPI.canDeleteTagInodesByInode(limitedUser, contentAsset.getInode()));
+			assertFalse("Delete should return false when the user can't edit the contentlet",
+					tagAPI.deleteTagInodesByInode(limitedUser, contentAsset.getInode()));
+			assertFalse("The contentlet should keep its tags",
+					tagAPI.getTagInodesByInode(contentAsset.getInode()).isEmpty());
+		} finally {
+			if (tag != null) {
+				try { tagAPI.deleteTag(tag.getTagId()); } catch (Exception e) { /* ignore */ }
+			}
+			if (contentAsset != null) {
+				try { conAPI.destroy(contentAsset, systemUser, false); } catch (Exception e) { /* ignore */ }
+			}
+			try { UserDataGen.remove(limitedUser); } catch (Exception e) { /* ignore */ }
+		}
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#deleteTagInodesByInode(User, String)}
+	 * Given scenario: A user with EDIT permission on the contentlet removes the contentlet's tags
+	 * Expected result: Returns true and the contentlet has no tags left
+	 */
+	@Test
+	public void deleteTagInodesByInode_WithPermission_ShouldDelete() throws Exception {
+		final Role limitedRole = new RoleDataGen().nextPersisted();
+		final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
+		Contentlet contentAsset = null;
+		Tag tag = null;
+
+		try {
+			contentAsset = createTestContentlet();
+			final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+			final Permission permission = new Permission();
+			permission.setPermission(PermissionAPI.PERMISSION_EDIT);
+			permission.setRoleId(limitedRole.getId());
+			permission.setInode(contentAsset.getPermissionId());
+			permissionAPI.save(permission, contentAsset, systemUser, false);
+
+			final String tagName = "inodeallowed" + System.currentTimeMillis();
+			tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+			tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
+
+			assertTrue("Delete should succeed when the user can edit the contentlet",
+					tagAPI.deleteTagInodesByInode(limitedUser, contentAsset.getInode()));
+			assertTrue("The contentlet should have no tags left",
+					tagAPI.getTagInodesByInode(contentAsset.getInode()).isEmpty());
+		} finally {
+			if (tag != null) {
+				try { tagAPI.deleteTag(tag.getTagId()); } catch (Exception e) { /* ignore */ }
+			}
+			if (contentAsset != null) {
+				try { conAPI.destroy(contentAsset, systemUser, false); } catch (Exception e) { /* ignore */ }
+			}
+			try { UserDataGen.remove(limitedUser); } catch (Exception e) { /* ignore */ }
+		}
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#deleteTagInodesByInode(User, String)}
+	 * Given scenario: An admin user removes the tags of a contentlet
+	 * Expected result: Returns true and the contentlet has no tags left
+	 */
+	@Test
+	public void deleteTagInodesByInode_AdminUser_ShouldDelete() throws Exception {
+		final Contentlet contentAsset = createTestContentlet();
+		Tag tag = null;
+
+		try {
+			final String tagName = "inodeadmin" + System.currentTimeMillis();
+			tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+			tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
+
+			assertTrue(tagAPI.deleteTagInodesByInode(testUser, contentAsset.getInode()));
+			assertTrue(tagAPI.getTagInodesByInode(contentAsset.getInode()).isEmpty());
+		} finally {
+			if (tag != null) {
+				try { tagAPI.deleteTag(tag.getTagId()); } catch (Exception e) { /* ignore */ }
+			}
+			conAPI.destroy(contentAsset, systemUser, false);
+		}
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#deleteTagInodesByInode(User, String)}
+	 * Given scenario: A non-admin user removes the tags of an inode that isn't a contentlet
+	 * Expected result: Returns false and the tags are kept
+	 */
+	@Test
+	public void deleteTagInodesByInode_NotAContentlet_ShouldReturnFalse() throws Exception {
+		final Role limitedRole = new RoleDataGen().nextPersisted();
+		final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
+		final String inode = UUIDGenerator.generateUuid();
+		Tag tag = null;
+
+		try {
+			final String tagName = "inodenotcontent" + System.currentTimeMillis();
+			tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+			tagAPI.addContentletTagInode(tagName, inode, defaultHostId, WIKI_TAG_VARNAME);
+
+			assertFalse(tagAPI.deleteTagInodesByInode(limitedUser, inode));
+			assertFalse(tagAPI.getTagInodesByInode(inode).isEmpty());
+		} finally {
+			try { tagAPI.deleteTagInodesByInode(inode); } catch (Exception e) { /* ignore */ }
+			if (tag != null) {
+				try { tagAPI.deleteTag(tag.getTagId()); } catch (Exception e) { /* ignore */ }
+			}
+			try { UserDataGen.remove(limitedUser); } catch (Exception e) { /* ignore */ }
+		}
+	}
+
 	private Contentlet createTestContentlet() throws Exception {
 		final Contentlet contentAsset = new Contentlet();
 		final ContentType contentType = TestDataUtils.getWikiLikeContentType();
@@ -1490,7 +1621,51 @@ public class TagAPITest extends IntegrationTestBase {
 				.getTagsInText(personaTag.getTagName()+":persona", defaultHostId);
 
 		assertEquals(personaTag.getTagName(), fetchedTags.get(0).getTagName());
+		if (!personaTag.getTagId().equals(fetchedTags.get(0).getTagId())) {
+			fail(describeDuplicateTags(personaTag, fetchedTags.get(0)));
+		}
 		assertEquals(personaTag.getTagId(), fetchedTags.get(0).getTagId());
+	}
+
+	/**
+	 * Builds the failure message for
+	 * {@link #getTagsInText_givenTagWithPersonaSuffix_shouldNotCreateDup()}: every database row
+	 * with the tag's name (id, host, persona flag, modification date), the default Site as the test
+	 * class and as the API see it now, the Site the tag was saved under, the Site the tag storage
+	 * resolves to, and the by-name lookup read from the cache and from the database. It only
+	 * reads state, so it can be called after the failing comparison without changing what is asserted.
+	 *
+	 * @param expected the tag the test saved
+	 * @param actual   the tag {@link TagAPI#getTagsInText(String, String)} returned
+	 * @return a multi-line description of the tag rows and Sites involved
+	 */
+	private String describeDuplicateTags(final Tag expected, final Tag actual) {
+		final StringBuilder message = new StringBuilder("getTagsInText returned tag ")
+				.append(actual.getTagId()).append(" (host ").append(actual.getHostId())
+				.append(") instead of the saved tag ").append(expected.getTagId())
+				.append(" (host ").append(expected.getHostId()).append(", persona ")
+				.append(expected.isPersona()).append(")");
+		final String name = expected.getTagName().toLowerCase();
+		try {
+			message.append("\nstatic defaultHostId=").append(defaultHostId)
+					.append(", findDefaultHost now=")
+					.append(hostAPI.findDefaultHost(systemUser, false).getIdentifier())
+					.append(", tag storage resolved for defaultHostId=")
+					.append(tagAPI.resolveTagStorage(defaultHostId, expected.getHostId()));
+			message.append("\ntag rows named '").append(name).append("':");
+			new DotConnect().setSQL("SELECT tag_id, tagname, host_id, persona, mod_date FROM tag WHERE tagname = ?")
+					.addParam(name).loadObjectResults()
+					.forEach(row -> message.append("\n  ").append(row));
+			final String cacheGroup = CacheLocator.getTagCache().getTagsByNameGroup();
+			final Object cached = CacheLocator.getCacheAdministrator().getNoThrow(cacheGroup + name, cacheGroup);
+			message.append("\nby-name cache entry: ").append(cached == null ? "none" : ((List<?>) cached).stream()
+					.map(tag -> ((Tag) tag).getTagId() + "@" + ((Tag) tag).getHostId()).collect(Collectors.toList()));
+			message.append("\nby-name lookup (cache or database): ").append(tagAPI.getTagsByName(name).stream()
+					.map(tag -> tag.getTagId() + "@" + tag.getHostId()).collect(Collectors.toList()));
+		} catch (final Exception e) {
+			message.append("\ncould not collect all details: ").append(e);
+		}
+		return message.toString();
 	}
 
 	/**

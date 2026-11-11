@@ -77,7 +77,7 @@ import javax.enterprise.context.Dependent;
  * @see Queue
  * @see ExponentialBackoffRetryPolicy
  */
-@Queue("importContentlets")
+@Queue(value = "importContentlets", genericEntry = true)
 @NoRetryPolicy
 @Dependent
 public class ImportContentletsProcessor implements JobProcessor, Validator, Cancellable {

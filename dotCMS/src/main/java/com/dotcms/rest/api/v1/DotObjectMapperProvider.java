@@ -4,6 +4,9 @@ import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.SerializableString;
+import com.fasterxml.jackson.core.io.CharacterEscapes;
+import com.fasterxml.jackson.core.io.SerializedString;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -26,6 +29,7 @@ import java.time.Instant;
 public class DotObjectMapperProvider {
 
     private final ObjectMapper defaultObjectMapper;
+    private final ObjectMapper scriptEmbeddableObjectMapper;
 
     /**
      * Get's the default object mapper.
@@ -35,14 +39,119 @@ public class DotObjectMapperProvider {
         return defaultObjectMapper;
     }
 
+    /**
+     * Returns the mapper to use when JSON is written inline into an HTML {@code <script>} element,
+     * for example to seed a JavaScript variable from a JSP. It is a copy of the default mapper, so
+     * modules, key order and date format are the same, with one difference in the text it produces:
+     * inside string values and keys, {@code <}, {@code >}, {@code &}, {@code /} and the Unicode line
+     * separators U+2028 and U+2029 are written as Unicode sequences (a backslash, {@code u} and four hex
+     * digits), which keeps the text inside the script element and lets the browser parse it as a
+     * JavaScript literal. Parsing that text yields the same values as parsing the default mapper's
+     * output; only the text differs.
+     *
+     * @return the script-embeddable {@link ObjectMapper}
+     */
+    public ObjectMapper getScriptEmbeddableObjectMapper() {
+        return scriptEmbeddableObjectMapper;
+    }
+
 
     private DotObjectMapperProvider() {
         this(createDefaultMapper());
     }
 
+    /**
+     * Builds the provider around the given default mapper; the script-embeddable mapper is derived
+     * from it, so a test that supplies its own default mapper gets a matching pair.
+     *
+     * @param defaultObjectMapper the mapper to serve as the default one
+     */
     @VisibleForTesting
     protected DotObjectMapperProvider(final ObjectMapper defaultObjectMapper) {
         this.defaultObjectMapper = defaultObjectMapper;
+        this.scriptEmbeddableObjectMapper = toScriptEmbeddableMapper(defaultObjectMapper);
+    }
+
+    /**
+     * Creates a mapper whose JSON text can be written inline into an HTML {@code <script>} element:
+     * the configuration of {@link #createDefaultMapper()} plus the character handling described in
+     * {@link #getScriptEmbeddableObjectMapper()}. The default mapper is not changed.
+     *
+     * @return a new script-embeddable {@link ObjectMapper}
+     */
+    public static ObjectMapper createScriptEmbeddableMapper() {
+        return toScriptEmbeddableMapper(createDefaultMapper());
+    }
+
+    /**
+     * Copies the given mapper and installs the character table that lets its output be written inside
+     * a script element. The copy has its own {@code JsonFactory}, so the source mapper keeps writing
+     * plain JSON.
+     *
+     * @param source the mapper whose configuration is copied
+     * @return the copy, writing script-embeddable JSON
+     */
+    private static ObjectMapper toScriptEmbeddableMapper(final ObjectMapper source) {
+        final ObjectMapper result = source.copy();
+        result.getFactory().setCharacterEscapes(new ScriptEmbeddableCharacters());
+        return result;
+    }
+
+    /**
+     * Character table for JSON embedded in an HTML script element. On top of the standard JSON
+     * sequences for quotes, backslashes and control characters, the markup delimiters {@code <},
+     * {@code >}, {@code &} and {@code /} and the Unicode line separators U+2028 and U+2029 are written
+     * as Unicode sequences (a backslash, {@code u} and four hex digits). Every other character,
+     * non-ASCII letters included, is written as is.
+     */
+    private static class ScriptEmbeddableCharacters extends CharacterEscapes {
+
+        private static final long serialVersionUID = 1L;
+        private static final int LINE_SEPARATOR = 0x2028;
+        private static final int PARAGRAPH_SEPARATOR = 0x2029;
+        private static final SerializableString LINE_SEPARATOR_SEQUENCE = new SerializedString("\\u2028");
+        private static final SerializableString PARAGRAPH_SEPARATOR_SEQUENCE = new SerializedString("\\u2029");
+
+        private final int[] asciiCodes;
+
+        ScriptEmbeddableCharacters() {
+            final int[] codes = CharacterEscapes.standardAsciiEscapesForJSON();
+            codes['<'] = CharacterEscapes.ESCAPE_STANDARD;
+            codes['>'] = CharacterEscapes.ESCAPE_STANDARD;
+            codes['&'] = CharacterEscapes.ESCAPE_STANDARD;
+            codes['/'] = CharacterEscapes.ESCAPE_STANDARD;
+            this.asciiCodes = codes;
+        }
+
+        /**
+         * Returns the handling of each ASCII character: the standard JSON table, with the four markup
+         * delimiters marked to be written as Unicode sequences.
+         *
+         * @return the per-character table Jackson consults for ASCII input
+         */
+        @Override
+        public int[] getEscapeCodesForAscii() {
+            return asciiCodes;
+        }
+
+        /**
+         * Returns the sequence to write for a non-ASCII character, or {@code null} to write it as is.
+         * Only the two Unicode line separators get a sequence, because JavaScript engines before
+         * ES2019 treat them as line terminators inside a string literal.
+         *
+         * @param ch the code point being written
+         * @return the replacement text, or {@code null}
+         */
+        @Override
+        public SerializableString getEscapeSequence(final int ch) {
+            if (ch == LINE_SEPARATOR) {
+                return LINE_SEPARATOR_SEQUENCE;
+            }
+            if (ch == PARAGRAPH_SEPARATOR) {
+                return PARAGRAPH_SEPARATOR_SEQUENCE;
+            }
+            return null;
+        }
     }
 
     public static ObjectMapper createDefaultMapper() {

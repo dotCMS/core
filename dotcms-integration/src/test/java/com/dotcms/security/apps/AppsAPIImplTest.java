@@ -18,6 +18,7 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.api.v1.apps.ExportSecretForm;
 import com.dotcms.rest.api.v1.apps.view.SecretView.SecretViewSerializer;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -435,14 +436,49 @@ public class AppsAPIImplTest {
     }
 
     /**
-     * This method test a read secret operation using a non-admin random user with portlet access.
-     * Given scenario: A non-admin user with granted portlet apps access tries to read.
-     * Expected Result: Read operation should succeed
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * Given scenario: A non-admin user with granted portlet apps access tries to save configuration.
+     * Expected Result: DotSecurityException, Apps configuration is an administrator setting.
+     */
+    @Test(expected = DotSecurityException.class)
+    public void Test_Apps_Portlet_User_Without_Admin_Cannot_Save_App_Configuration()
+            throws DotDataException, DotSecurityException {
+        APILocator.getAppsAPI().saveSecrets(new AppSecrets.Builder().build(),
+                APILocator.systemHost(), newAppsPortletUser());
+    }
+
+    /**
+     * Given scenario: FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION is on and a non-admin user with granted
+     * portlet apps access saves configuration.
+     * Expected Result: The value is stored and the system user reads it back.
      */
     @Test
-    public void Test_Non_Admin_User_With_Portlet_Read_Attempt() throws DotDataException, DotSecurityException {
+    public void Test_Apps_Portlet_User_Can_Save_App_Configuration_When_Delegation_Switch_Is_On()
+            throws DotDataException, DotSecurityException {
+        final AppsAPI api = APILocator.getAppsAPI();
+        final User user = newAppsPortletUser();
+        final Host systemHost = APILocator.systemHost();
+        final String appKey = "apps-portlet-save-" + System.currentTimeMillis();
+        Config.setProperty(FeatureFlagName.FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION, true);
+        try {
+            api.saveSecrets(new AppSecrets.Builder().withKey(appKey)
+                    .withHiddenSecret("apiKey", "saved-by-apps-portlet-user").build(),
+                    systemHost, user);
+
+            final Optional<AppSecrets> saved =
+                    api.getSecrets(appKey, systemHost, APILocator.systemUser());
+            assertTrue(saved.isPresent());
+            assertEquals("saved-by-apps-portlet-user",
+                    saved.get().getSecrets().get("apiKey").getString());
+        } finally {
+            Config.setProperty(FeatureFlagName.FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION, false);
+            api.deleteSecrets(appKey, systemHost, APILocator.systemUser());
+        }
+    }
+
+    /**
+     * Creates a back-end, non-admin user whose role grants the Apps portlet.
+     */
+    private User newAppsPortletUser() throws DotDataException {
         final String integrationsPortletId = AppsAPIImpl.APPS_PORTLET_ID;
         final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
         final Role backEndUserRole = TestUserUtils.getBackendRole();
@@ -458,10 +494,8 @@ public class AppsAPIImplTest {
         final User nonAdminUserWithAccessToPortlet = new UserDataGen().roles(role1,backEndUserRole).nextPersisted();
 
         assertTrue(layoutAPI.doesUserHaveAccessToPortlet(integrationsPortletId, nonAdminUserWithAccessToPortlet));
-
-        final AppsAPI api = APILocator.getAppsAPI();
-        final AppSecrets.Builder builder = new AppSecrets.Builder();
-        api.saveSecrets(builder.build(), APILocator.systemHost() , nonAdminUserWithAccessToPortlet);
+        assertFalse(nonAdminUserWithAccessToPortlet.isAdmin());
+        return nonAdminUserWithAccessToPortlet;
     }
 
     /**
@@ -847,6 +881,25 @@ public class AppsAPIImplTest {
         final Optional<AppSecrets> secretsAfterSiteDelete = api.getSecrets(appKey, newSite, admin);
         assertFalse(secretsAfterSiteDelete.isPresent());
 
+    }
+
+    /**
+     * Given scenario: the Apps catalog is loaded as shipped.
+     * Expected Results: the Edit Mode Anywhere app ({@code dotema-config}) is no longer offered,
+     * while the Universal Visual Editor app ({@code dotema-config-v2}), which shares the prefix,
+     * still is.
+     */
+    @Test
+    public void Test_Edit_Mode_Anywhere_App_Is_Not_Offered_But_UVE_App_Is()
+            throws DotDataException, DotSecurityException {
+
+        final User admin = TestUserUtils.getAdminUser();
+        final AppsAPI api = APILocator.getAppsAPI();
+
+        assertFalse("the Edit Mode Anywhere app should not be offered",
+                api.getAppDescriptor("dotema-config", admin).isPresent());
+        assertTrue("the Universal Visual Editor app should still be offered",
+                api.getAppDescriptor("dotema-config-v2", admin).isPresent());
     }
 
     private final AppsAPI nonValidLicenseAppsAPI = new AppsAPIImpl(
@@ -1274,6 +1327,150 @@ public class AppsAPIImplTest {
             }
         } finally {
             file.delete();
+        }
+    }
+
+    /**
+     * Method to test: {@link AppsAPIImpl#importSecretsAndSave(Path, Key, User)}
+     * Given scenario: an export taken before the Edit Mode Anywhere app was removed holds that
+     * app's settings ({@code dotema-config}) next to another app's settings, and the instance no
+     * longer has the Edit Mode Anywhere app.
+     * Expected Results: the import does not stop on the retired app. Its settings are skipped and
+     * the other app's settings are imported.
+     */
+    @Test
+    public void Test_Import_Skips_Edit_Mode_Anywhere_Settings_From_An_Old_Export()
+            throws DotDataException, DotSecurityException, IOException, EncryptorException,
+            AlreadyExistException {
+        final User admin = TestUserUtils.getAdminUser();
+        final AppsAPI api = APILocator.getAppsAPI();
+        final Host site = new SiteDataGen().nextPersisted();
+
+        final AppDescriptorDataGen retiredDataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false, true)
+                .withFileName("dotema-config.yml")
+                .withName("Edit Mode Anywhere")
+                .withDescription("retired app")
+                .withExtraParameters(false);
+        final AppDescriptorDataGen otherDataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false, true)
+                .withName("other-app")
+                .withDescription("other app")
+                .withExtraParameters(false);
+        final File retiredFile = retiredDataGen.nextPersistedDescriptor();
+        final File otherFile = otherDataGen.nextPersistedDescriptor();
+        final String retiredKey = retiredDataGen.getKey();
+        final String otherKey = otherDataGen.getKey();
+        try {
+            // An instance from before the removal, with settings for both apps
+            api.createAppDescriptor(retiredFile, admin);
+            api.createAppDescriptor(otherFile, admin);
+            api.saveSecrets(new AppSecrets.Builder().withKey(retiredKey)
+                    .withHiddenSecret("p1", "retired-value").build(), site, admin);
+            api.saveSecrets(new AppSecrets.Builder().withKey(otherKey)
+                    .withHiddenSecret("p1", "other-value").build(), site, admin);
+
+            final Key securityKey = AppsUtil.generateKey(RandomStringUtils.randomAlphanumeric(32));
+            final Path exportFile = api.exportSecrets(securityKey, false,
+                    ImmutableMap.of(site.getIdentifier(), ImmutableSet.of(retiredKey, otherKey)), admin);
+
+            // The upgraded instance: the Edit Mode Anywhere app is gone, the other app is empty
+            api.removeApp(retiredKey, admin, true);
+            api.deleteSecrets(otherKey, site, admin);
+
+            final int imported = api.importSecretsAndSave(exportFile, securityKey, admin);
+
+            assertEquals("only the other app's settings should be imported", 1, imported);
+            final Optional<AppSecrets> otherSecrets = api.getSecrets(otherKey, site, admin);
+            assertTrue("the other app's settings should be imported", otherSecrets.isPresent());
+            assertEquals("other-value", otherSecrets.get().getSecrets().get("p1").getString());
+            final Set<String> siteAppKeys = api.appKeysByHost()
+                    .getOrDefault(site.getIdentifier().toLowerCase(), Set.of());
+            assertFalse("the Edit Mode Anywhere settings should not be imported",
+                    siteAppKeys.contains(retiredKey.toLowerCase()));
+        } finally {
+            Try.run(() -> api.removeApp(retiredKey, admin, true));
+            Try.run(() -> api.removeApp(otherKey, admin, true));
+            retiredFile.delete();
+            otherFile.delete();
+        }
+    }
+
+    /**
+     * Method to test: {@link AppsAPIImpl#importSecretsAndSave(Path, Key, User)}
+     * Given scenario: the instance has its own app installed under the key {@code dotema-config},
+     * and an export holds settings for it.
+     * Expected Results: the settings are imported. Only settings with no local descriptor are
+     * skipped as retired.
+     */
+    @Test
+    public void Test_Import_Keeps_Settings_Of_A_Local_App_That_Uses_The_Retired_Key()
+            throws DotDataException, DotSecurityException, IOException, EncryptorException,
+            AlreadyExistException {
+        final User admin = TestUserUtils.getAdminUser();
+        final AppsAPI api = APILocator.getAppsAPI();
+        final Host site = new SiteDataGen().nextPersisted();
+
+        final AppDescriptorDataGen localDataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false, true)
+                .withFileName("dotema-config.yml")
+                .withName("Local app")
+                .withDescription("local app")
+                .withExtraParameters(false);
+        final File localFile = localDataGen.nextPersistedDescriptor();
+        final String localKey = localDataGen.getKey();
+        try {
+            api.createAppDescriptor(localFile, admin);
+            api.saveSecrets(new AppSecrets.Builder().withKey(localKey)
+                    .withHiddenSecret("p1", "local-value").build(), site, admin);
+
+            final Key securityKey = AppsUtil.generateKey(RandomStringUtils.randomAlphanumeric(32));
+            final Path exportFile = api.exportSecrets(securityKey, false,
+                    ImmutableMap.of(site.getIdentifier(), ImmutableSet.of(localKey)), admin);
+            api.deleteSecrets(localKey, site, admin);
+
+            final int imported = api.importSecretsAndSave(exportFile, securityKey, admin);
+
+            assertEquals("the local app's settings should be imported", 1, imported);
+            final Optional<AppSecrets> localSecrets = api.getSecrets(localKey, site, admin);
+            assertTrue("the local app's settings should be imported", localSecrets.isPresent());
+            assertEquals("local-value", localSecrets.get().getSecrets().get("p1").getString());
+        } finally {
+            Try.run(() -> api.removeApp(localKey, admin, true));
+            localFile.delete();
+        }
+    }
+
+    /**
+     * Method to test: {@link AppsAPIImpl#exportSecrets(Key, boolean, Map, User)}
+     * Given scenario: a site still holds settings saved for the Edit Mode Anywhere app
+     * ({@code dotema-config}), which no longer has a descriptor, and an admin exports everything.
+     * Expected Results: the export leaves those settings out.
+     */
+    @Test
+    public void Test_Export_All_Leaves_Out_Edit_Mode_Anywhere_Settings_Left_In_The_Store()
+            throws DotDataException, DotSecurityException, IOException, EncryptorException {
+        final User admin = TestUserUtils.getAdminUser();
+        final AppsAPI api = APILocator.getAppsAPI();
+        final Host site = new SiteDataGen().nextPersisted();
+        final String leftoverKey = AppsUtil.internalKey("dotema-config", site);
+        final SecretsStore store = SecretsStore.INSTANCE.get();
+        store.saveValue(leftoverKey, AppsUtil.toJsonAsChars(new AppSecrets.Builder()
+                .withKey("dotema-config").withHiddenSecret("authenticationToken", "left-over")
+                .build()));
+        CacheLocator.getAppsCache().flushSecret();
+        try {
+            final Key securityKey = AppsUtil.generateKey(RandomStringUtils.randomAlphanumeric(32));
+            final Path exportFile = api.exportSecrets(securityKey, true, Map.of(), admin);
+
+            final List<AppSecrets> exportedForSite = AppsUtil.importSecrets(exportFile, securityKey)
+                    .getOrDefault(site.getIdentifier(), List.of());
+            assertTrue("the Edit Mode Anywhere settings should not be exported",
+                    exportedForSite.stream()
+                            .noneMatch(secrets -> "dotema-config".equalsIgnoreCase(secrets.getKey())));
+        } finally {
+            store.deleteValue(leftoverKey);
+            CacheLocator.getAppsCache().flushSecret();
         }
     }
 

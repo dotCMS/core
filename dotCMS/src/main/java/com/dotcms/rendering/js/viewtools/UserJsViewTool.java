@@ -4,48 +4,67 @@ import com.dotcms.rendering.js.proxy.JsRole;
 import com.dotcms.rendering.js.proxy.JsUser;
 import com.dotcms.rendering.js.JsViewContextAware;
 import com.dotcms.rendering.js.JsViewTool;
-import com.dotcms.rendering.velocity.viewtools.CMSUsersWebAPI;
+import com.dotcms.rendering.velocity.viewtools.CMSUserTool;
+import com.dotcms.rendering.velocity.viewtools.util.UserCopies;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.graalvm.polyglot.HostAccess;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
- * Wraps the CMSUsersWebAPI (cmsuser) into the JS context.
+ * Wraps the CMSUserTool (cmsuser) into the JS context.
+ * Looked-up accounts are wrapped around detached copies without credential fields, so scripts
+ * never hold the cached user record.
  * @author jsanca
  */
 public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 
-	private CMSUsersWebAPI cmsUsersWebAPI = new CMSUsersWebAPI();
+	private final CMSUserTool cmsUserTool = new CMSUserTool();
 
 	@HostAccess.Export
 	/**
 	 * Get the user by email
-	 * @param email
-	 * @return User
+	 * @param email the email address of the account
+	 * @return the account wrapped for the JS context, or {@code null} if none matches
 	 */
 	public JsUser getUserByEmail(final String email) {
-		final User user = cmsUsersWebAPI.getUserByEmail(email);
-		return null != user? new JsUser(user): null;
+		try {
+			final User user = APILocator.getUserAPI().loadByUserByEmail(email, APILocator.systemUser(), false);
+			return null != user? new JsUser(UserCopies.withoutCredentials(user)): null;
+		} catch (final Exception e) {
+			Logger.error(UserJsViewTool.class, e.getMessage(), e);
+			return null;
+		}
 	}
 
 	@HostAccess.Export
 	/**
 	 * Get User by user id
-	 * 
+	 *
 	 * @param userId
 	 *            userid of the user to be obtained
-	 * @return User
+	 * @return the account wrapped for the JS context, or {@code null} if none matches
 	 */
 	public JsUser getUserByUserId(final String userId) {
-		final User user = cmsUsersWebAPI.getUserByUserId(userId);
-		return null != user? new JsUser(user): null;
+		if (!UtilMethods.isSet(userId)) {
+			return null;
+		}
+		try {
+			final User user = APILocator.getUserAPI().loadUserById(userId, APILocator.systemUser(), false);
+			return null != user? new JsUser(UserCopies.withoutCredentials(user)): null;
+		} catch (final Exception e) {
+			Logger.error(UserJsViewTool.class, e.getMessage(), e);
+			return null;
+		}
 	}
 
 	@HostAccess.Export
@@ -56,22 +75,37 @@ public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 	 * @return
 	 */
 	public JsUser getLoggedInUser(final HttpServletRequest request) {
-		final User user = this.cmsUsersWebAPI.getLoggedInUser(request);
+		final User user = this.cmsUserTool.getLoggedInUser(request);
 		return null != user? new JsUser(user): null;
 	}
 
 	@HostAccess.Export
 	/**
 	 * This method return a list of users with the specified group
-	 * @param groupId compare string
-	 * @return List<User>
+	 * @param groupId the id of the role
+	 * @return the accounts holding the role, wrapped for the JS context
 	 * @deprecated will now return a list of roles
 	 */
 	public List<JsUser> getAllUsersInGroup(final String groupId) {
 
-		final List<User> users = this.cmsUsersWebAPI.getAllUsersInGroup(groupId);
-		return UtilMethods.isSet(users)?
-				users.stream().map(JsUser::new).collect(java.util.stream.Collectors.toList()): Collections.emptyList();
+		final List<String> userIds;
+		try {
+			userIds = APILocator.getRoleAPI().findUserIdsForRole(APILocator.getRoleAPI().loadRoleById(groupId));
+		} catch (final Exception e) {
+			Logger.error(this, e.getMessage(), e);
+			return Collections.emptyList();
+		}
+
+		final List<JsUser> users = new ArrayList<>();
+		for (final String userId : userIds) {
+			try {
+				users.add(new JsUser(UserCopies.withoutCredentials(
+						APILocator.getUserAPI().loadUserById(userId, APILocator.systemUser(), true))));
+			} catch (final Exception e) {
+				Logger.error(this, e.getMessage(), e);
+			}
+		}
+		return users;
 	}
 
 	@HostAccess.Export
@@ -82,7 +116,7 @@ public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 	 */
 	public List<JsRole> getUserGroups(final User user) {
 
-		final List<Role> roles = this.cmsUsersWebAPI.getUserGroups(user);
+		final List<Role> roles = this.cmsUserTool.getUserGroups(user);
 		return UtilMethods.isSet(roles)?
 				roles.stream().map(JsRole::new).collect(java.util.stream.Collectors.toList()): Collections.emptyList();
 	}
@@ -95,7 +129,7 @@ public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 	 */
 	public List<JsRole> getUserRoles(final User user) {
 
-		final List<Role> roles = this.cmsUsersWebAPI.getUserRoles(user);
+		final List<Role> roles = this.cmsUserTool.getUserRoles(user);
 		return UtilMethods.isSet(roles)?
 				roles.stream().map(JsRole::new).collect(java.util.stream.Collectors.toList()): Collections.emptyList();
 	}
@@ -110,7 +144,7 @@ public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 	 */
 	public boolean isUserRole(final User user, final String roleName) {
 
-		return this.cmsUsersWebAPI.isUserRole(user, roleName);
+		return this.cmsUserTool.isUserRole(user, roleName);
 	}
 
 	@HostAccess.Export
@@ -123,7 +157,7 @@ public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 	 */
 	public boolean hasRole(final String roleKey) throws DotDataException {
 
-		return this.cmsUsersWebAPI.hasRole(roleKey);
+		return this.cmsUserTool.hasRole(roleKey);
 	}
 
 	@HostAccess.Export
@@ -135,13 +169,13 @@ public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 	 */
 	public boolean isCMSAdmin(final User user) {
 
-		return this.cmsUsersWebAPI.isCMSAdmin(user);
+		return this.cmsUserTool.isCMSAdmin(user);
 	}
 
 	@Override
 	public void setViewContext(final ViewContext viewContext) {
 
-		cmsUsersWebAPI.init(viewContext);
+		cmsUserTool.init(viewContext);
 	}
 
 	@Override

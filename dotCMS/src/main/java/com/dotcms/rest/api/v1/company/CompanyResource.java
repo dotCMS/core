@@ -21,6 +21,7 @@ import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.NotFoundException;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -296,6 +297,54 @@ public class CompanyResource {
                 .init();
 
         return new ResponseEntityLicenseInfoView(helper.getLicenseInfo());
+    }
+
+    /**
+     * Returns the {@code /dA/...} path of the stock dotCMS login logo, for the "Use dotCMS Logo"
+     * button of the Configuration screen. Read-only: the login logo changes only when the client
+     * saves the path through {@code PUT /branding}.
+     */
+    @Operation(
+            summary = "Get the stock dotCMS login logo",
+            description = "Returns the /dA/ path of the stock dotCMS login logo. The path can be "
+                    + "saved as loginScreenLogo through PUT /api/v1/configuration/branding. "
+                    + "Read-only: no content and no company setting is created or changed. "
+                    + "Returns 404 when this instance "
+                    + "doesn't have the stock logo, or it isn't published, readable by anonymous "
+                    + "users, or the stock dotCMS image."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Path of the stock dotCMS login logo",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityStringView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - not authenticated, or not a CMS Administrator",
+                    content = @Content(mediaType = "text/plain")),
+            @ApiResponse(responseCode = "404",
+                    description = "The dotCMS logo is not available on this instance",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/dotcmsLogo")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public ResponseEntityStringView getDotcmsLogo(
+            @Parameter(hidden = true) @Context final HttpServletRequest request,
+            @Parameter(hidden = true) @Context final HttpServletResponse response)
+            throws DotDataException, DotSecurityException {
+
+        new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
+                .requiredPortlet(PortletID.CONFIGURATION.toString())
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        return new ResponseEntityStringView(helper.findStockLoginLogoPath().orElseThrow(
+                () -> new NotFoundException("The dotCMS logo is not available on this instance")));
     }
 
     /**

@@ -25,9 +25,15 @@
         <testdata.dir>${project.build.directory}/testdata</testdata.dir>
         <cleanup.before.tests>true</cleanup.before.tests>
         <postman.test.skip>true</postman.test.skip>
+        <!-- Ordinary shards stay at NONE; compatibility jobs provision their own server explicitly. -->
+        <postman.basic.auth.mode>NONE</postman.basic.auth.mode>
         <pnpm.install.args>install --frozen-lockfile</pnpm.install.args>
         <skip.npm.install>false</skip.npm.install>
         <postman.server.url>http://localhost:${tomcat.port}</postman.server.url>
+        <!-- Host port for the container's management connector (8090, mapped in parent/pom.xml).
+             ManagementEndpoints.postman_collection reaches /dotmgt/* through it. -->
+        <management.port>8090</management.port>
+        <postman.management.url>http://localhost:${management.port}</postman.management.url>
         <postman.collection.dir>src/main/resources/postman</postman.collection.dir>
         <wiremock.port>50505</wiremock.port>
         <wiremock.api.key>${ext.wiremock.api.key}</wiremock.api.key>
@@ -63,6 +69,17 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>run node unit tests</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <phase>test</phase>
+                        <configuration>
+                            <skip>${postman.test.skip}</skip>
+                            <commandlineArgs>run test</commandlineArgs>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>run node script</id>
                         <goals>
                             <goal>exec</goal>
@@ -71,29 +88,7 @@
                         <configuration>
                             <skip>${postman.test.skip}</skip>
                             <!-- 'start' is the script name defined in package.json -->
-                            <commandlineArgs>run start --serverUrl=${postman.server.url} --postmanTestsDir=${postman.collection.dir} ${postman.collections}</commandlineArgs>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-failsafe-plugin</artifactId>
-                <configuration>
-                    <skipTests>${postman.test.skip}</skipTests> <!-- This will skip the test execution -->
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>integration-test</id>
-                        <phase>none</phase> <!-- This disables automatic test execution in the integration-test phase -->
-                    </execution>
-                    <execution>
-                        <id>verify</id>
-                        <goals>
-                            <goal>verify</goal> <!-- This ensures the verify goal is still active -->
-                        </goals>
-                        <configuration>
-                            <!-- Configuration specific to verify goal can go here if needed -->
+                            <commandlineArgs>run start --deferFailureExit --serverUrl=${postman.server.url} --managementUrl=${postman.management.url} --postmanTestsDir=${postman.collection.dir} ${postman.collections}</commandlineArgs>
                         </configuration>
                     </execution>
                 </executions>
@@ -132,12 +127,38 @@
                                     <DOT_INDEX_POLICY_SINGLE_CONTENT>FORCE</DOT_INDEX_POLICY_SINGLE_CONTENT>
                                     <DOT_ASYNC_REINDEX_COMMIT_LISTENERS>false</DOT_ASYNC_REINDEX_COMMIT_LISTENERS>
                                     <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>
+                                    <!-- With synchronous commit listeners, the cache-flush delay is a sleep on the
+                                         request thread after every write (3000 ms by default). One node needs no
+                                         wait for a cluster to catch up; the integration tests use 10 as well. -->
+                                    <DOT_NETWORK_CACHE_FLUSH_DELAY>10</DOT_NETWORK_CACHE_FLUSH_DELAY>
+                                    <!-- Drop the GraphQL schema as soon as a content type changes (default: 5 s
+                                         debounce), so a query right after the change sees the new type. Safe only
+                                         because requests run one at a time (newman is sequential): field delete and
+                                         type destroy drop the schema before their transaction commits, so a
+                                         concurrent query could rebuild it from the old state. -->
+                                    <DOT_GRAPHQL_SCHEMA_DEBOUNCE_DELAY_MILLIS>0</DOT_GRAPHQL_SCHEMA_DEBOUNCE_DELAY_MILLIS>
+                                    <!-- Tomcat's keep-alive timeout defaults to this (3000 ms in server.xml). It must
+                                         exceed the longest script wait before a request (70 s in GraphQLTests), or
+                                         newman reuses a connection Tomcat is closing. -->
+                                    <CMS_CONNECTION_TIMEOUT>120000</CMS_CONNECTION_TIMEOUT>
                                     <DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>600</DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>
                                     <JVM_ENDPOINT_TEST_PASS>obfuscate_me</JVM_ENDPOINT_TEST_PASS>
+                                    <!-- The escalation job runs every 30 s and archives any workflow task past its
+                                         step's escalation time. Bundles imported by the collections carry old task
+                                         dates, so it archives their content at an arbitrary moment, undoing a publish
+                                         the request before. No collection tests escalation, so turn it off. -->
+                                    <DOT_ESCALATION_ENABLE>false</DOT_ESCALATION_ENABLE>
+                                    <!-- Deleting a content type returns before the type is gone by default: a
+                                         background thread removes the row later, and until then its variable is
+                                         taken. Image, PagesResourceTests and Template_Resource delete the starter
+                                         Image type and then import a bundle with its own Image type, which fails
+                                         when the old row is still there. Delete in the request instead. -->
+                                    <DOT_DELETE_CONTENT_TYPE_ASYNC>false</DOT_DELETE_CONTENT_TYPE_ASYNC>
                                     <DOT_ENABLE_SCRIPTING>true</DOT_ENABLE_SCRIPTING>
                                     <DOT_ANNOUNCEMENTS_BASE_URL>http://localhost:8080</DOT_ANNOUNCEMENTS_BASE_URL>
                                     <DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>true</DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>
                                     <DOT_DOTCMS_DEV_MODE>true</DOT_DOTCMS_DEV_MODE>
+                                    <DOT_ALLOW_BASIC_AUTH>${postman.basic.auth.mode}</DOT_ALLOW_BASIC_AUTH>
                                     <DOT_AI_API_URL>http://wm:8080/c</DOT_AI_API_URL>
                                     <DOT_AI_IMAGE_API_URL>http://wm:8080/i</DOT_AI_IMAGE_API_URL>
                                     <DOT_AI_EMBEDDINGS_API_URL>http://wm:8080/e</DOT_AI_EMBEDDINGS_API_URL>
@@ -174,6 +195,28 @@
                         <!-- should be post-integration test but need to make sure it does not stop
                         before dump of jacoco -->
                         <phase>verify</phase>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <skipTests>${postman.test.skip}</skipTests> <!-- This will skip the test execution -->
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>integration-test</id>
+                        <phase>none</phase> <!-- This disables automatic test execution in the integration-test phase -->
+                    </execution>
+                    <execution>
+                        <id>verify</id>
+                        <goals>
+                            <goal>verify</goal> <!-- This ensures the verify goal is still active -->
+                        </goals>
+                        <configuration>
+                            <!-- Configuration specific to verify goal can go here if needed -->
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>

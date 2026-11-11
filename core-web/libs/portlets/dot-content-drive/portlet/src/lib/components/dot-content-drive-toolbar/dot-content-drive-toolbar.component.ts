@@ -10,10 +10,12 @@ import {
     signal,
     untracked
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
+import { SelectButtonModule } from 'primeng/selectbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -42,6 +44,7 @@ import { DotContentDriveWorkflowActionsComponent } from './components/dot-conten
 import { DotContentDriveWorkflowFilterComponent } from './components/dot-content-drive-workflow-filter/dot-content-drive-workflow-filter.component';
 
 import { DIALOG_TYPE } from '../../shared/constants';
+import { DOT_CONTENT_DRIVE_VIEW_TYPE, DotContentDriveViewType } from '../../shared/models';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 /**
@@ -127,6 +130,8 @@ interface ToolbarAnimationState {
         DotFieldFilterMenuComponent,
         DotFilterBarComponent,
         DotStatusFilterComponent,
+        FormsModule,
+        SelectButtonModule,
         TooltipModule
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
@@ -194,6 +199,41 @@ export class DotContentDriveToolbarComponent {
 
     // Emits the click event so the shell can anchor the upload-type popover to the button.
     $upload = output<MouseEvent>({ alias: 'upload' });
+
+    /** The view switcher's two options (#37930). `label` is a message key. */
+    protected readonly viewOptions: {
+        value: DotContentDriveViewType;
+        icon: string;
+        label: string;
+    }[] = [
+        {
+            value: DOT_CONTENT_DRIVE_VIEW_TYPE.LIST,
+            icon: 'view_list',
+            label: 'content-drive.view-switcher.list'
+        },
+        {
+            value: DOT_CONTENT_DRIVE_VIEW_TYPE.CARD,
+            icon: 'grid_view',
+            label: 'content-drive.view-switcher.card'
+        }
+    ];
+
+    /** The listing that is showing. */
+    protected readonly $viewType = this.#store.viewType;
+
+    /**
+     * Shows the view the user picked and remembers it for this screen (FR-019). Only this control
+     * remembers a view: one arriving from a link or a tool's default is shown but not kept.
+     *
+     * @param viewType The picked view.
+     */
+    protected onViewTypeChange(viewType: DotContentDriveViewType): void {
+        if (!viewType || viewType === this.$viewType()) {
+            return;
+        }
+
+        this.#store.setViewType(viewType, { remember: true });
+    }
 
     /**
      * Base type the current folder pins uploads to, if any. `dot-upload-button` turns it into the

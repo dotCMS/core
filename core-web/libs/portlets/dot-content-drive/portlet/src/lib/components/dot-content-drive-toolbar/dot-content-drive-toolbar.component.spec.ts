@@ -41,7 +41,11 @@ import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.com
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { MOCK_BASE_TYPES, MOCK_CONTENT_TYPES, MOCK_ITEMS } from '../../shared/mocks';
-import { DotContentDriveActionExecution, DotContentDriveFilters } from '../../shared/models';
+import {
+    DotContentDriveActionExecution,
+    DotContentDriveFilters,
+    DotContentDriveViewType
+} from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { hasNonDefaultFilters } from '../../utils/functions';
@@ -95,6 +99,7 @@ describe('DotContentDriveToolbarComponent', () => {
     const userSearchableFieldsSignal = signal<DotCMSContentTypeField[]>([]);
     const userSearchableActiveSignal = signal<string[]>([]);
     const siteCanAddChildrenSignal = signal<boolean | undefined>(undefined);
+    const viewTypeSignal = signal<DotContentDriveViewType>('list');
 
     const createComponent = createComponentFactory({
         component: DotContentDriveToolbarComponent,
@@ -180,7 +185,9 @@ describe('DotContentDriveToolbarComponent', () => {
                 // Read by the Locale chip this toolbar renders: the store resolves the languages
                 // once and seeds the environment default into the `languageId` filter.
                 languages: signal(mockLocales),
-                defaultLanguageId: vi.fn().mockReturnValue(1)
+                defaultLanguageId: vi.fn().mockReturnValue(1),
+                viewType: viewTypeSignal,
+                setViewType: vi.fn()
             }),
             mockProvider(DotContentTypeService, {
                 getContentTypes: vi.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
@@ -257,6 +264,7 @@ describe('DotContentDriveToolbarComponent', () => {
         actionExecutionSignal.set(undefined);
         activeRunCountSignal.set(0);
         blockingRunCountOverride.set(undefined);
+        viewTypeSignal.set('list');
     });
 
     it('should render toolbar container', () => {
@@ -1027,6 +1035,49 @@ describe('DotContentDriveToolbarComponent', () => {
             spectator.detectChanges();
 
             expect(folderEntry()).toBeDefined();
+        });
+    });
+
+    describe('view switcher (#37930, FR-001)', () => {
+        const option = (view: string) =>
+            spectator
+                .query(byTestId(`view-switcher-option-${view}`))
+                ?.closest('p-togglebutton') as HTMLElement | null;
+
+        it('should sit in the toolbar with a list and a grid option', () => {
+            expect(spectator.query(byTestId('view-switcher'))).toBeTruthy();
+            expect(option('list')).toBeTruthy();
+            expect(option('card')).toBeTruthy();
+        });
+
+        it('should name both options for screen readers', () => {
+            expect(option('list')?.textContent).toContain('content-drive.view-switcher.list');
+            expect(option('card')?.textContent).toContain('content-drive.view-switcher.card');
+        });
+
+        it('should mark the view the store is showing', async () => {
+            viewTypeSignal.set('card');
+            spectator.detectChanges();
+            // `ngModel` writes a microtask later, on the switcher and again on each option.
+            await spectator.fixture.whenStable();
+            spectator.detectChanges();
+            await spectator.fixture.whenStable();
+            spectator.detectChanges();
+
+            expect(option('card')?.getAttribute('aria-pressed')).toBe('true');
+            expect(option('list')?.getAttribute('aria-pressed')).toBe('false');
+        });
+
+        it('should show and remember the view the user picks', () => {
+            spectator.click(option('card') as HTMLElement);
+
+            expect(store.setViewType).toHaveBeenCalledWith('card', { remember: true });
+        });
+
+        it('should not unselect the active view when it is clicked again', () => {
+            spectator.click(option('list') as HTMLElement);
+
+            expect(store.setViewType).not.toHaveBeenCalled();
         });
     });
 });

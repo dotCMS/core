@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.collect.ImmutableList;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -39,7 +40,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -66,11 +66,46 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
         "es-es",34
     );
 
+    private static final String EN_CA_FILE = "cms_language_en_CA.properties";
+
+    /** Whether this class put the en_CA file in the messages directory, so it knows to remove it. */
+    private static boolean enCaFileAdded = false;
+
     @BeforeClass
     public static void prepare() throws Exception {
         // Setting web app environment
         IntegrationTestInitService.getInstance().init();
         seedLanguages();
+        addEnglishCanadaFile();
+    }
+
+    @AfterClass
+    public static void removeEnglishCanadaFile() throws IOException {
+        if (enCaFileAdded) {
+            Files.deleteIfExists(LegacyLangVarMigrationHelper.messagesDir().resolve(EN_CA_FILE));
+            enCaFileAdded = false;
+        }
+    }
+
+    /**
+     * The starter's messages directory has no file for English (Canada), yet the tests below expect
+     * five languages to be processed: en, en-us, en-ca, fr-fr and es-es. Without this file the
+     * seeded en-ca language is never matched and only four are processed.
+     *
+     * @throws IOException An error occurred copying the file.
+     */
+    private static void addEnglishCanadaFile() throws IOException {
+        final Path target = LegacyLangVarMigrationHelper.messagesDir().resolve(EN_CA_FILE);
+        if (Files.exists(target)) {
+            return;
+        }
+        try (final InputStream in = Task240306MigrateLegacyLanguageVariablesTest.class
+                .getClassLoader().getResourceAsStream("lang-vars/" + EN_CA_FILE)) {
+            assertNotNull("The en_CA test resource must exist in the classpath", in);
+            Files.createDirectories(target.getParent());
+            Files.copy(in, target);
+            enCaFileAdded = true;
+        }
     }
 
     /**
@@ -710,10 +745,15 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
         createLangVariantInNotExists("en", "ca", "English", "Canada");
         // Create French variant
         createLangVariantInNotExists("fr", "fr", "French", "French");
+        // Create Spanish variant. Some of the expected results need it and the integration
+        // database doesn't start with it; other tests only leave it behind later in the suite
+        createLangVariantInNotExists("es", "es", "Spanish", "Spain");
     }
 
     /**
-     * Create a language variant if it does not exist
+     * Create a language variant if it does not exist. The id is left at 0 so the language API
+     * assigns it; a random long id is negative half the time, and the language outlives this class,
+     * so later classes in the suite would inherit a negative language id.
      * @param languageCode the language code
      * @param countryCode the country code
      * @param languageName the language name
@@ -725,7 +765,7 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
         final List<Language> languages = languageAPI.getLanguages();
         final boolean exists = languages.stream().anyMatch(l -> l.getLanguageCode().equalsIgnoreCase(languageCode) && l.getCountryCode().equalsIgnoreCase(countryCode));
         if (!exists) {
-            new UniqueLanguageDataGen().persist(new Language(new Random().nextLong(), languageCode, countryCode, languageName, countryName));
+            new UniqueLanguageDataGen().persist(new Language(0, languageCode, countryCode, languageName, countryName));
         }
     }
 

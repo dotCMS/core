@@ -14,7 +14,7 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import { DotClipboardUtil } from '@dotcms/ui';
+import { DOT_VELOCITY_LANGUAGE_ID, DotClipboardUtil } from '@dotcms/ui';
 
 import { DotVelocityPlaygroundPageComponent } from './dot-velocity-playground-page.component';
 import { DotVelocityPlaygroundStore } from './store/dot-velocity-playground.store';
@@ -225,7 +225,7 @@ describe('DotVelocityPlaygroundPageComponent', () => {
     describe('editor options computed signal', () => {
         it('exposes velocity language and wrap=on when wrapCode is true', () => {
             setup({ wrapCode: vi.fn().mockReturnValue(true) });
-            expect(spectator.component.$editorOptions().language).toBe('velocity-playground');
+            expect(spectator.component.$editorOptions().language).toBe(DOT_VELOCITY_LANGUAGE_ID);
             expect(spectator.component.$editorOptions().wordWrap).toBe('on');
         });
 

@@ -6,10 +6,37 @@
         <dot-content-drive-tree-toggler data-testid="tree-toggler" />
 
         <div
-            class="col-start-2 row-start-1 grid w-full grid-cols-[repeat(2,minmax(4.5rem,14rem))_1fr] items-center gap-1">
+            class="col-start-2 row-start-1 grid w-full grid-cols-[repeat(2,minmax(4.5rem,14rem))_auto_1fr] items-center gap-1">
             <dot-content-drive-search-input data-testid="search-input" class="col-span-2" />
 
-            <div class="col-start-3 flex items-center gap-2 justify-self-end">
+            <!-- Table or grid (#37930), right beside the search, as in the design. `allowEmpty` off:
+                 one of the two views is always showing, so clicking the active one does nothing. -->
+            <p-selectbutton
+                class="col-start-3 ml-2"
+                [options]="viewOptions"
+                optionValue="value"
+                optionLabel="value"
+                [allowEmpty]="false"
+                [ngModel]="$viewType()"
+                (ngModelChange)="onViewTypeChange($event)"
+                data-testid="view-switcher">
+                <ng-template #item let-option>
+                    <i
+                        class="material-symbols-outlined text-[1.25rem]! leading-none"
+                        aria-hidden="true"
+                        [pTooltip]="option.label | dm"
+                        tooltipPosition="bottom">
+                        {{ option.icon }}
+                    </i>
+                    <span
+                        class="sr-only"
+                        [attr.data-testid]="'view-switcher-option-' + option.value">
+                        {{ option.label | dm }}
+                    </span>
+                </ng-template>
+            </p-selectbutton>
+
+            <div class="col-start-4 flex items-center gap-2 justify-self-end">
                 @if ($displayButton()) {
                     <!-- Both create children in the browsed folder, and the server refuses without
                          CAN_ADD_CHILDREN on it, so they are offered disabled with the reason rather

@@ -15,6 +15,9 @@ import { DEFAULT_CONFIG } from '../store/dot-auth-config.mappers';
 const TOOLTIP =
     'Comma-separated list of dotCMS role keys assigned to every provisioned user. Group mappings below add additional roles on top of these.';
 
+const EMAIL_TOOLTIP =
+    'Sign in as the existing dotCMS user with the same email address even when the provider sends no email_verified claim.';
+
 // A fresh object literal picks up the index signature the component's input type requires.
 const provisioningConfig = (): DotAuthProvisioningConfig & Record<string, unknown> => ({
     ...structuredClone(DEFAULT_CONFIG.oidc)
@@ -28,7 +31,10 @@ describe('DotAuthProvisioningComponent', () => {
         providers: [
             {
                 provide: DotMessageService,
-                useValue: new MockDotMessageService({ 'dotauth.tooltip.defaultRoles': TOOLTIP })
+                useValue: new MockDotMessageService({
+                    'dotauth.tooltip.defaultRoles': TOOLTIP,
+                    'dotauth.tooltip.trustEmailWithoutVerifiedClaim': EMAIL_TOOLTIP
+                })
             }
         ]
     });
@@ -36,6 +42,48 @@ describe('DotAuthProvisioningComponent', () => {
     beforeEach(() => {
         spectator = createComponent({
             props: { config: provisioningConfig(), syncLabel: 'Sync on login' }
+        });
+    });
+
+    describe('email linking toggle', () => {
+        it('is hidden unless the host enables it (SAML has no email_verified claim)', () => {
+            expect(spectator.query(byTestId('trust-email-toggle'))).not.toExist();
+        });
+
+        describe('when enabled', () => {
+            beforeEach(() => {
+                spectator.setInput('showEmailLinking', true);
+            });
+
+            it('renders off by default', () => {
+                const input = spectator
+                    .query(byTestId('trust-email-toggle'))
+                    ?.querySelector('input');
+                expect(input?.checked).toBe(false);
+            });
+
+            it('explains in the tooltip what is being trusted', () => {
+                const tooltip = spectator.debugElement
+                    .query(By.css('[data-testid="trust-email-tip"]'))
+                    .injector.get(Tooltip);
+                expect(tooltip.content).toBe(EMAIL_TOOLTIP);
+            });
+
+            it('emits the change under the backend key', () => {
+                const emitted: unknown[] = [];
+                spectator.output('fieldChange').subscribe((change) => emitted.push(change));
+
+                spectator.click(
+                    spectator
+                        .query(byTestId('trust-email-toggle'))
+                        ?.querySelector('input') as Element
+                );
+
+                expect(emitted.pop()).toEqual({
+                    path: 'trustEmailWithoutVerifiedClaim',
+                    value: true
+                });
+            });
         });
     });
 

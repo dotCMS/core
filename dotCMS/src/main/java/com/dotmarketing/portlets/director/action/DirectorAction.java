@@ -53,7 +53,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.user.factories.UserPreferencesFactory;
 import com.dotmarketing.portlets.user.model.UserPreference;
@@ -74,6 +73,16 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+/**
+ * Struts dispatcher of the legacy JSP back-end: one action whose {@code cmd} parameter selects an
+ * operation over pages, files, templates, containers, links and menus.
+ *
+ * @deprecated The current UI drives these operations through the REST API and the Angular
+ * editors; no Angular code calls this action, and its only remaining callers are other legacy
+ * Struts actions. It is kept so existing URLs keep working and will be removed in a future
+ * version.
+ */
+@Deprecated
 public class DirectorAction extends DotPortletAction {
 
 	private ContentletAPI conAPI = APILocator.getContentletAPI();
@@ -382,40 +391,6 @@ public class DirectorAction extends DotPortletAction {
 				return;
 			}
 
-
-			if (cmd!=null && cmd.equals("editContainer")) {
-
-				Logger.debug(DirectorAction.class, "Director :: editContainer" + subcmd);
-
-				Container container = (Container) InodeFactory.getInode(req.getParameter("container"), Container.class);
-
-				Identifier identifier = APILocator.getIdentifierAPI().find(container);
-				//gets the current working asset
-				WebAsset workingContainer = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(identifier,APILocator.getUserAPI().getSystemUser(),false);
-
-				if ("unlockContainer".equals(subcmd)) {
-					WebAssetFactory.unLockAsset(workingContainer);
-				}
-				if (workingContainer.isLocked() && !workingContainer.getModUser().equals(user.getUserId())) {
-					req.setAttribute(WebKeys.CONTAINER_EDIT, workingContainer);
-					setForward(req,"portlet.ext.director.unlock_container");
-					return;
-				}
-				else if (workingContainer.isLocked()) {
-					//it's locked by the same user
-					WebAssetFactory.unLockAsset(workingContainer);
-				}
-				java.util.Map params = new java.util.HashMap();
-				params.put("struts_action",new String[] {"/ext/containers/edit_container"});
-				params.put("cmd",new String[] { "edit" });
-				params.put("inode",new String[] { workingContainer.getInode() + "" });
-				params.put("referer",new String[] { referer });
-
-				String af = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq,WindowState.MAXIMIZED.toString(),params);
-
-				_sendToReferral(req, res, af);
-				return;
-			}
 
 			if (cmd!=null && cmd.equals("editLink")) {
 
@@ -786,20 +761,6 @@ public class DirectorAction extends DotPortletAction {
 					contentlet = conAPI.find(cInode, user, true);	
 				}
 				conAPI.unlock(contentlet, user,true);
-			}
-			
-			if (cmd!=null && cmd.equals("createForm")) {
-
-				Logger.debug(DirectorAction.class, "Director :: createForrm");
-				java.util.Map params = new java.util.HashMap();
-				params.put("struts_action",new String[] {"/ext/structure/edit_structure"});
-				params.put("structureType",new String[] {Integer.toString(Structure.STRUCTURE_TYPE_FORM)});
-				params.put("cmd",new String[] {"null"});
-	
-				String af = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq,WindowState.MAXIMIZED.toString(),params);
-
-				_sendToReferral(req, res, af);
-				return;
 			}
 			
 			Contentlet contentlet = new Contentlet();

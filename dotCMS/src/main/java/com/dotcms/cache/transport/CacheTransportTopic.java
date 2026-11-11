@@ -24,20 +24,51 @@ public class CacheTransportTopic implements DotPubSubTopic {
 
     static long bytesSent, bytesRecieved, messagesSent, messagesRecieved = 0;
 
-    private final Map<String, Serializable> serverResponses = new ConcurrentHashMap<>();
+    /** Payload key that ties a cluster status reply to the request it answers. */
+    static final String CLUSTER_REQUEST_ID = "clusterRequestId";
 
-    public HashMap<String, Serializable> readResponses() {
-        return new HashMap<>(serverResponses);
+    /**
+     * Replies to this server's open cluster status requests: request id, then responding server
+     * id, then that server's reply. Every server receives every reply, so only ids opened here are
+     * kept, and each is removed when its request ends.
+     */
+    private final Map<String, Map<String, Serializable>> pendingRequests = new ConcurrentHashMap<>();
 
+    /**
+     * Starts collecting replies for a cluster status request this server is about to send.
+     *
+     * @param requestId the id the request carries
+     */
+    void openRequest(final String requestId) {
+        pendingRequests.put(requestId, new ConcurrentHashMap<>());
     }
 
-    public void resetResponses() {
-        serverResponses.clear();
+    /**
+     * Returns the replies collected so far for an open request, keyed by responding server id.
+     *
+     * @param requestId the request id
+     * @return a copy of the replies; empty if the request isn't open
+     */
+    Map<String, Serializable> readResponses(final String requestId) {
+        final Map<String, Serializable> replies = pendingRequests.get(requestId);
+        return replies != null ? new HashMap<>(replies) : new HashMap<>();
+    }
 
+    /**
+     * Stops collecting replies for a request and returns what arrived. Later replies to it are
+     * ignored.
+     *
+     * @param requestId the request id
+     * @return the replies keyed by responding server id; empty if the request wasn't open
+     */
+    Map<String, Serializable> closeRequest(final String requestId) {
+        final Map<String, Serializable> replies = pendingRequests.remove(requestId);
+        return replies != null ? new HashMap<>(replies) : new HashMap<>();
     }
 
     @VisibleForTesting
     final String serverId;
+
 
     final DotPubSubProvider provider;
 
@@ -117,30 +148,50 @@ public class CacheTransportTopic implements DotPubSubTopic {
         return true;
     };
 
+    /**
+     * Answers a cluster status request ({@code CLUSTER_REQ}). The reply is built from the request,
+     * so it echoes the request id, and carries this server's report, built once. If the report
+     * can't be built, the failure is logged and no reply is sent.
+     */
     final private Function2<DotPubSubEvent, CacheTransportTopic, Boolean> clusterRequest = (event, topic) -> {
-        serverResponses.clear();
         Logger.info(this.getClass(), () -> "Got CLUSTER_REQ from server:" + event.getOrigin() + ". sending response");
 
-        final Map<String, Serializable> cacheInfo = Try.of(() -> ClusterUtilProxy.getNodeInfo()).onFailure(e -> {
-            Logger.warnAndDebug(CacheTransportTopic.class, e.getMessage(), e);
-        }).getOrElse(ImmutableMap.of("serverId", event.getOrigin()));
+        // Built once. If it fails, no reply is sent: the requester then lists this server as not
+        // responding, as it always has. A reply without a report would make it look healthy.
+        final Try<Map<String, Serializable>> cacheInfo = Try.of(ClusterUtilProxy::getNodeInfo);
+        if (cacheInfo.isFailure()) {
+            Logger.warnAndDebug(CacheTransportTopic.class,
+                    "Could not build the cluster status report: " + cacheInfo.getCause(), cacheInfo.getCause());
+            return true;
+        }
 
-        cacheInfo.putAll(ClusterUtilProxy.getNodeInfo());
-
-        topic.provider.publish(new DotPubSubEvent.Builder(event).withTopic(this).withPayload(cacheInfo)
+        topic.provider.publish(new DotPubSubEvent.Builder(event).withTopic(this).withPayload(cacheInfo.get())
                         .withType(CacheEventType.CLUSTER_RES.name()).withTopic(this)
 
                         .build());
         return true;
     };
 
+    /**
+     * Collects a reply to a cluster status request ({@code CLUSTER_RES}) under its request id.
+     * Replies without an id, or for a request this server didn't open, are ignored.
+     */
     final private Function2<DotPubSubEvent, CacheTransportTopic, Boolean> clusterResponse = (event, topic) -> {
 
         Logger.info(this.getClass(),
                         () -> "Got CLUSTER_RESPONSE from server:" + event.getOrigin() + ". Saving response");
 
+        final Serializable requestId = event.getPayload().get(CLUSTER_REQUEST_ID);
         final String origin = (String) event.getPayload().get("serverId");
-        serverResponses.put(origin, (Serializable) event.getPayload());
+        if (requestId == null || origin == null) {
+            Logger.debug(this.getClass(), () -> "Ignoring a cluster response without a request id: " + event);
+            return true;
+        }
+        // computeIfPresent: replies to requests this server didn't send, or already closed, are dropped
+        topic.pendingRequests.computeIfPresent(String.valueOf(requestId), (id, replies) -> {
+            replies.put(origin, (Serializable) event.getPayload());
+            return replies;
+        });
         return true;
     };
 

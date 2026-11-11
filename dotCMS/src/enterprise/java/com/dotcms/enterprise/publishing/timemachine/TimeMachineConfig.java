@@ -12,6 +12,7 @@ package com.dotcms.enterprise.publishing.timemachine;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.dotcms.publishing.IPublisher;
 import com.dotcms.publishing.PublisherConfig;
 
 public class TimeMachineConfig extends PublisherConfig {
@@ -21,8 +22,8 @@ public class TimeMachineConfig extends PublisherConfig {
 	}
 	
 	@Override
-	public List<Class> getPublishers() {
-		List<Class> clazz = new ArrayList<>();
+	public List<Class<? extends IPublisher>> getPublishers() {
+		final List<Class<? extends IPublisher>> clazz = new ArrayList<>();
 		clazz.add(TimeMachinePublisher.class);
 		return clazz;
 	}

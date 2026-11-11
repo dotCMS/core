@@ -150,7 +150,10 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.notification.cancel.schedule': 'Experiment {0} unscheduled',
     'experiments.list.error.title': ERROR_COPY.title,
     'experiments.error.fetching.data': ERROR_COPY.subtitle,
-    'experiments.list.error.retry': 'Retry'
+    'experiments.list.error.retry': 'Retry',
+    'experiments.list.limited-mode.banner': 'Limited mode — one free experiment.',
+    'experiments.list.limited-mode.banner.slot-used': 'Limited mode — slot occupied.',
+    'experiments.list.limited-mode.action.disabled': 'Not available in limited mode.'
 });
 
 /**
@@ -180,7 +183,9 @@ const createStoreMock = () => ({
     perPage: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
     orderBy: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_ORDER_BY),
     direction: vi.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_DIRECTION),
-    totalRecords: vi.fn().mockReturnValue(0)
+    totalRecords: vi.fn().mockReturnValue(0),
+    isLimitedMode: vi.fn().mockReturnValue(false),
+    isSlotUsed: vi.fn().mockReturnValue(false)
 });
 
 describe('DotExperimentsListComponent', () => {
@@ -796,6 +801,99 @@ describe('DotExperimentsListComponent', () => {
                     message: `Experiment ${experiment.name} ${expectedVerb}`
                 })
             );
+        });
+    });
+
+    /**
+     * Limited-mode branches: banner and kebab command routing.
+     *
+     * All three isLimitedMode/isSlotUsed stubs default to false, so none of these paths
+     * ran before. Reverting them would leave the suite green — these are the regression guards.
+     */
+    describe('in limited mode', () => {
+        beforeEach(() => {
+            storeMock.isLimitedMode.mockReturnValue(true);
+        });
+
+        describe('banner', () => {
+            it('should render the limited-mode banner when the slot is free', () => {
+                storeMock.isSlotUsed.mockReturnValue(false);
+                spectator.detectChanges();
+
+                const banner = spectator.query(byTestId('experiments-limited-mode-banner'));
+
+                expect(banner).not.toBeNull();
+                expect(banner?.textContent).toContain('Limited mode — one free experiment.');
+            });
+
+            it('should render a warn-severity banner and slot-used copy when the slot is occupied', () => {
+                storeMock.isSlotUsed.mockReturnValue(true);
+                spectator.detectChanges();
+
+                const banner = spectator.query(byTestId('experiments-limited-mode-banner'));
+
+                expect(banner).not.toBeNull();
+                expect(banner?.textContent).toContain('Limited mode — slot occupied.');
+            });
+
+            it('should not render the banner in full mode', () => {
+                storeMock.isLimitedMode.mockReturnValue(false);
+                spectator.detectChanges();
+
+                expect(spectator.query(byTestId('experiments-limited-mode-banner'))).toBeNull();
+            });
+        });
+
+        describe('kebab actions that toast instead of confirming', () => {
+            let messageDisplayService: { push: Mock };
+
+            beforeEach(() => {
+                messageDisplayService = spectator.inject(DotMessageDisplayService, true) as {
+                    push: Mock;
+                };
+            });
+
+            it.each([
+                [DotExperimentStatus.ENDED, MENU_ITEM.archive],
+                [DotExperimentStatus.SCHEDULED, MENU_ITEM.cancelSchedule],
+                [DotExperimentStatus.RUNNING, MENU_ITEM.abort]
+            ])(
+                'should push an info toast for %s / %s instead of opening a confirmation',
+                (status, itemId) => {
+                    renderRowWith(status);
+
+                    runMenuItem(itemId);
+
+                    expect(confirm).not.toHaveBeenCalled();
+                    expect(messageDisplayService.push).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            severity: DotMessageSeverity.INFO,
+                            message: 'Not available in limited mode.'
+                        })
+                    );
+                }
+            );
+        });
+
+        describe('end in limited mode', () => {
+            it('should confirm before dispatching endExperiment — end is allowed in limited mode', () => {
+                // _end is allowed (ENDED keeps the slot, no loophole), so the list treats it
+                // the same as full mode: confirmation dialog, then dispatch.
+                const experiment = renderRowWith(DotExperimentStatus.RUNNING);
+
+                runMenuItem(MENU_ITEM.end);
+
+                expect(confirm).toHaveBeenCalledTimes(1);
+                expect(dispatchedEvents()).not.toContainEqual(
+                    dotExperimentsListPageEvents.endExperiment(experiment)
+                );
+
+                acceptConfirmation();
+
+                expect(dispatchedEvents()).toContainEqual(
+                    dotExperimentsListPageEvents.endExperiment(experiment)
+                );
+            });
         });
     });
 

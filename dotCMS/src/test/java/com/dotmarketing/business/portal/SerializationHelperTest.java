@@ -47,14 +47,8 @@ public class SerializationHelperTest {
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("categories")));
             assertTrue("PortletList should contain 'experiments' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("experiments")));
-            assertTrue("PortletList should contain 'categories-legacy' portlet",
-                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("categories-legacy")));
             assertTrue("PortletList should contain 'es-search' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("es-search")));
-            assertTrue("PortletList should contain 'es-search-legacy' portlet",
-                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("es-search-legacy")));
-            assertTrue("PortletList should contain 'query-tool-legacy' portlet",
-                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("query-tool-legacy")));
             assertTrue("PortletList should contain 'dotai' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("dotai")));
             assertTrue("PortletList should contain 'analytics-search' portlet",
@@ -75,6 +69,12 @@ public class SerializationHelperTest {
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("users-beta")));
             assertTrue("PortletList should contain 'roles-beta' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("roles-beta")));
+            assertTrue("PortletList should contain 'tools-beta' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("tools-beta")));
+            assertTrue("PortletList should contain 'configuration' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("configuration")));
+            assertTrue("PortletList should contain 'configuration-beta' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("configuration-beta")));
 
             // Check the Angular categories portlet
             Optional<DotPortlet> categoriesPortlet = portletList.getPortlets().stream()
@@ -86,18 +86,6 @@ public class SerializationHelperTest {
                         "com.dotcms.spring.portlet.PortletController", portlet.getPortletClass());
                 assertEquals("Categories portlet should have correct portlet-url",
                         "/categories", portlet.getPortletUrl());
-            });
-
-            // Check the legacy categories portlet
-            Optional<DotPortlet> categoriesLegacyPortlet = portletList.getPortlets().stream()
-                    .filter(p -> p.getPortletId().equals("categories-legacy"))
-                    .findFirst();
-            assertTrue("Categories legacy portlet should exist", categoriesLegacyPortlet.isPresent());
-            categoriesLegacyPortlet.ifPresent(portlet -> {
-                assertEquals("Categories legacy portlet class should match",
-                        "com.liferay.portlet.StrutsPortlet", portlet.getPortletClass());
-                assertEquals("Categories legacy portlet should have correct view-action",
-                        "/ext/categories/view_categories", portlet.initParams().get("view-action"));
             });
         }
     }

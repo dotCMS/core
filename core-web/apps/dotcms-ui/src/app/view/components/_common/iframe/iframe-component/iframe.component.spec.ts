@@ -3,7 +3,7 @@
 import { Subject } from 'rxjs';
 import { vi } from 'vitest';
 
-import { Component, DebugElement } from '@angular/core';
+import { Component, DebugElement, ElementRef } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -200,6 +200,13 @@ describe('IframeComponent', () => {
         dotIframeService.reloadColors();
 
         expect<any>(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl);
+    });
+
+    it('should ignore a colors reload while no iframe is rendered', () => {
+        comp.iframeElement = new ElementRef({ contentWindow: null });
+
+        expect(() => dotIframeService.reloadColors()).not.toThrow();
+        expect(dotUiColorsService.setColors).not.toHaveBeenCalled();
     });
 
     describe('bind iframe events', () => {

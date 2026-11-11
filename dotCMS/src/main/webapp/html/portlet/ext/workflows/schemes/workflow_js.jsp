@@ -291,7 +291,7 @@ dojo.declare("dotcms.dijit.workflows.SchemeAdmin", null, {
 		if (null != optionalName) {
 
 			var xhrArgs = {
-				url: "/api/v1/workflow/schemes/" + schemeId + "/copy?name=" + optionalName,
+				url: "/api/v1/workflow/schemes/" + schemeId + "/copy?name=" + encodeURIComponent(optionalName),
 
 				postData: '',
 				handleAs: 'json',
@@ -1459,7 +1459,7 @@ dojo.declare("dotcms.dijit.workflows.ActionClassAdmin", null, {
             var tr = dojo.create("tr", {className:"dojoDndItem dndMyActionClasses", id:"myRow" + entry.id}, tbody);
             hasBatchOnly |= entry.isOnlyBatch;
             dojo.create("td", { innerHTML: "<span class='deleteIcon'></span>",className:"wfXBox", onClick:"actionClassAdmin.deleteActionClass('" + entry.id +"');" }, tr);
-            dojo.create("td", { innerHTML: entry.name, onClick:"actionClassAdmin.manageParams('" + entry.id + "');", className:"showPointer" }, tr);
+            dojo.create("td", { textContent: entry.name, onClick:"actionClassAdmin.manageParams('" + entry.id + "');", className:"showPointer" }, tr);
         });
 
         if(actionClassAdmin.actionClasses.length == 0){

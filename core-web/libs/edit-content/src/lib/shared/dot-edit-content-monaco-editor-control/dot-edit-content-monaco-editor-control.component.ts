@@ -22,8 +22,8 @@ import { ControlContainer, FormControl, ReactiveFormsModule } from '@angular/for
 import { PaginatorModule } from 'primeng/paginator';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import { ensureDotVelocityLanguageRegistered } from '@dotcms/ui';
 
-import { dotVelocityLanguageDefinition } from '../../custom-languages/velocity-monaco-language';
 import {
     isHtml,
     isJavascript,
@@ -36,15 +36,6 @@ import {
     DEFAULT_MONACO_LANGUAGE
 } from '../../models/dot-edit-content-field.constant';
 import { getFieldVariablesParsed, stringToJson } from '../../utils/functions.util';
-
-interface WindowWithMonaco extends Window {
-    monaco?: {
-        languages: {
-            register: (language: { id: string }) => void;
-            setMonarchTokensProvider: (id: string, provider: unknown) => void;
-        };
-    };
-}
 
 /**
  * DotEditContentMonacoEditorControl is an Angular component utilizing Monaco Editor.
@@ -113,18 +104,24 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
      *
      * This property merges default Monaco editor configurations with custom ones and sets the editor's language.
      *
+     * The language is chosen in this order: the `forceLanguage` input, then `language` in the
+     * field's `monacoOptions` variable, then the language detected from the content.
      */
     $monacoOptions = computed(() => {
+        const customProps = this.$customPropsContentField();
+
         return {
             ...DEFAULT_MONACO_CONFIG,
-            ...this.$customPropsContentField(),
+            ...customProps,
             // Monaco owns its DOM, so `<label for>` cannot reach the surface it renders. Its own
             // ariaLabel option is where the field name belongs; without it the editor announces
             // itself with Monaco's generic default and the author cannot tell which field they are
             // in. Set after the spreads, like `language`, so it is not silently dropped by custom
             // monacoOptions.
             ariaLabel: this.$field()?.name,
-            language: this.$forcedLanguage() || this.$language()
+            // A language configured in monacoOptions pins the editor, so content whose words look
+            // like another language (issue #37996) is not re-detected and checked as that language.
+            language: this.$forcedLanguage() || customProps?.language || this.$language()
         };
     });
 
@@ -234,23 +231,11 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
     }
 
     /**
-     * Registers the Velocity language for the Monaco editor.
+     * Registers the Velocity language for the Monaco editor: the shared grammar from `@dotcms/ui`,
+     * under the `velocity` id this field's detection and forced language use.
      */
     registerVelocityLanguage() {
-        this.#ngZone.runOutsideAngular(() => {
-            const windowWithMonaco = window as WindowWithMonaco;
-            if (windowWithMonaco.monaco) {
-                windowWithMonaco.monaco.languages.register({
-                    id: AvailableLanguageMonaco.Velocity
-                });
-                windowWithMonaco.monaco.languages.setMonarchTokensProvider(
-                    AvailableLanguageMonaco.Velocity,
-                    dotVelocityLanguageDefinition
-                );
-            } else {
-                console.warn('Monaco is not available globally');
-            }
-        });
+        this.#ngZone.runOutsideAngular(() => ensureDotVelocityLanguageRegistered());
     }
 
     private readonly languageDetectors = {

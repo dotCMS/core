@@ -2,6 +2,8 @@ package com.dotcms.rest;
 
 import com.dotcms.api.web.HttpServletRequestImpersonator;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.content.filter.ContentFieldFilter;
+import com.dotcms.content.filter.PropertyTreeFilter;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -11,6 +13,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.rendering.velocity.WidgetRenderer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.JsonUtil;
@@ -73,6 +76,11 @@ import static com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI.
  * @author jsanca
  */
 public class ContentHelper {
+
+    /**
+     * Property added next to {@code parsedCode} when a widget's field values were returned as text.
+     */
+    public static final String PARSED_CODE_WARNING = "parsedCodeWarning";
 
     private final MapToContentletPopulator mapToContentletPopulator;
     private final IdentifierAPI identifierAPI;
@@ -322,7 +330,29 @@ public class ContentHelper {
 
         final long queryTook = afterAPISearchPull - startAPISearchPull;
         final long contentTook = afterAPIPull - startAPIPull;
-        return new SearchView(resultsSize, queryTook, contentTook, new JsonObjectView(resultJson));
+        return new SearchView(resultsSize, queryTook, contentTook, new JsonObjectView(resultJson),
+                renderWarnings(resultJson));
+    }
+
+    /**
+     * Collects the warnings worth reporting once for a whole search result: at the moment, that
+     * some widget had its field values returned as text.
+     *
+     * @param resultJson the {@code contentlets} JSON built by {@link #getJSONObject}
+     * @return the warnings, empty when there is nothing to report
+     */
+    private List<String> renderWarnings(final JSONObject resultJson) {
+        final JSONArray contentlets = resultJson.optJSONArray("contentlets");
+        if (contentlets == null) {
+            return Collections.emptyList();
+        }
+        for (int i = 0; i < contentlets.length(); i++) {
+            final JSONObject contentlet = contentlets.optJSONObject(i);
+            if (contentlet != null && contentlet.has(PARSED_CODE_WARNING)) {
+                return List.of(WidgetRenderer.FIELD_SCRIPTING_OFF_WARNING);
+            }
+        }
+        return Collections.emptyList();
     }
 
 
@@ -396,7 +426,9 @@ public class ContentHelper {
      * @param user              The {@link User} performing this action.
      * @param allCategoriesInfo If information about Categories must be included, set to {@code true}.
      *
-     * @return The representation of the Contentlet as a {@link JSONObject}.
+     * @return The representation of the Contentlet as a {@link JSONObject}, with the properties configured in
+     * {@link ContentFieldFilter} masked or removed when the user is neither a CMS administrator nor a back-end
+     * user.
      *
      * @throws JSONException        An error occurred when generating the JSON object.
      * @throws IOException          An error occurred when generating the printable Contentlet map.
@@ -418,9 +450,10 @@ public class ContentHelper {
      * @param render            If the rendered HTML version must be included in the response, set to {@code true}.
      * @param user              The {@link User} performing this action.
      * @param allCategoriesInfo If information about Categories must be included, set to {@code true}.
-     * @param hydrateRelated
+     * @param hydrateRelated    If related content must be hydrated into the result, set to {@code true}.
      *
-     * @return The representation of the Contentlet as a {@link JSONObject}.
+     * @return The representation of the Contentlet as a {@link JSONObject}, with every property. Responses
+     * apply {@link ContentFieldFilter} to the finished result with {@link #filterForCaller(JSONObject, User)}.
      *
      * @throws JSONException        An error occurred when generating the JSON object.
      * @throws IOException          An error occurred when generating the printable Contentlet map.
@@ -478,7 +511,12 @@ public class ContentHelper {
         }
         if (BaseContentType.WIDGET.equals(type.baseType()) && "true".equalsIgnoreCase(render)) {
             final HttpServletRequestImpersonator impersonator = HttpServletRequestImpersonator.newInstance();
-            jsonObject.put("parsedCode", WidgetResource.parseWidget(impersonator.request(), response, contentlet));
+            final WidgetRenderer.Rendering rendering = WidgetRenderer.getInstance()
+                    .renderWithDetails(impersonator.request(), response, contentlet);
+            jsonObject.put("parsedCode", rendering.text());
+            if (rendering.fieldScriptingSkipped()) {
+                jsonObject.put(PARSED_CODE_WARNING, WidgetRenderer.FIELD_SCRIPTING_OFF_WARNING);
+            }
         }
 
         if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
@@ -489,6 +527,22 @@ public class ContentHelper {
         jsonObject.put("contentTypeIcon", type.icon());
         jsonObject.put("variant", contentlet.getVariantId());
         return jsonObject;
+    }
+
+    /**
+     * Prepares a finished content response for the user it is sent to: the properties configured in
+     * {@link ContentFieldFilter} are masked or removed, in the contentlets and in their related content at
+     * every depth, when the user is neither a CMS administrator nor a back-end user. It is applied to the
+     * response rather than while each contentlet is built, because the same builder also serves page
+     * rendering and other callers whose results must not depend on who asked first.
+     *
+     * @param json the finished response
+     * @param user the {@link User} the response is sent to
+     * @return a filtered copy of the response, or the response itself when nothing is filtered for the user
+     */
+    public static JSONObject filterForCaller(final JSONObject json, final User user) {
+        return (JSONObject) PropertyTreeFilter.filter(json, ContentFieldFilter.forUser(user),
+                PropertyTreeFilter.storedContentTypes());
     }
 
     public JSONObject addRelationshipsToJSON(final HttpServletRequest request,

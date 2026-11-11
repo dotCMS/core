@@ -252,6 +252,19 @@ describe('dot-auth-config.mappers', () => {
             expect(config.oidc.groupFilterPattern).toBe('');
         });
 
+        it('maps trustEmailWithoutVerifiedClaim', () => {
+            const view: DotAuthConfigView = {
+                ...OIDC_VIEW,
+                values: { ...OIDC_VIEW.values, trustEmailWithoutVerifiedClaim: true }
+            };
+            expect(fromView(view).oidc.trustEmailWithoutVerifiedClaim).toBe(true);
+        });
+
+        it('defaults trustEmailWithoutVerifiedClaim to false (verified-email linking only)', () => {
+            // OIDC_VIEW carries no such key — the backend treats an absent value as off.
+            expect(fromView(OIDC_VIEW).oidc.trustEmailWithoutVerifiedClaim).toBe(false);
+        });
+
         it('maps top-level login behavior fields', () => {
             const config = fromView(OIDC_VIEW);
             expect(config.enableBackend).toBe(true);
@@ -280,6 +293,7 @@ describe('dot-auth-config.mappers', () => {
                 idpName: 'Okta',
                 sPIssuerURL: 'https://cms.example',
                 sPEndpointHostname: '',
+                additionalAcsUrls: 'https://cms.example/api/v1/dotsaml/benchmark/abc',
                 signatureValidationType: 'responseandassertion',
                 idPMetadataFile: 'https://idp.example/metadata.xml',
                 publicCert: 'MIIC...',
@@ -314,6 +328,16 @@ describe('dot-auth-config.mappers', () => {
             expect(config.saml.metadataUrl).toBe('https://idp.example/metadata.xml');
             expect(config.saml.x509cert).toBe('MIIC...');
             expect(config.saml.privateKey).toBe('****');
+        });
+
+        it('maps additionalAcsUrls to its own field, not an extra property', () => {
+            const config = fromView(SAML_VIEW);
+            expect(config.saml.additionalAcsUrls).toBe(
+                'https://cms.example/api/v1/dotsaml/benchmark/abc'
+            );
+            expect(config.saml.extraProperties.map((p) => p.key)).not.toContain(
+                'additionalAcsUrls'
+            );
         });
 
         it('maps SAML IdP endpoint fields', () => {
@@ -489,6 +513,19 @@ describe('dot-auth-config.mappers', () => {
             expect(payload.values.groupFilterPattern).toBe('^(dotcms|CMS) ');
         });
 
+        it('serializes trustEmailWithoutVerifiedClaim, false by default', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.protocol = 'oidc';
+            expect(toPayload(config, 'test-site-id').values).toMatchObject({
+                trustEmailWithoutVerifiedClaim: false
+            });
+
+            config.oidc.trustEmailWithoutVerifiedClaim = true;
+            expect(toPayload(config, 'test-site-id').values).toMatchObject({
+                trustEmailWithoutVerifiedClaim: true
+            });
+        });
+
         it('defaults allowUnmappedGroups to false and omits an empty filter pattern', () => {
             const config = clone(DEFAULT_CONFIG);
             config.protocol = 'oidc';
@@ -593,6 +630,24 @@ describe('dot-auth-config.mappers', () => {
 
             const vals = toPayload(config, 'test-site-id').values as Record<string, unknown>;
             expect(vals['sPEndpointHostname']).toBeUndefined();
+        });
+
+        it('serializes additionalAcsUrls trimmed, and sends an empty value when blank', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.protocol = 'saml';
+            config.saml.additionalAcsUrls = '  https://a.example/acs, https://b.example/acs  ';
+            expect(
+                (toPayload(config, 'test-site-id').values as Record<string, unknown>)[
+                    'additionalAcsUrls'
+                ]
+            ).toBe('https://a.example/acs, https://b.example/acs');
+
+            config.saml.additionalAcsUrls = '   ';
+            expect(
+                (toPayload(config, 'test-site-id').values as Record<string, unknown>)[
+                    'additionalAcsUrls'
+                ]
+            ).toBe('');
         });
 
         it('serializes signRequests so the toggle persists', () => {

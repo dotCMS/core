@@ -8,6 +8,7 @@ import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplMigration
 import com.dotcms.content.elasticsearch.business.OsBootstrapForbiddenIndexTest;
 import com.dotcms.content.index.opensearch.ContentFactoryIndexOperationsOSIntegrationTest;
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOSIntegrationTest;
+import com.dotcms.content.index.opensearch.OSIndexBulkProcessorByteLimitTest;
 import com.dotcms.content.index.opensearch.OSCreateContentIndexIntegrationTest;
 import com.dotcms.content.index.opensearch.OSMappingAPIImplIntegrationTest;
 import com.dotcms.content.index.VersionedIndicesAPITest;
@@ -17,6 +18,7 @@ import com.dotcms.content.index.opensearch.OSClientConfigTest;
 import com.dotcms.content.index.opensearch.OSClientProviderIntegrationTest;
 import com.dotcms.content.index.opensearch.OSSearchAPIImplIntegrationTest;
 import com.dotcms.content.index.opensearch.OSSiteSearchAPIIntegrationTest;
+import com.dotcms.content.index.opensearch.OSTrailingBackslashQueryTest;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchDualWriteRouterIT;
 import com.dotcms.junit.MainBaseSuite;
 import org.junit.runner.RunWith;
@@ -46,6 +48,7 @@ import org.junit.runners.Suite.SuiteClasses;
         OSIndexAPIImplWaitReadyIT.class,
         OSMappingAPIImplIntegrationTest.class,
         ContentletIndexOperationsOSIntegrationTest.class,
+        OSIndexBulkProcessorByteLimitTest.class,
         OSCreateContentIndexIntegrationTest.class,
         ContentFactoryIndexOperationsOSIntegrationTest.class,
         OSClientProviderIntegrationTest.class,
@@ -58,7 +61,8 @@ import org.junit.runners.Suite.SuiteClasses;
         OsBootstrapForbiddenIndexTest.class,
         OSSearchAPIImplIntegrationTest.class,
         OSSiteSearchAPIIntegrationTest.class,
-        SiteSearchDualWriteRouterIT.class
+        SiteSearchDualWriteRouterIT.class,
+        OSTrailingBackslashQueryTest.class,
 })
 public class OpenSearchUpgradeSuite {
 }

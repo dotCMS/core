@@ -4,14 +4,14 @@
       "command": "npx",
       "args": [
         "-y",
-        "nx-mcp@latest"
+        "nx-mcp@0.25.0"
       ]
     },
     "angular-cli": {
       "type": "stdio",
       "command": "npx",
       "args": [
-        "@angular/cli",
+        "@angular/cli@22.2.5",
         "mcp"
       ],
       "env": {}

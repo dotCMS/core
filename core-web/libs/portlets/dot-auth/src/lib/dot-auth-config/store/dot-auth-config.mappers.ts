@@ -37,6 +37,7 @@ export const DEFAULT_CONFIG: DotAuthConfig = {
         claimLastName: 'family_name',
         claimGroups: 'groups',
         autoProvision: true,
+        trustEmailWithoutVerifiedClaim: false,
         syncOnLogin: true,
         defaultRoles: [],
         roleBehavior: 'sync-all',
@@ -50,6 +51,7 @@ export const DEFAULT_CONFIG: DotAuthConfig = {
     saml: {
         idpName: 'SAML Identity Provider',
         spEndpointHostname: '',
+        additionalAcsUrls: '',
         metadataUrl: '',
         entityId: '',
         ssoUrl: '',
@@ -116,6 +118,7 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
             ...config.saml,
             idpName: String(values.idpName ?? config.saml.idpName),
             spEndpointHostname: String(values.sPEndpointHostname ?? ''),
+            additionalAcsUrls: String(values.additionalAcsUrls ?? ''),
             metadataUrl: String(values.idPMetadataFile ?? ''),
             entityId: String(values.sPIssuerURL ?? ''),
             ssoUrl: String(values['identity.provider.destinationsso.url'] ?? ''),
@@ -163,6 +166,10 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
         claimFirstName: String(values.firstNameClaim ?? config.oidc.claimFirstName),
         claimLastName: String(values.lastNameClaim ?? config.oidc.claimLastName),
         autoProvision: booleanValue(values.autoProvision, config.oidc.autoProvision),
+        trustEmailWithoutVerifiedClaim: booleanValue(
+            values.trustEmailWithoutVerifiedClaim,
+            config.oidc.trustEmailWithoutVerifiedClaim ?? false
+        ),
         syncOnLogin: true,
         defaultRoles: splitList(values.extraRoles),
         roleBehavior: fromBuildRolesStrategy(values.buildRolesStrategy),
@@ -188,6 +195,9 @@ export function toPayload(config: DotAuthConfig, siteId: string): DotAuthConfigP
                 // Omit when unset: the backend replaces the whole secrets row on save, so an
                 // empty string would be STORED and shadow the host-name fallback downstream.
                 sPEndpointHostname: config.saml.spEndpointHostname || undefined,
+                // Always send (even when empty) so an admin clearing the list on a site
+                // overrides any System Host value — rather than silently inheriting it.
+                additionalAcsUrls: config.saml.additionalAcsUrls.trim(),
                 signRequests: String(config.saml.signRequests),
                 // Never 'none': with neither box checked both signatures are required.
                 signatureValidationType:
@@ -253,6 +263,7 @@ export function toPayload(config: DotAuthConfig, siteId: string): DotAuthConfigP
             firstNameClaim: config.oidc.claimFirstName || undefined,
             lastNameClaim: config.oidc.claimLastName || undefined,
             autoProvision: config.oidc.autoProvision,
+            trustEmailWithoutVerifiedClaim: config.oidc.trustEmailWithoutVerifiedClaim ?? false,
             groupMappings: JSON.stringify(config.oidc.groupMappings),
             extraRoles: config.oidc.defaultRoles.join(','),
             buildRolesStrategy: toBuildRoles(config.oidc.roleBehavior),
@@ -451,6 +462,7 @@ const SAML_ELEVATED_KEYS = new Set([
     'idpName',
     'sPIssuerURL',
     'sPEndpointHostname',
+    'additionalAcsUrls',
     'signRequests',
     'signatureValidationType',
     'idPMetadataFile',

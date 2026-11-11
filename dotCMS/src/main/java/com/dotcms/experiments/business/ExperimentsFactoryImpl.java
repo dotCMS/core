@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ExperimentsFactoryImpl implements
@@ -44,6 +45,9 @@ public class ExperimentsFactoryImpl implements
     public static final String NAME_FILTER = "AND name LIKE ?";
 
     public static final String STATUS_FILTER = "SELECT * from experiment WHERE status = ?";
+
+    private static final String COUNT_BY_STATUS_IN =
+            "SELECT COUNT(*) AS total FROM experiment WHERE status IN (";
 
     private static final String ACTIVE_EXPERIMENTS_BY_PAGE = "SELECT experiment.* " +
     "FROM experiment " +
@@ -200,5 +204,30 @@ public class ExperimentsFactoryImpl implements
 
             return TransformerLocator.createExperimentTransformer(results).list;
         });
+    }
+
+    @Override
+    public int countByStatuses(final Set<AbstractExperiment.Status> statuses) throws DotDataException {
+        if (statuses == null || statuses.isEmpty()) {
+            return 0;
+        }
+        final String placeholders = statuses.stream()
+                .map(ignored -> "?")
+                .collect(Collectors.joining(", "));
+        final String sql = COUNT_BY_STATUS_IN + placeholders + ")";
+
+        final DotConnect dc = new DotConnect().setSQL(sql);
+        statuses.forEach(status -> dc.addParam(status.name()));
+
+        final List<Map<String, Object>> result = dc.loadObjectResults();
+        return Integer.parseInt(String.valueOf(result.get(0).get("total")));
+    }
+
+    @Override
+    public void acquireFreeSlotLock() throws DotDataException {
+        // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- static SQL, no runtime input
+        new DotConnect()
+                .setSQL("SELECT pg_advisory_xact_lock(hashtext('experiment_free_slot'))")
+                .loadObjectResults();
     }
 }

@@ -1,33 +1,18 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { fakeAsync, tick } from '@angular/core/testing';
-import { RouterTestingModule } from '@angular/router/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
 import { take } from 'rxjs/operators';
 
-import {
-    DotCurrentUserService,
-    DotEventsService,
-    DotMessageService,
-    DotRouterService,
-    DotSystemConfigService,
-    DotIframeService
-} from '@dotcms/data-access';
-import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
-import { GlobalStore } from '@dotcms/store';
-import {
-    DOT_SYSTEM_CONFIG_SERVICE_MOCK,
-    DotCurrentUserServiceMock,
-    LoginServiceMock,
-    mockAuth
-} from '@dotcms/utils-testing';
+import { DotMessageService } from '@dotcms/data-access';
+import { LoggerService, LoginService } from '@dotcms/dotcms-js';
+import { LoginServiceMock, mockAuth } from '@dotcms/utils-testing';
 
 import { DotToolbarUserStore } from './dot-toolbar-user.store';
 
-import { DotMenuService } from '../../../../../../api/services/dot-menu.service';
 import { LOCATION_TOKEN } from '../../../../../../providers';
 import { DotNavigationService } from '../../../../dot-navigation/services/dot-navigation.service';
 
@@ -40,18 +25,10 @@ describe('DotToolbarUserStore', () => {
 
     const createService = createServiceFactory({
         service: DotToolbarUserStore,
-        imports: [RouterTestingModule],
         providers: [
-            LoggerService,
+            mockProvider(LoggerService),
             DotMessageService,
-            DotNavigationService,
-            DotEventsService,
-            DotIframeService,
-            DotMenuService,
-            DotcmsConfigService,
-            StringUtils,
-            DotRouterService,
-            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
+            mockProvider(DotNavigationService),
             {
                 provide: LOCATION_TOKEN,
                 useValue: {
@@ -61,11 +38,6 @@ describe('DotToolbarUserStore', () => {
                 }
             },
             { provide: LoginService, useClass: LoginServiceMock },
-            {
-                provide: DotSystemConfigService,
-                useValue: DOT_SYSTEM_CONFIG_SERVICE_MOCK
-            },
-            GlobalStore,
             provideHttpClient(),
             provideHttpClientTesting()
         ]
@@ -136,6 +108,153 @@ describe('DotToolbarUserStore', () => {
         tick();
         expect(locationService.reload).toHaveBeenCalled();
     }));
+
+    describe('bundle recovery', () => {
+        const version = 'a'.repeat(64);
+        const url = '/api/v2/languages/default/keys';
+        let messages: DotMessageService;
+        let http: HttpTestingController;
+
+        const installBundle = (language = 'default', accountLabel = 'My account') => {
+            messages.init({ language, languageBundleVersion: version });
+            http.expectOne(`/api/v2/languages/${language}/keys`).flush({
+                entity: {
+                    ...Object.fromEntries(
+                        Array.from({ length: 101 }, (_, i) => [`key.${i}`, `Message ${i}`])
+                    ),
+                    'my-account': accountLabel,
+                    'login-as': 'Login as',
+                    'report-an-issue': 'Report an issue',
+                    Logout: 'Log out',
+                    'logout-as': 'Log out as'
+                },
+                languageBundleVersion: version
+            });
+        };
+        const state = () => store.selectSignal((s) => s)();
+
+        beforeEach(() => {
+            localStorage.clear();
+            messages = spectator.inject(DotMessageService);
+            http = spectator.inject(HttpTestingController);
+        });
+
+        afterEach(() => {
+            http.verify();
+            localStorage.clear();
+        });
+
+        it('should translate existing items after an initial failure and a child retry without another auth update', () => {
+            messages.init({ languageBundleVersion: version });
+            http.expectOne(url).flush(null, { status: 500, statusText: 'Server Error' });
+            store.init();
+            store.showMyAccount(true);
+            TestBed.tick();
+            const initial = state();
+            expect(initial.items[2].label).toBe('my-account');
+
+            installBundle();
+            TestBed.tick();
+
+            expect(
+                state()
+                    .items.filter((item) => item.icon)
+                    .map((item) => item.label)
+            ).toEqual(['My account', 'Login as', 'Report an issue', 'Log out', 'Log out as']);
+            expect(state().userData).toEqual(initial.userData);
+            expect(state().showMyAccount).toBe(true);
+            const items = state().items;
+            messages.init({ languageBundleVersion: version });
+            TestBed.tick();
+            expect(state().items).toBe(items);
+        });
+
+        it('refreshes menu labels when an uncached retry replaces the same-version bundle', () => {
+            installBundle();
+            store.init();
+            TestBed.tick();
+            messages.init();
+            http.expectOne(url).flush({
+                entity: {
+                    ...Object.fromEntries(
+                        Array.from({ length: 101 }, (_, i) => [`key.${i}`, `Message ${i}`])
+                    ),
+                    'my-account': 'Refreshed account'
+                },
+                languageBundleVersion: version
+            });
+            TestBed.tick();
+            expect(state().items[2].label).toBe('Refreshed account');
+        });
+
+        it('should rebuild menu labels on a same-version locale switch without an auth update', () => {
+            installBundle();
+            store.init();
+            store.showLoginAs(true);
+            TestBed.tick();
+            const initial = state();
+            expect(initial.items[2].label).toBe('My account');
+
+            installBundle('es_ES', 'Mi cuenta');
+            TestBed.tick();
+            expect(messages.loadedBundleVersion()).toBe(version);
+            expect(state().items[2].label).toBe('Mi cuenta');
+            expect(state().items).not.toBe(initial.items);
+            expect(state().userData).toEqual(initial.userData);
+            expect(state().showLoginAs).toBe(true);
+
+            const items = state().items;
+            messages.init({ language: 'es_ES', languageBundleVersion: version });
+            TestBed.tick();
+            expect(state().items).toBe(items);
+            http.expectNone('/api/v2/languages/es_ES/keys');
+        });
+
+        it('should not rebuild when auth initialization already used the installed bundle', () => {
+            installBundle();
+            store.init();
+            const items = state().items;
+            TestBed.tick();
+            expect(state().items).toBe(items);
+        });
+
+        it('should not populate items before initialization', () => {
+            installBundle();
+            TestBed.tick();
+            expect(state().items).toEqual([]);
+        });
+
+        it('should not rebuild for a user who has logged out before recovery', () => {
+            store.init();
+            const items = state().items;
+            // The service can be unauthenticated at runtime despite its non-null getter type.
+            vi.spyOn(loginService, 'auth', 'get').mockReturnValue(
+                null as unknown as LoginService['auth']
+            );
+            installBundle();
+            TestBed.tick();
+            expect(state().items).toBe(items);
+        });
+
+        it('should use the current impersonated user when recovery runs', () => {
+            store.init();
+            const auth = {
+                ...mockAuth,
+                isLoginAs: true,
+                loginAsUser: { ...mockAuth.user, name: 'Current impersonated user' }
+            };
+            vi.spyOn(loginService, 'auth', 'get').mockReturnValue(auth);
+            installBundle();
+            TestBed.tick();
+            expect(state().items[0].label).toContain('Current impersonated user');
+            expect(
+                state().items.find((item) => item.id === 'dot-toolbar-user-link-logout')?.visible
+            ).toBe(false);
+            expect(
+                state().items.find((item) => item.id === 'dot-toolbar-user-link-logout-as')?.visible
+            ).toBe(true);
+        });
+    });
 
     describe('showLoginAs method', () => {
         it('should change its state value to true', () => {

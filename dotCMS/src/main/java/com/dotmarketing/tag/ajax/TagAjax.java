@@ -17,6 +17,7 @@ import com.dotmarketing.tag.business.TagAlreadyExistsException;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -183,13 +184,29 @@ public class TagAjax {
 	 * @param tagId id of the tag to be deleted
 	 * @return list of all the tags, with the owner information and the respective permission
 	 */
-	public void deleteTag ( String tagId ) throws DotDataException {
+	public void deleteTag ( String tagId ) throws DotDataException, DotSecurityException {
 		try {
-			tagAPI.deleteTag(tagId);
-		} catch (DotDataException e) {
+			deleteTag(getLoggedInUser(), tagId);
+		} catch (DotDataException | DotSecurityException e) {
 			//Logging the error because DWR tends to swallow the exceptions
 			Logger.error(TagAjax.class, "Error deleting tag", e);
 			throw e;
+		}
+	}
+
+	/**
+	 * Deletes a tag on behalf of the given user, following the rules of
+	 * {@link TagAPI#canDeleteTag(User, String)}.
+	 *
+	 * @param user  user requesting the deletion
+	 * @param tagId id of the tag to be deleted
+	 * @throws DotSecurityException if the user can't delete the tag
+	 * @throws DotDataException     if there's a data access error
+	 */
+	static void deleteTag(final User user, final String tagId) throws DotDataException, DotSecurityException {
+		if (!tagAPI.deleteTag(user, tagId)) {
+			throw new DotSecurityException(String.format(
+					"User '%s' lacks permission to delete tag '%s'", user.getUserId(), tagId));
 		}
 	}
 
@@ -240,6 +257,40 @@ public class TagAjax {
 	}
 
 	/**
+	 * Checks that a user may change the tags of a given user: the user themselves, an admin, or
+	 * a user with access to the Users portlet.
+	 *
+	 * @param user   user making the change
+	 * @param userId id of the user whose tags are changed
+	 * @throws DotSecurityException if the user can't change those tags
+	 * @throws DotDataException     if the user's portlet access can't be resolved
+	 */
+	static void checkCanEditUserTags(final User user, final String userId)
+			throws DotDataException, DotSecurityException {
+		if (user.isAdmin() || user.getUserId().equals(userId)
+				|| APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), user)) {
+			return;
+		}
+		throw new DotSecurityException(String.format(
+				"User '%s' lacks permission to change the tags of user '%s'", user.getUserId(), userId));
+	}
+
+	/**
+	 * Returns the user logged in to the current DWR request.
+	 *
+	 * @return the logged in user
+	 * @throws DotSecurityException if there's no logged in user
+	 */
+	private static User getLoggedInUser() throws DotSecurityException {
+		final HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
+		final User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+		if (user == null) {
+			throw new DotSecurityException("There's no logged in user");
+		}
+		return user;
+	}
+
+	/**
 	 * Deletes an object tag assignment
 	 * @param tagNameOrId name/id of the tag to remove
 	 * @param userId user related with the tag
@@ -250,6 +301,7 @@ public class TagAjax {
 	public Map<String, List<Tag>> deleteTag ( String tagNameOrId, String userId ) throws DotDataException, DotSecurityException {
 
 		try {
+			checkCanEditUserTags(getLoggedInUser(), userId);
 			Tag tag = APILocator.getTagAPI().getTagByTagId(tagNameOrId);
 
 			if ( !UtilMethods.isSet(tag) || !UtilMethods.isSet(tag.getTagId()) ) {

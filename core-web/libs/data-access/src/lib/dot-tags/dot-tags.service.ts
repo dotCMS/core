@@ -5,7 +5,12 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { DotTag, DotCMSAPIResponse } from '@dotcms/dotcms-models';
+import {
+    DotTag,
+    DotCMSAPIResponse,
+    DotTagsCreateResult,
+    DotTagsImportResult
+} from '@dotcms/dotcms-models';
 
 /**
  * Provide util methods to get Tags available in the system.
@@ -95,10 +100,12 @@ export class DotTagsService {
     /**
      * Creates one or more tags.
      * @param tags - Array of tag data to create.
-     * @returns Observable with the created tags.
+     * @returns Observable with the newly created tags and the ones that already existed.
      */
-    createTag(tags: { name: string; siteId?: string }[]): Observable<DotCMSAPIResponse<DotTag[]>> {
-        return this.#http.post<DotCMSAPIResponse<DotTag[]>>('/api/v2/tags', tags);
+    createTag(
+        tags: { name: string; siteId?: string }[]
+    ): Observable<DotCMSAPIResponse<DotTagsCreateResult>> {
+        return this.#http.post<DotCMSAPIResponse<DotTagsCreateResult>>('/api/v2/tags', tags);
     }
 
     /**
@@ -132,26 +139,15 @@ export class DotTagsService {
     /**
      * Imports tags from a CSV file.
      * @param file - The CSV file to import.
-     * @returns Observable with import result counts.
+     * @returns Observable with import result counts, including rows skipped as duplicates.
      */
-    importTags(file: File): Observable<
-        DotCMSAPIResponse<{
-            totalRows: number;
-            successCount: number;
-            failureCount: number;
-            success: boolean;
-        }>
-    > {
+    importTags(file: File): Observable<DotCMSAPIResponse<DotTagsImportResult>> {
         const formData = new FormData();
         formData.append('file', file);
 
-        return this.#http.post<
-            DotCMSAPIResponse<{
-                totalRows: number;
-                successCount: number;
-                failureCount: number;
-                success: boolean;
-            }>
-        >('/api/v2/tags/import', formData);
+        return this.#http.post<DotCMSAPIResponse<DotTagsImportResult>>(
+            '/api/v2/tags/import',
+            formData
+        );
     }
 }

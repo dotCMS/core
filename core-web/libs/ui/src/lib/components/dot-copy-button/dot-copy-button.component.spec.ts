@@ -100,6 +100,18 @@ describe('DotCopyButtonComponent', () => {
             discardPeriodicTasks();
         }));
 
+        it('should show "Error" in tooltip when the clipboard refuses the copy', fakeAsync(() => {
+            vi.mocked(dotClipboardUtil.copy).mockResolvedValue(false);
+            vi.spyOn(console, 'error').mockImplementation(() => undefined);
+            const event = { stopPropagation: vi.fn() } as unknown as MouseEvent;
+            spectator.component.copyUrlToClipboard(event);
+            tick(0); // flush promise .then()
+            spectator.detectChanges();
+
+            expect(spectator.component.$tooltipText()).toBe('Error');
+            discardPeriodicTasks();
+        }));
+
         it('should reset tooltip text after 1 second', fakeAsync(() => {
             const event = { stopPropagation: vi.fn() } as unknown as MouseEvent;
             spectator.component.copyUrlToClipboard(event);

@@ -21,8 +21,7 @@ import { SafeUrlPipe } from '@dotcms/ui';
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
-import { resolveClickedAnchor, scrollIframeToFragment } from '../../../utils';
-import { addEditorPageScript } from '../../../utils/ema-legacy-script-injection';
+import { isNavigableHref, resolveClickedAnchor, scrollIframeToFragment } from '../../../utils';
 
 /**
  * Renders the UVE (Universal Visual Editor) page preview inside an iframe.
@@ -107,11 +106,6 @@ export class DotUveIframeComponent {
      */
     readonly $enableInlineEdit = this.uveStore.editorEnableInlineEdit;
     /**
-     * Whether the legacy UVE script injection is enabled via feature flag.
-     * @type {Signal<boolean>}
-     */
-    readonly $isEmaLegacyScriptInjectionEnabled = this.uveStore.$isEmaLegacyScriptInjectionEnabled;
-    /**
      * Effect that injects rendered content into traditional pages when ready.
      * @type {EffectRef}
      */
@@ -171,14 +165,10 @@ export class DotUveIframeComponent {
             return;
         }
 
-        const content = this.$isEmaLegacyScriptInjectionEnabled()
-            ? addEditorPageScript(pageRender)
-            : pageRender;
-
         const srcRef = this.src();
 
-        if (content !== this.lastWrittenContent || srcRef !== this.lastWrittenSrcRef) {
-            this.lastWrittenContent = content;
+        if (pageRender !== this.lastWrittenContent || srcRef !== this.lastWrittenSrcRef) {
+            this.lastWrittenContent = pageRender;
             this.lastWrittenSrcRef = srcRef;
             // srcdoc navigates the iframe to a fresh browsing context on every
             // unique render, clearing the window's global lexical scope.
@@ -188,7 +178,7 @@ export class DotUveIframeComponent {
             // run again — even across legitimate re-renders (e.g. preview → edit
             // mode returns different server-rendered HTML that still contains the
             // same let/const declarations).
-            iframeElement.srcdoc = content;
+            iframeElement.srcdoc = pageRender;
         }
 
         this.handleInlineScripts(enableInlineEdit);
@@ -289,23 +279,28 @@ export class DotUveIframeComponent {
 
                     const linkElement = resolveClickedAnchor(target);
                     const href = linkElement?.getAttribute('href');
-                    const hasLink = !!href;
+                    const isNavigatingLink = isNavigableHref(href);
 
-                    // stopPropagation() is scoped to clicks that resolve to an
-                    // actual link — the only kind of click a page's own code
-                    // could still react to in a way that bypasses the SPA (e.g.
-                    // a delegate router on a padded wrapper around a
-                    // `pointer-events: none` anchor, resolveClickedAnchor's
-                    // fallback above already covers that case as `hasLink`).
-                    // Stopping every click regardless of whether it resolves to
-                    // a link was tried first and failed QA (dotCMS/core#37961):
-                    // it also silenced page-owned, non-navigating UI — a
-                    // Usercentrics cookie-consent dialog's Accept/Reject buttons
-                    // stopped responding, along with any other accordion/tab/
-                    // carousel control — because none of those clicks are links
-                    // and none of this iframe's own four target types.
+                    // stopPropagation() is scoped to clicks that resolve to a
+                    // link that actually navigates somewhere — the only kind of
+                    // click a page's own code could still react to in a way
+                    // that bypasses the SPA (e.g. a delegate router on a padded
+                    // wrapper around a `pointer-events: none` anchor,
+                    // resolveClickedAnchor's fallback above already covers that
+                    // case). Stopping every click regardless of whether it
+                    // resolves to a link was tried first and failed QA
+                    // (dotCMS/core#37961): it also silenced page-owned,
+                    // non-navigating UI — a Usercentrics cookie-consent
+                    // dialog's Accept/Reject buttons stopped responding,
+                    // along with any other accordion/tab/carousel control —
+                    // because none of those clicks are links and none of this
+                    // iframe's own four target types. Narrowing to `hasLink`
+                    // still failed a second QA round: `#…` and `javascript:…`
+                    // anchors never navigate either, yet are a common
+                    // link-shaped toggle pattern (Bootstrap collapses, inline
+                    // `onclick` accordions) — `isNavigableHref` excludes both.
                     if (
-                        hasLink &&
+                        isNavigatingLink &&
                         !isInlineEditTarget &&
                         !isTinyMceUiTarget &&
                         !isBlockEditorTarget &&
@@ -341,7 +336,7 @@ export class DotUveIframeComponent {
                     // runs once the SDK has already made that call, exactly as
                     // it did before this listener moved to the capture phase.
                     if (
-                        hasLink &&
+                        isNavigatingLink &&
                         isContentSelectionTarget &&
                         !isInlineEditTarget &&
                         !isBlockEditorTarget
@@ -349,7 +344,7 @@ export class DotUveIframeComponent {
                         return false;
                     }
 
-                    return hasLink || isInlineEditTarget;
+                    return isNavigatingLink || isInlineEditTarget;
                 }),
                 takeUntil(this.iframeClickListener$),
                 takeUntilDestroyed(this.destroyRef)
@@ -390,8 +385,7 @@ export class DotUveIframeComponent {
                     const href = resolveClickedAnchor(target)?.getAttribute('href');
 
                     return (
-                        !!href &&
-                        !href.startsWith('#') &&
+                        isNavigableHref(href) &&
                         isContentSelectionTarget &&
                         !isInlineEditTarget &&
                         !isBlockEditorTarget

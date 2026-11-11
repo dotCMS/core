@@ -1,5 +1,6 @@
 package com.dotcms.experiments.business;
 
+import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.exception.DotDataException;
@@ -7,6 +8,7 @@ import com.dotmarketing.exception.DotDataException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Interaction with the persistence layer for CRUD and other operations with {@link Experiment}s
@@ -48,4 +50,26 @@ public interface ExperimentsFactory {
      * @throws DotDataException
      */
     Collection<Experiment> listActive(final String pageIdentifier) throws DotDataException;
+
+    /**
+     * Returns the number of experiments whose {@code status} is in {@code statuses}.
+     * Issues a SQL {@code COUNT} query — no experiment rows are loaded into memory.
+     *
+     * @param statuses the set of statuses to count
+     * @return the count of matching experiments
+     * @throws DotDataException on persistence errors
+     */
+    int countByStatuses(Set<Status> statuses) throws DotDataException;
+
+    /**
+     * Acquires a transaction-scoped Postgres advisory lock that serialises concurrent
+     * free-slot checks across all cluster nodes. The lock is released automatically when
+     * the current transaction commits or rolls back — no manual unlock is needed.
+     *
+     * <p>Must be called inside an active transaction ({@code @WrapInTransaction}) to be
+     * effective; in an auto-commit context the lock is released immediately after this call.
+     *
+     * @throws DotDataException on persistence errors
+     */
+    void acquireFreeSlotLock() throws DotDataException;
 }

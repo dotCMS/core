@@ -10,6 +10,50 @@
 			"name": "Not Started Experiment",
 			"item": [
 				{
+					"name": "pre_configureAnalyticsApp",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Analytics App configured for CI\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{"key": "Content-Type", "value": "application/json", "type": "text"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"siteAuth\":{\"value\":\"ci-test-site-auth\"},\"bearerToken\":{\"value\":\"ci-test-bearer-token\"},\"persistenceMode\":{\"value\":\"readwrite\"}}",
+							"options": {"raw": {"language": "json"}}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apps/dotContentAnalytics-config/SYSTEM_HOST",
+							"host": ["{{serverURL}}"],
+							"path": ["api", "v1", "apps", "dotContentAnalytics-config", "SYSTEM_HOST"]
+						},
+						"description": "Configures the Content Analytics App at SYSTEM_HOST level with CI test credentials so that the /results endpoint passes the isAppConfigured() gate. Fake credentials are sufficient — the gate only checks that siteAuth and bearerToken are non-blank."
+					},
+					"response": []
+				},
+				{
 					"name": "Create page",
 					"event": [
 						{
@@ -33,16 +77,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -101,16 +140,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -177,6 +211,16 @@
 								"{{getResultFromNotStartedExperimentId}}",
 								"results"
 							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
 						}
 					},
 					"response": []
@@ -218,6 +262,16 @@
 						"experiments",
 						"not_exists_id",
 						"results"
+					]
+				},
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
 					]
 				}
 			},

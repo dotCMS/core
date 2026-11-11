@@ -77,6 +77,7 @@
 <%@ page import="com.dotmarketing.util.ConfigUtils" %>
 <%@ page import="java.util.Optional" %>
 <%@ page import="com.liferay.portal.util.ReleaseInfo" %>
+<%@ page import="com.liferay.util.Xss" %>
 <!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
@@ -145,13 +146,7 @@
 	}
 </script>
 
-<script language="javascript">
-	require(["vs/editor/editor.main"], function() {
-		// Hack to avoid MonacoEditorLoaderService to load the editor again
-		// That service not works in `dojo` environment Dojo amdLoader. See docs: [https://dojotoolkit.org/reference-guide/1.7/loader/amd.html?highlight=packages%20location%20name%20main]
-		window.monacoEditorAlreadyInitialized = !!window.monaco;
-	});
-</script>
+<script src="/html/js/dotcms-monaco-loader.js"></script>
 
 <%
 	PermissionAPI conPerAPI = APILocator.getPermissionAPI();
@@ -735,13 +730,13 @@
         });
 
 <%
-    final String titleFieldValue = (contentlet != null ? contentlet.getTitle() : "").replace("'", "\'");
+    final String titleFieldValue = Xss.encodeForJavaScript(contentlet != null ? contentlet.getTitle() : "");
 %>
         var customEvent = document.createEvent("CustomEvent");
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "edit-contentlet-loaded",
             data: {
-                contentType: '<%=CacheLocator.getContentTypeCache().getStructureByInode(structure.getInode() ).getName()%>',
+                contentType: '<%=Xss.encodeForJavaScript(CacheLocator.getContentTypeCache().getStructureByInode(structure.getInode() ).getName())%>',
                 pageTitle: "<%=titleFieldValue%>"
             }
         });

@@ -127,10 +127,48 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
         expect(component.$monacoOptions()).toEqual(expectedOptions);
     });
 
-    it('should register Velocity language when Monaco is loaded', () => {
-        const registerSpy = vi.spyOn(component, 'registerVelocityLanguage');
+    /**
+     * Issue #37996 — `language` in the `monacoOptions` field variable was overwritten by the
+     * detected language, so a content type could not pin its WYSIWYG code mode to Markdown.
+     */
+    describe('language from the monacoOptions field variable', () => {
+        const withMonacoOptions = (options: object) =>
+            ({
+                ...WYSIWYG_MOCK,
+                fieldVariables: [{ key: 'monacoOptions', value: JSON.stringify(options) }]
+            }) as DotCMSContentTypeField;
+
+        it('should use the configured language instead of the detected one', () => {
+            spectator.setHostInput('field', withMonacoOptions({ language: 'markdown' }));
+            spectator.detectChanges();
+
+            expect(component.$monacoOptions().language).toBe('markdown');
+        });
+
+        it('should let a forced language win over the configured one', () => {
+            spectator.hostComponent.forceLanguage = AvailableLanguageMonaco.Json;
+            spectator.setHostInput('field', withMonacoOptions({ language: 'markdown' }));
+            spectator.detectChanges();
+
+            expect(component.$monacoOptions().language).toBe(AvailableLanguageMonaco.Json);
+        });
+
+        it('should fall back to detection when no language is configured', () => {
+            spectator.setHostInput('field', withMonacoOptions({ wordWrap: 'on' }));
+            spectator.detectChanges();
+
+            expect(component.$monacoOptions().language).toBe(AvailableLanguageMonaco.PlainText);
+        });
+    });
+
+    it('should register the shared Velocity grammar under the id this field uses', () => {
+        const registerSpy = vi.spyOn(monacoMock.languages, 'register');
+
         spectator.detectChanges();
-        expect(registerSpy).toHaveBeenCalled();
+
+        expect(registerSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ id: AvailableLanguageMonaco.Velocity })
+        );
     });
 
     /**

@@ -288,10 +288,11 @@ public class ShortyServlet extends HttpServlet {
         return;
     }
     
+    final User caller;
     try {
-        final User user = ServletUtils.getUserAndAuthenticateIfRequired(
+        caller = ServletUtils.getUserAndAuthenticateIfRequired(
                 this.webResource, request, response);
-        Logger.debug(ShortyServlet.class, () -> "User: " + user);
+        Logger.debug(ShortyServlet.class, () -> "User: " + caller);
     } catch (SecurityException e) {
         SecurityLogger.logInfo(ShortyServlet.class, e.getMessage());
         Logger.debug(ShortyServlet.class, e,  () -> "Error getting user and authenticating");
@@ -326,7 +327,7 @@ public class ShortyServlet extends HttpServlet {
       return;
     }
 
-    this.doForward(request, response, fieldName, lowerUri, live, shortOpt);
+    this.doForward(request, response, fieldName, lowerUri, live, shortOpt, caller);
   }
 
   private void doForward(final HttpServletRequest request,
@@ -334,7 +335,8 @@ public class ShortyServlet extends HttpServlet {
                          final String fieldName,
                          final String lowerUri,
                          final boolean live,
-                         final Optional<ShortyId> shortOpt)
+                         final Optional<ShortyId> shortOpt,
+                         final User caller)
           throws DotDataException, DotSecurityException, ServletException, IOException {
 
     final int      width   = this.getWidth(lowerUri, 0);
@@ -358,7 +360,6 @@ public class ShortyServlet extends HttpServlet {
     final boolean  isImage = webp || jpeg || avif || width+height+maxWidth+maxHeight +minHeight+minWidth> 0 || quality>0 || cropHeight>0 || cropWidth>0;
     final ShortyId shorty  = shortOpt.get();
     final String   path    = isImage? "/contentAsset/image" : "/contentAsset/raw-data";
-    final User systemUser  = APILocator.systemUser();
     final Language language =WebAPILocator.getLanguageWebAPI().getLanguage(request);
     try {
 
@@ -366,8 +367,8 @@ public class ShortyServlet extends HttpServlet {
         String inodePath = null;
         if(shorty.type!= ShortType.TEMP_FILE) {
           final Optional<Contentlet> conOpt = (shorty.type == ShortType.IDENTIFIER)
-                      ? getContentletByIdentifier(live, shorty.longId, language)
-                      : Optional.ofNullable(APILocator.getContentletAPI().find(shorty.longId, systemUser, false));
+                      ? getContentletByIdentifier(live, shorty.longId, language, caller)
+                      : getContentletByInode(shorty.longId, caller);
                       
           if(conOpt.isEmpty()) {
               response.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -411,13 +412,52 @@ public class ShortyServlet extends HttpServlet {
     }
   }
 
+    /**
+     * Finds the version a short-URL request names by inode.
+     *
+     * <p>An inode names one exact version, so there is no variant left to resolve here. The
+     * version is handed back only when the caller may read the variant it lives in, and is
+     * reported as missing otherwise.
+     *
+     * @param inode the version's inode
+     * @param caller the {@link User} the request is served for, or null when there is none
+     * @return the matching {@link Contentlet}, empty when there is none or the caller may not be
+     * served its variant
+     * @throws DotDataException if the lookup fails
+     * @throws DotSecurityException if the content item cannot be read
+     */
+    private static Optional<Contentlet> getContentletByInode(final String inode, final User caller)
+            throws DotDataException, DotSecurityException {
+
+        return Optional.ofNullable(
+                        APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false))
+                .filter(contentlet -> WebAPILocator.getVariantWebAPI()
+                        .canReadVariant(contentlet.getVariantId(), caller));
+    }
+
+    /**
+     * Finds the version of a content item a short-URL request should be served from.
+     *
+     * <p>The language is resolved the usual way, with the fallback the render context applies.
+     * The variant is resolved from the request only when the caller decides it; any other caller
+     * is served the default variant, whatever the request carries.
+     *
+     * @param live whether the live version is wanted
+     * @param identifier the content item's identifier
+     * @param language the {@link Language} the asset is requested in
+     * @param caller the {@link User} the request is served for, or null when there is none
+     * @return the matching {@link Contentlet}, empty when there is none
+     * @throws DotDataException if the lookup fails
+     * @throws DotSecurityException if the content item cannot be read
+     */
     private static Optional<Contentlet> getContentletByIdentifier(final boolean live,
-            final String identifier, final Language language)
+            final String identifier, final Language language, final User caller)
             throws DotDataException, DotSecurityException {
 
         final PageMode pageMode = live ? PageMode.LIVE : PageMode.PREVIEW_MODE;
         final RenderContext renderContext = WebAPILocator.getVariantWebAPI()
                 .getRenderContext(language.getId(), identifier, pageMode, APILocator.systemUser());
+        final String variantId = WebAPILocator.getVariantWebAPI().currentVariantId(caller);
 
         // If a Time Machine date is configured, attempt to retrieve the future version of the contentlet.
         // Return if found.
@@ -429,7 +469,7 @@ public class ShortyServlet extends HttpServlet {
         // considering whether the live version or a preview version is required.
         return Optional.ofNullable(
                 APILocator.getContentletAPI().findContentletByIdentifier(identifier, live,
-                        renderContext.getCurrentLanguageId(), renderContext.getCurrentVariantKey(),
+                        renderContext.getCurrentLanguageId(), variantId,
                         APILocator.systemUser(), false)
         );
     }

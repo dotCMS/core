@@ -25,13 +25,12 @@ import { debounceTime, distinctUntilChanged, filter } from 'rxjs/operators';
 import {
     DotMessagePipe,
     DotFieldValidationMessageComponent,
-    DotFieldRequiredDirective
+    DotFieldRequiredDirective,
+    ensureDotVelocityLanguageRegistered
 } from '@dotcms/ui';
 
 import { FormFileEditorStore } from './store/form-file-editor.store';
 
-import { dotVelocityLanguageDefinition } from '../../../../custom-languages/velocity-monaco-language';
-import { AvailableLanguageMonaco } from '../../../../models/dot-edit-content-field.constant';
 import { UPLOAD_TYPE, UploadedFile } from '../../../../models/dot-edit-content-file.model';
 
 type DialogProps = {
@@ -427,10 +426,9 @@ export class DotFormFileEditorComponent implements OnInit {
     onEditorInit(editor: monaco.editor.IStandaloneCodeEditor) {
         this.#editorRef = editor;
 
-        // Monaco is now loaded. Register the custom Velocity language so .vtl files get
-        // proper highlighting (its Monarch tokens — keyword.velocity, variable.velocity,
-        // … — are coloured by the default `vs` theme).
-        this.#registerVelocityLanguage();
+        // Monaco is now loaded. Register the shared Velocity language so .vtl files
+        // highlight the same way here as in every other dotCMS editor.
+        ensureDotVelocityLanguageRegistered();
 
         // initLoad ran in ngOnInit before Monaco's language registry existed, so the
         // detected language fell back to 'text'. Re-detect it (also fixes the upload
@@ -445,34 +443,5 @@ export class DotFormFileEditorComponent implements OnInit {
         if (model && typeof monaco !== 'undefined') {
             monaco.editor.setModelLanguage(model, this.store.file().language);
         }
-    }
-
-    /**
-     * Registers the custom Velocity Monarch language with Monaco, once. Mirrors
-     * `DotEditContentMonacoEditorControlComponent` so .vtl files highlight the same
-     * way here. Idempotent: skips registration when another editor already added it.
-     */
-    #registerVelocityLanguage(): void {
-        if (typeof monaco === 'undefined') {
-            return;
-        }
-
-        const alreadyRegistered = monaco.languages
-            .getLanguages()
-            .some((lang) => lang.id === AvailableLanguageMonaco.Velocity);
-
-        if (alreadyRegistered) {
-            return;
-        }
-
-        monaco.languages.register({
-            id: AvailableLanguageMonaco.Velocity,
-            extensions: ['.vtl'],
-            mimetypes: ['text/x-velocity']
-        });
-        monaco.languages.setMonarchTokensProvider(
-            AvailableLanguageMonaco.Velocity,
-            dotVelocityLanguageDefinition
-        );
     }
 }

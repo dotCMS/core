@@ -9,6 +9,7 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.saml.Attributes;
 import com.dotcms.saml.DotSamlConstants;
 import com.dotcms.saml.SamlNameID;
@@ -20,6 +21,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.RegEX;
@@ -471,6 +473,39 @@ public class SAMLHelperTest extends IntegrationTestBase {
         Assert.assertEquals(uuid+"@dotcms.com.cr", attrs.getEmail());
         Assert.assertEquals("John", attrs.getFirstName());
         Assert.assertEquals("Sn", attrs.getLastName());
+    }
+
+    /**
+     * Method to test: {@link SAMLHelper#createNewUser(User, Attributes, IdentityProviderConfiguration)}
+     * Given Scenario: a user is provisioned from the identity provider
+     * ExpectedResult: the stored local password is a secure hash, the same format every other
+     * local password uses
+     */
+    @Test()
+    public void test_createNewUser_storesSecurePasswordHash() throws Exception {
+
+        final SamlAuthenticationService samlAuthenticationService         = new MockSamlAuthenticationService();
+        final CompanyAPI companyAPI                                       = mock(CompanyAPI.class);
+        final Company    company                                          = new Company();
+        final SAMLHelper           		samlHelper                        = new SAMLHelper(samlAuthenticationService, companyAPI);
+
+        company.setAuthType(Company.AUTH_TYPE_EA);
+        when(companyAPI.getDefaultCompany()).thenReturn(company);
+        final IdentityProviderConfiguration identityProviderConfiguration = mock(IdentityProviderConfiguration.class);
+        final String uuid = UUID.randomUUID().toString();
+        final Attributes attrs = new Attributes.Builder().nameID(testNameID(uuid)).email(uuid+"@dotcms.com.cr").build();
+
+        final User user = samlHelper.createNewUser(APILocator.systemUser(), attrs, identityProviderConfiguration);
+
+        try {
+            final String storedPassword = new DotConnect()
+                    .setSQL("select password_ from user_ where userId = ?")
+                    .addParam(user.getUserId())
+                    .getString("password_");
+            Assert.assertFalse(PasswordFactoryProxy.isUnsecurePasswordHash(storedPassword));
+        } finally {
+            UserDataGen.remove(user);
+        }
     }
 
     /**

@@ -5,6 +5,7 @@ import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.jobs.business.processor.JobQueueEntryPoint;
 import com.dotcms.listeners.SessionMonitor;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
@@ -266,8 +267,12 @@ public class MaintenanceResource implements Serializable {
      * <p>
      * The local server's log is always included. For every other alive server in
      * the cluster, this method creates a short-lived API token and calls the
-     * peer's {@code _downloadLog} endpoint over HTTP using the Java native
-     * {@link java.net.http.HttpClient}.
+     * peer's {@code _downloadLog} endpoint over HTTPS — verifying the peer's
+     * certificate and host name against the JVM's default trust store — or over plain HTTP
+     * when {@code CLUSTER_LOG_DOWNLOAD_SCHEME} is {@code http}, on the port
+     * given by {@code CLUSTER_LOG_DOWNLOAD_PORT} (8443 by default for HTTPS),
+     * using the Java native {@link java.net.http.HttpClient} (see
+     * {@link ClusterLogCollector#collect()}).
      * <p>
      * If a peer server is unreachable or returns an error, the ZIP will still
      * contain all successfully retrieved logs plus an {@code _errors.txt} entry
@@ -786,6 +791,7 @@ public class MaintenanceResource implements Serializable {
     })
     @POST
     @Path("/assets/_fix")
+    @JobQueueEntryPoint(MaintenanceJobHelper.FIX_ASSETS_QUEUE)
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
     public ResponseEntityJobStatusView requestFixAssetsJob(
@@ -964,6 +970,7 @@ public class MaintenanceResource implements Serializable {
     })
     @POST
     @Path("/assets/_clean")
+    @JobQueueEntryPoint(MaintenanceJobHelper.CLEAN_ASSETS_QUEUE)
     @NoCache
     @Produces({MediaType.APPLICATION_JSON})
     public ResponseEntityJobStatusView requestCleanAssetsJob(
@@ -1285,8 +1292,7 @@ public class MaintenanceResource implements Serializable {
 
     /**
      * Captures a structured JVM thread dump including stack traces, lock info, and deadlock
-     * detection. Replaces the legacy DWR call {@code ThreadMonitorTool.getThreads(boolean)} which
-     * returned an HTML {@code <pre>} blob — this endpoint returns JSON for the Angular UI.
+     * detection, as JSON. The Threads tab of the Maintenance portlet formats it as a text dump.
      *
      * @param request    The current {@link HttpServletRequest}
      * @param response   The current {@link HttpServletResponse}
@@ -1413,10 +1419,8 @@ public class MaintenanceResource implements Serializable {
     }
 
     /**
-     * Returns lightweight JVM startup and thread-count information. Replaces the legacy DWR
-     * call {@code ThreadMonitorTool.getSysProps()} which returned a {@code Map<String,String>}
-     * of pre-formatted strings; this endpoint also exposes raw millis values so the UI can
-     * compute uptime client-side.
+     * Returns lightweight JVM startup and thread-count information, shown by the Threads tab of
+     * the Maintenance portlet; raw millis values are included so a client can compute uptime.
      *
      * @param request  The current {@link HttpServletRequest}
      * @param response The current {@link HttpServletResponse}

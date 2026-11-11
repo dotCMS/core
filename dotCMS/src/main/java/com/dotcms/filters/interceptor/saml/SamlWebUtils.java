@@ -3,6 +3,8 @@ package com.dotcms.filters.interceptor.saml;
 import com.dotcms.auth.dotAuth.DotAuthConstants;
 
 import com.dotcms.saml.IdentityProviderConfiguration;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Logger;
@@ -18,10 +20,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -44,6 +52,24 @@ public class SamlWebUtils {
 
     public static final String BY_PASS_KEY   = DotAuthConstants.BYPASS_PARAM;
     public static final String AUTH_RELAYSTATE_KEY = "auth.relaystate";
+
+    /**
+     * SAML app property that turns off the default RelayState (the visitor's requested page) that dotCMS sends
+     * when no {@code auth.relaystate} template or {@link RelayStateStrategy} is configured. On unless set to
+     * exactly {@code false} (case-insensitive).
+     */
+    public static final String AUTH_RELAYSTATE_DEFAULT_KEY = "auth.relaystate.default";
+
+    /**
+     * SAML app property listing extra hosts (comma-separated, exact host names) that a post-login redirect may
+     * point to, besides the site's own hosts. A backward-compatibility valve for RelayState values that send users
+     * to another host.
+     */
+    public static final String AUTH_RELAYSTATE_ALLOWED_HOSTS_KEY = "auth.relaystate.allowed.hosts";
+
+    /** Path prefixes of the dotCMS back-end login and logout pages. */
+    private static final List<String> BACK_END_LOGIN_PREFIXES = List.of("/dotAdmin", "/html/portal/login",
+            "/c/public/login", "/c/portal_public/login", "/c/portal/logout");
 
     protected     final UserWebAPI userWebAPI;
 
@@ -142,8 +168,23 @@ public class SamlWebUtils {
      */
     public boolean isBackEndLoginPage(final String uri) {
 
-        return uri.startsWith("/dotAdmin") || uri.startsWith("/html/portal/login") || uri.startsWith("/c/public/login")
-                || uri.startsWith("/c/portal_public/login") || uri.startsWith("/c/portal/logout");
+        return BACK_END_LOGIN_PREFIXES.stream().anyMatch(uri::startsWith);
+    }
+
+    /**
+     * Same check as {@link #isBackEndLoginPage(String)}, ignoring letter case. Used by the post-login redirect
+     * check, where a case-varied path such as {@code /DotAdmin/} must still get the back-end role check because
+     * a proxy or CDN in front of dotCMS may normalize its case. The interceptor keeps the case-sensitive check,
+     * so the sign-in flow a request gets is unchanged.
+     *
+     * @param uri The post-login destination path.
+     *
+     * @return {@code true} when the path starts with a back-end login or logout prefix in any letter case.
+     */
+    public boolean isBackEndLoginPageIgnoreCase(final String uri) {
+
+        return BACK_END_LOGIN_PREFIXES.stream()
+                .anyMatch(prefix -> uri.regionMatches(true, 0, prefix, 0, prefix.length()));
     }
 
     protected boolean isFrontEndLoginPage(final String uri){
@@ -216,39 +257,38 @@ public class SamlWebUtils {
 
 
     /**
-     * Return the relay state for the SAML request if it is possible
-     * it could be a specific delegate class implemented or a generic one based on the velocity template indexed by the property auth.relaystate on the app SAML config
-     * for instance this config: auth.relaystate=companyCode=request.getParameter('companyCode')
-     * Will took the companyCode parameter from the request and will put it on the relay state
-     * Otherwise null will be returned
-     * @param request
-     * @param response
-     * @param identityProviderConfiguration
-     * @param siteIdentifier
-     * @return
+     * Returns the RelayState to send to the IdP for this site, without a default: the value of the
+     * {@link RelayStateStrategy} registered for the site, otherwise the evaluated {@code auth.relaystate}
+     * template from the site's SAML configuration (e.g. {@code companyCode=$request.getParameter('companyCode')}),
+     * otherwise null. The value is also stored in the session under {@link #AUTH_RELAYSTATE_KEY}.
+     *
+     * @param request                       the current request
+     * @param response                      the current response
+     * @param identityProviderConfiguration the site's SAML configuration
+     * @param siteIdentifier                the site whose strategy, if any, is used
+     * @return the RelayState, or null
      */
     public String getRelayState(final HttpServletRequest request,
                                 final HttpServletResponse response,
                                 final IdentityProviderConfiguration identityProviderConfiguration,
                                 final String siteIdentifier) {
 
-        final String relayState = null != identityProviderConfiguration &&
-                identityProviderConfiguration.containsOptionalProperty(AUTH_RELAYSTATE_KEY)?
-                identityProviderConfiguration.getOptionalProperty(AUTH_RELAYSTATE_KEY).toString(): null;
-        return getRelayState(request, response, identityProviderConfiguration, relayState, siteIdentifier);
+        return getRelayState(request, response, identityProviderConfiguration,
+                relayStateTemplate(identityProviderConfiguration), siteIdentifier);
     }
 
     /**
-     * Based on the relayStateTemplate value will find a specific delegate class implemented or a generic one based on the velocity template
-     * for instance if the value for the parameter relayStateTemplate is: companyCode=request.getParameter('companyCode')
-     * Will took the companyCode parameter from the request and will put it on the relay state
-     * Otherwise null will be returned
-     * @param request
-     * @param response
-     * @param identityProviderConfiguration
-     * @param relayStateTemplate
-     * @param siteIdentifier
-     * @return
+     * Returns the RelayState to send to the IdP for this site, without a default: the value of the
+     * {@link RelayStateStrategy} registered for the site, otherwise the evaluated {@code relayStateTemplate}
+     * (a Velocity template such as {@code companyCode=$request.getParameter('companyCode')}), otherwise null.
+     * The value is also stored in the session under {@link #AUTH_RELAYSTATE_KEY}.
+     *
+     * @param request                       the current request
+     * @param response                      the current response
+     * @param identityProviderConfiguration the site's SAML configuration
+     * @param relayStateTemplate            the template to evaluate when no strategy is registered
+     * @param siteIdentifier                the site whose strategy, if any, is used
+     * @return the RelayState, or null
      */
     public String getRelayState(final HttpServletRequest request,
                                 final HttpServletResponse response,
@@ -265,6 +305,147 @@ public class SamlWebUtils {
         Optional.ofNullable(request.getSession()).ifPresent(session -> session.setAttribute(AUTH_RELAYSTATE_KEY, relayStateValue));
 
         return relayStateValue;
+    }
+
+    /**
+     * Returns the RelayState to send to the IdP when a login starts, falling back to a default destination.
+     * The order is: the {@link RelayStateStrategy} registered for the site (whatever it returns, even null),
+     * then the site's {@code auth.relaystate} template, then {@code defaultRelayState}. A configured strategy
+     * or template therefore produces exactly the same value as {@link #getRelayState}; the default is only
+     * used when neither is configured. The value is also stored in the session under
+     * {@link #AUTH_RELAYSTATE_KEY}.
+     *
+     * The caller is responsible for making {@code defaultRelayState} safe; the SAML interceptor passes the
+     * visitor's destination only after it passes the same-host check.
+     *
+     * @param request                       the current request
+     * @param response                      the current response
+     * @param identityProviderConfiguration the site's SAML configuration
+     * @param siteIdentifier                the site whose strategy, if any, is used
+     * @param defaultRelayState             the value to send when no strategy or template is configured
+     * @return the RelayState, or null
+     */
+    public String getRelayStateWithDefault(final HttpServletRequest request,
+                                           final HttpServletResponse response,
+                                           final IdentityProviderConfiguration identityProviderConfiguration,
+                                           final String siteIdentifier,
+                                           final String defaultRelayState) {
+
+        final String relayStateTemplate = relayStateTemplate(identityProviderConfiguration);
+        if (RELAY_STATE_STRATEGY_MAP.containsKey(siteIdentifier) || UtilMethods.isSet(relayStateTemplate)) {
+            return getRelayState(request, response, identityProviderConfiguration, relayStateTemplate, siteIdentifier);
+        }
+
+        Optional.ofNullable(request.getSession()).ifPresent(session -> session.setAttribute(AUTH_RELAYSTATE_KEY, defaultRelayState));
+        return defaultRelayState;
+    }
+
+    /**
+     * Returns the external hosts an admin explicitly allowed for post-login redirects, from the
+     * {@link #AUTH_RELAYSTATE_ALLOWED_HOSTS_KEY} property: comma-separated, trimmed, matched exactly
+     * (case-insensitive). Entries containing a wildcard, scheme, port, path, user-info or whitespace are ignored,
+     * so the list can only name exact hosts.
+     *
+     * @param identityProviderConfiguration the site's SAML configuration
+     * @return the allowed external hosts; empty when none are configured
+     */
+    public static List<String> configuredAllowedHosts(final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        if (null == identityProviderConfiguration
+                || !identityProviderConfiguration.containsOptionalProperty(AUTH_RELAYSTATE_ALLOWED_HOSTS_KEY)) {
+            return Collections.emptyList();
+        }
+        final Object value = identityProviderConfiguration.getOptionalProperty(AUTH_RELAYSTATE_ALLOWED_HOSTS_KEY);
+        if (null == value || !UtilMethods.isSet(value.toString())) {
+            return Collections.emptyList();
+        }
+        final List<String> hosts = new ArrayList<>();
+        for (final String entry : value.toString().split(",")) {
+            final String host = entry.trim();
+            if (host.isEmpty()) {
+                continue;
+            }
+            if (host.matches(".*[*/:@\\s].*")) {
+                Logger.debug(SamlWebUtils.class, () -> "Ignoring an invalid entry in "
+                        + AUTH_RELAYSTATE_ALLOWED_HOSTS_KEY + ": only exact host names are allowed");
+                continue;
+            }
+            hosts.add(host);
+        }
+        return hosts;
+    }
+
+    /**
+     * Whether dotCMS may send its default RelayState (the visitor's requested page) for this SAML configuration.
+     * It is on unless the {@link #AUTH_RELAYSTATE_DEFAULT_KEY} property is set to exactly {@code false}
+     * (case-insensitive, surrounding spaces ignored); any other value keeps it on, so a typo cannot silently
+     * change behavior. Turning it off restores the behavior from before the default existed.
+     *
+     * @param identityProviderConfiguration the site's SAML configuration
+     * @return false only when the default RelayState is explicitly turned off
+     */
+    public static boolean isDefaultRelayStateEnabled(final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        if (null == identityProviderConfiguration
+                || !identityProviderConfiguration.containsOptionalProperty(AUTH_RELAYSTATE_DEFAULT_KEY)) {
+            return true;
+        }
+        final Object value = identityProviderConfiguration.getOptionalProperty(AUTH_RELAYSTATE_DEFAULT_KEY);
+        return null == value || !"false".equalsIgnoreCase(value.toString().trim());
+    }
+
+    /**
+     * Returns the hosts a post-login redirect may point to on this site: the host of the current request plus
+     * the hostname and aliases of the site whose SAML configuration is in use. An IdP often sends a RelayState
+     * on one alias of a site while its callback arrives on another, so all of them count as the same host.
+     * Hosts of other sites are never included. If the site cannot be loaded, only the request host is returned.
+     *
+     * @param requestHost    the host of the current request ({@code request.getServerName()})
+     * @param siteIdentifier the identifier of the site being logged in to (the SAML configuration id)
+     * @return the allowed hosts, without duplicates
+     */
+    public static Collection<String> siteHosts(final String requestHost, final String siteIdentifier) {
+
+        final Set<String> hosts = new LinkedHashSet<>();
+        if (UtilMethods.isSet(requestHost)) {
+            hosts.add(requestHost);
+        }
+        if (UtilMethods.isSet(siteIdentifier)) {
+            try {
+                final Host site = APILocator.getHostAPI().find(siteIdentifier, APILocator.systemUser(), false);
+                if (null != site) {
+                    if (UtilMethods.isSet(site.getHostname())) {
+                        hosts.add(site.getHostname());
+                    }
+                    hosts.addAll(APILocator.getHostAPI().parseHostAliases(site));
+                }
+            } catch (final Exception e) {
+                Logger.debug(SamlWebUtils.class, () -> "Unable to load the aliases of site " + siteIdentifier
+                        + "; only the request host is allowed for post-login redirects: " + e.getMessage());
+            }
+        }
+        return hosts;
+    }
+
+    /**
+     * Removes the relay state strategy registered for a site, if any. Only used by tests, since the
+     * registry is static and shared.
+     *
+     * @param siteIdentifier the site whose strategy is removed
+     */
+    @VisibleForTesting
+    static void removeRelayStateStrategy(final String siteIdentifier) {
+        RELAY_STATE_STRATEGY_MAP.remove(siteIdentifier);
+    }
+
+    /**
+     * Returns the site's configured {@code auth.relaystate} Velocity template, or null when none is set.
+     */
+    private static String relayStateTemplate(final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        return null != identityProviderConfiguration &&
+                identityProviderConfiguration.containsOptionalProperty(AUTH_RELAYSTATE_KEY)?
+                identityProviderConfiguration.getOptionalProperty(AUTH_RELAYSTATE_KEY).toString(): null;
     }
 
 

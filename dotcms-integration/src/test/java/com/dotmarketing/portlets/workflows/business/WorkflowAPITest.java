@@ -3771,6 +3771,13 @@ public class WorkflowAPITest extends IntegrationTestBase {
         return contentType;
     }
 
+    /**
+     * Checks that {@code pushIndexUpdate} queues the scheme's content for reindexing and that the
+     * queue then drains. The test runs with ALLOW_MANUAL_REINDEX_UNPAUSE on, where writing to the
+     * reindex journal does not wake the reindex worker, so it parks the worker first (as the
+     * worker does itself once the queue is empty) and wakes it after queueing. Without the wake-up
+     * the wait used to time out silently after 30 seconds on most runs.
+     */
     @Test
     public void testPushIndexUpdate() throws Exception{
         final WorkflowScheme scheme = addWorkflowScheme(
@@ -3799,9 +3806,14 @@ public class WorkflowAPITest extends IntegrationTestBase {
             contentlet = contentletAPI.checkin(contentlet, user, false);
 
             final WorkflowAPIImpl impl = WorkflowAPIImpl.class.cast(workflowAPI);
+            // Start from a parked worker, the state it puts itself in once the queue drains.
+            ReindexThread.pause();
             final int rows = impl.pushIndexUpdate(scheme, user);
             assertTrue("Expected at least one contentlet to be queued", rows > 0);
-            TestDataUtils.waitForEmptyQueue();
+            // With ALLOW_MANUAL_REINDEX_UNPAUSE on, a journal write no longer wakes the worker.
+            ReindexThread.unpause();
+            assertTrue("Reindex queue should drain after pushIndexUpdate",
+                    TestDataUtils.waitForEmptyQueue());
         } finally {
             try {
                 if (contentlet != null) {

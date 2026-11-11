@@ -1,10 +1,20 @@
+import { fetchRemoteFile } from './remote-file';
+
 import {
     AbortError,
     HttpError,
+    NetworkError,
     PolicyError,
     RuntimeError,
-    ValidationError
+    TimeoutError,
+    ValidationError,
+    isDotCMSError
 } from '../sandbox/errors';
+
+/** Whether `err` is fetch's abort rejection (a DOMException named "AbortError"). */
+function isAbortError(err: unknown): boolean {
+    return !!err && typeof err === 'object' && (err as { name?: string }).name === 'AbortError';
+}
 
 /**
  * The single shared request core.
@@ -20,8 +30,18 @@ import {
 interface FileFieldDescriptor {
     name: string; // filename, e.g. "logo.png"
     type: string; // MIME type, e.g. "image/png"
-    data?: string; // base64-encoded content (mutually exclusive with url)
-    url?: string; // URL to fetch content from (mutually exclusive with data)
+    data?: string; // base64-encoded content (exactly one of data, url, blob)
+    url?: string; // URL to fetch content from
+    // Content as a Blob, sent without copying it first: a file-backed one
+    // (`fs.openAsBlob`) stays on disk until `fetch` reads it.
+    blob?: Blob;
+}
+
+/** What a response-body sink is told about the body it receives. */
+export interface ResponseBodyInfo {
+    contentType: string;
+    /** From `Content-Length`, when the server sent one. */
+    contentLength?: number;
 }
 
 type FormDataFieldValue = string | FileFieldDescriptor;
@@ -39,14 +59,58 @@ export interface RequestOptions {
     // survive the JSON.stringify boundary in the consuming sandbox. Set 'base64' to
     // force the binary path regardless of the declared content-type.
     responseType?: 'auto' | 'base64';
+    // Host only (a function cannot be posted out of the sandbox worker): stream a
+    // successful response's body to this sink instead of decoding it, and resolve to what
+    // the sink returns. The request's signal and deadline cover the sink until it settles.
+    // Error responses are thrown as `HttpError` and never reach it.
+    onBody?: (body: ReadableStream<Uint8Array>, info: ResponseBodyInfo) => Promise<unknown>;
 }
 
 /**
  * A policy hook consulted before a request reaches the wire. Return `false` (or throw) to
  * reject. The single place a caller-owned allow-list plugs in — both verbs honor it because
  * both flow through `requestCore`.
+ *
+ * `path` is the RESOLVED path — dot-segments, encoded dots and backslashes already collapsed
+ * the way the URL that is sent will collapse them — so a policy never has to defend against
+ * `/allowed/../elsewhere` itself.
  */
 export type RequestPolicy = (req: { method: string; path: string }) => boolean | void;
+
+/**
+ * Normalize an `allow` setting into the policy the request core consults: a list of paths
+ * (a request is allowed when its resolved path IS one of them or lies UNDER one), or a
+ * predicate used as-is. The one place that meaning is defined, so every caller that accepts
+ * `allow` reads it the same way.
+ *
+ * Matching is by whole segment, never by raw `startsWith`: `/api/v1/content` allows
+ * `/api/v1/content` and `/api/v1/content/abc`, but not `/api/v1/contenttype`. As a string
+ * prefix it allowed every endpoint whose name happened to begin the same way. A trailing
+ * slash on an entry changes nothing: `/api/v1/page/` and `/api/v1/page` mean the same, and
+ * `'/'` is the explicit way to allow every path.
+ *
+ * An entry that is not a path (`''`, blank, relative, protocol-relative) throws a
+ * `ValidationError` here, when the runtime or tool is created. This is a security boundary,
+ * so a malformed entry must fail closed and loudly: `''` used to match every path, so a typo or
+ * an unset variable silently opened the whole API.
+ */
+export function toRequestPolicy(
+    allow: string[] | RequestPolicy | undefined
+): RequestPolicy | undefined {
+    if (!allow) return undefined;
+    if (typeof allow === 'function') return allow;
+    const invalid = allow.find(
+        (entry) => typeof entry !== 'string' || !entry.startsWith('/') || entry.startsWith('//')
+    );
+    if (invalid !== undefined) {
+        throw new ValidationError(
+            `\`allow\` entry ${JSON.stringify(invalid)} is not a path. Every entry must be an ` +
+                `absolute API path such as "/api/v1/content"; use "/" to allow every path.`
+        );
+    }
+    const bases = allow.map((entry) => entry.replace(/\/+$/, ''));
+    return ({ path }) => bases.some((base) => path === base || path.startsWith(`${base}/`));
+}
 
 /** Host-side context the request core needs. Auth lives here, never in the caller's code. */
 export interface RequestCoreContext {
@@ -76,7 +140,9 @@ function isFileDescriptor(value: unknown): value is FileFieldDescriptor {
         value !== null &&
         typeof obj.name === 'string' &&
         typeof obj.type === 'string' &&
-        (typeof obj.data === 'string' || typeof obj.url === 'string')
+        (typeof obj['data'] === 'string' ||
+            typeof obj['url'] === 'string' ||
+            obj['blob'] instanceof Blob)
     );
 }
 
@@ -169,112 +235,56 @@ async function readBinaryResponse(
     };
 }
 
-/**
- * Validates a user-supplied file URL before fetching it, to mitigate SSRF.
- * Sandbox code can put any string in `desc.url`, and the fetch runs on the
- * host with host network access — so we restrict it to public http(s) targets
- * and reject loopback, link-local, and private (RFC 1918 / unique-local) hosts.
- *
- * KNOWN LIMITATION (DNS rebinding): this validates the literal hostname/IP in the URL, not
- * the address it ultimately resolves to. A hostname that resolves to a private/link-local/
- * metadata IP at fetch time bypasses this check. `redirect: 'error'` blocks the redirect
- * vector, but not rebinding. This matches the package threat model — capability confinement
- * for trusted code generators, not adversarial isolation. A consumer accepting genuinely
- * untrusted file URLs must front this with a hardened fetcher that resolves and pins the IP.
- */
-function assertSafeRemoteUrl(rawUrl: string): URL {
-    let parsed: URL;
-    try {
-        parsed = new URL(rawUrl);
-    } catch {
-        throw new ValidationError(`Invalid file URL: "${rawUrl}"`);
-    }
-
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-        throw new ValidationError(`File URL must use http(s); got "${parsed.protocol}"`);
-    }
-
-    const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
-
-    // Block obvious metadata / loopback hostnames.
-    if (
-        host === 'localhost' ||
-        host.endsWith('.localhost') ||
-        host === 'metadata.google.internal'
-    ) {
-        throw new ValidationError(`File URL host "${host}" is not allowed`);
-    }
-
-    // IPv4 private / loopback / link-local / unspecified ranges.
-    const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-    if (ipv4) {
-        const [a, b] = ipv4.slice(1).map(Number);
-        const isPrivate =
-            a === 0 || // 0.0.0.0/8 (unspecified)
-            a === 10 || // 10.0.0.0/8
-            a === 127 || // 127.0.0.0/8 (loopback)
-            (a === 169 && b === 254) || // 169.254.0.0/16 (link-local, incl. cloud metadata)
-            (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0/12
-            (a === 192 && b === 168); // 192.168.0.0/16
-        if (isPrivate) {
-            throw new ValidationError(`File URL resolves to a private/loopback address: "${host}"`);
-        }
-    }
-
-    // IPv6 loopback (::1), unspecified (::) and unique-local (fc00::/7) / link-local (fe80::/10).
-    if (host.includes(':')) {
-        if (host === '::1' || host === '::' || /^f[cd]/.test(host) || /^fe[89ab]/.test(host)) {
-            throw new ValidationError(
-                `File URL resolves to a private/loopback IPv6 address: "${host}"`
-            );
-        }
-    }
-
-    return parsed;
-}
-
 async function resolveFileDescriptor(
     desc: FileFieldDescriptor,
     signal?: AbortSignal
 ): Promise<Blob> {
+    if (desc.blob) {
+        // `slice` re-labels without copying, so a disk-backed Blob stays on disk.
+        return desc.blob.type ? desc.blob : desc.blob.slice(0, desc.blob.size, desc.type);
+    }
     if (desc.data) {
         const binary = Buffer.from(desc.data, 'base64');
         return new Blob([new Uint8Array(binary)], { type: desc.type });
     }
     if (desc.url) {
-        const safeUrl = assertSafeRemoteUrl(desc.url);
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), REMOTE_FILE_FETCH_TIMEOUT_MS);
-        // If the surrounding execution is aborted, also abort this nested fetch.
-        const onParentAbort = () => controller.abort();
+        const timer = setTimeout(
+            () =>
+                controller.abort(
+                    new TimeoutError(
+                        `Download of "${desc.url}" timed out after ${REMOTE_FILE_FETCH_TIMEOUT_MS} ms`,
+                        REMOTE_FILE_FETCH_TIMEOUT_MS
+                    )
+                ),
+            REMOTE_FILE_FETCH_TIMEOUT_MS
+        );
+        // If the surrounding execution is aborted, or already was, also abort this nested
+        // download, with the same reason.
+        const onParentAbort = () => controller.abort(signal?.reason);
         signal?.addEventListener('abort', onParentAbort, { once: true });
+        if (signal?.aborted) {
+            onParentAbort();
+        }
         try {
-            const response = await fetch(safeUrl.toString(), {
-                signal: controller.signal,
-                redirect: 'error' // a redirect could escape the SSRF guard
+            return await fetchRemoteFile(desc.url, {
+                type: desc.type,
+                maxBytes: MAX_REMOTE_FILE_BYTES,
+                signal: controller.signal
             });
-            if (!response.ok) {
-                throw new HttpError(
-                    response.status,
-                    response.statusText,
-                    `Failed to fetch file from "${desc.url}"`
-                );
-            }
-            const buffer = await response.arrayBuffer();
-            if (buffer.byteLength > MAX_REMOTE_FILE_BYTES) {
-                throw new ValidationError(
-                    `Remote file "${desc.url}" exceeds the ${MAX_REMOTE_FILE_BYTES}-byte limit`
-                );
-            }
-            return new Blob([buffer], { type: desc.type });
         } finally {
             clearTimeout(timer);
             signal?.removeEventListener('abort', onParentAbort);
         }
     }
     throw new ValidationError(
-        `File descriptor "${desc.name}" must have either "data" (base64) or "url"`
+        `File descriptor "${desc.name}" must have "data" (base64), "url" or "blob"`
     );
+}
+
+/** The body of a response that has none (`response.body` is null for a 204, say). */
+function emptyBody(): ReadableStream<Uint8Array> {
+    return new ReadableStream({ start: (controller) => controller.close() });
 }
 
 /**
@@ -321,23 +331,32 @@ export async function requestCore(
             throw new ValidationError('options.path must not be an absolute URL');
         }
 
+        // Build the URL BEFORE the policy check, so the policy judges the path that will
+        // actually be requested. `new URL` resolves dot-segments, percent-encoded dots and
+        // backslashes: checked as a raw string, `/api/v1/content/../site/x` passed an
+        // allow-list for `/api/v1/content` and then requested `/api/v1/site/x`.
+        const url = new URL(urlPath, ctx.baseUrl);
+        const resolvedPath = url.pathname;
+        const described =
+            resolvedPath === urlPath ? urlPath : `${urlPath} (resolves to ${resolvedPath})`;
+
         // Policy / allow-list check — before anything touches the wire.
         if (ctx.policy) {
             let allowed: boolean | void;
             try {
-                allowed = ctx.policy({ method, path: urlPath });
+                allowed = ctx.policy({ method, path: resolvedPath });
             } catch (err) {
                 throw new PolicyError(
                     err instanceof Error ? err.message : String(err),
                     method,
-                    urlPath
+                    resolvedPath
                 );
             }
             if (allowed === false) {
                 throw new PolicyError(
-                    `Request ${method} ${urlPath} rejected by policy`,
+                    `Request ${method} ${described} rejected by policy`,
                     method,
-                    urlPath
+                    resolvedPath
                 );
             }
         }
@@ -347,8 +366,7 @@ export async function requestCore(
             throw new AbortError(`Request ${method} ${urlPath} was aborted before it started`);
         }
 
-        // Build URL with query params.
-        const url = new URL(urlPath, ctx.baseUrl);
+        // Add query params.
         if (options.query) {
             for (const [key, value] of Object.entries(options.query)) {
                 url.searchParams.set(key, String(value));
@@ -391,7 +409,18 @@ export async function requestCore(
             fetchOptions.body = JSON.stringify(options.body);
         }
 
-        const response = await fetch(url.toString(), fetchOptions);
+        // Only `fetch()` itself is guarded here: anything it throws that is not an abort is a
+        // network-level failure by definition (the fetch spec rejects with a TypeError), and
+        // left raw it surfaced as an opaque "fetch failed" the model read as permanent.
+        let response: Response;
+        try {
+            response = await fetch(url.toString(), fetchOptions);
+        } catch (err) {
+            if (isAbortError(err)) {
+                throw err;
+            }
+            throw new NetworkError(method, urlPath, err);
+        }
 
         const contentType = response.headers.get('content-type') || '';
 
@@ -406,7 +435,16 @@ export async function requestCore(
         const forceBinary = options.responseType === 'base64';
 
         let result: unknown;
-        if (!forceBinary && contentType.includes('application/json')) {
+        if (options.onBody) {
+            // Awaited HERE, inside the request, so the caller's signal and deadline keep
+            // covering the body until the sink has consumed it.
+            const declared = response.headers.get('content-length');
+            const declaredLength = declared === null ? NaN : Number(declared);
+            result = await options.onBody(response.body ?? emptyBody(), {
+                contentType,
+                contentLength: Number.isFinite(declaredLength) ? declaredLength : undefined
+            });
+        } else if (!forceBinary && contentType.includes('application/json')) {
             result = await response.json();
         } else if (!forceBinary && isTextualContentType(contentType)) {
             result = await response.text();
@@ -419,8 +457,9 @@ export async function requestCore(
         emit(response.status, true);
         return result;
     } catch (err) {
-        // Normalize fetch's AbortError (a DOMException with name "AbortError") into our typed one.
-        if (err && typeof err === 'object' && (err as { name?: string }).name === 'AbortError') {
+        // Normalize fetch's AbortError (a DOMException with name "AbortError") into our typed one;
+        // the SDK's own errors (a download that timed out, for instance) pass through unchanged.
+        if (isAbortError(err) && !isDotCMSError(err)) {
             const aborted = new AbortError(`Request ${method} ${urlPath} was aborted`);
             emit(undefined, false, aborted.code);
             throw aborted;

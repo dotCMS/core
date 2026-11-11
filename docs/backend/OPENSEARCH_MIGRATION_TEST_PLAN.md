@@ -8,6 +8,10 @@
 
 **Status:** All four phases (0–3) are now testable end-to-end, **including Phase 3**. The dotCMS query/read layer has been migrated, so application-level reads can be validated against OpenSearch in phases 2 and 3 — not only via the dashboards. The migration is close to complete but still under active QA: **expect to find bugs, and file them** against the QA epic [#35476](https://github.com/dotCMS/core/issues/35476). PR #35632 introduced an **automatic migration shutdown**: when OpenSearch is unreachable or reports the wrong version in Phase ≥ 1, dotCMS resets to Phase 0 by itself and keeps serving from ES — it does **not** crash or hang. The visible effects of that shutdown are two `ERROR` lines + one `WARN` line (there is **no** `FATAL` on the startup path — see **Helpers / H5**). This plan is written for a tester who exercises the system from the outside; the test cases live in **Groups 1–16** below.
 
+> **Migrating a real customer instance?** This plan exercises the migration in a lab. The
+> step-by-step operator procedure lives in
+> [`OPENSEARCH_MIGRATION_RUNBOOK.md`](OPENSEARCH_MIGRATION_RUNBOOK.md).
+
 ---
 
 ## Abstract

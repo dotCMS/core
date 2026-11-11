@@ -10,6 +10,8 @@ import com.dotcms.saml.SamlAuthenticationService;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.saml.SamlName;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.util.RedirectUtil;
+import com.dotcms.util.SecurityUtils;
 import com.dotcms.util.security.Encryptor;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.beans.Host;
@@ -32,15 +34,22 @@ import com.liferay.portal.servlet.PortletSessionPool;
 import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.dotcms.saml.DotSamlConstants.SAML_USER_ID;
 
@@ -56,6 +65,17 @@ public class SamlWebInterceptor implements WebInterceptor {
 
     public static final String REFERRER_PARAMETER_KEY = "referrer";
     public static final String ORIGINAL_REQUEST       = "original_request";
+
+    /** RelayState size limit in the SAML bindings spec; longer values are still sent, since the supported IdPs accept them. */
+    private static final int SAML_RELAYSTATE_MAX_BYTES = 80;
+
+    /** Login pages: a default RelayState pointing at one would send the user back to a login form. */
+    private static final List<String> LOGIN_PAGE_PATHS = List.of("/dotCMS/login", "/application/login",
+            "/html/portal/login", "/c/public/login", "/c/portal_public/login", "/dotsaml/login");
+
+    /** Built-in logout paths, also excluded when {@code logout.path.values} is configured with other paths. */
+    private static final List<String> DEFAULT_LOGOUT_PATHS = List.of("/c/portal/logout", "/dotCMS/logout",
+            "/dotsaml/request/logout", "/dotAdmin/logout");
 
     protected final Encryptor       encryptor;
     protected final LoginServiceAPI loginService;
@@ -193,6 +213,8 @@ public class SamlWebInterceptor implements WebInterceptor {
                                     final HttpSession loopSession = request.getSession(false);
                                     if (null != loopSession) {
                                         loopSession.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+                                        loopSession.removeAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_STRING);
+                                        loopSession.removeAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_PATH);
                                     }
                                     // isCommitted() guard avoids IllegalStateException / a double response.
                                     if (!response.isCommitted()) {
@@ -256,6 +278,26 @@ public class SamlWebInterceptor implements WebInterceptor {
         return session != null? session: httpServletRequest.getSession(true);
     }
 
+    /**
+     * Starts a SAML login: saves the visitor's destination in the session and redirects the browser to the
+     * IdP. The destination ({@code referrer} parameter, otherwise the requested URI and query string) is also
+     * sent as the default RelayState when the site has no {@code auth.relaystate} template and no
+     * {@link RelayStateStrategy}, so the callback can return the visitor to it even when the session does not
+     * survive the IdP's cross-site POST. On the usual front-end route (a 401 redirected to
+     * {@code /dotCMS/login?referrer=<path>}) the query string saved when the 401 was raised is reattached. The
+     * default is only sent when it is a destination on this site (the request host, or the hostname or an alias
+     * of the site) or on a host listed in the app's {@code auth.relaystate.allowed.hosts}
+     * ({@link RedirectUtil#toAllowedRedirect(String, Collection, Collection)}), and not a login or logout page;
+     * otherwise no RelayState is sent and the existing fallbacks apply after the callback. Setting the SAML app
+     * property {@code auth.relaystate.default=false} turns the default off.
+     *
+     * @param request                       the intercepted request
+     * @param response                      the response used to redirect to the IdP
+     * @param session                       the visitor's session
+     * @param identityProviderConfiguration the site's SAML configuration
+     * @param siteIdentifier                the site being logged in to
+     * @throws IOException when the error response cannot be sent
+     */
     private void doAuthentication(final HttpServletRequest request,
                                   final HttpServletResponse response,
                                   final HttpSession session,
@@ -264,6 +306,18 @@ public class SamlWebInterceptor implements WebInterceptor {
 
         Logger.debug(this, ()-> "There's no logged-in user. Processing SAML request...");
         this.doRequestLoginSecurityLog(request, identityProviderConfiguration);
+
+        // What a 401 on a protected page saved before redirecting here, read before it is overwritten below.
+        // The path saved next to the query string persists with Redis sessions; REDIRECT_AFTER_LOGIN, written by
+        // the 401 error page, may not, so it is only the fallback.
+        final Object savedRedirect    = null == session ? null
+                : null != session.getAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_PATH)
+                        ? session.getAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_PATH)
+                        : session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+        final Object savedQueryString = null == session ? null
+                : null != session.getAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_STRING)
+                        ? session.getAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_STRING)
+                        : session.getAttribute(RequestDispatcher.FORWARD_QUERY_STRING);
 
         final String originalRequest = request.getRequestURI() +
                 (UtilMethods.isSet(request.getQueryString())?
@@ -290,7 +344,12 @@ public class SamlWebInterceptor implements WebInterceptor {
 
         try {
             // this will redirect the user to the IdP Login Page.
-            final String relayState = this.samlWebUtils.getRelayState(request, response, identityProviderConfiguration, siteIdentifier);
+            final String destination = this.withSavedQueryString(redirectAfterLogin,
+                    UtilMethods.isSet(request.getParameter(REFERRER_PARAMETER_KEY)), savedRedirect, savedQueryString);
+            final String defaultRelayState = this.defaultRelayState(destination,
+                    this.allowedRedirectHosts(request, siteIdentifier), identityProviderConfiguration);
+            final String relayState = this.samlWebUtils.getRelayStateWithDefault(request, response,
+                    identityProviderConfiguration, siteIdentifier, defaultRelayState);
             DotSamlProxyFactory.getInstance().samlAuthenticationService()
                     .authentication(request, response, identityProviderConfiguration, relayState);
         } catch (Exception exception) {
@@ -301,6 +360,93 @@ public class SamlWebInterceptor implements WebInterceptor {
                     "response status.");
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         }
+    }
+
+    /**
+     * On the usual front-end route a 401 on a protected page redirects to {@code /dotCMS/login?referrer=<path>},
+     * and {@link SecurityUtils#sendPermissionDenied} keeps the page's query string in the session
+     * ({@link SecurityUtils#REDIRECT_AFTER_LOGIN_QUERY_STRING}), next to the page's path
+     * ({@link SecurityUtils#REDIRECT_AFTER_LOGIN_QUERY_PATH}). Reattach it so the destination survives the IdP
+     * round trip, but only when the referrer is the very page the 401 saved; a stale query string is never
+     * attached to an unrelated page, and a referrer with its own query string is left as is.
+     */
+    private String withSavedQueryString(final String destination, final boolean fromReferrer,
+                                        final Object savedRedirect, final Object savedQueryString) {
+
+        if (fromReferrer && null != destination && !destination.contains("?")
+                && null != savedQueryString && UtilMethods.isSet(savedQueryString.toString())
+                && destination.equals(savedRedirect)) {
+            Logger.debug(this, () -> "SAML: reattached the query string saved by the 401 page to the default RelayState");
+            return destination + "?" + savedQueryString;
+        }
+        return destination;
+    }
+
+    /**
+     * Returns the visitor's destination as a safe RelayState, or null when none should be sent: when the default
+     * is turned off ({@code auth.relaystate.default=false}), when it is neither a destination on this site nor on a
+     * host listed in {@code auth.relaystate.allowed.hosts}, or when it is a login or logout page (a user whose
+     * session expired and who clicked Logout must not be sent back to the logout URL after signing in). Never
+     * logs the destination itself, since it can be attacker-controlled.
+     */
+    private String defaultRelayState(final String destination, final Collection<String> allowedHosts,
+                                     final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        if (!SamlWebUtils.isDefaultRelayStateEnabled(identityProviderConfiguration)) {
+            Logger.debug(this, () -> "SAML: the default RelayState is turned off ("
+                    + SamlWebUtils.AUTH_RELAYSTATE_DEFAULT_KEY + "=false); no default RelayState is sent");
+            return null;
+        }
+
+        final Collection<String> externalHosts = SamlWebUtils.configuredAllowedHosts(identityProviderConfiguration);
+        final Optional<String> safeDestination = RedirectUtil.toAllowedRedirect(destination, allowedHosts, externalHosts);
+        if (safeDestination.isEmpty()) {
+            final String reason = RedirectUtil.rejectionReason(destination, allowedHosts, externalHosts)
+                    .map(Enum::name).orElse("UNKNOWN");
+            Logger.debug(this, () -> "SAML: the requested destination is not an allowed destination (reason " + reason
+                    + "); no default RelayState is sent");
+            return null;
+        }
+        final String path = safeDestination.get().split("[?#]", 2)[0];
+        if (this.isLoginOrLogoutPage(path, identityProviderConfiguration)) {
+            Logger.debug(this, () -> "SAML: the requested destination is a login or logout page; no default RelayState is sent");
+            return null;
+        }
+        if (safeDestination.get().getBytes(StandardCharsets.UTF_8).length > SAML_RELAYSTATE_MAX_BYTES) {
+            Logger.debug(this, () -> "SAML: the default RelayState is " + safeDestination.get().getBytes(StandardCharsets.UTF_8).length
+                    + " bytes, over the " + SAML_RELAYSTATE_MAX_BYTES + "-byte SAML limit; sending it in full");
+        }
+        return safeDestination.get();
+    }
+
+    /**
+     * True for the login pages and the logout paths (built-in ones plus any configured in
+     * {@code logout.path.values}), ignoring letter case, since a proxy or CDN in front of dotCMS may normalize
+     * the case. {@code /dotAdmin} itself is never one of them.
+     */
+    private boolean isLoginOrLogoutPage(final String path,
+                                        final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        final Set<String> pages = new LinkedHashSet<>(LOGIN_PAGE_PATHS);
+        pages.addAll(DEFAULT_LOGOUT_PATHS);
+        final String[] configuredLogoutPaths = Try.of(() -> this.getLogoutPathArray(identityProviderConfiguration)).getOrNull();
+        if (null != configuredLogoutPaths) {
+            Arrays.stream(configuredLogoutPaths).map(String::trim).filter(UtilMethods::isSet).forEach(pages::add);
+        }
+        return pages.stream().anyMatch(page -> path.regionMatches(true, 0, page, 0, page.length()));
+    }
+
+    /**
+     * Returns the hosts a default RelayState may point to: the request host plus the hostname and aliases of
+     * the site being logged in to.
+     *
+     * @param request        the intercepted request
+     * @param siteIdentifier the site being logged in to
+     * @return the allowed hosts
+     */
+    @VisibleForTesting
+    protected Collection<String> allowedRedirectHosts(final HttpServletRequest request, final String siteIdentifier) {
+        return SamlWebUtils.siteHosts(request.getServerName(), siteIdentifier);
     }
 
     protected boolean isAnySamlConfigurated() {

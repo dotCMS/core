@@ -40,14 +40,6 @@ public class CategoriesWebAPI implements ViewTool {
 	Context ctx;
 	User user = null;
 
-	public CategoryAPI getCategoryAPI() {
-		return categoryAPI;
-	}
-
-	public void setCategoryAPI(CategoryAPI categoryAPI) {
-		this.categoryAPI = categoryAPI;
-	}
-
 	public void init(Object obj) {
 		ViewContext context = (ViewContext) obj;
 		this.request = context.getRequest();

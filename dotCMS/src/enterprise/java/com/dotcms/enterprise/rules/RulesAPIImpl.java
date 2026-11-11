@@ -11,11 +11,13 @@ package com.dotcms.enterprise.rules;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.experiments.model.Experiment;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
@@ -23,6 +25,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Ruleable;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -184,7 +187,7 @@ public class RulesAPIImpl implements RulesAPI {
         	return new ArrayList<>();
         }
 
-        checkRulePermission(user, this.getParent(rules.get(0)), PermissionAPI.PERMISSION_USE, respectFrontendRoles);
+        checkRulePermission(user, rules.get(0), PermissionAPI.PERMISSION_USE, respectFrontendRoles);
 
         return rules;
     }
@@ -196,6 +199,11 @@ public class RulesAPIImpl implements RulesAPI {
 				.filterCollection(rulesFactory.getAllRules(), PermissionAPI.PERMISSION_READ, respectFrontendRoles, user);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>The parent is looked up as a site first, then as a page, archived versions included, so
+     * the rules of an archived page are listed under the same permission check as a live one.</p>
+     */
     @CloseDBIfOpened
     @Override
     public List<Rule> getAllRulesByParent(final String parentId, final User user, final boolean respectFrontendRoles)
@@ -203,7 +211,7 @@ public class RulesAPIImpl implements RulesAPI {
         Host host = APILocator.getHostAPI().find(parentId, user, false);
 
         if (host == null) {
-            final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(parentId);
+            final Contentlet contentlet = APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(parentId, true);
             return  getAllRulesByParent(contentlet, user, respectFrontendRoles);
         } else {
             return  getAllRulesByParent(host, user, respectFrontendRoles);
@@ -235,8 +243,11 @@ public class RulesAPIImpl implements RulesAPI {
             return Collections.emptyList();
         }
 
-        final Contentlet contentletParent = parent instanceof Contentlet ? (Contentlet) parent : this.getParent(parent.getIdentifier());
-        checkRulePermission(user, contentletParent, PermissionAPI.PERMISSION_READ, respectFrontendRoles);
+        if (parent instanceof Contentlet) {
+            checkRulePermission(user, (Contentlet) parent, PermissionAPI.PERMISSION_READ, respectFrontendRoles);
+        } else {
+            checkRulePermission(user, parent.getIdentifier(), PermissionAPI.PERMISSION_READ, respectFrontendRoles);
+        }
         return rules;
     }
 
@@ -270,29 +281,98 @@ public class RulesAPIImpl implements RulesAPI {
                 );
     }
 
+    /**
+     * Checks that the user holds the given Rules permission on the parent of the rule.
+     *
+     * @param user                 the user to check
+     * @param rule                 the rule whose parent is checked
+     * @param permissionLevel      the Rules permission level required
+     * @param respectFrontendRoles whether front-end roles are respected
+     * @throws DotDataException     if the parent cannot be looked up
+     * @throws DotSecurityException if the user does not hold the permission on the rule's parent
+     */
     private void checkRulePermission(
             final User user,
             final Rule rule,
             final int permissionLevel, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
-        this.checkRulePermission(user, this.getParent(rule), permissionLevel, respectFrontendRoles);
+        this.checkRulePermission(user, rule.getParent(), permissionLevel, respectFrontendRoles);
     }
 
+    /**
+     * Checks that the user holds the given Rules permission on the rule parent with the given
+     * identifier. The parent must be a site or a page (live or archived), checked through
+     * {@link #checkRulePermission(User, Contentlet, int, boolean)}, or an experiment, which
+     * requires EDIT on the experiment's page for every operation, checked the way
+     * {@code ExperimentsAPIImpl} checks reading and editing an experiment (EDIT granted through a
+     * front-end role counts there too). Any other parent is refused, except for the system user.
+     *
+     * @param user                 the user to check
+     * @param parentId             identifier of the rule's parent
+     * @param permissionLevel      the Rules permission level required
+     * @param respectFrontendRoles whether front-end roles are respected for a site or page parent
+     * @throws DotDataException     if the parent cannot be looked up
+     * @throws DotSecurityException if the parent is not a site, page or experiment the user may
+     *                              work on
+     */
+    private void checkRulePermission(
+            final User user,
+            final String parentId,
+            final int permissionLevel, final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        if (isSystemUser(user)) {
+            return;
+        }
+
+        final Contentlet parent = UtilMethods.isSet(parentId)
+                ? APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(parentId, true)
+                : null;
+        if (parent != null) {
+            this.checkRulePermission(user, parent, permissionLevel, respectFrontendRoles);
+            return;
+        }
+
+        final Optional<Experiment> experiment = UtilMethods.isSet(parentId)
+                ? FactoryLocator.getExperimentsFactory().find(parentId)
+                : Optional.empty();
+        if (experiment.isPresent()) {
+            final PermissionableProxy experimentPage = new PermissionableProxy();
+            experimentPage.setIdentifier(experiment.get().pageId());
+            experimentPage.setType("htmlpage");
+
+            if (!permissionAPI.doesUserHavePermission(experimentPage, PermissionLevel.EDIT.getType(), user)) {
+                throw denied(user, permissionLevel);
+            }
+            return;
+        }
+
+        throw denied(user, permissionLevel);
+    }
+
+    /**
+     * Checks that the user holds the given Rules permission on a site or page parent. The parent
+     * must be a site or a page; writes on a page also need PUBLISH on the page itself.
+     *
+     * @param user                 the user to check
+     * @param parent               the site or page owning the rules
+     * @param permissionLevel      the Rules permission level required
+     * @param respectFrontendRoles whether front-end roles are respected
+     * @throws DotDataException     if the parent's permissions cannot be looked up
+     * @throws DotSecurityException if the parent is not a site or page, or the user does not hold
+     *                              the permission on it
+     */
     private void checkRulePermission(
             final User user,
             final Contentlet parent,
             final int permissionLevel, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
 
-        final Optional<Permissionable> parentPermissionableOptional = getParentPermissionable(parent);
-
-        if (parentPermissionableOptional.isEmpty()) {
+        if (isSystemUser(user)) {
             return;
         }
 
-        final Permissionable parentPermissionable = parentPermissionableOptional.get();
+        final Permissionable parentPermissionable = getParentPermissionable(parent)
+                .orElseThrow(() -> denied(user, permissionLevel));
         if (!permissionAPI.doesUserHavePermissions(parentPermissionable, "RULES: " + permissionLevel, user, respectFrontendRoles)) {
-            final String permissionType = (PermissionLevel.USE.getType() == permissionLevel || PermissionLevel.READ.getType() == permissionLevel) ?
-                    "VIEW" : "PUBLISH";
-            throw new DotSecurityException(String.format("User %s does not have permissions to %s Rules", user.getUserId(), permissionType));
+            throw denied(user, permissionLevel);
         }
 
         if (parent.isHTMLPage() && PermissionAPI.PERMISSION_PUBLISH == permissionLevel) {
@@ -304,17 +384,102 @@ public class RulesAPIImpl implements RulesAPI {
         }
     }
 
-    private Contentlet getParent(final Rule rule) {
-        return this.getParent(rule.getParent());
+    /**
+     * When a stored rule component (condition group, condition, condition value or action) is saved
+     * under a different rule than the one it belongs to, also requires PUBLISH on the rule it
+     * belongs to now, so only a user who may edit both rules can move it. A stored component whose
+     * rule no longer exists has nothing to protect, so no extra check is made for it.
+     *
+     * @param user                 the user saving the component
+     * @param storedRuleId         the rule the stored component belongs to, or {@code null} when the
+     *                             component is new
+     * @param ruleId               the rule the component is being saved under
+     * @param respectFrontendRoles whether front-end roles are respected
+     * @throws DotDataException     if the stored rule cannot be looked up
+     * @throws DotSecurityException if the user may not edit the rule the component belongs to now
+     */
+    private void checkStoredRulePermission(final User user, final String storedRuleId,
+            final String ruleId, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+        if (!UtilMethods.isSet(storedRuleId) || storedRuleId.equals(ruleId)) {
+            return;
+        }
+        final Rule storedRule = rulesFactory.getRuleById(storedRuleId);
+        if (storedRule != null) {
+            checkRulePermission(user, storedRule, PermissionAPI.PERMISSION_PUBLISH, respectFrontendRoles);
+        }
     }
 
-    private Contentlet getParent(final String parentId) {
-        try {
-            return APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(parentId);
-        } catch (DotDataException e) {
-            Logger.debug(RulesAPIImpl.class, e.getMessage());
-            throw new DotRuntimeException(e);
-        }
+    /**
+     * Returns the rule a stored action belongs to.
+     *
+     * @param actionId the action id, may be {@code null} for a new action
+     * @return the rule id, or {@code null} when no action with that id is stored
+     * @throws DotDataException if the action cannot be looked up
+     */
+    private String storedRuleIdOfAction(final String actionId) throws DotDataException {
+        final RuleAction stored = UtilMethods.isSet(actionId) ? rulesFactory.getRuleActionById(actionId) : null;
+        return stored != null ? stored.getRuleId() : null;
+    }
+
+    /**
+     * Returns the rule a stored condition group belongs to.
+     *
+     * @param groupId the condition group id, may be {@code null} for a new group
+     * @return the rule id, or {@code null} when no group with that id is stored
+     * @throws DotDataException if the group cannot be looked up
+     */
+    private String storedRuleIdOfGroup(final String groupId) throws DotDataException {
+        final ConditionGroup stored = UtilMethods.isSet(groupId) ? rulesFactory.getConditionGroupById(groupId) : null;
+        return stored != null ? stored.getRuleId() : null;
+    }
+
+    /**
+     * Returns the rule a stored condition belongs to, through its condition group.
+     *
+     * @param conditionId the condition id, may be {@code null} for a new condition
+     * @return the rule id, or {@code null} when no condition with that id is stored
+     * @throws DotDataException if the condition or its group cannot be looked up
+     */
+    private String storedRuleIdOfCondition(final String conditionId) throws DotDataException {
+        final Condition stored = UtilMethods.isSet(conditionId) ? rulesFactory.getConditionById(conditionId) : null;
+        return stored != null ? storedRuleIdOfGroup(stored.getConditionGroup()) : null;
+    }
+
+    /**
+     * Returns the rule a stored condition value belongs to, through its condition and group.
+     *
+     * @param valueId the condition value id, may be {@code null} for a new value
+     * @return the rule id, or {@code null} when no value with that id is stored
+     * @throws DotDataException if the value, its condition or its group cannot be looked up
+     */
+    private String storedRuleIdOfConditionValue(final String valueId) throws DotDataException {
+        final ParameterModel stored = UtilMethods.isSet(valueId) ? rulesFactory.getConditionValueById(valueId) : null;
+        return stored != null ? storedRuleIdOfCondition(stored.getOwnerId()) : null;
+    }
+
+    /**
+     * Tells whether the given user is the system user.
+     *
+     * @param user the user to test, may be {@code null}
+     * @return {@code true} only for the system user
+     */
+    private boolean isSystemUser(final User user) {
+        return user != null && UserAPI.SYSTEM_USER_ID.equals(user.getUserId());
+    }
+
+    /**
+     * Builds the refusal returned when the user may not work on the rules of a parent.
+     *
+     * @param user            the refused user, may be {@code null}
+     * @param permissionLevel the Rules permission level that was required
+     * @return the exception to throw
+     */
+    private DotSecurityException denied(final User user, final int permissionLevel) {
+        final String permissionType = (PermissionLevel.USE.getType() == permissionLevel || PermissionLevel.READ.getType() == permissionLevel) ?
+                "VIEW" : "PUBLISH";
+        final String userId = user != null ? user.getUserId() : null;
+        return new DotSecurityException(String.format("User %s does not have permissions to %s Rules", userId, permissionType));
     }
 
     @CloseDBIfOpened
@@ -706,6 +871,11 @@ public class RulesAPIImpl implements RulesAPI {
     }
 
 
+    /**
+     * {@inheritDoc}
+     * <p>Saving a stored condition group under a different rule also requires PUBLISH on the rule it belongs to
+     * now.</p>
+     */
     @WrapInTransaction
     @Override
     public void saveConditionGroup(ConditionGroup conditionGroup, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -716,12 +886,19 @@ public class RulesAPIImpl implements RulesAPI {
                 conditionGroup.getRuleId());
 
         checkRulePermission(user, rule, PermissionAPI.PERMISSION_PUBLISH, respectFrontendRoles);
+        checkStoredRulePermission(user, storedRuleIdOfGroup(conditionGroup.getId()), rule.getId(),
+                respectFrontendRoles);
 
         rulesFactory.saveConditionGroup(conditionGroup);
         String userID = user != null ? user.getUserId() : "";
         ActivityLogger.logInfo(getClass(), "Saved/Updated Condition Group: " + conditionGroup.getId(), "Date: " + DateUtil.getCurrentDate() + "; " + "User:"+ userID);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Saving a stored condition under a different condition group also requires PUBLISH on the rule it belongs to
+     * now.</p>
+     */
     @WrapInTransaction
     @Override
     public void saveCondition(Condition condition, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -735,12 +912,19 @@ public class RulesAPIImpl implements RulesAPI {
         Rule rule = rulesFactory.getRuleById(group.getRuleId()); // Can only be null if there is a schema integrity failure.
 
         checkRulePermission(user, rule, PermissionAPI.PERMISSION_PUBLISH, respectFrontendRoles);
+        checkStoredRulePermission(user, storedRuleIdOfCondition(condition.getId()), group.getRuleId(),
+                respectFrontendRoles);
 
         rulesFactory.saveCondition(condition);
         String userID = user != null ? user.getUserId() : "";
         ActivityLogger.logInfo(getClass(), "Saved/Updated Rule Condition: " + condition.getId(), "Date: " + DateUtil.getCurrentDate() + "; " + "User:"+ userID);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Saving a stored condition value under a different condition also requires PUBLISH on the rule it belongs to
+     * now.</p>
+     */
     @WrapInTransaction
     @Override
     public void saveConditionValue(ParameterModel parameterModel, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -759,12 +943,19 @@ public class RulesAPIImpl implements RulesAPI {
         Rule rule = rulesFactory.getRuleById(group.getRuleId()); // Can only be null if there is a schema integrity failure.
 
         checkRulePermission(user, rule, PermissionAPI.PERMISSION_PUBLISH, respectFrontendRoles);
+        checkStoredRulePermission(user, storedRuleIdOfConditionValue(parameterModel.getId()),
+                group.getRuleId(), respectFrontendRoles);
 
         rulesFactory.saveConditionValue(parameterModel);
         String userID = user != null ? user.getUserId() : "";
         ActivityLogger.logInfo(getClass(), "Saved/Updated Rule Condition Value: " + parameterModel.getId(), "Date: " + DateUtil.getCurrentDate() + "; " + "User:"+ userID);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>Saving a stored action under a different rule also requires PUBLISH on the rule it belongs to
+     * now.</p>
+     */
     @WrapInTransaction
     @Override
     public void saveRuleAction(RuleAction ruleAction, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -784,6 +975,8 @@ public class RulesAPIImpl implements RulesAPI {
         }
 
         checkRulePermission(user, rule, PermissionAPI.PERMISSION_PUBLISH, respectFrontendRoles);
+        checkStoredRulePermission(user, storedRuleIdOfAction(ruleAction.getId()), rule.getId(),
+                respectFrontendRoles);
 
         rulesFactory.saveRuleAction(ruleAction);
         String userID = user != null ? user.getUserId() : "";

@@ -1,6 +1,8 @@
 package com.dotcms.rest;
 
 import com.dotcms.publisher.business.PublishAuditStatus;
+import com.dotcms.publisher.receiver.BundleOrigin;
+import com.dotcms.publisher.receiver.BundlePluginAccess;
 import com.dotcms.publisher.receiver.BundlePublisher;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.PublisherConfig;
@@ -19,12 +21,25 @@ import org.quartz.JobExecutionException;
 import org.quartz.Trigger;
 
 public class PushPublisherJob extends DotStatefulJob {
+	private static final String ORIGIN_KEY = "origin";
+	private static final String UPLOADER_KEY = "uploaderId";
 	private String bundleName;
 	private String endpointId;
 	private String groupId;
 	private PublishAuditStatus status;
 
-    public PublisherConfig processBundle(final String bundleName, final PublishAuditStatus status) {
+    /**
+     * Processes a received bundle with the {@link BundlePublisher}.
+     *
+     * @param bundleName   File name of the received bundle.
+     * @param status       Audit status of the bundle.
+     * @param origin       How the bundle arrived, or {@code null} if unknown; an unknown origin
+     *                     never deploys plugins.
+     * @param uploaderId   Id of the user who uploaded the bundle, for a user upload.
+     * @return The configuration used to process the bundle.
+     */
+    public PublisherConfig processBundle(final String bundleName, final PublishAuditStatus status,
+            final BundleOrigin origin, final String uploaderId) {
 		//Configure and Invoke the Publisher
 		Logger.info(PushPublisherJob.class, "Started bundle publish process");
 		PushPublishLogger.log(PushPublisherJob.class, "Started bundle publish process", bundleName);
@@ -35,6 +50,12 @@ public class PushPublisherJob extends DotStatefulJob {
 		config.setEndpoint(endpointId);
 		config.setGroupId(groupId);
 		config.setPublishAuditStatus(status);
+		if (origin != null) {
+			config.put(PublisherConfig.Config.BUNDLE_ORIGIN.name(), origin.name());
+		}
+		if (uploaderId != null) {
+			config.put(PublisherConfig.Config.UPLOADED_BY.name(), uploaderId);
+		}
 		try {
 			bundlePublisher.init(config);
 			config = bundlePublisher.process(null);
@@ -49,10 +70,13 @@ public class PushPublisherJob extends DotStatefulJob {
 	}
 
 	/**
-	 * Sends for processing a given bundle to the {@link BundlePublisher}
+	 * Sends for processing a given bundle to the {@link BundlePublisher}. Reads the bundle name, its status and how it arrived from the
+	 * trigger data and processes the bundle. A trigger without an origin never deploys plugins.
 	 *
 	 * @see PublisherConfig
 	 * @see BundlePublisher
+	 * @param jobContext The Quartz execution context.
+	 * @throws JobExecutionException If the job cannot run.
 	 */
 	@Override
 	public void run(JobExecutionContext jobContext) throws JobExecutionException {
@@ -64,7 +88,10 @@ public class PushPublisherJob extends DotStatefulJob {
 		final String bundleName = (String) executionData.get("bundleName");
 		final PublishAuditStatus status = (PublishAuditStatus) executionData.get("status");
 
-		processBundle(bundleName, status);
+		// a job without an origin (for example queued by an older version) never deploys plugins
+		final BundleOrigin origin = BundlePluginAccess.parseOrigin(executionData.get(ORIGIN_KEY));
+		final Serializable uploaderId = executionData.get(UPLOADER_KEY);
+		processBundle(bundleName, status, origin, uploaderId instanceof String ? (String) uploaderId : null);
 	}
 
 	/**
@@ -72,13 +99,24 @@ public class PushPublisherJob extends DotStatefulJob {
 	 *
 	 * @param bundleName Bundle file name
 	 * @param status PublishAuditStatus
+	 * @param origin How the bundle arrived; see
+	 *               {@link #processBundle(String, PublishAuditStatus, BundleOrigin, String)}
+	 * @param uploaderId Id of the user who uploaded the bundle, for a user upload; may be {@code null}
 	 */
 	public static void triggerPushPublisherJob(final String bundleName,
-			final PublishAuditStatus status) {
+			final PublishAuditStatus status, final BundleOrigin origin, final String uploaderId) {
 		Logger.debug(PushPublisherJob.class, "Triggering Push Publisher Job for bundle: " + bundleName);
 		Logger.debug(PushPublisherJob.class, "Status: " + status.getStatus().name());
-		final ImmutableMap<String, Serializable> nextExecutionData = ImmutableMap
-				.of("bundleName", bundleName, "status", status);
+		final ImmutableMap.Builder<String, Serializable> data = ImmutableMap.<String, Serializable>builder()
+				.put("bundleName", bundleName)
+				.put("status", status);
+		if (origin != null) {
+			data.put(ORIGIN_KEY, origin.name());
+		}
+		if (uploaderId != null) {
+			data.put(UPLOADER_KEY, uploaderId);
+		}
+		final ImmutableMap<String, Serializable> nextExecutionData = data.build();
 
 		try {
 			DotStatefulJob.enqueueTrigger(nextExecutionData, PushPublisherJob.class);

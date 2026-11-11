@@ -1,5 +1,7 @@
 package com.dotcms.rest;
 
+import com.dotcms.auth.BasicAuthentication;
+import com.dotcms.auth.BasicAuthentication.Mode;
 import com.dotcms.auth.dotAuth.rest.DotAuthSessionCredentialProcessor;
 import com.dotcms.auth.dotAuth.rest.DotAuthSessionCredentialProcessorImpl;
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
@@ -12,6 +14,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -70,6 +73,7 @@ public  class WebResource {
     private final UserWebAPI        userWebAPI;
     private final UserAPI           userAPI;
     private final LayoutAPI         layoutAPI;
+    private final RoleAPI           roleAPI;
     private final JsonWebTokenAuthCredentialProcessor jsonWebTokenAuthCredentialProcessor;
     private final DotAuthSessionCredentialProcessor dotAuthSessionCredentialProcessor =
             DotAuthSessionCredentialProcessorImpl.getInstance();
@@ -90,6 +94,7 @@ public  class WebResource {
         this.userAPI           = apiProvider.userAPI();
         this.userWebAPI        = apiProvider.userWebAPI();
         this.layoutAPI         = apiProvider.layoutAPI();
+        this.roleAPI           = apiProvider.roleAPI();
         this.jsonWebTokenAuthCredentialProcessor = jsonWebTokenAuthCredentialProcessor;
     }
 
@@ -420,25 +425,56 @@ public  class WebResource {
     }
 
     /**
-     * make sure we have the right Role permissions
-     * @param builder {@link InitBuilder}
-     * @param user {@link User}
+     * Makes sure the user holds at least one of the roles the endpoint requires, such as the
+     * back-end user role added by {@link InitBuilder#requiredBackendUser(boolean)}. Nothing is
+     * checked when the builder requires no role.
+     *
+     * @param builder the {@link InitBuilder} carrying the required role keys
+     * @param user    the {@link User} resolved for the request, possibly {@code null}
+     *
+     * @throws SecurityException if the user holds none of the required roles
      */
     @VisibleForTesting
-    void checkRolePermissions(final InitBuilder builder, User user) {
+    void checkRolePermissions(final InitBuilder builder, final User user) {
         if(builder.requiredRolesSet.isEmpty()){
             return;
         }
-        for (String roleKey : builder.requiredRolesSet) {
-            if (Try.of(() -> APILocator.getRoleAPI()
-                    .doesUserHaveRole(user, roleKey)).getOrElse(false)) {
-                return;
-            }
+        if (hasAnyRole(this.roleAPI, user, builder.requiredRolesSet)) {
+            return;
         }
         throw new SecurityException(
                 String.format("User " + (user != null ? user.getFullName() + ":" + user.getEmailAddress() : user)
                         + " lacks one of the required role %s", builder.requiredRolesSet),
                 Response.Status.UNAUTHORIZED);
+    }
+
+    /**
+     * Tells whether the user holds at least one of the given roles. Each entry is a role key, such
+     * as {@link Role#DOTCMS_BACK_END_USER}, although a role id is accepted too. The role is
+     * resolved with {@link RoleAPI#loadRoleByKeyOrId(String)} before the membership check, instead
+     * of handing the key to {@link RoleAPI#doesUserHaveRole(User, String)}: that overload expects
+     * a role id and only found a key while the role cache happened to hold the role, so the check
+     * failed every time the cache had just been cleared (for instance, by deleting any role).
+     *
+     * @param roleAPI  the {@link RoleAPI} used to resolve the roles and check membership
+     * @param user     the {@link User} being checked, possibly {@code null}
+     * @param roleKeys the keys (or ids) of the roles, any one of which grants access
+     *
+     * @return {@code true} if the user holds at least one of the roles; {@code false} if the user
+     * is {@code null}, holds none of them, or none of the keys resolves to a role
+     */
+    @VisibleForTesting
+    static boolean hasAnyRole(final RoleAPI roleAPI, final User user, final Set<String> roleKeys) {
+        if (null == user) {
+            return false;
+        }
+        for (final String roleKey : roleKeys) {
+            final Role role = Try.of(() -> roleAPI.loadRoleByKeyOrId(roleKey)).getOrNull();
+            if (null != role && Try.of(() -> roleAPI.doesUserHaveRole(user, role)).getOrElse(false)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -594,7 +630,7 @@ public  class WebResource {
                 user = authenticateUser(userPass.get().username, userPass.get().password, request, response, userAPI);
             } catch (SecurityException e) {
                 // The anonymous fallback only covers header-replayed credentials (BASIC/DOTAUTH).
-                // An explicit request-parameter login (?userid=&pwd=) must still fail hard so it is
+                // An explicit request-parameter login (user/password) must still fail hard so it is
                 // never silently downgraded to anonymous. REST callers (option off) also fail hard.
                 if (!fallbackToAnonymousOnAuthFailure || CRED_SOURCE_REQUEST_PARAMETER.equals(source)) {
                     throw e;
@@ -710,6 +746,19 @@ public  class WebResource {
         return result;
     }
 
+    /**
+     * Parses credentials from an {@code Authorization: Basic <base64>} header.
+     * <p>
+     * The auth scheme is matched case-insensitively (RFC 7235) and the decoded payload is split on
+     * the first colon only, so a secret that itself contains colons (for example a token with
+     * appended data) is kept whole instead of being truncated at the first colon. A payload with no
+     * separator, or with an empty secret, is rejected with {@code 400}.
+     *
+     * @param request the request whose {@code Authorization} header is read
+     * @return the parsed credentials, or empty when no Basic header is present
+     * @throws SecurityException with {@code 400} when the Base64 payload is malformed or has no
+     *         non-empty secret
+     */
     @VisibleForTesting
     static Optional<UsernamePassword> getAuthCredentialsFromBasicAuth(final HttpServletRequest request) throws SecurityException {
 
@@ -717,13 +766,11 @@ public  class WebResource {
         // Extract authentication credentials
         String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
 
-        if(StringUtils.isNotEmpty(authentication) && authentication.startsWith(BASIC)) {
+        if(StringUtils.isNotEmpty(authentication)
+                && authentication.regionMatches(true, 0, BASIC, 0, BASIC.length())) {
             authentication = authentication.substring(BASIC.length());
-            // @todo ggranum: this should be a split limit 1.
-            // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
-            // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = new String(decodeBase64Credentials(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":");
-            if(values.length < 2) {
+            String[] values = new String(decodeBase64Credentials(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":", 2);
+            if(values.length < 2 || values[1].isEmpty()) {
                 // "Invalid syntax for username and password"
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
             }
@@ -746,17 +793,27 @@ public  class WebResource {
         }
     }
 
+    /**
+     * Parses credentials from the custom {@code DOTAUTH} header, whose value is the Base64-encoded
+     * {@code username:secret} pair.
+     * <p>
+     * The decoded payload is split on the first colon only, so a secret that itself contains colons
+     * is kept whole; a payload with no separator, or with an empty secret, is rejected with
+     * {@code 400}.
+     *
+     * @param request the request whose {@code DOTAUTH} header is read
+     * @return the parsed credentials, or empty when the header is absent
+     * @throws SecurityException with {@code 400} when the Base64 payload is malformed or has no
+     *         non-empty secret
+     */
     @VisibleForTesting
     static Optional<UsernamePassword> getAuthCredentialsFromHeaderAuth(HttpServletRequest request) throws SecurityException {
         Optional<UsernamePassword> result =  Optional.empty();
 
         String authentication = request.getHeader("DOTAUTH");
         if(StringUtils.isNotEmpty(authentication)) {
-            // @todo ggranum: this should be a split limit 1.
-            // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
-            // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = new String(decodeBase64Credentials(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":");
-            if(values.length < 2) {
+            String[] values = new String(decodeBase64Credentials(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":", 2);
+            if(values.length < 2 || values[1].isEmpty()) {
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
             }
             result = Optional.of(new UsernamePassword(values[0], values[1]));
@@ -765,8 +822,9 @@ public  class WebResource {
     }
 
     /**
-     * Authenticates and returns a {@link User} using <code>username</code> and <code>password</code>.
-     * If a wrong <code>username</code> or <code>password</code> are provided, a SecurityException is thrown
+     * Authenticates a username and credential under the shared Basic authentication policy.
+     * API JWTs identify their active owner without creating a browser login. Only compatibility
+     * mode permits the legacy password login pipeline; rejected credentials produce a 401.
      */
     @VisibleForTesting
     static User authenticateUser(final String username, final String password,
@@ -775,6 +833,21 @@ public  class WebResource {
                                  final UserAPI userAPI) throws SecurityException {
         User user       = null;
         final String ip = request != null ? request.getRemoteAddr() : BLANK;
+        final Mode mode = BasicAuthentication.mode();
+        if (mode == Mode.NONE) {
+            throw new SecurityException("Username and credential authentication is disabled",
+                    Response.Status.UNAUTHORIZED);
+        }
+        // Avoid false JWT audit failures for ordinary passwords in legacy mode.
+        if (mode == Mode.JWT_TOKEN || StringUtils.countMatches(password, ".") == 2) {
+            final Optional<User> tokenUser = BasicAuthentication.authenticateApiToken(username, password, ip);
+            if (tokenUser.isPresent()) {
+                return tokenUser.get();
+            }
+            if (mode != Mode.ALL) {
+                throw new SecurityException("Invalid API token credentials", Response.Status.UNAUTHORIZED);
+            }
+        }
 
         if(StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) { // providing login and password so let's try to authenticate
 
@@ -1040,6 +1113,17 @@ public  class WebResource {
             return Collections.unmodifiableSet(requiredPortlet);
         }
 
+        /**
+         * Returns the role keys the caller must hold for this request to be accepted, such as the
+         * back-end user role added by {@link #requiredBackendUser(boolean)}.
+         *
+         * @return a read-only view of the required role keys
+         */
+        @VisibleForTesting
+        public Set<String> getRequiredRoles() {
+            return Collections.unmodifiableSet(requiredRolesSet);
+        }
+
         public InitBuilder requireLicense(final boolean requireLicense){
             this.requireLicense = requireLicense;
             return this;
@@ -1050,6 +1134,12 @@ public  class WebResource {
             return this;
         }
 
+        /**
+         * Authenticates and authorizes the request, without copying credential-bearing paths into logs.
+         *
+         * @return the initialized request identity and parameters
+         * @throws SecurityException when authentication or authorization is refused
+         */
         public InitDataObject init() {
 
             response = (response == null ? new EmptyHttpResponse() : response);
@@ -1076,7 +1166,7 @@ public  class WebResource {
                 }
 
                 Logger.debug(InitBuilder.class,
-                        () -> request.getRequestURI()+" calling webResource.init(..) with AnonymousAccess set to `" + anonAccess + "`");
+                        () -> "Calling webResource.init(..) with AnonymousAccess set to `" + anonAccess + "`");
             }
 
             if(requireLicense){
@@ -1088,7 +1178,7 @@ public  class WebResource {
             try {
                 return webResource.init(this);
             } catch (final Exception e) {
-                 Logger.warnAndDebug(WebResource.class,"InitDataObject Error: uri:" + request.getRequestURI() + " err:" + e.getMessage() ,e);
+                 Logger.warnAndDebug(WebResource.class, "InitDataObject Error: " + e.getMessage(), e);
                  throw e;
             }
         }

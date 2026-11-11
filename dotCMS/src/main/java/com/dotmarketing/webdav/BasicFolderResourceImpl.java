@@ -49,7 +49,21 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
         this.isAutoPub=dotDavHelper.isAutoPub(path);
     }
     
-    public Resource createNew(String newName, final InputStream in, final Long length, final String contentType) throws IOException, DotRuntimeException {
+    /**
+     * Creates a file named {@code newName} in this folder. A temp-style name goes to temp storage
+     * and must be a single plain path segment; any other name is stored as content.
+     *
+     * @param newName     the file name received from the WebDAV client
+     * @param in          the file content
+     * @param length      the content length, if known
+     * @param contentType the content type, if known
+     * @return the created resource
+     * @throws IOException         if the content cannot be read or written
+     * @throws DotRuntimeException if the file cannot be created
+     * @throws BadRequestException (HTTP 400) when a temp-style name is not a single plain path segment
+     */
+    public Resource createNew(String newName, final InputStream in, final Long length, final String contentType)
+            throws IOException, DotRuntimeException, BadRequestException {
 
     	if(newName.matches("^\\.(.*)-Spotlight$")){
             // http://jira.dotmarketing.net/browse/DOTCMS-7285
@@ -73,6 +87,9 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
                 final IFileAsset iFileAsset = this.dotDavHelper.loadFile(this.path + newName, user);
                 final Resource fileResource = new FileResourceImpl(iFileAsset, iFileAsset.getFileName());
                 return fileResource;
+            } catch (final IllegalArgumentException e) {
+                // the name was refused (for example a blocked extension); the client gets a 400
+                throw new BadRequestException(this, e.getMessage());
             } catch (Exception e) {
 
             	Logger.warn(this, "An error occurred while creating new file: " +
@@ -83,6 +100,7 @@ public abstract class BasicFolderResourceImpl implements FolderResource {
             }
         } else {
 
+            DotWebdavHelper.requirePlainSegment(this, newName);
             return this.createNewTemporalResource(newName, in);
         }
     } // createNew.

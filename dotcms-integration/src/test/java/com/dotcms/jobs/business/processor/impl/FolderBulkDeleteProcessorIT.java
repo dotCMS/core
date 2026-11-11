@@ -31,6 +31,9 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.business.FolderAPIImpl;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -628,7 +631,8 @@ public class FolderBulkDeleteProcessorIT extends Junit5WeldBaseTest {
      * the descendant listed FIRST, so a pass mistaking processing order for the check would get
      * this wrong
      * ExpectedResult: The ancestor is deleted; the descendant is never attempted at all — recorded
-     * SKIPPED/COVERED_BY_PARENT, never FAILED, regardless of submission order (FR-013)
+     * SKIPPED/COVERED_BY_PARENT, never FAILED, regardless of submission order. Coverage holds
+     * because the ancestor was actually deleted (FR-013, as amended by #37782)
      */
     @Test
     public void test_process_ancestorAndDescendant_descendantSkippedNeverAttempted()
@@ -714,6 +718,305 @@ public class FolderBulkDeleteProcessorIT extends Junit5WeldBaseTest {
 
         for (final String path : paths) {
             assertEquals(BatchFailureReason.PATH_NOT_FOUND, resultFor(metadata, path).reason().orElseThrow());
+        }
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}
+     * Given Scenario: A path naming a file, spelled with a trailing slash as a folder path would be
+     * ExpectedResult: Still FAILED/PATH_NOT_FOUND, never resolved to the file's parent folder
+     * (#37782, AC-008)
+     */
+    @Test
+    public void test_process_pathResolvesToFileWithTrailingSlash_recordedAsPathNotFound()
+            throws Exception {
+
+        final Folder parent = folder();
+        final Contentlet fileAsset = FileAssetDataGen.createFileAsset(parent, "myfile", ".txt");
+        final String filePath = pathOf(parent)
+                + fileAsset.getStringProperty(FileAssetAPI.FILE_NAME_FIELD) + "/";
+
+        final Job job = jobForPaths(List.of(filePath), admin);
+        final FolderBulkDeleteProcessor processor = new FolderBulkDeleteProcessor();
+        processor.process(job);
+
+        final BatchItemResult result = resultFor(processor.getResultMetadata(job), filePath);
+        assertEquals(BatchItemStatus.FAILED, result.status());
+        assertEquals(BatchFailureReason.PATH_NOT_FOUND, result.reason().orElseThrow());
+        final Folder parentStillThere = folderAPI.find(parent.getInode(), admin, false);
+        assertTrue(parentStillThere != null && UtilMethods.isSet(parentStillThere.getInode()),
+                "the file's parent folder must not be deleted in its place");
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}
+     * Given Scenario: A folder and its subfolder, the subfolder submitted first. The user may
+     * delete the subfolder but not the folder
+     * ExpectedResult: The folder is FAILED/PERMISSION_DENIED and the subfolder is deleted on its
+     * own: it is not reported COVERED_BY_PARENT, since its parent was never deleted (#37782,
+     * AC-006)
+     */
+    @Test
+    public void test_process_ancestorRefused_descendantDeletedOnItsOwn() throws Exception {
+
+        final User limitedUser = new UserDataGen().nextPersisted();
+        final String roleId = APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId())
+                .getId();
+        grantPermission(site, roleId, PermissionAPI.PERMISSION_READ);
+
+        final Folder parent = folder();
+        grantPermission(parent, roleId, PermissionAPI.PERMISSION_READ);
+        final Folder child = new FolderDataGen().parent(parent).name("deletable-child")
+                .nextPersisted();
+        grantPermission(child, roleId, PermissionAPI.PERMISSION_READ
+                | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_EDIT_PERMISSIONS);
+
+        final String parentPath = pathOf(parent);
+        final String childPath = parentPath + child.getName() + "/";
+        final Job job = jobForPaths(List.of(childPath, parentPath), limitedUser);
+        final FolderBulkDeleteProcessor processor = new FolderBulkDeleteProcessor();
+        processor.process(job);
+
+        final Map<String, Object> metadata = processor.getResultMetadata(job);
+        final BatchItemResult parentResult = resultFor(metadata, parentPath);
+        assertEquals(BatchItemStatus.FAILED, parentResult.status());
+        assertEquals(BatchFailureReason.PERMISSION_DENIED, parentResult.reason().orElseThrow());
+        final BatchItemResult childResult = resultFor(metadata, childPath);
+        assertEquals(BatchItemStatus.SUCCESS, childResult.status(),
+                "reason: " + childResult.reason() + ", message: " + childResult.message());
+        assertThrowsDoesNotExist(child.getInode());
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}
+     * Given Scenario: A folder holding content locked by another user, and one of its subfolders,
+     * the subfolder submitted first
+     * ExpectedResult: The folder is FAILED/IN_USE and the subfolder is deleted on its own, not
+     * reported COVERED_BY_PARENT (#37782, AC-006)
+     */
+    @Test
+    public void test_process_ancestorInUse_descendantDeletedOnItsOwn() throws Exception {
+
+        final ContentScenario scenario = contentScenario(true);
+        final String deleterRoleId = APILocator.getRoleAPI()
+                .loadRoleByKey(scenario.deleter().getUserId()).getId();
+        final Folder child = new FolderDataGen().parent(scenario.folder())
+                .name("deletable-child").nextPersisted();
+        grantPermission(child, deleterRoleId, PermissionAPI.PERMISSION_READ
+                | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_EDIT_PERMISSIONS);
+
+        final String parentPath = pathOf(scenario.folder());
+        final String childPath = parentPath + child.getName() + "/";
+        final Job job = jobForPaths(List.of(childPath, parentPath), scenario.deleter());
+        final FolderBulkDeleteProcessor processor = new FolderBulkDeleteProcessor();
+        processor.process(job);
+
+        final Map<String, Object> metadata = processor.getResultMetadata(job);
+        final BatchItemResult parentResult = resultFor(metadata, parentPath);
+        assertEquals(BatchItemStatus.FAILED, parentResult.status());
+        assertEquals(BatchFailureReason.IN_USE, parentResult.reason().orElseThrow());
+        final BatchItemResult childResult = resultFor(metadata, childPath);
+        assertEquals(BatchItemStatus.SUCCESS, childResult.status(),
+                "reason: " + childResult.reason() + ", message: " + childResult.message());
+        assertThrowsDoesNotExist(child.getInode());
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}
+     * Given Scenario: A path that does not exist and a path under it, the deeper one submitted
+     * first
+     * ExpectedResult: Both are FAILED/PATH_NOT_FOUND: the deeper one is checked on its own, not
+     * reported COVERED_BY_PARENT by an ancestor that was never deleted (#37782, AC-006)
+     */
+    @Test
+    public void test_process_ancestorNotFound_descendantCheckedOnItsOwn() throws Exception {
+
+        final String missing = String.format("//%s/missing-%s/", site.getHostname(),
+                UUID.randomUUID().toString().substring(0, 8));
+        final String missingChild = missing + "child/";
+
+        final Job job = jobForPaths(List.of(missingChild, missing), admin);
+        final FolderBulkDeleteProcessor processor = new FolderBulkDeleteProcessor();
+        processor.process(job);
+
+        final Map<String, Object> metadata = processor.getResultMetadata(job);
+        for (final String path : List.of(missing, missingChild)) {
+            final BatchItemResult result = resultFor(metadata, path);
+            assertEquals(BatchItemStatus.FAILED, result.status(), "status of " + path);
+            assertEquals(BatchFailureReason.PATH_NOT_FOUND, result.reason().orElseThrow(),
+                    "reason of " + path);
+        }
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}
+     * Given Scenario: A folder whose delete fails with an unexpected error, and one of its
+     * subfolders, the subfolder submitted first
+     * ExpectedResult: The folder is FAILED/UNCLASSIFIED and the subfolder is deleted on its own,
+     * not reported COVERED_BY_PARENT (#37782, AC-006)
+     */
+    @Test
+    public void test_process_ancestorFailsUnexpectedly_descendantDeletedOnItsOwn()
+            throws Exception {
+
+        final Folder parent = folder();
+        final Folder child = new FolderDataGen().parent(parent).name("child").nextPersisted();
+        final FolderAPI failingForParent = new FolderAPIImpl() {
+            @Override
+            public void delete(final Folder folder, final User user,
+                    final boolean respectFrontEndPermissions)
+                    throws DotDataException, DotSecurityException {
+                if (folder.getInode().equals(parent.getInode())) {
+                    throw new DotDataException("delete failure forced by the test");
+                }
+                super.delete(folder, user, respectFrontEndPermissions);
+            }
+        };
+
+        final String parentPath = pathOf(parent);
+        final String childPath = parentPath + child.getName() + "/";
+        final Job job = jobForPaths(List.of(childPath, parentPath), admin);
+        final FolderBulkDeleteProcessor processor = new FolderBulkDeleteProcessor(
+                APILocator.getSystemEventsAPI(), failingForParent);
+        processor.process(job);
+
+        final Map<String, Object> metadata = processor.getResultMetadata(job);
+        final BatchItemResult parentResult = resultFor(metadata, parentPath);
+        assertEquals(BatchItemStatus.FAILED, parentResult.status());
+        assertEquals(BatchFailureReason.UNCLASSIFIED, parentResult.reason().orElseThrow());
+        final BatchItemResult childResult = resultFor(metadata, childPath);
+        assertEquals(BatchItemStatus.SUCCESS, childResult.status(),
+                "reason: " + childResult.reason() + ", message: " + childResult.message());
+        assertThrowsDoesNotExist(child.getInode());
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}
+     * Given Scenario: A subfolder, an unrelated folder and the subfolder's parent, submitted in that
+     * order, with cancellation requested as soon as the first folder completes
+     * ExpectedResult: The unrelated folder runs first and is deleted; the parent and its subfolder
+     * are both SKIPPED with no reason and still exist, and the run stopped at the parent. The
+     * subfolder is not reported COVERED_BY_PARENT by a parent the run never reached (#37782,
+     * AC-006)
+     */
+    @Test
+    public void test_process_cancelledBeforeAncestor_descendantSkippedWithNoReason()
+            throws Exception {
+
+        final Folder unrelated = folder();
+        final Folder parent = folder();
+        final Folder child = new FolderDataGen().parent(parent).name("child").nextPersisted();
+        final String parentPath = pathOf(parent);
+        final String childPath = parentPath + child.getName() + "/";
+
+        final FolderBulkDeleteProcessor processor = new FolderBulkDeleteProcessor();
+        final CancellingProgressTracker tracker = new CancellingProgressTracker(processor);
+        final Job job = jobForPaths(List.of(childPath, pathOf(unrelated), parentPath), admin,
+                tracker);
+        tracker.job = job;
+        processor.process(job);
+
+        final Map<String, Object> metadata = processor.getResultMetadata(job);
+        assertEquals(BatchItemStatus.SUCCESS, resultFor(metadata, pathOf(unrelated)).status());
+        for (final String path : List.of(parentPath, childPath)) {
+            final BatchItemResult result = resultFor(metadata, path);
+            assertEquals(BatchItemStatus.SKIPPED, result.status(), "status of " + path);
+            assertTrue(result.reason().isEmpty(),
+                    "a folder the run never reached has no reason: " + path + " had "
+                            + result.reason());
+        }
+        assertEquals(parentPath, metadata.get("stoppedAt"));
+        final Folder childStillThere = folderAPI.find(child.getInode(), admin, false);
+        assertTrue(childStillThere != null && UtilMethods.isSet(childStillThere.getInode()),
+                "the subfolder must still exist");
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDeleteProcessor#getResultMetadata(Job)}
+     * Given Scenario: A subfolder and its parent, the subfolder submitted first, with cancellation
+     * requested before the run starts
+     * ExpectedResult: Both SKIPPED with no reason, and the run is reported as stopped at the
+     * parent: the first folder in the order the run uses, which puts a folder before its
+     * subfolders, not the first one submitted (#37782)
+     */
+    @Test
+    public void test_process_cancelledBeforeStart_stoppedAtIsFirstInRunOrder() throws Exception {
+
+        final Folder parent = folder();
+        final Folder child = new FolderDataGen().parent(parent).name("child").nextPersisted();
+        final String parentPath = pathOf(parent);
+        final String childPath = parentPath + child.getName() + "/";
+
+        final Job job = jobForPaths(List.of(childPath, parentPath), admin);
+        final FolderBulkDeleteProcessor processor = new FolderBulkDeleteProcessor();
+        processor.cancel(job);
+        processor.process(job);
+
+        final Map<String, Object> metadata = processor.getResultMetadata(job);
+        for (final String path : List.of(parentPath, childPath)) {
+            final BatchItemResult result = resultFor(metadata, path);
+            assertEquals(BatchItemStatus.SKIPPED, result.status(), "status of " + path);
+            assertTrue(result.reason().isEmpty(), "no reason expected for " + path);
+        }
+        assertEquals(parentPath, metadata.get("stoppedAt"));
+    }
+
+    /**
+     * Method to test: {@link FolderBulkDeleteProcessor#process(Job)}
+     * Given Scenario: A folder, its subfolder and that subfolder's own subfolder, submitted deepest
+     * first, all deletable
+     * ExpectedResult: The folder is deleted; the two below it are SKIPPED/COVERED_BY_PARENT,
+     * including the deepest one, covered through its covered parent (#37782, AC-006)
+     */
+    @Test
+    public void test_process_coverageIsTransitive() throws Exception {
+
+        final Folder parent = folder();
+        final Folder child = new FolderDataGen().parent(parent).name("child").nextPersisted();
+        final Folder grandchild = new FolderDataGen().parent(child).name("grandchild")
+                .nextPersisted();
+        final String parentPath = pathOf(parent);
+        final String childPath = parentPath + child.getName() + "/";
+        final String grandchildPath = childPath + grandchild.getName() + "/";
+
+        final Job job = jobForPaths(List.of(grandchildPath, childPath, parentPath), admin);
+        final FolderBulkDeleteProcessor processor = new FolderBulkDeleteProcessor();
+        processor.process(job);
+
+        final Map<String, Object> metadata = processor.getResultMetadata(job);
+        assertEquals(BatchItemStatus.SUCCESS, resultFor(metadata, parentPath).status());
+        for (final String path : List.of(childPath, grandchildPath)) {
+            final BatchItemResult result = resultFor(metadata, path);
+            assertEquals(BatchItemStatus.SKIPPED, result.status(), "status of " + path);
+            assertEquals(BatchFailureReason.COVERED_BY_PARENT, result.reason().orElseThrow(),
+                    "reason of " + path);
+        }
+        assertThrowsDoesNotExist(grandchild.getInode());
+    }
+
+    /**
+     * Requests cancellation of the run the first time it reports progress, which is right after
+     * its first folder completes.
+     */
+    private static final class CancellingProgressTracker implements ProgressTracker {
+
+        private final FolderBulkDeleteProcessor processor;
+        private volatile Job job;
+        private volatile float current;
+
+        private CancellingProgressTracker(final FolderBulkDeleteProcessor processor) {
+            this.processor = processor;
+        }
+
+        @Override
+        public void updateProgress(final float progress) {
+            this.current = progress;
+            this.processor.cancel(this.job);
+        }
+
+        @Override
+        public float progress() {
+            return current;
         }
     }
 

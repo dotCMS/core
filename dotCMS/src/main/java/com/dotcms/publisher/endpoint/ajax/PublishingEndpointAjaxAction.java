@@ -5,12 +5,13 @@ import com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory;
 import com.dotcms.publisher.endpoint.business.PublishingEndPointAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
-import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.PublishingEndPointValidationException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.Lists;
@@ -45,21 +46,6 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 		try{
 			// Check permissions if the user has access to the CMS Maintenance Portlet
 			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
-				String userName = map.get("u") !=null
-					? map.get("u")
-						: map.get("user") !=null
-							? map.get("user")
-								: null;
-
-				String password = map.get("p") !=null
-					? map.get("p")
-							: map.get("passwd") !=null
-								? map.get("passwd")
-									: null;
-
-
-
-				LoginFactory.doLogin(userName, password, false, request, response);
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
 				if(user==null) {
 				    setUser(request);
@@ -100,7 +86,23 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 		}
 	}
 
+	/**
+	 * Registers a publishing endpoint, or edits it when an identifier is sent. Only users allowed by
+	 * {@link #hasManagementAccess(User)} can do it; any other user gets a 403.
+	 *
+	 * @param request  The current instance of the {@link HttpServletRequest}.
+	 * @param response The current instance of the {@link HttpServletResponse}.
+	 *
+	 * @throws ServletException An error occurred while handling the request.
+	 * @throws IOException      An error occurred while writing the response.
+	 * @throws LanguageException A message could not be resolved.
+	 */
 	public void addEndpoint(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, LanguageException {
+		if (!hasManagementAccess(getUser())) {
+			rejectManagementRequest(response);
+			return;
+		}
+
         try {
         	String identifier = request.getParameter("identifier");
         	if(UtilMethods.isSet(identifier)){
@@ -150,7 +152,23 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 		}
 	}
 
+	/**
+	 * Updates a publishing endpoint. Only users allowed by {@link #hasManagementAccess(User)} can
+	 * do it; any other user gets a 403.
+	 *
+	 * @param request  The current instance of the {@link HttpServletRequest}.
+	 * @param response The current instance of the {@link HttpServletResponse}.
+	 *
+	 * @throws ServletException An error occurred while handling the request.
+	 * @throws IOException      An error occurred while writing the response.
+	 * @throws LanguageException A message could not be resolved.
+	 */
 	public void editEndpoint(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, LanguageException {
+		if (!hasManagementAccess(getUser())) {
+			rejectManagementRequest(response);
+			return;
+		}
+
 		try {
 
 			String serverName = request.getParameter("serverName");
@@ -213,6 +231,42 @@ public class PublishingEndpointAjaxAction extends AjaxAction {
 			Logger.info(getClass(), "Error editing EndPoint. Error Message: " +  e.getMessage());
 			response.getWriter().println("FAILURE: " + e.getMessage());
 		}
+	}
+
+	/**
+	 * Tells whether a user can create or modify publishing endpoints: an administrator, or a user with
+	 * access to the Configuration portlet, the same rule the REST endpoint resource applies.
+	 *
+	 * @param user The user making the request, which can be {@code null}.
+	 *
+	 * @return {@code true} if the user is allowed to make the change.
+	 */
+	private boolean hasManagementAccess(final User user) {
+		if (user == null) {
+			return false;
+		}
+		try {
+			return user.isAdmin() || APILocator.getLayoutAPI()
+					.doesUserHaveAccessToPortlet(PortletID.CONFIGURATION.toString(), user);
+		} catch (DotDataException e) {
+			Logger.error(this, "Unable to check the portlet access of the user: " + e.getMessage(), e);
+			return false;
+		}
+	}
+
+	/**
+	 * Answers a request that the user is not allowed to make with a 403 and leaves a log entry
+	 * with the user id and nothing else from the request.
+	 *
+	 * @param response The current instance of the {@link HttpServletResponse}.
+	 *
+	 * @throws IOException The response could not be written.
+	 */
+	private void rejectManagementRequest(final HttpServletResponse response) throws IOException {
+		final User user = getUser();
+		SecurityLogger.logWarn(getClass(), () -> "Rejected a publishing endpoint change from a user without management access, userId: "
+				+ (user != null ? user.getUserId() : "unknown"));
+		response.sendError(HttpServletResponse.SC_FORBIDDEN);
 	}
 
 }

@@ -413,6 +413,14 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
                             new CompanyLocaleForm("en_US", "America/New_York")),
                     () -> {
                         try {
+                            resource.getDotcmsLogo(createRequestForUser(user), mockResponse);
+                        } catch (final com.dotmarketing.exception.DotDataException
+                                | com.dotmarketing.exception.DotSecurityException e) {
+                            throw new RuntimeException(e);
+                        }
+                    },
+                    () -> {
+                        try {
                             resource.regenerateKey(createRequestForUser(user), mockResponse);
                         } catch (final com.dotmarketing.exception.DotDataException
                                 | com.dotmarketing.exception.DotSecurityException e) {
@@ -556,6 +564,53 @@ public class CompanyResourceIntegrationTest extends IntegrationTestBase {
         final HttpServletRequest request = createRequestForUser(nonAdminUser);
         final CompanyLocaleForm form = new CompanyLocaleForm("en_US", "America/New_York");
         resource.saveLocaleInfo(request, mockResponse, form);
+    }
+
+    // ==================== GET /v1/configuration/dotcmsLogo ====================
+
+    /**
+     * The path of the starter's stock logo, which the test database is loaded with.
+     */
+    private static final String STOCK_LOGO_PATH =
+            "/dA/a083e942-5fb0-47ef-9619-6f8f40593474/asset/company_logo.png";
+
+    /**
+     * An admin gets the stock logo path, the same on every call, and the call leaves the stored
+     * login logo unchanged.
+     */
+    @Test
+    public void test_getDotcmsLogo_asAdmin_returnsStarterLogoPath() throws Exception {
+        final String cityBefore = companyAPI.getDefaultCompany().getCity();
+
+        final ResponseEntityStringView first =
+                resource.getDotcmsLogo(createAdminRequest(), mockResponse);
+        final ResponseEntityStringView second =
+                resource.getDotcmsLogo(createAdminRequest(), mockResponse);
+
+        assertEquals(STOCK_LOGO_PATH, first.getEntity());
+        assertEquals(STOCK_LOGO_PATH, second.getEntity());
+        assertEquals(cityBefore, companyAPI.getDefaultCompany().getCity());
+    }
+
+    /**
+     * The returned path is accepted as the login screen logo and read back unchanged.
+     */
+    @Test
+    public void test_getDotcmsLogo_pathSavesAsLoginScreenLogo() throws Exception {
+        final CompanySnapshot snapshot = CompanySnapshot.take(companyAPI);
+        try {
+            final String path =
+                    resource.getDotcmsLogo(createAdminRequest(), mockResponse).getEntity();
+
+            resource.saveBasicInfo(createAdminRequest(), mockResponse,
+                    basicInfoForm("http://localhost:8080", "test@dotcms.com", null,
+                            "#FF0000", "#00FF00", null, null, path, null));
+
+            assertEquals(path, resource.getCompanyConfig(createAdminRequest(), mockResponse)
+                    .getEntity().loginScreenLogo());
+        } finally {
+            snapshot.restore(companyAPI);
+        }
     }
 
     // ==================== POST /v1/configuration/_regenerateKey ====================

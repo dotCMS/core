@@ -24,6 +24,7 @@ import {
     DotHttpErrorManagerService,
     DotMessageService,
     DotRenderMode,
+    DotRouterService,
     DotSiteService,
     DotSystemConfigService,
     DotWizardService,
@@ -42,7 +43,7 @@ import {
     DotContentDriveItem,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
-import { DotJspIframeDialogComponent } from '@dotcms/ui';
+import { DOT_VELOCITY_LANGUAGE_ID, DotJspIframeDialogComponent } from '@dotcms/ui';
 import {
     createFakeContentlet,
     DOT_SYSTEM_CONFIG_SERVICE_MOCK,
@@ -133,6 +134,10 @@ describe('DotFolderListViewContextMenuComponent', () => {
         component: DotFolderListViewContextMenuComponent,
         componentProviders: [DotContentDriveStore, DialogService],
         providers: [
+            // The real store reads the hosting portlet once, to key the remembered view (#37930).
+            mockProvider(DotRouterService, {
+                currentPortlet: { id: 'content-drive', url: '', parentMenuId: '' }
+            }),
             mockProvider(DotContentDriveService, {
                 search: vi
                     .fn()
@@ -544,6 +549,83 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 expect(items).toContain('content-drive.context-menu.edit-content');
                 expect(items.some((label) => label.includes('push-publish'))).toBe(true);
                 expect(items).toContain('contenttypes.content.add_to_bundle');
+            });
+        });
+
+        describe('edit code', () => {
+            const everything = [1, 2, 4, 8, 16] as unknown as DotCMSContentlet['permissions'];
+            const velocityFile = (overrides: Partial<DotCMSContentlet> = {}) =>
+                createFakeContentlet({
+                    baseType: DotCMSBaseTypesContentTypes.FILEASSET,
+                    extension: 'vtl',
+                    fileName: 'header.vtl',
+                    permissions: everything,
+                    ...overrides
+                });
+            const openMenuFor = async (contentlet: DotCMSContentlet) => {
+                await component.getMenuItems({
+                    triggeredEvent: mockEvent,
+                    contentlet,
+                    showAddToBundle: false
+                });
+
+                return labels(component.$items());
+            };
+
+            it('should offer Edit Code right after Edit Content on a Velocity file', async () => {
+                const items = await openMenuFor(velocityFile());
+
+                expect(items.slice(1, 3)).toEqual([
+                    'content-drive.context-menu.edit-content',
+                    'content-drive.context-menu.edit-code'
+                ]);
+            });
+
+            it('should open the file in the source editor', async () => {
+                const file = velocityFile();
+                await openMenuFor(file);
+
+                invoke(component.$items(), 'content-drive.context-menu.edit-code');
+
+                expect(store.sourceEditor()).toEqual({
+                    inode: file.inode,
+                    title: 'header.vtl',
+                    language: DOT_VELOCITY_LANGUAGE_ID
+                });
+            });
+
+            it('should not offer Edit Code on a file type it does not edit yet', async () => {
+                const items = await openMenuFor(velocityFile({ extension: 'png' }));
+
+                expect(items).not.toContain('content-drive.context-menu.edit-code');
+            });
+
+            it('should not offer Edit Code on content that is not a file', async () => {
+                const items = await openMenuFor(createFakeContentlet({ permissions: everything }));
+
+                expect(items).not.toContain('content-drive.context-menu.edit-code');
+            });
+
+            // Edit permission is the server's half of `canLock`, so the menu reads it from there,
+            // the same answer the page editor gets.
+            it('should not offer Edit Code when the user cannot edit the file', async () => {
+                dotContentletService.canLock.mockReturnValueOnce(
+                    of(createMockCanLock(false, false))
+                );
+
+                const items = await openMenuFor(velocityFile());
+
+                expect(items).not.toContain('content-drive.context-menu.edit-code');
+            });
+
+            it('should not offer Edit Code on a file another user has locked', async () => {
+                dotContentletService.canLock.mockReturnValueOnce(
+                    of(createMockCanLock(false, true))
+                );
+
+                const items = await openMenuFor(velocityFile());
+
+                expect(items).not.toContain('content-drive.context-menu.edit-code');
             });
         });
 

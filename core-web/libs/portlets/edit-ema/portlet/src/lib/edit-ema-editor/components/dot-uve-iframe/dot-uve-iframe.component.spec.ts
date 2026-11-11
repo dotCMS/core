@@ -18,7 +18,6 @@ import { DotUveIframeComponent } from './dot-uve-iframe.component';
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
-import { SDK_EDITOR_SCRIPT_SOURCE } from '../../../utils/ema-legacy-script-injection';
 
 describe('DotUveIframeComponent', () => {
     let spectator: Spectator<DotUveIframeComponent>;
@@ -31,7 +30,6 @@ describe('DotUveIframeComponent', () => {
     let pageTypeSignal: WritableSignal<PageType>;
     let pageRenderSignal: WritableSignal<string>;
     let editorEnableInlineEditSignal: WritableSignal<boolean>;
-    let legacyScriptInjectionEnabledSignal: WritableSignal<boolean>;
 
     const mockPageRender = '<html><head></head><body>Test Content</body></html>';
     const mockSeoResults: SeoMetaTagsResult[] = [
@@ -70,7 +68,6 @@ describe('DotUveIframeComponent', () => {
                     $pageRender: pageRenderSignal,
                     editorEnableInlineEdit: editorEnableInlineEditSignal,
                     pageType: pageTypeSignal,
-                    $isEmaLegacyScriptInjectionEnabled: legacyScriptInjectionEnabledSignal,
                     setSeoData: vi.fn()
                 })
             }
@@ -81,7 +78,6 @@ describe('DotUveIframeComponent', () => {
         pageTypeSignal = signal(PageType.HEADLESS);
         pageRenderSignal = signal(mockPageRender);
         editorEnableInlineEditSignal = signal(false);
-        legacyScriptInjectionEnabledSignal = signal(false);
 
         spectator = createComponent({
             props: {
@@ -241,24 +237,6 @@ describe('DotUveIframeComponent', () => {
             component.onIframeLoad();
             expect(mockIframe.srcdoc).toBe('');
         });
-
-        describe('legacy script injection (FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION)', () => {
-            it('should inject the UVE script when the flag is enabled', () => {
-                legacyScriptInjectionEnabledSignal.set(true);
-                component.onIframeLoad();
-                expect(mockIframe.srcdoc).toContain(
-                    `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
-                );
-            });
-
-            it('should NOT inject the UVE script when the flag is disabled', () => {
-                legacyScriptInjectionEnabledSignal.set(false);
-                component.onIframeLoad();
-                expect(mockIframe.srcdoc).not.toContain(
-                    `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
-                );
-            });
-        });
     });
 
     describe('handleInlineScripts', () => {
@@ -366,6 +344,48 @@ describe('DotUveIframeComponent', () => {
 
             const plainDiv = document.createElement('div');
             const clickEvent = createClickWithTarget(plainDiv);
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            captureClickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not stop propagation for a click on a hash-only anchor', () => {
+            // Regression test: a second QA verification round on
+            // dotCMS/core#37961 failed the link-scoped fix above — `#…`
+            // anchors never navigate anywhere, but still counted as
+            // `hasLink`, so a page's own link-shaped toggle (an inline
+            // `onclick` accordion, a Bootstrap-style `data-toggle="collapse"`
+            // delegate on `document`) never got the click.
+            // The hash branch (below the stopPropagation check) still runs
+            // and scrolls the iframe, hence the document/scrollTo stubs.
+            Object.assign(mockWindow, {
+                document: document.implementation.createHTMLDocument(),
+                scrollTo: vi.fn()
+            });
+            (component as any).handleInlineScripts(false);
+
+            const hashLink = document.createElement('a');
+            hashLink.setAttribute('href', '#panel');
+            const clickEvent = createClickWithTarget(hashLink);
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            captureClickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not stop propagation for a click on a javascript:-href anchor', () => {
+            // Same QA regression as the hash-only case above: `javascript:…`
+            // is a page's own click handler invoked via the href itself
+            // (instead of a real `onclick`/listener), not a navigation —
+            // e.g. `<a href="javascript:void(0)" onclick="toggle()">`.
+            (component as any).handleInlineScripts(false);
+
+            const jsVoidLink = document.createElement('a');
+            jsVoidLink.setAttribute('href', 'javascript:void(0)');
+            const clickEvent = createClickWithTarget(jsVoidLink);
             const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
 
             captureClickHandler?.(clickEvent);
@@ -533,6 +553,28 @@ describe('DotUveIframeComponent', () => {
             bubbleClickHandler?.(createClickWithTarget(navRow));
             expect(internalNavSpy).toHaveBeenCalledTimes(1);
             expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not defer a javascript:-href anchor inside a contentlet to the bubble-phase listener', () => {
+            // The bubble-phase listener applies the same navigability check as
+            // the capture-phase one above — a `javascript:…` href inside a
+            // contentlet is page-owned UI, not a second click confirming
+            // navigation, so neither listener should ever emit for it.
+            (component as any).handleInlineScripts(false);
+
+            const contentletLink = document.createElement('a');
+            contentletLink.setAttribute('href', 'javascript:void(0)');
+            const contentletWrapper = document.createElement('div');
+            contentletWrapper.setAttribute('data-dot-object', 'contentlet');
+            contentletWrapper.appendChild(contentletLink);
+
+            const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+            const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
+
+            bubbleClickHandler?.(createClickWithTarget(contentletLink));
+
+            expect(internalNavSpy).not.toHaveBeenCalled();
+            expect(inlineEditingSpy).not.toHaveBeenCalled();
         });
 
         it('should emit internalNav on click', () => {
@@ -768,6 +810,24 @@ describe('DotUveIframeComponent', () => {
                 const a = doc.createElement('a');
                 a.setAttribute('href', '#page-section');
                 wrapper.appendChild(a);
+
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
+
+                captureClickHandler?.(createClickWithTarget(a));
+
+                expect(internalNavSpy).not.toHaveBeenCalled();
+                expect(inlineEditingSpy).not.toHaveBeenCalled();
+            });
+
+            it('should not emit for javascript:-href anchors', () => {
+                // Regression test: a `javascript:…` href never navigates —
+                // it's a page's own click handler invoked via the href itself
+                // — so, unlike a real link, a click on one should neither
+                // stop propagation (covered above) nor be treated as
+                // navigation here.
+                const a = doc.createElement('a');
+                a.setAttribute('href', 'javascript:void(0)');
 
                 const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
                 const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');

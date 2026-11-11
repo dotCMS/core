@@ -147,6 +147,8 @@ import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isNewFiel
  */
 public class EditContentletAction extends DotPortletAction implements DotPortletActionInterface {
 
+	private static final String CANNOT_READ_MESSAGE = "User '%s' does not have READ permissions on the selected content";
+
 	private Contentlet contentletToEdit;
 	
 	private CategoryAPI catAPI;
@@ -761,6 +763,27 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	}
 
 	/**
+	 * Loads a contentlet with the requesting user. When the user can't read it, the exception
+	 * thrown carries a generic message, because the error page shows the message as is and the
+	 * original one describes the contentlet. The original is kept in the debug log.
+	 *
+	 * @param inode inode of the contentlet
+	 * @param user  user making the request
+	 * @return the contentlet
+	 * @throws DotDataException     if the contentlet cannot be loaded
+	 * @throws DotSecurityException if the user cannot read the contentlet
+	 */
+	private Contentlet findForUser(final String inode, final User user)
+			throws DotDataException, DotSecurityException {
+		try {
+			return conAPI.find(inode, user, false);
+		} catch (final DotSecurityException e) {
+			Logger.debug(this, e::getMessage);
+			throw new DotSecurityException(String.format(CANNOT_READ_MESSAGE, user.getUserId()));
+		}
+	}
+
+	/**
 	 * 
 	 * @param req
 	 *            - The Struts wrapper for the HTTP Request object.
@@ -791,10 +814,12 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			Boolean makeEditable = Boolean.valueOf(req.getParameter("makeEditable"));
 			Boolean populateaccept = Boolean.valueOf(req.getParameter("populateaccept"));
 			if(makeEditable && !populateaccept){
+			   // Read first, so a user who cannot read the contentlet gets the same message as below
+			   findForUser(inodeStr, user);
 			   contentlet = conAPI.checkout(inodeStr, user, false);
 			   contentlet.setInode(inodeStr);
 			}else{
-			   contentlet = conAPI.find(inodeStr, user, false);
+			   contentlet = findForUser(inodeStr, user);
 			}
 		}else {
 			/*In case of multi-language first ocurrence new contentlet*/
@@ -802,7 +827,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			String langId = req.getParameter("lang");
 
 			if(InodeUtils.isSet(sibblingInode) && !sibblingInode.equals("0")){
-				Contentlet sibblingContentlet = conAPI.find(sibblingInode,APILocator.getUserAPI().getSystemUser(), false);
+				// Loaded with the requesting user, so the sibling must be readable to be used as the source
+				Contentlet sibblingContentlet = findForUser(sibblingInode, user);
 
 				if (UtilMethods.isSet(langId) && sibblingContentlet.getLanguageId() == Long.parseLong(langId)) {
 					contentlet = sibblingContentlet;
@@ -830,7 +856,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			}
 		}
 
-		if(perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false));
+		// A new contentlet or a new translation has nothing to read yet; an existing one must be readable
+		if (InodeUtils.isSet(contentlet.getInode())
+				&& !perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
+			throw new DotSecurityException(String.format(CANNOT_READ_MESSAGE, user.getUserId()));
+		}
 		req.setAttribute(WebKeys.CONTENTLET_EDIT, contentlet);
 		contentletToEdit = contentlet;
 
@@ -1865,8 +1895,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 	/**
 	 * Downloads the list of contentlets of the specified Content Type Inode as
-	 * a CSV file.
-	 * 
+	 * a CSV file. The file has one column per exportable field of the Content Type,
+	 * named after the field variable. Image and File fields are written as the dotCMS
+	 * path of the referenced file, which is also what the content import accepts; an
+	 * empty value, or a file that no longer exists, is written as an empty cell.
+	 *
 	 * @param response
 	 *            - The Struts wrapper for the HTTP Response object.
 	 * @param user
@@ -1987,10 +2020,14 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
                                 if (null != id && UtilMethods.isSet(id.getId())) {
                                     text = id.getPath();
                                 }
-							} else if (field instanceof ImageField) {
-								final Identifier id = APILocator.getIdentifierAPI().find((String) value);
-								if (null != id && UtilMethods.isSet(id.getId())) {
-									text = id.getPath();
+							} else if (field instanceof ImageField || field instanceof FileField) {
+								// Both field types store the identifier of a file asset; export its path
+								final String fileIdentifier = value.toString();
+								if (UtilMethods.isSet(fileIdentifier)) {
+									final Identifier id = APILocator.getIdentifierAPI().find(fileIdentifier);
+									if (null != id && UtilMethods.isSet(id.getId())) {
+										text = id.getPath();
+									}
 								}
 
 							} else if (field instanceof BinaryField){

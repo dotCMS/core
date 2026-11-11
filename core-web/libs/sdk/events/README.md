@@ -32,7 +32,7 @@ The `@dotcms/events` SDK is the official dotCMS library for everything your page
 - [How It Works](#how-it-works)
 - [Configuration](#configuration)
 - [Usage](#usage)
-- [API Reference](#api-reference)
+- [SDK Reference](#sdk-reference)
 - [Migrating from @dotcms/analytics and @dotcms/experiments](#migrating-from-dotcmsanalytics-and-dotcmsexperiments)
 - [Under the Hood](#under-the-hood)
 - [Troubleshooting](#troubleshooting)
@@ -198,7 +198,7 @@ The [Next.js experiments example](https://github.com/dotCMS/core/tree/main/examp
 
 ### Pageviews
 
-A pageview is sent when the page first loads, on every client-side navigation, and when the visitor returns to a page with the Back or Forward button. Each one carries the page's URL, title and referrer, the campaign (UTM) parameters, and the visitor's device and screen.
+A pageview is sent when the page first loads, on every client-side navigation, and when the visitor returns to a page with the Back or Forward button. Each one carries the page's URL, title and locale, the campaign (UTM) parameters, and the visitor's device and screen.
 
 To send them yourself instead, set `autoPageView: false` and call [`dotEvents.pageView()`](#doteventspageviewdata).
 
@@ -247,16 +247,16 @@ Inside the dotCMS Universal Visual Editor, the SDK sends nothing, and experiment
 
 | Option         | Type                                     | Required | Default | Description                                                                 |
 | -------------- | ---------------------------------------- | -------- | ------- | --------------------------------------------------------------------------- |
-| `dotcmsUrl`    | `string`                                 | Yes      | —       | The URL of your dotCMS instance, the same value `createDotCMSClient` takes |
-| `siteAuth`     | `string`                                 | Yes      | —       | The Site Auth from the Content Analytics app                                |
-| `autoPageView` | `boolean`                                | No       | `true`  | Send pageviews automatically                                                |
-| `experiments`  | `boolean \| DotCMSEventsExperimentsConfig` | No       | `true`  | Run experiments; `false` turns them off                                     |
-| `impressions`  | `boolean \| DotCMSEventsImpressionsConfig` | No       | `false` | Record content impressions                                                  |
-| `clicks`       | `boolean`                                | No       | `false` | Record content clicks                                                       |
-| `queue`        | `boolean \| DotCMSEventsQueueConfig`       | No       | `true`  | Send events in batches; `false` sends each one at once                      |
-| `debug`        | `boolean`                                | No       | `false` | Log what the SDK does to the browser console                                |
-| `logLevel`     | `'debug' \| 'info' \| 'warn' \| 'error'`   | No       | —       | The least important level the console shows                                 |
-| `onError`      | `(error: DotCMSEventsError) => void`     | No       | —       | Called when something fails that the page can't see                         |
+| `dotcmsUrl`    | `string`                                 | ✅        | —       | The URL of your dotCMS instance, the same value `createDotCMSClient` takes |
+| `siteAuth`     | `string`                                 | ✅        | —       | The Site Auth from the Content Analytics app                                |
+| `autoPageView` | `boolean`                                | ❌        | `true`  | Send pageviews automatically                                                |
+| `experiments`  | `boolean \| DotCMSEventsExperimentsConfig` | ❌        | `true`  | Run experiments; `false` turns them off                                     |
+| `impressions`  | `boolean \| DotCMSEventsImpressionsConfig` | ❌        | `false` | Record content impressions                                                  |
+| `clicks`       | `boolean`                                | ❌        | `false` | Record content clicks                                                       |
+| `queue`        | `boolean \| DotCMSEventsQueueConfig`       | ❌        | `true`  | Send events in batches; `false` sends each one at once                      |
+| `debug`        | `boolean`                                | ❌        | `false` | Log what the SDK does to the browser console                                |
+| `logLevel`     | `'debug' \| 'info' \| 'warn' \| 'error'`   | ❌        | —       | The least important level the console shows                                 |
+| `onError`      | `(error: DotCMSEventsError) => void`     | ❌        | —       | Called when something fails that the page can't see                         |
 
 ### Impressions
 
@@ -298,6 +298,13 @@ dotEvents.init({
 | `REJECTED`    | dotCMS refused an events request, or some of its events. `status` and `detail` say why                       |
 | `NETWORK`     | An events request got no answer                                                                              |
 | `EXPERIMENTS` | Asking dotCMS for the visitor's variant failed. A 403 means experiments are off for the site; the SDK stops asking for a day |
+
+Alongside `code` it carries:
+
+-   `message` (string): What went wrong.
+-   `status` (number): The HTTP status, when dotCMS answered.
+-   `detail` (unknown): What dotCMS said about the failure, for `REJECTED`.
+-   `events` (number): How many events the failed request carried, for `REJECTED` and `NETWORK`.
 
 ```ts
 dotEvents.init({
@@ -365,47 +372,166 @@ window.addEventListener('pageshow', (event) => {
 });
 ```
 
-## API Reference
+## SDK Reference
+
+`dotEvents` and the types it uses are imported from `@dotcms/events`. The two pieces that print what a page needs to run its experiment have their own entries: `DotCMSExperiment` from `@dotcms/events/react`, and `experimentMarkup` from `@dotcms/events/markup`.
+
+### `dotEvents`
+
+`dotEvents` is the object every entry point shares. There is one per page: every import gets the same instance, configured by the one `init` call, and it carries the three methods below.
+
+Every method does nothing on the server and inside the Universal Visual Editor, and none of them throws: failures reach your page through [`onError`](#errors).
 
 ### `dotEvents.init(config)`
 
-Starts the SDK with your [configuration](#config-options). Call it once, as early as possible. A second call with the same configuration does nothing; one with another configuration is ignored with a warning. Calls made before the SDK is ready wait and run once it is.
+`dotEvents.init` is the function that starts the SDK. Call it once, as early as possible: in Next.js that is `src/instrumentation-client.ts`, and in any other app wherever it starts, before it renders.
+
+| Input    | Type                 | Required | Description                                 |
+| -------- | -------------------- | -------- | ------------------------------------------- |
+| `config` | `DotCMSEventsConfig` | ✅       | [The SDK's configuration](#config-options)  |
+
+#### Usage
+
+```ts
+import { dotEvents } from '@dotcms/events';
+
+dotEvents.init({
+    dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST!,
+    siteAuth: process.env.NEXT_PUBLIC_DOTCMS_SITE_AUTH!,
+    impressions: true,
+    clicks: true
+});
+```
+
+#### What a Second Call Does
+
+- **The same configuration**: the second call does nothing.
+- **Another configuration**: ignored, with a console warning.
+- **`dotcmsUrl` or `siteAuth` missing**: nothing starts, and a console error says which one.
+- **`conversion` or `pageView` called before `init` finishes**: the call waits and runs once the SDK is ready, up to 50 waiting calls.
+- **Inside the Universal Visual Editor**: nothing is tracked, and experiment content is shown as it is.
 
 ### `dotEvents.conversion(name)`
 
-Records a conversion with its `name`. dotCMS records the name and the page; it accepts no other data.
+`dotEvents.conversion` is the function that records a conversion. dotCMS records the name and the page; its schema accepts no other data, so a conversion carries no custom properties.
+
+| Input  | Type     | Required | Description                                             |
+| ------ | -------- | -------- | ------------------------------------------------------- |
+| `name` | `string` | ✅       | The conversion's name. An empty name is ignored with a console warning |
+
+Call it only once the goal is reached — a completed purchase, a finished download, a created account — never on the click that started it.
+
+#### Usage
+
+```tsx
+'use client';
+
+import { dotEvents } from '@dotcms/events';
+
+export function SignupForm() {
+    const onSubmit = async (event: React.FormEvent) => {
+        event.preventDefault();
+        await createAccount(); // your own code
+
+        dotEvents.conversion('signup');
+    };
+
+    return <form onSubmit={onSubmit}>{/* fields */}</form>;
+}
+```
 
 ### `dotEvents.pageView(data?)`
 
-Sends a pageview, with optional custom data. Only needed with `autoPageView: false`.
+`dotEvents.pageView` is the function that sends a pageview by hand. Only needed with `autoPageView: false`.
+
+| Input  | Type                     | Required | Description                                                        |
+| ------ | ------------------------ | -------- | ------------------------------------------------------------------ |
+| `data` | `DotCMSEventsJsonObject` | ❌       | Your own data, which arrives in the event's `data.custom`          |
+
+On a page that runs an experiment, the pageview waits for the visitor's variant, and is dropped if the SDK sends the visitor to another variant: that page sends its own.
+
+#### Usage
+
+```ts
+dotEvents.pageView({ campaign: 'spring' });
+
+// A page the browser brings back with the Back button is seen again, without loading again
+window.addEventListener('pageshow', (event) => {
+    if (event.persisted) {
+        dotEvents.pageView();
+    }
+});
+```
 
 ### `DotCMSExperiment`
 
-```tsx
-import { DotCMSExperiment } from '@dotcms/events/react';
-```
+`DotCMSExperiment` is a component that runs the page's experiment on the content it wraps. On a page that runs an experiment it wraps `children` in an element marked with the experiment and the variant the server rendered, keeps it hidden, and prints the script that decides the visitor's variant while the HTML is parsed. On a page that runs none it renders `children` alone, so every page can be wrapped the same way.
 
-| Prop        | Type        | Required | Description                                                          |
-| ----------- | ----------- | -------- | -------------------------------------------------------------------- |
-| `page`      | page asset  | Yes      | The page asset, requested with the URL's `variantName`               |
-| `children`  | `ReactNode` | Yes      | What the experiment changes: the page's layout, or part of it        |
-| `nonce`     | `string`    | No       | The nonce of a nonce-based Content-Security-Policy                   |
-| `className` | `string`    | No       | A class for the element that wraps the content                       |
+| Input       | Type                         | Required | Default | Description                                                   |
+| ----------- | ---------------------------- | -------- | ------- | ------------------------------------------------------------- |
+| `page`      | `DotCMSEventsExperimentPage` | ✅       | -       | The page asset, requested with the URL's `variantName` |
+| `children`  | `ReactNode`                  | ✅       | -       | What the experiment changes: the page's layout, or part of it |
+| `nonce`     | `string`                     | ❌       | -       | The nonce of a nonce-based Content-Security-Policy            |
+| `className` | `string`                     | ❌       | -       | A class for the element that wraps the content                |
+
+It uses no hooks, so it also renders in a server component — where it adds no JavaScript to the browser. In a client component it adds about 1.5 KB.
+
+#### Usage
+
+```tsx
+// src/app/[[...slug]]/page.tsx
+import { DotCMSExperiment } from '@dotcms/events/react';
+
+export default async function Page({ params, searchParams }: PageProps) {
+    const { slug } = await params;
+    const { variantName } = await searchParams;
+    const path = slug?.length ? `/${slug.join('/')}` : '/';
+
+    // variantName makes dotCMS render the visitor's variant
+    const pageContent = await dotCMSClient.page.get(path, { variantName });
+
+    return (
+        <DotCMSExperiment page={pageContent.pageAsset}>
+            <DotCMSLayoutBody page={pageContent.pageAsset} components={pageComponents} />
+        </DotCMSExperiment>
+    );
+}
+```
 
 ### `experimentMarkup(page)`
 
+`experimentMarkup` is the function that returns what a server-rendered page prints to run its experiment, for frameworks other than React. It returns `null` when the page runs no experiment.
+
+| Input  | Type                         | Required | Description                                                   |
+| ------ | ---------------------------- | -------- | ------------------------------------------------------------- |
+| `page` | `DotCMSEventsExperimentPage` | ✅       | The page asset, requested with the URL's `variantName` |
+
+#### Usage
+
 ```ts
 import { experimentMarkup } from '@dotcms/events/markup';
+
+const markup = experimentMarkup(pageAsset); // null when the page runs no experiment
+
+// <style>{markup.style}</style>
+// <script>{markup.script}</script>
+// <div {...markup.attributes}>the content the experiment changes</div>
 ```
 
-Returns what a server-rendered page prints to run its experiment, or `null` when the page runs none: `style` and `script`, which go before the content, and `attributes`, for the element that wraps it.
+`style` is the rule that keeps the marked element hidden until the variant is decided, `script` is the boot script's source, and `attributes` are `data-dot-experiment` and `data-dot-variant` for the element that wraps what the experiment varies.
 
-### Types
+The style and the script must come **before** that element in the HTML the server sends: the script decides the visitor's variant while that HTML is parsed.
 
-Every type the options, methods and errors use comes from the main entry:
+### `window.dotEvents`
 
-```ts
-import type { DotCMSEventsConfig, DotCMSEventsError } from '@dotcms/events';
+After `init`, the same object is on `window`, so a plain script on the page reaches it without a bundler.
+
+#### Usage
+
+```html
+<script>
+    window.dotEvents?.conversion('newsletter');
+</script>
 ```
 
 ## Migrating from @dotcms/analytics and @dotcms/experiments
@@ -438,6 +564,17 @@ No cookies. Everything carries the `dot_events_` prefix:
 | `dot_events_queue_<tab id>`        | sessionStorage | Events not sent yet, kept until the next page sends them     |
 | `dot_events_experiments_checked`   | sessionStorage | This tab already asked for the visitor's assignments         |
 | `dot_events_session_experiments`   | sessionStorage | The experiments the visitor joined during the session        |
+
+### What It Sends
+
+Every event carries, besides its own data:
+
+-   The site's Site Auth, so dotCMS knows which site it belongs to
+-   The visitor's anonymous id and the session's id
+-   The visitor's screen resolution, viewport size and language
+-   The experiments the visitor joined in the session, on pages running an experiment they are in
+
+It sends nothing else about the visitor, and no cookies. The four event types — `pageview`, `conversion`, `content_impression` and `content_click` — are the only ones dotCMS accepts; there is no custom-event API.
 
 ### Endpoints
 
