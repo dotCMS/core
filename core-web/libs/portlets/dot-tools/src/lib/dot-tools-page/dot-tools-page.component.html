@@ -181,8 +181,10 @@
                                     class="py-1 pr-2 pl-10"
                                     [attr.data-testid]="'tools-section-tools-' + section.id">
                                     @for (
-                                        tool of store.selectedSectionTools();
-                                        track tool.id;
+                                        entry of $toolEntries();
+                                        track entry.parent
+                                            ? 'parent:' + entry.parent
+                                            : 'tool:' + entry.tools[0].id;
                                         let toolIndex = $index
                                     ) {
                                         @if ($toolDropIndex() === toolIndex) {
@@ -197,72 +199,205 @@
                                             (cdkDragMoved)="onToolDragMoved($event, toolListEl)"
                                             (cdkDragEnded)="onToolDragEnded(toolIndex)"
                                             (contextmenu)="
-                                                onToolRowContextMenu($event, tool, toolMenu)
+                                                !entry.parent &&
+                                                    onToolRowContextMenu(
+                                                        $event,
+                                                        entry.tools[0],
+                                                        toolMenu
+                                                    )
                                             "
-                                            class="group/tool flex items-center gap-2 rounded-md px-3 py-2 text-slate-500 hover:bg-gray-100">
-                                            <span
-                                                cdkDragHandle
-                                                [attr.aria-label]="
-                                                    'tools.tool.drag-handle.aria-label' | dm
-                                                "
-                                                class="material-symbols-outlined cursor-grab text-base! leading-none! text-gray-400 opacity-0 group-hover/tool:opacity-100 active:cursor-grabbing">
-                                                drag_indicator
-                                            </span>
-                                            <span
-                                                class="flex-1 truncate"
-                                                [pTooltip]="tool.title"
-                                                [showOnEllipsis]="true"
-                                                tooltipPosition="right"
-                                                [attr.data-testid]="
-                                                    'tools-section-tool-title-' + tool.id
-                                                ">
-                                                {{ tool.title }}
-                                            </span>
-                                            <p-button
-                                                icon="pi pi-times"
-                                                size="small"
-                                                severity="secondary"
-                                                [text]="true"
-                                                [rounded]="true"
-                                                [ariaLabel]="
-                                                    'tools.section-tool.remove.aria-label' | dm
-                                                "
-                                                [pTooltip]="
-                                                    'tools.section-tool.remove.tooltip' | dm
-                                                "
-                                                (click)="onRemoveTool(tool.id)"
-                                                [attr.data-testid]="
-                                                    'tools-section-tool-remove-' + tool.id
-                                                "
-                                                styleClass="opacity-0 group-hover/tool:opacity-100" />
-
+                                            [attr.data-testid]="
+                                                entry.parent
+                                                    ? 'tools-parent-' + entry.parent
+                                                    : 'tools-section-tool-row-' + entry.tools[0].id
+                                            ">
+                                            <div
+                                                class="group/tool flex min-h-12 items-center gap-2 rounded-md px-3 py-2 text-slate-500 hover:bg-gray-100">
+                                                <button
+                                                    type="button"
+                                                    cdkDragHandle
+                                                    (keydown.arrowup)="
+                                                        onToolReorderKey($event, toolIndex, -1)
+                                                    "
+                                                    (keydown.arrowdown)="
+                                                        onToolReorderKey($event, toolIndex, 1)
+                                                    "
+                                                    [attr.aria-label]="
+                                                        (entry.parent
+                                                            ? 'tools.parent.drag-handle.aria-label'
+                                                            : 'tools.tool.drag-handle.aria-label'
+                                                        ) | dm
+                                                    "
+                                                    [attr.data-testid]="
+                                                        'tools-row-handle-' +
+                                                        (entry.parent ?? entry.tools[0].id)
+                                                    "
+                                                    class="material-symbols-outlined cursor-grab bg-transparent p-0 text-base! leading-none! text-gray-400 opacity-0 group-hover/tool:opacity-100 focus-visible:opacity-100 active:cursor-grabbing">
+                                                    drag_indicator
+                                                </button>
+                                                @if (entry.parent; as parent) {
+                                                    <span
+                                                        class="material-symbols-outlined text-base! leading-none!"
+                                                        aria-hidden="true">
+                                                        folder_open
+                                                    </span>
+                                                    <span
+                                                        class="flex-1 truncate font-semibold text-slate-700"
+                                                        [pTooltip]="parent | dm"
+                                                        [showOnEllipsis]="true"
+                                                        tooltipPosition="right">
+                                                        {{ parent | dm }}
+                                                    </span>
+                                                } @else {
+                                                    <ng-container
+                                                        *ngTemplateOutlet="
+                                                            toolContent;
+                                                            context: { $implicit: entry.tools[0] }
+                                                        " />
+                                                }
+                                            </div>
+                                            @if (entry.parent; as parent) {
+                                                @let childDropIndex =
+                                                    $childDrop()?.parent === parent
+                                                        ? $childDrop()?.index
+                                                        : null;
+                                                <ul
+                                                    #childListEl
+                                                    cdkDropList
+                                                    cdkDropListSortingDisabled
+                                                    class="py-1 pl-6"
+                                                    [attr.aria-label]="parent | dm"
+                                                    [attr.data-testid]="
+                                                        'tools-parent-children-' + parent
+                                                    ">
+                                                    @for (
+                                                        tool of entry.tools;
+                                                        track tool.id;
+                                                        let childIndex = $index
+                                                    ) {
+                                                        @if (childDropIndex === childIndex) {
+                                                            <li
+                                                                aria-hidden="true"
+                                                                class="mx-2 my-1 h-0.5 rounded-full bg-indigo-500"
+                                                                data-testid="tools-child-drop-line"></li>
+                                                        }
+                                                        <li
+                                                            cdkDrag
+                                                            data-row
+                                                            (cdkDragMoved)="
+                                                                onChildDragMoved(
+                                                                    $event,
+                                                                    childListEl,
+                                                                    parent
+                                                                )
+                                                            "
+                                                            (cdkDragEnded)="
+                                                                onChildDragEnded(parent, childIndex)
+                                                            "
+                                                            (contextmenu)="
+                                                                onToolRowContextMenu(
+                                                                    $event,
+                                                                    tool,
+                                                                    toolMenu
+                                                                )
+                                                            "
+                                                            class="group/tool flex min-h-12 items-center gap-2 rounded-md px-3 py-2 text-slate-500 hover:bg-gray-100"
+                                                            [attr.data-testid]="
+                                                                'tools-section-tool-row-' + tool.id
+                                                            ">
+                                                            <button
+                                                                type="button"
+                                                                cdkDragHandle
+                                                                (keydown.arrowup)="
+                                                                    onToolReorderKey(
+                                                                        $event,
+                                                                        childIndex,
+                                                                        -1,
+                                                                        parent
+                                                                    )
+                                                                "
+                                                                (keydown.arrowdown)="
+                                                                    onToolReorderKey(
+                                                                        $event,
+                                                                        childIndex,
+                                                                        1,
+                                                                        parent
+                                                                    )
+                                                                "
+                                                                [attr.aria-label]="
+                                                                    'tools.tool.drag-handle.aria-label'
+                                                                        | dm
+                                                                "
+                                                                [attr.data-testid]="
+                                                                    'tools-child-handle-' + tool.id
+                                                                "
+                                                                class="material-symbols-outlined cursor-grab bg-transparent p-0 text-base! leading-none! text-gray-400 opacity-0 group-hover/tool:opacity-100 focus-visible:opacity-100 active:cursor-grabbing">
+                                                                drag_indicator
+                                                            </button>
+                                                            <ng-container
+                                                                *ngTemplateOutlet="
+                                                                    toolContent;
+                                                                    context: { $implicit: tool }
+                                                                " />
+                                                            <div
+                                                                *cdkDragPlaceholder
+                                                                data-row
+                                                                class="rounded-md text-slate-500 opacity-40">
+                                                                <ng-container
+                                                                    *ngTemplateOutlet="
+                                                                        entryGhost;
+                                                                        context: {
+                                                                            $implicit: {
+                                                                                tools: [tool]
+                                                                            }
+                                                                        }
+                                                                    " />
+                                                            </div>
+                                                            <div
+                                                                *cdkDragPreview
+                                                                class="w-72 rounded-md bg-white text-slate-500 opacity-70 shadow-lg">
+                                                                <ng-container
+                                                                    *ngTemplateOutlet="
+                                                                        entryGhost;
+                                                                        context: {
+                                                                            $implicit: {
+                                                                                tools: [tool]
+                                                                            }
+                                                                        }
+                                                                    " />
+                                                            </div>
+                                                        </li>
+                                                    }
+                                                    @if (childDropIndex === entry.tools.length) {
+                                                        <li
+                                                            aria-hidden="true"
+                                                            class="mx-2 my-1 h-0.5 rounded-full bg-indigo-500"
+                                                            data-testid="tools-child-drop-line-end"></li>
+                                                    }
+                                                </ul>
+                                            }
                                             <div
                                                 *cdkDragPlaceholder
                                                 data-row
-                                                class="flex items-center gap-2 rounded-md px-3 py-2 text-slate-500 opacity-40">
-                                                <span
-                                                    class="material-symbols-outlined text-base! leading-none! text-gray-400">
-                                                    drag_indicator
-                                                </span>
-                                                <span class="flex-1 truncate">
-                                                    {{ tool.title }}
-                                                </span>
+                                                class="rounded-md text-slate-500 opacity-40">
+                                                <ng-container
+                                                    *ngTemplateOutlet="
+                                                        entryGhost;
+                                                        context: { $implicit: entry }
+                                                    " />
                                             </div>
-
                                             <div
                                                 *cdkDragPreview
-                                                class="flex w-64 items-center gap-2 rounded-md bg-white px-3 py-2 text-slate-500 opacity-70 shadow-lg">
-                                                <span
-                                                    class="material-symbols-outlined text-base! leading-none! text-gray-400">
-                                                    drag_indicator
-                                                </span>
-                                                <span class="flex-1 truncate">
-                                                    {{ tool.title }}
-                                                </span>
+                                                class="w-80 rounded-md bg-white text-slate-500 opacity-70 shadow-lg">
+                                                <ng-container
+                                                    *ngTemplateOutlet="
+                                                        entryGhost;
+                                                        context: { $implicit: entry }
+                                                    " />
                                             </div>
                                         </li>
                                     }
-                                    @if ($toolDropIndex() === store.selectedSectionTools().length) {
+                                    @if ($toolDropIndex() === $toolEntries().length) {
                                         <li
                                             aria-hidden="true"
                                             class="mx-2 my-1 h-0.5 rounded-full bg-indigo-500"
@@ -440,6 +575,53 @@
         </section>
     </ng-template>
 </p-splitter>
+
+<ng-template #toolContent let-tool>
+    <span
+        class="flex-1 truncate"
+        [pTooltip]="tool.title"
+        [showOnEllipsis]="true"
+        tooltipPosition="right"
+        [attr.data-testid]="'tools-section-tool-title-' + tool.id">
+        {{ tool.label ?? tool.title }}
+    </span>
+    <p-button
+        icon="pi pi-times"
+        size="small"
+        severity="secondary"
+        [text]="true"
+        [rounded]="true"
+        [ariaLabel]="'tools.section-tool.remove.aria-label' | dm"
+        [pTooltip]="'tools.section-tool.remove.tooltip' | dm"
+        (click)="onRemoveTool(tool.id)"
+        [attr.data-testid]="'tools-section-tool-remove-' + tool.id"
+        styleClass="opacity-0 group-hover/tool:opacity-100 focus-visible:opacity-100" />
+</ng-template>
+
+<ng-template #entryGhost let-entry>
+    <div class="flex min-h-12 items-center gap-2 px-3 py-2">
+        <span class="material-symbols-outlined text-base! leading-none! text-gray-400">
+            drag_indicator
+        </span>
+        <span class="flex-1 truncate">
+            {{
+                entry.parent ? (entry.parent | dm) : (entry.tools[0].label ?? entry.tools[0].title)
+            }}
+        </span>
+    </div>
+    @if (entry.parent) {
+        <ul class="py-1 pl-6">
+            @for (tool of entry.tools; track tool.id) {
+                <li class="flex min-h-12 items-center gap-2 px-3 py-2">
+                    <span class="material-symbols-outlined text-base! leading-none! text-gray-400">
+                        drag_indicator
+                    </span>
+                    <span class="flex-1 truncate">{{ tool.label ?? tool.title }}</span>
+                </li>
+            }
+        </ul>
+    }
+</ng-template>
 
 <!--
     p-contextMenu is used (over p-menu with popup=true) so the overlay

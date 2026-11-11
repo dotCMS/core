@@ -33,7 +33,7 @@ Users, Roles & Tools, dotAuth, Users (Beta), Roles (Beta), and Tools (Beta) use 
 - Clicking an open parent does not toggle it closed. Clicking a child still navigates normally but leaves the flyout open, like the main navigation flyout.
 - Leaving the parent or its flyout starts a 300 ms close delay. Entering either cancels the delay, allowing the pointer to cross between them without dismissing the flyout.
 - Grouping works with both expanded and collapsed navigation. The active child's parent is highlighted.
-- Roles & Tools and Tools (Beta) show qualified labels such as `Identity Access › Users` in available-tool pickers and included-tools lists. Their catalogs can be searched by the translated parent label. Tools without a parent keep their original labels; placement and removal still use the unchanged portlet IDs.
+- Legacy Roles & Tools shows qualified labels such as `Identity Access › Users`. Tools (Beta) keeps qualified labels in its catalog and nests included children beneath their parent heading, matching navigation. Catalogs can be searched by the translated parent label. Placement and removal still use unchanged portlet IDs.
 - Tools (Beta) uses the same resizable divider and initial 22%/78% panel split as Roles (Beta). Drag the divider, or focus its handle and use the arrow keys, to change the tree and catalog widths. Names that still overflow reveal their full label in a tooltip on hover.
 - Existing portlet routes, layout IDs, bookmarks, and dynamic Angular module loading are unchanged. `/api/v1/menu` stays flat and carries the parent key through its existing `initParams` map.
 
@@ -44,6 +44,12 @@ This is one optional grouping level, not a recursive portlet hierarchy. The pare
 ## Reordering upgraded sections
 
 Older sections may retain retired tool IDs such as `dynamic-plugins` for rollback compatibility. Reordering or editing a section may keep those existing entries without registering them again. Only newly added tools must be registered and placeable; existing entries cannot be duplicated or blank, and an unregistered tool cannot be copied from another section. Reordering never silently removes legacy entries.
+
+## Ordering groups and children in Tools (Beta)
+
+The included-tools tree places a parent where its first child occurs and preserves relative child order, just like navigation. Drag a parent to move all its children as one block; drag a child to reorder it within that parent. Focus a drag handle and use Up/Down Arrow for keyboard reordering. Children cannot be dropped into a different parent: change a custom tool's Parent through Edit Tool instead.
+
+Grouping uses the catalog's explicit `parent` key and unqualified `label`, never a delimiter parsed from the display title. The existing qualified `title` is unchanged for older clients. A catalog without the new metadata remains flat. Reorders still submit the full flat ID list; retained legacy entries are not dropped or reassigned.
 
 ## Custom tools
 

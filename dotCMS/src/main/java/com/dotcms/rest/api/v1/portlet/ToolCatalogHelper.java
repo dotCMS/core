@@ -95,7 +95,9 @@ public class ToolCatalogHelper {
                 .map(portlet -> new ToolCatalogEntryView(
                         portlet.getPortletId(),
                         title(user, portlet),
-                        portletApi.isCustomContentPortlet(portlet)))
+                        portletApi.isCustomContentPortlet(portlet),
+                        Objects.requireNonNullElse(initParam(portlet, "parent"), "").trim(),
+                        label(user, portlet.getPortletId(), portlet)))
                 .sorted(Comparator.comparing((ToolCatalogEntryView row) -> row.title().toLowerCase())
                         .thenComparing(ToolCatalogEntryView::id))
                 .collect(Collectors.toList());
@@ -126,13 +128,18 @@ public class ToolCatalogHelper {
         return title(user, portlet.getPortletId(), portlet);
     }
 
-    /** Resolves the title and optional parent while retaining the registered-name and id fallbacks. */
-    private String title(final User user, final String portletId, final Portlet portlet) {
+    /** Resolves a child label with the registered-name and id fallbacks, without a parent prefix. */
+    private String label(final User user, final String portletId, final Portlet portlet) {
         final String key = TITLE_KEY_PREFIX + portletId;
         final String translated = titleResolver.apply(user, key);
         final String registeredName = initParam(portlet, NAME_INIT_PARAM);
-        final String toolTitle = UtilMethods.isSet(translated) && !key.equals(translated)
+        return UtilMethods.isSet(translated) && !key.equals(translated)
                 ? translated : UtilMethods.isSet(registeredName) ? registeredName : portletId;
+    }
+
+    /** Resolves the title and optional parent while retaining the registered-name and id fallbacks. */
+    private String title(final User user, final String portletId, final Portlet portlet) {
+        final String toolTitle = label(user, portletId, portlet);
         final String parent = initParam(portlet, "parent");
         if (parent == null || parent.trim().isEmpty()) {
             return toolTitle;

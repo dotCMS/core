@@ -7,6 +7,7 @@ import {
     CdkDropList,
     moveItemInArray
 } from '@angular/cdk/drag-drop';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -42,6 +43,12 @@ import { DotToolsSectionDialogComponent } from '../dot-tools-section-dialog/dot-
 import { DotToolsToolDialogComponent } from '../dot-tools-tool-dialog/dot-tools-tool-dialog.component';
 import { DotToolsCatalogEntry, DotToolsSection } from '../models/dot-tools.models';
 
+/** One top-level row: a single tool or the children of a navigation parent. */
+interface ToolTreeEntry {
+    parent?: string;
+    tools: DotToolsCatalogEntry[];
+}
+
 /** Shape p-contextMenu exposes for programmatic show. */
 interface ContextMenuLike {
     show(event: Event): void;
@@ -51,6 +58,7 @@ interface ContextMenuLike {
     selector: 'dot-tools-page',
     standalone: true,
     imports: [
+        NgTemplateOutlet,
         FormsModule,
         CdkDrag,
         CdkDragHandle,
@@ -82,6 +90,27 @@ export class DotToolsPageComponent {
         gutter: { 'data-testid': 'tools-splitter-gutter' },
         gutterHandle: { 'data-testid': 'tools-splitter-handle' }
     };
+
+    protected readonly $toolEntries = computed(() => {
+        const entries: ToolTreeEntry[] = [];
+        const parents = new Map<string, ToolTreeEntry>();
+        for (const tool of this.store.selectedSectionTools()) {
+            const parent = tool.parent?.trim();
+            if (!parent) {
+                entries.push({ tools: [tool] });
+                continue;
+            }
+            let group = parents.get(parent);
+            if (!group) {
+                group = { parent, tools: [] };
+                parents.set(parent, group);
+                entries.push(group);
+            }
+            group.tools.push(tool);
+        }
+
+        return entries;
+    });
 
     readonly #dialogService = inject(DialogService);
     readonly #confirmationService = inject(ConfirmationService);
@@ -219,6 +248,8 @@ export class DotToolsPageComponent {
     }
 
     protected onSelectSection(id: string): void {
+        this.$toolDropIndex.set(null);
+        this.$childDrop.set(null);
         this.store.selectSection(id);
     }
 
@@ -250,6 +281,7 @@ export class DotToolsPageComponent {
 
     protected readonly $sectionDropIndex = signal<number | null>(null);
     protected readonly $toolDropIndex = signal<number | null>(null);
+    protected readonly $childDrop = signal<{ parent: string; index: number } | null>(null);
 
     protected onSectionDragMoved(event: CdkDragMove, listEl: HTMLElement): void {
         this.$sectionDropIndex.set(this.#computeDropIndex(event, listEl));
@@ -288,14 +320,74 @@ export class DotToolsPageComponent {
             return;
         }
 
-        const ids = [...section.portletIds];
-        const currentIndex = this.#normalizeInsertionIndex(previousIndex, target, ids.length);
+        const entries = [...this.$toolEntries()];
+        const currentIndex = this.#normalizeInsertionIndex(previousIndex, target, entries.length);
         if (currentIndex === previousIndex) {
             return;
         }
 
-        moveItemInArray(ids, previousIndex, currentIndex);
-        this.store.reorderSelectedSectionTools(ids);
+        moveItemInArray(entries, previousIndex, currentIndex);
+        this.store.reorderSelectedSectionTools(
+            entries.flatMap((entry) => entry.tools.map((tool) => tool.id))
+        );
+    }
+
+    protected onChildDragMoved(event: CdkDragMove, listEl: HTMLElement, parent: string): void {
+        this.$childDrop.set({ parent, index: this.#computeDropIndex(event, listEl) });
+    }
+
+    protected onChildDragEnded(parent: string, previousIndex: number): void {
+        const target = this.$childDrop();
+        this.$childDrop.set(null);
+        if (!target || target.parent !== parent || !this.store.selectedSection()) {
+            return;
+        }
+        const entries = this.$toolEntries();
+        const group = entries.find((entry) => entry.parent === parent);
+        if (!group) {
+            return;
+        }
+        const currentIndex = this.#normalizeInsertionIndex(
+            previousIndex,
+            target.index,
+            group.tools.length
+        );
+        if (currentIndex === previousIndex) {
+            return;
+        }
+        const children = [...group.tools];
+        moveItemInArray(children, previousIndex, currentIndex);
+        this.store.reorderSelectedSectionTools(
+            entries.flatMap((entry) =>
+                (entry === group ? children : entry.tools).map((tool) => tool.id)
+            )
+        );
+    }
+
+    /** Arrow keys move the focused row without changing any tool's parent assignment. */
+    protected onToolReorderKey(
+        event: KeyboardEvent,
+        index: number,
+        direction: number,
+        parent?: string
+    ): void {
+        event.preventDefault();
+        event.stopPropagation();
+        const count = parent
+            ? (this.$toolEntries().find((entry) => entry.parent === parent)?.tools.length ?? 0)
+            : this.$toolEntries().length;
+        const next = index + direction;
+        if (next < 0 || next >= count) {
+            return;
+        }
+        const gap = direction > 0 ? next + 1 : next;
+        if (parent) {
+            this.$childDrop.set({ parent, index: gap });
+            this.onChildDragEnded(parent, index);
+        } else {
+            this.$toolDropIndex.set(gap);
+            this.onToolDragEnded(index);
+        }
     }
 
     /**
@@ -306,7 +398,7 @@ export class DotToolsPageComponent {
      * row.
      */
     #computeDropIndex(event: CdkDragMove, listEl: HTMLElement): number {
-        const rows = Array.from(listEl.querySelectorAll<HTMLElement>('[data-row]'));
+        const rows = Array.from(listEl.querySelectorAll<HTMLElement>(':scope > [data-row]'));
         if (rows.length === 0) {
             return 0;
         }

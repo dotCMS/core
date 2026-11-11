@@ -169,6 +169,21 @@ public class ToolCatalogHelperTest {
         final ToolCatalogEntryView entry = helper.catalog(user).get(0);
         assertEquals("users", entry.id());
         assertEquals("Identität und Zugriff › Benutzer", entry.title());
+        assertEquals("Identity-Access", entry.parent());
+        assertEquals("Benutzer", entry.label());
+    }
+
+    /** Structured metadata keeps literal separators in names and normalizes absent or blank parents. */
+    @Test
+    public void catalog_preservesLiteralNamesWithoutInferringParents() throws Exception {
+        allPortlets(portlet("c_literal", Map.of("name", "News › Archive")),
+                portlet("c_blank", Map.of("name", "Flat", "parent", " \t ")));
+        for (final ToolCatalogEntryView entry : helper.catalog(user)) {
+            assertEquals("", entry.parent());
+            assertEquals(entry.title(), entry.label());
+        }
+        assertEquals("News › Archive", helper.catalog(user).stream()
+                .filter(entry -> entry.id().equals("c_literal")).findFirst().orElseThrow().label());
     }
 
     /** Unknown parent translations use the key, matching the navigation flyout fallback. */
@@ -230,18 +245,19 @@ public class ToolCatalogHelperTest {
 
     /**
      * Given Scenario: a catalog row is serialized with the REST object mapper.
-     * Expected Result: the JSON keys are exactly {@code id}, {@code title}, {@code isCustom}, the
-     * names the frontend model expects.
+     * Expected Result: the existing keys and explicit parent/child-label metadata match the frontend model.
      */
     @Test
     public void catalogEntry_serializesIsCustomKey() throws Exception {
         final JsonNode json = DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
-                .valueToTree(new ToolCatalogEntryView("c_x", "X", true));
+                .valueToTree(new ToolCatalogEntryView("c_x", "Group › X", true, "Group", "X"));
 
         assertEquals("c_x", json.get("id").asText());
-        assertEquals("X", json.get("title").asText());
+        assertEquals("Group › X", json.get("title").asText());
         assertTrue(json.get("isCustom").asBoolean());
-        assertEquals(3, json.size());
+        assertEquals("Group", json.get("parent").asText());
+        assertEquals("X", json.get("label").asText());
+        assertEquals(5, json.size());
     }
 
     /**

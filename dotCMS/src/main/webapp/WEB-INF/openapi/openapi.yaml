@@ -41625,10 +41625,19 @@ components:
           description: "True only for tools created through New Tool: registered in\
             \ the database and not declared in the product's portlet id registry.\
             \ False for every shipped tool, Language Variables included"
+        label:
+          type: string
+          description: Localized child label without the parent prefix
+          example: Users
+        parent:
+          type: string
+          description: Raw navigation parent label or language key; empty for no parent
+          example: Identity-Access
         title:
           type: string
-          description: "Title in the caller's language; falls back to the registered\
-            \ name, then to the id"
+          description: "Qualified title in the caller's language, prefixed by the\
+            \ parent when configured; falls back to the registered name, then to the\
+            \ id"
           example: Press Releases
     ToolView:
       type: object

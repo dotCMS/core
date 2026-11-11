@@ -26,6 +26,10 @@ export interface DotToolsCatalogEntry {
     /** Localized title, prefixed with the navigation parent when configured. */
     title: string;
     isCustom: boolean;
+    /** Raw navigation parent key, not inferred from the display title. */
+    parent?: string;
+    /** Localized child label without a parent prefix. */
+    label?: string;
 }
 
 /**
