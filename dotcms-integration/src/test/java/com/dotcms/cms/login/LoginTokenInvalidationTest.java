@@ -215,6 +215,33 @@ public class LoginTokenInvalidationTest {
     }
 
     /**
+     * When a user is deleted inside a transaction, a copy of the user cached before the commit, as
+     * another request reading the still-committed row would leave behind, is evicted once the
+     * transaction commits (the cache administrator repeats, after the commit, every removal made
+     * inside the transaction), so a session of that user not reached by the delete resolves to no
+     * user afterwards.
+     */
+    @Test
+    public void test_deleteInTransaction_evictsUserCachedBeforeCommit() throws Exception {
+        final User user = new UserDataGen().nextPersisted();
+        final String userId = user.getUserId();
+        final User loadedBefore = userAPI.loadUserById(userId);
+        final UserCache userCache = CacheLocator.getUserCache();
+        final HttpSession untrackedSession = new MockSession(UUIDGenerator.generateUuid());
+        untrackedSession.setAttribute(WebKeys.USER_ID, userId);
+
+        LocalTransaction.wrap(() -> {
+            userAPI.delete(userAPI.loadUserById(userId), APILocator.systemUser(),
+                    APILocator.systemUser(), false);
+            userCache.add(userId, loadedBefore);
+        });
+
+        assertNull("the cache must hold no entry for the user after the commit", userCache.get(userId));
+        assertNull("a session of the deleted user must resolve to no user",
+                PortalUtil.getUser(untrackedSession));
+    }
+
+    /**
      * Invalidating the login tokens of a user id given in a different case or with surrounding
      * spaces changes that user and evicts the cached copy, so the earlier token is rejected right
      * away.
