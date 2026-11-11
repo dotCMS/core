@@ -48,6 +48,11 @@
 		<async-supported>true</async-supported>
 	</filter>
 	<filter>
+		<filter-name>InteractiveIdentityFilter</filter-name>
+		<filter-class>com.dotcms.auth.InteractiveIdentityFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter>
 		<filter-name>InterceptorFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.InterceptorFilter</filter-class>
 		<async-supported>true</async-supported>
@@ -212,6 +217,11 @@
 	
 	<filter-mapping>
 		<filter-name>ThreadNameFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<filter-mapping>
+		<filter-name>InteractiveIdentityFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 
