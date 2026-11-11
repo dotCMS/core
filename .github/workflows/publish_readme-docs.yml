@@ -17,8 +17,13 @@
 # on the site, on the Documentation content type, on the Push Publish action and on the
 # `prod` push environment.
 #
+# Production is read too (with the read-only AI search account's token), so a page whose
+# earlier push failed is pushed again. A page that is not on production at all (e.g. an
+# unreleased SDK) is published on authoring only and never pushed. A page with a pending
+# draft fails the run instead of being published: the draft may hold unreviewed edits.
+#
 # Runs on every merge that touches a markdown file, and manually (dry run by default).
-# Every run checks all mapped pages and writes only those whose body differs.
+# Every run checks all mapped pages and writes only those that differ.
 
 name: Publish README Docs
 
@@ -58,12 +63,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          # Manual runs can be started from any branch; only main's files are published.
+          ref: main
           fetch-depth: 1
 
       - name: Sync pages
         env:
           DOTCMS_URL: ${{ vars.AUTODOC_DOTCMS_BASE_URL }}
           DOTCMS_TOKEN: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_PUBLISH }}
+          # Production, read only: the AI search account sees the live docs pages.
+          PROD_URL: ${{ vars.DOTCMS_DEVSITE_URL }}
+          PROD_TOKEN: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_AISEARCH }}
           # Empty on push, so merges always write.
           DRY_RUN: ${{ inputs.dry_run }}
           PAGES_FILTER: ${{ inputs.pages }}
@@ -74,6 +84,8 @@ jobs:
           REPO = "dotCMS/core"
           # Authoring server's "Push Publish" action: Save, Publish, Unlock, Push/Remove Now (to `prod`).
           PUSH_PUBLISH_ACTION = "0c5239e8-4aef-4dcd-b31f-ab5ca0394ea2"
+          # "Publish" action: Save, Publish on authoring only (for pages not on production).
+          PUBLISH_ACTION = "b9d89c80-3d88-4311-8365-187323c96436"
           PUSH_TIMEOUT = 180  # seconds to wait for a page's push bundle to succeed
           SOURCE_PREFIX = f"https://github.com/{REPO}/blob/main/"
           LINK_BASE = f"https://github.com/{REPO}/blob/main"
@@ -84,6 +96,8 @@ jobs:
 
           base = os.environ["DOTCMS_URL"].rstrip("/")
           token = os.environ["DOTCMS_TOKEN"]
+          prod_base = os.environ["PROD_URL"].rstrip("/")
+          prod_token = os.environ["PROD_TOKEN"]
           dry_run = os.environ.get("DRY_RUN") == "true"
           selected = set(os.environ.get("PAGES_FILTER", "").split())
           summary = open(os.environ["GITHUB_STEP_SUMMARY"], "a")
@@ -143,10 +157,10 @@ jobs:
                   raise RuntimeError(f"readmeSource file not found on main: {path}")
               return path
 
-          def call(method, url, payload=None):
-              req = urllib.request.Request(base + url, method=method,
+          def call(method, url, payload=None, prod=False):
+              req = urllib.request.Request((prod_base if prod else base) + url, method=method,
                                            data=json.dumps(payload).encode() if payload is not None else None)
-              req.add_header("Authorization", f"Bearer {token}")
+              req.add_header("Authorization", f"Bearer {prod_token if prod else token}")
               req.add_header("Content-Type", "application/json")
               try:
                   with urllib.request.urlopen(req, timeout=60) as resp:
@@ -154,14 +168,22 @@ jobs:
               except urllib.error.HTTPError as e:
                   return e.code, {"error": e.read().decode(errors="replace")[:300]}
 
+          class PushStalled(RuntimeError):
+              """A push never finished; most likely a setup problem that affects every page."""
+
           def recent_bundles():
-              status, data = call("GET", "/api/v1/publishing?page=1&per_page=20")
+              # Generous page size: scheduled bundles can be listed ahead of new pushes.
+              status, data = call("GET", "/api/v1/publishing?page=1&per_page=100")
               if status != 200:
                   raise RuntimeError(f"publishing queue unreadable: HTTP {status} {data}")
               return data.get("entity") or []
 
-          def wait_for_push(ident, before):
-              """Find the push bundle created for this page and wait until it succeeds."""
+          def wait_for_push(ident, before, inode):
+              """Find the push bundle created for this page and wait until the push has landed.
+
+              Landed means production serves the version just published (same inode), or the bundle
+              reports SUCCESS. Production usually has it within seconds; the authoring server can take
+              minutes to update the bundle's own status."""
               seen, bundle = set(before), None
               deadline = time.time() + PUSH_TIMEOUT
               while time.time() < deadline:
@@ -169,30 +191,37 @@ jobs:
                       if bundle and b["bundleId"] == bundle["bundleId"]:
                           bundle = b  # refresh status
                       elif not bundle and b["bundleId"] not in seen:
-                          seen.add(b["bundleId"])
                           status, assets = call("GET", f"/api/bundle/{b['bundleId']}/assets")
-                          if status == 200 and any(a.get("asset") == ident for a in assets):
+                          if status != 200:
+                              continue  # look again on the next pass
+                          seen.add(b["bundleId"])
+                          if any(a.get("asset") == ident for a in assets):
                               bundle = b
                   if bundle:
                       if bundle["status"] in ("SUCCESS", "SUCCESS_WITH_WARNINGS"):
                           return bundle["bundleId"]
                       if "FAIL" in bundle["status"]:
                           raise RuntimeError(f"published, but push bundle {bundle['bundleId']} {bundle['status']}")
+                      try:
+                          on_prod = production_page(ident)
+                      except RuntimeError:
+                          on_prod = None  # check again on the next pass
+                      if on_prod and on_prod.get("inode") == inode:
+                          return bundle["bundleId"]
                   time.sleep(5)
               if not bundle:
-                  raise RuntimeError(f"published, but no push bundle appeared within {PUSH_TIMEOUT}s")
+                  raise PushStalled(f"published, but no push bundle appeared within {PUSH_TIMEOUT}s")
               # The action succeeds even when the user may not push anywhere: the bundle then gets no
               # environment and never leaves BUNDLE_REQUESTED. (A new bundle briefly shows 0 environments too.)
               hint = (" (no environment: is the role allowed on the `prod` push environment?)"
                       if not bundle.get("environmentCount") else "")
-              raise RuntimeError(f"published, but push bundle {bundle['bundleId']} still {bundle['status']} "
-                                 f"after {PUSH_TIMEOUT}s{hint}")
+              raise PushStalled(f"published, but push bundle {bundle['bundleId']} still {bundle['status']} "
+                                f"after {PUSH_TIMEOUT}s{hint}")
 
-          def push_publish(ident, body):
-              before = {b["bundleId"] for b in recent_bundles()}
+          def fire(action, ident, body):
               payload = {"contentlet": {"identifier": ident, "languageId": 1, "documentation": body,
                                         "disabledWYSIWYG": ["documentation"]}}
-              url = f"/api/v1/workflow/actions/{PUSH_PUBLISH_ACTION}/fire?identifier={ident}"
+              url = f"/api/v1/workflow/actions/{action}/fire?identifier={ident}"
               status, data = call("PUT", url, payload)
               if status >= 500:  # dotCMS intermittently fails a save; a retry has always gone through
                   status, data = call("PUT", url, payload)
@@ -200,7 +229,21 @@ jobs:
                   # A failed save can leave the page locked to this account; release it.
                   call("PUT", f"/api/v1/content/_unlock/{ident}?language=1")
                   raise RuntimeError(f"save/publish failed: HTTP {status} {data.get('errors') or data}")
-              return wait_for_push(ident, before)
+              return data["entity"].get("inode")
+
+          def push_publish(ident, body):
+              before = {b["bundleId"] for b in recent_bundles()}
+              inode = fire(PUSH_PUBLISH_ACTION, ident, body)
+              return wait_for_push(ident, before, inode)
+
+          def production_page(ident):
+              """The page as production serves it, or None if the page is not there."""
+              status, data = call("GET", f"/api/v1/content/{ident}", prod=True)
+              if status == 404:
+                  return None
+              if status != 200:
+                  raise RuntimeError(f"production read failed: HTTP {status} {data}")
+              return data["entity"]
 
           # A bad token still reads the public pages as anonymous, so check it before anything else.
           status, data = call("GET", "/api/v1/users/current/")
@@ -216,31 +259,60 @@ jobs:
           if unknown:
               sys.exit(f"not a mapped page urlTitle: {' '.join(sorted(unknown))}")
 
-          rows, diffs, failed = [], [], 0
+          rows, diffs, failed, stalled = [], [], 0, None
           for page in sorted(pages, key=lambda p: p.get("urlTitle") or ""):
-              slug, ident, url = page.get("urlTitle"), page["identifier"], page.get("readmeSource", "").strip()
+              slug, ident = page.get("urlTitle"), page["identifier"]
               if selected and slug not in selected:
                   continue
-              path = None
+              url, path = page.get("readmeSource", "").strip(), None
               try:
+                  if stalled:
+                      raise RuntimeError(f"not attempted: an earlier push stalled ({stalled})")
+                  # Search results can lag behind recent saves; read the page itself.
+                  status, data = call("GET", f"/api/v1/content/{ident}")
+                  if status != 200:
+                      raise RuntimeError(f"read failed: HTTP {status} {data}")
+                  content = data["entity"]
+                  url = (content.get("readmeSource") or "").strip()
                   path = source_path(url)
                   if path is None:
                       result = "other source, skipped"
+                  elif content.get("live") is not True:
+                      # Publishing would also publish whatever else the draft changed, unreviewed.
+                      raise RuntimeError("pending draft: publish or discard it in dotCMS, then rerun")
                   else:
                       body = clean(open(path, encoding="utf-8").read(), path)
-                      # Search results can lag behind recent saves; compare with the page itself.
-                      status, data = call("GET", f"/api/v1/content/{ident}")
-                      if status != 200:
-                          raise RuntimeError(f"read failed: HTTP {status} {data}")
-                      current = data["entity"].get("documentation") or ""
-                      if normalize(current) == normalize(body):
+                      current = content.get("documentation") or ""
+                      on_prod = production_page(ident)
+                      if on_prod is None:
+                          # Not released to production (or removed from it); keep it that way.
+                          if normalize(current) == normalize(body):
+                              result = "unchanged (not on production)"
+                          elif dry_run:
+                              result = "would update on authoring only (not on production)"
+                          else:
+                              fire(PUBLISH_ACTION, ident, body)
+                              result = "published on authoring only (not on production)"
+                      elif normalize(current) != normalize(body):
+                          if dry_run:
+                              result = "would update"
+                          else:
+                              result = f"published and pushed (bundle {push_publish(ident, body)})"
+                      elif normalize(on_prod.get("documentation") or "") != normalize(body):
+                          # Authoring is current but production is not: an earlier push failed.
+                          if dry_run:
+                              result = "would push again (production is behind)"
+                          else:
+                              result = f"pushed again, production was behind (bundle {push_publish(ident, body)})"
+                      else:
                           result = "unchanged"
-                      elif dry_run:
-                          result = "would update"
+                      if dry_run and normalize(current) != normalize(body):
                           diffs.append((slug, "".join(difflib.unified_diff(
                               current.splitlines(True), body.splitlines(True), "dotCMS", path))))
-                      else:
-                          result = f"published and pushed (bundle {push_publish(ident, body)})"
+              except PushStalled as exc:
+                  failed += 1
+                  stalled = slug
+                  result = f"FAILED: {exc}"
               except Exception as exc:
                   failed += 1
                   result = f"FAILED: {exc}"
