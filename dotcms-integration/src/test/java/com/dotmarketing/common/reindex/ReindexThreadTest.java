@@ -15,6 +15,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -519,11 +520,18 @@ public class ReindexThreadTest {
      * refreshes, which can be up to a second later, so callers poll with {@link #waitUntil}
      * instead of searching once.
      *
+     * <p>The search query caches are cleared before every search. The worker clears them when it
+     * acknowledges a batch, which is before the index refresh, so a search made in between caches
+     * an empty result. Nothing else is indexed while this class waits, so that empty result would
+     * be served for the rest of the wait and the content would look unindexed.</p>
+     *
      * @param contentlet the contentlet to look for
      * @return {@code true} if the search found it
      * @throws Exception if the search fails
      */
     private static boolean isSearchable(final Contentlet contentlet) throws Exception {
+        CacheLocator.getESQueryCache().clearCache();
+        CacheLocator.getOSQueryCache().clearCache();
         return !contentletAPI.search("+identifier:" + contentlet.getIdentifier(), 1, 0, null,
                 user, respectFrontendRoles).isEmpty();
     }
