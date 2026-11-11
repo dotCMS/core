@@ -1,38 +1,82 @@
 package com.dotcms.auth;
 
+import java.util.concurrent.Callable;
+
 /**
  * Thread-bound, server-side scope during which identity resolution answers with the built-in system user
- * without consulting the request. Stub for the Red gate: no behavior yet.
+ * without consulting the request.
+ * <p>
+ * It is for server-side work only: nothing a request, a session or a template carries can open it. It is
+ * tied to the thread that opened it; to run work on another thread use {@link #wrap(Runnable)} or
+ * {@link #wrap(Callable)} at the point where the work is handed over.
  */
 public final class SystemUserScope implements AutoCloseable {
+
+    private static final ThreadLocal<Integer> DEPTH = ThreadLocal.withInitial(() -> 0);
 
     private SystemUserScope() {
     }
 
+    /**
+     * Opens a scope on the current thread. Scopes nest; the outermost one ends it.
+     *
+     * @return the scope, to be closed in a try-with-resources
+     */
     public static SystemUserScope open() {
+        DEPTH.set(DEPTH.get() + 1);
         return new SystemUserScope();
     }
 
     /**
-     * Returns a task that, when run on any thread, runs inside a scope if one was active when this method
-     * was called. Stub for the Red gate: returns the task unchanged.
+     * @return true while a scope is open on the current thread
      */
-    public static Runnable wrap(final Runnable task) {
-        return task;
+    public static boolean isActive() {
+        return DEPTH.get() > 0;
     }
 
     /**
-     * Callable variant of {@link #wrap(Runnable)}. Stub for the Red gate: returns the task unchanged.
+     * Returns a task that runs inside a scope on whichever thread executes it, if a scope is active on the
+     * thread that calls this method; otherwise the task is returned unchanged.
+     *
+     * @param task the work to hand to another thread
+     * @return the task to hand over
      */
-    public static <T> java.util.concurrent.Callable<T> wrap(final java.util.concurrent.Callable<T> task) {
-        return task;
+    public static Runnable wrap(final Runnable task) {
+        if (!isActive()) {
+            return task;
+        }
+        return () -> {
+            try (SystemUserScope ignored = open()) {
+                task.run();
+            }
+        };
     }
 
-    public static boolean isActive() {
-        return false;
+    /**
+     * Callable variant of {@link #wrap(Runnable)}.
+     *
+     * @param task the work to hand to another thread
+     * @param <T>  the result type
+     * @return the task to hand over
+     */
+    public static <T> Callable<T> wrap(final Callable<T> task) {
+        if (!isActive()) {
+            return task;
+        }
+        return () -> {
+            try (SystemUserScope ignored = open()) {
+                return task.call();
+            }
+        };
     }
 
     @Override
     public void close() {
+        final int depth = DEPTH.get() - 1;
+        if (depth <= 0) {
+            DEPTH.remove();
+        } else {
+            DEPTH.set(depth);
+        }
     }
 }
