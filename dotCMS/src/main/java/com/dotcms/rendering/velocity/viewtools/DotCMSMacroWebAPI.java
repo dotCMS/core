@@ -1,8 +1,10 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.browser.BrowserAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -11,6 +13,7 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
@@ -22,7 +25,6 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -43,11 +45,32 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	/** The request the tool was initialised with; it carries the author of the rendered code. */
 	private HttpServletRequest request;
 
+	/**
+	 * Keeps the request the tool was created for.
+	 *
+	 * @param obj the {@link ViewContext} of the rendering
+	 */
+	@Override
 	public void init(Object obj) {
-
-                ViewContext context = (ViewContext) obj;
+		final ViewContext context = (ViewContext) obj;
 		this.request = context.getRequest();
+	}
 
+	/**
+	 * Returns the user making the current request, or the anonymous user when nobody is logged
+	 * in. The request bound to the current thread wins over the one the tool was created for, so
+	 * a tool instance shared between requests still answers for the current one.
+	 *
+	 * @return the user whose permissions folders, files and content are read with
+	 */
+	protected User getRequestUser() {
+		final HttpServletRequest threadRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		final HttpServletRequest currentRequest = null != threadRequest ? threadRequest : this.request;
+		User user = null;
+		if (null != currentRequest) {
+			user = WebAPILocator.getUserWebAPI().getUser(currentRequest);
+		}
+		return null != user ? user : APILocator.getUserAPI().getAnonymousUserNoThrow();
 	}
 
 	public List getfileRepository(String folderPath, String searchFolder,
@@ -418,19 +441,46 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	}
 
 
+	/**
+	 * Returns the files of a folder to show in a media gallery. The site, the folder and its files
+	 * are read with the permissions of the user making the request (the anonymous user when nobody
+	 * is logged in), so files that user cannot read are left out.
+	 *
+	 * @param folderPath path of the folder whose files are listed
+	 * @param hostId identifier of the site the folder belongs to
+	 * @return one map per file, with the keys 'movie' (null when the file is not a movie) and
+	 * 'photo' (the file, or the photo of the movie). Empty when the user cannot read the site or
+	 * the folder.
+	 * @throws DotDataException if the files cannot be loaded
+	 */
 	public List<HashMap<String, IFileAsset>> getMediaGalleryFolderFiles(String folderPath, String hostId) throws DotDataException {
         folderPath = (folderPath == null) ? "" : folderPath;
         folderPath = folderPath.trim().endsWith("/") ? folderPath.trim() : folderPath.trim() + "/";
-        Folder folder = new Folder();
+        final User user = getRequestUser();
+        Folder folder;
 		try {
-			folder = APILocator.getFolderAPI().findFolderByPath(folderPath, hostId,userAPI.getSystemUser(),false);
+			// Resolve the site here: the hostId overload of findFolderByPath reads the site
+			// without front-end roles.
+			final Host site = APILocator.getHostAPI().find(hostId, user, true);
+			folder = APILocator.getFolderAPI().findFolderByPath(folderPath, site, user, true);
+		} catch (final DotSecurityException e) {
+			Logger.debug(this, () -> String.format("User '%s' cannot read the requested gallery site or folder",
+					user.getUserId()));
+			return new ArrayList<>();
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(),e);
 		}
         List<IFileAsset> fileList = new ArrayList<>();
 		try {
-			fileList.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, "", true, APILocator.getUserAPI().getSystemUser(), false));
+			// The site and the folder were read as the viewer above. The listing itself runs as the
+			// system user because it reads the folder again with the page mode's front-end role
+			// setting (off in edit and preview mode); the files are then kept only if the viewer can
+			// read them.
+			final List<FileAsset> folderFiles = APILocator.getFileAssetAPI().findFileAssetsByFolder(
+					folder, "", true, APILocator.getUserAPI().getSystemUser(), false);
+			fileList.addAll(APILocator.getPermissionAPI().filterCollection(folderFiles,
+					PermissionAPI.PERMISSION_READ, true, user));
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage());
 		}

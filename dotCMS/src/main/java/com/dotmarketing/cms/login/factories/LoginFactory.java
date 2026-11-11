@@ -111,14 +111,15 @@ public class LoginFactory {
     }
 
     /**
+     * Signs a user in and puts them on the session, checking the password they typed.
      *
-     * @param userName
-     * @param password
-     * @param rememberMe
-     * @param request
-     * @param response
-     * @return
-     * @throws NoSuchUserException
+     * @param userName   the email address or user id, depending on the company's authentication type
+     * @param password   the password typed by the user
+     * @param rememberMe whether the login should be remembered beyond the session
+     * @param request    the request the login was sent on
+     * @param response   the response the session is established on
+     * @return {@code true} when the user was signed in
+     * @throws NoSuchUserException when dotCMS holds no account for the given name
      */
 	public static boolean doLogin(String userName, String password, boolean rememberMe, HttpServletRequest request,
 			HttpServletResponse response) throws NoSuchUserException {
@@ -126,15 +127,21 @@ public class LoginFactory {
 	}
 
 	/**
-	 * 
-	 * @param userName
-	 * @param password
-	 * @param rememberMe
-	 * @param request
-	 * @param response
-	 * @param skipPasswordCheck
-	 * @return
-	 * @throws NoSuchUserException
+	 * Signs a user in and puts them on the session.
+	 *
+	 * <p>The password stored in dotCMS is checked unless {@code skipPasswordCheck} is set, which is
+	 * how a login that already proved the identity some other way, such as the cookie login, signs
+	 * the user in.</p>
+	 *
+	 * @param userName          the email address or user id, depending on the company's authentication type
+	 * @param password          the password typed by the user, ignored when the check is skipped
+	 * @param rememberMe        whether the login should be remembered beyond the session
+	 * @param request           the request the login was sent on
+	 * @param response          the response the session is established on
+	 * @param skipPasswordCheck when {@code true} the identity is taken as already proven and no
+	 *                          password is checked
+	 * @return {@code true} when the user was signed in
+	 * @throws NoSuchUserException when dotCMS holds no account for the given name
 	 */
     public static boolean doLogin(String userName, String password, boolean rememberMe, HttpServletRequest request, HttpServletResponse response, boolean skipPasswordCheck) throws NoSuchUserException {
         try {

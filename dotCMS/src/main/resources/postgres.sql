@@ -1530,6 +1530,8 @@ create index idx_user_clickstream13 on clickstream (first_page_id);
 create index idx_user_clickstream14 on clickstream (operating_system);
 create index idx_user_clickstream17 on clickstream (remote_address);
 create index idx_multitree_1 on multi_tree (relation_type);
+create index idx_multitree_parent1_variant on multi_tree (parent1, variant_id);
+create index idx_multitree_parent2_variant on multi_tree (parent2, variant_id);
 create index idx_workflow_6 on workflow_task (language_id);
 create index idx_workflow_4 on workflow_task (webasset);
 create index idx_workflow_5 on workflow_task (created_by);
