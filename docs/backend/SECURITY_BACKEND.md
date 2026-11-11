@@ -163,7 +163,9 @@ HTTP session is gone (session timeout, node restart). Its lifetime depends on "r
 A session login token is renewed once half its lifetime has passed, on the next back-end
 request (`/api/`, `/dotAdmin`, `/html/`, `/c/`, `/dwr/`) that carries the cookie
 (`DefaultAutoLoginWebInterceptor`). An active user therefore keeps a valid cookie, and a browser
-left idle for longer than the lifetime must log in again. Site pages and assets never receive a
+left idle for longer than the lifetime must log in again. The effective idle limit is therefore
+this lifetime: the Tomcat `session-timeout` (30 minutes in `web.xml`) only decides when the cookie
+has to step in and log the browser back in. Site pages and assets never receive a
 renewed cookie. The cookie is renewed only for its own owner, when that owner is the session's
 user and still active, and never while an administrator is logged in as another user. Setting the
 minutes to `1440` sets a one-day lifetime, still renewed while the user works; a value below 1 is
