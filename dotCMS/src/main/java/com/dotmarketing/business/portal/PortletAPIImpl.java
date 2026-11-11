@@ -2,6 +2,8 @@ package com.dotmarketing.business.portal;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -110,6 +112,16 @@ public class PortletAPIImpl implements PortletAPI {
         }
     }
 
+    /**
+     * Saves a custom tool definition and notifies open navigation menus in the same transaction.
+     * Consumers re-read the menu, so duplicate refresh notifications are harmless.
+     *
+     * @param portlet the {@link Portlet} definition to save
+     * @param user the {@link User} saving the tool
+     * @return the stored tool
+     * @throws DotDataException if saving the definition or its refresh event fails
+     * @throws LanguageException if a language lookup fails
+     */
     @Override
     @WrapInTransaction
     public Portlet savePortlet(Portlet portlet, User user) throws DotDataException, LanguageException {
@@ -154,6 +166,7 @@ public class PortletAPIImpl implements PortletAPI {
                 .setMessage(Try.of(() -> LanguageUtil.get(user.getLocale(), messageKey))
                         .getOrElse(defaultMessage)).create(),list(user.getUserId()));
 
+        APILocator.getSystemEventsAPI().push(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
         return newPortlet;
     }
 

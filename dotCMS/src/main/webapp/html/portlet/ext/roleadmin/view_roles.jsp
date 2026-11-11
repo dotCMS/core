@@ -158,6 +158,14 @@ margin:0px auto;
         </tr>
         
         <tr>
+            <td style="white-space: nowrap;"><label for="customPortletParent"><%=LanguageUtil.get(pageContext, "tools.form.parent")%></label></td>
+            <td>
+                <input dojoType="dijit.form.TextBox" type="text" name="customPortletParent"
+                    id="customPortletParent" value="" aria-describedby="customPortletParentHint">
+                <div class="hint-text" id="customPortletParentHint"><%=LanguageUtil.get(pageContext, "tools.form.parent.hint")%></div>
+            </td>
+        </tr>
+        <tr>
             <td style="white-space: nowrap;"><label for="customPortletBaseTypes"><%=LanguageUtil.get(pageContext, "custom.content.portlet.baseTypes")%>
             </label></td>
 

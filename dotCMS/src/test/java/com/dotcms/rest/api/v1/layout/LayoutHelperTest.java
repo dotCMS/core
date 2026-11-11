@@ -102,6 +102,21 @@ public class LayoutHelperTest {
         assertEquals("Templates", helper.title(user, "templates"));
     }
 
+    /** Section labels include the same translated parent shown by the available-tools catalog. */
+    @Test
+    public void toView_includesParentInToolTitles() {
+        final Portlet users = registered("users", "Users");
+        users.getInitParams().put("parent", "Identity-Access");
+        titles.put("Identity-Access", "Identity Access");
+        titles.put(TITLE_PREFIX + "users", "Users");
+        registered("templates", "Templates");
+        final SectionView view = helper.toView(
+                layout("section", "System", "settings", 1, "users", "templates"), user);
+
+        assertEquals(List.of("users", "templates"), view.portletIds());
+        assertEquals(List.of("Identity Access › Users", "Templates"), view.portletTitles());
+    }
+
     /**
      * Method to test: {@link LayoutHelper#title(User, String)}
      * Given: no translation (the resolver returns the key) and a portlet registered with a name

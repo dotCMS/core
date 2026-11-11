@@ -1,4 +1,9 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { Subject } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
@@ -181,6 +186,37 @@ describe('DotToolsPageComponent', () => {
         const toast = spectator.inject(MessageService, true);
         (toast.add as Mock).mockClear();
         (toast.clear as Mock).mockClear();
+    });
+
+    it('shows the qualified parent label in the catalog and included tools without changing ids', () => {
+        const entry: DotToolsCatalogEntry = {
+            id: 'users',
+            title: 'Identity Access › Users',
+            isCustom: false
+        };
+        const section: DotToolsSection = {
+            ...SITE,
+            id: 'system',
+            name: 'System',
+            portletIds: [entry.id],
+            portletTitles: [entry.title]
+        };
+        store.sections.set([section]);
+        store.selectedSection.set(section);
+        store.selectedSectionId.set(section.id);
+        store.selectedSectionTools.set([entry]);
+        store.selectedSectionToolIds.set(new Set([entry.id]));
+        store.paginatedCatalog.set([entry]);
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('tools-catalog-row-users')).textContent).toContain(
+            entry.title
+        );
+        expect(spectator.query(byTestId('tools-section-tools-system')).textContent).toContain(
+            entry.title
+        );
+        spectator.click(byTestId('tools-section-tool-remove-users'));
+        expect(store.removeToolFromSelectedSection).toHaveBeenCalledWith('users');
     });
 
     describe('drag drop-index math', () => {

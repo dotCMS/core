@@ -1,17 +1,30 @@
 import { animate, state, style, transition, trigger } from '@angular/animations';
+import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
 import {
+    ChangeDetectionStrategy,
     Component,
+    DestroyRef,
     ElementRef,
-    EventEmitter,
-    HostBinding,
-    Input,
-    Output,
     ViewChild,
-    ChangeDetectionStrategy
+    computed,
+    inject,
+    input,
+    output,
+    signal,
+    viewChildren
 } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
-import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
+import { DotMenu, DotMenuItem, MenuGroup } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import { DotNavMenuItemDirective, DotNavMenuTriggerDirective } from './dot-nav-menu.directive';
+
+interface NavigationEntry {
+    parent?: string;
+    items: DotMenuItem[];
+    active: boolean;
+}
 
 @Component({
     animations: [
@@ -37,33 +50,90 @@ import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
     templateUrl: './dot-sub-nav.component.html',
     styleUrls: ['./dot-sub-nav.component.scss'],
     changeDetection: ChangeDetectionStrategy.Eager,
-    imports: [RouterModule]
+    // Keep the default CDK trigger out of scope; the persistent navigation trigger owns its input.
+    imports: [
+        CdkMenu,
+        CdkMenuItem,
+        DotMessagePipe,
+        DotNavMenuItemDirective,
+        DotNavMenuTriggerDirective,
+        RouterModule
+    ],
+    host: {
+        '(document:keydown.escape)': 'closeFlyouts()',
+        '[@expandAnimation]': 'getAnimation',
+        '[class.dot-nav-sub--flyout-open]': '$flyoutOpen()',
+        '[attr.inert]': '!$collapsed() && !$data().isOpen ? "" : null'
+    }
 })
 export class DotSubNavComponent {
-    @ViewChild('ul', { static: true }) ul: ElementRef;
+    @ViewChild('ul', { static: true }) ul: ElementRef<HTMLUListElement>;
 
-    @Input() data: DotMenu;
+    readonly $data = input.required<DotMenu | MenuGroup>({ alias: 'data' });
+    readonly $collapsed = input(false, { alias: 'collapsed' });
+    readonly itemClick = output<{ originalEvent: MouseEvent; data: DotMenuItem }>();
 
-    @Output()
-    itemClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenuItem }> = new EventEmitter();
+    #closeTimeout: ReturnType<typeof setTimeout> | undefined;
 
-    @Input() collapsed: boolean;
+    protected readonly $parentMenus = viewChildren(CdkMenuTrigger);
+    protected readonly $flyoutOpen = signal(false);
+    protected readonly $entries = computed(() => {
+        const entries: NavigationEntry[] = [];
+        const parents = new Map<string, NavigationEntry>();
 
-    @HostBinding('@expandAnimation') get getAnimation(): string {
-        return !this.collapsed && this.data.isOpen ? 'expanded' : 'collapsed';
+        for (const item of this.$data().menuItems) {
+            const parent = item.initParams?.['parent']?.trim();
+            if (!parent) {
+                entries.push({ items: [item], active: item.active });
+                continue;
+            }
+
+            let group = parents.get(parent);
+            if (!group) {
+                group = { parent, items: [], active: false };
+                parents.set(parent, group);
+                entries.push(group);
+            }
+            group.items.push(item);
+            group.active ||= item.active;
+        }
+
+        return entries;
+    });
+
+    constructor() {
+        inject(DestroyRef).onDestroy(() => this.cancelFlyoutClose());
     }
 
-    /**
-     * Handle click event in a menu sub item
-     *
-     * @param MouseEvent $event
-     * @param DotMenuItem item
-     * @memberof DotSubNavComponent
-     */
-    onItemClick($event: MouseEvent, item: DotMenuItem): void {
-        this.itemClick.emit({
-            originalEvent: $event,
-            data: item
-        });
+    get getAnimation(): string {
+        return !this.$collapsed() && this.$data().isOpen ? 'expanded' : 'collapsed';
+    }
+
+    /** Allows the pointer to cross between the parent and its overlay before closing. */
+    protected scheduleFlyoutClose(menu: CdkMenuTrigger): void {
+        this.cancelFlyoutClose();
+        if (menu.isOpen()) {
+            this.#closeTimeout = setTimeout(() => menu.close(), 300);
+        }
+    }
+
+    protected cancelFlyoutClose(): void {
+        clearTimeout(this.#closeTimeout);
+        this.#closeTimeout = undefined;
+    }
+
+    /** Also dismisses hover-opened flyouts when keyboard focus is outside the menu. */
+    protected closeFlyouts(): void {
+        this.cancelFlyoutClose();
+        if (this.$flyoutOpen()) {
+            for (const menu of this.$parentMenus()) {
+                menu.close();
+            }
+        }
+    }
+
+    /** Emits the original portlet, preserving its layout and routing metadata. */
+    onItemClick(event: MouseEvent, item: DotMenuItem): void {
+        this.itemClick.emit({ originalEvent: event, data: item });
     }
 }

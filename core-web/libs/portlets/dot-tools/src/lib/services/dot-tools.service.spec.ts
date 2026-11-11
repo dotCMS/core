@@ -24,6 +24,7 @@ const MOCK_CATALOG: DotToolsCatalogEntry[] = [{ id: 'pages', title: 'Pages', isC
 const MOCK_CUSTOM: DotToolsCustomToolConfig = {
     portletId: 'c_press-releases',
     portletName: 'Press Releases',
+    parent: 'Identity-Access',
     baseTypes: [DotCMSBaseTypesContentTypes.CONTENT],
     contentTypes: ['Blog'],
     dataViewMode: 'card'
@@ -98,7 +99,7 @@ describe('DotToolsService', () => {
             expect(received).toEqual(MOCK_CUSTOM);
         });
 
-        it('POST /v1/portlet/custom joins arrays into comma-separated strings and chains GET', () => {
+        it('POST /v1/portlet/custom submits the parent and reads the localized catalog row', () => {
             // Backend's CustomPortletForm declares baseTypes / contentTypes
             // as `String` (comma-separated). Sending arrays verbatim makes
             // Jackson reject the body, so this is a load-bearing conversion.
@@ -107,6 +108,7 @@ describe('DotToolsService', () => {
                 .createCustomTool({
                     portletId: 'c_press-releases',
                     portletName: 'Press Releases',
+                    parent: 'Identity-Access',
                     baseTypes: [
                         DotCMSBaseTypesContentTypes.CONTENT,
                         DotCMSBaseTypesContentTypes.PERSONA
@@ -120,34 +122,41 @@ describe('DotToolsService', () => {
             expect(create.request.body).toEqual({
                 portletId: 'c_press-releases',
                 portletName: 'Press Releases',
+                parent: 'Identity-Access',
                 baseTypes: 'CONTENT,PERSONA',
                 contentTypes: 'Blog,Event',
                 dataViewMode: 'card'
             });
             // Backend returns only `{ entity: { portlet: id } }`, not the
-            // full config, so the service follows up with a GET to populate
-            // the catalog entry.
+            // full catalog row, so read the catalog for the localized parent/title.
             create.flush({ entity: { portlet: 'c_press-releases' } });
 
-            const follow = spectator.expectOne(
-                '/api/v1/portlet/custom/c_press-releases',
-                HttpMethod.GET
-            );
-            follow.flush({ entity: MOCK_CUSTOM });
+            const follow = spectator.expectOne('/api/v1/portlet/_catalog', HttpMethod.GET);
+            follow.flush({
+                entity: [
+                    ...MOCK_CATALOG,
+                    {
+                        id: 'c_press-releases',
+                        title: 'Identity Access › Press Releases',
+                        isCustom: true
+                    }
+                ]
+            });
 
             expect(received).toEqual({
                 id: 'c_press-releases',
-                title: 'Press Releases',
+                title: 'Identity Access › Press Releases',
                 isCustom: true
             });
         });
 
-        it('PUT /v1/portlet/custom follows the same chain as POST', () => {
+        it('PUT /v1/portlet/custom clears the parent and reads the updated catalog row', () => {
             let received: DotToolsCatalogEntry | undefined;
             spectator.service
                 .updateCustomTool({
                     portletId: 'c_press-releases',
                     portletName: 'Press Releases v2',
+                    parent: '',
                     baseTypes: [DotCMSBaseTypesContentTypes.CONTENT],
                     contentTypes: [],
                     dataViewMode: 'list'
@@ -158,17 +167,36 @@ describe('DotToolsService', () => {
             expect(update.request.body).toEqual({
                 portletId: 'c_press-releases',
                 portletName: 'Press Releases v2',
+                parent: '',
                 baseTypes: 'CONTENT',
                 contentTypes: '',
                 dataViewMode: 'list'
             });
             update.flush({ entity: { portlet: 'c_press-releases' } });
 
-            spectator
-                .expectOne('/api/v1/portlet/custom/c_press-releases', HttpMethod.GET)
-                .flush({ entity: { ...MOCK_CUSTOM, portletName: 'Press Releases v2' } });
+            spectator.expectOne('/api/v1/portlet/_catalog', HttpMethod.GET).flush({
+                entity: [{ id: 'c_press-releases', title: 'Press Releases v2', isCustom: true }]
+            });
 
             expect(received?.title).toBe('Press Releases v2');
+        });
+
+        it('omits an unspecified parent and reports a missing saved catalog row', () => {
+            let error: unknown;
+            spectator.service
+                .updateCustomTool({
+                    portletId: 'c_custom',
+                    portletName: 'Custom',
+                    baseTypes: [],
+                    contentTypes: [],
+                    dataViewMode: 'list'
+                })
+                .subscribe({ error: (result) => (error = result) });
+            const request = spectator.expectOne('/api/v1/portlet/custom', HttpMethod.PUT);
+            expect(request.request.serializeBody()).not.toContain('"parent"');
+            request.flush({ entity: { portlet: 'c_custom' } });
+            spectator.expectOne('/api/v1/portlet/_catalog', HttpMethod.GET).flush({ entity: [] });
+            expect(error).toBeInstanceOf(Error);
         });
 
         it('DELETE /v1/portlet/custom/{id} (id encoded)', () => {

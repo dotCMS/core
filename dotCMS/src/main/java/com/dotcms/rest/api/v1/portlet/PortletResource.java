@@ -172,6 +172,7 @@ public class PortletResource implements Serializable {
             operationId = "saveNew",
             summary = "Create a custom content tool",
             description = "Creates a custom content tool that lists the given base types and/or content types. "
+                    + "The optional parent is a navigation label or language key; empty means no parent. "
                     + "Requires an authenticated back-end user with access to the roles, tools or tools-beta "
                     + "portlet, or the CMS Administrator role."
     )
@@ -221,6 +222,7 @@ public class PortletResource implements Serializable {
                     .putInitParam("baseTypes", formData.baseTypes)
                     .putInitParam("contentTypes", formData.contentTypes)
                     .putInitParam(DATA_VIEW_MODE_KEY, formData.dataViewMode)
+                    .putInitParam("parent", formData.parent == null ? BLANK : formData.parent)
                     .build();
 
 
@@ -249,7 +251,7 @@ public class PortletResource implements Serializable {
     @Operation(
             operationId = "getCustomTool",
             summary = "Read one custom content tool's configuration",
-            description = "Returns the editable configuration of a custom content tool: id, name, base types, "
+            description = "Returns the editable configuration of a custom content tool: id, name, navigation parent, base types, "
                     + "content types and data view mode. Requires an authenticated back-end user with access to "
                     + "the tools or tools-beta portlet, or the CMS Administrator role."
     )
@@ -314,14 +316,17 @@ public class PortletResource implements Serializable {
      * {@code roles}, {@code tools} or {@code tools-beta} portlet, or the CMS Administrator role.
      *
      * @param request  the current request
-     * @param formData the full definition to store; every field is replaced
+     * @param formData the definition to store; an omitted parent preserves its existing value,
+     *                 while an empty parent clears the navigation grouping
      * @return the stored portlet id
      */
     @Operation(
             operationId = "updatePortlet",
             summary = "Update a custom content tool",
             description = "Replaces the name, base types, content types and data view mode of an existing custom "
-                    + "content tool. Refuses, with 404 and no change, an id that is not a custom content tool: "
+                    + "content tool, and its navigation parent when supplied. An empty parent clears grouping; "
+                    + "an omitted parent preserves the existing value. Refuses, with 404 and no change, an id "
+                    + "that is not a custom content tool: "
                     + "tools shipped with the product cannot be rewritten this way. Requires an authenticated "
                     + "back-end user with access to the roles, tools or tools-beta portlet, or the CMS "
                     + "Administrator role."
@@ -378,6 +383,8 @@ public class PortletResource implements Serializable {
                     .putInitParam("baseTypes", formData.baseTypes)
                     .putInitParam("contentTypes", formData.contentTypes)
                     .putInitParam(DATA_VIEW_MODE_KEY, formData.dataViewMode)
+                    .putInitParam("parent", formData.parent == null
+                            ? existing.getInitParams().getOrDefault("parent", BLANK) : formData.parent)
                     .build();
 
 

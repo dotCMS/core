@@ -14,6 +14,7 @@ import java.util.List;
  * @param baseTypes    base type names as stored (CONTENT, WIDGET, PERSONA, ...); empty when none
  * @param contentTypes content type variable names; empty when none
  * @param dataViewMode {@code list} or {@code card}, exactly as stored
+ * @param parent       raw navigation parent label or language key; empty when no parent is set
  * @author hassandotcms
  */
 @Schema(description = "Editable configuration of a custom content tool")
@@ -28,5 +29,8 @@ public record CustomToolView(
         @Schema(description = "Content type variable names; empty when none")
         List<String> contentTypes,
         @Schema(description = "list or card, as stored", example = "card")
-        String dataViewMode) {
+        String dataViewMode,
+        @Schema(description = "Navigation parent label or language key, not translated; empty for no parent",
+                example = "Identity-Access")
+        String parent) {
 }

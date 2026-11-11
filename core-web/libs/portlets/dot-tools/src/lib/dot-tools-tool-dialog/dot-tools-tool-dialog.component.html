@@ -62,6 +62,21 @@
     </div>
 
     <div class="field">
+        <label for="tools-tool-parent">{{ 'tools.form.parent' | dm }}</label>
+        <input
+            pInputText
+            id="tools-tool-parent"
+            formControlName="parent"
+            [placeholder]="'tools.tool-dialog.parent.placeholder' | dm"
+            aria-describedby="tools-tool-parent-hint"
+            data-testid="tools-tool-parent-input"
+            class="w-full" />
+        <small id="tools-tool-parent-hint" class="p-field-hint">
+            {{ 'tools.form.parent.hint' | dm }}
+        </small>
+    </div>
+
+    <div class="field">
         <label for="tools-tool-base-types">{{ 'tools.form.base-types' | dm }}</label>
         <p-multiSelect
             inputId="tools-tool-base-types"

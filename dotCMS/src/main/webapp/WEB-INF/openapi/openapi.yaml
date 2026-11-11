@@ -15726,8 +15726,10 @@ paths:
   /v1/portlet/custom:
     post:
       description: "Creates a custom content tool that lists the given base types\
-        \ and/or content types. Requires an authenticated back-end user with access\
-        \ to the roles, tools or tools-beta portlet, or the CMS Administrator role."
+        \ and/or content types. The optional parent is a navigation label or language\
+        \ key; empty means no parent. Requires an authenticated back-end user with\
+        \ access to the roles, tools or tools-beta portlet, or the CMS Administrator\
+        \ role."
       operationId: saveNew
       requestBody:
         content:
@@ -15757,10 +15759,12 @@ paths:
       - Portlets
     put:
       description: "Replaces the name, base types, content types and data view mode\
-        \ of an existing custom content tool. Refuses, with 404 and no change, an\
-        \ id that is not a custom content tool: tools shipped with the product cannot\
-        \ be rewritten this way. Requires an authenticated back-end user with access\
-        \ to the roles, tools or tools-beta portlet, or the CMS Administrator role."
+        \ of an existing custom content tool, and its navigation parent when supplied.\
+        \ An empty parent clears grouping; an omitted parent preserves the existing\
+        \ value. Refuses, with 404 and no change, an id that is not a custom content\
+        \ tool: tools shipped with the product cannot be rewritten this way. Requires\
+        \ an authenticated back-end user with access to the roles, tools or tools-beta\
+        \ portlet, or the CMS Administrator role."
       operationId: updatePortlet
       requestBody:
         content:
@@ -15825,9 +15829,9 @@ paths:
       - Portlets
     get:
       description: "Returns the editable configuration of a custom content tool: id,\
-        \ name, base types, content types and data view mode. Requires an authenticated\
-        \ back-end user with access to the tools or tools-beta portlet, or the CMS\
-        \ Administrator role."
+        \ name, navigation parent, base types, content types and data view mode. Requires\
+        \ an authenticated back-end user with access to the tools or tools-beta portlet,\
+        \ or the CMS Administrator role."
       operationId: getCustomTool
       parameters:
       - description: "Stored id of the custom tool, c_ prefix included"
@@ -28833,6 +28837,11 @@ components:
           type: string
         dataViewMode:
           type: string
+        parent:
+          type: string
+          description: Optional navigation parent label or language key. Empty clears
+            the parent; omitting it preserves the existing parent on update.
+          example: Identity-Access
         portletId:
           type: string
         portletName:
@@ -28859,6 +28868,11 @@ components:
           type: string
           description: "list or card, as stored"
           example: card
+        parent:
+          type: string
+          description: "Navigation parent label or language key, not translated; empty\
+            \ for no parent"
+          example: Identity-Access
         portletId:
           type: string
           description: Stored id including the c_ prefix

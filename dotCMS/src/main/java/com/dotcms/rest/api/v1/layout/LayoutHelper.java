@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.layout;
 
+import com.dotcms.rest.api.v1.portlet.ToolCatalogHelper;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
@@ -31,20 +32,15 @@ import java.util.stream.Collectors;
  */
 public class LayoutHelper {
 
-    /** Prefix of the message key that holds a portlet's localized title. */
-    static final String TITLE_KEY_PREFIX = "com.dotcms.repackage.javax.portlet.title.";
-
     /** Column limit of {@code cms_layout.layout_name} and {@code cms_layout.description}. */
     static final int MAX_LENGTH = 255;
-
-    private static final String NAME_INIT_PARAM = "name";
 
     /** Name of the unique constraint on {@code cms_layout.layout_name}. */
     private static final String NAME_CONSTRAINT = "cms_layout_name_parent";
 
     private final LayoutAPI layoutApi;
     private final PortletAPI portletApi;
-    private final BiFunction<User, String, String> titleResolver;
+    private final ToolCatalogHelper toolCatalogHelper;
 
     /**
      * Production wiring: titles come from {@link LanguageUtil#get(User, String)}.
@@ -69,30 +65,22 @@ public class LayoutHelper {
                         final BiFunction<User, String, String> titleResolver) {
         this.layoutApi = layoutApi;
         this.portletApi = portletApi;
-        this.titleResolver = titleResolver;
+        this.toolCatalogHelper = new ToolCatalogHelper(portletApi, titleResolver);
     }
 
     // ==================== read side ====================
 
     /**
      * Resolves a tool's title for the caller's language: the translation if one exists, else the
-     * name the tool was registered with, else its id. The raw translation key is never returned,
-     * so the same rule as the tools catalog applies and the two lists never disagree.
+     * name the tool was registered with, else its id. A configured navigation parent prefixes the
+     * label. The same resolver serves the tools catalog, keeping both management lists consistent.
      *
      * @param user      the caller, whose language decides the translation
      * @param portletId the tool id
      * @return a displayable title
      */
     public String title(final User user, final String portletId) {
-        final String key = TITLE_KEY_PREFIX + portletId;
-        final String translated = titleResolver.apply(user, key);
-        if (UtilMethods.isSet(translated) && !key.equals(translated)) {
-            return translated;
-        }
-        final Portlet portlet = portletApi.findPortlet(portletId);
-        final Map<String, String> initParams = null == portlet ? null : portlet.getInitParams();
-        final String registeredName = null == initParams ? null : initParams.get(NAME_INIT_PARAM);
-        return UtilMethods.isSet(registeredName) ? registeredName : portletId;
+        return toolCatalogHelper.title(user, portletId);
     }
 
     /**

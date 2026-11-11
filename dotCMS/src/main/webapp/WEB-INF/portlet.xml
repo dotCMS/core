@@ -113,6 +113,10 @@
         <display-name>User Admin</display-name>
         <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
         <init-param>
+            <name>parent</name>
+            <value>Identity-Access</value>
+        </init-param>
+        <init-param>
             <name>view-action</name>
             <value>/ext/useradmin/view_users</value>
         </init-param>
@@ -195,6 +199,10 @@
         <portlet-name>roles</portlet-name>
         <display-name>Roles Admin</display-name>
         <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>parent</name>
+            <value>Identity-Access</value>
+        </init-param>
         <init-param>
             <name>view-jsp</name>
             <value>/portlet/ext/roleadmin/view_roles.jsp</value>
@@ -507,6 +515,10 @@
         <portlet-name>users-beta</portlet-name>
         <display-name>Users (Beta)</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <init-param>
+            <name>parent</name>
+            <value>Identity-Access</value>
+        </init-param>
         <portlet-url>/users-beta</portlet-url>
     </portlet>
 
@@ -514,6 +526,10 @@
         <portlet-name>roles-beta</portlet-name>
         <display-name>Roles (Beta)</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <init-param>
+            <name>parent</name>
+            <value>Identity-Access</value>
+        </init-param>
         <portlet-url>/roles-beta</portlet-url>
     </portlet>
 
@@ -521,6 +537,10 @@
         <portlet-name>tools-beta</portlet-name>
         <display-name>Tools (Beta)</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <init-param>
+            <name>parent</name>
+            <value>Identity-Access</value>
+        </init-param>
         <portlet-url>/tools-beta</portlet-url>
     </portlet>
 
@@ -535,6 +555,10 @@
         <portlet-name>dotAuth</portlet-name>
         <display-name>dotAuth</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <init-param>
+            <name>parent</name>
+            <value>Identity-Access</value>
+        </init-param>
         <portlet-url>/dotAuth</portlet-url>
     </portlet>
 

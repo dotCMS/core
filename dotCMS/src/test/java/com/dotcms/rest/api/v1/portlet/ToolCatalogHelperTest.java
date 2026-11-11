@@ -159,6 +159,57 @@ public class ToolCatalogHelperTest {
         assertFalse(byId.values().stream().anyMatch(t -> t.startsWith(TITLE_PREFIX)));
     }
 
+    /** A configured parent and its child title are both localized in management labels. */
+    @Test
+    public void catalog_prefixesTranslatedParent() throws Exception {
+        allPortlets(portlet("users", Map.of("parent", " Identity-Access ")));
+        titles.put("Identity-Access", "Identität und Zugriff");
+        titles.put(TITLE_PREFIX + "users", "Benutzer");
+
+        final ToolCatalogEntryView entry = helper.catalog(user).get(0);
+        assertEquals("users", entry.id());
+        assertEquals("Identität und Zugriff › Benutzer", entry.title());
+    }
+
+    /** Unknown parent translations use the key, matching the navigation flyout fallback. */
+    @Test
+    public void title_missingParentTranslationUsesKeyAndKeepsToolFallbacks() {
+        assertEquals("Custom-parent › Registered name", helper.title(user,
+                portlet("c_custom", Map.of("parent", "Custom-parent", "name", "Registered name"))));
+        assertEquals("Custom-parent › bare", helper.title(user,
+                portlet("bare", Map.of("parent", "Custom-parent"))));
+    }
+
+    /** Blank parent values do not introduce empty groups or separators. */
+    @Test
+    public void title_blankParentsKeepFlatTitle() {
+        titles.put(TITLE_PREFIX + "users", "Users");
+        for (final String parent : List.of("", " ", "\t")) {
+            assertEquals("Users", helper.title(user, portlet("users", Map.of("parent", parent))));
+        }
+    }
+
+    /** Missing portlets retain a translated label or their id for existing layout references. */
+    @Test
+    public void title_missingPortletKeepsTranslationOrId() {
+        titles.put(TITLE_PREFIX + "removed", "Removed tool");
+        assertEquals("Removed tool", helper.title(user, "removed"));
+        assertEquals("unknown", helper.title(user, "unknown"));
+    }
+
+    /** Catalog ordering and searching use the qualified labels administrators see. */
+    @Test
+    public void catalog_sortsByQualifiedTitle() throws Exception {
+        allPortlets(portlet("users", Map.of("parent", "Identity-Access")),
+                portlet("templates"), portlet("roles", Map.of("parent", "Identity-Access")));
+        titles.put("Identity-Access", "Identity Access");
+        titles.put(TITLE_PREFIX + "users", "Users");
+        titles.put(TITLE_PREFIX + "roles", "Roles & Tools");
+        titles.put(TITLE_PREFIX + "templates", "Templates");
+
+        assertEquals(List.of("roles", "users", "templates"), ids(helper.catalog(user)));
+    }
+
     /**
      * Given Scenario: the API classifies one portlet as custom and another as shipped.
      * Expected Result: the flag on each row is exactly what the API answered.
@@ -243,6 +294,17 @@ public class ToolCatalogHelperTest {
 
         assertEquals(List.of(), view.baseTypes());
         assertEquals(List.of(), view.contentTypes());
+    }
+
+    /** The editor receives the raw parent key, with an empty string for old or cleared definitions. */
+    @Test
+    public void customView_returnsEditableParent() {
+        final Portlet tool = customTool("CONTENT", "", "list");
+        assertEquals("", helper.toCustomToolView(tool).parent());
+        tool.getInitParams().put("parent", "Identity-Access");
+        assertEquals("Identity-Access", helper.toCustomToolView(tool).parent());
+        tool.getInitParams().put("parent", "");
+        assertEquals("", helper.toCustomToolView(tool).parent());
     }
 
     /**

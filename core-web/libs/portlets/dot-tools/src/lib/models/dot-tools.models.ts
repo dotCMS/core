@@ -7,7 +7,8 @@ import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
  *
  * `portletTitles` is aligned by index with `portletIds`: the localized title
  * the backend resolved for each id, falling back to the tool's registered
- * name and then the id (never a raw translation key). It lets the sections
+ * name and then the id. A configured navigation parent prefixes the title,
+ * e.g. "Identity Access › Users". It lets the sections
  * panel show tool titles without a separate catalog lookup when the catalog
  * has not loaded yet.
  */
@@ -22,6 +23,7 @@ export interface DotToolsSection {
 
 export interface DotToolsCatalogEntry {
     id: string;
+    /** Localized title, prefixed with the navigation parent when configured. */
     title: string;
     isCustom: boolean;
 }
@@ -38,6 +40,8 @@ export type DotToolsDataViewMode = 'list' | 'card';
 export interface DotToolsCustomToolConfig {
     portletId: string;
     portletName: string;
+    /** Raw navigation parent label or language key; empty means no parent. */
+    parent?: string;
     baseTypes: DotCMSBaseTypesContentTypes[];
     contentTypes: string[];
     dataViewMode: DotToolsDataViewMode;
@@ -51,6 +55,8 @@ export interface DotToolsSectionForm {
 export interface DotToolsToolForm {
     portletId: string;
     portletName: string;
+    /** Empty clears the parent; omitting it preserves the existing value on update. */
+    parent?: string;
     baseTypes: DotCMSBaseTypesContentTypes[];
     contentTypes: string[];
     dataViewMode: DotToolsDataViewMode;

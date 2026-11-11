@@ -9,6 +9,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.portlet.ToolCatalogHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Inode;
@@ -658,7 +659,7 @@ public class RoleAjax {
 
 	/**
 	 * Retrieves the title and ID of all portlets that can be added to the main menu -- i.e.,
-	 * layouts --  in the dotCMS backend
+	 * layouts -- in the dotCMS backend. Titles include the translated navigation parent when set.
 	 *
 	 * @return A list of maps, each containing the title and ID of a portlet that can be added to
 	 * the main menu.
@@ -673,14 +674,15 @@ public class RoleAjax {
 		final HttpServletRequest request = DwrUtil.getHttpServletRequest();
 		final List<Map<String, Object>> listOfPortletsInfo = new ArrayList<>();
 		final Collection<Portlet> portlets = this.portletAPI.findAllPortlets();
+		final User user = this.userWebAPI.getLoggedInUser(request);
+		final ToolCatalogHelper toolCatalogHelper = new ToolCatalogHelper(this.portletAPI);
 		for (final Portlet portlet : portlets) {
 			if (LANGUAGES.name().equalsIgnoreCase(portlet.getPortletId())
 					&& Boolean.TRUE.equals(HIDE_OLD_LANGUAGES_PORTLET.get())) {
 				continue;
 			}
 			if (this.portletAPI.canAddPortletToLayout(portlet)) {
-				final String portletTitle = LanguageUtil.get(this.userWebAPI.getLoggedInUser(request),
-								"com.dotcms.repackage.javax.portlet.title." + portlet.getPortletId());
+				final String portletTitle = toolCatalogHelper.title(user, portlet);
 				listOfPortletsInfo.add(Map.of(
 						"title", portletTitle,
 						"id", portlet.getPortletId()
@@ -1012,21 +1014,24 @@ public class RoleAjax {
 
 	}
 
-	private List<String> getPorletTitlesFromLayout (Layout l) throws LanguageException, DotRuntimeException, PortalException, SystemException {
-
-		UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-
-		List<String> portletIds = l.getPortletIds();
-		List<String> portletTitles = new ArrayList<>();
-		if(portletIds != null) {
-			for(String id: portletIds) {
-				String portletTitle = LanguageUtil.get(uWebAPI.getLoggedInUser(request),"com.dotcms.repackage.javax.portlet.title." + id);
-				portletTitles.add(portletTitle);
+	/**
+	 * Resolves the management labels for a layout's tools, including their translated parents.
+	 *
+	 * @param layout the {@link Layout} being displayed or edited
+	 * @return labels in the same order as the layout's portlet ids
+	 */
+	private List<String> getPorletTitlesFromLayout(final Layout layout) throws LanguageException, DotRuntimeException, PortalException, SystemException {
+		final UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
+		final HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
+		final User user = uWebAPI.getLoggedInUser(request);
+		final ToolCatalogHelper toolCatalogHelper = new ToolCatalogHelper(this.portletAPI);
+		final List<String> portletIds = layout.getPortletIds();
+		final List<String> portletTitles = new ArrayList<>();
+		if (portletIds != null) {
+			for (final String id : portletIds) {
+				portletTitles.add(toolCatalogHelper.title(user, id));
 			}
 		}
-
 		return portletTitles;
 	}
 

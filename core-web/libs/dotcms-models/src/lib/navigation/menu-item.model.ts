@@ -13,8 +13,9 @@ export interface DotMenuItem {
     parentMenuId: string;
     /**
      * Init parameters from the portlet's configuration.
-     * May contain 'angular-module' for dynamic lazy loading of Angular modules.
-     * Example: { 'angular-module': 'remote:http://localhost:4201/remoteEntry.js|myPlugin|./Routes' }
+     * May contain 'angular-module' for dynamic lazy loading of Angular modules,
+     * or 'parent' for a translated, one-level navigation group within the layout.
+     * Example: { parent: 'Identity-Access' }
      */
     initParams?: Record<string, string>;
 }

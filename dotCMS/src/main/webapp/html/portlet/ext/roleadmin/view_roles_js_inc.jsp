@@ -32,6 +32,7 @@
 	dojo.require("dijit.Menu");
 	dojo.require("dijit.MenuItem");
 	dojo.require("dojox.grid.DataGrid");
+	dojo.require("dojox.html.entities");
 	dojo.require("dojo.data.ItemFileWriteStore");
 	dojo.require("dojo.data.ItemFileReadStore");
 	dojo.require("dijit.layout.AccordionContainer");
@@ -1123,7 +1124,7 @@
 				if(!first) {
 					titles += ", "
 				}
-				titles += title
+				titles += dojox.html.entities.encode(String(title));
 				first = false;
 			}).bind(this))
 			return titles;
@@ -1202,7 +1203,7 @@
 
 		const portletDelete = (portletId.indexOf("c_")==0) ? `<div style='float:left;line-height:34px;padding:0px 20px;margin-right:10px;' class='dijitButtonText dijitButton' onclick='doPortletDelete("` + portletId + `")'><%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "delete")) %></div>` : "";
 
-		var html = dojo.string.substitute(portletListItemTemplate, { portletTitle: portletTitle, portletId: portletId, portletDelete: portletDelete })
+		var html = dojo.string.substitute(portletListItemTemplate, { portletTitle: dojox.html.entities.encode(String(norm(portletTitle))), portletId: portletId, portletDelete: portletDelete })
 		return html;
 	}
 
@@ -1323,6 +1324,7 @@
 
 	    dijit.byId("customPortletId").setValue("");
 	    dijit.byId("customPortletName").setValue("");
+	    dijit.byId("customPortletParent").setValue("");
 	    dijit.byId("customPortletBaseTypes").setValue("");
 	    dijit.byId("customPortletContentTypes").setValue("");
 	    dijit.byId("customPortletDialog").show()
@@ -1351,6 +1353,7 @@
 
 	    data.portletId =dijit.byId("customPortletId").attr('value');
 	    data.portletName =dijit.byId("customPortletName").attr('value');
+	    data.parent =dijit.byId("customPortletParent").attr('value');
 	    data.baseTypes =dijit.byId("customPortletBaseTypes").attr('value');
 	    data.contentTypes =dijit.byId("customPortletContentTypes").attr('value');
 	    data.dataViewMode = dojo.query('input[type=radio][name=dataViewMode]:checked')[0].value;;
