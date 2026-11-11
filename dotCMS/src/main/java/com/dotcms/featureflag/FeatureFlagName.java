@@ -204,4 +204,21 @@ public interface FeatureFlagName {
      */
     String FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS =
             "FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS";
+
+    /**
+     * Lets the Custom Field preview in the Content Editor render the output of the Velocity
+     * view tools reserved for the Scripting Developer role ({@code $xslttool}, {@code $sql},
+     * {@code $macro}). On by default: the preview names the user it is being rendered for when
+     * that user both holds the role and is allowed to change the Content Type the field belongs
+     * to, so what runs is code that user could have written themselves. Turn it off to keep
+     * those tools from rendering anything in the preview at all; the rest of the field renders
+     * either way.
+     *
+     * <p>A field rendered on a page is unaffected: there it is judged by the author of the
+     * container or template it is embedded in.
+     *
+     * @see com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess
+     */
+    String FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED =
+            "FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED";
 }

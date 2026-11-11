@@ -5,6 +5,7 @@
 <%@ page import="com.dotcms.contenttype.model.type.ContentType" %>
 <%@ page import="com.dotcms.contenttype.model.field.Field" %>
 <%@ page import="com.dotmarketing.portlets.contentlet.model.Contentlet" %>
+<%@ page import="com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess" %>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
 <%@page import="com.dotmarketing.util.VelocityUtil"%>
 
@@ -279,6 +280,16 @@
         String inode = request.getParameter("inode") != null ? request.getParameter("inode") : null;
         ContentletAPI conAPI = APILocator.getContentletAPI();
         Contentlet contentlet =  (inode!=null) ? conAPI.find(inode,user,false) : new Contentlet();
+        // the type comes from ?variable= and the content from ?inode=: a request naming a
+        // content of some other type is asking for a preview that could never be reached from
+        // the editor, so drop the content and preview the field on its own
+        if (null != contentType && null != contentlet && UtilMethods.isSet(contentlet.getInode())
+                && !contentType.id().equals(contentlet.getContentTypeId())) {
+            Logger.warn("legacy-custom-field.jsp", "Content '" + contentlet.getInode()
+                    + "' is not of type '" + contentTypeVarName + "'; previewing the field "
+                    + "without it");
+            contentlet = new Contentlet();
+        }
         String contentletObj = "{}";
 
         if(contentlet != null){
@@ -342,7 +353,17 @@
                             velocityContext.put(field.variable(), defaultValue);
                         }
                     }
-                    HTMLString = new VelocityUtil().parseVelocity(textValue,velocityContext);
+                    // The field's code is about to run as a preview for this user alone, so
+                    // name them: the restricted view tools it calls answer to their role. Nothing
+                    // else on this path names anybody, and an unnamed render is refused.
+                    final Object previousAuthor =
+                            RestrictedViewToolAccess.announceFieldPreviewAuthor(request,
+                                    contentType, user);
+                    try {
+                        HTMLString = new VelocityUtil().parseVelocity(textValue,velocityContext);
+                    } finally {
+                        RestrictedViewToolAccess.restoreRenderingAuthor(request, previousAuthor);
+                    }
                 }
 %>
                     <body id="legacy-custom-field-body">
