@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.template;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -48,7 +51,6 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,6 +67,9 @@ import org.junit.Test;
 
 public class TemplateResourceTest {
 
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
+
     static TemplateResource resource;
     static HttpServletResponse response;
     static User adminUser;
@@ -79,8 +84,15 @@ public class TemplateResourceTest {
         response = new MockHttpResponse();
     }
 
+    /**
+     * Builds a request that authenticates as the given user with a Bearer API token. The password
+     * argument is retained for call-site compatibility; credentials are no longer sent on the wire.
+     *
+     * @param userEmail the fixture user to authenticate as
+     * @param password retained for call-site compatibility; not used
+     * @return the authenticated request
+     */
     private HttpServletRequest getHttpRequest(final String userEmail,final String password) {
-        final String userEmailAndPassword = userEmail + ":" + password;
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
                         new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
@@ -88,7 +100,7 @@ public class TemplateResourceTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode(userEmailAndPassword.getBytes())));
+                TOKEN_UTILS.bearerHeaderForEmail(userEmail));
 
 
         return request;
@@ -228,7 +240,7 @@ public class TemplateResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Give Permissions Over the Folder
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -397,7 +409,7 @@ public class TemplateResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Give Permissions Over the Folder
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -547,7 +559,7 @@ public class TemplateResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Give Permissions Over the Folder
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -753,7 +765,7 @@ public class TemplateResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Give Permissions Over the Folder
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -913,7 +925,7 @@ public class TemplateResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Give Permissions Over the Folder
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -987,7 +999,7 @@ public class TemplateResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Call Resource
         resource.copy(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,template.getIdentifier());
@@ -1139,7 +1151,7 @@ public class TemplateResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Give Permissions Over the Template B
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,

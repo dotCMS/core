@@ -75,7 +75,7 @@ inputs:
       dependency cache and, with artifacts-from, downloads the maven-repo artifact on
       top of it. The artifact carries only what the build installed, so a job that
       compiles or runs the dotCMS modules needs both. A job whose modules use none of
-      them (Postman and E2E declare no dependencies, Karate only karate-junit5) turns
+      them (Postman and E2E declare no dependencies) turns
       this off and gets a small Maven plugin cache instead, which holds just the
       plugins those modules run.
     required: false
@@ -278,7 +278,7 @@ runs:
         restore-keys: |
           ${{ runner.os }}-mavencore-v2-
 
-    # Postman, Karate and E2E run no dotCMS module, so they skip the cache above and the
+    # Postman and E2E run no dotCMS module, so they skip the cache above and the
     # maven-repo artifact, and Maven fetches the plugins they run (about 170-220 MB, thousands
     # of small files) from Maven Central. Maven 3.9.2's resolver (1.9.10) retries only I/O
     # errors, three times (aether.connector.http.retryHandler.count), and never an HTTP 429 or
@@ -294,7 +294,7 @@ runs:
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.m2/repository
-        key: ${{ runner.os }}-mavenplugins-v1-${{ hashFiles('pom.xml', 'parent/pom.xml', 'nodejs-parent/pom.xml', 'dotcms-postman/pom.xml', 'core-web/apps/dotcms-ui-e2e/pom.xml', 'test-karate/pom.xml') }}
+        key: ${{ runner.os }}-mavenplugins-v1-${{ hashFiles('pom.xml', 'parent/pom.xml', 'nodejs-parent/pom.xml', 'dotcms-postman/pom.xml', 'core-web/apps/dotcms-ui-e2e/pom.xml') }}
         restore-keys: |
           ${{ runner.os }}-mavenplugins-v1-
 
@@ -383,7 +383,7 @@ runs:
 
     # Lands on top of the dependency cache restored above: the built artifacts only.
     # Suites that need no dotCMS module (needs-maven-repo off) do not download it: their
-    # modules build from an empty repository (checked for Postman, Karate and E2E), and
+    # modules build from an empty repository (checked for Postman and E2E), and
     # their Docker image comes from the docker-image artifact below.
     - id: restore-artifact-maven-repo
       name: Restore Maven Build Repo

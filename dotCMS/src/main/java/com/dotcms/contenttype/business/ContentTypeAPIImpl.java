@@ -373,6 +373,11 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>When the user cannot read the content type, the {@link DotSecurityException} names the user
+   * and the content type by id only, as REST endpoints may return its message to the caller.</p>
+   */
   @Override
   @CloseDBIfOpened
   public ContentType find(final String inodeOrVar) throws DotSecurityException, DotDataException {
@@ -386,7 +391,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       return type;
     }
 
-    throw new DotSecurityException("User " + user + " does not have READ permissions on ContentType " + type);
+    throw new DotSecurityException(String.format("User %s does not have READ permission on content type %s",
+            null == user ? "anonymous" : user.getUserId(), type.id()));
   }
 
   @CloseDBIfOpened
@@ -1166,6 +1172,17 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return transactionalSave(newFields, newFieldVariables, contentType);
   }
 
+  /**
+   * Persists the content type with its fields and field variables in one transaction. When the
+   * save changes the type's publish or expire date var, {@link IdentifierDateJob} is scheduled to
+   * copy the new dates onto the identifiers of the type's contentlets. The job is scheduled after
+   * the transaction commits, so it never runs against a save that rolls back or has not committed.
+   *
+   * @param newFields         the fields to save with the type
+   * @param newFieldVariables the field variables to save with the type
+   * @param contentTypeToSave the content type to persist
+   * @return the saved content type
+   */
   @WrapInTransaction
   private ContentType transactionalSave(final List<Field> newFields,
                                         final List<FieldVariable> newFieldVariables,
@@ -1188,11 +1205,16 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     if (oldType != null) {
 
-      final ContentType oldOldType = oldType;
       if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())
               || fireUpdateIdentifiers(oldType.publishDateVar(),
               contentTypeToSave.publishDateVar())) {
-        IdentifierDateJob.triggerJobImmediately(oldOldType, user);
+        // The job copies the type's publish/expire date vars onto each identifier, so it must get
+        // the saved type: the previous one still has the old (possibly empty) date vars. It runs
+        // on a Quartz thread, so it is scheduled only after this transaction commits; otherwise it
+        // could start before the type and its fields are committed, or act on a save that rolls back.
+        final ContentType typeForDateJob = contentTypeToSave;
+        HibernateUtil.addCommitListener(
+                () -> IdentifierDateJob.triggerJobImmediately(typeForDateJob, user));
       }
       perms.resetPermissionReferences(contentTypeToSave);
     }

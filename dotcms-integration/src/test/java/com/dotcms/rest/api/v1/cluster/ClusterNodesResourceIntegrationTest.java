@@ -25,7 +25,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.util.PortletID;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import org.junit.AfterClass;
@@ -67,6 +67,7 @@ public class ClusterNodesResourceIntegrationTest {
 
     @AfterClass
     public static void cleanup() throws Exception {
+        TOKEN_UTILS.close();
         if (createdMyServer) {
             final ServerAPI serverAPI = APILocator.getServerAPI();
             serverAPI.removeServerFromClusterTable(serverAPI.readServerId());
@@ -82,10 +83,13 @@ public class ClusterNodesResourceIntegrationTest {
                         .request());
     }
 
+    /** Mints and owns the admin API token used by the requests below. */
+    private static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
+
     private static HttpServletRequest adminRequest() {
         final MockHeaderRequest request = (MockHeaderRequest) baseRequest();
-        request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        // Username/password Basic is disabled by default; authenticate with an API token.
+        request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
         return request;
     }
 

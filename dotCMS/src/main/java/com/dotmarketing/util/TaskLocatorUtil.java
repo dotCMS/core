@@ -272,8 +272,10 @@ import com.dotmarketing.startup.runonce.Task260615AlterClusterIdLength;
 import com.dotmarketing.startup.runonce.Task260420AddDotAuthPortletToMenu;
 import com.dotmarketing.startup.runonce.Task260720AddDefaultBaseTypeToFolderTable;
 import com.dotmarketing.startup.runonce.Task260826CreateSystemEventCursorTable;
-import com.dotmarketing.startup.runonce.Task261023RemoveContainersLegacyPortletFromLayouts;
 import com.dotmarketing.startup.runonce.Task261028RemoveSearchLegacyPortletsFromLayouts;
+import com.dotmarketing.startup.runonce.Task261103RemoveContainersLegacyPortletFromLayouts;
+import com.dotmarketing.startup.runonce.Task261104CreateLoginLockoutTable;
+import com.dotmarketing.startup.runonce.Task261109AddMultiTreeParentIndexes;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -619,8 +621,10 @@ public class TaskLocatorUtil {
         .add(Task260615AlterClusterIdLength.class)
         .add(Task260720AddDefaultBaseTypeToFolderTable.class)
         .add(Task260826CreateSystemEventCursorTable.class)
-        .add(Task261023RemoveContainersLegacyPortletFromLayouts.class)
         .add(Task261028RemoveSearchLegacyPortletsFromLayouts.class)
+        .add(Task261103RemoveContainersLegacyPortletFromLayouts.class)
+        .add(Task261104CreateLoginLockoutTable.class)
+        .add(Task261109AddMultiTreeParentIndexes.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
@@ -690,6 +694,7 @@ public class TaskLocatorUtil {
 	public static List<Class<?>> getTaskClassesNoTransaction() {
 		final List<Class<?>> ret = new ArrayList<>();
 		ret.add(Task241014AddTemplateValueOnContentletIndex.class);
+        ret.add(Task261109AddMultiTreeParentIndexes.class);
 		return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

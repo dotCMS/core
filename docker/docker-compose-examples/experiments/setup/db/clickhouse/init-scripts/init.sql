@@ -315,7 +315,10 @@ ENGINE = AggregatingMergeTree
 --    '{replica}'
 --)
 PARTITION BY (customer_id, cluster_id)
-ORDER BY (customer_id, cluster_id, context_user_id);
+-- context_site_id is a grouping key of conversion_time_mv, so it must be part of the sorting key:
+-- AggregatingMergeTree collapses rows with the same key on merge, and a column outside the key
+-- would keep the value of whichever row survived (ClickHouse 26.7+ rejects such a table at creation time).
+ORDER BY (customer_id, cluster_id, context_site_id, context_user_id);
 
 -- =====================================================================
 -- Tracks which content a user interacted with prior to a conversion and after the user's previous conversion

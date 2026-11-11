@@ -3,17 +3,12 @@
     "nx-mcp": {
       "type": "stdio",
       "command": "npx",
-      "args": ["-y", "nx-mcp@latest"]
-    },
-    "primeng": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@primeng/mcp"]
+      "args": ["-y", "nx-mcp@0.25.0"]
     },
     "angular-cli": {
       "type": "stdio",
       "command": "npx",
-      "args": ["@angular/cli", "mcp"],
+      "args": ["@angular/cli@22.2.5", "mcp"],
       "env": {}
     }
   }
