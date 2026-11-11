@@ -1136,9 +1136,10 @@ public class LoginLockoutTest {
     /**
      * Given: an account, with the default ("pow") delay strategy enabled
      * When: 3 wrong passwords arrive from one address at the same moment
-     * Then: they do not all take the same (minimum) delay — each is paced by its own atomically-counted attempt
-     *       number, which {@link #begin} already assigns before any password is checked, rather than by a
-     *       per-node field a race can leave identical, or unset, for all of them
+     * Then: every one of them is paced by a real escalated count, not only whichever happens to be slowest —
+     *       each is paced by at least its own atomically-counted attempt number, which {@link #begin} already
+     *       assigns before any password is checked, rather than by a per-node field a race can leave
+     *       identical, or unset, for all of them
      */
     @Test
     public void test_concurrent_wrong_logins_get_escalating_delays() throws Exception {
@@ -1148,14 +1149,16 @@ public class LoginLockoutTest {
         final User user = newUser();
         try {
             final List<Long> elapsed = timedInParallel(3, ADDRESS, () -> login(user, "wrong-in-parallel"));
-            final long max = elapsed.stream().mapToLong(Long::longValue).max().orElseThrow();
+            final long min = elapsed.stream().mapToLong(Long::longValue).min().orElseThrow();
             // Today, every concurrent attempt reads the same fresh (unset) count and sleeps for POW(0) = 0s, so
-            // the slowest of the three finishes in well under a second. Once paced by each attempt's own
-            // atomically-counted position (1, 2, 3), the slowest sleeps POW(3) = 9s. A relative spread between
-            // threads is not used here, since thread-pool and connection jitter alone can produce one: this bound
-            // is only clearable by an attempt actually having slept for several seconds.
-            assertTrue("slowest of " + elapsed + "ms should reflect a real escalating sleep, not jitter alone",
-                    max >= 3_000L);
+            // every one of the three finishes in well under a second. Once paced, every one of the three
+            // actually converges on the same POW(3) = 9s: the source's recorded total catches up to 3 almost as
+            // soon as the attempts are counted, so the seed ends up identical for all three regardless of which
+            // one checks it first. The fastest is checked here, not just the slowest, since a regression that
+            // paced some concurrent attempts correctly and others not at all would still clear a bound on the
+            // slowest alone.
+            assertTrue("fastest of " + elapsed + "ms should also reflect a real escalating sleep, not jitter alone",
+                    min >= 3_000L);
         } finally {
             Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, false);
             Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, strategyBefore);
@@ -1232,8 +1235,9 @@ public class LoginLockoutTest {
      * Given: an account, with the delay strategy configured as a literal per-unit value ({@code
      *        TIME_MILLS:500})
      * When: 3 wrong passwords arrive from one address at the same moment
-     * Then: they do not all take the same flat delay — the literal unit scales by each attempt's own
-     *       atomically-counted position, the same way the default ("pow") strategy already does
+     * Then: every one of them is scaled past the configured flat value, not only whichever happens to be
+     *       slowest — the literal unit scales by each attempt's own atomically-counted position, the same
+     *       way the default ("pow") strategy already does
      */
     @Test
     public void test_concurrent_wrong_logins_get_escalating_delays_with_literal_strategy() throws Exception {
@@ -1243,15 +1247,16 @@ public class LoginLockoutTest {
         final User user = newUser();
         try {
             final List<Long> elapsed = timedInParallel(3, ADDRESS, () -> login(user, "wrong-in-parallel"));
-            final long max = elapsed.stream().mapToLong(Long::longValue).max().orElseThrow();
+            final long min = elapsed.stream().mapToLong(Long::longValue).min().orElseThrow();
             // Today, the configured "500" always replaces the computed seed outright, so every concurrent
-            // attempt sleeps the same flat 500ms regardless of its attempt number. Once the literal value
-            // scales by each attempt's own atomically-counted position (1, 2, 3) instead of replacing it, the
-            // slowest sleeps 3 * 500 = 1500ms. An absolute floor is used for the same reason as the "pow"
-            // version of this test: thread-pool and connection jitter alone could satisfy a relative
-            // comparison.
-            assertTrue("slowest of " + elapsed + "ms should reflect a scaled delay, not a flat one",
-                    max >= 1_200L);
+            // attempt sleeps the same flat 500ms. Once the literal value scales by the computed seed instead
+            // of replacing it, every one of the three actually converges on the same 3 * 500 = 1500ms: the
+            // source's recorded total catches up to 3 almost as soon as the attempts are counted, the same way
+            // the "pow" version of this test converges. The fastest is checked here, not just the slowest, for
+            // the same reason as that test: a regression that scaled some concurrent attempts correctly and
+            // left others flat would still clear a bound on the slowest alone.
+            assertTrue("fastest of " + elapsed + "ms should also reflect a scaled delay, not a flat one",
+                    min >= 1_200L);
         } finally {
             Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, false);
             Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, strategyBefore);
