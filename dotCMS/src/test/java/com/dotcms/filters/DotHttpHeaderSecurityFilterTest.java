@@ -325,6 +325,33 @@ public class DotHttpHeaderSecurityFilterTest extends UnitTestBase {
     }
 
     /**
+     * An unreadable value for the on/off switch must not fail the request: the default policy is
+     * still sent.
+     */
+    @Test
+    public void testDoFilter_whenEnabledValueUnreadable_shouldSendDefaultPolicy() throws Exception {
+        Config.setProperty(CSP_ENABLED, "flase");
+
+        final HttpServletResponse response = filter("/api", "/v1/sites");
+
+        verify(response).setHeader(CSP_HEADER, DEFAULT_BACKEND_POLICY);
+    }
+
+    /**
+     * An unreadable value for the report-only switch must not fail the request: the policy is
+     * still enforced.
+     */
+    @Test
+    public void testDoFilter_whenReportOnlyValueUnreadable_shouldEnforcePolicy() throws Exception {
+        Config.setProperty(CSP_REPORT_ONLY, "maybe");
+
+        final HttpServletResponse response = filter("/dotAdmin", null);
+
+        verify(response).setHeader(CSP_HEADER, DEFAULT_BACKEND_POLICY);
+        verify(response, never()).setHeader(eq(CSP_REPORT_ONLY_HEADER), anyString());
+    }
+
+    /**
      * Sends one request with the given servlet path and path info through a filter initialized
      * with no init-params and returns the Content-Security-Policy value it wrote.
      */

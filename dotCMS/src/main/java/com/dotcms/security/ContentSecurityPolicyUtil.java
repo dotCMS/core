@@ -3,6 +3,7 @@ package com.dotcms.security;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.repackage.org.apache.axiom.om.util.Base64;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -260,16 +261,38 @@ public class ContentSecurityPolicyUtil {
      * @param response the response to write the header to
      */
     public static void addBackendHeader(final HttpServletResponse response) {
-        if (!Config.getBooleanProperty(BACKEND_ENABLED, true)) {
+        if (!readBackendFlag(BACKEND_ENABLED, true)) {
             return;
         }
         final String policy = Config.getStringProperty(BACKEND_POLICY, DEFAULT_BACKEND_POLICY);
         if (!UtilMethods.isSet(policy)) {
             return;
         }
-        final String header = Config.getBooleanProperty(BACKEND_REPORT_ONLY, false)
+        final String header = readBackendFlag(BACKEND_REPORT_ONLY, false)
                 ? "Content-Security-Policy-Report-Only" : "Content-Security-Policy";
         response.setHeader(header, policy.trim());
+    }
+
+    /**
+     * Reads one of the back-end policy switches. These are read on every back-end request, and
+     * {@link Config#getBooleanProperty(String, boolean)} throws when a properties file holds a value
+     * it cannot read as a boolean (a typo such as {@code flase}). Instead of failing the request,
+     * this uses the given default, which keeps the policy enforced, and logs a warning at most
+     * once a minute per property.
+     *
+     * @param name     the property name
+     * @param fallback the value to use when the property cannot be read
+     * @return the configured value, or {@code fallback} when it cannot be read
+     */
+    private static boolean readBackendFlag(final String name, final boolean fallback) {
+        try {
+            return Config.getBooleanProperty(name, fallback);
+        } catch (final RuntimeException e) {
+            Logger.warnEvery(ContentSecurityPolicyUtil.class, name,
+                    name + " is not true or false; using " + fallback + ": " + e.getMessage(),
+                    60_000);
+            return fallback;
+        }
     }
 
     /**
