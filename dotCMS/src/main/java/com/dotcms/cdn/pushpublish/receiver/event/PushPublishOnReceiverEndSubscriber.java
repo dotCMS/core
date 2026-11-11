@@ -58,10 +58,8 @@ public class PushPublishOnReceiverEndSubscriber {
         for (final PublishQueueElement publishQueueElement : publishQueueElements) {
 
             final String identifier = publishQueueElement.getAsset();
-            final long languageId = publishQueueElement.getLanguageId();
-            final Contentlet contentlet = Try.of(() -> contentletAPI
-                    .findContentletByIdentifier(identifier, LIVE, languageId, user,
-                            RESPECT_FRONTEND_ROLES)).getOrNull();
+            final Contentlet contentlet =
+                    resolveContentlet(contentletAPI, user, publishQueueElement);
 
             if (null == contentlet) {
                 Logger.debug(this, () -> "Cannot invalidate contentlet: "
@@ -101,17 +99,35 @@ public class PushPublishOnReceiverEndSubscriber {
         }
     }
 
+    /**
+     * Finds the contentlet a received queue element points at. Elements read from a bundle
+     * manifest carry the contentlet's inode and no language, while elements from a legacy
+     * {@code bundle.xml} carry an identifier and a language, so each shape is looked up its own way.
+     *
+     * @param contentletAPI the API used for the lookup
+     * @param user the user the lookup runs as
+     * @param publishQueueElement the received element
+     * @return the contentlet, or {@code null} when it cannot be found
+     */
+    static Contentlet resolveContentlet(final ContentletAPI contentletAPI, final User user,
+            final PublishQueueElement publishQueueElement) {
+
+        final String asset = publishQueueElement.getAsset();
+        final Integer languageId = publishQueueElement.getLanguageId();
+        return Try.of(() -> null == languageId
+                ? contentletAPI.find(asset, user, RESPECT_FRONTEND_ROLES)
+                : contentletAPI.findContentletByIdentifier(asset, LIVE, languageId, user,
+                        RESPECT_FRONTEND_ROLES)).getOrNull();
+    }
+
     private void invalidateAllSites(final ContentletAPI contentletAPI,
             final List<PublishQueueElement> publishQueueElements) {
 
         final Map<String, Host> hostMap = new HashMap<>();
         for (final PublishQueueElement publishQueueElement : publishQueueElements) {
 
-            final String identifier = publishQueueElement.getAsset();
-            final long languageId = publishQueueElement.getLanguageId();
-            final Contentlet contentlet = Try.of(() -> contentletAPI
-                    .findContentletByIdentifier(identifier, LIVE, languageId, user,
-                            RESPECT_FRONTEND_ROLES)).getOrNull();
+            final Contentlet contentlet =
+                    resolveContentlet(contentletAPI, user, publishQueueElement);
             if (null != contentlet) {
                 final Host site = Try.of(() -> APILocator.getHostAPI()
                         .find(contentlet.getHost(), user, RESPECT_FRONTEND_ROLES)).getOrNull();
