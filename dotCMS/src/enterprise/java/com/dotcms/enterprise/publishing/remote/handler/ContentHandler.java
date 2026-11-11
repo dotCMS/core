@@ -1259,10 +1259,12 @@ public class ContentHandler implements IHandler {
 
 	/**
 	 * Checks whether the field the relationship was created from, named in its
-	 * {@code <Content Type>.<field>} relation type, is on the parent type. A field on the parent type
-	 * is stored as the child relation name, and a field on the child type as the parent relation
-	 * name. A relationship that wasn't created from a field, or whose field can't be matched, is
-	 * treated as having it on the child, as a field created as many-to-one is stored.
+	 * {@code <Content Type>.<field>} relation type, is on the parent type. When the parent and child
+	 * types differ, the Content Type in the relation type tells the side. A type related to itself
+	 * is told apart by the relation names: a field on the parent is stored as the child relation
+	 * name, and a field on the child as the parent relation name. A relationship that wasn't created
+	 * from a field, or whose side can't be told, is treated as having it on the child, which is how
+	 * dotCMS stores a relationship created as many-to-one.
 	 *
 	 * @param relationship The relationship to check.
 	 *
@@ -1274,7 +1276,13 @@ public class ContentHandler implements IHandler {
 		if (separator < 0) {
 			return false;
 		}
+		final String typeVariable = relationType.substring(0, separator);
 		final String fieldVariable = relationType.substring(separator + 1);
+		if (!relationship.getParentStructureInode().equals(relationship.getChildStructureInode())) {
+			final String parentVariable = Try.of(() -> APILocator.getContentTypeAPI(APILocator.systemUser())
+					.find(relationship.getParentStructureInode()).variable()).getOrNull();
+			return typeVariable.equalsIgnoreCase(parentVariable);
+		}
 		return fieldVariable.equals(relationship.getChildRelationName())
 				&& !fieldVariable.equals(relationship.getParentRelationName());
 	}
