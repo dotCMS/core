@@ -76,7 +76,7 @@ import org.junit.platform.suite.api.Suite;
         FolderBulkDeleteNotificationIT.class,
         FolderBulkDeleteOverlapIT.class,
         com.dotcms.rendering.velocity.viewtools.DotCMSMacroWebAPIGalleryTest.class,
-        com.dotmarketing.portlets.director.action.DirectorActionTest.class,
+        com.dotmarketing.portlets.links.action.EditLinkActionTest.class,
         FolderBulkDeleteAnnouncementIT.class,
         FolderBulkDeleteResumeIT.class,
         FolderBulkDeleteHeartbeatIT.class,
