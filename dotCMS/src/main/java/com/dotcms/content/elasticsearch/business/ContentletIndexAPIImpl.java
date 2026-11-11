@@ -22,6 +22,7 @@ import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
@@ -757,10 +758,10 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
                 final String workingInode = cvi.getWorkingInode();
                 final String liveInode = cvi.getLiveInode();
                 inodes.put(workingInode,
-                        APILocator.getContentletAPI().findInDb(workingInode).orElse(null));
+                        FactoryLocator.getContentletFactory().findInDb(workingInode, true).orElse(null));
                 if (UtilMethods.isSet(liveInode) && !inodes.containsKey(liveInode)) {
                     inodes.put(liveInode,
-                            APILocator.getContentletAPI().findInDb(liveInode).orElse(null));
+                            FactoryLocator.getContentletFactory().findInDb(liveInode, true).orElse(null));
                 }
             }
             inodes.values().removeIf(Objects::isNull);

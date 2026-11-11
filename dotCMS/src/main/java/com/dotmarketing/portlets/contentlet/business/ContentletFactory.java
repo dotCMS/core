@@ -540,6 +540,18 @@ public abstract class ContentletFactory {
 
     public abstract Optional<Contentlet> findInDb(String inode) ;
 
+    /**
+     * Loads the Contentlet with the given inode from the database, skipping the contentlet cache.
+     *
+     * @param inode            The inode of the Contentlet.
+     * @param ignoreStoryBlock If {@code true}, the Story Block values are returned as they are
+     *                         stored; otherwise the references in them are refreshed for the user
+     *                         of the current request, as {@link #findInDb(String)} does.
+     *
+     * @return The Contentlet, or an empty {@link Optional} if there is none with that inode.
+     */
+    public abstract Optional<Contentlet> findInDb(String inode, boolean ignoreStoryBlock);
+
 	public static void rebuildRestHighLevelClientIfNeeded(final Exception e) {
 		if(e != null && e.getMessage().contains("reactor status: STOPPED")) {
 			RestHighLevelClientProvider.getInstance().rebuildClient();

@@ -46,6 +46,39 @@ public interface StoryBlockAPI {
     StoryBlockReferenceResult refreshReferences(final Contentlet contentlet);
 
     /**
+     * Checks the Contentlets referenced in every Story Block field of the given Contentlet against
+     * the READ permission of the user of the current request (the logged-in user, or the anonymous
+     * user when nobody is logged in), without refreshing them from the Contentlets they point to.
+     * A reference the user can read keeps the data stored with it; any other reference keeps only
+     * the keys that identify it ({@code identifier} and {@code languageId}). This is the
+     * counterpart of {@link #refreshReferences(Contentlet)} for reads that do not refresh
+     * references, such as cached reads when {@code REFRESH_BLOCK_EDITOR_REFERENCES} is disabled.
+     * <p>Nothing is changed when there is no current request (no reader to check), inside a
+     * database transaction, or when the Content Type has no Story Block fields.</p>
+     *
+     * @param contentlet The Contentlet containing the Story Block field(s). It is modified in
+     *                   place, so it must not be an instance shared with other readers (such as a
+     *                   cached one).
+     *
+     * @return The {@link StoryBlockReferenceResult} with the given Contentlet; it is marked as
+     * refreshed when any Story Block field changed.
+     */
+    StoryBlockReferenceResult limitReferencesToReader(final Contentlet contentlet);
+
+    /**
+     * Returns a copy of a Story Block value in which every Contentlet reference, at any level of
+     * the document, keeps only the keys that identify it ({@code identifier} and
+     * {@code languageId}). The result is the same for every user, so it can be kept where different
+     * users will read it, such as code cached for a page. A value that is not a Story Block
+     * document is returned as it is.
+     *
+     * @param storyBlockValue The Story Block value, as a JSON String or a Map. It is not modified.
+     *
+     * @return The reduced copy, of the same kind as the given value (JSON String or Map).
+     */
+    Object withReferenceKeysOnly(final Object storyBlockValue);
+
+    /**
      * Takes the actual JSON value of a given {@link com.dotcms.contenttype.model.field.StoryBlockField} and refreshes
      * any Contentlet references in it, if applicable.
      *
