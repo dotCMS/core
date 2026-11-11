@@ -52,8 +52,9 @@ LABEL com.dotcms.contact="support@dotcms.com" \
 COPY --from=container-base /usr/local/libvips /usr/local/libvips
 COPY --from=container-base /etc/ld.so.conf.d/libvips.conf /etc/ld.so.conf.d/libvips.conf
 
-# When archive.ubuntu.com does not resolve (Canonical's nameservers stopped answering on
-# 2026-11-11, dotCMS/core#38547), point apt at a mirror whose DNS does not depend on them.
+# When archive.ubuntu.com or security.ubuntu.com does not resolve (Canonical's nameservers
+# stopped answering on 2026-11-11, dotCMS/core#38547), point apt at a mirror whose DNS does
+# not depend on them.
 # apt still verifies the Release signatures with the image's Ubuntu keyring, so the mirror
 # cannot alter packages. Plain HTTP because ca-certificates is not installed yet. The
 # rewritten sources file is used by every apt step below. Builds where the name resolves
@@ -61,8 +62,8 @@ COPY --from=container-base /etc/ld.so.conf.d/libvips.conf /etc/ld.so.conf.d/libv
 ARG APT_FALLBACK_MIRROR="http://mirrors.edge.kernel.org/ubuntu/"
 
 # Install basic packages and tini
-RUN if ! getent hosts archive.ubuntu.com > /dev/null; then \
-        echo "archive.ubuntu.com does not resolve; using apt mirror ${APT_FALLBACK_MIRROR}" && \
+RUN if ! getent hosts archive.ubuntu.com > /dev/null || ! getent hosts security.ubuntu.com > /dev/null; then \
+        echo "archive or security.ubuntu.com does not resolve; using apt mirror ${APT_FALLBACK_MIRROR}" && \
         sed -i -E "s#http://(archive|security)\.ubuntu\.com/ubuntu/?#${APT_FALLBACK_MIRROR}#" \
             /etc/apt/sources.list.d/ubuntu.sources; \
     fi && \
