@@ -15,15 +15,12 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil.ImportAuditResults;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
 import com.dotmarketing.portlets.contentlet.struts.ImportContentletsForm;
-import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.*;
 import com.liferay.portal.language.LanguageUtil;
@@ -32,7 +29,6 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portlet.ActionRequestImpl;
-import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.servlet.SessionMessages;
 import com.liferay.util.servlet.UploadPortletRequest;
 import java.io.BufferedReader;
@@ -46,7 +42,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -339,8 +334,6 @@ public class ImportContentletsAction extends DotPortletAction {
 				 req.setAttribute("importId", importId);
 				 setForward(req, "portlet.ext.contentlet.import_contentlets_preview");
 			}		
-		}else  if(cmd != null && cmd.equals("downloadCSVTemplate")){
-			_downloadCSVTemplate(req, res,config,form);
 		} else {
 			if(UtilMethods.isSet(req.getParameter("selectedStructure")) && UtilMethods.isSet(req.getAttribute("ImportContentletsForm"))){
 				((ImportContentletsForm)req.getAttribute("ImportContentletsForm")).setStructure(req.getParameter("selectedStructure"));
@@ -368,94 +361,6 @@ public class ImportContentletsAction extends DotPortletAction {
 
 
 
-	/**
-	 * Provides the user a CSV template based on the selected Content Type. This
-	 * assists users in the process of adding new content to dotCMS as it
-	 * already provides the correct column headers required by the content
-	 * import process.
-	 * 
-	 * @param req
-	 *            - The Struts wrapper for the HTTP Request object.
-	 * @param res
-	 *            - The Struts wrapper for the HTTP Response object.
-	 * @param config
-	 *            - The configuration parameters for this portlet.
-	 * @param form
-	 *            - The form containing the information selected by the user in
-	 *            the UI.
-	 * @throws Exception
-	 *             The CSV template could not be generated.
-	 */
-	private void _downloadCSVTemplate(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form) throws Exception {
-		ActionResponseImpl resImpl = (ActionResponseImpl)res;
-		HttpServletResponse httpRes = resImpl.getHttpServletResponse();
-
-		ImportContentletsForm importForm = (ImportContentletsForm) form;
-		if (!UtilMethods.isSet(importForm.getStructure())) {
-			SessionMessages.add(req, ERROR, "structure-type-is-required");
-			setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
-			return;
-		}
-
-		// The fields must be resolved before any download header is committed, otherwise a
-		// failed lookup leaves the response flagged as an attachment with an empty error body
-		final List<Field> fields;
-		try {
-			fields = FieldsCache.getFieldsByStructureInode(importForm.getStructure());
-		} catch (final DotStateException e) {
-			Logger.warn(this, "Unable to generate CSV template: selected Content Type does not exist", e);
-			SessionMessages.add(req, ERROR, "Workflow-does-not-exists-content-type");
-			setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
-			return;
-		}
-
-		httpRes.setContentType("application/octet-stream");
-		httpRes.setHeader("Content-Disposition", "attachment; filename=\"CSV_Template.csv\"");
-
-		ServletOutputStream out = httpRes.getOutputStream();
-		for(int i = 0; i < fields.size(); i++) {
-			Field field = fields.get(i);
-			if (ImportUtil.isImportableField(field)) {
-				String fieldVariableName = field.getVelocityVarName();
-				if(fieldVariableName.contains(",")) {
-					out.print("\"" + fieldVariableName + "\"");
-				} else {
-					out.print(fieldVariableName);
-				}
-				if(i < fields.size() - 1) { 
-					out.print(",");
-				}
-			}
-		}
-		out.print("\n");
-
-		for(int i = 0; i < fields.size(); i++) {
-			Field field = fields.get(i);
-			if (ImportUtil.isImportableField(field)) {
-				if (field.getFieldType().equals(Field.FieldType.DATE.toString())) {
-					out.print("\"MM/dd/yyyy\"");
-				} else if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
-					out.print("\"MM/dd/yyyy hh:mm aa\"");
-				} else if (field.getFieldType().equals(Field.FieldType.TIME.toString())) {
-					out.print("\"hh:mm aa\"");
-				}else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-					out.print("\"Host/Folder Identifier\"");
-				}else if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
-					out.print("\"Category Unique Key\"");
-				}else if (field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
-				    out.print("\"{'key1':'value','key2':'value2'}\"");
-				}    else {
-					out.print("\"XXX\"");
-				}
-				if(i < fields.size() - 1) {
-					out.print(",");
-				}
-			}
-		}
-		out.flush();
-		out.close();
-		HibernateUtil.closeSession();
-	}
 
 
 	/**
