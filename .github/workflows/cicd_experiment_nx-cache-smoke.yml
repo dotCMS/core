@@ -1,0 +1,64 @@
+name: Nx Remote Cache Smoke Test
+
+# One-off experiment, not part of the implementation PR or pull-request execution.
+on:
+  push:
+    branches: [issue-38563-nx-cache-smoke]
+
+permissions:
+  contents: read
+
+jobs:
+  remote-cache:
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    timeout-minutes: 20
+    steps:
+      - name: Checkout reviewed cache implementation
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ab7c99f223e9731a899b99dcb098feb799f9b5b1
+          persist-credentials: false
+
+      - name: Setup Java
+        uses: ./.github/actions/core-cicd/setup-java
+
+      - name: Setup Node
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: core-web/.nvmrc
+
+      - name: Setup pnpm and install dependencies
+        uses: ./.github/actions/core-cicd/setup-pnpm
+        with:
+          working-directory: core-web
+          cache: true
+
+      - name: Prove Maven restores the build from the remote cache
+        shell: bash
+        env:
+          NX_SELF_HOSTED_REMOTE_CACHE_SERVER: ${{ vars.NX_SELF_HOSTED_REMOTE_CACHE_SERVER }}
+          NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: ${{ secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN }}
+          NX_DAEMON: 'false'
+          NX_TUI: 'false'
+          FORCE_COLOR: '0'
+        run: |
+          set -euo pipefail
+          : "${NX_SELF_HOSTED_REMOTE_CACHE_SERVER:?Organization cache server variable is unavailable}"
+          : "${NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN:?Organization cache token secret is unavailable}"
+          [[ "$NX_SELF_HOSTED_REMOTE_CACHE_SERVER" == https://* ]]
+          for attempt in 1 2; do
+            export NX_CACHE_DIRECTORY
+            NX_CACHE_DIRECTORY=$(mktemp -d "$RUNNER_TEMP/nx-remote-${attempt}.XXXXXX")
+            echo "Attempt $attempt: independent empty local Nx cache"
+            ./mvnw -B --no-transfer-progress -pl :dotcms-core-web exec:exec@build-test \
+              -Dpnpm.executable="$(command -v pnpm)" \
+              -Dnx.build.options=--projects=sdk-types \
+              -Dmaven.build.cache.enabled=false \
+              | tee "$RUNNER_TEMP/nx-remote-${attempt}.log"
+          done
+          if ! grep -Fq '[remote cache]' "$RUNNER_TEMP/nx-remote-2.log"; then
+            echo '::error::Second Maven build did not report a remote Nx cache hit.'
+            exit 1
+          fi
+          echo '## Nx remote cache verified' >> "$GITHUB_STEP_SUMMARY"
+          echo 'Maven built sdk-types twice with independent empty local Nx caches. The second run restored its output from the self-hosted remote cache.' >> "$GITHUB_STEP_SUMMARY"
