@@ -17,6 +17,7 @@ import io.jsonwebtoken.SignatureException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.time.Duration;
+import java.util.Map;
 import java.util.UUID;
 
 import static com.dotcms.exception.ExceptionUtil.causedBy;
@@ -29,6 +30,8 @@ public class JsonWebTokenUtils {
 
     public static final String CLAIM_UPDATED_AT = "xmod";
     public static final String CLAIM_ALLOWED_NETWORK = "xnet";
+    /** Marks a session login token, the token of a login without "remember me". */
+    public static final String CLAIM_SESSION_LOGIN = "xses";
 
     private static class SingletonHolder {
         private static final JsonWebTokenUtils INSTANCE = new JsonWebTokenUtils();
@@ -97,24 +100,33 @@ public class JsonWebTokenUtils {
     }
 
     /**
-     * Creates a login token for the user that expires the given duration from now.
+     * Creates a session login token for the user (the token of a login without "remember me")
+     * that expires the given duration from now. It carries the signed
+     * {@link #CLAIM_SESSION_LOGIN} claim, which is how a later login from the cookie tells it
+     * apart from a "remember me" token.
      *
      * @param user     the user the token logs in
      * @param lifetime how long the token stays valid
      * @return the signed token
      */
-    public String createUserToken(final User user, final Duration lifetime) {
+    public String createSessionLoginToken(final User user, final Duration lifetime) {
 
-        return createUserToken(user, lifetime.toMillis());
+        return createUserToken(user, lifetime.toMillis(), Map.of(CLAIM_SESSION_LOGIN, true));
     }
 
     private String createUserToken(final User user, final long ttlMillis) {
+
+        return createUserToken(user, ttlMillis, Map.of());
+    }
+
+    private String createUserToken(final User user, final long ttlMillis, final Map<String, Object> claims) {
 
         return this.jsonWebTokenService.generateUserToken(
                 new UserToken.Builder().id(user.getRememberMeToken())
                         .subject(PublicEncryptionFactory.encryptString(user.getUserId()))
                         .modificationDate(user.getModificationDate())
-                        .expiresDate(ttlMillis).build()
+                        .expiresDate(ttlMillis)
+                        .claims(claims).build()
         );
     }
 

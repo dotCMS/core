@@ -161,8 +161,10 @@ HTTP session is gone (session timeout, node restart). Its lifetime depends on "r
 | With "remember me" (opt-in) | Persistent | 14 days, not renewed | `json.web.token.days.max.age` (default `14`) |
 
 A session login token is renewed once half its lifetime has passed, on the next back-end
-request (`/api/`, `/dotAdmin`, `/html/`, `/c/`, `/dwr/`) that carries the cookie
-(`DefaultAutoLoginWebInterceptor`). An active user therefore keeps a valid cookie, and a browser
+request that carries the cookie (`DefaultAutoLoginWebInterceptor`): `/api/`, the `/dotAdmin`
+entry page, `/c/`, `/dotAdmin/c/` and `/dwr/call/`. Static files (`/html/`, the admin bundles,
+DWR scripts) never receive a renewed cookie, since a cache may keep them by file type; a GraphQL
+request that is due to renew skips the GraphQL cache for that one request. An active user therefore keeps a valid cookie, and a browser
 left idle for longer than the lifetime must log in again. The effective idle limit is therefore
 this lifetime: the Tomcat `session-timeout` (30 minutes in `web.xml`) only decides when the cookie
 has to step in and log the browser back in. Site pages and assets never receive a
@@ -171,9 +173,11 @@ user and still active, and never while an administrator is logged in as another 
 minutes to `1440` sets a one-day lifetime, still renewed while the user works; a value below 1 is
 ignored and the default used. `SET_JWT_SESSION_COOKIE=false` still turns the session cookie off
 for interactive logins. A renewal that cannot happen (the cookie expired, or was replaced by a
-logout or password change) is dropped for that session rather than retried. The lifetime that
-decides whether a restored token is renewed is the one configured now, so after lowering it,
-older and longer tokens are simply left to expire.
+logout or password change) is dropped for that session rather than retried; an unexpected error
+while checking the cookie keeps it for the next request. A session login token carries a signed
+`xses` claim, which is how a login restored from the cookie tells it apart from a "remember me"
+token whatever the two lifetimes are set to; it stays a browser-session cookie even when its
+lifetime is longer than the "remember me" limit.
 
 The "remember me" token is a separate, opt-in lifetime. Deployments that want a shorter limit
 for it can lower `json.web.token.days.max.age`. API tokens (`/api/v1/apitoken`) have their own

@@ -677,7 +677,7 @@ public class LoginServiceAPIFactory implements Serializable {
                                                 final User user) {
 
             final Duration lifetime = LoginServiceAPI.sessionLoginTokenLifetime();
-            final String sessionToken = this.jsonWebTokenUtils.createUserToken(user, lifetime);
+            final String sessionToken = this.jsonWebTokenUtils.createSessionLoginToken(user, lifetime);
             createJsonWebTokenCookie(req, res, sessionToken, Optional.of(0));
 
             final HttpSession session = req.getSession(false);

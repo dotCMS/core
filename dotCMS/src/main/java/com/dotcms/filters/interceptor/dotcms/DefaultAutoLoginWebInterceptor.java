@@ -18,14 +18,13 @@ import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.CookieUtil;
-import io.jsonwebtoken.Claims;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import java.util.Set;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,13 +37,15 @@ import javax.servlet.http.HttpSession;
  */
 public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
 
-    /** Paths of the back-end application, whose responses are never cached. */
+    /**
+     * Dynamic back-end paths whose responses are never cached. Static files (the admin
+     * application's scripts, {@code /html/} and the DWR scripts) are left out: some are sent with
+     * public cache headers, and a cache may keep any of them by file type, cookie included.
+     */
     private static final List<String> BACK_END_APPLICATION_PREFIXES =
-            List.of("/api/", "/dotAdmin/", "/html/", "/c/", "/dwr/");
-    private static final String ADMIN_APPLICATION_ROOT = "/dotAdmin";
-
-    /** Allowance for the second-precision issue and expiry times of a token. */
-    private static final long TOKEN_TIME_SLACK_MILLIS = TimeUnit.MINUTES.toMillis(1);
+            List.of("/api/", "/c/", "/dotAdmin/c/", "/dwr/call/");
+    /** The admin application's entry page. */
+    private static final Set<String> ADMIN_APPLICATION_ENTRY = Set.of("/dotAdmin", "/dotAdmin/");
 
     private final JsonWebTokenUtils jsonWebTokenUtils;
     private final LoginServiceAPI loginServiceAPI;
@@ -91,9 +92,10 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
             return Result.NEXT;
         }
 
-        // if the token was expiry date is greater than the allowed EXPIRY date, reset it
-        // maybe someone updated the configured MAX_AGE_DAYS
-        if(token.get().getExpiresDate().after(Date.from(Instant.now().plus(LoginServiceAPI.JWT_TOKEN_MAX_AGE_DAYS.get(), ChronoUnit.DAYS)))) {
+        // if a "remember me" token expires later than the allowed EXPIRY date, reset it
+        // maybe someone updated the configured MAX_AGE_DAYS. A session login token has its own
+        // lifetime and stays a session cookie.
+        if(!isSessionLoginToken(token.get()) && token.get().getExpiresDate().after(Date.from(Instant.now().plus(LoginServiceAPI.JWT_TOKEN_MAX_AGE_DAYS.get(), ChronoUnit.DAYS)))) {
             // refresh the token
             this.loginServiceAPI.doRememberMe(request, response, user.get(), true);
         }
@@ -112,23 +114,24 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
     } // intercept.
 
     /**
-     * After a login from the cookie, marks the new HTTP session's login token as due for renewal
-     * when it is a session login token, so an active user keeps a valid cookie. A token counts as
-     * one when it was issued for no longer than the session token lifetime; a "remember me" token
-     * is left as it is, even in its last hour.
+     * After a login from the cookie, marks the HTTP session's login token as due for renewal when
+     * it is a session login token, so an active user keeps a valid cookie; a "remember me" token is
+     * left as it is. A renewal already scheduled on the session is kept, so a front-end user, whose
+     * cookie login is repeated on each request, is not renewed on every request.
      */
     private void scheduleRenewalOfSessionLoginToken(final HttpServletRequest request, final JWToken token) {
 
         final HttpSession session = request.getSession(false);
-        if (null != session && isSessionLoginToken(token)) {
+        if (null != session && isSessionLoginToken(token)
+                && null == session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT)) {
             session.setAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT, 0L);
         }
     }
 
     /**
-     * Whether the token was issued as a session login token: its whole lifetime (expiry minus
-     * issue time) is no longer than the configured session token lifetime. The time it has left
-     * does not matter, so a "remember me" token near its expiry is not one.
+     * Whether the token was issued as a session login token, which the login service marks with a
+     * signed claim. Tokens issued before that claim existed are not session login tokens, so they
+     * are never renewed and simply expire.
      *
      * @param token a validated login token
      * @return {@code true} for a session login token
@@ -136,13 +139,21 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
     @VisibleForTesting
     static boolean isSessionLoginToken(final JWToken token) {
 
-        final Object issuedAtSeconds = token.getClaims().get(Claims.ISSUED_AT);
-        if (!(issuedAtSeconds instanceof Number) || null == token.getExpiresDate()) {
-            return false;
-        }
-        final long issuedFor = token.getExpiresDate().getTime()
-                - TimeUnit.SECONDS.toMillis(((Number) issuedAtSeconds).longValue());
-        return issuedFor <= LoginServiceAPI.sessionLoginTokenLifetime().toMillis() + TOKEN_TIME_SLACK_MILLIS;
+        return Boolean.TRUE.equals(token.getClaims().get(JsonWebTokenUtils.CLAIM_SESSION_LOGIN));
+    }
+
+    /**
+     * Whether the request's HTTP session has a session login token renewal whose time has passed.
+     *
+     * @param request the current request
+     * @return {@code true} when the next back-end request should renew the login cookie
+     */
+    public static boolean isSessionLoginTokenRenewalDue(final HttpServletRequest request) {
+
+        final HttpSession session = request.getSession(false);
+        final Object renewAt = null == session ? null
+                : session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT);
+        return renewAt instanceof Long && System.currentTimeMillis() >= (Long) renewAt;
     }
 
     /**
@@ -163,16 +174,12 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
                                              final HttpServletResponse response) {
 
         final HttpSession session = request.getSession(false);
-        if (null == session || isLoggedInAsAnotherUser(session)) {
-            return;
-        }
-        final Object renewAt = session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT);
-        if (!(renewAt instanceof Long) || System.currentTimeMillis() < (Long) renewAt
+        if (null == session || isLoggedInAsAnotherUser(session) || !isSessionLoginTokenRenewalDue(request)
                 || !isBackEndApplicationPath(request.getRequestURI())) {
             return;
         }
         final Cookie loginCookie = UtilMethods.getCookie(request.getCookies(), CookieKeys.REMEMBER_ME_COOKIE.get());
-        final Object sessionUserId = session.getAttribute(WebKeys.USER_ID);
+        final String sessionUserId = sessionUserId(session);
         final User cookieOwner;
         try {
             cookieOwner = null == loginCookie ? null
@@ -183,7 +190,7 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
             return;
         }
         if (null != cookieOwner && null != sessionUserId
-                && cookieOwner.getUserId().equals(sessionUserId.toString())) {
+                && cookieOwner.getUserId().equals(sessionUserId)) {
             this.loginServiceAPI.doRememberMe(request, response, cookieOwner, false);
             return;
         }
@@ -201,9 +208,24 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
                 || null != session.getAttribute(WebKeys.PRINCIPAL_USER_ID);
     }
 
+    /**
+     * The id of the user the session is logged in as. A back-end login keeps it under
+     * {@link WebKeys#USER_ID}; a front-end user restored from the login cookie is only kept as the
+     * CMS user.
+     */
+    private static String sessionUserId(final HttpSession session) {
+
+        final Object userId = session.getAttribute(WebKeys.USER_ID);
+        if (null != userId) {
+            return userId.toString();
+        }
+        final Object cmsUser = session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER);
+        return cmsUser instanceof User ? ((User) cmsUser).getUserId() : null;
+    }
+
     private static boolean isBackEndApplicationPath(final String uri) {
 
-        return null != uri && (ADMIN_APPLICATION_ROOT.equals(uri)
+        return null != uri && (ADMIN_APPLICATION_ENTRY.contains(uri)
                 || BACK_END_APPLICATION_PREFIXES.stream().anyMatch(uri::startsWith));
     }
 

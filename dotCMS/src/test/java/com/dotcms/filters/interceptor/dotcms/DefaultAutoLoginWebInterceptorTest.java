@@ -25,8 +25,6 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.WebKeys;
-import io.jsonwebtoken.Claims;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -279,49 +277,81 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
     }
 
     /**
-     * A token issued for the session token lifetime (60 minutes by default) is a session login
-     * token, whatever time it has left.
+     * A token carrying the session login claim is a session login token.
      */
     @Test
-    public void tokenIssuedForTheSessionLifetime_isASessionLoginToken() {
-        final long now = System.currentTimeMillis();
-
+    public void tokenWithSessionLoginClaim_isASessionLoginToken() {
         assertTrue(DefaultAutoLoginWebInterceptor.isSessionLoginToken(
-                token(now, now + TimeUnit.MINUTES.toMillis(60))));
-        assertTrue(DefaultAutoLoginWebInterceptor.isSessionLoginToken(
-                token(now - TimeUnit.MINUTES.toMillis(50), now + TimeUnit.MINUTES.toMillis(10))));
+                token(ImmutableMap.of(JsonWebTokenUtils.CLAIM_SESSION_LOGIN, true))));
     }
 
     /**
-     * A "remember me" token in its last hour is not a session login token, so a login restored
-     * from it does not turn its persistent cookie into a renewed session cookie.
+     * A token without the claim (a "remember me" token, or one issued before the claim existed)
+     * is not a session login token, however short its lifetime, so the session lifetime may be
+     * set as long as the "remember me" lifetime without the two being confused.
      */
     @Test
-    public void rememberMeTokenInItsLastHour_isNotASessionLoginToken() {
-        final long now = System.currentTimeMillis();
-        final long expires = now + TimeUnit.MINUTES.toMillis(30);
-
+    public void tokenWithoutSessionLoginClaim_isNotASessionLoginToken() {
+        assertFalse(DefaultAutoLoginWebInterceptor.isSessionLoginToken(token(ImmutableMap.of())));
         assertFalse(DefaultAutoLoginWebInterceptor.isSessionLoginToken(
-                token(expires - TimeUnit.DAYS.toMillis(14), expires)));
+                token(ImmutableMap.of(JsonWebTokenUtils.CLAIM_SESSION_LOGIN, "true"))));
     }
 
     /**
-     * A token without an issue time is not treated as a session login token.
+     * Static files are never sent a renewed cookie, since a cache may keep them by file type:
+     * {@code /html/} (whose common CSS and script pages are sent with public cache headers), the
+     * admin application's bundles and the DWR scripts.
      */
     @Test
-    public void tokenWithoutIssueTime_isNotASessionLoginToken() {
-        final JWToken token = mock(JWToken.class);
-        when(token.getClaims()).thenReturn(ImmutableMap.of());
-        when(token.getExpiresDate()).thenReturn(new Date());
+    public void keepsSessionLoginToken_onStaticFiles() {
+        cookieOwnedBy(cookieOwner);
 
-        assertFalse(DefaultAutoLoginWebInterceptor.isSessionLoginToken(token));
+        for (final String uri : new String[]{"/html/common/css.jsp", "/html/js/dojo/dojo.js",
+                "/dotAdmin/main-ABC123.js", "/dwr/engine.js", "/dwr/interface/UserAjax.js"}) {
+            interceptor.intercept(request(uri, session(pastRenewal()), true), mock(HttpServletResponse.class));
+        }
+
+        verifyNoRenewal();
     }
 
-    private static JWToken token(final long issuedAtMillis, final long expiresMillis) {
+    /**
+     * The admin application's entry page, legacy portal actions and DWR calls renew a due cookie.
+     */
+    @Test
+    public void renewsSessionLoginToken_onDynamicBackEndPaths() {
+        cookieOwnedBy(cookieOwner);
+
+        for (final String uri : new String[]{"/dotAdmin", "/dotAdmin/", "/c/portal/layout",
+                "/dotAdmin/c/portal/layout", "/dwr/call/plaincall/UserAjax.getUserById.dwr"}) {
+            final HttpServletRequest request = request(uri, session(pastRenewal()), true);
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+            interceptor.intercept(request, response);
+            verify(loginServiceAPI).doRememberMe(request, response, cookieOwner, false);
+        }
+    }
+
+    /**
+     * A front-end user restored from the login cookie is kept on the session only as the CMS
+     * user; that still identifies the session's user, so its cookie is renewed.
+     */
+    @Test
+    public void renewsSessionLoginToken_forFrontEndUserKeptAsCmsUser() {
+        cookieOwnedBy(cookieOwner);
+        final HttpSession session = mock(HttpSession.class);
+        when(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER)).thenReturn(sessionUser);
+        when(session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT)).thenReturn(pastRenewal());
+        final HttpServletRequest request = request("/api/v1/content", session, true);
+        when(request.getAttribute(WebKeys.USER)).thenReturn(sessionUser);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        assertEquals(Result.SKIP, interceptor.intercept(request, response));
+
+        verify(loginServiceAPI).doRememberMe(request, response, cookieOwner, false);
+    }
+
+    private static JWToken token(final Map<String, Object> claims) {
         final JWToken token = mock(JWToken.class);
-        when(token.getClaims()).thenReturn(
-                ImmutableMap.of(Claims.ISSUED_AT, TimeUnit.MILLISECONDS.toSeconds(issuedAtMillis)));
-        when(token.getExpiresDate()).thenReturn(new Date(expiresMillis));
+        when(token.getClaims()).thenReturn(ImmutableMap.copyOf(claims));
         return token;
     }
 
