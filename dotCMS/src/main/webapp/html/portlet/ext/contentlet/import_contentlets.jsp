@@ -132,15 +132,8 @@
 			showDotCMSSystemMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "structure-type-is-required")) %>', true);
 			return;
 		}
-		var href =  '<portlet:actionURL>';
-			href +=		'<portlet:param name="struts_action" value="/ext/contentlet/import_contentlets" />';
-			href +=		'<portlet:param name="cmd" value="downloadCSVTemplate" />';
-			href +=	'</portlet:actionURL>';
-		var form = document.getElementById("importForm");
-
-		form.action = href;
-		form.cmd.value = "downloadCSVTemplate";
-		form.submit();
+		window.location.href = '/api/v1/content/_import/_template?contentType='
+			+ encodeURIComponent(structureInode);
 	}
 
 	function languageChanged() {

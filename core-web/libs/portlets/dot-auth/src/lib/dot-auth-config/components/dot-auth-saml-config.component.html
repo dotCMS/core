@@ -35,6 +35,22 @@
                     [pTooltip]="'dotauth.tooltip.saml.acsUrl' | dm"
                     tooltipPosition="top" />
             </div>
+            <div class="field full">
+                <label for="saml-additional-acs-urls">
+                    {{ 'dotauth.field.additionalAcsUrls' | dm }}
+                    <i
+                        class="label-tip pi pi-question-circle"
+                        [pTooltip]="'dotauth.tooltip.saml.additionalAcsUrls' | dm"
+                        tooltipPosition="top"></i>
+                </label>
+                <input
+                    pInputText
+                    id="saml-additional-acs-urls"
+                    data-testid="saml-additional-acs-urls"
+                    [ngModel]="saml().additionalAcsUrls"
+                    (ngModelChange)="onChange('additionalAcsUrls', $event)"
+                    placeholder="https://example.com/api/v1/my-plugin/acs" />
+            </div>
             <div class="field">
                 <label>{{ 'dotauth.field.signRequests' | dm }}</label>
                 <div class="toggle-row flex items-center gap-2.5">
