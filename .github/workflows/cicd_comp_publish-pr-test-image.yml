@@ -202,6 +202,7 @@ jobs:
             echo ""
             echo "Sign in to Cloud Control to view or start the instance if your permissions allow it."
             echo "Environment provisioning is queued after this workflow completes."
+            echo "Merging this PR into main automatically decommissions the environment and deletes its data."
           } > body.md
 
           id=$(gh api -X GET "repos/${REPO}/issues/${PR}/comments" -f per_page=100 \
