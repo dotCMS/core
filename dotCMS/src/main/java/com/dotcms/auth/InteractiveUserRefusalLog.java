@@ -4,6 +4,7 @@ import com.dotmarketing.util.SecurityLogger;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 
+import java.security.NoSuchAlgorithmException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.nio.charset.StandardCharsets;
@@ -67,7 +68,7 @@ public final class InteractiveUserRefusalLog {
             final byte[] digest = MessageDigest.getInstance("SHA-256")
                     .digest(sessionId.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(digest);
-        } catch (final java.security.NoSuchAlgorithmException e) {
+        } catch (final NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }
     }

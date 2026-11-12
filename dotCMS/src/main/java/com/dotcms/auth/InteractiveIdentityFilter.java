@@ -4,6 +4,7 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
@@ -19,14 +20,21 @@ import java.io.IOException;
  */
 public class InteractiveIdentityFilter implements Filter {
 
+    /** Nothing to initialize. */
     @Override
-    public void init(final javax.servlet.FilterConfig filterConfig) {
+    public void init(final FilterConfig filterConfig) {
     }
 
+    /** Nothing to release. */
     @Override
     public void destroy() {
     }
 
+    /**
+     * Wraps the request, makes the wrapper the thread-bound request while the chain runs, and restores the
+     * previous thread-bound request afterwards. Passes the request through untouched when it is not an HTTP
+     * request or when the rollback switch is off.
+     */
     @Override
     public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain)
             throws IOException, ServletException {

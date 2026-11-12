@@ -104,4 +104,37 @@ public class InteractiveIdentityWrapperTest {
         assertFalse(sessionStore.containsKey(WebKeys.USER));
         assertFalse(sessionStore.containsKey(WebKeys.USER_ID));
     }
+
+    /**
+     * Asking the wrapped request for its session twice returns the same object, so identity-based use of
+     * the session (equality, locking, map keys) keeps working.
+     */
+    @Test
+    public void test_wrapped_request_returns_the_same_session_object_every_time() {
+        final HttpServletRequest request = InteractiveIdentityWrapper.wrap(
+                IdentityMocks.request(new HashMap<>(), IdentityMocks.session(new HashMap<>())));
+        final HttpSession first = request.getSession();
+        assertSame(first, request.getSession());
+        assertSame(first, request.getSession(true));
+        assertSame(first, request.getSession(false));
+        assertEquals(first, request.getSession());
+    }
+
+    /** A new container session (the old one invalidated) gets a new wrapper, not the stale one. */
+    @Test
+    public void test_a_replaced_container_session_gets_a_fresh_wrapper() {
+        final HttpSession old = IdentityMocks.session(new HashMap<>());
+        final HttpSession replacement = IdentityMocks.session(new HashMap<>());
+        final HttpServletRequest container = IdentityMocks.request(new HashMap<>(), old);
+        final HttpServletRequest request = InteractiveIdentityWrapper.wrap(container);
+        final HttpSession first = request.getSession();
+
+        org.mockito.Mockito.when(container.getSession()).thenReturn(replacement);
+        org.mockito.Mockito.when(container.getSession(org.mockito.ArgumentMatchers.anyBoolean()))
+                .thenReturn(replacement);
+
+        final HttpSession second = request.getSession();
+        org.junit.Assert.assertNotSame(first, second);
+        assertSame(second, request.getSession());
+    }
 }

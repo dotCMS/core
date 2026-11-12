@@ -134,22 +134,11 @@ public final class RequestUserResolver {
     }
 
     private static User eligible(final User user, final HttpServletRequest request, final HttpSession session) {
-        final User allowed = InteractiveUserPolicy.refuseIfNotEligible(user, request, session);
-        if (user != null && allowed == null) {
-            InteractiveUserRefusalLog.record(request, session);
-        }
-        return allowed;
+        return InteractiveUserPolicy.refuseIfNotEligible(user, request, session);
     }
 
     private static String eligibleId(final String userId, final HttpServletRequest request,
             final HttpSession session) {
-        if (userId == null) {
-            return null;
-        }
-        if (InteractiveUserPolicy.isEligibleUserId(userId)) {
-            return userId;
-        }
-        InteractiveUserRefusalLog.record(request, session);
-        return null;
+        return InteractiveUserPolicy.refuseIfNotEligibleId(userId, request, session);
     }
 }

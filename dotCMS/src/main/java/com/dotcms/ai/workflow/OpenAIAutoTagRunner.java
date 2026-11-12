@@ -136,20 +136,20 @@ public class OpenAIAutoTagRunner implements Runnable {
      */
     private String openAIRequest(final Contentlet workingContentlet, final String contentToTag) throws Exception {
         try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
-        final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
-        final String systemPrompt = this.limitTags ? SYSTEM_PROMPT_TAGGING_CONSTRAIN : SYSTEM_PROMPT_TAGGING_FREEFORM;
-        final Set<String> constrainTags = this.limitTags ? APILocator.getTagAPI().findTopTags(workingContentlet.getHost()) : Set.of();
-        ctx.put("constrainTags", String.join("\n", constrainTags));
+            final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
+            final String systemPrompt = this.limitTags ? SYSTEM_PROMPT_TAGGING_CONSTRAIN : SYSTEM_PROMPT_TAGGING_FREEFORM;
+            final Set<String> constrainTags = this.limitTags ? APILocator.getTagAPI().findTopTags(workingContentlet.getHost()) : Set.of();
+            ctx.put("constrainTags", String.join("\n", constrainTags));
 
-        final String parsedSystemPrompt = VelocityUtil.eval(systemPrompt, ctx);
-        final String parsedContentPrompt = VelocityUtil.eval(contentToTag, ctx);
+            final String parsedSystemPrompt = VelocityUtil.eval(systemPrompt, ctx);
+            final String parsedContentPrompt = VelocityUtil.eval(contentToTag, ctx);
 
-        final Host host = Try.of(() -> APILocator.getHostAPI().find(workingContentlet.getHost(), user, false)).getOrNull();
-        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
-        final JSONObject openAIResponse = APILocator.getDotAIAPI().getCompletionsAPI(appConfig)
-                .prompt(parsedSystemPrompt, parsedContentPrompt, null, 0f, 2000, user.getUserId());
+            final Host host = Try.of(() -> APILocator.getHostAPI().find(workingContentlet.getHost(), user, false)).getOrNull();
+            final AppConfig appConfig = ConfigService.INSTANCE.config(host);
+            final JSONObject openAIResponse = APILocator.getDotAIAPI().getCompletionsAPI(appConfig)
+                    .prompt(parsedSystemPrompt, parsedContentPrompt, null, 0f, 2000, user.getUserId());
 
-        return openAIResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
+            return openAIResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
         }
     }
 

@@ -58,17 +58,46 @@ public final class InteractiveUserPolicy {
     }
 
     /**
-     * Returns the account when it is eligible and {@code null} ("no user") when it is not. Never writes to
-     * the request or the session.
+     * Returns the account when it is eligible and {@code null} ("no user") when it is not, recording the
+     * refusal in the security log (see {@link InteractiveUserRefusalLog}). Never writes to the request or
+     * the session.
      *
      * @param user    the account found, may be null
      * @param request the request it was found for, may be null
-     * @param session the session it was found in, may be null
+     * @param session the session it was found in, may be null; used only to log once per session
      * @return the account, or null when it must not be used as an interactive identity
      */
     public static User refuseIfNotEligible(final User user, final HttpServletRequest request,
             final HttpSession session) {
-        return isEligible(user) ? user : null;
+        if (user == null) {
+            return null;
+        }
+        if (isEligible(user)) {
+            return user;
+        }
+        InteractiveUserRefusalLog.record(request, session);
+        return null;
+    }
+
+    /**
+     * Same as {@link #refuseIfNotEligible(User, HttpServletRequest, HttpSession)} when only the account id
+     * is known.
+     *
+     * @param userId  the account id found, may be null
+     * @param request the request it was found for, may be null
+     * @param session the session it was found in, may be null; used only to log once per session
+     * @return the id, or null when it must not be used as an interactive identity
+     */
+    public static String refuseIfNotEligibleId(final String userId, final HttpServletRequest request,
+            final HttpSession session) {
+        if (userId == null) {
+            return null;
+        }
+        if (isEligibleUserId(userId)) {
+            return userId;
+        }
+        InteractiveUserRefusalLog.record(request, session);
+        return null;
     }
 
     /**

@@ -349,7 +349,9 @@ public class ShortyBundler implements IBundler {
             request = new FakeHttpRequest(binFile.host.getHostname(), path).request();
             request = new MockServletPathRequest(request, "/contentAsset").request();
 
-            //Every Static Push call to the BinaryServlet must be executed using system user instead of anonymous
+            //Every Static Push call to the BinaryServlet must be executed using system user instead of anonymous:
+            //the scope around doGet below is what makes the user resolve to the system user; the attribute is kept
+            //only for code that reads it from the request directly.
             request.setAttribute(com.liferay.portal.util.WebKeys.USER, APILocator.getUserAPI().getSystemUser());
             try (final OutputStream outputStream = bundleOutput.addFile(binFile.binFile)) {
 

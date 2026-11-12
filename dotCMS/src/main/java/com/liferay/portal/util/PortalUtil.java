@@ -20,6 +20,7 @@
 package com.liferay.portal.util;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.RequestUserResolver;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
@@ -407,7 +408,7 @@ public class PortalUtil {
    * @return the user, or null when there is none or the account cannot be used interactively
    */
   public static User getUser(HttpServletRequest req) {
-    return com.dotcms.auth.RequestUserResolver.resolveRequestUser(req);
+    return RequestUserResolver.resolveRequestUser(req);
   }
 
   public static User getUserFromAuthHeader(HttpServletRequest req) {
@@ -431,7 +432,7 @@ public class PortalUtil {
    * @return the user, or null when there is none or the account cannot be used interactively
    */
   public static User getUser(HttpSession session) {
-    return com.dotcms.auth.RequestUserResolver.resolveSessionUser(session);
+    return RequestUserResolver.resolveSessionUser(session);
   }
 
   public static User getUser(ActionRequest req) {
@@ -455,7 +456,7 @@ public class PortalUtil {
    * @return the user id, or null when there is none or the account cannot be used interactively
    */
   public static String getUserId(HttpSession ses) {
-    return com.dotcms.auth.RequestUserResolver.resolveSessionUserId(ses);
+    return RequestUserResolver.resolveSessionUserId(ses);
   }
 
   /**
@@ -465,7 +466,7 @@ public class PortalUtil {
    * @return the user id, or null when there is none or the account cannot be used interactively
    */
   public static String getUserId(HttpServletRequest req) {
-    return com.dotcms.auth.RequestUserResolver.resolveRequestUserId(req);
+    return RequestUserResolver.resolveRequestUserId(req);
   }
 
   public static String getUserId(ActionRequest req) {

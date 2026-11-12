@@ -1,5 +1,7 @@
 package com.dotcms.auth;
 
+import com.dotmarketing.business.UserAPI;
+import com.liferay.portal.model.User;
 import java.util.concurrent.Callable;
 
 /**
@@ -37,9 +39,9 @@ public final class SystemUserScope implements AutoCloseable {
      * @param actingUser the user server code is acting as, may be null
      * @return a scope to be closed in a try-with-resources
      */
-    public static SystemUserScope openIfSystemUser(final com.liferay.portal.model.User actingUser) {
+    public static SystemUserScope openIfSystemUser(final User actingUser) {
         if (actingUser != null
-                && com.dotmarketing.business.UserAPI.SYSTEM_USER_ID.equalsIgnoreCase(actingUser.getUserId())) {
+                && UserAPI.SYSTEM_USER_ID.equalsIgnoreCase(actingUser.getUserId())) {
             return open();
         }
         return new SystemUserScope(false);
