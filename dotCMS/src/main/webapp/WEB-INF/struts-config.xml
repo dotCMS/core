@@ -186,17 +186,7 @@
 
 
 
-      <!-- HMTLPage View Reporting -->
-      <action path="/ext/htmlpageviews/view_htmlpage_views" type="com.dotmarketing.portlets.htmlpageviews.action.ViewHTMLPageViewsAction">
-         <forward name="portlet.ext.htmlpageviews.view_htmlpage_views" path="portlet.ext.htmlpageviews.view_htmlpage_views" />
-         <forward name="portlet.ext.htmlpageviews.view" path="portlet.ext.htmlpageviews.view" />
-         <forward name="portlet.ext.htmlpageviews.html_page_report" path="portlet.ext.htmlpageviews.html_page_report" />
-      </action>
 
-      <action path="/ext/htmlpageviews/html_page_report" type="com.dotmarketing.portlets.htmlpageviews.action.HTMLPageReportAction">
-         <forward name="portlet.ext.htmlpageviews.html_page_report" path="portlet.ext.htmlpageviews.html_page_report" />
-      </action>
-      <!-- HMTLPage View Reporting -->
 
 
 

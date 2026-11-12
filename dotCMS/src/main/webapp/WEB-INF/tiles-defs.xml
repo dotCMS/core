@@ -696,27 +696,7 @@
 
 
 
-	<!-- HTMLPageViews -->
-	<definition name="portlet.ext.htmlpageviews.view"
-		extends="portal">
-		<put name="content" value="/portlet/ext/htmlpageviews/view.jsp" />
-	</definition>
-	<definition name="portlet.ext.htmlpageviews" extends="portal">
-		<put name="portlet_sub_nav"
-			value="/portlet/ext/htmlpageviews/sub_nav.jsp" />
-	</definition>
-	<definition name="portlet.ext.htmlpageviews.view_htmlpage_views"
-		extends="portlet.ext.htmlpageviews">
-		<put name="content"
-			value="/portlet/ext/htmlpageviews/view_htmlpage_views.jsp" />
-	</definition>
-	<definition name="portlet.ext.htmlpageviews.html_page_report"
-		extends="blank">
-		<put name="content"
-			value="/portlet/ext/htmlpageviews/view_report_csv.jsp" />
-	</definition>
 
-	<!-- HTMLPageViews -->
 
 
 

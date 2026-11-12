@@ -561,7 +561,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         final LoginLockout.Attempt attempt = LoginLockout.getInstance().begin(user.getUserId(),
                 LoginLockout.clientAddress());
         if (attempt.isRefused()) {
-            // Same work, delay, failure handlers and result as a wrong password, so a refused login gives
+            // Same work, delay and result as a wrong password, so a refused login gives
             // no signal about whether the guess was right.
             if (LoginFactory.passwordMatch(password, user)) {
                 // Refused only because a lock applies or too many attempts were in flight at once: a right
@@ -571,11 +571,10 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
                 LoginLockout.getInstance().failed(attempt);
             }
             LoginLockout.getInstance().logRefused(attempt);
-            this.processFailedLogin(user, login, companyId, byEmailAddress, attempt, true);
+            this.processFailedLogin(user, login, byEmailAddress, attempt, true);
             return Authenticator.FAILURE;
         }
-        final int authResult = LoginFactory.passwordMatch(password, user)
-                ? Authenticator.SUCCESS : Authenticator.FAILURE;
+        final int authResult = LoginFactory.passwordMatch(password, user) ? Authenticator.SUCCESS : Authenticator.FAILURE;
         Logger.debug(this, String.format("Does password for User '%s' match? %s", login,
                 authResult == Authenticator.SUCCESS));
         if (authResult == Authenticator.SUCCESS) {
@@ -590,7 +589,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             // Earlier attempts from this address no longer count toward a lock
             LoginLockout.getInstance().succeeded(attempt);
         } else {
-            this.processFailedLogin(user, login, companyId, byEmailAddress, attempt, false);
+            this.processFailedLogin(user, login, byEmailAddress, attempt, false);
         }
         return authResult;
     }
@@ -681,11 +680,10 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
     }
 
     /**
-     * Updates the User information after a failed login attempt.
+     * Records the lockout failure, delays the request and updates the User information after a failed login attempt.
      *
      * @param user           The {@link User} that failed to log in.
      * @param login          The user's email or ID.
-     * @param companyId      The current Company ID.
      * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
      *                       done via User ID, set to {@code false}.
      * @param attempt        The login lockout attempt for this login; see {@link LoginLockout#begin(String, String)}.
@@ -693,7 +691,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
      *                       delayed the same way, but the User's failure counter is not changed, and the
      *                       caller has already finished the lockout attempt.
      */
-    private void processFailedLogin(final User user, final String login, final String companyId,
+    private void processFailedLogin(final User user, final String login,
                                     final boolean byEmailAddress, final LoginLockout.Attempt attempt,
                                     final boolean refused) {
         Logger.debug(this, String.format("Authentication for user '%s' has failed.", login));
@@ -705,7 +703,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             if (refused) {
                 this.delayFailedLogin(user, login);
             } else {
-                this.handleFailedLoginAttempt(user, login, companyId, byEmailAddress);
+                this.handleFailedLoginAttempt(user, login, byEmailAddress);
             }
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when handling failed login for User '%s': " +
@@ -720,19 +718,17 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
      * <ul>
      *     <li>Applies a login-delaying strategy to avoid brute-force attacks.</li>
      *     <li>Increases the counter of failed login attempts for the User.</li>
-     *     <li>If the maximum number of failed login attempts has been reached, it executes the custom handlers for
-     *     maximum failed login attempts.</li>
+     *     <li>Resets the failure counter at the configured maximum when login lockout is enabled.</li>
      * </ul>
      *
      * @param user           The {@link User} that tried to log into dotCMS.
      * @param login          The User's email or ID.
-     * @param companyId      The current Company ID.
      * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
      *                       done via User ID, set to {@code false}.
      *
      * @throws SystemException User failed attempts data could not be saved.
      */
-    private void handleFailedLoginAttempt(final User user, final String login, final String companyId,
+    private void handleFailedLoginAttempt(final User user, final String login,
                                           final boolean byEmailAddress) throws SystemException {
         int failedLoginAttempts = user.getFailedLoginAttempts();
         Logger.debug(this, String.format("Current failed login attempts for user '%s' is %s", login,
@@ -749,8 +745,8 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             Logger.debug(this, String.format("User '%s' failed to authenticate via '%s' after %s failed attempts",
                     login, byEmailAddress ? "email" : "user ID", failedLoginAttempts));
             if (lockoutEnabled) {
-                // Locks are decided per address by LoginLockout. This account-wide count only paces the delay and
-                // the handlers below, so it starts over rather than growing with every failure from anywhere.
+                // Locks are decided per address by LoginLockout. This account-wide count only paces the delay,
+                // so it starts over rather than growing with every failure from anywhere.
                 user.setFailedLoginAttempts(0);
                 UserUtil.update(user);
             }

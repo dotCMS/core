@@ -171,7 +171,8 @@ public class DotWebdavHelper {
 	 * Checks the credentials a WebDAV client sent and returns the matching user, under the shared
 	 * Basic authentication policy ({@code ALLOW_BASIC_AUTH}). In token-only mode the credential must
 	 * be an API token and the stored password is not consulted. When passwords are allowed, the
-	 * password is checked against the one stored in dotCMS, or accepted as an API token.
+	 * credential is checked against the password stored in dotCMS, or accepted as an API token.
+	 * Password attempts are subject to native login lockout; valid API tokens remain usable while locked.
 	 *
 	 * @param username the login sent by the client: an email address or a user id, depending on
 	 *                 the company's authentication type
@@ -181,8 +182,7 @@ public class DotWebdavHelper {
 	 * @throws NoSuchUserException if the named user does not exist
 	 * @throws DotDataException if the user lookup fails
 	 */
-	public User authorizePrincipal(final String username, final String passwd)
-			throws DotSecurityException, NoSuchUserException, DotDataException {
+	public User authorizePrincipal(final String username, final String passwd) throws DotSecurityException, NoSuchUserException, DotDataException {
 
 		final BasicAuthentication.Mode mode = BasicAuthentication.mode();
 		if (mode == BasicAuthentication.Mode.NONE) {
@@ -195,7 +195,7 @@ public class DotWebdavHelper {
 					.orElseThrow(() -> new DotSecurityException("Invalid API token credentials"));
 		}
 
-		final Company company = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
+		final Company company         = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
 
 		final UserAPI userAPI = APILocator.getUserAPI();
 		final User user       = company.getAuthType().equals(Company.AUTH_TYPE_ID)?

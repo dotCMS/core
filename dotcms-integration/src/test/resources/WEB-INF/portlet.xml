@@ -175,16 +175,6 @@
 
     </portlet>
 
-    <portlet>
-        <portlet-name>legacy-page-views</portlet-name>
-        <display-name>HTML Pages Statistics</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-        <init-param>
-            <name>view-action</name>
-            <value>/ext/htmlpageviews/view_htmlpage_views</value>
-        </init-param>
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-    </portlet>
 
 
     <portlet>

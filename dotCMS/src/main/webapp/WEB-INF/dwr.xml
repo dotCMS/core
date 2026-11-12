@@ -51,9 +51,6 @@
       <param name="class" value="com.dotmarketing.portlets.containers.ajax.ContainerAjaxDrawedTemplate"/>
     </create>
     <!-- END GRAZIANO issue-12-dnd-template -->
-    <create creator="new" javascript="HTMLPageViewAjax" scope="application">
-      <param name="class" value="com.dotmarketing.portlets.htmlpageviews.ajax.HTMLPageViewAjax"/>
-    </create>
     <create creator="new" javascript="ImportContentletAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.contentlet.ajax.ImportContentletAjax"/>
     </create>
@@ -74,7 +71,6 @@
 	<convert converter="bean" match="com.dotmarketing.tag.model.Tag"/>
 	<convert converter="bean" match="com.dotmarketing.tag.model.TagInode"/>
 	<convert converter="bean" match="com.dotmarketing.portlets.languagesmanager.model.LanguageKey"/>
-	<convert converter="bean" match="com.dotmarketing.portlets.htmlpageviews.factories.HTMLPageViewFactory$StatisticBetweenDates"/>
 	<convert match="java.lang.Exception" converter="exception">
 	  <param name='include' value='message,lineNumber'/>
 	</convert>

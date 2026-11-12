@@ -1,7 +1,6 @@
 <%@page import="com.dotcms.repackage.javax.portlet.WindowState"%>
 <%@ include file="/html/portlet/ext/folders/init.jsp" %>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
-<%@ page import="com.dotmarketing.util.Config" %>
 <%@page import="com.dotcms.enterprise.LicenseUtil"%>
 <%@page import="com.dotcms.enterprise.license.LicenseLevel"%>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
@@ -12,7 +11,6 @@
 
 <%
 	String r = String.valueOf(System.currentTimeMillis());
-    boolean enableClickStreamTracking = Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false);
 %>
 <script language="JavaScript">
 
@@ -275,7 +273,6 @@ function getTemplatePopUp(i,ctxPath, objId, objIden, openNodes, referer,live,wor
 
 // HTML Page Flyout
 function getHTMLPagePopUp(i,ctxPath, objId, objIden, parentId, openNodes, referer,live,working,deleted,locked,read,write,publish,userId,isLegacyPage) {
-	var enableClickStreamTracking = <%= enableClickStreamTracking %>;
     var strHTML = '';
 		strHTML += '<div dojoType="dijit.Menu" class="dotContextMenu" id="popupTr' + i + '" style="display: none;" targetNodeIds="tr' + i + '">';
 
@@ -313,11 +310,6 @@ function getHTMLPagePopUp(i,ctxPath, objId, objIden, parentId, openNodes, refere
 			}
 
 		}
-		if (deleted!="1" && enableClickStreamTracking) {
-	      strHTML += '<div dojoType="dijit.MenuItem" iconClass="statisticsIcon" onClick="<%=locationMode%>=\'<portlet:renderURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpageviews/view_htmlpage_views" /></portlet:renderURL>&htmlpage=' + objId + '&userId=' + userId + '&r=<%=r%>&referer=' + referer + openNodes + '\';">';
-	      strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "View-Statistics")) %>';
-	      strHTML += '</div>';
-	    }
 		if ((working=="1") && (deleted!="1") && (publish=="1")) {
 			strHTML += '<div dojoType="dijit.MenuItem" iconClass="publishIcon" onClick="<%=locationMode%>=\'<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/htmlpages/publish_htmlpages" /><portlet:param name="cmd" value="prepublish" /></portlet:actionURL>&parent=' + parentId + '&r=<%=r%>&publishInode=' + objId + '&referer=' + referer + openNodes + '\';">';
    	        strHTML += '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Publish")) %>';
