@@ -32,7 +32,7 @@ public final class RequestUserResolver {
      * @return the user, or null when there is none or the only one found is not eligible
      */
     public static User resolveRequestUser(final HttpServletRequest request) {
-        if (SystemUserScope.isActive()) {
+        if (scopeApplies()) {
             return systemUser();
         }
         if (request == null) {
@@ -65,7 +65,7 @@ public final class RequestUserResolver {
      * @return the user, or null when there is none or the one found is not eligible
      */
     public static User resolveSessionUser(final HttpSession session) {
-        if (SystemUserScope.isActive()) {
+        if (scopeApplies()) {
             return systemUser();
         }
         if (session == null) {
@@ -92,7 +92,7 @@ public final class RequestUserResolver {
      * @return the id, or null when there is none or the one found is not eligible
      */
     public static String resolveRequestUserId(final HttpServletRequest request) {
-        if (SystemUserScope.isActive()) {
+        if (scopeApplies()) {
             return UserAPI.SYSTEM_USER_ID;
         }
         if (request == null) {
@@ -115,10 +115,15 @@ public final class RequestUserResolver {
      * @return the id, or null when there is none or the one found is not eligible
      */
     public static String resolveSessionUserId(final HttpSession session) {
-        if (SystemUserScope.isActive()) {
+        if (scopeApplies()) {
             return UserAPI.SYSTEM_USER_ID;
         }
         return session == null ? null : eligibleId((String) session.getAttribute(WebKeys.USER_ID), null, session);
+    }
+
+    /** A scope only counts while the rule is on; with the rollback switch off it is inert. */
+    private static boolean scopeApplies() {
+        return SystemUserScope.isActive() && InteractiveUserPolicy.isRuleOn();
     }
 
     private static User systemUser() {

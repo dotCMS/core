@@ -130,6 +130,10 @@ public class OpenAIContentPromptRunner implements Runnable {
         throw new DotRuntimeException(e);
     }
 
+    /**
+     * Evaluates the configured prompt for the contentlet and sends it to the AI service, acting inside a
+     * system user scope when the runner's user is the built-in account.
+     */
     private String openAIRequest(final Contentlet workingContentlet) throws Exception {
 
         final JSONObject openAIResponse;

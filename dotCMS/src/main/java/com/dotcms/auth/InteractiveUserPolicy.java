@@ -71,7 +71,12 @@ public final class InteractiveUserPolicy {
         return isEligible(user) ? user : null;
     }
 
-    private static boolean isRuleOn() {
+    /**
+     * Whether the rule is applied right now (the rollback switch is on). Read on every call.
+     *
+     * @return {@code false} when {@value #KILL_SWITCH_KEY} is off, after logging one warning per JVM
+     */
+    static boolean isRuleOn() {
         if (Config.getBooleanProperty(KILL_SWITCH_KEY, true)) {
             return true;
         }

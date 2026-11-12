@@ -37,6 +37,10 @@ public final class DotAuthSessionCredentialProcessorImpl implements DotAuthSessi
         this.sessionCache = sessionCache;
     }
 
+    /**
+     * Resolves the user behind a dotAuth session-ref bearer credential. A reference whose user is inactive,
+     * or cannot be used interactively, is invalidated and refused with 401.
+     */
     @Override
     public User processAuthHeaderFromSessionRef(final HttpServletRequest request) {
         final String header = request.getHeader(ContainerRequest.AUTHORIZATION);

@@ -130,6 +130,10 @@ public class OpenAIAutoTagRunner implements Runnable {
         throw new DotRuntimeException(e);
     }
 
+    /**
+     * Builds the tagging prompt for the contentlet and sends it to the AI service, acting inside a system
+     * user scope when the runner's user is the built-in account.
+     */
     private String openAIRequest(final Contentlet workingContentlet, final String contentToTag) throws Exception {
         try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
         final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);

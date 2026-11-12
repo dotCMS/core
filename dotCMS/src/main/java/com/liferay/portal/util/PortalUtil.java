@@ -400,6 +400,12 @@ public class PortalUtil {
       return req==null ? null : getUser(req);
   }
 
+  /**
+   * Resolves the user of a request through {@link com.dotcms.auth.RequestUserResolver}.
+   *
+   * @param req the request
+   * @return the user, or null when there is none or the account cannot be used interactively
+   */
   public static User getUser(HttpServletRequest req) {
     return com.dotcms.auth.RequestUserResolver.resolveRequestUser(req);
   }
@@ -418,6 +424,12 @@ public class PortalUtil {
   }
 
 
+  /**
+   * Resolves the user held by a session through {@link com.dotcms.auth.RequestUserResolver}.
+   *
+   * @param session the session, may be null
+   * @return the user, or null when there is none or the account cannot be used interactively
+   */
   public static User getUser(HttpSession session) {
     return com.dotcms.auth.RequestUserResolver.resolveSessionUser(session);
   }
@@ -436,10 +448,22 @@ public class PortalUtil {
     return getUser(reqImpl.getHttpServletRequest());
   }
 
+  /**
+   * Resolves the user id held by a session through {@link com.dotcms.auth.RequestUserResolver}.
+   *
+   * @param ses the session, may be null
+   * @return the user id, or null when there is none or the account cannot be used interactively
+   */
   public static String getUserId(HttpSession ses) {
     return com.dotcms.auth.RequestUserResolver.resolveSessionUserId(ses);
   }
 
+  /**
+   * Resolves the user id of a request through {@link com.dotcms.auth.RequestUserResolver}.
+   *
+   * @param req the request
+   * @return the user id, or null when there is none or the account cannot be used interactively
+   */
   public static String getUserId(HttpServletRequest req) {
     return com.dotcms.auth.RequestUserResolver.resolveRequestUserId(req);
   }

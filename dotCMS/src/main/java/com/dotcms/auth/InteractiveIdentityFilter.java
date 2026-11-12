@@ -30,7 +30,7 @@ public class InteractiveIdentityFilter implements Filter {
     @Override
     public void doFilter(final ServletRequest request, final ServletResponse response, final FilterChain chain)
             throws IOException, ServletException {
-        if (!(request instanceof HttpServletRequest)) {
+        if (!(request instanceof HttpServletRequest) || !InteractiveUserPolicy.isRuleOn()) {
             chain.doFilter(request, response);
             return;
         }

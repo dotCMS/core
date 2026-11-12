@@ -85,6 +85,10 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
         return Optional.empty();
     }
 
+    /**
+     * Resolves the user of a JWT header and stores it on the session, unless the account cannot be used
+     * interactively, in which case there is no credential and nothing is stored.
+     */
     @Override
     public User processAuthHeaderFromJWT(final String authorizationHeader,
             final HttpSession session, final String ipAddress) {
@@ -101,6 +105,10 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
         return user;
     } // processAuthCredentialsFromJWT.
 
+    /**
+     * Resolves the user of the request's JWT and stores it on the request, unless the account cannot be
+     * used interactively, in which case there is no credential and nothing is stored.
+     */
     @Override
     public User processAuthHeaderFromJWT(final HttpServletRequest request) {
 

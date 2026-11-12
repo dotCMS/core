@@ -75,4 +75,32 @@ public class InteractiveUserKillSwitchEndToEndTest {
         session.setAttribute(WebKeys.USER_ID, UserAPI.SYSTEM_USER_ID);
         assertNull(session.getAttribute(WebKeys.USER_ID));
     }
+
+    /** Off: the filter hands the request down the chain unwrapped. */
+    @Test
+    public void test_switch_off_filter_passes_the_request_through_unwrapped() throws Exception {
+        Config.setProperty(KEY, false);
+        final HttpServletRequest container = IdentityMocks.request(new HashMap<>(), IdentityMocks.session(new HashMap<>()));
+        final java.util.concurrent.atomic.AtomicReference<Object> seen = new java.util.concurrent.atomic.AtomicReference<>();
+        final javax.servlet.FilterChain chain = org.mockito.Mockito.mock(javax.servlet.FilterChain.class);
+        org.mockito.Mockito.doAnswer(i -> {
+            seen.set(i.getArgument(0));
+            return null;
+        }).when(chain).doFilter(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any());
+
+        new InteractiveIdentityFilter().doFilter(container,
+                org.mockito.Mockito.mock(javax.servlet.http.HttpServletResponse.class), chain);
+
+        org.junit.Assert.assertSame(container, seen.get());
+    }
+
+    /** Off: an open scope is inert, so the resolver reads the request as before. */
+    @Test
+    public void test_switch_off_scope_is_inert() {
+        Config.setProperty(KEY, false);
+        final HttpServletRequest request = IdentityMocks.request(new HashMap<>(), null);
+        try (SystemUserScope ignored = SystemUserScope.open()) {
+            assertNull(RequestUserResolver.resolveRequestUser(request));
+        }
+    }
 }

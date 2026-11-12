@@ -123,6 +123,15 @@ public class DotCmsWebSocketConfigurator extends Configurator {
 		}
 	} // modifyHandshake.
 
+	/**
+	 * Loads the user whose id the handshake session stores, unless that account cannot be used
+	 * interactively.
+	 *
+	 * @param httpSession the handshake session
+	 * @return the user, or null when there is none or it is not eligible
+	 * @throws DotSecurityException if the user cannot be loaded for security reasons
+	 * @throws DotDataException     if the user cannot be loaded
+	 */
 	private User getUserFromId(final HttpSession httpSession) throws DotSecurityException, DotDataException {
 
 		User user = null;
