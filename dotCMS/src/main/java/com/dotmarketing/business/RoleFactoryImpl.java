@@ -35,6 +35,16 @@ import org.apache.commons.beanutils.BeanUtils;
  */
 public class RoleFactoryImpl extends RoleFactory {
 
+	/** Users holding any of the role ids bound as one array parameter. */
+	private static final String SELECT_USER_IDS_FOR_ROLE_IDS =
+			"select distinct user_id from users_cms_roles where role_id = any(?)";
+
+	/** Children of any of the parent role ids bound as one array parameter, ordered by name. */
+	private static final String SELECT_CHILDREN_FOR_ROLE_IDS =
+			"select cr1.id as childId, cr1.role_name as roleName, cr2.id as parentId"
+					+ " from cms_role cr1, cms_role cr2 where cr1.parent = any(?)"
+					+ " and cr1.parent = cr2.id and cr1.parent != cr1.id order by lower(cr1.role_name) asc";
+
 	private RoleCache rc = CacheLocator.getCmsRoleCache();
 
 	@Override
@@ -521,7 +531,7 @@ public class RoleFactoryImpl extends RoleFactory {
                 }
             }
         }
-        // Groups of 100 role ids keep the IN lists bounded
+        // Groups of 100 role ids keep each bound array small
         final int maxRecords = 100;
         for ( int from = 0; from < roles.size(); from += maxRecords ) {
             result.addAll( getUserIdsForRoleIds( roles.subList( from, Math.min( from + maxRecords, roles.size() ) ) ) );
@@ -532,7 +542,7 @@ public class RoleFactoryImpl extends RoleFactory {
 
     /**
      * Returns the ids of the users that hold any of the given roles directly. The role ids are bound
-     * as parameters, one placeholder each.
+     * as a single array parameter, so the query text never changes.
      *
      * @param roleIds the role ids to look up, never empty
      * @return the distinct user ids holding at least one of the roles
@@ -543,9 +553,8 @@ public class RoleFactoryImpl extends RoleFactory {
         List<String> result = new ArrayList<>();
 
         DotConnect dc = new DotConnect();
-        dc.setSQL( "select distinct user_id from users_cms_roles where role_id in ( "
-                + roleIds.stream().map( id -> "?" ).collect( Collectors.joining( "," ) ) + " )" );
-        roleIds.forEach( dc::addParam );
+        dc.setSQL( SELECT_USER_IDS_FOR_ROLE_IDS );
+        dc.addParam( roleIds.toArray( new String[0] ) );
         List<Map<String, Object>> rows = dc.loadObjectResults();
         if ( rows != null ) {
             for ( Map<String, Object> row : rows ) {
@@ -805,7 +814,7 @@ public class RoleFactoryImpl extends RoleFactory {
 
 	/**
 	 * Replaces the children list of every given role with the ids of the roles whose parent it is,
-	 * ordered by name. Role ids are bound as parameters, in groups of up to 200.
+	 * ordered by name. Role ids are bound as one array parameter, in groups of up to 200.
 	 *
 	 * @param roles the roles to populate; null entries are skipped
 	 * @throws Exception when the query fails
@@ -830,10 +839,8 @@ public class RoleFactoryImpl extends RoleFactory {
 		for (int from = 0; from < ids.size(); from += chunkSize) {
 			final List<String> chunk = ids.subList(from, Math.min(from + chunkSize, ids.size()));
 			final DotConnect dc = new DotConnect();
-			dc.setSQL("select cr1.id as childId, cr1.role_name as roleName, cr2.id as parentId  from cms_role cr1, cms_role cr2 where cr1.parent in ("
-					+ chunk.stream().map(id -> "?").collect(Collectors.joining(","))
-					+ ") and cr1.parent = cr2.id and cr1.parent != cr1.id order by lower(cr1.role_name) asc");
-			chunk.forEach(dc::addParam);
+			dc.setSQL(SELECT_CHILDREN_FOR_ROLE_IDS);
+			dc.addParam(chunk.toArray(new String[0]));
 			final List<Map<String,String>> sqlResults = dc.loadResults();
 			populateChildrenForRolesHelper(roleMap,sqlResults);
 		}
