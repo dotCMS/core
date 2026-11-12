@@ -69,6 +69,9 @@ public class AWSS3Publisher extends Publisher {
     public static final String DOTCMS_PUSH_AWS_S3_TOKEN                  = "aws_access_key";
     public static final String DOTCMS_PUSH_AWS_S3_SECRET                 = "aws_secret_access_key";
     public static final String PROTOCOL_AWS_S3                           = "awss3";
+
+    /** True once an endpoint of this run found the bundle empty; read to word the final log line. */
+    private boolean bundleWasEmpty = false;
     public static final String DEFAULT_BUCKET_NAME                       = "dot-bucket-default";
 
     private static final String CREATED_BUCKETS                          = "createdBuckets";
@@ -239,6 +242,15 @@ public class AWSS3Publisher extends Publisher {
     	return result;
     }
 
+    /**
+     * Uploads the static bundle to every S3 endpoint of the bundle's environments and records the
+     * result of each endpoint in the audit history. An endpoint that received an empty bundle is
+     * recorded with a message saying so, instead of being reported as "Bundle sent".
+     *
+     * @param status the status of the publishing run
+     * @return the publisher configuration used for the run
+     * @throws DotPublishingException the bundle could not be processed
+     */
     @Override
     public PublisherConfig process(final PublishStatus status) throws DotPublishingException {
         this.checkLicense();
@@ -260,9 +272,7 @@ public class AWSS3Publisher extends Publisher {
         	List<Environment> environments = this.environmentAPI.findEnvironmentsByBundleId(this.config.getId());
             //Updating audit table
             currentStatusHistory = this.publishAuditAPI.getPublishAuditStatus(config.getId()).getStatusPojo();
-            Map<String, Map<String, EndpointDetail>> endpointsMap = currentStatusHistory.getEndpointsMap();
             // If not empty, don't overwrite publish history already set via the PublisherQueueJob
-            boolean isHistoryEmpty = endpointsMap.size() == 0;
             currentStatusHistory.setPublishStart(new Date());
             this.publishAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.SENDING_TO_ENDPOINTS, currentStatusHistory);
             //Increment numTries
@@ -323,6 +333,7 @@ public class AWSS3Publisher extends Publisher {
                     EndpointDetail detail = new EndpointDetail();
                     EndpointFailureDetail endpointFailureDetail = null;
 
+                    boolean endpointWasEmpty = false;
                     try {
                         endPointPublisher.checkConnectSuccessfully(bucketValidationName);
                     } catch (final EndPointPublisherConnectionException e) {
@@ -350,6 +361,8 @@ public class AWSS3Publisher extends Publisher {
                         if ( !liveFolder.exists() ) {
                             Logger.warn(this.getClass(), "Bundle is EMPTY");
                             PushPublishLogger.log(this.getClass(), "Bundle is EMPTY");
+                            endpointWasEmpty = true;
+                            bundleWasEmpty = true;
                         } else {
                             //For each host.
                             for (File hostFolder : liveFolder.listFiles(FileUtil.getOnlyFolderFileFilter())) {
@@ -438,11 +451,14 @@ public class AWSS3Publisher extends Publisher {
 
                     if (detail.getStatus()==0){
                         detail.setStatus(PublishAuditStatus.Status.SUCCESS.getCode());
-                        detail.setInfo("Endpoint " + endpoint.getId() + " published successfully");
+                        detail.setInfo(endpointWasEmpty
+                                ? StaticPublisher.EMPTY_BUNDLE_INFO
+                                : "Endpoint " + endpoint.getId() + " published successfully");
                         currentStatusHistory.setPublishEnd(new Date());
                     }
 
-                    if (isHistoryEmpty || failedEnvironment) {
+                    // Record the endpoint when it has no entry yet or it failed (issue #34434).
+                    if (failedEnvironment || !currentStatusHistory.hasEndpoint(environment.getId(), endpoint.getId())) {
                         currentStatusHistory.addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);
                     }
 
@@ -464,7 +480,9 @@ public class AWSS3Publisher extends Publisher {
 
             if(failedEnvironmentCounter==0) {
                 //Updating Audit table
-                PushPublishLogger.log(this.getClass(), "Status Update: Bundle sent");
+                PushPublishLogger.log(this.getClass(), bundleWasEmpty
+                        ? "Status Update: Bundle is empty, nothing to send"
+                        : "Status Update: Bundle sent");
                 this.publishAuditAPI.updatePublishAuditStatus(config.getId(), PublishAuditStatus.Status.BUNDLE_SENT_SUCCESSFULLY, currentStatusHistory);
                 localSystemEventsAPI.asyncNotify(new AllStaticPublishEndpointsSuccessEvent(config));
             } else {

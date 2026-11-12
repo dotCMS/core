@@ -3,7 +3,12 @@ package com.dotcms.publisher.business;
 import static java.lang.String.valueOf;
 import static org.junit.Assert.assertEquals;
 
+import com.dotcms.datagen.BundleDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.StaticPublishingEndPointDataGen;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper;
 import com.dotcms.enterprise.publishing.PublishDateUpdater;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
@@ -72,6 +77,19 @@ public class PublisherTestUtil {
      */
     public static Environment createEnvironment(final User user)
             throws DotDataException, DotSecurityException {
+        return createEnvironment(user, false);
+    }
+
+    /**
+     * Creates a generic TestEnvironment.
+     *
+     * @param user       the user that gets the use permission on the environment
+     * @param pushToAll  true to create it with "Push to All Endpoints", so every enabled endpoint of
+     *                   the environment receives the bundle
+     * @return the saved environment
+     */
+    public static Environment createEnvironment(final User user, final boolean pushToAll)
+            throws DotDataException, DotSecurityException {
 
         final EnvironmentAPI environmentAPI = APILocator.getEnvironmentAPI();
         final Environment environment1 = new Environment();
@@ -81,7 +99,7 @@ public class PublisherTestUtil {
                 PermissionAPI.PERMISSION_USE));
 
         environment1.setName("TestEnvironment_" + valueOf(new Date().getTime()));
-        environment1.setPushToAll(false);
+        environment1.setPushToAll(pushToAll);
         environmentAPI.saveEnvironment(environment1, permissions1);
 
         return environment1;
@@ -190,6 +208,105 @@ public class PublisherTestUtil {
             }
         }
     } // cleanBundleEndpointEnv.
+
+    /**
+     * Everything a test needs to publish one bundle to an environment that has an unreachable
+     * {@code http} endpoint and a {@code static} endpoint. Call {@link #cleanUp()} in the test's
+     * {@code finally} or {@code @After}.
+     */
+    public static class MixedEndpointEnvironment {
+
+        public final Environment environment;
+        public final PublishingEndPoint httpEndpoint;
+        public final PublishingEndPoint staticEndpoint;
+        public final Bundle bundle;
+        public final Contentlet page;
+        public final PushPublisherConfig config;
+
+        MixedEndpointEnvironment(final Environment environment, final PublishingEndPoint httpEndpoint,
+                final PublishingEndPoint staticEndpoint, final Bundle bundle, final Contentlet page,
+                final PushPublisherConfig config) {
+            this.environment = environment;
+            this.httpEndpoint = httpEndpoint;
+            this.staticEndpoint = staticEndpoint;
+            this.bundle = bundle;
+            this.page = page;
+            this.config = config;
+        }
+
+        /**
+         * Removes what the fixture created: the audit row, the bundle, both endpoints and the
+         * environment. Never throws, so it is safe in a {@code finally}.
+         */
+        public void cleanUp() {
+            try {
+                PublisherAPI.getInstance().deleteElementsFromPublishQueueTable(bundle.getId());
+            } catch (Exception e) {
+                Logger.warn(PublisherTestUtil.class, "Could not clean the publish queue: " + e);
+            }
+            try {
+                PublishAuditAPI.getInstance().deletePublishAuditStatus(bundle.getId());
+            } catch (Exception e) {
+                Logger.warn(PublisherTestUtil.class, "Could not clean the audit: " + e);
+            }
+            try {
+                APILocator.getPublisherEndPointAPI().deleteEndPointById(staticEndpoint.getId());
+            } catch (Exception e) {
+                Logger.warn(PublisherTestUtil.class, "Could not delete the static endpoint: " + e);
+            }
+            cleanBundleEndpointEnv(bundle, httpEndpoint, environment);
+        }
+    }
+
+    /**
+     * Creates a mixed-endpoint environment: "Push to All Endpoints", one enabled {@code http}
+     * endpoint that points at an address with no listener (it always fails), one enabled
+     * {@code static} endpoint, a live page, a bundle holding that page with its
+     * {@code publishing_queue_audit} row, and a {@link PushPublisherConfig} whose publisher list is
+     * the one passed in, set the same way {@code PublisherQueueJob} does with
+     * {@link PublisherConfig#setPublishers(List)}. The caller chooses the publisher order.
+     *
+     * @param publishers the publishers to run, in the order they should run
+     * @param forcePush  true to mark the bundle as "Force Push"
+     * @return the fixture; call {@link MixedEndpointEnvironment#cleanUp()} when done
+     */
+    public static MixedEndpointEnvironment createMixedEndpointEnvironment(
+            final List<Class<? extends Publisher>> publishers, final boolean forcePush)
+            throws Exception {
+
+        final User user = TestUserUtils.getAdminUser();
+        final Environment environment = createEnvironment(user, true);
+        final PublishingEndPoint httpEndpoint = createEndpoint(environment);
+
+        final PublishingEndPoint staticEndpoint = new StaticPublishingEndPointDataGen()
+                .environment(environment)
+                .protocol(StaticPublisher.PROTOCOL_STATIC)
+                .nextPersisted();
+
+        final Contentlet page = StaticPublisherIntegrationTestHelper.createLivePage();
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        config.setPublishers(new ArrayList<>(publishers));
+        config.setLanguages(java.util.Collections.singleton(
+                String.valueOf(page.getLanguageId())));
+
+        final Bundle bundle = new BundleDataGen()
+                .pushPublisherConfig(config)
+                .forcePush(forcePush)
+                .addAssets(java.util.Collections.singletonList(page))
+                .nextPersisted();
+        APILocator.getBundleAPI().saveBundleEnvironment(bundle, environment);
+
+        final PublishAuditStatus status = new PublishAuditStatus(bundle.getId());
+        final PublishAuditHistory history = new PublishAuditHistory();
+        history.setAssets(java.util.Collections.singletonMap(page.getIdentifier(),
+                PusheableAsset.CONTENTLET.getType()));
+        status.setStatusPojo(history);
+        PublishAuditAPI.getInstance().insertPublishAuditStatus(status);
+
+        return new MixedEndpointEnvironment(environment, httpEndpoint, staticEndpoint, bundle,
+                page, config);
+    }
 
     /**
      * Creates a folder generic based on a given name

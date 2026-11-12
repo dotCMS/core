@@ -85,6 +85,12 @@ public class StaticPublisher extends Publisher {
     public static final String REGEX_DOT_DOT = "\\.{2}";
     public static final String PROTOCOL_STATIC = "static";
 
+    /** Info recorded on an endpoint when the bundle had no static content to publish. */
+    static final String EMPTY_BUNDLE_INFO = "Bundle is empty: nothing to publish to this endpoint";
+
+    /** True once any endpoint of this run found the bundle empty; read to word the final log line. */
+    private boolean bundleWasEmpty = false;
+
     private final PublishAuditAPI publishAuditAPI;
     private final EnvironmentAPI environmentAPI;
     private final PublishingEndPointAPI publisherEndPointAPI;
@@ -131,6 +137,15 @@ public class StaticPublisher extends Publisher {
         return this.config;
     } // init.
 
+    /**
+     * Moves the static bundle to every static endpoint of the bundle's environments and records
+     * the result of each endpoint in the audit history. An endpoint that received an empty
+     * bundle is recorded with a message saying so, instead of being reported as "Bundle sent".
+     *
+     * @param status the status of the publishing run
+     * @return the publisher configuration used for the run
+     * @throws DotPublishingException the bundle could not be processed
+     */
     @Override
     public PublisherConfig process(PublishStatus status) throws DotPublishingException {
         this.checkLicense();
@@ -159,7 +174,9 @@ public class StaticPublisher extends Publisher {
 
             if (failedEnvironmentCounter == 0) {
                 //Updating Audit table
-                PushPublishLogger.log(this.getClass(), "Status Update: Bundle sent");
+                PushPublishLogger.log(this.getClass(), bundleWasEmpty
+                        ? "Status Update: Bundle is empty, nothing to send"
+                        : "Status Update: Bundle sent");
                 this.publishAuditAPI.updatePublishAuditStatus(config.getId(),
                     PublishAuditStatus.Status.BUNDLE_SAVED_SUCCESSFULLY, currentStatusHistory);
 
@@ -214,12 +231,12 @@ public class StaticPublisher extends Publisher {
 
         EndpointDetail detail = new EndpointDetail();
         boolean hasEnvironmentFailed = false;
-        boolean isHistoryEmpty = currentStatusHistory.getEndpointsMap().isEmpty();
 
         for (PublishingEndPoint endpoint : getStaticEndpointsByEnviroment(environment)) {
             EndpointFailureDetail endpointFailureDetail = null;
+            boolean endpointHadContent = true;
             try {
-                handleEndpoint(endpoint);
+                endpointHadContent = handleEndpoint(endpoint);
             } catch (DotDataException | DotPublishingException e) {
                 // if the bundle can't be sent after the total num of tries, delete the pushed assets for this bundle
                 if (currentStatusHistory.getNumTries() >= PublisherQueueJob.MAX_NUM_TRIES) {
@@ -243,12 +260,19 @@ public class StaticPublisher extends Publisher {
 
             if (detail.getStatus() == 0) {
                 detail.setStatus(Status.BUNDLE_SAVED_SUCCESSFULLY.getCode());
-                detail.setInfo("Bundle saved successfully for Endpoint " + endpoint.getId());
+                if (endpointHadContent) {
+                    detail.setInfo("Bundle saved successfully for Endpoint " + endpoint.getId());
+                } else {
+                    bundleWasEmpty = true;
+                    detail.setInfo(EMPTY_BUNDLE_INFO);
+                }
                 currentStatusHistory.setPublishEnd(new Date());
             }
 
-            // If not empty, don't overwrite publish history already set via the PublisherQueueJob.
-            if (isHistoryEmpty || hasEnvironmentFailed) {
+            // Record the endpoint when it has no entry yet or it failed; don't overwrite a result
+            // already set via the PublisherQueueJob (issue #34434).
+            if (hasEnvironmentFailed
+                    || !currentStatusHistory.hasEndpoint(environment.getId(), endpoint.getId())) {
                 currentStatusHistory
                     .addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);
             }
@@ -271,8 +295,12 @@ public class StaticPublisher extends Publisher {
     /**
      * Retrieves endpoint properties and build the publish-to folder path with that information.
      * Then it will pass /live folder to handleLiveFolder method.
+     *
+     * @param endpoint the static {@link PublishingEndPoint} to publish to
+     * @return true if the bundle had static content and it was moved to the endpoint, false if the
+     * bundle was empty and there was nothing to publish
      */
-    private void handleEndpoint(PublishingEndPoint endpoint)
+    private boolean handleEndpoint(PublishingEndPoint endpoint)
         throws DotDataException, DotPublishingException {
 
         //For logging purpose
@@ -293,11 +321,12 @@ public class StaticPublisher extends Publisher {
         if (liveFolder.exists()) {
             PushPublishLogger.log(this.getClass(), "Status Update: Moving bundle");
             handleLiveFolder(liveFolder);
-
-        } else {
-            Logger.warn(this.getClass(), "Bundle is EMPTY");
-            PushPublishLogger.log(this.getClass(), "Bundle is EMPTY");
+            return true;
         }
+
+        Logger.warn(this.getClass(), "Bundle is EMPTY");
+        PushPublishLogger.log(this.getClass(), "Bundle is EMPTY");
+        return false;
     } //handleEndpoint.
 
     /**

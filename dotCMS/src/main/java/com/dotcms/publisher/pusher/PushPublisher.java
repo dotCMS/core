@@ -174,8 +174,6 @@ public class PushPublisher extends Publisher {
 			//Updating audit table
 			currentStatusHistory = pubAuditAPI.getPublishAuditStatus(this.config.getId()).getStatusPojo();
 			Map<String, Map<String, EndpointDetail>> endpointsMap = currentStatusHistory.getEndpointsMap();
-			// If not empty, don't overwrite publish history already set via the PublisherQueueJob
-			boolean isHistoryEmpty = endpointsMap.isEmpty();
 			currentStatusHistory.setPublishStart(new Date());
 			PushPublishLogger.log(this.getClass(), "Status Update: Sending to all environments");
 			pubAuditAPI.updatePublishAuditStatus(this.config.getId(), PublishAuditStatus.Status.SENDING_TO_ENDPOINTS, currentStatusHistory);
@@ -200,9 +198,10 @@ public class PushPublisher extends Publisher {
 								endpoints.add(ep);
 							} else {
 								EndpointDetail epDetail = endpointsDetail.get(ep.getId());
-								// If re-trying a bundle or just re-attempting to install a bundle,
+								// An endpoint with no entry never received the bundle, so it is sent
+								// to. If re-trying a bundle or just re-attempting to install a bundle,
 								// send it only to those end-points whose status IS NOT success
-								if (DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy())
+								if (null == epDetail || DeliveryStrategy.ALL_ENDPOINTS.equals(this.config.getDeliveryStrategy())
 										|| (DeliveryStrategy.FAILED_ENDPOINTS.equals(this.config.getDeliveryStrategy())
 										&& PublishAuditStatus.Status.SUCCESS.getCode() != epDetail.getStatus()
 										&& Status.SUCCESS_WITH_WARNINGS.getCode() != epDetail.getStatus()
@@ -305,7 +304,10 @@ public class PushPublisher extends Publisher {
 						ThreadContext.remove(ENDPOINT_NAME);
 						ThreadContext.remove(BUNDLE_ID);
 					}
-					if (isHistoryEmpty || failedEnvironment) {
+					// Record the result when this endpoint has no entry yet, or when it failed. An
+					// existing entry is left alone so a result merged by the PublisherQueueJob is not
+					// overwritten (issue #34434).
+					if (failedEnvironment || !currentStatusHistory.hasEndpoint(environment.getId(), endpoint.getId())) {
 						currentStatusHistory.addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);
 					}
 				}

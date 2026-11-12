@@ -132,6 +132,7 @@ import org.junit.runners.Suite;
     com.dotmarketing.portlets.workflows.action.WorkflowTaskAccessTest.class,
     com.dotcms.rendering.velocity.viewtools.XsltToolTest.class,
     com.dotmarketing.portlets.htmlpageasset.business.render.page.PageViewSerializerRelatedContentTest.class,
+    com.dotcms.publisher.business.PublishAuditMixedEndpointsTest.class,
         PublisherQueueJobTest.class,
         ContentToStringUtilTest.class,
     com.dotcms.enterprise.publishing.remote.BundleTrustedListRoundTripTest.class,
