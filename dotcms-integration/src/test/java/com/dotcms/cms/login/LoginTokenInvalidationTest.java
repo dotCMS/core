@@ -242,6 +242,33 @@ public class LoginTokenInvalidationTest {
     }
 
     /**
+     * A session that names its user in a different letter case than the stored record fills the
+     * user cache through that id. The cache administrator keys its entries without regard to
+     * case, so making the user inactive, which evicts the stored id, also removes the entry that
+     * session filled: a session not reached by the change resolves to no user on its next
+     * request instead of to the copy cached before it.
+     */
+    @Test
+    public void test_sessionWithUpperCaseUserId_resolvesToNoUserAfterDeactivation() throws Exception {
+        final User user = newUser();
+        final String upperCaseId = user.getUserId().toUpperCase();
+        assertNotEquals("the check needs an id that changes with its case", user.getUserId(), upperCaseId);
+        final UserCache userCache = CacheLocator.getUserCache();
+        final HttpSession untrackedSession = new MockSession(UUIDGenerator.generateUuid());
+        untrackedSession.setAttribute(WebKeys.USER_ID, upperCaseId);
+        assertNotNull("the session resolves while the user is active", PortalUtil.getUser(untrackedSession));
+        assertNotNull("resolving caches the user under the session's id", userCache.get(upperCaseId));
+
+        final User toSave = (User) userAPI.loadUserById(user.getUserId()).clone();
+        toSave.setActive(false);
+        userAPI.save(toSave, APILocator.systemUser(), false);
+
+        assertNull("the entry filled through the upper-case id must be evicted", userCache.get(upperCaseId));
+        assertNull("a session of the inactive user must resolve to no user",
+                PortalUtil.getUser(untrackedSession));
+    }
+
+    /**
      * Invalidating the login tokens of a user id given in a different case or with surrounding
      * spaces changes that user and evicts the cached copy, so the earlier token is rejected right
      * away.
