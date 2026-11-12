@@ -101,7 +101,13 @@
                 "default",
                 "^production",
                 "{workspaceRoot}/tools/vitest-stub-scss.mts",
-                { "externalDependencies": ["vitest"] }
+                {
+                    "externalDependencies": [
+                        "vitest",
+                        "@analogjs/vite-plugin-angular",
+                        "@analogjs/vitest-angular"
+                    ]
+                }
             ],
             "outputs": [
                 "{workspaceRoot}/target/core-web-reports/{projectName}.xml",

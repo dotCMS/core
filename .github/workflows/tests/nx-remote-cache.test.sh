@@ -4,8 +4,11 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
 python3 - <<'PY'
 from pathlib import Path
+import hashlib
 import json
 import re
+import shlex
+import subprocess
 from types import SimpleNamespace
 import unittest
 
@@ -48,6 +51,25 @@ class NxRemoteCacheTests(unittest.TestCase):
         config = json.loads(Path('core-web/nx.json').read_text())
         self.assertIn('{workspaceRoot}/tools/vitest-stub-scss.mts',
                       config['targetDefaults']['test']['inputs'])
+
+    def test_frontend_tests_hash_angular_vitest_tooling(self):
+        config = json.loads(Path('core-web/nx.json').read_text())
+        dependencies = next(item['externalDependencies']
+                            for item in config['targetDefaults']['test']['inputs']
+                            if isinstance(item, dict) and 'externalDependencies' in item)
+        for dependency in ('vitest', '@analogjs/vite-plugin-angular', '@analogjs/vitest-angular'):
+            self.assertIn(dependency, dependencies)
+
+    def test_sdk_ai_hashes_backend_openapi_source(self):
+        config = json.loads(Path('core-web/libs/sdk/ai/project.json').read_text())
+        inputs = config['namedInputs']['default']
+        self.assertIn('{projectRoot}/**/*', inputs)
+        self.assertIn('sharedGlobals', inputs)
+        self.assertIn('production', config['targets']['build']['inputs'])
+        runtime = next(item['runtime'] for item in inputs if isinstance(item, dict))
+        actual = subprocess.check_output(shlex.split(runtime), cwd='core-web', text=True).strip()
+        source = Path('dotCMS/src/main/webapp/WEB-INF/openapi/openapi.yaml').read_bytes()
+        self.assertEqual(actual, hashlib.sha256(source).hexdigest())
 
     def test_shared_workflows_disable_remote_without_settings_or_with_kill_switch(self):
         for phase in ('build', 'test'):
