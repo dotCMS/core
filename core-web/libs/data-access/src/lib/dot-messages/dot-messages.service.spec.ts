@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -90,6 +90,57 @@ describe('DotMessageService', () => {
             dotMessageService.init();
             expect(dotLocalstorageService.getItem).toHaveBeenCalledWith('dotMessagesKeys');
             expect(http.get).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('ensureLoaded', () => {
+        it('should recover from a rejected startup request by loading the messages after login', (done) => {
+            const get = http.get as unknown as jest.Mock;
+            get.mockImplementationOnce(() => throwError(() => ({ status: 401 })));
+
+            dotMessageService.init({ buildDate: '2020-01-01' });
+            expect(dotMessageService.get('dot.common.cancel')).toEqual('dot.common.cancel');
+
+            dotMessageService.ensureLoaded().subscribe((loaded) => {
+                expect(loaded).toBe(true);
+                expect(get).toHaveBeenCalledTimes(2);
+                expect(get).toHaveBeenLastCalledWith('/api/v2/languages/default/keys');
+                expect(dotMessageService.get('dot.common.cancel')).toEqual('Cancel');
+                done();
+            });
+        });
+
+        it('should not request again when the messages are already loaded', (done) => {
+            jest.spyOn(dotLocalstorageService, 'getItem').mockReturnValue(null);
+            dotMessageService.init();
+
+            dotMessageService.ensureLoaded().subscribe((loaded) => {
+                expect(loaded).toBe(true);
+                expect(http.get).toHaveBeenCalledTimes(1);
+                done();
+            });
+        });
+
+        it('should resolve false instead of erroring when the download fails', (done) => {
+            (http.get as unknown as jest.Mock).mockImplementation(() =>
+                throwError(() => ({ status: 500 }))
+            );
+
+            dotMessageService.ensureLoaded().subscribe((loaded) => {
+                expect(loaded).toBe(false);
+                done();
+            });
+        });
+
+        it('should share one request between concurrent callers', () => {
+            const get = http.get as unknown as jest.Mock;
+            const results: boolean[] = [];
+
+            dotMessageService.ensureLoaded().subscribe((loaded) => results.push(loaded));
+            dotMessageService.ensureLoaded().subscribe((loaded) => results.push(loaded));
+
+            expect(get).toHaveBeenCalledTimes(1);
+            expect(results).toEqual([true, true]);
         });
     });
 
