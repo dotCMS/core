@@ -3698,6 +3698,16 @@ public class ImportUtil {
                         .context(Map.of("errorHint", "The file's extension must be on "
                                 + "TEMP_RESOURCE_BY_URL_ALLOWED_EXTENSIONS and the content must match it."))
                         .build();
+            } catch (final DotSecurityException e) {
+                // the user of the request may not download by URL: reported the same way as in validation
+                throw ImportLineException.builder()
+                        .message("The importing user is not permitted to download files by URL")
+                        .code(ImportLineValidationCodes.PERMISSION_ERROR.name())
+                        .field(field.getVelocityVarName())
+                        .invalidValue(value.toString())
+                        .context(Map.of("errorHint", "Downloads by URL are restricted to administrators "
+                                + "(TEMP_RESOURCE_BY_URL_ADMIN_ONLY)."))
+                        .build();
             }
             cont.setBinary(field.getVelocityVarName(), tempFile.file);
         }
@@ -3736,6 +3746,26 @@ public class ImportUtil {
                     // That's how image fields are constructed
                     cont.setProperty(field.getVelocityVarName(), fileAsset.getIdentifier());
 
+                } catch (final DotSecurityException e) {
+                    // the user of the request may not download by URL: reported the same way as in validation
+                    throw ImportLineException.builder()
+                            .message("The importing user is not permitted to download files by URL")
+                            .code(ImportLineValidationCodes.PERMISSION_ERROR.name())
+                            .field(field.getVelocityVarName())
+                            .invalidValue(uriOrIdentifier)
+                            .context(Map.of("errorHint", "Downloads by URL are restricted to administrators "
+                                    + "(TEMP_RESOURCE_BY_URL_ADMIN_ONLY)."))
+                            .build();
+                } catch (final IllegalArgumentException e) {
+                    // the name or the content did not pass the download rules
+                    throw ImportLineException.builder()
+                            .message("The file could not be downloaded by URL: " + e.getMessage())
+                            .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
+                            .field(field.getVelocityVarName())
+                            .invalidValue(uriOrIdentifier)
+                            .context(Map.of("errorHint", "The file's extension must be on "
+                                    + "TEMP_RESOURCE_BY_URL_ALLOWED_EXTENSIONS and the content must match it."))
+                            .build();
                 } catch (Exception e) {
                     Logger.error(ImportUtil.class, "Error setting image field", e);
                     throw ImportLineException.builder()
