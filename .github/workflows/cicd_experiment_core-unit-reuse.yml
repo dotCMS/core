@@ -1,0 +1,186 @@
+name: 'EXPERIMENT — core unit-test artifact reuse'
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/cicd_experiment_core-unit-reuse.yml'
+      - '.github/scripts/benchmark-core-unit-tests.sh'
+      - '.github/workflows/tests/core-unit-reuse-benchmark.test.sh'
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: core-unit-reuse-experiment-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    if: github.head_ref == 'issue-38326-core-unit-reuse-experiment'
+    permissions:
+      contents: read
+      packages: write
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      core-build: true
+      cleanup-runner: false
+      generate-docker: false
+      generate-test-image: false
+      generate-build-classes: false
+
+  compare:
+    name: 'Benchmark / ${{ matrix.mode }}'
+    needs: build
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [baseline, reuse]
+    env:
+      MAVEN_OPTS: '-Xmx2048m'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 1
+
+      - name: Start job timer
+        run: echo "BENCHMARK_STARTED=$(date +%s)" >> "$GITHUB_ENV"
+
+      # Same native engine and validation as the normal JVM Unit Tests job.
+      - name: Install native libvips
+        timeout-minutes: 15
+        run: |
+          set -euo pipefail
+          java_version=$(awk -F '=' '/^java=/ {print $2}' .sdkmanrc)
+          docker pull "dotcms/java-base:${java_version//+/-}"
+          container_id=$(docker create "dotcms/java-base:${java_version//+/-}" /bin/true)
+          trap 'docker rm -f "$container_id" >/dev/null 2>&1 || true' EXIT
+          sudo docker cp "${container_id}:/usr/local/libvips" /usr/local/libvips
+          sudo docker cp "${container_id}:/etc/ld.so.conf.d/libvips.conf" /etc/ld.so.conf.d/libvips.conf
+          sudo apt-get update
+          sudo xargs -r apt-get install -y --no-install-recommends \
+            < /usr/local/libvips/share/runtime-packages.txt
+          sudo ldconfig
+          sudo env VIPS_VERIFY_SCOPE=prefix bash docker/java-base/verify-libvips.sh
+          echo "LD_LIBRARY_PATH=/usr/local/libvips/lib:${LD_LIBRARY_PATH:-}" >> "$GITHUB_ENV"
+          echo '/usr/local/libvips/bin' >> "$GITHUB_PATH"
+          echo 'DOT_TEST_REQUIRE_LIBVIPS=true' >> "$GITHUB_ENV"
+
+      - name: Run benchmark through the normal runner and artifact setup
+        id: benchmark
+        uses: ./.github/actions/core-cicd/maven-job
+        with:
+          stage-name: 'Core reuse experiment ${{ matrix.mode }}'
+          # A non-recursive exec launches the experiment after normal artifact restoration.
+          maven-args: >-
+            -N exec:exec
+            -Dexec.executable=.github/scripts/benchmark-core-unit-tests.sh
+            -Dexec.args=${{ matrix.mode }}
+            -Dmaven.build.cache.enabled=false
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          artifacts-from: ${{ github.run_id }}
+          requires-node: false
+          cleanup-runner: false
+          generates-test-results: true
+
+      - name: Record timings, test counts and compiler executions
+        if: always()
+        env:
+          MODE: ${{ matrix.mode }}
+          OUTCOME: ${{ steps.benchmark.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import time
+          import xml.etree.ElementTree as ET
+
+          suites = {}
+          for path in Path('dotCMS/target/surefire-reports').glob('TEST-*.xml'):
+              suite = ET.parse(path).getroot()
+              suites[suite.attrib['name']] = {
+                  key: int(suite.attrib.get(key, 0))
+                  for key in ('tests', 'failures', 'errors', 'skipped')
+              }
+          log = Path('benchmark-maven.log')
+          compilation = re.findall(
+              r'--- compiler:\S+:(?:compile|testCompile) ',
+              log.read_text(errors='replace') if log.exists() else '')
+          result = {
+              'mode': os.environ['MODE'],
+              'outcome': os.environ['OUTCOME'],
+              'seconds_including_setup': int(time.time()) - int(os.environ['BENCHMARK_STARTED']),
+              'compiler_executions': len(compilation),
+              'suites': suites,
+          }
+          Path('benchmark-result.json').write_text(json.dumps(result, indent=2))
+          print(json.dumps(result, indent=2))
+          PY
+
+      - name: Upload benchmark evidence
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: core-unit-benchmark-${{ matrix.mode }}
+          path: |
+            benchmark-result.json
+            benchmark-maven.log
+            dotCMS/target/surefire-reports/
+          retention-days: 3
+
+  results:
+    name: Compare test equivalence and elapsed time
+    if: always() && needs.build.result == 'success'
+    needs: [build, compare]
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          digest-mismatch: error
+          pattern: core-unit-benchmark-*
+          path: evidence
+
+      - name: Compare results
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          results = {
+              mode: json.loads(Path(f'evidence/core-unit-benchmark-{mode}/benchmark-result.json').read_text())
+              for mode in ('baseline', 'reuse')
+          }
+          lines = ['## Core unit-test artifact reuse (throwaway experiment)', '',
+                   '| Path | Seconds including setup | Tests | Failures/errors | Skipped | Compiler executions | Outcome |',
+                   '| --- | ---: | ---: | ---: | ---: | ---: | --- |']
+          for mode, result in results.items():
+              totals = {key: sum(suite[key] for suite in result['suites'].values())
+                        for key in ('tests', 'failures', 'errors', 'skipped')}
+              result['totals'] = totals
+              lines.append(f"| {mode} | {result['seconds_including_setup']} | {totals['tests']} | "
+                           f"{totals['failures'] + totals['errors']} | {totals['skipped']} | "
+                           f"{result['compiler_executions']} | {result['outcome']} |")
+          baseline, reuse = results['baseline'], results['reuse']
+          equivalent = (baseline['suites'] == reuse['suites']
+                        and baseline['totals']['tests'] > 0
+                        and baseline['totals']['tests'] > baseline['totals']['skipped']
+                        and all(result['outcome'] == 'success' for result in results.values())
+                        and baseline['compiler_executions'] > 0
+                        and reuse['compiler_executions'] == 0)
+          if equivalent:
+              saved = baseline['seconds_including_setup'] - reuse['seconds_including_setup']
+              lines += ['', f'Reuse saved {saved} seconds including setup in this single paired run.',
+                        'Repeat runs before claiming a reliable speedup. Total job durations are visible above.']
+          else:
+              lines += ['', '**Not equivalent or a job failed: no speedup claim is valid.**']
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as summary:
+              summary.write('\n'.join(lines) + '\n')
+          print('\n'.join(lines))
+          assert equivalent, 'Both paths must execute equivalent tests; reuse must not compile'
+          PY
