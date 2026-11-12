@@ -2,6 +2,8 @@ package com.dotcms.integritycheckers;
 
 import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -13,13 +15,16 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
 import com.google.common.io.Files;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -29,6 +34,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -479,19 +485,8 @@ public class IntegrityUtilTest  {
         final String endPointID = "endpointID_" + System.currentTimeMillis();
         final String remoteRoleId = "r'" + UUID.randomUUID().toString().replace("-", "").substring(0, 30);
 
-        final File zip = File.createTempFile("roles-to-fix", ".zip");
-        try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zip))) {
-            out.putNextEntry(new ZipEntry(IntegrityType.CMS_ROLES.getDataToFixCSVName()));
-            final String row = String.join("|", role.getName(), role.getRoleKey(), role.getId(),
-                    remoteRoleId, role.getDBFQN(), remoteRoleId) + "\n";
-            out.write(row.getBytes(StandardCharsets.UTF_8));
-            out.closeEntry();
-        }
-
         try {
-            try (FileInputStream in = new FileInputStream(zip)) {
-                new IntegrityUtil().fixConflicts(in, endPointID, IntegrityType.CMS_ROLES);
-            }
+            fixRoleFromRemote(role, remoteRoleId, endPointID);
 
             final List<Map<String, Object>> rows = new DotConnect()
                     .setSQL("select id, role_key from cms_role where id in (?, ?)")
@@ -504,6 +499,75 @@ public class IntegrityUtilTest  {
         } finally {
             new DotConnect().setSQL("delete from cms_role where id = ?").addParam(remoteRoleId).loadResult();
             IntegrityUtil.completeDiscardConflicts(endPointID);
+        }
+    }
+
+    /**
+     * Method to test: {@link IntegrityUtil#fixConflicts(java.io.InputStream, String, IntegrityType)}
+     * When: A role with a child role and a user is moved to a remote role id that contains a single
+     * quote
+     * Should: Leave the moved role loadable with its child, and deletable through the Role API once the
+     * child is gone, which reads the users of the role and its children by id
+     */
+    @Test
+    public void roleFixWithQuotedRemoteIdKeepsRoleLoadableAndDeletable() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final Role role = new RoleDataGen().nextPersisted();
+        final Role child = new RoleDataGen().parent(role.getId()).nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        final String endPointID = "endpointID_" + System.currentTimeMillis();
+        final String remoteRoleId = "r'" + UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+
+        try {
+            fixRoleFromRemote(role, remoteRoleId, endPointID);
+            CacheLocator.getRoleCache().clearCache();
+
+            final Role moved = roleAPI.loadRoleById(remoteRoleId);
+            assertNotNull(moved);
+            assertEquals(List.of(child.getId()), moved.getRoleChildren());
+            assertTrue(roleAPI.doesUserHaveRole(user, moved));
+
+            roleAPI.delete(roleAPI.loadRoleById(child.getId()));
+            roleAPI.delete(moved);
+
+            assertTrue(new DotConnect().setSQL("select id from cms_role where id = ?")
+                    .addParam(remoteRoleId).loadObjectResults().isEmpty());
+            assertTrue(new DotConnect().setSQL("select id from users_cms_roles where role_id = ?")
+                    .addParam(remoteRoleId).loadObjectResults().isEmpty());
+        } finally {
+            new DotConnect().setSQL("delete from cms_role where id = ?").addParam(child.getId()).loadResult();
+            new DotConnect().setSQL("delete from users_cms_roles where role_id = ?").addParam(remoteRoleId).loadResult();
+            new DotConnect().setSQL("delete from cms_role where id = ?").addParam(remoteRoleId).loadResult();
+            UserDataGen.remove(user);
+            CacheLocator.getRoleCache().clearCache();
+            IntegrityUtil.completeDiscardConflicts(endPointID);
+        }
+    }
+
+    /**
+     * Uploads a roles-to-fix file that moves the given local role to the given remote role id, the way
+     * a push publishing end point sends it, and applies the fix.
+     *
+     * @param role the local role to move
+     * @param remoteRoleId the id the remote end point uses for the role
+     * @param endPointID the end point the conflict is recorded for
+     * @throws Exception when the file cannot be written or the fix fails
+     */
+    private static void fixRoleFromRemote(final Role role, final String remoteRoleId,
+            final String endPointID) throws Exception {
+        final File zip = File.createTempFile("roles-to-fix", ".zip");
+        try {
+            try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zip))) {
+                out.putNextEntry(new ZipEntry(IntegrityType.CMS_ROLES.getDataToFixCSVName()));
+                final String row = String.join("|", role.getName(), role.getRoleKey(), role.getId(),
+                        remoteRoleId, role.getDBFQN(), remoteRoleId) + "\n";
+                out.write(row.getBytes(StandardCharsets.UTF_8));
+                out.closeEntry();
+            }
+            try (FileInputStream in = new FileInputStream(zip)) {
+                new IntegrityUtil().fixConflicts(in, endPointID, IntegrityType.CMS_ROLES);
+            }
+        } finally {
             zip.delete();
         }
     }
