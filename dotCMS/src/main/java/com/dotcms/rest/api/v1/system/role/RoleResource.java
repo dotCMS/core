@@ -8,6 +8,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
@@ -17,6 +18,8 @@ import com.dotcms.util.pagination.UserPaginator;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.DuplicateRoleException;
+import com.dotmarketing.business.DuplicateRoleKeyException;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -273,7 +276,8 @@ public class RoleResource implements Serializable {
 
 	/**
 	 * Add a new role
-	 * Only admins can add roles.
+	 * Only admins can add roles. A key that is already taken, or a name already used under
+	 * the same parent, is answered with a 409 carrying the same message as an update.
 	 */
 	@Operation(
 		operationId = "createRole",
@@ -291,8 +295,11 @@ public class RoleResource implements Serializable {
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
-		@ApiResponse(responseCode = "403", 
+		@ApiResponse(responseCode = "403",
 					description = "Forbidden - admin permissions required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "409",
+					description = "Conflict - duplicate role key, or duplicate role name under the same parent",
 					content = @Content(mediaType = "application/json"))
 	})
 	@POST
@@ -340,6 +347,16 @@ public class RoleResource implements Serializable {
 					Try.of(()->LanguageUtil.get(user,"Role-Save-Name-Failed")).getOrElse("Role Name not valid"),
 					"Role-Save-Name-Failed", e);
 
+		} catch (final DuplicateRoleKeyException e) {
+			ActivityLogger.logInfo(getClass(), "Error Adding Role. Duplicate Key", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			AdminLogger.log(getClass(), "Error Adding Role. Duplicate Key", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			throw new ConflictException(
+					"A role with key '" + roleForm.getRoleKey() + "' already exists", e);
+		} catch (final DuplicateRoleException e) {
+			ActivityLogger.logInfo(getClass(), "Error Adding Role. Duplicate Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			AdminLogger.log(getClass(), "Error Adding Role. Duplicate Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			throw new ConflictException(
+					"A role named '" + roleForm.getRoleName() + "' already exists under the same parent", e);
 		} catch(DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Adding Role", "Date: " + date + ";  "+ "User:" + user.getUserId());
 			AdminLogger.log(getClass(), "Error Adding Role", "Date: " + date + ";  "+ "User:" + user.getUserId());

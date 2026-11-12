@@ -504,7 +504,8 @@
 				if (!response.ok) {
 					var message = (data && (data.message
 							|| (data.errors && data.errors.length && data.errors[0].message)))
-							|| response.statusText;
+							|| response.statusText
+							|| ('HTTP ' + response.status);
 					var error = new Error(message);
 					error.status = response.status;
 					throw error;

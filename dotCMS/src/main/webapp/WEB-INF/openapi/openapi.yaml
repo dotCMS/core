@@ -16509,6 +16509,11 @@ paths:
           content:
             application/json: {}
           description: Forbidden - admin permissions required
+        "409":
+          content:
+            application/json: {}
+          description: "Conflict - duplicate role key, or duplicate role name under\
+            \ the same parent"
       summary: Create new role
       tags:
       - Roles
