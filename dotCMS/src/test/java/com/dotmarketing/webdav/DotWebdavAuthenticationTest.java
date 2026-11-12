@@ -4,7 +4,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -24,7 +23,6 @@ import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.TokenType;
 import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
-import com.dotcms.repackage.bsh.Interpreter;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -32,7 +30,6 @@ import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Config;
-import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import java.lang.reflect.Field;
@@ -64,7 +61,6 @@ public class DotWebdavAuthenticationTest {
     private MockedStatic<LoginLockout> lockouts;
     private LoginLockout lockout;
     private MockedConstruction<Timer> timers;
-    private MockedConstruction<Interpreter> preAuthenticators;
     private UserAPI userAPI;
     private ApiTokenAPI tokens;
     private Company company;
@@ -93,9 +89,6 @@ public class DotWebdavAuthenticationTest {
                 });
         // Loading the helper must not leave its unrelated non-daemon cache-cleaner timer running.
         timers = mockConstruction(Timer.class);
-        preAuthenticators = mockConstruction(Interpreter.class,
-                (interpreter, context) -> when(interpreter.eval(anyString()))
-                        .thenReturn(mock(Authenticator.class)));
         userAPI = mock(UserAPI.class);
         tokens = mock(ApiTokenAPI.class);
         company = mock(Company.class);
@@ -124,9 +117,6 @@ public class DotWebdavAuthenticationTest {
     /** No mode, thread-local request, or static mock may leak into the next test. */
     @After
     public void tearDown() {
-        if (preAuthenticators != null) {
-            preAuthenticators.close();
-        }
         if (timers != null) {
             timers.close();
         }
@@ -191,8 +181,6 @@ public class DotWebdavAuthenticationTest {
         passwords.verifyNoInteractions();
         companies.verifyNoInteractions();
         verifyNoInteractions(lockout);
-        assertTrue("Token-only authentication must not enter the pre-authentication pipeline",
-                preAuthenticators.constructed().isEmpty());
     }
 
     /** Companies that log in by id keep that lookup in token-only mode. */

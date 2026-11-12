@@ -83,7 +83,7 @@ public class UserPaginatorTest extends UnitTestBase {
         layoutAPI = mock(LayoutAPI.class);
         when(layoutAPI.doesUserHaveAccessToPortlet(eq(PortletID.USERS.toString()), any())).thenReturn(true);
         // doesUserHaveAccessToUsersPortlet is a default method on the interface: run the real one so it
-        // delegates to the per-portlet stubs below (USERS / USERS_BETA) rather than the mock's default false.
+        // delegates to the per-portlet stubs below (USERS / USERS_LEGACY) rather than the mock's default false.
         when(layoutAPI.doesUserHaveAccessToUsersPortlet(any())).thenCallRealMethod();
         userPaginator = new UserPaginator(userAPI, roleAPI, () -> layoutAPI);
     }
@@ -403,7 +403,7 @@ public class UserPaginatorTest extends UnitTestBase {
      */
     @Test
     public void testGetItemsWithUsersPortletKeepsFullMap() throws Exception {
-        final User listed = listedUserWithFullMap();
+        listedUserWithFullMap();
         final User caller = mock(User.class);
         when(caller.isAdmin()).thenReturn(false);
         when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller)).thenReturn(true);
@@ -411,30 +411,33 @@ public class UserPaginatorTest extends UnitTestBase {
         final PaginatedArrayList<Map<String, Object>> items = userPaginator.getItems(caller, "filter", 5, 0,
                 null, null, Map.of());
 
-        assertEquals(listed.toMap().keySet(), items.get(0).keySet());
+        // a fresh map: the stubbed toMap() hands out one instance, which the paginator trims in place
+        assertEquals(fullUserMap().keySet(), items.get(0).keySet());
     }
 
     /**
      * <ul>
      *     <li><b>Method to test:</b> {@link UserPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}</li>
-     *     <li><b>Given Scenario:</b> The caller is not a CMS Administrator and lacks the legacy Users portlet, but
-     *     holds the Angular {@code users-beta} portlet — the list the Users portlet UI actually renders.</li>
-     *     <li><b>Expected Result:</b> Each item carries the complete data map, so the portlet's own columns
+     *     <li><b>Given Scenario:</b> The caller is not a CMS Administrator and lacks the {@code users} portlet,
+     *     but holds the old Users screen kept as {@code users-legacy}, which lists users through the same
+     *     paginator.</li>
+     *     <li><b>Expected Result:</b> Each item carries the complete data map, so the screen's own columns
      *     ({@code active}, {@code lastLoginDate}) keep rendering.</li>
      * </ul>
      */
     @Test
-    public void testGetItemsWithUsersBetaPortletKeepsFullMap() throws Exception {
-        final User listed = listedUserWithFullMap();
+    public void testGetItemsWithUsersLegacyPortletKeepsFullMap() throws Exception {
+        listedUserWithFullMap();
         final User caller = mock(User.class);
         when(caller.isAdmin()).thenReturn(false);
         when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller)).thenReturn(false);
-        when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS_BETA.toString(), caller)).thenReturn(true);
+        when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS_LEGACY.toString(), caller)).thenReturn(true);
 
         final PaginatedArrayList<Map<String, Object>> items = userPaginator.getItems(caller, "filter", 5, 0,
                 null, null, Map.of());
 
-        assertEquals(listed.toMap().keySet(), items.get(0).keySet());
+        // a fresh map: the stubbed toMap() hands out one instance, which the paginator trims in place
+        assertEquals(fullUserMap().keySet(), items.get(0).keySet());
     }
 
     /**
