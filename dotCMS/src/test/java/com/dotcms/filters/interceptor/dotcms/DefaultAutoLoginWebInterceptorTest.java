@@ -2,10 +2,14 @@ package com.dotcms.filters.interceptor.dotcms;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
@@ -30,6 +34,7 @@ import com.liferay.portal.util.WebKeys;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -46,6 +51,7 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
     private static final String LOGIN_COOKIE_VALUE = "a.b.c";
     /** The id carried by the validated login cookie. */
     private static final String TOKEN_ID = "validated-token-id";
+    private static final String SESSION_ID = "http-session-id";
 
     private final LoginServiceAPI loginServiceAPI = mock(LoginServiceAPI.class);
     private final JsonWebTokenUtils jsonWebTokenUtils = mock(JsonWebTokenUtils.class);
@@ -66,9 +72,82 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final HttpServletRequest request = request("/api/v1/users/current", session(pastRenewal()), true);
 
-        assertEquals(Result.SKIP, interceptor.intercept(request, response));
+        assertContinuesWithNoStoreResponse(interceptor.intercept(request, response));
 
         verify(loginServiceAPI).issueSessionLoginToken(request, response, cookieOwner, TOKEN_ID);
+    }
+
+    /**
+     * Once a renewed cookie is on the response, code further down the chain (a rule that sets a
+     * response header on a page rendered through GraphQL, or a template calling
+     * {@code $response.setHeader}) cannot make the response publicly cacheable; other headers
+     * still reach the response.
+     */
+    @Test
+    public void renewedCookieResponse_ignoresLaterCachingHeaders() {
+        cookieOwnedBy(cookieOwner);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        final HttpServletResponse downstream = interceptor.intercept(
+                request("/api/v1/graphql", session(pastRenewal()), true), response).getResponse();
+        downstream.setHeader("Cache-Control", "public, max-age=3600");
+        downstream.addHeader("cache-control", "max-age=3600");
+        downstream.setDateHeader("Expires", System.currentTimeMillis() + 3_600_000L);
+        downstream.addDateHeader("EXPIRES", System.currentTimeMillis() + 3_600_000L);
+        downstream.setIntHeader("Expires", 3600);
+        downstream.setHeader("Surrogate-Control", "max-age=3600");
+        downstream.addHeader("CDN-Cache-Control", "max-age=3600");
+        downstream.setHeader("X-Rule-Header", "set by a rule");
+
+        verify(response).setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        verify(response, never()).setHeader(eq("Cache-Control"), eq("public, max-age=3600"));
+        verify(response, never()).addHeader(anyString(), anyString());
+        verify(response, never()).setDateHeader(anyString(), anyLong());
+        verify(response, never()).addDateHeader(anyString(), anyLong());
+        verify(response, never()).setIntHeader(anyString(), anyInt());
+        verify(response, never()).setHeader(eq("Surrogate-Control"), anyString());
+        verify(response).setHeader("X-Rule-Header", "set by a rule");
+    }
+
+    /**
+     * A request of the same session that finds the renewal due but carries no login cookie cannot
+     * drop the renewal after another request has just renewed the cookie and scheduled the next
+     * renewal: it waits for that renewal to finish, then finds nothing due.
+     */
+    @Test
+    public void requestWithoutCookie_doesNotDropRenewalScheduledByConcurrentRenewal() throws Exception {
+        cookieOwnedBy(cookieOwner);
+        final HttpSession session = statefulSession(pastRenewal());
+        final long nextRenewal = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(30);
+        final CountDownLatch otherReadsItsCookies = new CountDownLatch(1);
+        final CountDownLatch renewalScheduled = new CountDownLatch(1);
+        final HttpServletRequest withoutCookie = request("/api/v1/b", session, false);
+        // Reached once the other request has found the renewal due and goes on to drop it.
+        when(withoutCookie.getCookies()).thenAnswer(call -> {
+            otherReadsItsCookies.countDown();
+            renewalScheduled.await(5, TimeUnit.SECONDS);
+            return null;
+        });
+        final Thread other = new Thread(() -> interceptor.intercept(withoutCookie,
+                mock(HttpServletResponse.class)));
+        doAnswer(call -> {
+            other.start();
+            // With the session's lock held here, the other request cannot get this far.
+            final boolean otherGotIn = otherReadsItsCookies.await(500, TimeUnit.MILLISECONDS);
+            session.setAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT, nextRenewal);
+            renewalScheduled.countDown();
+            if (otherGotIn) {
+                other.join(5_000);
+            }
+            return null;
+        }).when(loginServiceAPI).issueSessionLoginToken(any(HttpServletRequest.class),
+                any(HttpServletResponse.class), any(User.class), anyString());
+
+        interceptor.intercept(request("/api/v1/a", session, true), mock(HttpServletResponse.class));
+        other.join(5_000);
+
+        assertFalse(other.isAlive());
+        assertEquals(nextRenewal, session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
     }
 
     /**
@@ -299,7 +378,7 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
                 any(HttpServletResponse.class), any(User.class), anyString());
         final HttpServletResponse response = mock(HttpServletResponse.class);
 
-        assertEquals(Result.SKIP, interceptor.intercept(request("/api/v1/a", session, true), response));
+        assertContinuesWithNoStoreResponse(interceptor.intercept(request("/api/v1/a", session, true), response));
         assertEquals(Result.SKIP, interceptor.intercept(request("/api/v1/b", session, true), response));
 
         verify(loginServiceAPI, times(1)).issueSessionLoginToken(any(HttpServletRequest.class),
@@ -327,7 +406,7 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
         assertEquals(renewAt, session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
 
         final HttpServletRequest second = request("/api/v1/b", session, true);
-        assertEquals(Result.SKIP, interceptor.intercept(second, response));
+        assertContinuesWithNoStoreResponse(interceptor.intercept(second, response));
         verify(loginServiceAPI).issueSessionLoginToken(second, response, cookieOwner, TOKEN_ID);
     }
 
@@ -345,7 +424,7 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
         }).when(loginServiceAPI).issueSessionLoginToken(any(HttpServletRequest.class),
                 any(HttpServletResponse.class), any(User.class), anyString());
 
-        assertEquals(Result.SKIP, interceptor.intercept(request("/api/v1/a", session, true),
+        assertContinuesWithNoStoreResponse(interceptor.intercept(request("/api/v1/a", session, true),
                 mock(HttpServletResponse.class)));
 
         assertEquals(renewAt, session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
@@ -457,13 +536,14 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
     public void renewsSessionLoginToken_forFrontEndUserKeptAsCmsUser() {
         cookieOwnedBy(cookieOwner);
         final HttpSession session = mock(HttpSession.class);
+        when(session.getId()).thenReturn(SESSION_ID);
         when(session.getAttribute(com.dotmarketing.util.WebKeys.CMS_USER)).thenReturn(sessionUser);
         when(session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT)).thenReturn(pastRenewal());
         final HttpServletRequest request = request("/api/v1/content", session, true);
         when(request.getAttribute(WebKeys.USER)).thenReturn(sessionUser);
         final HttpServletResponse response = mock(HttpServletResponse.class);
 
-        assertEquals(Result.SKIP, interceptor.intercept(request, response));
+        assertContinuesWithNoStoreResponse(interceptor.intercept(request, response));
 
         verify(loginServiceAPI).issueSessionLoginToken(request, response, cookieOwner, TOKEN_ID);
     }
@@ -472,6 +552,16 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
         final JWToken token = mock(JWToken.class);
         when(token.getClaims()).thenReturn(ImmutableMap.copyOf(claims));
         return token;
+    }
+
+    /**
+     * The filter chain goes on (a skip of the remaining interceptors, not of the chain) with a
+     * response that keeps its no-store headers.
+     */
+    private static void assertContinuesWithNoStoreResponse(final Result result) {
+        assertSame(Result.SKIP.getType(), result.getType());
+        assertNotNull(result.getResponse());
+        assertTrue(result.getResponse() instanceof DefaultAutoLoginWebInterceptor.NoStoreResponse);
     }
 
     private void verifyNoRenewal() {
@@ -508,6 +598,7 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
         attributes.put(WebKeys.USER_ID, sessionUser.getUserId());
         attributes.put(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT, renewAt);
         final HttpSession session = mock(HttpSession.class);
+        when(session.getId()).thenReturn(SESSION_ID);
         when(session.getAttribute(anyString())).thenAnswer(call -> attributes.get(call.<String>getArgument(0)));
         doAnswer(call -> attributes.remove(call.<String>getArgument(0)))
                 .when(session).removeAttribute(anyString());
@@ -518,6 +609,7 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
 
     private HttpSession session(final Long renewAt) {
         final HttpSession session = mock(HttpSession.class);
+        when(session.getId()).thenReturn(SESSION_ID);
         when(session.getAttribute(WebKeys.USER)).thenReturn(sessionUser);
         when(session.getAttribute(WebKeys.USER_ID)).thenReturn(sessionUser.getUserId());
         when(session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT)).thenReturn(renewAt);

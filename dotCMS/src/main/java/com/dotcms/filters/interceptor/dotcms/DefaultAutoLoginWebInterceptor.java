@@ -12,6 +12,7 @@ import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LoginAsSession;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.util.concurrent.Striped;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -26,9 +27,13 @@ import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
+import java.util.concurrent.locks.Lock;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
 import javax.servlet.http.HttpSession;
 
 /**
@@ -51,6 +56,17 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
      * mark them as publicly cacheable.
      */
     private static final List<String> SCRIPTED_API_PREFIXES = List.of("/api/vtl/", "/api/js/");
+    /**
+     * Response headers that could let a shared cache keep a response, and with it a renewed login
+     * cookie. Header names are compared ignoring case.
+     */
+    private static final Set<String> CACHING_HEADERS = caseInsensitiveSet(HeaderFilter.CACHE_CONTROL,
+            HeaderFilter.EXPIRES, "Surrogate-Control", "CDN-Cache-Control");
+    /**
+     * One lock per HTTP session id, so the due check, the cookie validation, the new cookie and the
+     * change to the session's renewal time happen as one step for each session.
+     */
+    private static final Striped<Lock> RENEWAL_LOCKS = Striped.lazyWeakLock(64);
 
     private final JsonWebTokenUtils jsonWebTokenUtils;
     private final LoginServiceAPI loginServiceAPI;
@@ -78,8 +94,7 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) {
 
         if (PortalUtil.getUser(request) != null) {
-            this.renewSessionLoginTokenIfDue(request, response);
-            return Result.SKIP;
+            return this.renewSessionLoginTokenIfDue(request, response);
         }
 
         final Cookie rememberMe = UtilMethods.getCookie(request.getCookies(), CookieKeys.REMEMBER_ME_COOKIE.get());
@@ -107,8 +122,7 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
 
         if (this.loginServiceAPI.doCookieLogin(token.get().getSubject(), request, response)) {
             this.scheduleRenewalOfSessionLoginToken(request, token.get());
-            this.renewSessionLoginTokenIfDue(request, response);
-            return Result.SKIP;
+            return this.renewSessionLoginTokenIfDue(request, response);
         }
 
         // user is null because token is expired
@@ -175,19 +189,54 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
      * renewal time (a "remember me" login, or a request authenticated by a header) is left alone.
      * Two requests that pass the check together each issue a valid token, so either cookie works.
      * The new token carries the id of the token that was validated, and the response that carries
-     * it is marked as not to be stored by any cache.
+     * it is marked as not to be stored by any cache; the request goes on with a response on which
+     * later code (a rule that sets a response header, or a template) cannot change that.
+     * The due check, the validation, the new cookie and the change to the renewal time run under
+     * a lock for the session, so a request that drops a renewal cannot do so after another request
+     * of the same session has just renewed the cookie and scheduled the next renewal.
      * A due renewal that cannot happen (no cookie, or a cookie that is not valid for the session's
      * user) is removed from the session, so later requests do not read the cookie again. An
      * unexpected error while loading the cookie's owner or issuing the new token is logged and the
      * renewal is kept, so the next back-end request tries again and the request itself goes on.
+     *
+     * @param request  the current request
+     * @param response the current response
+     * @return {@link Result#SKIP}, or a skip that carries a {@link NoStoreResponse} when a new
+     *         cookie was set
      */
-    private void renewSessionLoginTokenIfDue(final HttpServletRequest request,
-                                             final HttpServletResponse response) {
+    private Result renewSessionLoginTokenIfDue(final HttpServletRequest request,
+                                               final HttpServletResponse response) {
 
-        final HttpSession session = request.getSession(false);
         if (!isSessionLoginTokenRenewalDue(request) || !isBackEndApplicationPath(request.getRequestURI())) {
-            return;
+            return Result.SKIP;
         }
+        final HttpSession session = request.getSession(false);
+        final Lock lock = RENEWAL_LOCKS.get(session.getId());
+        lock.lock();
+        try {
+            // Checked again under the lock: another request may have renewed or dropped it.
+            if (!isSessionLoginTokenRenewalDue(request)) {
+                return Result.SKIP;
+            }
+            return this.renewSessionLoginToken(request, response, session)
+                    ? new Result.Builder().skip().wrap(new NoStoreResponse(response)).build()
+                    : Result.SKIP;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Renews a due session login token, or drops the renewal when it cannot happen. Runs under
+     * the session's renewal lock.
+     *
+     * @return {@code true} when the response was marked as not to be stored and a new cookie was
+     *         issued on it
+     */
+    private boolean renewSessionLoginToken(final HttpServletRequest request,
+                                           final HttpServletResponse response,
+                                           final HttpSession session) {
+
         final Cookie loginCookie = UtilMethods.getCookie(request.getCookies(), CookieKeys.REMEMBER_ME_COOKIE.get());
         final String sessionUserId = sessionUserId(session);
         final LoginTokenOwner cookieOwner;
@@ -198,14 +247,15 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
         } catch (final RuntimeException e) {
             Logger.warnAndDebug(DefaultAutoLoginWebInterceptor.class, String.format("Could not load the owner of the login cookie for user '%s'; "
                     + "the session login token renewal is kept for the next request", sessionUserId), e);
-            return;
+            return false;
         }
         if (null != cookieOwner && null != sessionUserId
                 && cookieOwner.user().getUserId().equals(sessionUserId)) {
             try {
                 // Set before the endpoint runs: a page rendered in live mode (a GraphQL GET, for
                 // example) only sets its max-age when no Cache-Control header is present, so a
-                // shared cache cannot keep this response and the new login cookie with it.
+                // shared cache cannot keep this response and the new login cookie with it. The
+                // request goes on with a NoStoreResponse, so later code cannot replace it.
                 response.setHeader(HeaderFilter.CACHE_CONTROL, HeaderFilter.NO_CACHE_CONTROL);
                 // The validated token's id, not the one on the loaded user, which a concurrent
                 // logout or password change may have replaced since.
@@ -215,7 +265,7 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
                 Logger.warnAndDebug(DefaultAutoLoginWebInterceptor.class, String.format("Could not renew the session login token for user '%s'; "
                         + "the renewal is kept for the next request", sessionUserId), e);
             }
-            return;
+            return true;
         }
         // The cookie cannot become valid again by itself, so the renewal is dropped rather than
         // retried on every request; the next login schedules a new one.
@@ -223,6 +273,7 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
         Logger.info(this, () -> String.format("Session login token not renewed for user '%s': the request "
                 + "carries %s", sessionUserId, null == loginCookie ? "no login cookie"
                 : "a login cookie that is not valid for this user"));
+        return false;
     }
 
     private static boolean isLoggedInAsAnotherUser(final HttpSession session) {
@@ -255,5 +306,82 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
                 && SCRIPTED_API_PREFIXES.stream().noneMatch(uri::startsWith);
     }
 
+    private static Set<String> caseInsensitiveSet(final String... values) {
+
+        final Set<String> set = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+        set.addAll(List.of(values));
+        return set;
+    }
+
+    /**
+     * A response that carries a renewed login cookie. It keeps the no-store Cache-Control header
+     * set on it: later attempts to set Cache-Control, Expires or a CDN caching header (a rule that
+     * sets a response header on a rendered page, or a template calling {@code $response.setHeader})
+     * are ignored, so no shared cache keeps the response together with the cookie.
+     */
+    @VisibleForTesting
+    static final class NoStoreResponse extends HttpServletResponseWrapper {
+
+        NoStoreResponse(final HttpServletResponse response) {
+            super(response);
+        }
+
+        /** Sets the header unless it could make the response cacheable. */
+        @Override
+        public void setHeader(final String name, final String value) {
+            if (isWritable(name)) {
+                super.setHeader(name, value);
+            }
+        }
+
+        /** Adds the header unless it could make the response cacheable. */
+        @Override
+        public void addHeader(final String name, final String value) {
+            if (isWritable(name)) {
+                super.addHeader(name, value);
+            }
+        }
+
+        /** Sets the date header unless it could make the response cacheable. */
+        @Override
+        public void setDateHeader(final String name, final long date) {
+            if (isWritable(name)) {
+                super.setDateHeader(name, date);
+            }
+        }
+
+        /** Adds the date header unless it could make the response cacheable. */
+        @Override
+        public void addDateHeader(final String name, final long date) {
+            if (isWritable(name)) {
+                super.addDateHeader(name, date);
+            }
+        }
+
+        /** Sets the integer header unless it could make the response cacheable. */
+        @Override
+        public void setIntHeader(final String name, final int value) {
+            if (isWritable(name)) {
+                super.setIntHeader(name, value);
+            }
+        }
+
+        /** Adds the integer header unless it could make the response cacheable. */
+        @Override
+        public void addIntHeader(final String name, final int value) {
+            if (isWritable(name)) {
+                super.addIntHeader(name, value);
+            }
+        }
+
+        private static boolean isWritable(final String name) {
+            if (null != name && CACHING_HEADERS.contains(name)) {
+                Logger.debug(DefaultAutoLoginWebInterceptor.class.getName(), () -> String.format(
+                        "Ignored the '%s' header on a response that carries a renewed login cookie", name));
+                return false;
+            }
+            return true;
+        }
+    }
 
 } // E:O:F:DefaultAutoLoginWebInterceptor.
