@@ -5,13 +5,18 @@
 # keyed `.*` or `^\.github/...$` silently matches nothing, which is worth
 # knowing before assuming an ignore is working.
 #
-# Every entry is a PRE-EXISTING finding in a file this repo has not fixed yet,
-# recorded so a PR that touches one of these files is not blocked by debt it did
-# not introduce. Remove an entry when the underlying issue is fixed. The message
-# patterns are deliberately narrow, so a NEW problem in the same file still
-# fails.
+# Entries cover pre-existing findings or documented GitHub syntax that the pinned
+# validator does not yet support. Remove entries when the underlying issue or
+# validator limitation is fixed. Patterns are deliberately narrow so other
+# problems in the same file still fail.
 
 paths:
+  # GitHub supports queue: max for job concurrency; actionlint 1.7.7 predates it.
+  # https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency
+  .github/workflows/cicd_comp_publish-pr-test-image.yml:
+    ignore:
+      - '^unexpected key "queue" for "concurrency" section[.]'
+
   # 11 workflow_dispatch inputs against GitHub's documented maximum of 10. This
   # needs a human decision (merge or drop an input, or confirm GitHub no longer
   # enforces the limit), not a lint fix.
