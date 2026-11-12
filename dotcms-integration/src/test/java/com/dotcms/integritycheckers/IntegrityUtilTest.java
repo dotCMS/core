@@ -510,12 +510,16 @@ public class IntegrityUtilTest  {
 
     /**
      * Method to test: {@link IntegrityUtil#fixConflicts(String, IntegrityType)}
-     * When: A content type conflict carries a remote inode that contains a single quote
-     * Should: Move the content type to the remote inode, stored exactly as received
+     * When: A content type conflict carries a remote inode that contains a single quote, and the type
+     * has a contentlet and is the default file type of a folder
+     * Should: Move the content type, the contentlet's type (column and JSON) and the folder's default
+     * file type to the remote inode, stored exactly as received
      */
     @Test
     public void contentTypeFixStoresRemoteInodeAsData() throws Exception {
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType).nextPersisted();
+        final Folder folder = new FolderDataGen().defaultFileType(contentType.inode()).nextPersisted();
         final String endPointID = "endpointID_" + System.currentTimeMillis();
         final String remoteInode = "s'" + UUID.randomUUID().toString().replace("-", "").substring(0, 30);
 
@@ -538,8 +542,22 @@ public class IntegrityUtilTest  {
             assertEquals(1, rows.size());
             assertEquals(remoteInode, rows.get(0).get("inode"));
             assertEquals(contentType.variable(), rows.get(0).get("velocity_var_name"));
+
+            final Map<String, Object> contentRow = new DotConnect()
+                    .setSQL("select structure_inode, contentlet_as_json->>'contentType' as json_type"
+                            + " from contentlet where inode = ?")
+                    .addParam(contentlet.getInode())
+                    .loadObjectResults().get(0);
+            assertEquals(remoteInode, contentRow.get("structure_inode"));
+            assertEquals(remoteInode, contentRow.get("json_type"));
+
+            assertEquals(remoteInode, new DotConnect()
+                    .setSQL("select default_file_type from folder where inode = ?")
+                    .addParam(folder.getInode())
+                    .loadObjectResults().get(0).get("default_file_type"));
         } finally {
             IntegrityUtil.completeDiscardConflicts(endPointID);
+            Try.run(() -> FolderDataGen.remove(folder));
             Try.run(() -> ContentTypeDataGen.remove(
                     APILocator.getContentTypeAPI(APILocator.systemUser()).find(remoteInode), true));
         }
