@@ -266,7 +266,8 @@ public class VelocityUtil {
     context.put("contentType", contentType);
     context.put("host_id", host.getIdentifier());
     context.put("user", processor.getUser());
-    context.put("company", APILocator.getCompanyAPI().getDefaultCompany());
+    // Sub-action parameters are written by workflow editors; the company key is only for server code
+    context.put("company", APILocator.getCompanyAPI().getDefaultCompany().getProtected());
     context.put("workflow", processor);
     context.put("actionName", processor.getAction().getName());
     context.put("stepName", processor.getStep().getName());
