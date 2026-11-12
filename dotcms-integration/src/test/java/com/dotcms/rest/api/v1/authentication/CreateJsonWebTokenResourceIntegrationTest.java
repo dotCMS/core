@@ -35,8 +35,28 @@ public class CreateJsonWebTokenResourceIntegrationTest {
         IntegrationTestInitService.getInstance().init();
     }
 
+    /**
+     * Checks that a valid login through {@link CreateJsonWebTokenResource#getApiToken} returns a 200 response with no
+     * errors. The test swaps in a mock {@link ServletContext} and a mock {@link UserWebAPI}; both are global statics,
+     * so they are restored afterwards. Leaving the mock context in {@link Config#CONTEXT} made every later test in the
+     * same JVM that first builds the PortletAPI fail, because the mock resolves no real paths.
+     */
     @Test
     public void testGetApiToken() throws Exception {
+        final ServletContext originalContext = Config.CONTEXT;
+        try {
+            runGetApiToken();
+        } finally {
+            Config.CONTEXT = originalContext;
+            // LocaleUtil resolves the real UserWebAPI lazily when the field is null
+            LocaleUtil.setUserWebAPI(null);
+        }
+    }
+
+    /**
+     * Body of {@link #testGetApiToken()}, run with the global statics already saved for restoration.
+     */
+    private void runGetApiToken() throws Exception {
 
         final HttpServletRequest request  = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
@@ -83,6 +103,5 @@ public class CreateJsonWebTokenResourceIntegrationTest {
         assertNotNull(ResponseEntityView.class.cast(response1.getEntity()).getErrors());
         assertTrue(ResponseEntityView.class.cast(response1.getEntity()).getErrors().size() == 0);
 
-        System.out.println(ResponseEntityView.class.cast(response1.getEntity()).getEntity());
     }
 }

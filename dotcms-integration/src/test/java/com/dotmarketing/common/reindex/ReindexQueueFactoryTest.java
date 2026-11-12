@@ -90,6 +90,7 @@ public class ReindexQueueFactoryTest {
                     .findDefaultHost(APILocator.systemUser(), false);
 
             factory.refreshContentUnderHost(host);
+            assertQueuedRowsStampedNow();
 
             assertTrue(factory.findContentToReindex(1).size() > 0);
 
@@ -123,6 +124,7 @@ public class ReindexQueueFactoryTest {
             dotConnect.setSQL("delete from dist_reindex_journal").loadResult();
 
             factory.refreshContentUnderFolderPath(host.getIdentifier(), folder.getPath());
+            assertQueuedRowsStampedNow();
 
             assertEquals(1, factory.findContentToReindex(1).size());
         } finally {
@@ -155,6 +157,7 @@ public class ReindexQueueFactoryTest {
             dotConnect.setSQL("delete from dist_reindex_journal").loadResult();
 
             factory.refreshContentUnderFolder(folder);
+            assertQueuedRowsStampedNow();
 
             assertEquals(1, factory.findContentToReindex(1).size());
         } finally {
@@ -217,6 +220,23 @@ public class ReindexQueueFactoryTest {
             Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false);
             ReindexThread.unpause();
         }
+    }
+
+    /**
+     * Asserts that the journal has rows and that every one carries the time it was queued. The
+     * column defaults to the current date, so a row an INSERT leaves unstamped reads as midnight,
+     * which is more than a minute ago for all but the first minute of the day.
+     *
+     * @throws DotDataException if the journal cannot be read
+     */
+    private static void assertQueuedRowsStampedNow() throws DotDataException {
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL("select count(*) as total from dist_reindex_journal");
+        assertTrue(Long.parseLong(dotConnect.loadObjectResults().get(0).get("total").toString()) > 0);
+        dotConnect.setSQL("select count(*) as total from dist_reindex_journal"
+                + " where time_entered < now() - interval '1 minute'");
+        assertEquals("journal rows not stamped with the time they were queued", 0L,
+                Long.parseLong(dotConnect.loadObjectResults().get(0).get("total").toString()));
     }
 
 }
