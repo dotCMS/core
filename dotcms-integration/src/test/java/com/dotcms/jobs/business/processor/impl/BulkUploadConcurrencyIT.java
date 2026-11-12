@@ -45,6 +45,7 @@ import org.junit.jupiter.api.Test;
  * collision again.
  */
 @EnableWeld
+@org.junit.jupiter.api.extension.ExtendWith(com.dotcms.junit.SystemUserScopeExtension.class)
 public class BulkUploadConcurrencyIT extends Junit5WeldBaseTest {
 
     @BeforeAll

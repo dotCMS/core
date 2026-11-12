@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.test.util.ApiTokenTestUtils;
 import org.junit.ClassRule;
 
@@ -98,7 +99,7 @@ public class BundleResourceTest {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
         bundleResource = new BundleResource();
-        adminUser = APILocator.systemUser();
+        adminUser = TestUserUtils.getAdminUser();
         final RoleAPI roleAPI = APILocator.getRoleAPI();
         if (!roleAPI.doesUserHaveRole(adminUser, roleAPI.loadBackEndUserRole())) {
             roleAPI.addRoleToUser(roleAPI.loadBackEndUserRole(), adminUser);
@@ -150,7 +151,7 @@ public class BundleResourceTest {
 
     private void publish(FileInputStream createCOntentFileInputStream) throws DotPublisherException {
         final HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+        when(request.getAttribute(WebKeys.USER)).thenReturn(adminUser);
 
         final BodyPart bodyPart = mock(BodyPart.class);
         when(bodyPart.getEntity()).thenReturn(createCOntentFileInputStream);
@@ -378,7 +379,7 @@ public class BundleResourceTest {
         final User userB = newBackendUser();
 
         final Response resp = bundleResource.getUnsendBundles(
-                mockRequestFor(APILocator.systemUser()), response, "userid/" + userB.getUserId());
+                mockRequestFor(adminUser), response, "userid/" + userB.getUserId());
 
         assertEquals(200, resp.getStatus());
     }
@@ -456,7 +457,7 @@ public class BundleResourceTest {
         pushHistoryFor(contentlet.getIdentifier(), environment);
 
         final Response resp = bundleResource.deleteEnvironmentPushHistory(
-                mockRequestFor(APILocator.systemUser()), response, "environmentid/" + environment.getId());
+                mockRequestFor(adminUser), response, "environmentid/" + environment.getId());
 
         assertEquals(200, resp.getStatus());
         assertTrue(APILocator.getPushedAssetsAPI().getPushedAssets(contentlet.getIdentifier()).isEmpty());

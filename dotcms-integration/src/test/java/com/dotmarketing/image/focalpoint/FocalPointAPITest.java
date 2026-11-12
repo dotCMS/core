@@ -32,6 +32,9 @@ import org.junit.Test;
 
 public class FocalPointAPITest {
 
+    @org.junit.Rule
+    public final com.dotcms.junit.SystemUserScopeRule systemUserScope = new com.dotcms.junit.SystemUserScopeRule();
+
     final static String[] extensions = new String[] {"webp", "png", "gif", "jpg"};
 
     static FocalPointAPIImpl focalPointAPI;
