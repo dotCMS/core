@@ -286,19 +286,27 @@ zero tests for weeks (#38336).
 Maven invokes Nx for frontend builds and tests. The shared build/test workflows use:
 
 - Organization/repository variable `NX_SELF_HOSTED_REMOTE_CACHE_SERVER`: the HTTPS cache server URL.
-- Organization/repository secret `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN`: its access token.
+- Organization/repository secret `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN`: its writer access token.
+- Repository variable `NX_SELF_HOSTED_REMOTE_CACHE_READ_SERVER`: `https://nx-cache-read.dotcms.dev`, the public GET-only endpoint for PRs (including forks). No secret is needed.
 
 Organization settings must grant this repository access to both. The token is explicitly forwarded
 through reusable workflow calls, not placed in Maven arguments or committed files.
 
 Remote reads and writes are enabled for merge-queue builds, trunk runs on `main`/`master`, nightly
 runs from `main`, and LTS runs on protected `release-*` branches. Only the frontend test matrix job
-receives the credentials. Pull requests, feature-branch dispatches, and arbitrary-ref deployment/
-release workflows receive no token, so they cannot poison the shared cache. PR remote caching would
-require a separate server-enforced read-only credential and a security review.
+receives the credentials. Feature-branch dispatches and arbitrary-ref deployment/release workflows
+receive no token. PR frontend builds/tests use only the public reader URL; the reusable workflows
+explicitly clear the writer token even if a caller accidentally supplies it. No secret is added to PR callers.
 
-Without either setting, Nx continues without the HTTP remote cache. Set `BUILD_CACHE_DISABLED=true`
-to disable both Maven and Nx remote caching. Nx still checks its local cache first.
+Caddy allows only cache GETs on the reader and injects backend authentication privately. Writes are
+blocked at Caddy with **403**, including requests supplying valid writer credentials. Nx 23.3.1 treats
+PUT 403 as a benign read-only result; PUT 405 fails cache-miss builds. Cached artifacts and terminal
+output are publicly readable by known/derived hash: never cache secrets or private output. The owner
+approved this public-read posture. Storage remains private and only trusted workflows populate it.
+
+Missing writer URL/token disables HTTP caching for trusted jobs; missing reader URL disables it for
+PR jobs, with no fallback to writer credentials. Set `BUILD_CACHE_DISABLED=true` to disable both
+Maven and Nx remote caching, including PR reads. Nx still checks its local cache first.
 
 Workflow wiring regression checks: `bash .github/workflows/tests/nx-remote-cache.test.sh`.
 

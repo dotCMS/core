@@ -11,6 +11,7 @@ import unittest
 WORKFLOWS = Path('.github/workflows')
 TOKEN = 'NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN'
 SERVER = 'NX_SELF_HOSTED_REMOTE_CACHE_SERVER'
+READER = 'NX_SELF_HOSTED_REMOTE_CACHE_READ_SERVER'
 
 
 def value(block, key):
@@ -21,13 +22,14 @@ def value(block, key):
 
 def evaluate(expression, ref='refs/heads/main', protected=False,
              token='test-token', server='https://cache.example.test',
-             test_type='frontend', disabled='false'):
+             test_type='frontend', disabled='false', event='push',
+             reader='https://reader.example.test'):
     # Evaluate only the small expression subset used in this cache wiring.
     expression = expression[3:-2].strip().replace('&&', ' and ').replace('||', ' or ')
     return eval(expression, {'__builtins__': {}}, {
-        'github': SimpleNamespace(ref=ref, ref_protected=protected),
+        'github': SimpleNamespace(ref=ref, ref_protected=protected, event_name=event),
         'secrets': SimpleNamespace(**{TOKEN: token}),
-        'vars': SimpleNamespace(**{SERVER: server, 'BUILD_CACHE_DISABLED': disabled}),
+        'vars': SimpleNamespace(**{SERVER: server, READER: reader, 'BUILD_CACHE_DISABLED': disabled}),
         'matrix': SimpleNamespace(test_type=test_type),
         'startsWith': str.startswith,
     })
@@ -56,6 +58,30 @@ class NxRemoteCacheTests(unittest.TestCase):
                 with self.subTest(test_type=test_type, key=key):
                     self.assertEqual(evaluate(value(text, key), test_type=test_type), '')
         self.assertEqual(evaluate(value(text, TOKEN)), 'test-token')
+
+    def test_prs_use_reader_without_writer_token(self):
+        for phase in ('build', 'test'):
+            text = (WORKFLOWS / f'cicd_comp_{phase}-phase.yml').read_text()
+            for token in ('', 'accidentally-forwarded-writer'):
+                with self.subTest(phase=phase, token_present=bool(token)):
+                    self.assertEqual(evaluate(value(text, SERVER), event='pull_request', token=token),
+                                     'https://reader.example.test')
+                    self.assertEqual(evaluate(value(text, TOKEN), event='pull_request', token=token), '')
+                    self.assertEqual(evaluate(value(text, SERVER), event='pull_request', token=token, reader=''), '')
+                    self.assertEqual(evaluate(value(text, SERVER), event='pull_request', token=token, disabled='true'), '')
+                    self.assertEqual(evaluate(value(text, TOKEN), disabled='true'), '')
+            if phase == 'test':
+                for test_type in ('jvm', 'cli', 'integration', 'postman', 'e2e'):
+                    for key in (SERVER, TOKEN):
+                        self.assertEqual(evaluate(value(text, key), event='pull_request', test_type=test_type), '')
+
+    def test_non_prs_never_fall_back_to_public_reader(self):
+        for phase in ('build', 'test'):
+            text = (WORKFLOWS / f'cicd_comp_{phase}-phase.yml').read_text()
+            for event in ('push', 'merge_group', 'workflow_dispatch', 'schedule'):
+                with self.subTest(phase=phase, event=event):
+                    self.assertEqual(evaluate(value(text, SERVER), event=event, token=''), '')
+                    self.assertEqual(evaluate(value(text, SERVER), event=event, server=''), '')
 
     def test_trusted_callers_forward_token_to_build_and_test(self):
         cases = {
