@@ -142,7 +142,9 @@ public class RoleFactoryImpl extends RoleFactory {
 					if(includeImplicitRoles || rids.contains(r.getId())){
 						roles.add(r);
 					}
-					if(r.getRoleChildren() != null && includeImplicitRoles)
+					// always walk the children: the cached list serves both kinds of lookup, so a
+					// direct-only call must still store the inherited roles for later callers
+					if(r.getRoleChildren() != null)
 						for(String roleId: r.getRoleChildren()) {
 							rolesToProcess.add(getRoleById(roleId));
 						}

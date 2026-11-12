@@ -657,6 +657,36 @@ public class RoleAPITest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link RoleAPI#loadRolesForUser(String, boolean)}
+     * Given Scenario: A user holds a role; another role is moved under it, which flushes every
+     *                 user's cached role list. The first lookup afterwards asks for direct roles only.
+     * Expected Result: The direct lookup returns only the assigned role, and a following lookup
+     *                  that includes inherited roles still returns the moved role.
+     */
+    @Test
+    public void test_loadRolesForUser_directLookupAfterMove_keepsInheritedRolesCached() throws Exception {
+
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final long now = System.currentTimeMillis();
+        final Role parent = new RoleDataGen().name("inheritParent_" + now).nextPersisted();
+        final Role moved = new RoleDataGen().name("inheritMoved_" + now).nextPersisted();
+        final User user = new UserDataGen().roles(parent).nextPersisted();
+
+        final Role copy = copyForSave(roleAPI.loadRoleById(moved.getId()), "move");
+        copy.setParent(parent.getId());
+        roleAPI.save(copy);
+
+        final List<Role> direct = roleAPI.loadRolesForUser(user.getUserId(), false);
+        assertTrue(direct.contains(parent));
+        assertFalse(direct.contains(moved));
+
+        final List<Role> all = roleAPI.loadRolesForUser(user.getUserId(), true);
+        assertTrue("an inherited role must survive a direct-only lookup filling the cache",
+                all.contains(moved));
+        assertTrue(roleAPI.doesUserHaveRole(user, moved));
+    }
+
+    /**
      * Detached copy of a role, mirroring how {@code RoleHelper.updateRole} prepares the
      * instance it hands to {@link RoleAPI#save(Role)} (the flow of #37303).
      */
