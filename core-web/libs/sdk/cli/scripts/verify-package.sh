@@ -114,7 +114,7 @@ SDK_DIR="$SCRIPT_DIR/../.."
 LEAKED=""
 for d in "$SDK_DIR"/*/; do
     [ -f "$d/package.json" ] || continue
-    if [ "$(node -p "require('$d/package.json').private === true" 2>/dev/null)" = "true" ]; then
+    if [ "$(FORCE_COLOR=0 node -p "require('$d/package.json').private === true" 2>/dev/null)" = "true" ]; then
         LEAKED="$LEAKED $(basename "$d")"
     fi
 done

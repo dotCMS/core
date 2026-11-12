@@ -6,9 +6,12 @@ python3 - <<'PY'
 from pathlib import Path
 import hashlib
 import json
+import os
 import re
 import shlex
+import shutil
 import subprocess
+import tempfile
 from types import SimpleNamespace
 import unittest
 
@@ -75,11 +78,39 @@ class NxRemoteCacheTests(unittest.TestCase):
         self.assertEqual(actual, hashlib.sha256(source).hexdigest())
 
     def test_package_verification_hashes_the_built_artifact(self):
-        config = json.loads(Path('core-web/libs/sdk/create-app/project.json').read_text())
-        target = config['targets']['verify-package']
-        self.assertIn('build', target['dependsOn'])
-        self.assertIn('default', target['inputs'])
-        self.assertIn({'dependentTasksOutputFiles': '**/*'}, target['inputs'])
+        for project in ('create-app', 'cli'):
+            with self.subTest(project=project):
+                config = json.loads(Path(f'core-web/libs/sdk/{project}/project.json').read_text())
+                target = config['targets']['verify-package']
+                self.assertIn('build', target['dependsOn'])
+                self.assertIn('default', target['inputs'])
+                self.assertIn({'dependentTasksOutputFiles': '**/*'}, target['inputs'])
+                if project == 'cli':
+                    self.assertIn('{workspaceRoot}/libs/sdk/*/package.json', target['inputs'])
+
+    def test_cli_private_package_guard_ignores_nx_forced_colors(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            scripts = root / 'sdk/cli/scripts'
+            scripts.mkdir(parents=True)
+            shutil.copy2('core-web/libs/sdk/cli/scripts/verify-package.sh', scripts)
+            (scripts.parent / 'package.json').write_text('{"name":"dotcms"}')
+            sibling = root / 'sdk/events'
+            sibling.mkdir()
+            (sibling / 'package.json').write_text('{"private":true}')
+            dist = root / 'dist'
+            dist.mkdir()
+            (dist / 'index.js').write_text('#!/usr/bin/env node\n')
+            (dist / 'package.json').write_text('{"bin":{"dotcms":"./index.js"}}')
+            npm = root / 'npm'
+            npm.write_text('#!/bin/sh\nprintf \'%s\\n\' \'[{"path":"index.js"},{"path":"README.md"}]\'\n')
+            npm.chmod(0o755)
+            result = subprocess.run(['bash', str(scripts / 'verify-package.sh'), str(dist)],
+                                    env={**os.environ, 'FORCE_COLOR': '1',
+                                         'PATH': f'{root}{os.pathsep}{os.environ["PATH"]}'},
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+            self.assertIn('private package(s) under libs/sdk/: events', result.stdout)
 
     def test_pr_cache_bypass_disables_nx_server_and_token(self):
         for phase in ('build', 'test'):
