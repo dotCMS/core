@@ -215,8 +215,9 @@ jobs:
         env:
           # Only frontend uses Nx: PRs use anonymous reads, trusted callers may write.
           NX_SELF_HOSTED_REMOTE_CACHE_SERVER: >-
-            ${{ matrix.test_type == 'frontend' && vars.BUILD_CACHE_DISABLED != 'true' && (github.event_name == 'pull_request' && vars.NX_SELF_HOSTED_REMOTE_CACHE_READ_SERVER || github.event_name != 'pull_request' && secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN != '' && vars.NX_SELF_HOSTED_REMOTE_CACHE_SERVER) || '' }}
-          NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: ${{ matrix.test_type == 'frontend' && vars.BUILD_CACHE_DISABLED != 'true' && github.event_name != 'pull_request' && secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN || '' }}
+            ${{ matrix.test_type == 'frontend' && vars.BUILD_CACHE_DISABLED != 'true' && !contains(github.event.pull_request.labels.*.name, 'CI : No Build Cache') && (github.event_name == 'pull_request' && vars.NX_SELF_HOSTED_REMOTE_CACHE_READ_SERVER || github.event_name != 'pull_request' && secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN != '' && vars.NX_SELF_HOSTED_REMOTE_CACHE_SERVER) || '' }}
+          NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: >-
+            ${{ matrix.test_type == 'frontend' && vars.BUILD_CACHE_DISABLED != 'true' && !contains(github.event.pull_request.labels.*.name, 'CI : No Build Cache') && github.event_name != 'pull_request' && secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN || '' }}
         with:
           stage-name: ${{ matrix.stage_name }}
           maven-args: ${{ matrix.maven_args }}

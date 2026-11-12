@@ -27,15 +27,19 @@ def value(block, key):
 def evaluate(expression, ref='refs/heads/main', protected=False,
              token='test-token', server='https://cache.example.test',
              test_type='frontend', disabled='false', event='push',
-             reader='https://reader.example.test'):
-    # Evaluate only the small expression subset used in this cache wiring.
+             reader='https://reader.example.test', labels=()):
+    # Only &&/||, !contains and startsWith are supported in this expression subset.
     expression = expression[3:-2].strip().replace('&&', ' and ').replace('||', ' or ')
+    expression = expression.replace('!contains(', 'not contains(')
+    expression = expression.replace('github.event.pull_request.labels.*.name', 'labels')
     return eval(expression, {'__builtins__': {}}, {
         'github': SimpleNamespace(ref=ref, ref_protected=protected, event_name=event),
         'secrets': SimpleNamespace(**{TOKEN: token}),
         'vars': SimpleNamespace(**{SERVER: server, READER: reader, 'BUILD_CACHE_DISABLED': disabled}),
         'matrix': SimpleNamespace(test_type=test_type),
         'startsWith': str.startswith,
+        'contains': lambda values, item: item in values,
+        'labels': labels,
     })
 
 
@@ -69,6 +73,23 @@ class NxRemoteCacheTests(unittest.TestCase):
         actual = subprocess.check_output(shlex.split(runtime), cwd='core-web', text=True).strip()
         source = Path('dotCMS/src/main/webapp/WEB-INF/openapi/openapi.yaml').read_bytes()
         self.assertEqual(actual, hashlib.sha256(source).hexdigest())
+
+    def test_package_verification_hashes_the_built_artifact(self):
+        config = json.loads(Path('core-web/libs/sdk/create-app/project.json').read_text())
+        target = config['targets']['verify-package']
+        self.assertIn('build', target['dependsOn'])
+        self.assertIn('default', target['inputs'])
+        self.assertIn({'dependentTasksOutputFiles': '**/*'}, target['inputs'])
+
+    def test_pr_cache_bypass_disables_nx_server_and_token(self):
+        for phase in ('build', 'test'):
+            text = (WORKFLOWS / f'cicd_comp_{phase}-phase.yml').read_text()
+            for key in (SERVER, TOKEN):
+                with self.subTest(phase=phase, key=key):
+                    self.assertEqual(evaluate(value(text, key), event='pull_request',
+                                              labels=('CI : No Build Cache',)), '')
+            self.assertEqual(evaluate(value(text, SERVER), event='pull_request',
+                                      labels=('Area : CI/CD',)), 'https://reader.example.test')
 
     def test_shared_workflows_disable_remote_without_settings_or_with_kill_switch(self):
         for phase in ('build', 'test'):

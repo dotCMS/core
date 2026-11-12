@@ -191,8 +191,9 @@ jobs:
         env:
           # PRs/forks use the server-enforced public reader, never the writer credential.
           NX_SELF_HOSTED_REMOTE_CACHE_SERVER: >-
-            ${{ vars.BUILD_CACHE_DISABLED != 'true' && (github.event_name == 'pull_request' && vars.NX_SELF_HOSTED_REMOTE_CACHE_READ_SERVER || github.event_name != 'pull_request' && secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN != '' && vars.NX_SELF_HOSTED_REMOTE_CACHE_SERVER) || '' }}
-          NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: ${{ vars.BUILD_CACHE_DISABLED != 'true' && github.event_name != 'pull_request' && secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN || '' }}
+            ${{ vars.BUILD_CACHE_DISABLED != 'true' && !contains(github.event.pull_request.labels.*.name, 'CI : No Build Cache') && (github.event_name == 'pull_request' && vars.NX_SELF_HOSTED_REMOTE_CACHE_READ_SERVER || github.event_name != 'pull_request' && secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN != '' && vars.NX_SELF_HOSTED_REMOTE_CACHE_SERVER) || '' }}
+          NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: >-
+            ${{ vars.BUILD_CACHE_DISABLED != 'true' && !contains(github.event.pull_request.labels.*.name, 'CI : No Build Cache') && github.event_name != 'pull_request' && secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN || '' }}
         with:
           stage-name: "Initial Artifact Build"
           # No -Dgithub.event.name: its only effect was activating core-web's is_pr profile,

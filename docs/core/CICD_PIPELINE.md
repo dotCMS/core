@@ -306,7 +306,8 @@ approved this public-read posture. Storage remains private and only trusted work
 
 Missing writer URL/token disables HTTP caching for trusted jobs; missing reader URL disables it for
 PR jobs, with no fallback to writer credentials. Set `BUILD_CACHE_DISABLED=true` to disable both
-Maven and Nx remote caching, including PR reads. Nx still checks its local cache first.
+Maven and Nx remote caching, including PR reads. The `CI : No Build Cache` PR label also disables
+Nx remote caching for that PR's builds and frontend tests. Nx still checks its local cache first.
 
 Workflow wiring regression checks: `bash .github/workflows/tests/nx-remote-cache.test.sh`.
 
