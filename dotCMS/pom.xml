@@ -14,7 +14,7 @@
         <!-- Preload the byte-buddy agent for this module's tests so CacheSizingUtil can use
              Instrumentation.getObjectSize(). The path is populated by the dependency-plugin
              'properties' goal (see build/plugins). Consumed by the shared surefire/failsafe argLine. -->
-        <bytebuddy.agent.argline>-javaagent:${net.bytebuddy:byte-buddy-agent:jar}</bytebuddy.agent.argline>
+        <bytebuddy.agent.argline>-javaagent:"${net.bytebuddy:byte-buddy-agent:jar}"</bytebuddy.agent.argline>
         <servlet.port>8080</servlet.port>
         <palantirJavaFormat.version>2.29.0</palantirJavaFormat.version>
         <src.dir>${project.basedir}/src/main/java</src.dir>

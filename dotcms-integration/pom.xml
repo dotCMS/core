@@ -83,7 +83,7 @@
         <maven.failsafe.debugArgs/>
         <!-- Preload the agent so ByteBuddyFactory doesn't fall back to runtime self-attach;
              the path is filled in by the resolve-bytebuddy-agent-path execution below. -->
-        <bytebuddy.agent.argline>-javaagent:${net.bytebuddy:byte-buddy-agent:jar}</bytebuddy.agent.argline>
+        <bytebuddy.agent.argline>-javaagent:"${net.bytebuddy:byte-buddy-agent:jar}"</bytebuddy.agent.argline>
         <coreit.test.skip>true</coreit.test.skip>
         <docker.filter>database,opensearch</docker.filter>
           <!-- Force to use node v18.20.3 -->
@@ -426,18 +426,9 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <skip>${coreit.test.skip}</skip>
-                    <!-- Same flags as the parent's failsafe argLine, repeated because a non-empty
-                         debug.args would otherwise replace them all. debug.args stays last. -->
-                    <argLine>@{argLine} -Xmx1024m
-                        ${java.module.args}
-                        --enable-preview
-                        -XX:+UseCompactObjectHeaders
-                        --enable-native-access=ALL-UNNAMED
-                        ${vipsffm.libpath.args}
-                        -Dnet.bytebuddy.experimental=true
-                        ${bytebuddy.agent.argline}
-                        ${debug.args}
-                    </argLine>
+                    <!-- The parent's failsafe flags plus debug.args, which stays last. debug.args lives
+                         here rather than in the parent so it does not reach other modules' forks. -->
+                    <argLine>@{argLine} ${failsafe.base.argLine} ${debug.args}</argLine>
                     <forkCount>${it.test.forkcount}</forkCount>
                     <reuseForks>true</reuseForks>
                     <rerunFailingTestsCount>3</rerunFailingTestsCount>
