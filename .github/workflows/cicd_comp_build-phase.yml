@@ -214,9 +214,9 @@ jobs:
           # queue still builds everything, because trunk reuses its maven-repo for the CLI
           # native build and the dotcms-cli deploy. About 1.5 min with a warm ~/.m2, 3.5 min cold.
           # Stacked PRs (base is not main/master) build everything too: cicd_1-pr.yml skips their
-          # integration, postman, karate, cli and e2e jobs, so this build is the only place those
+          # integration, postman, cli and e2e jobs, so this build is the only place those
           # modules still compile before the stack lands.
-          maven-args: "clean install ${{ env.VALIDATE_PROFILE }} -Dprod=true -DskipTests=true ${{ github.event_name == 'pull_request' && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'master') && '-pl !:dotcms-integration,!:dotcms-postman,!:dotcms-reports,!:dotcms-ui-e2e,!:dotcms-test-karate,!:dotcms-api-data-model,!:dotcms-cli' || '' }}"
+          maven-args: "clean install ${{ env.VALIDATE_PROFILE }} -Dprod=true -DskipTests=true ${{ github.event_name == 'pull_request' && (github.event.pull_request.base.ref == 'main' || github.event.pull_request.base.ref == 'master') && '-pl !:dotcms-integration,!:dotcms-postman,!:dotcms-reports,!:dotcms-ui-e2e,!:dotcms-api-data-model,!:dotcms-cli' || '' }}"
           generate-artifacts: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
           cleanup-runner: ${{ inputs.cleanup-runner }}
