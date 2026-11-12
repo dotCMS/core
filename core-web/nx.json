@@ -97,7 +97,12 @@
         },
         "test": {
             "cache": true,
-            "inputs": ["default", "^production", { "externalDependencies": ["vitest"] }],
+            "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/tools/vitest-stub-scss.mts",
+                { "externalDependencies": ["vitest"] }
+            ],
             "outputs": [
                 "{workspaceRoot}/target/core-web-reports/{projectName}.xml",
                 "{workspaceRoot}/coverage/{projectRoot}"
@@ -173,7 +178,8 @@
             "{workspaceRoot}/angular.json",
             "{workspaceRoot}/tsconfig.base.json",
             "{workspaceRoot}/nx.json",
-            "{workspaceRoot}/babel.config.json"
+            "{workspaceRoot}/babel.config.json",
+            "{workspaceRoot}/tools/rollup/types-first.cjs"
         ],
         "production": [
             "default",

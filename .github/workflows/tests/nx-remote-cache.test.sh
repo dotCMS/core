@@ -4,6 +4,7 @@ set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
 python3 - <<'PY'
 from pathlib import Path
+import json
 import re
 from types import SimpleNamespace
 import unittest
@@ -36,6 +37,18 @@ def evaluate(expression, ref='refs/heads/main', protected=False,
 
 
 class NxRemoteCacheTests(unittest.TestCase):
+    def test_sdk_builds_hash_shared_rollup_helper(self):
+        config = json.loads(Path('core-web/nx.json').read_text())
+        self.assertIn('sharedGlobals', config['namedInputs']['default'])
+        self.assertIn('default', config['namedInputs']['production'])
+        self.assertIn('{workspaceRoot}/tools/rollup/types-first.cjs',
+                      config['namedInputs']['sharedGlobals'])
+
+    def test_frontend_tests_hash_shared_vitest_plugin(self):
+        config = json.loads(Path('core-web/nx.json').read_text())
+        self.assertIn('{workspaceRoot}/tools/vitest-stub-scss.mts',
+                      config['targetDefaults']['test']['inputs'])
+
     def test_shared_workflows_disable_remote_without_settings_or_with_kill_switch(self):
         for phase in ('build', 'test'):
             text = (WORKFLOWS / f'cicd_comp_{phase}-phase.yml').read_text()
