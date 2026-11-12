@@ -44,6 +44,35 @@ Welcome to the dotCMS CI/CD documentation! This guide will help you understand a
 - Success → auto-merge to main
 - Failure blocks all PRs behind it in queue
 
+### PR Docker images and Cloud Control
+
+The `PR: docker image` label publishes a multi-architecture image to `dotcms/dotcms-test`
+on label application and subsequent commits. After the publishing workflow completes,
+`cicd_post-pr-cloud-control.yml` creates or starts an environment in the `dotpr` organization
+using the mutable image tag. Its key is `<PR number>-<sanitized branch>`, truncated to
+53 characters with no trailing hyphen, leaving room for the `dot-dotpr-` prefix inside
+PostgreSQL's 63-character database-name limit; Docker image tags are unchanged. Existing
+short-named environments are not renamed or deleted; a subsequent build may create a
+separate environment under the longer name. The sticky PR
+image comment links to the environment's Cloud Control detail page, where users can
+view or start it if their Cloud Control permissions allow it. The link is published
+with the image; the environment is created after the publishing workflow completes.
+
+Configure the GitHub Actions secret `CLOUD_CONTROL_DOTCMS_MACHINE_TOKEN` with a Cloud
+Control bearer token that can provision into `dotpr` and start its environments
+(`PATCH /api/envs/dotpr/detail` requires admin access for personal tokens).
+The secret is only used by the default-branch `workflow_run`, which never checks out
+PR code and validates that the publication belongs to a current, open, labeled internal PR.
+This workflow must be on the default branch before deployment triggers will run.
+
+Missing environments are provisioned with Cloud Control defaults and one replica.
+Stopped environments with the matching image are started; running or already-starting
+environments are left alone because the reconciler handles mutable-tag updates.
+Image mismatches, failed/deleting environments and API errors fail without overwriting
+configuration. No automatic teardown is added; existing Cloud Control tag/schedule rules apply.
+
+Offline tests: `bash .github/workflows/tests/pr-cloud-control.test.sh` (also run by workflow lint CI).
+
 ### For Release Managers
 
 **Triggering a Release:**

@@ -1,0 +1,122 @@
+# Keep the Cloud Control token in default-branch code, not the PR's reusable workflow.
+# The manifest is untrusted data; verify the current PR before using the token.
+name: 'Start PR Cloud Environment'
+
+on:
+  workflow_run:
+    workflows: ['-1 PR Check', 'Publish PR Test Image']
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: read
+
+jobs:
+  deploy:
+    if: >-
+      github.event.workflow_run.head_repository.full_name == github.repository &&
+      contains(fromJSON('["pull_request","pull_request_target"]'), github.event.workflow_run.event)
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    timeout-minutes: 5
+    steps:
+      - name: Find image publication manifest
+        id: artifact
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        with:
+          script: |
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {
+              ...context.repo, run_id: context.payload.workflow_run.id,
+            });
+            const artifact = artifacts.find(a => a.name === 'pr-cloud-control' && !a.expired);
+            if (artifact) core.setOutput('id', artifact.id);
+
+      - name: Download image publication manifest
+        if: steps.artifact.outputs.id != ''
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          artifact-ids: ${{ steps.artifact.outputs.id }}
+          merge-multiple: true
+          path: ${{ runner.temp }}/pr-cloud-control
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          digest-mismatch: error
+
+      # Tested offline by tests/pr-cloud-control.test.cjs; no checkout or PR code runs here.
+      - name: Create or start PR environment
+        id: deploy
+        if: steps.artifact.outputs.id != ''
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          CLOUD_CONTROL_DOTCMS_MACHINE_TOKEN: ${{ secrets.CLOUD_CONTROL_DOTCMS_MACHINE_TOKEN }}
+        with:
+          script: |
+            const fs = require('node:fs');
+            const manifest = JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/pr-cloud-control/pr.json`, 'utf8'));
+            if (!Number.isSafeInteger(manifest.pr) || manifest.pr <= 0 ||
+                typeof manifest.sha !== 'string' || !/^[a-f0-9]{40}$/.test(manifest.sha)) {
+              throw new Error('Invalid PR deployment manifest');
+            }
+            const { data: pr } = await github.rest.pulls.get({ ...context.repo, pull_number: manifest.pr });
+            const run = context.payload.workflow_run;
+            const repository = `${context.repo.owner}/${context.repo.repo}`;
+            if (pr.state !== 'open' || pr.head.repo?.full_name !== repository ||
+                pr.head.sha !== manifest.sha || !pr.labels.some(label => label.name === 'PR: docker image') ||
+                (run.event === 'pull_request' && (run.head_sha !== manifest.sha || run.head_branch !== pr.head.ref))) {
+              core.info('Skipping closed, unlabeled, fork or superseded PR publication.');
+              return;
+            }
+
+            // Match the publisher's tag normalization; environment keys additionally need DNS-label characters.
+            const branch = pr.head.ref.replace(/[A-Z]/g, c => c.toLowerCase());
+            const tagBranch = branch.replace(/[^a-z0-9._-]/g, '-').replace(/-+/g, '-')
+              .replace(/^[-.]+|[-.]+$/g, '').slice(0, 100);
+            const image = `dotcms/dotcms-test:pr-${pr.number}-${tagBranch}`;
+            const slug = branch.replace(/[^a-z0-9-]/g, '-').replace(/-+/g, '-').replace(/^-+|-+$/g, '');
+            // Reserve 'dot-dotpr-' inside PostgreSQL's 63-character identifier limit.
+            const envKey = `${pr.number}${slug ? '-' + slug : ''}`.slice(0, 53).replace(/-+$/, '');
+            const token = process.env.CLOUD_CONTROL_DOTCMS_MACHINE_TOKEN;
+            if (!token) throw new Error('CLOUD_CONTROL_DOTCMS_MACHINE_TOKEN is not configured');
+            const request = (path, method = 'GET', body) => fetch(`https://cloud.dotcms.dev${path}`, {
+              method, redirect: 'error', signal: AbortSignal.timeout(30000),
+              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+              ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+            });
+            const detailPath = `/api/envs/dotpr/detail?env_key=${encodeURIComponent(envKey)}`;
+            const report = async action => {
+              core.info(`${action}: dotpr/${envKey} (${image})`);
+              await core.summary.addRaw(`### PR Cloud Control\n${action}: \`dotpr/${envKey}\`\n\nImage: \`${image}\`\n`).write();
+            };
+            // Missing envs deliberately return 403 on detail routes for scoped tokens; use the filtered list.
+            const lookup = async () => {
+              const response = await request(`/api/envs?org_key=dotpr&name=${encodeURIComponent(envKey)}&scope=all`);
+              if (!response.ok) throw new Error(`Cloud Control lookup failed (HTTP ${response.status})`);
+              return (await response.json()).find(env => env.org_key === 'dotpr' && env.env_key === envKey);
+            };
+            let env = await lookup();
+            if (!env) {
+              const created = await request('/api/provision', 'POST', {
+                wizard: true, org: { org_key: 'dotpr' }, env: { env_key: envKey, image, replicas: 1 },
+              });
+              if (created.status === 201) {
+                await report('Provisioning queued');
+                return;
+              }
+              if (created.status !== 409) throw new Error(`Cloud Control provision failed (HTTP ${created.status})`);
+              // Another label/commit run may have created it while we were looking it up.
+              env = await lookup();
+              if (!env) throw new Error('Cloud Control provision rejected (HTTP 409); no matching environment found');
+            }
+            if (env.image !== image) throw new Error('Existing environment image does not match the PR mutable tag');
+            if (env.pending_delete || ['failed', 'decommissioning', 'decommissioned', 'stopping'].includes(env.deploy_status)) {
+              throw new Error('Cannot start an environment that is failed, stopping or being deleted');
+            }
+            if (env.replicas > 0) {
+              // The reconciler picks up mutable-tag changes; do not restart a running environment.
+              await report('Already running or starting; unchanged');
+              return;
+            }
+            if (env.deploy_status !== 'stopped') throw new Error('Cannot start an environment in its current state');
+            const started = await request(detailPath, 'PATCH', { replicas: 1 });
+            if (!started.ok) throw new Error(`Cloud Control start failed (HTTP ${started.status})`);
+            await report('Start queued');
