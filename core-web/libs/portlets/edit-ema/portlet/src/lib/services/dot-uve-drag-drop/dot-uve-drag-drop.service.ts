@@ -5,7 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { filter } from 'rxjs/operators';
 
-import { WINDOW } from '@dotcms/utils';
+import { WINDOW, isEqual } from '@dotcms/utils';
 
 import {
     IFRAME_LEGACY_SCROLL_THROTTLE_MS,
@@ -27,36 +27,30 @@ export interface DragDropHandlers {
 }
 
 /**
- * The speed the page scrolls at while the pointer is in an edge zone of the iframe, in signed px
- * per 60fps frame: negative near the top, positive near the bottom, 0 elsewhere. It eases
- * quadratically from the minimum just inside the zone to the maximum at the edge.
+ * The speed the page scrolls at for the pointer's height, in signed px per 60fps frame: negative
+ * toward the top, positive toward the bottom, 0 in the middle. It eases quadratically from the
+ * minimum just inside an edge zone to the maximum at the edge, and stays at the maximum at and
+ * past the edge. Both edges are treated alike, and the nearer edge wins where the zones overlap
+ * on a short iframe.
  *
  * @param clientY the pointer's vertical position in the admin window
  * @param iframeRect where the iframe is in the admin window
  * @returns the velocity, 0 outside both edge zones
  */
 function getEdgeScrollVelocity(clientY: number, iframeRect: DOMRect): number {
-    let depth = 0;
-    let sign = 0;
+    const distanceToTop = clientY - iframeRect.top;
+    const distanceToBottom = iframeRect.bottom - clientY;
+    const nearTop = distanceToTop <= distanceToBottom;
+    const depth = IFRAME_SCROLL_ZONE - (nearTop ? distanceToTop : distanceToBottom);
 
-    if (clientY > iframeRect.top && clientY < iframeRect.top + IFRAME_SCROLL_ZONE) {
-        depth = iframeRect.top + IFRAME_SCROLL_ZONE - clientY;
-        sign = -1;
-    }
-
-    if (clientY > iframeRect.bottom - IFRAME_SCROLL_ZONE && clientY <= iframeRect.bottom) {
-        depth = clientY - (iframeRect.bottom - IFRAME_SCROLL_ZONE);
-        sign = 1;
-    }
-
-    if (!sign) {
+    if (depth <= 0) {
         return 0;
     }
 
     const { MIN, MAX } = IFRAME_SCROLL_VELOCITY;
     const eased = (Math.min(depth, IFRAME_SCROLL_ZONE) / IFRAME_SCROLL_ZONE) ** 2;
 
-    return sign * (MIN + (MAX - MIN) * eased);
+    return (nearTop ? -1 : 1) * (MIN + (MAX - MIN) * eased);
 }
 
 @Injectable()
@@ -188,9 +182,12 @@ export class DotUveDragDropService {
                 const iframeRect = iframe.nativeElement.getBoundingClientRect();
                 const isInsideIframe =
                     event.clientX > iframeRect.left && event.clientX < iframeRect.right;
-                const velocity = isInsideIframe
-                    ? getEdgeScrollVelocity(event.clientY, iframeRect)
-                    : 0;
+                // Beside the iframe a scroll never starts (a palette tile picked up near the
+                // bottom must not scroll the page), but one already running follows the pointer.
+                const velocity =
+                    isInsideIframe || lastVelocity !== 0
+                        ? getEdgeScrollVelocity(event.clientY, iframeRect)
+                        : 0;
 
                 if (!velocity) {
                     stopScrolling();
@@ -214,6 +211,15 @@ export class DotUveDragDropService {
                 filter((event: DragEvent) => !event.relatedTarget)
             )
             .subscribe(() => {
+                const dragItem = uveStore.editorDragItem();
+
+                // A drag from the editor comes back or ends with dragend, so it keeps its
+                // scroll, its drag item and its drop targets while the pointer is outside the
+                // app window. A file from the desktop gets no dragend, so it stops here.
+                if (dragItem && !isEqual(dragItem, TEMPORAL_DRAG_ITEM)) {
+                    return;
+                }
+
                 stopScrolling();
                 handlers.onDragLeave();
             });
