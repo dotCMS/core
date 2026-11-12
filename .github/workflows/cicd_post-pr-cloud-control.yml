@@ -22,6 +22,7 @@ jobs:
        github.event.workflow_run.head_repository.full_name == github.repository &&
        contains(fromJSON('["pull_request","pull_request_target"]'), github.event.workflow_run.event)) ||
       (github.event_name == 'pull_request_target' && github.event.pull_request.merged == true &&
+       github.event.pull_request.base.ref == 'main' &&
        github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     timeout-minutes: 5
@@ -63,7 +64,8 @@ jobs:
             let pr, manifest;
             if (teardown) {
               pr = context.payload.pull_request;
-              if (!pr.merged || pr.state !== 'closed' || pr.head.repo?.full_name !== repository) return;
+              if (!pr.merged || pr.state !== 'closed' || pr.base?.ref !== 'main' ||
+                  pr.head.repo?.full_name !== repository) return;
             } else {
               const fs = require('node:fs');
               manifest = JSON.parse(fs.readFileSync(`${process.env.RUNNER_TEMP}/pr-cloud-control/pr.json`, 'utf8'));
@@ -147,7 +149,7 @@ jobs:
               await report(action);
               // Merge cleanup may have run before this in-flight create/start finished.
               const { data: current } = await github.rest.pulls.get({ ...context.repo, pull_number: pr.number });
-              if (current.merged) await decommission();
+              if (current.merged && current.base?.ref === 'main') await decommission();
             };
             let env = await lookup();
             if (!env) {

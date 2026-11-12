@@ -23,7 +23,8 @@ async function deploy({ metadata = {}, pr = {}, existing = null, status = 200, c
     immutableDigest = 'sha256:' + 'a'.repeat(64), mutableDigest = immutableDigest } = {}) {
     const sha = 'a'.repeat(40);
     const pull = {
-        number: 1234, state: teardown ? 'closed' : 'open', merged: teardown, labels: [{ name: 'PR: docker image' }],
+        number: 1234, state: teardown ? 'closed' : 'open', merged: teardown, base: { ref: 'main' },
+        labels: [{ name: 'PR: docker image' }],
         head: { sha, ref: 'feat/My_branch.with-dots', repo: { full_name: 'dotcms/core' } },
         ...pr,
     };
@@ -333,9 +334,10 @@ test('missing, decommissioning and decommissioned environments make merge teardo
     }
 });
 
-test('an unmerged close or a merged fork cannot trigger Cloud Control teardown', async () => {
+test('unmerged closes, forks and actual non-main bases cannot trigger Cloud Control teardown', async () => {
     const head = { sha: 'a'.repeat(40), ref: 'feature/x', repo: { full_name: 'other/fork' } };
-    for (const pr of [{ merged: false }, { state: 'open' }, { head }]) {
+    for (const pr of [{ merged: false }, { state: 'open' }, { head },
+        { base: { ref: 'master' } }, { base: { ref: 'stack-parent' } }, { base: null }]) {
         const { calls, registryCalls } = await deploy({ teardown: true, pr, existing: stopped });
         assert.equal(calls.length, 0);
         assert.equal(registryCalls.length, 0);
@@ -363,10 +365,19 @@ test('teardown tolerates concurrent deletion or confirmed decommissioning, but r
 test('a PR merging during provision or start still gets its environment decommissioned', async () => {
     for (const creating of [false, true]) {
         const { calls } = await deploy({ existing: creating ? null : stopped,
-            mutationStatus: creating ? 201 : 200, latestPr: { state: 'closed', merged: true },
+            mutationStatus: creating ? 201 : 200, latestPr: { state: 'closed', merged: true, base: { ref: 'main' } },
             afterConflict: { ...stopped, deploy_status: 'pending', replicas: 1 } });
         assert.deepEqual(calls.map(call => call.method), ['GET', creating ? 'POST' : 'PATCH', 'GET', 'PATCH']);
         assert.ok(calls[3].url.includes('/decommission?'));
+    }
+});
+
+test('post-write merge rechecks never decommission for master or a stack parent', async () => {
+    for (const ref of ['master', 'stack-parent']) {
+        const { calls } = await deploy({ existing: stopped,
+            latestPr: { state: 'closed', merged: true, base: { ref } }, afterConflict: stopped });
+        assert.deepEqual(calls.map(call => call.method), ['GET', 'PATCH']);
+        assert.ok(calls[1].url.includes('/detail?'));
     }
 });
 
