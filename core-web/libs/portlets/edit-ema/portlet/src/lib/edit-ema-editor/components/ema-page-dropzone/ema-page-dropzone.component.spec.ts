@@ -598,4 +598,74 @@ describe('EmaPageDropzoneComponent drop target', () => {
             }
         );
     });
+
+    // Review of #38575: while the page scrolls under a still pointer, new bounds arrive with no
+    // new dragover. The line and the target must follow the blocks, not stay where they were.
+    describe('when the page scrolls under a still pointer', () => {
+        /** The same containers, moved `dy` px, as the store shifts them while the page scrolls. */
+        const scrolledBy = (dy: number, containers: Container[] = CONTAINERS): Container[] =>
+            containers.map((container) => ({ ...container, y: container.y + dy }));
+
+        const pageScrolls = (dy: number) => {
+            spectator.setHostInput({ containers: scrolledBy(dy) });
+            spectator.detectChanges();
+        };
+
+        describe('while a contentlet from the palette is dragged', () => {
+            beforeEach(() => startDrag(PALETTE_ITEM));
+
+            it('should move the line to the edge of the contentlet now under the pointer and report it', () => {
+                // Top half of c2: the line is on c2's top edge.
+                dragOver(contentletElement('c2'), 300);
+                expect(insertionLine().style.top).toBe('250px');
+
+                // The page scrolls 220px down: c3 (500–700 in its container) is now at 280–480,
+                // and the pointer at 300 is over its top half.
+                pageScrolls(-220);
+
+                expect(lastTarget()).toEqual({
+                    kind: 'contentlet',
+                    payload: { container: CONTAINER_A, contentlet: contentletOf('c3') },
+                    position: 'before'
+                });
+                expect(insertionLine().style.top).toBe('280px');
+                expect(insertionLine().style.opacity).toBe('1');
+            });
+
+            it('should not resolve anything before the pointer has been over a target', () => {
+                pageScrolls(-220);
+
+                expect(spectator.hostComponent.targets).toEqual([]);
+                expect(insertionLine().style.opacity).toBe('0');
+            });
+
+            it('should not resolve anything once the pointer has left the dropzone', () => {
+                dragOver(contentletElement('c2'), 300);
+                spectator.dispatchMouseEvent(spectator.element, 'dragleave');
+                spectator.detectChanges();
+                const reported = spectator.hostComponent.targets.length;
+
+                pageScrolls(-220);
+
+                expect(spectator.hostComponent.targets).toHaveLength(reported);
+                expect(lastTarget()).toEqual(expect.objectContaining({ kind: 'none' }));
+                expect(insertionLine().style.opacity).toBe('0');
+            });
+        });
+
+        describe('while a contentlet on the page is moved', () => {
+            beforeEach(() => startDrag(MOVED_C2));
+
+            it('should resolve to no target and hide the line once its own placeholder is under the pointer', () => {
+                dragOver(contentletElement('c3'), 650);
+                expect(lastTarget()).toEqual(expect.objectContaining({ kind: 'contentlet' }));
+
+                // The page scrolls 300px up: c2's place (250–450) is now at 550–750, under 650.
+                pageScrolls(300);
+
+                expect(lastTarget()).toEqual(expect.objectContaining({ kind: 'none' }));
+                expect(insertionLine().style.opacity).toBe('0');
+            });
+        });
+    });
 });

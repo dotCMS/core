@@ -303,6 +303,35 @@ describe('registerUVEEvents scroll during a drag', () => {
         }
     );
 
+    // Review of #38575: the editor measures the drop targets' shift from the last scrollY the
+    // page reported. A report that waits for the next scroll event is a frame late, so bounds
+    // taken mid-scroll would be shifted from a stale value.
+    it('should report where the page is right after each step, in the same frame', () => {
+        const editor = window.parent.postMessage as unknown as MockInstance;
+        scrollBy.mockImplementation((options: ScrollToOptions) =>
+            pageAt(window.scrollY + options.top)
+        );
+        scrollAtVelocity(12);
+
+        runFrame(1000);
+        expect(editor).toHaveBeenLastCalledWith(
+            {
+                action: DotCMSUVEAction.IFRAME_SCROLL,
+                payload: { scrollY: expect.closeTo(1012, 5) }
+            },
+            '*'
+        );
+
+        runFrame(1000 + FRAME);
+        expect(editor).toHaveBeenLastCalledWith(
+            {
+                action: DotCMSUVEAction.IFRAME_SCROLL,
+                payload: { scrollY: expect.closeTo(1024, 5) }
+            },
+            '*'
+        );
+    });
+
     it('should stop when the page stops listening to the editor', () => {
         scrollAtVelocity(12);
         runFrame(1000);

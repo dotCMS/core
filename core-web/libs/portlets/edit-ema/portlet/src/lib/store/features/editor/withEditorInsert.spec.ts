@@ -194,6 +194,39 @@ describe('withEditorInsert', () => {
             });
         });
 
+        // Review of #38575: a pivot that is gone is not a duplicate.
+        describe('when the contentlet it should go next to is not in the container', () => {
+            const createIntoMissingPivot = () =>
+                createInto({
+                    contentlet: {
+                        identifier: 'missing-1',
+                        inode: 'missing-1-inode',
+                        title: 'missing-1',
+                        contentType: 'test'
+                    },
+                    position: 'after'
+                });
+
+            it('should report that the pivot is gone, not that the contentlet is already there', () => {
+                expect(store.editorInsertContentlet(createIntoMissingPivot(), 'new-1')).toEqual({
+                    didInsert: false,
+                    errorCode: CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND
+                });
+            });
+
+            it('should not save', () => {
+                store.editorInsertContentlet(createIntoMissingPivot(), 'new-1');
+
+                expect(editorSave).not.toHaveBeenCalled();
+            });
+
+            it('should end the drag', () => {
+                store.editorInsertContentlet(createIntoMissingPivot(), 'new-1');
+
+                expect(resetEditorProperties).toHaveBeenCalledTimes(1);
+            });
+        });
+
         describe('when it does not go in', () => {
             it('should end the drag and clear the hovered contentlet', () => {
                 store.editorInsertContentlet(createInto(), 'existing-1');

@@ -920,6 +920,35 @@ describe('utils functions', () => {
             expect(orderOf(result.pageContainers, 'container-a')).toEqual(['c2', 'c3']);
         });
 
+        // Review of #38575: say why nothing went in, so the user is not told it was a duplicate.
+        it('should report that there is nothing to place it next to when it is dropped next to itself', () => {
+            const result = move({
+                id: 'c1',
+                from: containerA(),
+                to: containerA(),
+                pivot: 'c1',
+                position: 'after',
+                pageContainers: pageContainersOf(containerA())
+            });
+
+            expect(result.errorCode).toBe(CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND);
+        });
+
+        it('should report a pivot that is missing from a container that holds other contentlets', () => {
+            const result = move({
+                id: 'c1',
+                from: containerA(),
+                to: containerB(),
+                pivot: 'missing',
+                position: 'after',
+                pageContainers: pageContainersOf(containerA(), containerB())
+            });
+
+            expect(result.didInsert).toBe(false);
+            expect(result.errorCode).toBe(CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND);
+            expect(orderOf(result.pageContainers, 'container-b')).toEqual(['b1']);
+        });
+
         it('should leave the order as it was when it is dropped right after the contentlet above it', () => {
             const result = move({
                 id: 'c2',

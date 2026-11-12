@@ -1031,6 +1031,15 @@ describe('withEditor', () => {
                         expect(containerYs()).toEqual([-90]);
                     });
 
+                    // The page reports each frame's scroll and again on the scroll event that
+                    // follows it, with the same value: the second report moves nothing.
+                    it('should not move the containers again when the page reports the same scrollY twice', () => {
+                        pageScrolled(40);
+                        pageScrolled(40);
+
+                        expect(containerYs()).toEqual([-30]);
+                    });
+
                     it('should take fresh bounds as they are and measure later scrolls from them', () => {
                         pageScrolled(40);
 
