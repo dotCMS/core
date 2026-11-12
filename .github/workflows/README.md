@@ -47,7 +47,9 @@ Welcome to the dotCMS CI/CD documentation! This guide will help you understand a
 ### PR Docker images and Cloud Control
 
 The `PR: docker image` label publishes a multi-architecture image to `dotcms/dotcms-test`
-on label application and subsequent commits. After the publishing workflow completes,
+on label application and subsequent commits. Both entry points share a per-PR publisher
+lock; queued publishers check the current PR head before resolving artifacts or pushing
+so an older build cannot overwrite an already-published newer image. After the publishing workflow completes,
 `cicd_post-pr-cloud-control.yml` creates or starts an environment in the `dotpr` organization
 using the mutable image tag. Its key is `<PR number>-<sanitized branch>`, truncated to
 53 characters with no trailing hyphen, leaving room for the `dot-dotpr-` prefix inside

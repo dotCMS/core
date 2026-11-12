@@ -76,6 +76,52 @@ test('trusted workflow covers both publishers and never checks out PR code', () 
     assert.doesNotMatch(publisher, /CLOUD_CONTROL_DOTCMS_MACHINE_TOKEN/);
 });
 
+test('both entry points serialize publishing per PR without cancelling an active image push', () => {
+    const publisher = fs.readFileSync(path.join(root, '.github/workflows/cicd_comp_publish-pr-test-image.yml'), 'utf8');
+    assert.match(publisher, /    concurrency:\n      group: publish-pr-image-job-\$\{\{ inputs\.pr \}\}\n      cancel-in-progress: false/);
+    for (const file of ['cicd_1-pr.yml', 'cicd_publish-pr-test-image.yml']) {
+        assert.match(fs.readFileSync(path.join(root, '.github/workflows', file), 'utf8'),
+            /uses: \.\/\.github\/workflows\/cicd_comp_publish-pr-test-image\.yml/);
+    }
+});
+
+test('queued publishers check the current PR SHA before discovering artifacts or writing image tags', () => {
+    const publisher = fs.readFileSync(path.join(root, '.github/workflows/cicd_comp_publish-pr-test-image.yml'), 'utf8');
+    const step = publisher.split('      - name: Resolve artifact run and tag\n')[1].split('      - name:')[0];
+    const shell = step.split('        run: |\n')[1].split('\n')
+        .map(line => line.startsWith('          ') ? line.slice(10) : line).join('\n');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'pr-publish-guard-'));
+    try {
+        fs.writeFileSync(path.join(dir, 'gh'), `#!/usr/bin/env bash
+printf '%s\\n' "$*" >> "$GH_CALLS"
+if [[ "$*" == *'repos/dotcms/core/pulls/1234'* ]]; then
+  printf '%s' "$CURRENT_SHA"
+else
+  echo 'Stale publisher tried to discover artifacts' >&2
+  exit 99
+fi
+`, { mode: 0o755 });
+        for (const stale of [false, true]) {
+            const output = path.join(dir, stale ? 'stale-output' : 'current-output');
+            execFileSync('bash', ['-e', '-c', shell], { cwd: dir, env: {
+                ...process.env, PATH: `${dir}:${process.env.PATH}`, GITHUB_OUTPUT: output, GH_CALLS: output + '-calls',
+                CURRENT_SHA: (stale ? 'b' : 'a').repeat(40), SHA: 'a'.repeat(40),
+                REPO: 'dotcms/core', PR: '1234', BRANCH: 'feature/test',
+                RUN_ID_IN: stale ? '' : '789', GITHUB_RUN_ID: '42', GH_TOKEN: 'fake-token',
+            } });
+            const apiCalls = fs.readFileSync(output + '-calls', 'utf8').trim().split('\n');
+            assert.equal(apiCalls.length, 1);
+            assert.ok(apiCalls[0].includes('repos/dotcms/core/pulls/1234'));
+            const values = fs.readFileSync(output, 'utf8');
+            assert.ok(values.includes(`found=${!stale}\n`));
+            if (stale) assert.doesNotMatch(values, /tags<<|dotcms\/dotcms-test/);
+            else assert.ok(values.includes('dotcms/dotcms-test:pr-1234-feature-test'));
+        }
+    } finally {
+        fs.rmSync(dir, { recursive: true, force: true });
+    }
+});
+
 test('only a non-expired manifest from this run is selected', async () => {
     const outputs = {};
     const endpoint = {};
