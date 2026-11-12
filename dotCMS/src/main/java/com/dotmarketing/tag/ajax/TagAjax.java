@@ -1,11 +1,10 @@
 package com.dotmarketing.tag.ajax;
 
-import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.uk.ltd.getahead.dwr.WebContextFactory;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.UserWebAPI;
+import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -34,14 +33,30 @@ public class TagAjax {
 	private static TagAPI tagAPI = APILocator.getTagAPI();
 
 	/**
-	 * Tags an object, validates the existence of a tag(s), creates it if it doesn't exists
-	 * and then tags the object
-	 * @param tagNames tag(s) to create
-	 * @param userId owner of the tag
-	 * @param hostId the storage host id
-	 * @return a list of all tags assigned to an object
+	 * Creates the given tag(s) when they don't exist yet and adds them to a user's profile. With
+	 * an empty {@code userId} the tags are only created. Creating tags without an owner needs
+	 * access to one of the Tags portlets. Adding tags to a user follows
+	 * {@link TagAPI#canEditUserTags(User, String)}, and the logged in user also needs access to one
+	 * of the Users or Tags portlets, since tags can be created on any storage host.
+	 *
+	 * @param tagNames comma-separated tag name(s)
+	 * @param userId   id of the user who gets the tags, or empty to only create them
+	 * @param hostId   the storage host id
+	 * @return the user's tags, plus any errors found while saving
+	 * @throws DotSecurityException if the logged in user can't add these tags
+	 * @throws DotDataException     if there's a data access error
 	 */
 	public static Map<String, Object> addTag ( String tagNames, String userId, String hostId ) throws DotDataException, DotSecurityException {
+
+		final User user = getLoggedInUser();
+		if (UtilMethods.isSet(userId)) {
+			checkCanEditUserTags(user, userId);
+			if (!APILocator.getLayoutAPI().doesUserHaveAccessToUsersPortlet(user)) {
+				checkCanManageTags(user);
+			}
+		} else {
+			checkCanManageTags(user);
+		}
 
 		if ( !UtilMethods.isSet(hostId) ) {
 			hostId = Host.SYSTEM_HOST;
@@ -106,18 +121,32 @@ public class TagAjax {
 	    	}
     	}
 
-        callbackData.put("tags", new TagAjax().getTagByUser(userId));
+        callbackData.put("tags", tagAPI.getTagsForUserByUserId(userId));
 
         return callbackData;
 	}
 
 	/**
-	 * Updates an existing tag.
-	 * @param tagId tag to update
-	 * @param tagName New tagname to be use
-	 * @param hostId the storage host id
+	 * Renames an existing tag or moves it to another storage host. Needs access to one of the Tags
+	 * portlets, and the same permissions as deleting the tag ({@link TagAPI#canDeleteTag(User, String)}),
+	 * because the change reaches every piece of content that carries it.
+	 *
+	 * @param tagId   tag to update
+	 * @param tagName new tag name
+	 * @param hostId  the storage host id
+	 * @return any errors found while saving
+	 * @throws DotSecurityException if the logged in user can't change the tag
+	 * @throws DotDataException     if the user's permissions can't be resolved
 	 */
-	public static Map<String,Object> updateTag(String tagId, String tagName, String hostId){
+	public static Map<String,Object> updateTag(String tagId, String tagName, String hostId)
+			throws DotDataException, DotSecurityException {
+
+		final User user = getLoggedInUser();
+		checkCanManageTags(user);
+		if (!tagAPI.canDeleteTag(user, tagId)) {
+			throw new DotSecurityException(String.format(
+					"User '%s' lacks permission to change the tag", user.getUserId()));
+		}
 
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
     	List<String> saveTagErrors = new ArrayList<>();
@@ -147,11 +176,15 @@ public class TagAjax {
 
 
 	/**
-	 * Gets all the tag created by an user
+	 * Gets the tags of a user's profile. Follows {@link TagAPI#canEditUserTags(User, String)}.
+	 *
 	 * @param userId id of the user
-	 * @return a list of all the tags created
+	 * @return the user's tags
+	 * @throws DotSecurityException if the logged in user can't see that user's tags
+	 * @throws DotDataException     if there's a data access error
 	 */
 	public List<Tag> getTagByUser ( String userId ) throws DotSecurityException, DotDataException {
+		checkCanEditUserTags(getLoggedInUser(), userId);
 		try {
 			return APILocator.getTagAPI().getTagsForUserByUserId(userId);
 		} catch (Exception e) {
@@ -162,11 +195,15 @@ public class TagAjax {
 	}
 
 	/**
-	 * Gets all the tag created by an user
+	 * Gets the tags of a user's profile. Follows {@link TagAPI#canEditUserTags(User, String)}.
+	 *
 	 * @param userId id of the user
-	 * @return a Map with a list of all the tags created
+	 * @return a Map with the user's tags under {@code tags}
+	 * @throws DotSecurityException if the logged in user can't see that user's tags
+	 * @throws DotDataException     if there's a data access error
 	 */
 	public Map<String, List<Tag>> getTagsByUser ( String userId ) throws DotSecurityException, DotDataException {
+		checkCanEditUserTags(getLoggedInUser(), userId);
 		try {
 			List<Tag> tags = APILocator.getTagAPI().getTagsForUserByUserId(userId);
 			Map<String, List<Tag>> map = new HashMap<>();
@@ -226,11 +263,19 @@ public class TagAjax {
 	}
 
 	/**
-	 * Gets all tags associated to an object
+	 * Gets all tags associated to an object. Follows {@link TagAPI#canReadTagInodes(User, String)}.
+	 *
 	 * @param inode inode of the object tagged
 	 * @return list of all the TagInode where the tags are associated to the object
+	 * @throws DotSecurityException if the logged in user can't see the object's tags
+	 * @throws DotDataException     if there's a data access error
 	 */
-	public static List<TagInode> getTagInodeByInode(String inode) throws DotDataException {
+	public static List<TagInode> getTagInodeByInode(String inode) throws DotDataException, DotSecurityException {
+		final User user = getLoggedInUser();
+		if (!tagAPI.canReadTagInodes(user, inode)) {
+			throw new DotSecurityException(String.format(
+					"User '%s' lacks permission to see the tags of this object", user.getUserId()));
+		}
 		try {
 			return APILocator.getTagAPI().getTagInodesByInode(inode);
 		} catch (DotDataException e) {
@@ -241,12 +286,19 @@ public class TagAjax {
 	}
 
 	/**
-	 * Deletes an object tag assignment(s)
+	 * Removes the given tag(s) from an object. Follows {@link TagAPI#canEditTagInodes(User, String)}.
+	 *
 	 * @param tagName name(s) of the tag(s)
-	 * @param inode inode of the object tagged
-	 * @return a list of all tags assigned to an object
+	 * @param inode   inode of the object tagged
+	 * @throws DotSecurityException if the logged in user can't change the object's tags
+	 * @throws DotDataException     if there's a data access error
 	 */
 	public void deleteTagInode ( String tagName, String inode ) throws DotDataException, DotSecurityException {
+		final User user = getLoggedInUser();
+		if (!tagAPI.canEditTagInodes(user, inode)) {
+			throw new DotSecurityException(String.format(
+					"User '%s' lacks permission to change the tags of this object", user.getUserId()));
+		}
 		try {
 			APILocator.getTagAPI().deleteTagInode(tagName, inode, null);
 		} catch (Exception e) {
@@ -257,8 +309,9 @@ public class TagAjax {
 	}
 
 	/**
-	 * Checks that a user may change the tags of a given user: the user themselves, an admin, or
-	 * a user with access to the Users portlet.
+	 * Checks that a user may see or change the tags of a given user, following
+	 * {@link TagAPI#canEditUserTags(User, String)}: the user themselves, an admin or the system user,
+	 * or a user with access to one of the Users portlets.
 	 *
 	 * @param user   user making the change
 	 * @param userId id of the user whose tags are changed
@@ -267,12 +320,30 @@ public class TagAjax {
 	 */
 	static void checkCanEditUserTags(final User user, final String userId)
 			throws DotDataException, DotSecurityException {
-		if (user.isAdmin() || user.getUserId().equals(userId)
-				|| APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), user)) {
+		if (tagAPI.canEditUserTags(user, userId)) {
 			return;
 		}
 		throw new DotSecurityException(String.format(
-				"User '%s' lacks permission to change the tags of user '%s'", user.getUserId(), userId));
+				"User '%s' lacks permission to work with the tags of another user", user.getUserId()));
+	}
+
+	/**
+	 * Checks that a user may create, rename or import tags: an admin, or a user with access to the
+	 * Tags portlet or the legacy Tag Manager.
+	 *
+	 * @param user user making the change
+	 * @throws DotSecurityException if the user can't manage tags
+	 * @throws DotDataException     if the user's portlet access can't be resolved
+	 */
+	static void checkCanManageTags(final User user) throws DotDataException, DotSecurityException {
+		final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+		if (user.isAdmin()
+				|| layoutAPI.doesUserHaveAccessToPortlet(PortletID.TAGS.toString(), user)
+				|| layoutAPI.doesUserHaveAccessToPortlet(PortletID.TAGS_LEGACY.toString(), user)) {
+			return;
+		}
+		throw new DotSecurityException(String.format(
+				"User '%s' lacks permission to manage tags", user.getUserId()));
 	}
 
 	/**
@@ -300,8 +371,8 @@ public class TagAjax {
 	 */
 	public Map<String, List<Tag>> deleteTag ( String tagNameOrId, String userId ) throws DotDataException, DotSecurityException {
 
+		checkCanEditUserTags(getLoggedInUser(), userId);
 		try {
-			checkCanEditUserTags(getLoggedInUser(), userId);
 			Tag tag = APILocator.getTagAPI().getTagByTagId(tagNameOrId);
 
 			if ( !UtilMethods.isSet(tag) || !UtilMethods.isSet(tag.getTagId()) ) {
@@ -376,16 +447,22 @@ public class TagAjax {
 		}
 	}
 
-	public static Map<String,Object> importTags(byte[] uploadFile) {
+	/**
+	 * Creates the tags listed in a CSV file, one {@code tag name,host id} pair per line. Needs
+	 * access to one of the Tags portlets.
+	 *
+	 * @param uploadFile contents of the CSV file
+	 * @return the number of lines that failed under {@code importSomeTagsFailed}, if any
+	 * @throws DotSecurityException if the logged in user can't manage tags
+	 * @throws DotDataException     if the user's portlet access can't be resolved
+	 */
+	public static Map<String,Object> importTags(byte[] uploadFile) throws DotDataException, DotSecurityException {
+
+		checkCanManageTags(getLoggedInUser());
 
 		Map<String,Object> callbackData = new HashMap<>();
 		int counterFailedTags = 0;
 		try {
-			UserWebAPI uWebAPI = WebAPILocator.getUserWebAPI();
-			WebContext ctx = WebContextFactory.get();
-			HttpServletRequest request = ctx.getHttpServletRequest();
-			User user = uWebAPI.getLoggedInUser(request);
-
 			String content = new String(uploadFile);
 			StringReader sr = new StringReader(content);
 			BufferedReader br = new BufferedReader(sr);

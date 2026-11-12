@@ -92,6 +92,22 @@ public class TagResource {
     }
 
     /**
+     * Checks that a user may see or change the tags of a user's profile, following
+     * {@link TagAPI#canEditUserTags(User, String)}.
+     *
+     * @param user   the {@link User} making the request
+     * @param userId id of the user whose tags are read or changed
+     * @throws ForbiddenException if the user can't work with those tags
+     * @throws DotDataException   if the user's portlet access can't be resolved
+     */
+    private void checkCanEditUserTags(final User user, final String userId) throws DotDataException {
+        if (!tagAPI.canEditUserTags(user, userId)) {
+            throw new ForbiddenException(String.format(
+                    "User '%s' lacks permission to work with the tags of another user", user.getUserId()));
+        }
+    }
+
+    /**
      * This performs a list operation. But if a name is provided a search-by-name (like) operation will be performed instead.
      * The search-by-name operation can be delimited by a siteId
      * if No matches are found against the siteId the search-by-name operation will be performed against the global tags.
@@ -182,7 +198,7 @@ public class TagResource {
     })
     public Response addTag(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            final TagForm tagForm) {
+            final TagForm tagForm) throws DotDataException {
 
         final InitDataObject initDataObject =
                 new WebResource.InitBuilder(webResource)
@@ -196,8 +212,10 @@ public class TagResource {
         final User user = initDataObject.getUser();
         Logger.debug(TagResource.class,()->String.format(" user %s is adding tag %s ",user.getUserId(),tagForm));
 
-        //We can assign tags to any user as long as we are admin.
         final String userId = tagForm.getOwnerId();
+        if (UtilMethods.isSet(userId)) {
+            checkCanEditUserTags(user, userId);
+        }
         final ImmutableList.Builder<Tag> savedTags = ImmutableList.builder();
         final ImmutableList.Builder<ErrorEntity> saveFails = ImmutableList.builder();
         final Map<String, RestTag> tags = tagForm.getTags();
@@ -264,7 +282,7 @@ public class TagResource {
     })
     public Response updateTag(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            final UpdateTagForm tagForm) {
+            final UpdateTagForm tagForm) throws DotDataException {
 
         final InitDataObject initDataObject =
                 new WebResource.InitBuilder(webResource)
@@ -289,7 +307,6 @@ public class TagResource {
             throw new BadRequestException(errorMessage);
         }
 
-        //We can assign tags to any user as long as we are admin.
         final Tag tagByTagId = Try.of(() -> tagAPI.getTagByTagId(tagForm.tagId)).getOrNull();
         if (null == tagByTagId) {
             final String errorMessage = Try.of(() -> LanguageUtil
@@ -298,6 +315,10 @@ public class TagResource {
                             tagForm.tagId)); //fallback message
             Logger.error(TagResource.class, errorMessage);
             throw new DoesNotExistException(errorMessage);
+        }
+        if (!tagAPI.canDeleteTag(user, tagByTagId.getTagId())) {
+            throw new ForbiddenException(String.format(
+                    "User '%s' lacks permission to change the tag", user.getUserId()));
         }
         try {
             tagAPI.updateTag(tagForm.tagId, tagForm.tagName, false, tagForm.siteId);
@@ -355,7 +376,7 @@ public class TagResource {
     public Response getTagsByUserId(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(description = "User identifier to retrieve owned tags for", required = true)
-            @PathParam("userId") final String userId) {
+            @PathParam("userId") final String userId) throws DotDataException {
 
         final InitDataObject initDataObject =
                 new WebResource.InitBuilder(webResource)
@@ -368,6 +389,7 @@ public class TagResource {
 
         final User user = initDataObject.getUser();
         Logger.debug(TagResource.class,()->String.format(" user %s is requesting tags owned by  %s ",user.getUserId(), userId));
+        checkCanEditUserTags(user, userId);
         final List<Tag> tags = Try.of(() -> tagAPI.getTagsForUserByUserId(userId))
                 .getOrElse(ImmutableList.of());
         if (tags.isEmpty()) {
@@ -569,7 +591,7 @@ public class TagResource {
             @Parameter(description = "Tag name or tag UUID to link", required = true)
             @PathParam("nameOrId") final String nameOrId,
             @Parameter(description = "Inode identifier to link the tag(s) to", required = true)
-            @PathParam("inode") final String inode) {
+            @PathParam("inode") final String inode) throws DotDataException {
 
         final InitDataObject initDataObject =
                 new WebResource.InitBuilder(webResource)
@@ -581,6 +603,10 @@ public class TagResource {
                         .init();
         final User user = initDataObject.getUser();
         Logger.debug(TagResource.class,()->String.format(" user %s is requesting linking tags %s with inode %s ",user.getUserId(), nameOrId, inode));
+        if (!tagAPI.canEditTagInodes(user, inode)) {
+            throw new ForbiddenException(String.format(
+                    "User '%s' lacks permission to change the tags of this inode", user.getUserId()));
+        }
         final List<Tag> tags = new ArrayList<>();
         if (isUUID(nameOrId)){
             Logger.error(TagResource.class, String.format("Trying to look up tag `%s` by id.",nameOrId));
@@ -648,7 +674,7 @@ public class TagResource {
     public Response findTagsByInode(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(description = "Inode identifier to retrieve associated tags for", required = true)
-            @PathParam("inode") final String inode) {
+            @PathParam("inode") final String inode) throws DotDataException {
 
         final InitDataObject initDataObject =
                 new WebResource.InitBuilder(webResource)
@@ -660,6 +686,10 @@ public class TagResource {
                         .init();
         final User user = initDataObject.getUser();
         Logger.debug(TagResource.class,()->String.format(" user %s is requesting finding tags by inode %s ",user.getUserId(), inode));
+        if (!tagAPI.canReadTagInodes(user, inode)) {
+            throw new ForbiddenException(String.format(
+                    "User '%s' lacks permission to see the tags of this inode", user.getUserId()));
+        }
         final List<TagInode> tagInodes = Try.of(() -> tagAPI.getTagInodesByInode(inode))
                 .getOrElse(ImmutableList.of());
         if (tagInodes.isEmpty()) {

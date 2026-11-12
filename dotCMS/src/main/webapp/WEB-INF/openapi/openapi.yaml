@@ -24582,7 +24582,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - User does not have access to Tags portlet
+          description: "Forbidden - User does not have access to Tags portlet, or\
+            \ cannot add tags to the given owner"
         "500":
           content:
             application/json: {}
@@ -24920,7 +24921,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - User does not have access to Tags portlet
+          description: "Forbidden - User does not have access to Tags portlet, or\
+            \ cannot edit all the content that carries the tag"
         "404":
           content:
             application/json: {}

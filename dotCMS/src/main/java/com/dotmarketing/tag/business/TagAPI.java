@@ -397,10 +397,9 @@ public interface TagAPI {
 	public void deleteTagInodesByInode(String inode) throws DotDataException;
 
 	/**
-	 * Checks if a user can remove all the Tags of a given inode.
-	 * <p>The inode must belong to a contentlet the user has EDIT permission on. Admin and system
-	 * users can always remove them. For any other inode (one that isn't a contentlet), only admin
-	 * and system users can remove its Tags.</p>
+	 * Checks if a user can remove all the Tags of a given inode, following the same rules as
+	 * {@link #canEditTagInodes(User, String)}: EDIT permission on a contentlet inode, the user tag
+	 * rules on an inode that is a user id, and admin or system user for any other inode.
 	 *
 	 * @param user  the user to check permissions for
 	 * @param inode inode whose Tags would be removed
@@ -419,6 +418,41 @@ public interface TagAPI {
 	 * @throws DotDataException if there's a data access error
 	 */
 	public boolean deleteTagInodesByInode(User user, String inode) throws DotDataException;
+
+	/**
+	 * Checks if a user can see or change the Tags that belong to a given user's profile. Allowed
+	 * for the user themselves, admin and system users, and users with access to one of the Users
+	 * portlets.
+	 *
+	 * @param user   the {@link User} making the request
+	 * @param userId id of the user whose Tags are read or changed
+	 * @return true if the user can see or change those Tags, false otherwise
+	 * @throws DotDataException if the user's portlet access can't be resolved
+	 */
+	public boolean canEditUserTags(User user, String userId) throws DotDataException;
+
+	/**
+	 * Checks if a user can add or remove Tags on a given inode. A contentlet inode needs EDIT
+	 * permission on the contentlet. An inode that is a user id follows
+	 * {@link #canEditUserTags(User, String)}. Any other inode is limited to admin and system users.
+	 *
+	 * @param user  the {@link User} making the request
+	 * @param inode inode whose Tags would change
+	 * @return true if the user can change the Tags of the inode, false otherwise
+	 * @throws DotDataException if there's a data access error
+	 */
+	public boolean canEditTagInodes(User user, String inode) throws DotDataException;
+
+	/**
+	 * Checks if a user can see the Tags of a given inode. Same rules as
+	 * {@link #canEditTagInodes(User, String)}, but a contentlet inode needs READ permission.
+	 *
+	 * @param user  the {@link User} making the request
+	 * @param inode inode whose Tags would be read
+	 * @return true if the user can see the Tags of the inode, false otherwise
+	 * @throws DotDataException if there's a data access error
+	 */
+	public boolean canReadTagInodes(User user, String inode) throws DotDataException;
 
 	/**
 	 * Deletes TagInodes references by tag id
