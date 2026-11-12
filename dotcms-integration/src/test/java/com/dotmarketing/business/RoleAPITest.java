@@ -687,6 +687,38 @@ public class RoleAPITest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link RoleAPI#loadRolesForUser(String, boolean)}
+     * Given Scenario: A user holds both a role and that role's child, so the child is reachable
+     *                 directly and through its parent.
+     * Expected Result: The child appears once in a direct lookup and once in a lookup with
+     *                  inherited roles, whether the user's role list is built fresh or read from cache.
+     */
+    @Test
+    public void test_loadRolesForUser_userHoldsParentAndChild_childListedOnce() throws Exception {
+
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final long now = System.currentTimeMillis();
+        final Role parent = new RoleDataGen().name("dupParent_" + now).nextPersisted();
+        final Role child = new RoleDataGen().name("dupChild_" + now).parent(parent.getId()).nextPersisted();
+        // child first: addRoleToUser skips a role the user already inherits
+        final User user = new UserDataGen().roles(child, parent).nextPersisted();
+        assertTrue("precondition: the child must be listed under its parent",
+                roleAPI.loadRoleById(parent.getId()).getRoleChildren().contains(child.getId()));
+        assertTrue("precondition: the user must hold the child directly",
+                roleAPI.loadRolesForUser(user.getUserId(), false).contains(child));
+
+        for (final boolean includeImplicitRoles : new boolean[]{false, true}) {
+            CacheLocator.getRoleCache().clearUserRoleCache();
+            assertEquals("fresh lookup, implicit=" + includeImplicitRoles, 1,
+                    Collections.frequency(roleAPI.loadRolesForUser(user.getUserId(), includeImplicitRoles), child));
+            assertEquals("cached lookup, implicit=" + includeImplicitRoles, 1,
+                    Collections.frequency(roleAPI.loadRolesForUser(user.getUserId(), includeImplicitRoles), child));
+            assertEquals("cached lookup, implicit=" + !includeImplicitRoles, 1,
+                    Collections.frequency(roleAPI.loadRolesForUser(user.getUserId(), !includeImplicitRoles), child));
+        }
+    }
+
+    /**
      * Detached copy of a role, mirroring how {@code RoleHelper.updateRole} prepares the
      * instance it hands to {@link RoleAPI#save(Role)} (the flow of #37303).
      */

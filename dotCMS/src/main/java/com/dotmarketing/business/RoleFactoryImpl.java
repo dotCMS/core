@@ -97,6 +97,15 @@ public class RoleFactoryImpl extends RoleFactory {
 		return r;
 	}
 
+	/**
+	 * Returns the roles of a user, each role once. The user's cached role list always holds both
+	 * directly assigned and inherited roles; the flag only filters what is returned.
+	 *
+	 * @param userId the user to look up
+	 * @param includeImplicitRoles true to include roles inherited through parent roles
+	 * @return the user's roles, without duplicates
+	 * @throws DotDataException if the roles cannot be read
+	 */
 	@Override
 	protected List<Role> loadRolesForUser(String userId, boolean includeImplicitRoles) throws DotDataException {
 		try {
@@ -134,9 +143,12 @@ public class RoleFactoryImpl extends RoleFactory {
 						&& !rolesToProcess.contains(APILocator.getRoleAPI().loadCMSAnonymousRole())){
 					rolesToProcess.add(APILocator.getRoleAPI().loadCMSAnonymousRole());
 				}
+				// a role reachable more than once (held directly and through its parent, or a
+				// parent/child cycle) is listed and walked only the first time
+				final Set<String> processed = new HashSet<>();
 				while(!rolesToProcess.isEmpty()) {
 					Role r = rolesToProcess.poll();
-					if(r ==null) continue;
+					if(r == null || !processed.add(r.getId())) continue;
 					UserRoleCacheHelper h = new UserRoleCacheHelper(r.getId(),rids.contains(r.getId())?false:true);
 					helpers.add(h);
 					if(includeImplicitRoles || rids.contains(r.getId())){
