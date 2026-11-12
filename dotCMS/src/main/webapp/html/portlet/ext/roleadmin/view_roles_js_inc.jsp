@@ -72,6 +72,7 @@
 	var includedToolsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "included-tools")) %>';
 	var orderMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Sort-Order")) %>';
 	var layoutSavedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "layout-saved")) %>';
+	var layoutCleanupFailedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "layout-cleanup-failed")) %>';
 
 	//Layout Initialization
 
@@ -1487,9 +1488,15 @@
 					callback: saveLayoutCallback.bind(this),
 					exceptionHandler: function (message, exception) {
 						// remove the section just created so a failed save leaves nothing behind
-						var removeCreated = callRolesApi('DELETE', '/api/v1/layouts/' + encodeURIComponent(section.id));
-						var report = function () { saveLayoutException(message, exception); };
-						removeCreated.then(report, report);
+						callRolesApi('DELETE', '/api/v1/layouts/' + encodeURIComponent(section.id)).then(function () {
+							saveLayoutException(message, exception);
+						}, function (cleanupError) {
+							// the section is still there: say so, and list it so it can be edited instead
+							saveLayoutException(message, exception);
+							var errors = dojo.byId('addLayoutErrorMessagesList');
+							errors.textContent = errors.textContent + ' ' + layoutCleanupFailedMsg + ' ' + cleanupError.message;
+							reloadLayoutsGrid();
+						});
 					}
 				});
 			}.bind(this), function (error) {
