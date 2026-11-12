@@ -7013,6 +7013,44 @@ paths:
       tags:
       - Content Import
       - Content
+  /v1/content/_import/_template:
+    get:
+      description: "Returns a CSV file with one header line naming every field an\
+        \ import row can set, and one sample row showing the format each of those\
+        \ columns takes. Requires READ permission on the Content Type."
+      operationId: downloadContentImportTemplate
+      parameters:
+      - description: The id or the variable name of the Content Type
+        in: query
+        name: contentType
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            text/csv:
+              example: |-
+                title,body
+                "XXX","XXX"
+              schema:
+                type: string
+                description: "A header line of field variable names, and a sample\
+                  \ row."
+          description: "The CSV template, as a file attachment."
+        "400":
+          description: "Bad Request: No Content Type was given."
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: User does not have READ permission on the Content\
+            \ Type."
+        "404":
+          description: "Not Found: The Content Type could not be found."
+      summary: Downloads the CSV template of a Content Type
+      tags:
+      - Content Import
+      - Content
   /v1/content/_import/_validate:
     post:
       description: "Creates and enqueues a content import job in preview mode. This\
