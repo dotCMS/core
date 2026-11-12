@@ -405,6 +405,88 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link ContentTypeInitializer#init()}
+     * Given Scenario: A favorite is indexed while the type passes a CMS Anonymous READ row to its
+     * contentlets. That row is then deleted in the database without a reindex, so the type's rows
+     * are correct and the index is stale, as when a repair committed and its node stopped before
+     * the delayed cache clear and reindex ran. The pending cleanup key that repair wrote is still
+     * there.
+     * ExpectedResult: The next start finds the type correct and repairs nothing, but finishes the
+     * pending cleanup: an anonymous search stops finding the favorite, and the key is deleted once
+     * the delayed step has run.
+     */
+    @Test
+    public void test_init_finishes_cleanup_left_pending_by_a_stopped_node() throws Exception {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
+        final Role anonymousRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME);
+        // a delayed step left by an earlier test would reindex the favorite on its own; wait for
+        // the last one to delete the key first
+        final long idleDeadline = System.currentTimeMillis() + 60_000;
+        while (pendingCleanupKeyExists() && System.currentTimeMillis() < idleDeadline) {
+            DateUtil.sleep(1000);
+        }
+        APILocator.getSystemAPI().getSystemTable()
+                .set(ContentTypeInitializer.FAVORITE_PAGE_PERMISSIONS_RESET_KEY, "true");
+        permissionAPI.removePermissions(contentType);
+        permissionAPI.assignPermissions(List.of(
+                new Permission(contentType.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true),
+                new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
+                        cmsOwner.getId(), OWNER_BITS, true),
+                new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
+                        anonymousRole.getId(), PermissionAPI.PERMISSION_READ, true)),
+                contentType, APILocator.systemUser(), false);
+
+        final Contentlet favorite = new ContentletDataGen(contentType).host(APILocator.systemHost())
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                .nextPersistedAndPublish();
+        try {
+
+            final User anonymous = APILocator.getUserAPI().getAnonymousUser();
+            final String query = "+contentType:" + ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME
+                    + " +identifier:" + favorite.getIdentifier();
+            Assert.assertEquals("Before the cleanup the favorite must be indexed as anonymously readable",
+                    1, APILocator.getContentletAPI().search(query, 10, 0, null, anonymous, true).size());
+
+            new DotConnect().executeUpdate("delete from permission where inode_id = ? and roleid = ?",
+                    contentType.getPermissionId(), anonymousRole.getId());
+            CacheLocator.getPermissionCache().clearCache();
+            APILocator.getSystemAPI().getSystemTable()
+                    .set(ContentTypeInitializer.FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY, "true");
+            Assert.assertEquals("The stale index must still let an anonymous search find the favorite",
+                    1, APILocator.getContentletAPI().search(query, 10, 0, null, anonymous, true).size());
+
+            new ContentTypeInitializer().init();
+
+            final long deadline = System.currentTimeMillis() + 90_000;
+            while ((!APILocator.getContentletAPI().search(query, 10, 0, null, anonymous, true).isEmpty()
+                    || pendingCleanupKeyExists()) && System.currentTimeMillis() < deadline) {
+                DateUtil.sleep(1000);
+            }
+            Assert.assertTrue("After the start an anonymous search must not find the favorite; reindex queue holds "
+                            + APILocator.getReindexQueueAPI().recordsInQueue() + " record(s): "
+                            + describePermissions(favorite, "favorite"),
+                    APILocator.getContentletAPI().search(query, 10, 0, null, anonymous, true).isEmpty());
+            Assert.assertFalse("The pending cleanup key must be deleted once the delayed step has run",
+                    pendingCleanupKeyExists());
+        } finally {
+
+            ContentletDataGen.destroy(favorite);
+        }
+    }
+
+    private static boolean pendingCleanupKeyExists() throws DotDataException {
+
+        return new DotConnect().setSQL("select count(*) as total from system_table where key = ?")
+                .addParam(ContentTypeInitializer.FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY)
+                .getInt("total") > 0;
+    }
+
+    /**
+     * Method to test: {@link ContentTypeInitializer#init()}
      * Given Scenario: The favorite page content type already has its CMS Owner rows. A favorite is
      * given its own rows, sharing it with another back-end user, and the initializer runs again,
      * as on a later start.

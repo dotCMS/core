@@ -49,9 +49,15 @@ public class ContentTypeInitializer implements DotInitializer {
     /** System table key written once a repair has reset the favorites' own permission rows. */
     public static final String FAVORITE_PAGE_PERMISSIONS_RESET_KEY = "FAVORITE_PAGE_PERMISSIONS_RESET";
 
+    /**
+     * System table key written by every repair and deleted once the second permission cache clear
+     * and reindex after it have run, so a start that finds it finishes that step.
+     */
+    public static final String FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY = "FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING";
+
     private static final String FAVORITE_PAGE_PERMISSIONS_LOCK = "favorite-page-permissions";
     private static final String REPAIR_LOCK_SQL = "SELECT pg_advisory_xact_lock(hashtext(?))";
-    private static final String COUNT_RESET_MARKER_SQL = "select count(*) as total from system_table where key = ?";
+    private static final String COUNT_SYSTEM_TABLE_KEY_SQL = "select count(*) as total from system_table where key = ?";
     private static final String COUNT_FAVORITES_WITH_OWN_ROWS_SQL = "select count(distinct inode_id) as total from permission where inode_id in (select identifier from contentlet where structure_inode = ?)";
     private static final String FAVORITES_OFF_SYSTEM_HOST_SQL = "select i.id, min(c.inode) as inode from identifier i join contentlet c on c.identifier = i.id where c.structure_inode = ? and (i.host_inode <> ? or i.parent_path <> ?) group by i.id";
     private static final String DELETE_OTHER_ROLES_ROWS_SQL = "delete from permission where inode_id = ? and roleid <> ?";
@@ -178,7 +184,10 @@ public class ContentTypeInitializer implements DotInitializer {
      * repairs them itself if they are still wrong. Once a repair commits, the permission cache is
      * cleared and the favorites are queued for reindex again, and both are done once more a short
      * time later, so that rows a lookup read before the commit and cached after the first clear
-     * neither stay cached nor stay in the index.
+     * neither stay cached nor stay in the index. The repair also writes
+     * {@link #FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY}, which is deleted once that later
+     * clear and reindex have run; a start that still finds it, because the node stopped before
+     * they ran, clears the cache and reindexes the favorites again the same way.
      *
      * @param savedContentType the favorite page content type
      */
@@ -189,7 +198,11 @@ public class ContentTypeInitializer implements DotInitializer {
             try {
 
                 final String repair = LocalTransaction.wrapReturn(() -> this.repairDefaultPermissions(savedContentType));
-                if (null != repair) {
+                // the repair writes this key in its transaction, so it is set after any repair,
+                // and still set on a later start if a node stopped before the delayed step ran
+                if (this.systemTableHasKey(FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY)) {
+                    Logger.info(this, null != repair ? repair
+                            : "Favorite pages: finishing the permission cache clear and reindex of an earlier repair");
                     // the repair evicts cached rows before it commits, so a read on this or
                     // another node can cache the old rows again until then; flush them now that
                     // the new rows are committed, and reindex from what is read after the flush
@@ -200,9 +213,8 @@ public class ContentTypeInitializer implements DotInitializer {
                     // prune: time-bounded, a lookup stalled longer than the delay can still cache
                     // the old rows; fence the cache put itself if that is ever seen
                     DotConcurrentFactory.getScheduledThreadPoolExecutor().schedule(
-                            () -> this.clearPermissionCacheAndReindex(savedContentType),
+                            () -> this.finishPermissionCleanup(savedContentType),
                             PERMISSION_CACHE_RECLEAR_SECONDS, TimeUnit.SECONDS);
-                    Logger.info(this, repair);
                 }
             } catch (final Throwable e) {
 
@@ -219,16 +231,41 @@ public class ContentTypeInitializer implements DotInitializer {
      * also runs on a scheduler thread where they would otherwise be lost.
      *
      * @param contentType the favorite page content type
+     * @return {@code true} if the favorites were queued for reindex
      */
-    private void clearPermissionCacheAndReindex(final ContentType contentType) {
+    private boolean clearPermissionCacheAndReindex(final ContentType contentType) {
 
         CacheLocator.getPermissionCache().clearCache();
         try {
 
             APILocator.getReindexQueueAPI().addStructureReindexEntries(contentType);
+            return true;
         } catch (final Throwable e) {
 
             Logger.error(this, "Favorite pages: could not queue the favorites for reindex: " + e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Runs the delayed permission cache clear and reindex, then deletes
+     * {@link #FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY}. The reindex queue is a database
+     * table, so once the favorites are queued the step survives a restart. If they could not be
+     * queued the key stays, and the next start runs the step again. Failures are logged, since
+     * this runs on a scheduler thread.
+     *
+     * @param contentType the favorite page content type
+     */
+    private void finishPermissionCleanup(final ContentType contentType) {
+
+        if (this.clearPermissionCacheAndReindex(contentType)) {
+            try {
+
+                APILocator.getSystemAPI().getSystemTable().delete(FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY);
+            } catch (final Throwable e) {
+
+                Logger.error(this, "Favorite pages: could not record the finished permission cleanup: " + e.getMessage(), e);
+            }
         }
     }
 
@@ -286,6 +323,7 @@ public class ContentTypeInitializer implements DotInitializer {
             favoritesOffSystemHost = this.giveOwnerRowsToFavoritesOffSystemHost(savedContentType, permissionType, backendRole);
             APILocator.getSystemAPI().getSystemTable().set(FAVORITE_PAGE_PERMISSIONS_RESET_KEY, "true");
         }
+        APILocator.getSystemAPI().getSystemTable().set(FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY, "true");
         return resetFavorites
                 ? "Favorite pages: reset the content type permissions to CMS Owner only, removed the own permissions of "
                         + favoritesWithOwnRows + " favorite(s) and gave " + favoritesOffSystemHost
@@ -407,8 +445,20 @@ public class ContentTypeInitializer implements DotInitializer {
      */
     private boolean favoritesWereReset() throws DotDataException {
 
-        return new DotConnect().setSQL(COUNT_RESET_MARKER_SQL)
-                .addParam(FAVORITE_PAGE_PERMISSIONS_RESET_KEY).getInt("total") > 0;
+        return this.systemTableHasKey(FAVORITE_PAGE_PERMISSIONS_RESET_KEY);
+    }
+
+    /**
+     * Tells whether the system table has a row for the given key, reading the table directly
+     * rather than through its cache, so a row another node committed is seen.
+     *
+     * @param key the system table key
+     * @return {@code true} if the key has a row
+     * @throws DotDataException if the system table cannot be read
+     */
+    private boolean systemTableHasKey(final String key) throws DotDataException {
+
+        return new DotConnect().setSQL(COUNT_SYSTEM_TABLE_KEY_SQL).addParam(key).getInt("total") > 0;
     }
 
     /**
