@@ -111,6 +111,28 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         expect(de.query(By.css('dot-key-value-ng'))).toBeNull();
     });
 
+    it.each([
+        ['a network failure', 0],
+        ['a gateway error', 502]
+    ])('should report %s while loading as a server error', (_, status) => {
+        const httpError = new HttpErrorResponse({
+            status,
+            statusText: 'Bad Gateway',
+            error: '<html>proxy page</html>'
+        });
+        const httpErrorManager = de.injector.get(DotHttpErrorManagerService);
+        vi.spyOn(httpErrorManager, 'handle').mockReturnValue(
+            of({ redirected: false, status: HttpCode.SERVER_ERROR })
+        );
+        vi.spyOn(dotFieldVariableService, 'load').mockReturnValue(throwError(() => httpError));
+        fixtureHost.detectChanges();
+
+        // The error manager shows nothing for statuses it has no handler for.
+        expect(httpErrorManager.handle).toHaveBeenCalledWith(
+            expect.objectContaining({ status: HttpCode.SERVER_ERROR, error: null })
+        );
+    });
+
     /** Hands the editor a new list, as `updatedList` does. */
     const changeTo = (variables: DotFieldVariable[]) =>
         de.query(By.css('dot-key-value-ng')).triggerEventHandler('updatedList', variables);
@@ -258,6 +280,22 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             expect(httpErrorManager.handle).toHaveBeenCalledWith(httpError);
             // Closing on a failed write would look like it succeeded.
             expect(saved).not.toHaveBeenCalled();
+        });
+
+        it('should report a save that failed at the gateway as a server error', () => {
+            vi.spyOn(dotFieldVariableService, 'save').mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 502, statusText: 'Bad Gateway' }))
+            );
+
+            changeTo([
+                ...mockFieldVariables,
+                { key: 'newKey', value: 'newValue' } as DotFieldVariable
+            ]);
+            comp.saveChanges();
+
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(
+                expect.objectContaining({ status: HttpCode.SERVER_ERROR })
+            );
         });
 
         it('should not re-send a write that already went through', () => {

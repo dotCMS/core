@@ -17,6 +17,7 @@ import {
 import { catchError, finalize, take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import { HttpCode } from '@dotcms/dotcms-js';
 import {
     CUSTOM_FIELD_OPTIONS_KEY,
     DotCMSClazzes,
@@ -232,7 +233,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
                 this.#stored.set(this.#storedAfter(stored, current, succeeded));
 
                 if (failed.length) {
-                    this.dotHttpErrorManagerService.handle(failed[0]).pipe(take(1)).subscribe();
+                    this.#reportFailure(failed[0]);
 
                     return;
                 }
@@ -294,6 +295,21 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     }
 
     /**
+     * Tells the admin a request failed. The error manager only shows something for the
+     * statuses in {@link HttpCode}; a network failure (status 0) or a gateway error such
+     * as 502 would otherwise end silently, leaving the editor hidden or the Save doing
+     * nothing visible, so those are shown as a server error. Their body is dropped: a
+     * gateway answers with an HTML page, which the alert would print as it is.
+     */
+    #reportFailure(err: HttpErrorResponse): void {
+        const shown = Object.values(HttpCode).includes(err.status)
+            ? err
+            : new HttpErrorResponse({ status: HttpCode.SERVER_ERROR, statusText: err.statusText });
+
+        this.dotHttpErrorManagerService.handle(shown).pipe(take(1)).subscribe();
+    }
+
+    /**
      * Loads the field's stored variables into the table. The editor stays hidden until
      * they arrive: the loaded list replaces the editor's own, so a pair added before the
      * load answered would otherwise disappear.
@@ -312,7 +328,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
             .load(this.field)
             .pipe(
                 catchError((err: HttpErrorResponse) => {
-                    this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
+                    this.#reportFailure(err);
 
                     return EMPTY;
                 }),
