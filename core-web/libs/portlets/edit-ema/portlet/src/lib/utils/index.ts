@@ -535,9 +535,11 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
                 // Nothing to place it next to: a container that holds nothing else takes it.
                 pageContainer.contentletsId.push(newContentletId);
                 didInsert = true;
+            } else {
+                // The pivot is gone, as when a moved contentlet is dropped next to itself:
+                // nothing is placed rather than appending it to the end (#38575).
+                errorCode = CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND;
             }
-            // Otherwise the pivot is gone, as when a moved contentlet is dropped next to itself:
-            // nothing is placed rather than appending it to the end (#38575).
         }
 
         pageContainer.personaTag = personaTag;

@@ -71,6 +71,12 @@ function createDragScroller() {
             top: velocity * (Math.min(elapsed, MAX_FRAME_MS) / FRAME_MS),
             behavior: 'instant'
         });
+        // Report where the page is now, in this frame. The scroll event's own report comes a
+        // frame later, and the editor shifts bounds that arrive in between from the last report.
+        sendMessageToUVE<DotCMSIframeScrollPayload>({
+            action: DotCMSUVEAction.IFRAME_SCROLL,
+            payload: { scrollY: window.scrollY }
+        });
         frameId = requestAnimationFrame(step);
     };
 

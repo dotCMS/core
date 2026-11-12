@@ -24,7 +24,8 @@ const MESSAGE_KEY = {
 
 /**
  * Tell the user why a container refused a contentlet: it is full, or it already holds that
- * contentlet. Every flow that inserts into a container shows the same two toasts.
+ * contentlet. Every flow that inserts into a container shows the same two toasts. A refusal for
+ * a missing pivot shows none: nothing changed, and it is not something the user did wrong.
  *
  * @param refusal what the store's `editorInsertContentlet` reported
  * @param messageService where the toast goes
@@ -35,6 +36,11 @@ export function notifyContainerInsertRefused(
     messageService: MessageService,
     dotMessageService: DotMessageService
 ): void {
+    // A drop with nothing to place it next to changes nothing; the editor resets quietly.
+    if (refusal.errorCode === CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND) {
+        return;
+    }
+
     if (refusal.errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
         messageService.add({
             severity: 'warn',

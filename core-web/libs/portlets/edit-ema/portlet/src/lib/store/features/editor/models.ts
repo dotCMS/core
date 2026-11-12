@@ -125,7 +125,8 @@ export type EditorInsertRefusal =
           errorCode: CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED;
           maxContentlets: number;
       }
-    | { didInsert: false; errorCode: CONTAINER_INSERT_ERROR.DUPLICATE_CONTENT };
+    | { didInsert: false; errorCode: CONTAINER_INSERT_ERROR.DUPLICATE_CONTENT }
+    | { didInsert: false; errorCode: CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND };
 
 /**
  * What `editorInsertContentlet` reports: the contentlet went into the container, or why the
