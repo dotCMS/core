@@ -2,15 +2,12 @@ package com.liferay.portal.ejb;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 
-import com.dotcms.enterprise.AuthPipeProxy;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordFactory;
 import com.dotmarketing.util.Config;
@@ -30,8 +27,8 @@ import org.mockito.MockedStatic;
  * verifier that checks a stored password, against a placeholder hash in the current format that
  * is prepared once.
  *
- * <p>The account lookup and the custom authenticator pipeline are mocked, so no database is
- * needed; the password verifier runs for real.</p>
+ * <p>The account lookup is mocked, so no database is needed; the password verifier runs for
+ * real.</p>
  *
  * @author hassandotcms
  */
@@ -59,10 +56,9 @@ class UserManagerImplTest {
     @Test
     void loginForUnknownAccountChecksThePasswordOnce() throws Exception {
         try (MockedStatic<UserUtil> users = mockStatic(UserUtil.class);
-                MockedStatic<AuthPipeProxy> pipeline = mockStatic(AuthPipeProxy.class);
                 MockedStatic<PasswordFactoryProxy> passwords = mockStatic(PasswordFactoryProxy.class,
                         CALLS_REAL_METHODS)) {
-            noAccounts(users, pipeline);
+            noAccountsByEmail(users);
 
             // When
             final int result = new UserManagerImpl().authenticateByEmailAddress(COMPANY_ID,
@@ -78,10 +74,9 @@ class UserManagerImplTest {
     @Test
     void unknownAccountCheckUsesTheCurrentHashFormat() throws Exception {
         try (MockedStatic<UserUtil> users = mockStatic(UserUtil.class);
-                MockedStatic<AuthPipeProxy> pipeline = mockStatic(AuthPipeProxy.class);
                 MockedStatic<PasswordFactoryProxy> passwords = mockStatic(PasswordFactoryProxy.class,
                         CALLS_REAL_METHODS)) {
-            noAccounts(users, pipeline);
+            noAccountsByEmail(users);
 
             // When
             new UserManagerImpl().authenticateByEmailAddress(COMPANY_ID, "no-account-2@example.com", PASSWORD);
@@ -100,10 +95,9 @@ class UserManagerImplTest {
     @Test
     void unknownAccountChecksReuseOnePlaceholder() throws Exception {
         try (MockedStatic<UserUtil> users = mockStatic(UserUtil.class);
-                MockedStatic<AuthPipeProxy> pipeline = mockStatic(AuthPipeProxy.class);
                 MockedStatic<PasswordFactoryProxy> passwords = mockStatic(PasswordFactoryProxy.class,
                         CALLS_REAL_METHODS)) {
-            noAccounts(users, pipeline);
+            noAccountsByEmail(users);
 
             // When
             final UserManagerImpl userManager = new UserManagerImpl();
@@ -123,12 +117,9 @@ class UserManagerImplTest {
     @Test
     void loginByUserIdForUnknownAccountChecksThePasswordOnce() throws Exception {
         try (MockedStatic<UserUtil> users = mockStatic(UserUtil.class);
-                MockedStatic<AuthPipeProxy> pipeline = mockStatic(AuthPipeProxy.class);
                 MockedStatic<PasswordFactoryProxy> passwords = mockStatic(PasswordFactoryProxy.class,
                         CALLS_REAL_METHODS)) {
             users.when(() -> UserUtil.findByC_U(anyString(), anyString())).thenThrow(new NoSuchUserException());
-            pipeline.when(() -> AuthPipeProxy.authenticateByUserId(any(), anyString(), anyString(), anyString()))
-                    .thenReturn(Authenticator.SUCCESS);
 
             // When
             final int result = new UserManagerImpl().authenticateByUserId(COMPANY_ID, "no-account-id", PASSWORD);
@@ -139,37 +130,8 @@ class UserManagerImplTest {
         }
     }
 
-    /**
-     * When a custom authenticator that runs first refuses the login, no password is checked for an account that
-     * does not exist, just as none is checked for an existing account in that case.
-     */
-    @Test
-    void unknownAccountRefusedByCustomAuthenticatorChecksNoPassword() throws Exception {
-        try (MockedStatic<UserUtil> users = mockStatic(UserUtil.class);
-                MockedStatic<AuthPipeProxy> pipeline = mockStatic(AuthPipeProxy.class);
-                MockedStatic<PasswordFactoryProxy> passwords = mockStatic(PasswordFactoryProxy.class,
-                        CALLS_REAL_METHODS)) {
-            users.when(() -> UserUtil.findByC_EA(anyString(), anyString())).thenThrow(new NoSuchUserException());
-            pipeline.when(() -> AuthPipeProxy.authenticateByEmailAddress(any(), anyString(), anyString(), anyString()))
-                    .thenReturn(Authenticator.FAILURE);
-
-            // When
-            final int result = new UserManagerImpl().authenticateByEmailAddress(COMPANY_ID,
-                    "no-account-5@example.com", PASSWORD);
-
-            // Then
-            assertEquals(Authenticator.DNE, result, "A login with no account still answers DNE");
-            passwords.verify(() -> PasswordFactoryProxy.authPassword(anyString(), anyString()), never());
-        }
-    }
-
-    /**
-     * Makes every account lookup miss and lets the custom authenticator pipeline accept, so the login
-     * reaches the account lookup the way it does with no custom authenticators configured.
-     */
-    private static void noAccounts(final MockedStatic<UserUtil> users, final MockedStatic<AuthPipeProxy> pipeline) {
+    /** Makes every account lookup by email address miss. */
+    private static void noAccountsByEmail(final MockedStatic<UserUtil> users) {
         users.when(() -> UserUtil.findByC_EA(anyString(), anyString())).thenThrow(new NoSuchUserException());
-        pipeline.when(() -> AuthPipeProxy.authenticateByEmailAddress(any(), anyString(), anyString(), anyString()))
-                .thenReturn(Authenticator.SUCCESS);
     }
 }

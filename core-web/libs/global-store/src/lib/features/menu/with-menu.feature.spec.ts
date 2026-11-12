@@ -693,6 +693,62 @@ describe('withMenu Feature', () => {
         });
     });
 
+    describe('Page Title By URL', () => {
+        // The Angular Users portlet links to /users; the old screen, kept as users-legacy,
+        // links to /c/users-legacy, which also contains "/users".
+        const usersMenu: DotMenu[] = [
+            {
+                active: false,
+                id: 'system',
+                isOpen: false,
+                label: 'System',
+                menuItems: [
+                    {
+                        active: false,
+                        ajax: true,
+                        angular: true,
+                        id: 'users',
+                        label: 'Users',
+                        url: '/users',
+                        menuLink: '',
+                        parentMenuId: 'system'
+                    },
+                    {
+                        active: false,
+                        ajax: true,
+                        angular: false,
+                        id: 'users-legacy',
+                        label: 'Users (Legacy)',
+                        url: '/c/users-legacy',
+                        menuLink: '',
+                        parentMenuId: 'system'
+                    }
+                ],
+                name: 'System',
+                tabDescription: 'System section',
+                tabIcon: 'pi pi-cog',
+                tabName: 'System',
+                url: '/users'
+            }
+        ];
+
+        beforeEach(() => {
+            store.loadMenu(usersMenu);
+        });
+
+        it('should return the Angular portlet title for its own URL', () => {
+            expect(store.getPageTitleByUrl('/users')).toBe('Users');
+        });
+
+        it('should return the legacy title for /c/users-legacy, not the Angular one it also contains', () => {
+            expect(store.getPageTitleByUrl('/c/users-legacy')).toBe('Users (Legacy)');
+        });
+
+        it('should return an empty string when no menu item matches', () => {
+            expect(store.getPageTitleByUrl('/nothing-here')).toBe('');
+        });
+    });
+
     describe('Entity Map', () => {
         beforeEach(() => {
             store.loadMenu(mockMenuItems);
