@@ -389,6 +389,42 @@ export function deleteContentletFromContainer(action: ActionPayload): {
 }
 
 /**
+ * Whether moving a contentlet next to a pivot in the container it already sits in changes the
+ * container's order. It does not when the pivot is the moved contentlet itself, when the drop is
+ * right after the contentlet above it or right before the one below it, or when the pivot is not
+ * in the container, so there is nothing to place it next to.
+ *
+ * @param contentletsId the container's contentlets, in order, before the move
+ * @param contentletId the contentlet being moved
+ * @param pivotId the contentlet it is dropped next to
+ * @param position which side of the pivot it is dropped on
+ * @returns true when the move leaves a different order
+ */
+export function doesMoveChangeOrder({
+    contentletsId,
+    contentletId,
+    pivotId,
+    position
+}: {
+    contentletsId: string[];
+    contentletId: string;
+    pivotId: string | undefined;
+    position: 'before' | 'after' | undefined;
+}): boolean {
+    const remaining = contentletsId.filter((id) => id !== contentletId);
+    const pivotIndex = remaining.indexOf(pivotId);
+
+    if (pivotIndex === -1) {
+        return false;
+    }
+
+    const offset = position === 'before' ? pivotIndex : pivotIndex + 1;
+    const moved = [...remaining.slice(0, offset), contentletId, ...remaining.slice(offset)];
+
+    return moved.some((id, index) => id !== contentletsId[index]);
+}
+
+/**
  * Check if two containers are equals
  *
  * @param {PageContainer} currentContainer
@@ -488,17 +524,20 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
                 return pageContainer;
             }
 
-            const index = pageContainer.contentletsId.indexOf(contentlet.identifier);
+            const index = pageContainer.contentletsId.indexOf(contentlet?.identifier);
 
             if (index !== -1) {
                 const offset = position === 'before' ? index : index + 1;
                 pageContainer.contentletsId.splice(offset, 0, newContentletId);
 
                 didInsert = true;
-            } else {
+            } else if (!pageContainer.contentletsId.length) {
+                // Nothing to place it next to: a container that holds nothing else takes it.
                 pageContainer.contentletsId.push(newContentletId);
                 didInsert = true;
             }
+            // Otherwise the pivot is gone, as when a moved contentlet is dropped next to itself:
+            // nothing is placed rather than appending it to the end (#38575).
         }
 
         pageContainer.personaTag = personaTag;

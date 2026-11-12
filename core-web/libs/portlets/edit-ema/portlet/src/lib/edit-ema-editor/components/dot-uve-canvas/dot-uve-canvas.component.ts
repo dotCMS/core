@@ -59,6 +59,7 @@ import { IframeAccessMode, PageType } from '../../../store/models';
 import {
     TEMPORAL_DRAG_ITEM,
     deleteContentletFromContainer,
+    doesMoveChangeOrder,
     getPageOwnedParamKeys,
     isAssetPath,
     isNavigableHref,
@@ -76,7 +77,7 @@ import { DotUveIframeResizeHandlesComponent } from '../dot-uve-iframe-resize-han
 import { DotUveLockOverlayComponent } from '../dot-uve-lock-overlay/dot-uve-lock-overlay.component';
 import { DotUvePageVersionNotFoundComponent } from '../dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { EmaPageDropzoneComponent } from '../ema-page-dropzone/ema-page-dropzone.component';
-import { EmaDragItem } from '../ema-page-dropzone/types';
+import { EmaDragItem, EmaDropTarget } from '../ema-page-dropzone/types';
 
 /**
  * The canvas: the page in its iframe and everything drawn over it (contentlet tools, dropzone,
@@ -259,6 +260,9 @@ export class DotUveCanvasComponent implements AfterViewInit, OnDestroy {
      * (page click) and the toolbar wouldn't reappear.
      */
     #lastSelectedAreaWasSet = false;
+
+    /** Where a drop would go, as the dropzone last resolved it; null when nothing is resolved. */
+    #dropTarget: EmaDropTarget | null = null;
     readonly #notifySelectionCleared = signalMethod<SelectedContentlet | null>((selected) => {
         const hasSelection = !!selected;
 
@@ -341,9 +345,11 @@ export class DotUveCanvasComponent implements AfterViewInit, OnDestroy {
                 // Handled in dragDropService
             },
             onDragLeave: () => {
+                this.#dropTarget = null;
                 this.uveStore.resetEditorProperties();
             },
             onDragEnd: () => {
+                this.#dropTarget = null;
                 this.uveStore.resetEditorProperties();
             },
             onDragStart: () => {
@@ -370,17 +376,38 @@ export class DotUveCanvasComponent implements AfterViewInit, OnDestroy {
         });
     }
 
+    /**
+     * Keeps where a drop would go, as the dropzone resolves it under the pointer.
+     *
+     * @param {EmaDropTarget} target
+     * @memberof DotUveCanvasComponent
+     */
+    protected onDropTargetChange(target: EmaDropTarget): void {
+        this.#dropTarget = target;
+    }
+
+    /**
+     * Drops on the target the dropzone resolved, so the drop lands where the insertion line was.
+     * A drop that misses the dropzone, or lands where the dropzone resolved no target, only
+     * resets the editor.
+     *
+     * @param {DragEvent} event
+     * @memberof DotUveCanvasComponent
+     */
     #handleDrop(event: DragEvent): void {
         event.preventDefault();
-        const target = event.target as HTMLDivElement;
-        const { position, payload, dropzone } = target.dataset;
+        const { dropzone } = (event.target as HTMLElement | null)?.dataset ?? {};
+        const target = this.#dropTarget;
 
-        if (dropzone !== 'true') {
+        this.#dropTarget = null;
+
+        if (dropzone !== 'true' || !target || target.kind === 'none') {
             this.uveStore.resetEditorProperties();
             return;
         }
 
-        const data: ClientData = JSON.parse(payload || '{}');
+        const data: ClientData = target.payload;
+        const position = target.kind === 'contentlet' ? target.position : undefined;
         const file = event.dataTransfer?.files[0];
         const dragItem = this.uveStore.editorDragItem();
 
@@ -619,6 +646,20 @@ export class DotUveCanvasComponent implements AfterViewInit, OnDestroy {
             const contentletToMove = draggedPayload.item.contentlet;
 
             if (draggedPayload.move) {
+                // A drop that puts it back where it is saves nothing (#38575).
+                if (
+                    !this.#moveChangesOrder(
+                        payload,
+                        originContainer,
+                        contentletToMove.identifier,
+                        positionToInsert
+                    )
+                ) {
+                    this.uveStore.resetEditorProperties();
+
+                    return;
+                }
+
                 const deletePayload = this.#createDeletePayload({
                     payload,
                     // A move starts from the container the contentlet sits in, which only a
@@ -657,6 +698,49 @@ export class DotUveCanvasComponent implements AfterViewInit, OnDestroy {
             // A temp drop is a file uploaded on drop, which always carries the new contentlet.
             this.#insert(payload, payload.newContentlet.identifier);
         }
+    }
+
+    /**
+     * Whether moving a contentlet to the drop position changes the page. A move to another
+     * container always does; within its own container it does unless it lands where it is.
+     *
+     * @param {ActionPayload} payload the drop position, with the page's containers
+     * @param {ContainerPayload} originContainer the container it is moved from
+     * @param {string} contentletId the contentlet being moved
+     * @param {string} position which side of the pivot it is dropped on
+     * @return {*}  {boolean}
+     * @memberof DotUveCanvasComponent
+     */
+    #moveChangesOrder(
+        payload: ActionPayload,
+        originContainer: ContainerPayload | undefined,
+        contentletId: string,
+        position: 'before' | 'after' | undefined
+    ): boolean {
+        const destination = payload.container;
+        const isSameContainer =
+            !!originContainer &&
+            originContainer.identifier === destination?.identifier &&
+            originContainer.uuid === destination?.uuid;
+
+        if (!isSameContainer) {
+            return true;
+        }
+
+        const contentletsId =
+            payload.pageContainers?.find(
+                ({ identifier, uuid }) =>
+                    identifier === originContainer.identifier && uuid === originContainer.uuid
+            )?.contentletsId ??
+            originContainer.contentletsId ??
+            [];
+
+        return doesMoveChangeOrder({
+            contentletsId,
+            contentletId,
+            pivotId: payload.contentlet?.identifier,
+            position
+        });
     }
 
     /**

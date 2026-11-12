@@ -1,38 +1,29 @@
-@for (container of containers(); track $index) {
+@for (container of $containers(); track $index) {
     <div
-        (dragover)="onDragover($event)"
-        [ngStyle]="container | dotPosition"
-        [attr.data-payload]="container.payload"
+        (dragover)="onDragover($event, container)"
+        [style]="container.container | dotPosition"
+        [attr.data-payload]="container.payloadAttribute"
         [attr.data-dropzone]="true"
-        [attr.data-empty]="true"
+        [attr.data-empty]="!container.contentlets.length"
         data-type="container">
         @for (contentlet of container.contentlets; track $index) {
             <div
-                (dragover)="onDragover($event)"
-                [attr.data-payload]="contentlet.payload"
-                [ngStyle]="contentlet | dotPosition"
+                [attr.data-payload]="contentlet.payloadAttribute"
+                [style]="contentlet.area | dotPosition"
                 [attr.data-dropzone]="true"
-                [attr.data-position]="$positionData().position"
                 [attr.data-empty]="false"
                 data-type="contentlet"></div>
         }
 
-        <ng-container
-            *ngTemplateOutlet="
-                errorTemplate;
-                context: { error: container | dotError: dragItem(), container: container }
-            " />
+        @let error = container.container | dotError: dragItem();
+        @if (error.message.length) {
+            <div [style]="container.container | dotPosition: true" class="drop-zone_error">
+                <span [innerHTML]="error.message | dm: error.args"></span>
+            </div>
+        }
     </div>
 }
 
 @if (containers().length > 0) {
-    <div [ngStyle]="pointerPosition" class="pointer"></div>
+    <div [style]="$pointerPosition()" class="pointer" data-testid="dropzone-insertion-line"></div>
 }
-
-<ng-template #errorTemplate let-error="error" let-container="container">
-    @if (error.message.length) {
-        <div [ngStyle]="container | dotPosition: true" class="drop-zone_error">
-            <span [innerHTML]="error.message | dm: error.args"></span>
-        </div>
-    }
-</ng-template>

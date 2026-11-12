@@ -15,7 +15,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { EmaPageDropzoneComponent } from './ema-page-dropzone.component';
-import { Container, ContentletArea, EmaDragItem } from './types';
+import { Container, ContentletArea, EmaDragItem, EmaDropTarget } from './types';
 
 import {
     ITEM_MOCK,
@@ -24,22 +24,7 @@ import {
     ACTION_MOCK,
     BOUNDS_EMPTY_CONTAINER_MOCK
 } from '../../../shared/mocks';
-import {
-    ActionPayload,
-    ClientData,
-    ContainerPayload,
-    ContentletPayload
-} from '../../../shared/models';
-
-/**
- * Where a drop goes, as the dropzone resolves it (#38575): next to a contentlet, into an empty
- * container, or nowhere. Declared here until the dropzone exports it from `types.ts`.
- */
-type ResolvedDropTarget = {
-    kind: 'contentlet' | 'empty-container' | 'none';
-    payload?: ClientData;
-    position?: 'before' | 'after';
-};
+import { ActionPayload, ContainerPayload, ContentletPayload } from '../../../shared/models';
 
 /** Places the dropzone the way the canvas does, and keeps every drop target it reports. */
 // Spectator declares the host in its testing module, so it cannot be standalone.
@@ -47,7 +32,7 @@ type ResolvedDropTarget = {
 class DropzoneHostComponent {
     containers: Container[] = [];
     dragItem: EmaDragItem | null = null;
-    targets: ResolvedDropTarget[] = [];
+    targets: EmaDropTarget[] = [];
 }
 
 const messageServiceMock = new MockDotMessageService({
@@ -219,32 +204,20 @@ describe('EmaPageDropzoneComponent', () => {
                 spectator.setInput('containers', BOUNDS_MOCK);
                 spectator.detectComponentChanges();
 
-                spectator.triggerEventHandler('div[data-type="contentlet"]', 'dragover', {
-                    target: {
-                        clientY: 100,
-                        getBoundingClientRect: () => {
-                            return {
-                                left: 100,
-                                top: 100,
-                                width: 100,
-                                height: 100
-                            };
-                        },
-                        dataset: {
-                            type: 'contentlet',
-                            payload: JSON.stringify(ACTION_MOCK),
-                            dropzone: 'true'
-                        }
-                    }
-                });
-
+                // The container sits at y=10 and the first contentlet 20px into it, 140px tall:
+                // y=130 is in its bottom half, so the line goes on its bottom edge.
+                spectator.dispatchMouseEvent('div[data-type="contentlet"]', 'dragover', 100, 130);
                 spectator.detectChanges();
 
-                expect(spectator.component.pointerPosition).toEqual({
-                    left: '100px',
+                const { left, opacity, top, width, height } = spectator.query<HTMLElement>(
+                    byTestId('dropzone-insertion-line')
+                ).style;
+
+                expect({ left, opacity, top, width, height }).toEqual({
+                    left: '30px',
                     opacity: '1',
-                    top: '200px',
-                    width: '100px',
+                    top: '170px',
+                    width: '940px',
                     height: '3px'
                 });
             });
@@ -281,34 +254,20 @@ describe('EmaPageDropzoneComponent', () => {
                 spectator.setInput('containers', BOUNDS_EMPTY_CONTAINER_MOCK);
                 spectator.detectComponentChanges();
 
-                spectator.triggerEventHandler('div[data-type="container"]', 'dragover', {
-                    target: {
-                        clientY: 100,
-                        getBoundingClientRect: () => {
-                            return {
-                                left: 100,
-                                top: 100,
-                                width: 100,
-                                height: 100
-                            };
-                        },
-                        dataset: {
-                            type: 'contentlet',
-                            payload: JSON.stringify(ACTION_MOCK),
-                            dropzone: 'true',
-                            empty: 'true'
-                        }
-                    }
-                });
-
+                spectator.dispatchMouseEvent('div[data-type="container"]', 'dragover', 100, 100);
                 spectator.detectChanges();
 
-                expect(spectator.component.pointerPosition).toEqual({
-                    left: '100px',
+                const { left, opacity, top, width, height } = spectator.query<HTMLElement>(
+                    byTestId('dropzone-insertion-line')
+                ).style;
+
+                // An empty container is highlighted whole.
+                expect({ left, opacity, top, width, height }).toEqual({
+                    left: '10px',
                     opacity: '0.1',
-                    top: '100px',
-                    width: '100px',
-                    height: '100px'
+                    top: '10px',
+                    width: '980px',
+                    height: '180px'
                 });
             });
         });
@@ -499,7 +458,7 @@ describe('EmaPageDropzoneComponent drop target', () => {
         spectator.detectChanges();
     };
 
-    const lastTarget = (): ResolvedDropTarget | undefined => spectator.hostComponent.targets.at(-1);
+    const lastTarget = (): EmaDropTarget | undefined => spectator.hostComponent.targets.at(-1);
 
     const startDrag = (dragItem: EmaDragItem, containers: Container[] = CONTAINERS) => {
         spectator = createHost(

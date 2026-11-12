@@ -33,6 +33,16 @@ export interface Column {
     containers: Container[];
 }
 
+/**
+ * Where a drop goes, as the dropzone resolves it from the pointer: next to a contentlet, into a
+ * container that holds nothing, or nowhere. `none` covers the dragged contentlet's own place and
+ * the two places next to it, which leave the order as it is, and a pointer that left the targets.
+ */
+export type EmaDropTarget =
+    | { kind: 'contentlet'; payload: ClientData; position: 'before' | 'after' }
+    | { kind: 'empty-container'; payload: ClientData }
+    | { kind: 'none' };
+
 export interface EmaDragItem {
     baseType: string;
     contentType: string;
