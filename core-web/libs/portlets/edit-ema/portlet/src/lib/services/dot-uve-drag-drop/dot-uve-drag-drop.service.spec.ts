@@ -12,6 +12,7 @@ import { DotUveDragDropService, DragDropHandlers } from './dot-uve-drag-drop.ser
 import { EDITOR_STATE } from '../../shared/enums';
 import { EMA_DRAG_ITEM_CONTENTLET_MOCK, getBoundsMock, ACTION_MOCK } from '../../shared/mocks';
 import { UVEStore } from '../../store/dot-uve.store';
+import { TEMPORAL_DRAG_ITEM } from '../../utils';
 import {
     IframeMessage,
     UveIframeMessengerService
@@ -170,13 +171,25 @@ describe('DotUveDragDropService', () => {
         });
 
         it.each([
-            { when: 'the user drops', event: () => new Event('drop') },
-            { when: 'the drag ends', event: () => new Event('dragend') },
             {
-                when: 'the drag leaves the window',
-                event: () => new MouseEvent('dragleave', { relatedTarget: null })
+                when: 'the user drops',
+                event: () => new Event('drop'),
+                dragItem: EMA_DRAG_ITEM_CONTENTLET_MOCK
+            },
+            {
+                when: 'the drag ends',
+                event: () => new Event('dragend'),
+                dragItem: EMA_DRAG_ITEM_CONTENTLET_MOCK
+            },
+            {
+                // Only a file from the desktop: an editor drag keeps scrolling outside the
+                // window, and no dragend ever comes for a file from outside the browser.
+                when: 'a file dragged in from the desktop leaves the window',
+                event: () => new MouseEvent('dragleave', { relatedTarget: null }),
+                dragItem: TEMPORAL_DRAG_ITEM as typeof EMA_DRAG_ITEM_CONTENTLET_MOCK
             }
-        ])('should ask the page to stop when $when', ({ event }) => {
+        ])('should ask the page to stop when $when', ({ event, dragItem }) => {
+            store.editorDragItem.set(dragItem);
             dragOver(10);
 
             window.dispatchEvent(event());
@@ -209,6 +222,220 @@ describe('DotUveDragDropService', () => {
             dragOver(400);
 
             expect(legacyScrolls()).toBe(0);
+        });
+    });
+
+    // #38575, from the manual check: a scroll that has started keeps going when the pointer
+    // leaves the iframe or the app window, and only stops when the pointer comes back to the
+    // middle, on drop, or when the drag ends.
+    describe('scroll outside the iframe', () => {
+        /** Right of the iframe, over the edit panel. */
+        const BESIDE = 1200;
+
+        /** The pointer drags over the admin window at (`clientX`, `clientY`). */
+        const dragOverAt = (clientX: number, clientY: number) => {
+            window.dispatchEvent(new MouseEvent('dragover', { clientX, clientY }));
+        };
+
+        /** The pointer leaves the app window: `dragleave` with nowhere it went. */
+        const leaveWindow = () => {
+            window.dispatchEvent(new MouseEvent('dragleave', { relatedTarget: null }));
+        };
+
+        /** The direction of the last one-step scroll request. */
+        const lastLegacyDirection = (): 'up' | 'down' | undefined =>
+            posted()
+                .filter((message) => message.name === __DOTCMS_UVE_EVENT__.UVE_SCROLL_INSIDE_IFRAME)
+                .at(-1)?.direction;
+
+        // R1
+        describe('past the top or bottom of the iframe', () => {
+            it.each([{ clientY: 0 }, { clientY: -20 }])(
+                'should scroll up at the maximum speed with the pointer at or above the top (y=$clientY)',
+                ({ clientY }) => {
+                    dragOver(clientY);
+
+                    expect(lastVelocity()).toBe(-MAX_VELOCITY);
+                }
+            );
+
+            it.each([{ clientY: 800 }, { clientY: 850 }])(
+                'should scroll down at the maximum speed with the pointer at or below the bottom (y=$clientY)',
+                ({ clientY }) => {
+                    dragOver(clientY);
+
+                    expect(lastVelocity()).toBe(MAX_VELOCITY);
+                }
+            );
+
+            it('should keep scrolling when the pointer moves from the edge zone past the edge', () => {
+                dragOver(750);
+                dragOver(850);
+
+                expect(velocities()).not.toContain(0);
+                expect(lastVelocity()).toBe(MAX_VELOCITY);
+            });
+        });
+
+        // R2
+        describe('beside the iframe while the page scrolls', () => {
+            it('should keep scrolling when the pointer leaves the iframe sideways', () => {
+                dragOver(750);
+                const insideVelocity = lastVelocity();
+
+                dragOverAt(BESIDE, 750);
+
+                expect(velocities()).not.toContain(0);
+                expect(lastVelocity()).toBe(insideVelocity);
+            });
+
+            it('should follow the pointer up and down by the same rule as inside the iframe', () => {
+                dragOver(750);
+                const atZoneMiddle = lastVelocity();
+
+                dragOverAt(BESIDE, 790);
+                expect(lastVelocity()).toBeGreaterThan(atZoneMiddle);
+
+                dragOverAt(BESIDE, 10);
+                expect(lastVelocity()).toBeLessThan(0);
+            });
+
+            it('should scroll at the maximum speed when the pointer is beside and past the edge', () => {
+                dragOver(750);
+
+                dragOverAt(BESIDE, 850);
+
+                expect(lastVelocity()).toBe(MAX_VELOCITY);
+            });
+
+            it('should stop once the pointer, beside the iframe, is back in the middle', () => {
+                dragOver(750);
+
+                dragOverAt(BESIDE, 400);
+
+                expect(lastVelocity()).toBe(0);
+            });
+        });
+
+        // R3
+        describe('beside the iframe while the page does not scroll', () => {
+            it('should not start scrolling, as when a palette tile near the bottom is picked up', () => {
+                dragOverAt(BESIDE, 750);
+                dragOverAt(BESIDE, 850);
+                dragOverAt(BESIDE, 10);
+
+                expect(velocities().filter((velocity) => velocity !== 0)).toEqual([]);
+                expect(legacyScrolls()).toBe(0);
+            });
+
+            it('should not start again beside the iframe once it stopped', () => {
+                dragOver(750);
+                dragOverAt(BESIDE, 400);
+
+                dragOverAt(BESIDE, 750);
+
+                expect(lastVelocity()).toBe(0);
+            });
+        });
+
+        // R4
+        describe('leaving the app window while dragging from the editor', () => {
+            it('should keep scrolling at the last velocity', () => {
+                dragOver(10);
+                const velocity = lastVelocity();
+
+                leaveWindow();
+
+                expect(velocities()).not.toContain(0);
+                expect(lastVelocity()).toBe(velocity);
+            });
+
+            it('should follow the pointer again at the next dragover', () => {
+                dragOver(10);
+                const atEdge = lastVelocity();
+
+                leaveWindow();
+                dragOver(50);
+
+                expect(velocities()).not.toContain(0);
+                expect(lastVelocity()).toBeLessThan(0);
+                expect(lastVelocity()).toBeGreaterThan(atEdge);
+            });
+
+            it.each([
+                { when: 'the user drops', event: () => new Event('drop') },
+                { when: 'the drag ends', event: () => new Event('dragend') }
+            ])('should still stop when $when', ({ event }) => {
+                dragOver(10);
+                leaveWindow();
+
+                window.dispatchEvent(event());
+
+                expect(lastVelocity()).toBe(0);
+            });
+        });
+
+        // The canvas resets the editor on onDragLeave, which drops the drag item and the drop
+        // targets: only a drag that will never come back may do that.
+        describe('telling the canvas the drag left the app window', () => {
+            it('should not, while dragging from the editor, so the drag and its drop targets stay', () => {
+                leaveWindow();
+
+                expect(handlers.onDragLeave).not.toHaveBeenCalled();
+            });
+
+            it('should, while dragging a file from the desktop', () => {
+                store.editorDragItem.set(
+                    TEMPORAL_DRAG_ITEM as typeof EMA_DRAG_ITEM_CONTENTLET_MOCK
+                );
+
+                leaveWindow();
+
+                expect(handlers.onDragLeave).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        // R5
+        it('should stop when a file dragged in from the desktop leaves the app window', () => {
+            // No dragend ever reaches the editor for a file from outside the browser.
+            store.editorDragItem.set(TEMPORAL_DRAG_ITEM as typeof EMA_DRAG_ITEM_CONTENTLET_MOCK);
+            dragOver(10);
+
+            leaveWindow();
+
+            expect(lastVelocity()).toBe(0);
+        });
+
+        // R6
+        describe('legacy scroll request', () => {
+            it.each([
+                { clientY: -20, direction: 'up' },
+                { clientY: 850, direction: 'down' }
+            ])(
+                'should send it past the edge of the iframe (y=$clientY)',
+                ({ clientY, direction }) => {
+                    dragOver(clientY);
+
+                    expect(legacyScrolls()).toBe(1);
+                    expect(lastLegacyDirection()).toBe(direction);
+                }
+            );
+
+            it('should keep sending it, throttled, beside the iframe while the page scrolls', () => {
+                dragOver(750);
+                vi.advanceTimersByTime(250);
+
+                dragOverAt(BESIDE, 750);
+
+                expect(legacyScrolls()).toBe(2);
+                expect(lastLegacyDirection()).toBe('down');
+            });
+
+            it('should not start it beside the iframe', () => {
+                dragOverAt(BESIDE, 750);
+
+                expect(legacyScrolls()).toBe(0);
+            });
         });
     });
 
