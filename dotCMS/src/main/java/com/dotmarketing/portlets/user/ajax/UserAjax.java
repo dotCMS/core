@@ -48,6 +48,7 @@ import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.NoSuchRoleException;
@@ -714,6 +715,16 @@ public class UserAjax {
 		return aRecord;
 	}
 
+	/**
+	 * Turns one of a user's access flags on or off from the Users screen's checkboxes: the account's
+	 * active flag, the CMS Administrator role, or the back-end or front-end user role. The caller
+	 * needs the Users portlet or the old Users screen kept as {@code users-legacy}.
+	 *
+	 * @param params {@code userid} of the user to change, {@code access} naming the flag, and
+	 *               {@code granted} ({@code true} or {@code false})
+	 * @return the flag's new value, the flag that changed, and the changed user's data
+	 * @throws Exception if the caller may not make the change or the user cannot be saved
+	 */
 	@WrapInTransaction
   public Map<String, Object> assignUserAccess(Map<String, String> params) throws Exception {
     final WebContext ctx = WebContextFactory.get();
@@ -724,7 +735,7 @@ public class UserAjax {
     final User loggedInUser = new WebResource.InitBuilder(request,response)
         .requiredBackendUser(true)
         .requiredAnonAccess(AnonymousAccess.NONE)
-        .requiredPortlet("users")
+        .requiredPortlet(PortletID.USERS.toString(), PortletID.USERS_LEGACY.toString())
         .init()
         .getUser();
     final User userToModify = uApi.loadUserById(params.get("userid"),loggedInUser,false);
