@@ -186,6 +186,23 @@ public class SessionMonitorTest {
     }
 
     /**
+     * Method to Test: {@link SessionMonitor#endSessionsOf(String)}
+     * When: a session stores its user id with surrounding spaces, or the id to end has them
+     * Should: match it anyway, as both name the same user record
+     */
+    @Test
+    public void testEndSessionsOfMatchesUserIdIgnoringSurroundingSpaces() {
+        final HttpSession padded = trackedSession("session_padded_id", "  " + USER_A + " ");
+        final HttpSession plain = trackedSession("session_plain_id", USER_A);
+
+        assertEquals(2, SessionMonitor.endSessionsOf(" " + USER_A + "  "));
+        verify(padded).invalidate();
+        verify(plain).invalidate();
+        assertFalse(trackedSessions().containsKey("session_padded_id"));
+        assertFalse(trackedSessions().containsKey("session_plain_id"));
+    }
+
+    /**
      * Method to Test: {@link SessionMonitor#track(HttpSession)}
      * When: the session has no USER_ID, or the session is null
      * Should: not be tracked and not throw

@@ -362,7 +362,9 @@ public class LoginServiceAPIFactory implements Serializable {
          * Executes the authentication process for the specified User ID. Several session-related
          * parameters are loaded as well. Additionally, users/developers can run their own Pre- and
          * Post-Login code, if necessary. A user logging in for the first time gets a login token id
-         * through {@link UserAPI#invalidateLoginTokens(String)} before the login JWT is issued.
+         * through {@link UserAPI#invalidateLoginTokens(String)} before the login JWT is issued. The
+         * session stores the user id as it is in the user record, not as it was typed, so every
+         * later reader of the session matches it to the same user.
          *
          * @param userId     The ID of the user to authenticate.
          * @param rememberMe This parameter is no longer useful.
@@ -402,7 +404,8 @@ public class LoginServiceAPIFactory implements Serializable {
             user.setFailedLoginAttempts(0);
             user.setLastLoginIP(request.getRemoteAddr());
             userAPI.save(user, userAPI.getSystemUser(), RESPECT_FRONT_END_ROLES);
-            session.setAttribute(WebKeys.USER_ID, userId);
+            // the id as stored, not as typed: the login name may differ in case or spacing
+            session.setAttribute(WebKeys.USER_ID, user.getUserId());
             this.loadSiteIntoSession(request, user);
 
             session.removeAttribute("_failedLoginName");

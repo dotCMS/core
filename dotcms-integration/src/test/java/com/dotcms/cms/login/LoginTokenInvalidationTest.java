@@ -29,6 +29,7 @@ import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UUIDGenerator;
+import com.liferay.portal.ejb.CompanyManagerUtil;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -266,6 +267,61 @@ public class LoginTokenInvalidationTest {
         assertNull("the entry filled through the upper-case id must be evicted", userCache.get(upperCaseId));
         assertNull("a session of the inactive user must resolve to no user",
                 PortalUtil.getUser(untrackedSession));
+    }
+
+    /**
+     * A session that stores its user id with surrounding spaces fills the user cache through that
+     * spelling. Making the user inactive evicts the record under its stored id, which must also
+     * drop the entry the padded spelling filled, so a session not reached by the change resolves
+     * to no user on its next request instead of to the copy cached before it.
+     */
+    @Test
+    public void test_sessionWithPaddedUserId_resolvesToNoUserAfterDeactivation() throws Exception {
+        final User user = newUser();
+        final String paddedId = "  " + user.getUserId() + " ";
+        final UserCache userCache = CacheLocator.getUserCache();
+        final HttpSession untrackedSession = new MockSession(UUIDGenerator.generateUuid());
+        untrackedSession.setAttribute(WebKeys.USER_ID, paddedId);
+        assertNotNull("the session resolves while the user is active", PortalUtil.getUser(untrackedSession));
+
+        final User toSave = (User) userAPI.loadUserById(user.getUserId()).clone();
+        toSave.setActive(false);
+        userAPI.save(toSave, APILocator.systemUser(), false);
+
+        assertNull("no entry may be left under the padded spelling", userCache.get(paddedId));
+        assertNull("a session of the inactive user must resolve to no user",
+                PortalUtil.getUser(untrackedSession));
+    }
+
+    /**
+     * In the authentication mode that takes the user id as the login name, the id may arrive with
+     * surrounding spaces. The session must then hold the id as stored in the user record, so the
+     * session tools and the per-request check match the session to its user.
+     */
+    @Test
+    public void test_doActionLogin_withPaddedUserIdInIdMode_storesTheStoredUserId() throws Exception {
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        createdUsers.add(user);
+        userAPI.updatePassword(user, NEW_PASSWORD, APILocator.systemUser(), false);
+        final HttpServletRequest request = new MockAttributeRequest(new MockSessionRequest(
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/authentication").request()))
+                .request();
+
+        final Company company = PublicCompanyFactory.getDefaultCompany();
+        final String authTypeBefore = company.getAuthType();
+        company.setAuthType(Company.AUTH_TYPE_ID);
+        CompanyManagerUtil.updateCompany(company);
+        try {
+            assertTrue(APILocator.getLoginServiceAPI().doActionLogin("  " + user.getUserId() + " ",
+                    NEW_PASSWORD, false, request, mock(HttpServletResponse.class)));
+        } finally {
+            company.setAuthType(authTypeBefore);
+            CompanyManagerUtil.updateCompany(company);
+        }
+
+        assertEquals("the session must name the user as stored", user.getUserId(),
+                request.getSession(false).getAttribute(WebKeys.USER_ID));
     }
 
     /**

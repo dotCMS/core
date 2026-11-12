@@ -231,6 +231,25 @@ public class UserResourceIntegrationTest {
     }
 
     /**
+     * Method to test: {@link UserResource#loginAs}
+     * Given Scenario: an administrator asks to Login As a user whose id is sent with surrounding
+     * spaces.
+     * ExpectedResult: the session names the user by the id stored in the user record, so the
+     * session tools and the per-request check match the session to that user.
+     */
+    @Test
+    public void test_loginAs_withPaddedUserId_storesTheStoredUserId() throws Exception {
+        final LoginAsForm loginAsForm = new LoginAsForm.Builder().userId("  " + user.getUserId() + " ").build();
+        request = mockRequest();
+
+        final Response resourceResponse = resource.loginAs(request, response, loginAsForm);
+
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        assertEquals(user.getUserId(), request.getSession().getAttribute(WebKeys.USER_ID));
+        assertEquals(adminUser.getUserId(), request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
+    }
+
+    /**
      * Creates a back-end user with the Login As role, a known password and, optionally, the CMS
      * Administrator role.
      */

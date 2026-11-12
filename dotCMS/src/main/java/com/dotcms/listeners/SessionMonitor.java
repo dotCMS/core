@@ -235,13 +235,14 @@ public class SessionMonitor implements ServletRequestListener,
 
     /**
      * Tells whether a session belongs to the user: it is the session's user, or the administrator
-     * behind a Login As session ({@code PRINCIPAL_USER_ID}).
+     * behind a Login As session ({@code PRINCIPAL_USER_ID}). Letter case and surrounding spaces
+     * are ignored, as both spellings name the same user record.
      */
     private static boolean belongsTo(final HttpSession session, final String userId) {
         for (final String key : new String[]{com.liferay.portal.util.WebKeys.USER_ID,
                 com.liferay.portal.util.WebKeys.PRINCIPAL_USER_ID}) {
             final Object value = session.getAttribute(key);
-            if (value instanceof String && userId.equalsIgnoreCase((String) value)) {
+            if (value instanceof String && userId.trim().equalsIgnoreCase(((String) value).trim())) {
                 return true;
             }
         }

@@ -151,18 +151,31 @@ public class UserFactoryImpl implements UserFactory {
         dbLookupCount.set(0);
     }
 
+    /**
+     * Returns the user with the given id, from the user cache when it holds the record and from
+     * the data source otherwise. The id is trimmed before the cache is read or filled, as the data
+     * source lookup ignores surrounding spaces too, so one record never has more than one cache
+     * entry whatever spelling a caller used, and every eviction made under the stored id reaches
+     * it.
+     *
+     * @param userId the id of the user to load
+     * @return the {@link User} record
+     * @throws DotDataException   when the data source cannot be read
+     * @throws NoSuchUserException when no user has that id
+     */
     @Override
     public User loadUserById(final String userId) throws DotDataException, NoSuchUserException {
-        User user = userCache.get(userId);
+        final String key = null != userId ? userId.trim() : null;
+        User user = userCache.get(key);
         if (!UtilMethods.isSet(user)) {
 
             if (user == null) {
-                user = readFromDataSource(userId);
+                user = readFromDataSource(key);
                 incrementDbLookupCount();
                 if (user == null) {
                     throw new NoSuchUserException(userId);
                 }
-                userCache.add(userId, user);
+                userCache.add(key, user);
             }
         }
         return user;
