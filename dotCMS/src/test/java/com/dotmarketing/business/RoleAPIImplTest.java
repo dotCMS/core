@@ -184,6 +184,29 @@ public class RoleAPIImplTest {
         assertFalse(canReadRoleMembership(false, false, true));
     }
 
+    /**
+     * Method to test: {@link RoleAPIImpl#canReadRoleMembership(User)}
+     * Given scenario: The user is not an administrator, does not have the Roles portlet, but has the
+     * old Roles &amp; Tools screen kept as {@code roles-legacy}, and has the Users portlet.
+     * Expected result: Role membership is readable: {@code roles-legacy} stands in for
+     * {@code roles}, so a role that kept the old screen can still list the users in a role there.
+     */
+    @Test
+    public void testCanReadRoleMembership_WhenRolesLegacyAndUsersPortlets_ShouldBeTrue() throws Exception {
+        assertTrue(canReadRoleMembershipWithRolesLegacy(true));
+    }
+
+    /**
+     * Method to test: {@link RoleAPIImpl#canReadRoleMembership(User)}
+     * Given scenario: The user is not an administrator and has {@code roles-legacy} but no Users
+     * portlet.
+     * Expected result: Role membership is not readable; the Users portlet is still required.
+     */
+    @Test
+    public void testCanReadRoleMembership_WhenRolesLegacyOnly_ShouldBeFalse() throws Exception {
+        assertFalse(canReadRoleMembershipWithRolesLegacy(false));
+    }
+
     // ==================== role check on behalf of a requesting user ====================
 
     /**
@@ -288,6 +311,23 @@ public class RoleAPIImplTest {
         final User user = requester(admin);
         final LayoutAPI layoutAPI = mock(LayoutAPI.class);
         when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user)).thenReturn(rolesPortlet);
+        when(layoutAPI.doesUserHaveAccessToUsersPortlet(user)).thenReturn(usersPortlet);
+        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class)) {
+            apiLocator.when(APILocator::getLayoutAPI).thenReturn(layoutAPI);
+            return roleAPI.canReadRoleMembership(user);
+        }
+    }
+
+    /**
+     * Builds a non-administrator {@link User} who holds {@code roles-legacy} but not {@code roles},
+     * with the Users portlet access given, and asks {@link RoleAPIImpl#canReadRoleMembership(User)}
+     * about them.
+     */
+    private boolean canReadRoleMembershipWithRolesLegacy(final boolean usersPortlet) throws Exception {
+        final User user = requester(false);
+        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
+        when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user)).thenReturn(false);
+        when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES_LEGACY.toString(), user)).thenReturn(true);
         when(layoutAPI.doesUserHaveAccessToUsersPortlet(user)).thenReturn(usersPortlet);
         try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class)) {
             apiLocator.when(APILocator::getLayoutAPI).thenReturn(layoutAPI);

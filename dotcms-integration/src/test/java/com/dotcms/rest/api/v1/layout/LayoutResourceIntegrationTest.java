@@ -24,6 +24,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Portlet;
@@ -66,8 +67,7 @@ import static org.junit.Assert.fail;
  * The resource is invoked directly with mock authenticated requests, following
  * {@code RoleResourceIntegrationTest}. Three callers are exercised: a CMS Administrator through
  * Basic auth, a non-admin back-end user whose only relevant grant is a section holding the
- * {@code tools-beta} portlet, and a non-admin back-end user with neither {@code tools} nor
- * {@code tools-beta}.
+ * {@code tools} portlet, and a non-admin back-end user without {@code tools}.
  *
  * @author hassandotcms
  */
@@ -76,6 +76,8 @@ public class LayoutResourceIntegrationTest {
     @ClassRule
     public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
+    private static final String TOOLS_PORTLET_ID = PortletID.TOOLS.toString();
+    // the beta id leaves PortletID with the promotion, so it is spelled out here
     private static final String TOOLS_BETA_PORTLET_ID = "tools-beta";
 
     private static LayoutResource resource;
@@ -83,14 +85,19 @@ public class LayoutResourceIntegrationTest {
     private static RoleAPI roleAPI;
     private static Host testHost;
 
-    /** Non-admin back-end user granted a section that contains {@code tools-beta}. */
+    /** Non-admin back-end user granted a section that contains {@code tools}. */
+    private static User toolsUser;
+
+    /** Non-admin back-end user whose only grant is a section holding the retired {@code tools-beta} id. */
     private static User toolsBetaUser;
 
-    /** Non-admin back-end user whose sections contain neither {@code tools} nor {@code tools-beta}. */
+    /** Non-admin back-end user whose sections do not contain {@code tools}. */
     private static User noPortletUser;
 
-    private static Layout toolsBetaLayout;
+    private static Layout toolsLayout;
     private static Layout contentOnlyLayout;
+    private static Role toolsRole;
+    private static Layout toolsBetaLayout;
     private static Role toolsBetaRole;
     private static Role contentOnlyRole;
 
@@ -103,10 +110,18 @@ public class LayoutResourceIntegrationTest {
         roleAPI = APILocator.getRoleAPI();
         testHost = new SiteDataGen().nextPersisted();
 
+        toolsLayout = new LayoutDataGen()
+                .name("Tools " + uniq())
+                .portletIds(TOOLS_PORTLET_ID)
+                .tabOrder(800000)
+                .nextPersisted();
+        toolsRole = new RoleDataGen().layout(toolsLayout).nextPersisted();
+        toolsUser = backendUser(toolsRole);
+
         toolsBetaLayout = new LayoutDataGen()
                 .name("Tools Beta " + uniq())
                 .portletIds(TOOLS_BETA_PORTLET_ID)
-                .tabOrder(800000)
+                .tabOrder(800002)
                 .nextPersisted();
         toolsBetaRole = new RoleDataGen().layout(toolsBetaLayout).nextPersisted();
         toolsBetaUser = backendUser(toolsBetaRole);
@@ -122,13 +137,13 @@ public class LayoutResourceIntegrationTest {
 
     @AfterClass
     public static void cleanup() throws Exception {
-        for (final Layout layout : List.of(toolsBetaLayout, contentOnlyLayout)) {
+        for (final Layout layout : List.of(toolsLayout, toolsBetaLayout, contentOnlyLayout)) {
             removeQuietly(layout.getId());
         }
-        for (final User user : List.of(toolsBetaUser, noPortletUser)) {
+        for (final User user : List.of(toolsUser, toolsBetaUser, noPortletUser)) {
             UserDataGen.remove(user, true);
         }
-        for (final Role role : List.of(toolsBetaRole, contentOnlyRole)) {
+        for (final Role role : List.of(toolsRole, toolsBetaRole, contentOnlyRole)) {
             RoleDataGen.remove(role, true);
         }
     }
@@ -226,7 +241,7 @@ public class LayoutResourceIntegrationTest {
         try {
             final List<String> expected = layoutAPI.findAllLayouts().stream()
                     .map(Layout::getId).collect(Collectors.toList());
-            final List<String> actual = listAs(requestFor(toolsBetaUser)).stream()
+            final List<String> actual = listAs(requestFor(toolsUser)).stream()
                     .map(SectionView::id).collect(Collectors.toList());
 
             // Same membership; and the two sections with distinct positions come back in position order.
@@ -250,7 +265,7 @@ public class LayoutResourceIntegrationTest {
         final Layout layout = new LayoutDataGen().name("Tool Order " + uniq())
                 .portletIds("templates", "containers", "site-browser").tabOrder(900003).nextPersisted();
         try {
-            final SectionView view = find(listAs(requestFor(toolsBetaUser)), layout.getId());
+            final SectionView view = find(listAs(requestFor(toolsUser)), layout.getId());
 
             assertEquals(List.of("templates", "containers", "site-browser"), view.portletIds());
         } finally {
@@ -274,7 +289,7 @@ public class LayoutResourceIntegrationTest {
             layout = new LayoutDataGen().name("Titles " + uniq())
                     .portletIds("templates", custom.getPortletId()).tabOrder(900004).nextPersisted();
 
-            final SectionView view = find(listAs(requestFor(toolsBetaUser)), layout.getId());
+            final SectionView view = find(listAs(requestFor(toolsUser)), layout.getId());
 
             assertEquals(view.portletIds().size(), view.portletTitles().size());
             assertEquals("Templates", view.portletTitles().get(0));
@@ -302,7 +317,7 @@ public class LayoutResourceIntegrationTest {
         final Layout layout = new LayoutDataGen().name("Languages " + uniq())
                 .portletIds("languages").tabOrder(900005).nextPersisted();
         try {
-            final SectionView view = find(listAs(requestFor(toolsBetaUser)), layout.getId());
+            final SectionView view = find(listAs(requestFor(toolsUser)), layout.getId());
 
             assertEquals(List.of("languages"), view.portletIds());
         } finally {
@@ -322,7 +337,7 @@ public class LayoutResourceIntegrationTest {
 
     /**
      * Method to test: {@link LayoutResource#list}
-     * Given: a non-admin back-end user with neither tools nor tools-beta
+     * Given: a non-admin back-end user without tools
      * Expected: the portlet gate rejects the call (REST SecurityException, 401)
      */
     @Test
@@ -330,6 +345,22 @@ public class LayoutResourceIntegrationTest {
         try {
             resource.list(requestFor(noPortletUser), response());
             fail("expected the portlet gate to reject the call");
+        } catch (final com.dotcms.rest.exception.SecurityException expected) {
+            assertEquals(401, expected.getResponse().getStatus());
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutResource#list}
+     * Given: a non-admin back-end user whose only grant is the retired tools-beta id, which no
+     * longer names any portlet now that Tools is promoted
+     * Expected: the portlet gate rejects the call (REST SecurityException, 401)
+     */
+    @Test
+    public void list_retiredToolsBetaUser_rejected() throws Exception {
+        try {
+            resource.list(requestFor(toolsBetaUser), response());
+            fail("expected the portlet gate to reject the tools-beta id");
         } catch (final com.dotcms.rest.exception.SecurityException expected) {
             assertEquals(401, expected.getResponse().getStatus());
         }
@@ -658,20 +689,20 @@ public class LayoutResourceIntegrationTest {
      * Expected: every write is refused as forbidden and nothing changes
      */
     @Test
-    public void create_update_delete_toolsBetaNonAdmin_throwDotSecurityException_andWriteNothing() throws Exception {
+    public void create_update_delete_toolsNonAdmin_throwDotSecurityException_andWriteNothing() throws Exception {
         final Layout layout = new LayoutDataGen().name("Sec " + uniq()).tabOrder(900013).nextPersisted();
         final int before = sectionCount();
         try {
             try {
-                resource.create(requestFor(toolsBetaUser), response(), form("Nope " + uniq(), ""));
+                resource.create(requestFor(toolsUser), response(), form("Nope " + uniq(), ""));
                 fail("non-admin create accepted");
             } catch (final DotSecurityException expected) { /* ok */ }
             try {
-                resource.update(requestFor(toolsBetaUser), response(), layout.getId(), form("Nope " + uniq(), ""));
+                resource.update(requestFor(toolsUser), response(), layout.getId(), form("Nope " + uniq(), ""));
                 fail("non-admin update accepted");
             } catch (final DotSecurityException expected) { /* ok */ }
             try {
-                resource.delete(requestFor(toolsBetaUser), response(), layout.getId());
+                resource.delete(requestFor(toolsUser), response(), layout.getId());
                 fail("non-admin delete accepted");
             } catch (final DotSecurityException expected) { /* ok */ }
 
@@ -910,10 +941,10 @@ public class LayoutResourceIntegrationTest {
      * Expected: refused as forbidden; section unchanged
      */
     @Test
-    public void setTools_toolsBetaNonAdmin_throwsDotSecurityException() throws Exception {
+    public void setTools_toolsNonAdmin_throwsDotSecurityException() throws Exception {
         final Layout layout = new LayoutDataGen().name("Tools " + uniq()).portletIds("templates").tabOrder(900026).nextPersisted();
         try {
-            resource.setTools(requestFor(toolsBetaUser), response(), layout.getId(), tools("containers"));
+            resource.setTools(requestFor(toolsUser), response(), layout.getId(), tools("containers"));
             fail("non-admin set-tools accepted");
         } catch (final DotSecurityException expected) {
             assertEquals(List.of("templates"), layoutAPI.loadLayout(layout.getId()).getPortletIds());
@@ -1033,12 +1064,12 @@ public class LayoutResourceIntegrationTest {
      * Expected: refused as forbidden; no position changes
      */
     @Test
-    public void reorder_toolsBetaNonAdmin_throwsDotSecurityException() throws Exception {
+    public void reorder_toolsNonAdmin_throwsDotSecurityException() throws Exception {
         final Map<String, Integer> snapshot = snapshotPositions();
         final List<String> reversed = new ArrayList<>(snapshot.keySet());
         Collections.reverse(reversed);
         try {
-            resource.reorder(requestFor(toolsBetaUser), response(), order(reversed));
+            resource.reorder(requestFor(toolsUser), response(), order(reversed));
             fail("non-admin reorder accepted");
         } catch (final DotSecurityException expected) {
             assertEquals(snapshot, snapshotPositions());
@@ -1058,7 +1089,7 @@ public class LayoutResourceIntegrationTest {
 
     /**
      * Method to test: every write of {@link LayoutResource}
-     * Given: a back-end user with neither tools nor tools-beta
+     * Given: a back-end user without tools
      * Expected: the portlet gate rejects each call with the REST SecurityException (401)
      */
     @Test
@@ -1145,13 +1176,13 @@ public class LayoutResourceIntegrationTest {
     public void everyWrite_nonAdminRefusal_writesSecurityLogLine() throws Exception {
         final List<String> lines = captureSecurityLog(() -> {
             try {
-                resource.create(requestFor(toolsBetaUser), response(), form("Audit " + uniq(), ""));
+                resource.create(requestFor(toolsUser), response(), form("Audit " + uniq(), ""));
                 fail("non-admin create accepted");
             } catch (final DotSecurityException expected) {
                 // ok
             }
         });
         assertTrue("no refusal line: " + lines, lines.stream().anyMatch(l ->
-                l.contains("unauthorized attempt to create navigation section by user " + toolsBetaUser.getUserId())));
+                l.contains("unauthorized attempt to create navigation section by user " + toolsUser.getUserId())));
     }
 }

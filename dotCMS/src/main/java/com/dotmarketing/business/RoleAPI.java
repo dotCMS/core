@@ -446,7 +446,8 @@ public interface RoleAPI {
 
 	/**
 	 * Whether a user may see which users hold a role and which roles a user holds: a CMS
-	 * Administrator, or a user with access to both the Roles and the Users portlets.
+	 * Administrator, or a user with access to both a Roles screen ({@code roles} or the old
+	 * {@code roles-legacy}) and a Users screen ({@code users} or the old {@code users-legacy}).
 	 *
 	 * @param user the {@link User} making the request
 	 * @return {@code true} when the user may read role membership

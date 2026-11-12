@@ -14,9 +14,11 @@ import com.dotcms.rest.ResponseEntityJobView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.job.SSEMonitorUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,6 +45,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.sse.EventOutput;
@@ -56,6 +59,8 @@ import org.glassfish.jersey.media.sse.SseFeature;
 @Path("/v1/content/_import")
 @Tag(name = "Content")
 public class ContentImportResource {
+
+    private static final String TEXT_CSV = "text/csv";
 
     private final WebResource webResource;
     private final ContentImportHelper importHelper;
@@ -228,6 +233,73 @@ public class ContentImportResource {
         return importHelper.handleJobCreation(
                 CMD_PREVIEW, params, initDataObject, request
         );
+    }
+
+    /**
+     * Returns the CSV template of a Content Type: the header line the importer expects, and one
+     * sample row showing the format every column takes. The caller must be able to read the
+     * Content Type.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param contentType The id or the variable name of the Content Type the template is for.
+     * @return A Response carrying the template as a CSV attachment.
+     * @throws DotDataException If the Content Type cannot be read from the database.
+     * @throws DotSecurityException If the caller does not hold READ permission on the Content Type.
+     */
+    @GET
+    @Path("/_template")
+    @NoCache
+    @Produces({TEXT_CSV, MediaType.APPLICATION_JSON})
+    @Operation(
+            operationId = "downloadContentImportTemplate",
+            summary = "Downloads the CSV template of a Content Type",
+            description = "Returns a CSV file with one header line naming every field an import row can set, and one sample row showing the format each of those columns takes. Requires READ permission on the Content Type.",
+            tags = {"Content Import"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "The CSV template, as a file attachment.",
+                            content = @Content(
+                                    mediaType = TEXT_CSV,
+                                    schema = @Schema(type = "string", description = "A header line of field variable names, and a sample row."),
+                                    examples = @ExampleObject(value = "title,body\n\"XXX\",\"XXX\"")
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad Request: No Content Type was given."),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have READ permission on the Content Type."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: The Content Type could not be found.")
+            }
+    )
+    public Response downloadTemplate(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "The id or the variable name of the Content Type",
+                    required = true,
+                    in = ParameterIn.QUERY
+            )
+            @QueryParam("contentType") final String contentType)
+            throws DotDataException, DotSecurityException {
+
+        // Initialize the WebResource and set required user information
+        final var initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final String template = ContentImportTemplate.generate(contentType,
+                initDataObject.getUser());
+        // The media type is pinned rather than negotiated: application/json is declared only so a
+        // strictly-JSON client is not turned away before the error mappers can answer it, and the
+        // body here is always CSV.
+        return Response.ok(template, TEXT_CSV)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"CSV_Template.csv\"")
+                .build();
     }
 
     /**
