@@ -383,6 +383,68 @@ public class LayoutResourceIntegrationTest {
 
     /**
      * Method to test: {@link LayoutResource#create}
+     * Given: a name, an icon, a position and an ordered tool list in one body
+     * Expected: the section is saved with that position and exactly those tools, in order
+     */
+    @Test
+    public void create_withPositionAndTools_savesThemInTheSameCall() throws Exception {
+        final String name = "Complete " + uniq();
+        final SectionForm form = new SectionForm.Builder().name(name).icon("bolt").tabOrder(900020)
+                .portletIds(List.of("templates", "containers")).build();
+
+        final SectionView created = entityOf(resource.create(adminRequest(), response(), form));
+        try {
+            assertEquals(900020, created.tabOrder());
+            assertEquals(List.of("templates", "containers"), created.portletIds());
+            assertEquals(List.of("templates", "containers"),
+                    layoutAPI.loadLayout(created.id()).getPortletIds());
+        } finally {
+            layoutAPI.removeLayout(layoutAPI.findLayout(created.id()));
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutResource#create}
+     * Given: a body whose tool list names a portlet that is not registered
+     * Expected: rejected (400) and no section written, so no empty section is left behind
+     */
+    @Test
+    public void create_unknownTool_throwsBadRequest_andWritesNothing() throws Exception {
+        final int before = sectionCount();
+        final SectionForm form = new SectionForm.Builder().name("Bad Tool " + uniq()).icon("bolt")
+                .portletIds(List.of("templates", "no-such-tool-" + uniq())).build();
+        try {
+            resource.create(adminRequest(), response(), form);
+            fail("unknown tool accepted");
+        } catch (final BadRequestException expected) {
+            assertEquals(before, sectionCount());
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutResource#update}
+     * Given: a rename body that also sends tools
+     * Expected: refused (400) and the section is left unchanged
+     */
+    @Test
+    public void update_withTools_throwsBadRequest_andChangesNothing() throws Exception {
+        final Layout layout = new LayoutDataGen().name("No Tools Via Update " + uniq())
+                .portletIds("templates").tabOrder(900021).nextPersisted();
+        try {
+            resource.update(adminRequest(), response(), layout.getId(), new SectionForm.Builder()
+                    .name("Renamed " + uniq()).icon("bolt").portletIds(List.of("containers")).build());
+            fail("tools on update accepted");
+        } catch (final BadRequestException expected) {
+            final Layout reloaded = layoutAPI.loadLayout(layout.getId());
+            assertEquals(layout.getName(), reloaded.getName());
+            assertEquals(List.of("templates"), reloaded.getPortletIds());
+        } finally {
+            removeQuietly(layout.getId());
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutResource#create}
      * Given: a name another section already has
      * Expected: rejected as a duplicate (400) and no section written
      */

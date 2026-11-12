@@ -12751,10 +12751,13 @@ paths:
       tags:
       - Administration
     post:
-      description: "Creates a section from a name and an icon. The new section is\
-        \ placed after every existing section and holds no tools. The name is trimmed,\
-        \ must be present, at most 255 characters and unique among sections; the icon\
-        \ is at most 255 characters and may be empty. Requires a CMS Administrator\
+      description: "Creates a section from a name and an icon. Unless tabOrder is\
+        \ sent, the new section is placed after every existing section; unless portletIds\
+        \ is sent, it holds no tools. The section, its position and its tools are\
+        \ saved in one transaction, so a failed create leaves nothing behind. The\
+        \ name is trimmed, must be present, at most 255 characters and unique among\
+        \ sections; the icon is at most 255 characters and may be empty; the tool\
+        \ ids follow the same rules as setting a section's tools. Requires a CMS Administrator\
         \ who also holds the tools or tools-beta portlet."
       operationId: createNavigationSection
       requestBody:
@@ -12762,7 +12765,8 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/SectionForm"
-        description: Name and icon of the new section
+        description: "Name and icon of the new section, optionally its position and\
+          \ tools"
         required: true
       responses:
         "200":
@@ -12774,8 +12778,8 @@ paths:
         "400":
           content:
             application/json: {}
-          description: "Bad request - blank or over-long name, over-long icon, or\
-            \ duplicate name"
+          description: "Bad request - blank or over-long name, over-long icon, duplicate\
+            \ name, or an unknown, repeated or disallowed tool id"
         "401":
           content:
             application/json: {}
@@ -12883,10 +12887,10 @@ paths:
       tags:
       - Administration
     put:
-      description: Changes a section's name and icon together; its position and its
-        tools are untouched. Same name and icon rules as create. Getting Started may
-        be renamed and re-iconed. Requires a CMS Administrator who also holds the
-        tools or tools-beta portlet.
+      description: "Changes a section's name and icon together; its position and its\
+        \ tools are untouched, and sending tabOrder or portletIds is refused. Same\
+        \ name and icon rules as create. Getting Started may be renamed and re-iconed.\
+        \ Requires a CMS Administrator who also holds the tools or tools-beta portlet."
       operationId: updateNavigationSection
       parameters:
       - description: Navigation section id
@@ -12912,8 +12916,8 @@ paths:
         "400":
           content:
             application/json: {}
-          description: "Bad request - blank or over-long name, over-long icon, or\
-            \ duplicate name"
+          description: "Bad request - blank or over-long name, over-long icon, duplicate\
+            \ name, or a position or tools sent"
         "401":
           content:
             application/json: {}
@@ -39805,6 +39809,20 @@ components:
           type: string
           description: "Section name, unique among sections, at most 255 characters"
           example: Marketing
+        portletIds:
+          type: array
+          description: "Create only: tool (portlet) ids the section holds, in order;\
+            \ defaults to none"
+          items:
+            type: string
+            description: "Create only: tool (portlet) ids the section holds, in order;\
+              \ defaults to none"
+        tabOrder:
+          type: integer
+          format: int32
+          description: "Create only: position of the section in the navigation; defaults\
+            \ to after every existing section"
+          example: 3
       required:
       - name
     SectionOrderForm:

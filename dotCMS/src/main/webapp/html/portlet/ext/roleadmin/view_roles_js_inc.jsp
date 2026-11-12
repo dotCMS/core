@@ -72,7 +72,6 @@
 	var includedToolsMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "included-tools")) %>';
 	var orderMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Sort-Order")) %>';
 	var layoutSavedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "layout-saved")) %>';
-	var layoutCleanupFailedMsg = '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "layout-cleanup-failed")) %>';
 
 	//Layout Initialization
 
@@ -1481,28 +1480,16 @@
 		var order = dijit.byId('layoutOrder').attr('value');
 		var description = dijit.byId('layoutDescription').attr('value');
 		var porletIds = getPortletsList();
-		if(newLayout)
-			// create the section, then apply its position and tools with the same call an edit uses
-			callRolesApi('POST', '/api/v1/layouts', { name: name, icon: description }).then(function (section) {
-				RoleAjax.updateLayout(section.id, name, description, order, porletIds, {
-					callback: saveLayoutCallback.bind(this),
-					exceptionHandler: function (message, exception) {
-						// remove the section just created so a failed save leaves nothing behind
-						callRolesApi('DELETE', '/api/v1/layouts/' + encodeURIComponent(section.id)).then(function () {
-							saveLayoutException(message, exception);
-						}, function (cleanupError) {
-							// the section is still there: say so, and list it so it can be edited instead
-							saveLayoutException(message, exception);
-							var errors = dojo.byId('addLayoutErrorMessagesList');
-							errors.textContent = errors.textContent + ' ' + layoutCleanupFailedMsg + ' ' + cleanupError.message;
-							reloadLayoutsGrid();
-						});
-					}
-				});
-			}.bind(this), function (error) {
+		if(newLayout) {
+			// one call saves the section with its position and tools, so a failure leaves nothing behind;
+			// the order box is free text, and a value that is not a number places the section last
+			var tabOrder = parseInt(order, 10);
+			callRolesApi('POST', '/api/v1/layouts', {
+				name: name, icon: description, tabOrder: isNaN(tabOrder) ? undefined : tabOrder, portletIds: porletIds
+			}).then(saveLayoutCallback.bind(this), function (error) {
 				dojo.byId('addLayoutErrorMessagesList').textContent = error.message;
 			});
-		else
+		} else
 			RoleAjax.updateLayout(norm(currentLayout.id), name, description,order, porletIds,
 				{ callback: saveLayoutCallback.bind(this), exceptionHandler: saveLayoutException.bind(this) });
 
