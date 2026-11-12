@@ -246,8 +246,22 @@ public class CircuitBreakerUrl {
      * never be mistaken for a successful (truncated) one.
      */
     public static class ResponseSizeLimitExceededException extends IOException {
+
+        private int statusCode = -1;
+
         private ResponseSizeLimitExceededException(final int maxBytes) {
             super("Response exceeded maximum size of " + maxBytes + " bytes");
+        }
+
+        /**
+         * The HTTP status the server answered with before its body went over the limit. The
+         * request's own status is reset when this exception is raised, so a caller that only
+         * wants to know whether the server answered, and how, reads it here.
+         *
+         * @return the status code, or {@code -1} when no response was received
+         */
+        public int getStatusCode() {
+            return statusCode;
         }
     }
 
@@ -376,12 +390,14 @@ public class CircuitBreakerUrl {
 
             Logger.debug(this.getClass(), ee.getMessage() + " " + this);
 
-            if (ee.getCause() instanceof ResponseSizeLimitExceededException) {
-                // The 2xx status was recorded before the copy aborted; reset it so the partial
-                // body can never read as a successful response, and fail regardless of
-                // raiseFailsafe — a truncated payload must not be returned silently.
+            if (ee.getCause() instanceof ResponseSizeLimitExceededException sizeLimit) {
+                // The status was recorded before the copy aborted; keep it on the exception for
+                // callers that only probe, and reset it here so the partial body can never read
+                // as a successful response. Fail regardless of raiseFailsafe: a truncated
+                // payload must not be returned silently.
+                sizeLimit.statusCode = this.response;
                 this.response = -1;
-                throw (ResponseSizeLimitExceededException) ee.getCause();
+                throw sizeLimit;
             }
 
             if (raiseFailsafe) {

@@ -18355,7 +18355,9 @@ paths:
     post:
       description: "Saves or updates the value of a key in the system table. The change\
         \ is applied cluster wide: every node is notified and re-resolves the key,\
-        \ so the request does not need to be repeated against each node."
+        \ so the request does not need to be repeated against each node. Keys the\
+        \ server reads from the environment or the properties file only are refused\
+        \ with a 400, since a value stored for them would have no effect."
       operationId: save
       requestBody:
         content:
@@ -18379,7 +18381,9 @@ paths:
       description: "Updates the value of an existing key in the system table, or returns\
         \ a 404 if the key does not exist. The change is applied cluster wide: every\
         \ node is notified and re-resolves the key, so the request does not need to\
-        \ be repeated against each node."
+        \ be repeated against each node. Keys the server reads from the environment\
+        \ or the properties file only are refused with a 400, since a value stored\
+        \ for them would have no effect."
       operationId: update_8
       requestBody:
         content:
@@ -18927,7 +18931,7 @@ paths:
   /v1/temp/byUrl:
     post:
       description: |-
-        Downloads a file from the specified remote URL and stores it as a temporary resource. The temporary file can then be referenced when creating content. The URL must pass validation to prevent SSRF attacks. Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property.
+        Downloads a file from the specified remote URL and stores it as a temporary resource. The temporary file can then be referenced when creating content. The URL must pass validation to prevent SSRF attacks. Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property, and TEMP_RESOURCE_BY_URL_ADMIN_ONLY restricts downloads by URL to administrators. The stored file name's extension must be on TEMP_RESOURCE_BY_URL_ALLOWED_EXTENSIONS (by default images, SVG and PDF) and the content the remote server returns must match it; otherwise the call returns 400.
 
         **Use this endpoint to supply files for binary and image fields** (`ImmutableBinaryField`, `ImmutableImageField`) when a file is already accessible by URL. Send `{"remoteUrl": "https://example.com/image.jpg"}` and pass `tempFiles[0].id` (e.g. `"temp_5311313004"`) as the field value in the workflow fire endpoint. See `PUT /api/v1/workflow/actions/default/fire/{systemAction}` for the full pattern.
       operationId: createTempFileFromUrl
@@ -18958,9 +18962,12 @@ paths:
                 $ref: "#/components/schemas/TempFilesView"
           description: Temporary file created from URL successfully
         "400":
-          description: "Invalid URL, missing URL, or invalid origin/referer"
+          description: "Invalid URL, missing URL, invalid origin/referer, file extension\
+            \ not allowed, or content that does not match the file name's extension"
         "401":
           description: Authentication required (when anonymous access is disabled)
+        "403":
+          description: Downloads by URL are restricted to administrators (TEMP_RESOURCE_BY_URL_ADMIN_ONLY)
         "404":
           description: Temp file resource is not enabled
       summary: Create temporary file from a remote URL

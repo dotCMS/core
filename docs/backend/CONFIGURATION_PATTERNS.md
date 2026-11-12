@@ -92,6 +92,16 @@ and the read site are enough.
 2. **System table** (database)
 3. **Properties files** (all files are loaded)
 
+**Provisioning keys skip the System table.** The keys in `SystemTableConfigSource.PROVISIONING_KEYS`
+(the remote-call address policy: `REMOTE_CALL_SUBNET_BLACKLIST`, `REMOTE_CALL_SUBNET_ALLOWLIST`,
+`REMOTE_CALL_ALLOW_IPV6`, `REMOTE_CALL_ALLOW_REDIRECTS`, `ALLOW_ACCESS_TO_PRIVATE_SUBNETS`, and the
+download-by-URL settings `TEMP_RESOURCE_BY_URL_ADMIN_ONLY` and `TEMP_RESOURCE_BY_URL_ALLOWED_EXTENSIONS`)
+are read from the environment and the properties files only. A System table row for one of them has
+no effect, `/api/v1/system-table` refuses to store the key (it can still be read and deleted, so a
+stale row can be cleaned up), and `PUT /api/v1/configuration` refuses to set it at runtime. Add a key
+to that set when a setting must not be changeable from inside the running application;
+`SystemTableConfigSource.isProvisioningKey(key)` is the single check every path uses.
+
 ## Anonymous Content API Access — Upgrade Note
 
 `CONTENT_APIS_ALLOW_ANONYMOUS` defaults to `NONE` in both the bundled configuration and
