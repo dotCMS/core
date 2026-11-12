@@ -7,6 +7,7 @@ import {
     addClassToEmptyContentlets,
     injectEmptyStateStyles,
     listenBlockEditorInlineEvent,
+    registerUVEEvents,
     scrollHandler,
     setClientIsReady
 } from './utils';
@@ -42,6 +43,23 @@ describe('scrollHandler', () => {
             { action: DotCMSUVEAction.IFRAME_SCROLL_END },
             '*'
         );
+    });
+
+    // #38575: the editor shifts its drop targets by how far the page scrolled during a drag.
+    it('sends the page scrollY with IFRAME_SCROLL', () => {
+        Object.defineProperty(window, 'scrollY', { value: 840, configurable: true });
+
+        try {
+            ({ destroyScrollHandler } = scrollHandler());
+            window.dispatchEvent(new Event('scroll'));
+
+            expect(postMessageSpy).toHaveBeenCalledWith(
+                { action: DotCMSUVEAction.IFRAME_SCROLL, payload: { scrollY: 840 } },
+                '*'
+            );
+        } finally {
+            Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
+        }
     });
 
     it('removes both listeners after destroyScrollHandler is called', () => {
@@ -86,6 +104,233 @@ describe('scrollHandler', () => {
             delete win['__zone_symbol__removeEventListener'];
             delete (globalThis as unknown as { Zone?: unknown }).Zone;
         }
+    });
+});
+
+// #38575: during a drag the editor sends a scroll velocity and the page scrolls itself, every
+// frame, until told to stop. Older editors still send the one-step direction request.
+describe('registerUVEEvents scroll during a drag', () => {
+    /** The new editor → page message; the event name does not exist in `@dotcms/types` yet. */
+    const SCROLL_VELOCITY = 'uve-scroll-velocity';
+
+    /** One frame at 60fps, in ms. */
+    const FRAME = 1000 / 60;
+
+    let subscriptions: { unsubscribe: () => void }[];
+    let scrollBy: MockInstance;
+    let frames: Map<number, FrameRequestCallback>;
+    let lastFrameId: number;
+
+    /** Runs the frame the page asked for, at `time` ms. */
+    const runFrame = (time: number) => {
+        const pending = [...frames.values()];
+        frames.clear();
+        pending.forEach((callback) => callback(time));
+    };
+
+    /** The editor sends a message to the page. */
+    const fromEditor = (data: Record<string, unknown>) => {
+        window.dispatchEvent(new MessageEvent('message', { data }));
+    };
+
+    const scrollAtVelocity = (velocity: unknown) => fromEditor({ name: SCROLL_VELOCITY, velocity });
+
+    /** Where the page is: `scrollY`, in a 3000px document seen through an 800px viewport. */
+    const pageAt = (scrollY: number) => {
+        Object.defineProperty(window, 'scrollY', { value: scrollY, configurable: true });
+    };
+
+    /** The `top` of the last instant scroll the page made. */
+    const lastInstantScroll = (): number | undefined =>
+        scrollBy.mock.calls
+            .map(([options]) => options as ScrollToOptions)
+            .filter((options) => options?.behavior === 'instant')
+            .at(-1)?.top;
+
+    beforeEach(() => {
+        // Inside the editor: the page has a parent window, which receives what the page sends.
+        vi.spyOn(window, 'parent', 'get').mockReturnValue({
+            postMessage: vi.fn()
+        } as unknown as Window);
+        // jsdom has no layout observers; the auto-bounds channel needs them to start.
+        vi.stubGlobal(
+            'ResizeObserver',
+            class {
+                observe = vi.fn();
+                unobserve = vi.fn();
+                disconnect = vi.fn();
+            }
+        );
+
+        frames = new Map();
+        lastFrameId = 0;
+        vi.stubGlobal(
+            'requestAnimationFrame',
+            vi.fn((callback: FrameRequestCallback) => {
+                lastFrameId += 1;
+                frames.set(lastFrameId, callback);
+
+                return lastFrameId;
+            })
+        );
+        vi.stubGlobal(
+            'cancelAnimationFrame',
+            vi.fn((id: number) => frames.delete(id))
+        );
+
+        scrollBy = vi.spyOn(window, 'scrollBy').mockImplementation(vi.fn());
+        Object.defineProperty(window, 'innerHeight', { value: 800, configurable: true });
+        Object.defineProperty(document.documentElement, 'scrollHeight', {
+            value: 3000,
+            configurable: true
+        });
+        pageAt(1000);
+
+        ({ subscriptions } = registerUVEEvents());
+    });
+
+    afterEach(() => {
+        subscriptions.forEach((subscription) => subscription.unsubscribe());
+        pageAt(0);
+        delete (document.documentElement as unknown as Record<string, unknown>)['scrollHeight'];
+        vi.unstubAllGlobals();
+        vi.restoreAllMocks();
+    });
+
+    it('should scroll instantly every frame at the velocity the editor sends', () => {
+        scrollAtVelocity(12);
+
+        runFrame(1000);
+        runFrame(1000 + FRAME);
+
+        expect(scrollBy).toHaveBeenLastCalledWith(
+            expect.objectContaining({ top: expect.closeTo(12, 1), behavior: 'instant' })
+        );
+        // Still going: the page asked for the next frame.
+        expect(frames.size).toBe(1);
+    });
+
+    it('should scale each step by how long the frame took', () => {
+        scrollAtVelocity(12);
+
+        runFrame(1000);
+        runFrame(1000 + 2 * FRAME);
+
+        expect(lastInstantScroll()).toBeCloseTo(24, 0);
+    });
+
+    it('should scroll up for a negative velocity', () => {
+        scrollAtVelocity(-12);
+
+        runFrame(1000);
+        runFrame(1000 + FRAME);
+
+        expect(lastInstantScroll()).toBeCloseTo(-12, 0);
+    });
+
+    it('should stop when the editor sends a velocity of 0', () => {
+        scrollAtVelocity(12);
+        runFrame(1000);
+        runFrame(1000 + FRAME);
+        const scrollsBeforeStop = scrollBy.mock.calls.length;
+
+        scrollAtVelocity(0);
+        runFrame(1000 + 2 * FRAME);
+        runFrame(1000 + 3 * FRAME);
+
+        expect(scrollsBeforeStop).toBeGreaterThan(0);
+        expect(scrollBy).toHaveBeenCalledTimes(scrollsBeforeStop);
+    });
+
+    it('should stop at the top of the page when scrolling up', () => {
+        pageAt(0);
+
+        scrollAtVelocity(-12);
+        runFrame(1000);
+        runFrame(1000 + FRAME);
+
+        expect(scrollBy).not.toHaveBeenCalled();
+        expect(frames.size).toBe(0);
+        // It stopped because of the limit, not because it never started.
+        expect(requestAnimationFrame).toHaveBeenCalled();
+    });
+
+    it('should stop at the bottom of the page when scrolling down', () => {
+        pageAt(2200);
+
+        scrollAtVelocity(12);
+        runFrame(1000);
+        runFrame(1000 + FRAME);
+
+        expect(scrollBy).not.toHaveBeenCalled();
+        expect(frames.size).toBe(0);
+        expect(requestAnimationFrame).toHaveBeenCalled();
+    });
+
+    it.each([NaN, Infinity, -Infinity, '12', null])(
+        'should treat a velocity of %s as 0 and stop',
+        (velocity) => {
+            scrollAtVelocity(12);
+            runFrame(1000);
+            runFrame(1000 + FRAME);
+            const scrollsBefore = scrollBy.mock.calls.length;
+
+            scrollAtVelocity(velocity);
+            runFrame(1000 + 2 * FRAME);
+            runFrame(1000 + 3 * FRAME);
+
+            expect(scrollsBefore).toBeGreaterThan(0);
+            expect(scrollBy).toHaveBeenCalledTimes(scrollsBefore);
+        }
+    );
+
+    it.each([
+        { sent: 100, clamped: 40 },
+        { sent: -100, clamped: -40 }
+    ])(
+        'should scroll no faster than 40px per frame when the editor sends $sent',
+        ({ sent, clamped }) => {
+            scrollAtVelocity(sent);
+
+            runFrame(1000);
+            runFrame(1000 + FRAME);
+
+            expect(lastInstantScroll()).toBeCloseTo(clamped, 0);
+        }
+    );
+
+    it('should stop when the page stops listening to the editor', () => {
+        scrollAtVelocity(12);
+        runFrame(1000);
+        runFrame(1000 + FRAME);
+        const scrollsBefore = scrollBy.mock.calls.length;
+
+        subscriptions.forEach((subscription) => subscription.unsubscribe());
+        runFrame(1000 + 2 * FRAME);
+
+        expect(scrollsBefore).toBeGreaterThan(0);
+        expect(scrollBy).toHaveBeenCalledTimes(scrollsBefore);
+    });
+
+    describe('legacy one-step scroll request', () => {
+        const legacyScroll = (direction: 'up' | 'down') =>
+            fromEditor({ name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_INSIDE_IFRAME, direction });
+
+        it('should still scroll 120px smoothly for an editor that sends no velocity', () => {
+            legacyScroll('down');
+
+            expect(scrollBy).toHaveBeenCalledWith({ left: 0, top: 120, behavior: 'smooth' });
+        });
+
+        it('should ignore it once the editor has sent a velocity', () => {
+            scrollAtVelocity(0);
+
+            legacyScroll('down');
+
+            expect(scrollBy).not.toHaveBeenCalledWith(
+                expect.objectContaining({ behavior: 'smooth' })
+            );
+        });
     });
 });
 

@@ -985,6 +985,103 @@ describe('withEditor', () => {
 
                 expect(store.editorContentArea()).toBe(null);
             });
+
+            // #38575: a page on a newer SDK reports its scrollY with every scroll. During a drag
+            // the editor keeps the drop targets and moves them with the page instead of hiding
+            // them until the page settles.
+            describe('when the page reports its scrollY', () => {
+                /** The page reports a scroll, at `scrollY` when it says where it is. */
+                const pageScrolled = (scrollY?: number) =>
+                    // `scrollY` is a new argument; the cast keeps this file compiling until it exists.
+                    (store.updateEditorScrollState as (scrollY?: number) => void)(scrollY);
+
+                /** Container y in the bounds, as the SDK measured them: 10. */
+                const BOUNDS = getBoundsMock(ACTION_MOCK);
+
+                const containerYs = () => store.editorBounds().map((container) => container.y);
+
+                describe('during a drag', () => {
+                    beforeEach(() => {
+                        store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+                        store.setEditorBounds(BOUNDS);
+                    });
+
+                    it('should keep the editor dragging', () => {
+                        pageScrolled(40);
+
+                        expect(store.editorState()).toEqual(EDITOR_STATE.DRAGGING);
+                    });
+
+                    it('should move the containers up by how far the page scrolled down', () => {
+                        pageScrolled(40);
+
+                        expect(containerYs()).toEqual([-30]);
+                    });
+
+                    it('should leave the contentlets where they are within their container', () => {
+                        pageScrolled(40);
+
+                        expect(
+                            store.editorBounds().map((container) => container.contentlets)
+                        ).toEqual([BOUNDS[0].contentlets]);
+                    });
+
+                    it('should measure each scroll from where the page was when the bounds were taken, not add them up', () => {
+                        pageScrolled(40);
+                        pageScrolled(100);
+
+                        expect(containerYs()).toEqual([-90]);
+                    });
+
+                    it('should take fresh bounds as they are and measure later scrolls from them', () => {
+                        pageScrolled(40);
+
+                        const fresh = getBoundsMock(ACTION_MOCK).map((container) => ({
+                            ...container,
+                            y: 200
+                        }));
+                        store.setEditorBounds(fresh);
+
+                        expect(store.editorBounds()).toEqual(fresh);
+
+                        pageScrolled(60);
+
+                        expect(containerYs()).toEqual([180]);
+                    });
+
+                    it('should hide the drop targets until fresh bounds arrive when the page does not report its scrollY', () => {
+                        pageScrolled();
+
+                        expect(store.editorState()).toEqual(EDITOR_STATE.SCROLL_DRAG);
+                        expect(store.editorBounds()).toEqual([]);
+                    });
+                });
+
+                it('should measure from where the page was scrolled to before the drag started', () => {
+                    // The user scrolled before picking up a contentlet; the bounds are taken there.
+                    pageScrolled(100);
+                    store.setEditorBounds(BOUNDS);
+                    store.setEditorDragItem(EMA_DRAG_ITEM_CONTENTLET_MOCK);
+
+                    pageScrolled(130);
+
+                    expect(store.editorState()).toEqual(EDITOR_STATE.DRAGGING);
+                    expect(containerYs()).toEqual([-20]);
+                });
+
+                it.each([{ scrollY: 40 }, { scrollY: undefined }])(
+                    'should hide the overlays as before when nothing is dragged (scrollY: $scrollY)',
+                    ({ scrollY }) => {
+                        store.setEditorBounds(BOUNDS);
+
+                        pageScrolled(scrollY);
+
+                        expect(store.editorState()).toEqual(EDITOR_STATE.SCROLLING);
+                        expect(store.editorBounds()).toEqual([]);
+                        expect(store.editorContentArea()).toBe(null);
+                    }
+                );
+            });
         });
 
         describe('editorSetEditPanelTab', () => {

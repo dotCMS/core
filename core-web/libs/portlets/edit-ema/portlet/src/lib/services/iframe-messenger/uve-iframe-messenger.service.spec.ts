@@ -152,6 +152,26 @@ describe('UveIframeMessengerService', () => {
         });
     });
 
+    // #38575. The method and its event name do not exist yet; the cast keeps this file compiling
+    // so the test fails on its assertion. Drop the cast once `scrollAtVelocity` exists.
+    describe('scrollAtVelocity', () => {
+        const scrollAtVelocity = (velocity: number) =>
+            (
+                service as unknown as { scrollAtVelocity?: (velocity: number) => void }
+            ).scrollAtVelocity?.(velocity);
+
+        it.each([12, -40, 0])('should ask the page to scroll at %d px per frame', (velocity) => {
+            service.setIframeWindow(mockIframeWindow);
+
+            scrollAtVelocity(velocity);
+
+            expect(mockIframeWindow.postMessage).toHaveBeenCalledWith(
+                { name: 'uve-scroll-velocity', velocity },
+                '*'
+            );
+        });
+    });
+
     describe('scrollToSection', () => {
         it('should ask the page to scroll to the section with that index', () => {
             service.setIframeWindow(mockIframeWindow);

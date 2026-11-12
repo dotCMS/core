@@ -80,12 +80,26 @@ class DotUveContentletToolsStubComponent {
     readonly deleteContent = output<ActionPayload>();
 }
 
-/** The dropzone has its own spec; here it only needs to show and to receive the drop targets. */
+/**
+ * Where a drop goes, as the dropzone resolves it (#38575): next to a contentlet, into an empty
+ * container, or nowhere. Declared here until the dropzone exports it from `types.ts`.
+ */
+type ResolvedDropTarget = {
+    kind: 'contentlet' | 'empty-container' | 'none';
+    payload?: ClientData;
+    position?: 'before' | 'after';
+};
+
+/**
+ * The dropzone has its own spec; here it only needs to show, to receive the drop targets, and to
+ * tell the canvas where a drop would go.
+ */
 @Component({ selector: 'dot-ema-page-dropzone', template: '' })
 class EmaPageDropzoneStubComponent {
     readonly containers = input<Container[]>([]);
     readonly dragItem = input<EmaDragItem | null>(null);
     readonly zoomLevel = input(1);
+    readonly dropTargetChange = output<ResolvedDropTarget>();
 }
 
 /** The lock overlay has its own spec; here it only needs to show. */
@@ -1362,6 +1376,222 @@ describe('DotUveCanvasComponent', () => {
                 expect(store.editorInsertContentlet).not.toHaveBeenCalled();
                 expect(store.resetEditorProperties).toHaveBeenCalled();
             });
+        });
+    });
+
+    // #38575: the dropzone resolves where a drop goes, so the drop lands where the insertion line
+    // said. Each drop below lands on an element carrying today's raw data, which disagrees with
+    // the resolved target, so only a canvas that uses the resolved target passes.
+    describe('drops on the target the dropzone resolved', () => {
+        const CONTENTLET_1 = contentletOnPage('contentlet-1');
+        const CONTENTLET_2 = contentletOnPage('contentlet-2');
+        const CONTENTLET_3 = contentletOnPage('contentlet-3');
+
+        /** The dropzone shows, and reports the target under the pointer. */
+        const resolveTarget = (target: ResolvedDropTarget) => {
+            store.editorBounds.set([
+                {
+                    x: 0,
+                    y: 0,
+                    width: 800,
+                    height: 400,
+                    contentlets: [],
+                    payload: { container: CONTAINER_1 }
+                }
+            ]);
+            store.editorState.set(EDITOR_STATE.DRAGGING);
+            spectator.detectChanges();
+            spectator.triggerEventHandler(EmaPageDropzoneStubComponent, 'dropTargetChange', target);
+        };
+
+        beforeEach(() => {
+            store.resetEditorProperties.mockClear();
+        });
+
+        describe('a contentlet moved on the page', () => {
+            beforeEach(() => {
+                // The first contentlet of the first container, which holds contentlet-1 and contentlet-2.
+                store.editorDragItem.set(MOVED_CONTENTLET);
+            });
+
+            it('should save nothing and reset the editor when the drop is on its own placeholder', () => {
+                resolveTarget({ kind: 'none' });
+
+                dropOn(dropTarget({ container: CONTAINER_1, contentlet: CONTENTLET_1 }, 'after'));
+
+                expect(store.editorInsertContentlet).not.toHaveBeenCalled();
+                expect(store.editorSave).not.toHaveBeenCalled();
+                expect(store.resetEditorProperties).toHaveBeenCalled();
+            });
+
+            it('should save nothing and reset the editor when it is dropped right before the contentlet below it', () => {
+                resolveTarget({
+                    kind: 'contentlet',
+                    payload: { container: CONTAINER_1, contentlet: CONTENTLET_2 },
+                    position: 'before'
+                });
+
+                dropOn(dropTarget({ container: CONTAINER_1, contentlet: CONTENTLET_2 }, 'before'));
+
+                expect(store.editorInsertContentlet).not.toHaveBeenCalled();
+                expect(store.editorSave).not.toHaveBeenCalled();
+                expect(store.resetEditorProperties).toHaveBeenCalled();
+            });
+
+            it('should save nothing and reset the editor when it is dropped next to itself', () => {
+                resolveTarget({
+                    kind: 'contentlet',
+                    payload: { container: CONTAINER_1, contentlet: CONTENTLET_1 },
+                    position: 'after'
+                });
+
+                dropOn(dropTarget({ container: CONTAINER_1, contentlet: CONTENTLET_1 }, 'after'));
+
+                expect(store.editorInsertContentlet).not.toHaveBeenCalled();
+                expect(store.editorSave).not.toHaveBeenCalled();
+                expect(store.resetEditorProperties).toHaveBeenCalled();
+            });
+
+            it('should insert it next to the nearest contentlet when it is dropped on the space between contentlets', () => {
+                resolveTarget({
+                    kind: 'contentlet',
+                    payload: { container: CONTAINER_2, contentlet: CONTENTLET_3 },
+                    position: 'after'
+                });
+
+                // Today the space between contentlets is the container itself, with no position.
+                dropOn(dropTarget({ container: CONTAINER_2 }));
+
+                expect(store.editorInsertContentlet).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        pageContainers: [
+                            expect.objectContaining({
+                                identifier: 'container-1',
+                                contentletsId: ['contentlet-2']
+                            }),
+                            expect.objectContaining({
+                                identifier: 'container-2',
+                                contentletsId: ['contentlet-3']
+                            })
+                        ],
+                        container: expect.objectContaining({ identifier: 'container-2' }),
+                        contentlet: expect.objectContaining({ identifier: 'contentlet-3' }),
+                        position: 'after'
+                    }),
+                    'contentlet-1'
+                );
+            });
+
+            it('should take it out of its container and insert it in another one, as before', () => {
+                resolveTarget({
+                    kind: 'contentlet',
+                    payload: AFTER_CONTENTLET_3,
+                    position: 'after'
+                });
+
+                dropOn(dropTarget(AFTER_CONTENTLET_3, 'after'));
+
+                expect(store.editorInsertContentlet).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        pageContainers: [
+                            expect.objectContaining({
+                                identifier: 'container-1',
+                                contentletsId: ['contentlet-2']
+                            }),
+                            expect.objectContaining({
+                                identifier: 'container-2',
+                                contentletsId: ['contentlet-3']
+                            })
+                        ],
+                        container: expect.objectContaining({ identifier: 'container-2' }),
+                        contentlet: expect.objectContaining({ identifier: 'contentlet-3' }),
+                        position: 'after'
+                    }),
+                    'contentlet-1'
+                );
+            });
+        });
+
+        describe('a contentlet from the palette', () => {
+            beforeEach(() => {
+                store.editorDragItem.set(PALETTE_CONTENTLET);
+            });
+
+            it('should insert it next to the nearest contentlet when it is dropped on the space between contentlets', () => {
+                resolveTarget({
+                    kind: 'contentlet',
+                    payload: { container: CONTAINER_2, contentlet: CONTENTLET_3 },
+                    position: 'before'
+                });
+
+                dropOn(dropTarget({ container: CONTAINER_2 }));
+
+                expect(store.getPageSavePayload).toHaveBeenCalledWith({
+                    position: 'before',
+                    container: CONTAINER_2,
+                    contentlet: CONTENTLET_3
+                });
+                expect(store.editorInsertContentlet).toHaveBeenCalledWith(
+                    store.getPageSavePayload.mock.results[0].value,
+                    'palette-contentlet'
+                );
+            });
+
+            it('should insert it into an empty container, as before', () => {
+                resolveTarget({ kind: 'empty-container', payload: { container: CONTAINER_2 } });
+
+                dropOn(dropTarget({ container: CONTAINER_2 }));
+
+                expect(store.editorInsertContentlet).toHaveBeenCalledWith(
+                    expect.objectContaining({ container: CONTAINER_2 }),
+                    'palette-contentlet'
+                );
+            });
+        });
+
+        it('should ask the content editor to create a contentlet of a content type at the resolved target, as before', () => {
+            store.editorDragItem.set(CONTENT_TYPE);
+            const dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
+            resolveTarget({ kind: 'contentlet', payload: AFTER_CONTENTLET_3, position: 'after' });
+
+            dropOn(dropTarget(AFTER_CONTENTLET_3, 'after'));
+
+            expect(store.getPageSavePayload).toHaveBeenCalledWith({
+                position: 'after',
+                ...AFTER_CONTENTLET_3
+            });
+            expect(dispatch).toHaveBeenCalledWith(
+                uveContentEditorEvents.uveCreateContentRequested({
+                    contentType: { variable: 'Banner', name: 'Banner' },
+                    into: store.getPageSavePayload.mock.results[0].value
+                }),
+                { scope: 'self' }
+            );
+        });
+
+        it('should upload an image file and insert it at the resolved target, as before', () => {
+            const IMAGE = new File(['image'], 'photo.png', { type: 'image/png' });
+            store.editorDragItem.set(TEMPORAL_DRAG_ITEM);
+            workflowActionsFireService.publishContentletAndWaitForIndex.mockReturnValue(
+                of(
+                    createFakeContentlet({
+                        identifier: 'uploaded-image',
+                        inode: 'uploaded-image-inode',
+                        title: 'photo.png',
+                        contentType: 'dotAsset',
+                        baseType: 'DOTASSET'
+                    })
+                )
+            );
+            resolveTarget({ kind: 'contentlet', payload: AFTER_CONTENTLET_3, position: 'after' });
+
+            dropOn(dropTarget(AFTER_CONTENTLET_3, 'after'), [IMAGE]);
+
+            expect(tempFileUploadService.upload).toHaveBeenCalledWith(IMAGE);
+            expect(store.editorInsertContentlet).toHaveBeenCalledWith(
+                expect.objectContaining({ ...AFTER_CONTENTLET_3, position: 'after' }),
+                'uploaded-image'
+            );
         });
     });
 
