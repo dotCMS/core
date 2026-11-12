@@ -22,7 +22,8 @@ READER = 'NX_SELF_HOSTED_REMOTE_CACHE_READ_SERVER'
 
 
 def value(block, key):
-    match = re.search(rf'^\s+{key}:\s*(?:>-\s*)?(\$\{{\{{[^\n]+\}}\}})', block, re.M)
+    setting = rf'(?:{key}|nx-remote-cache-server)' if key == SERVER else key
+    match = re.search(rf'^\s+{setting}:\s*(?:>-\s*)?(\$\{{\{{[^\n]+\}}\}})', block, re.M)
     assert match, f'Missing expression for {key}'
     return match[1]
 
@@ -30,11 +31,12 @@ def value(block, key):
 def evaluate(expression, ref='refs/heads/main', protected=False,
              token='test-token', server='https://cache.example.test',
              test_type='frontend', disabled='false', event='push',
-             reader='https://reader.example.test', labels=()):
+             reader='https://reader.example.test', labels=(), remote_server='', local_server=''):
     # Only &&/||, !contains and startsWith are supported in this expression subset.
     expression = expression[3:-2].strip().replace('&&', ' and ').replace('||', ' or ')
     expression = expression.replace('!contains(', 'not contains(')
     expression = expression.replace('github.event.pull_request.labels.*.name', 'labels')
+    expression = expression.replace('inputs.nx-remote-cache-server', 'remote_server')
     return eval(expression, {'__builtins__': {}}, {
         'github': SimpleNamespace(ref=ref, ref_protected=protected, event_name=event),
         'secrets': SimpleNamespace(**{TOKEN: token}),
@@ -43,6 +45,8 @@ def evaluate(expression, ref='refs/heads/main', protected=False,
         'startsWith': str.startswith,
         'contains': lambda values, item: item in values,
         'labels': labels,
+        'remote_server': remote_server,
+        'env': SimpleNamespace(**{SERVER: local_server}),
     })
 
 
@@ -134,8 +138,35 @@ class NxRemoteCacheTests(unittest.TestCase):
                 self.assertEqual(evaluate(expression, disabled='true'), '')
                 maven_step = text.split('uses: ./.github/actions/core-cicd/maven-job', 1)[1]
                 step_env = maven_step.split('        with:', 1)[0]
-                self.assertIn(value(text, SERVER), step_env)
+                self.assertIn(value(text, SERVER), maven_step)
                 self.assertIn(value(text, TOKEN), step_env)
+
+    def test_build_preserves_local_cache_without_remote_settings(self):
+        text = (WORKFLOWS / 'cicd_comp_build-phase.yml').read_text()
+        maven_step = text.split('uses: ./.github/actions/core-cicd/maven-job', 1)[1]
+        step_env = maven_step.split('        with:', 1)[0]
+        local_server = 'http://127.0.0.1:47321'
+        for event in ('pull_request', 'push', 'merge_group', 'schedule', 'workflow_dispatch'):
+            with self.subTest(event=event):
+                # A caller's explicit env wins over the composite's GITHUB_ENV export.
+                actual = local_server
+                if re.search(rf'^\s+{SERVER}:', step_env, re.M):
+                    actual = evaluate(value(step_env, SERVER), event=event,
+                                      token='', server='', reader='')
+                self.assertEqual(actual, local_server)
+
+    def test_maven_prefers_remote_server_with_local_cache_fallback(self):
+        action = Path('.github/actions/core-cicd/maven-job/action.yml').read_text()
+        self.assertRegex(action, r'  nx-remote-cache-server:\n(?:    .*\n)*?    default: \'\'')
+        maven_step = action.split('    - id: run-maven-build\n', 1)[1].split('    - ', 1)[0]
+        expression = value(maven_step, SERVER)
+        for remote, local, expected in (
+                ('https://cache.example.test', 'http://127.0.0.1:47321', 'https://cache.example.test'),
+                ('https://cache.example.test', '', 'https://cache.example.test'),
+                ('', 'http://127.0.0.1:47321', 'http://127.0.0.1:47321'),
+                ('', '', '')):
+            with self.subTest(remote=remote, local=local):
+                self.assertEqual(evaluate(expression, remote_server=remote, local_server=local), expected)
 
     def test_only_frontend_matrix_jobs_receive_credentials(self):
         text = (WORKFLOWS / 'cicd_comp_test-phase.yml').read_text()

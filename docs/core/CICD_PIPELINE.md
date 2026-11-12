@@ -304,10 +304,13 @@ PUT 403 as a benign read-only result; PUT 405 fails cache-miss builds. Cached ar
 output are publicly readable by known/derived hash: never cache secrets or private output. The owner
 approved this public-read posture. Storage remains private and only trusted workflows populate it.
 
-Missing writer URL/token disables HTTP caching for trusted jobs; missing reader URL disables it for
-PR jobs, with no fallback to writer credentials. Set `BUILD_CACHE_DISABLED=true` to disable both
-Maven and Nx remote caching, including PR reads. The `CI : No Build Cache` PR label also disables
-Nx remote caching for that PR's builds and frontend tests. Nx still checks its local cache first.
+Missing writer URL/token disables the shared HTTP cache for trusted jobs; missing reader URL disables
+it for PR jobs, with no fallback to writer credentials. The build workflow passes the URL through
+`maven-job`'s `nx-remote-cache-server` input, selected at Maven execution time; an empty input preserves
+the existing artifact-backed localhost cache when available. Frontend test jobs do not start that server.
+Set `BUILD_CACHE_DISABLED=true` to disable Maven's remote cache and the shared Nx HTTP cache, including
+PR reads. The `CI : No Build Cache` PR label also disables the shared Nx HTTP cache for that PR's builds
+and frontend tests. The pre-existing localhost build cache and Nx's local cache are unchanged.
 
 Workflow wiring regression checks: `bash .github/workflows/tests/nx-remote-cache.test.sh`.
 

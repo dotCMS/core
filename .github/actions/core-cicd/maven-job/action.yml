@@ -142,6 +142,10 @@ inputs:
       and upload release-looking 1.0.0 coordinates.
     required: false
     default: 'false'
+  nx-remote-cache-server:
+    description: 'Nx remote cache URL. Empty preserves the existing localhost cache when available.'
+    required: false
+    default: ''
   save-nx-cache:
     description: |
       Save the Nx cache this build used and built (see Restore Nx Cache). Only for builds of
@@ -593,6 +597,9 @@ runs:
     - id: run-maven-build
       name: Run Maven Build
       shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}
+      env:
+        # Select after Start Nx Cache Server has exported its localhost fallback.
+        NX_SELF_HOSTED_REMOTE_CACHE_SERVER: ${{ inputs.nx-remote-cache-server || env.NX_SELF_HOSTED_REMOTE_CACHE_SERVER }}
       run: |
         set -e  # Exit on any command failure
         DEFAULT_ARGS="-e -B --no-transfer-progress --show-version -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=warn -Dprod=true"
