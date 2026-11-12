@@ -228,6 +228,58 @@ public class VelocityUtilTest {
         final Company defaultCompany = APILocator.getCompanyAPI().getDefaultCompany();
         Assert.assertNotNull("the default company holds a key", defaultCompany.getKey());
 
+        final Context context = VelocityUtil.getInstance().getWorkflowContext(workflowProcessor());
+        final Company company = (Company) context.get("company");
+
+        // Checked without printing the values, so a failure does not write a key to the build log
+        Assert.assertTrue("the company must not hold the key", company.getKey() == null);
+        Assert.assertTrue("the company must not hold the key object", company.getKeyObj() == null);
+        Assert.assertTrue("the company must not hold the key digest", company.getKeyDigest() == null);
+        Assert.assertEquals(defaultCompany.getCompanyId(), company.getCompanyId());
+        Assert.assertEquals(defaultCompany.getEmailAddress(), company.getEmailAddress());
+        Assert.assertEquals(defaultCompany.getPortalURL(), company.getPortalURL());
+        Assert.assertNotNull("the default company keeps its key", defaultCompany.getKey());
+    }
+
+    /**
+     * Method to test: {@link VelocityUtil#getWorkflowContext(WorkflowProcessor)}.
+     * Given scenario: a sub-action changes the {@code $company} of its context, then another context is built.
+     * Expected result: each context gets its own company, so the change reaches neither the next context nor the
+     * default company.
+     */
+    @Test
+    public void test_workflow_context_company_is_a_copy_per_context() throws Exception {
+        final Company defaultCompany = APILocator.getCompanyAPI().getDefaultCompany();
+        final String emailAddress = defaultCompany.getEmailAddress();
+        final String backgroundColor = defaultCompany.getBackgroundColor();
+        final WorkflowProcessor processor = workflowProcessor();
+
+        final Company first = (Company) VelocityUtil.getInstance().getWorkflowContext(processor).get("company");
+        try {
+            first.setEmailAddress("changed@example.test");
+            first.setSize("#000000");
+
+            final Company second = (Company) VelocityUtil.getInstance().getWorkflowContext(processor).get("company");
+
+            Assert.assertNotSame(first, second);
+            Assert.assertEquals(emailAddress, second.getEmailAddress());
+            Assert.assertEquals(backgroundColor, second.getBackgroundColor());
+            Assert.assertEquals(emailAddress, defaultCompany.getEmailAddress());
+            Assert.assertEquals(backgroundColor, defaultCompany.getBackgroundColor());
+        } finally {
+            // Undo the change in case the copy is shared, so other tests see the company as it was
+            first.setEmailAddress(emailAddress);
+            first.setSize(backgroundColor);
+        }
+    }
+
+    /**
+     * Builds a workflow processor for a new saved content, with the action, steps and next assignee the workflow
+     * context reads.
+     *
+     * @return the {@link WorkflowProcessor}
+     */
+    private static WorkflowProcessor workflowProcessor() {
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
         final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
         final WorkflowStep step = new WorkflowStep();
@@ -243,18 +295,7 @@ public class VelocityUtilTest {
         when(processor.getStep()).thenReturn(step);
         when(processor.getNextStep()).thenReturn(step);
         when(processor.getNextAssign()).thenReturn(nextAssign);
-
-        final Context context = VelocityUtil.getInstance().getWorkflowContext(processor);
-        final Company company = (Company) context.get("company");
-
-        // Checked without printing the values, so a failure does not write a key to the build log
-        Assert.assertTrue("the company must not hold the key", company.getKey() == null);
-        Assert.assertTrue("the company must not hold the key object", company.getKeyObj() == null);
-        Assert.assertTrue("the company must not hold the key digest", company.getKeyDigest() == null);
-        Assert.assertEquals(defaultCompany.getCompanyId(), company.getCompanyId());
-        Assert.assertEquals(defaultCompany.getEmailAddress(), company.getEmailAddress());
-        Assert.assertEquals(defaultCompany.getPortalURL(), company.getPortalURL());
-        Assert.assertNotNull("the default company keeps its key", defaultCompany.getKey());
+        return processor;
     }
 
 }
