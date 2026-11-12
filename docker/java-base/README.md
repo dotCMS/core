@@ -17,13 +17,25 @@ docker buildx use multiarch
 
 At this point, you can use `buildx` to build your image and target the platform(s) you want to build for.  Mostly, the same arguements apply, though `buildx` also allows you to immediatly push your new image to docker hub after it is built.
 
-Use the version specified
-```
-docker buildx build --platform linux/amd64,linux/arm64 --pull --push -t dotcms/java-base:ms-jdk-21.09 .
+Build and publish the version pinned in `.sdkmanrc` (from this directory):
+```bash
+JAVA_VERSION="$(sed -n 's/^java=//p' ../../.sdkmanrc)"
+docker buildx build --platform linux/amd64,linux/arm64 --pull --push \
+  --build-arg SDKMAN_JAVA_VERSION="$JAVA_VERSION" \
+  -t "dotcms/java-base:${JAVA_VERSION//+/-}" .
 ```
 
-or specify a version
-```
-docker buildx build --platform linux/amd64,linux/arm64 --pull --push -t dotcms/java-base:21.2.0.r11-grl .
+Publish this base image before building downstream dotCMS images that reference its tag.
 
+### eMudhra certificate distrust
+
+Microsoft Java `25.0.5.0+2-ms` contains the CVE-2026-91403 intermediate-certificate
+blocklist. The build also applies [OpenJDK's root-removal mitigation](https://openjdk.org/emudhra)
+for the follow-up CVE-2026-114820 to `/java/lib/security/cacerts`. Certificates chaining
+only to these removed roots will no longer be trusted. Custom mounted truststores
+and developer SDKMAN installations require separate mitigation.
+
+Test removal with a JDK on `PATH`:
+```bash
+bash remove-compromised-cas.test.sh
 ```
