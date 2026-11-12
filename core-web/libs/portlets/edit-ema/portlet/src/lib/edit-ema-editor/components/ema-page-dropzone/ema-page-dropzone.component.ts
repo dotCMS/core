@@ -35,6 +35,8 @@ interface DropzoneContentlet {
     payload: ClientData;
     /** The JSON written to `data-payload`. */
     payloadAttribute: string;
+    /** Whether it is the contentlet being moved, in the container it is moved from. */
+    isSource: boolean;
 }
 
 /** A container of the page, with its payload read once. */
@@ -49,7 +51,8 @@ interface DropzoneContainer {
 /**
  * The drop targets drawn over the page while something is dragged. It is the one place that
  * decides where a drop goes: it resolves the target under the pointer, draws the insertion line
- * there, and reports the target to the canvas, which drops on it.
+ * there, and reports the target to the canvas, which drops on it. A contentlet being moved shows
+ * as a gray placeholder at its original place, which is not a target.
  */
 @Component({
     selector: 'dot-ema-page-dropzone',
@@ -81,24 +84,51 @@ export class EmaPageDropzoneComponent {
     /** Where the insertion line is drawn. */
     protected readonly $pointerPosition = signal<Record<string, string>>(POINTER_INITIAL_POSITION);
 
-    /** The containers and contentlets to draw, with their payloads read. */
-    protected readonly $containers = computed<DropzoneContainer[]>(() =>
-        this.containers().map((container) => ({
-            container,
-            payload: readPayload(container.payload),
-            payloadAttribute: writePayload(container.payload),
-            contentlets: container.contentlets.map((area) => ({
-                area,
-                payload: readPayload(area.payload),
-                payloadAttribute: writePayload(area.payload)
-            }))
-        }))
-    );
+    /**
+     * The containers and contentlets to draw, with their payloads read. The contentlet being
+     * moved is marked as the source, only in the container it is moved from: the same contentlet
+     * can sit in another container too.
+     */
+    protected readonly $containers = computed<DropzoneContainer[]>(() => {
+        const draggedPayload = this.dragItem()?.draggedPayload;
+        const source =
+            draggedPayload?.type === 'contentlet' && draggedPayload.move
+                ? draggedPayload.item
+                : null;
+
+        return this.containers().map((container) => {
+            const payload = readPayload(container.payload);
+            const isSourceContainer =
+                !!source?.container &&
+                source.container.identifier === payload?.container?.identifier &&
+                source.container.uuid === payload?.container?.uuid;
+
+            return {
+                container,
+                payload,
+                payloadAttribute: writePayload(container.payload),
+                contentlets: container.contentlets.map((area) => {
+                    const contentletPayload = readPayload(area.payload);
+
+                    return {
+                        area,
+                        payload: contentletPayload,
+                        payloadAttribute: writePayload(area.payload),
+                        isSource:
+                            isSourceContainer &&
+                            contentletPayload?.contentlet?.identifier ===
+                                source.contentlet?.identifier
+                    };
+                })
+            };
+        });
+    });
 
     /**
      * Resolve the drop target under the pointer in a container, draw the insertion line there and
      * report the target. Over a contentlet, the target is before or after it, by which half the
      * pointer is in. Between contentlets, it is the contentlet whose vertical centre is nearest.
+     * The moved contentlet's own place, and the places right next to it, are no target.
      *
      * @param {DragEvent} event
      * @param {DropzoneContainer} container the container the pointer is in
@@ -139,6 +169,13 @@ export class EmaPageDropzoneComponent {
             container.contentlets.find(({ area }) => isInside(area, pointerX, pointerY)) ??
             nearestByCentre(container.contentlets, pointerY);
         const position = pointerY < pivot.area.y + pivot.area.height / 2 ? 'before' : 'after';
+
+        if (leavesOrderUnchanged(container.contentlets, pivot, position)) {
+            this.#clearTarget();
+
+            return;
+        }
+
         const { area } = pivot;
 
         this.$pointerPosition.set({
@@ -212,6 +249,30 @@ function nearestByCentre(contentlets: DropzoneContentlet[], y: number): Dropzone
 
     return contentlets.reduce((nearest, contentlet) =>
         distance(contentlet) < distance(nearest) ? contentlet : nearest
+    );
+}
+
+/**
+ * Whether dropping next to `pivot` puts the moved contentlet back where it is: on itself, right
+ * after the contentlet above it, or right before the one below it.
+ */
+function leavesOrderUnchanged(
+    contentlets: DropzoneContentlet[],
+    pivot: DropzoneContentlet,
+    position: 'before' | 'after'
+): boolean {
+    const sourceIndex = contentlets.findIndex(({ isSource }) => isSource);
+
+    if (sourceIndex === -1) {
+        return false;
+    }
+
+    const pivotIndex = contentlets.indexOf(pivot);
+
+    return (
+        pivotIndex === sourceIndex ||
+        (pivotIndex === sourceIndex - 1 && position === 'after') ||
+        (pivotIndex === sourceIndex + 1 && position === 'before')
     );
 }
 

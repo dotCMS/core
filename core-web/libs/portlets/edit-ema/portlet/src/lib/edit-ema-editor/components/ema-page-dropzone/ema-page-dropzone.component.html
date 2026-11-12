@@ -7,12 +7,22 @@
         [attr.data-empty]="!container.contentlets.length"
         data-type="container">
         @for (contentlet of container.contentlets; track $index) {
-            <div
-                [attr.data-payload]="contentlet.payloadAttribute"
-                [style]="contentlet.area | dotPosition"
-                [attr.data-dropzone]="true"
-                [attr.data-empty]="false"
-                data-type="contentlet"></div>
+            @if (contentlet.isSource) {
+                <!-- Where the moved contentlet was. It takes the pointer, so it does not fall
+                     through to the container, but resolves to no target. -->
+                <div
+                    [style]="contentlet.area | dotPosition"
+                    [attr.data-dropzone]="true"
+                    class="bg-gray-500/40"
+                    data-testid="dropzone-source-placeholder"></div>
+            } @else {
+                <div
+                    [attr.data-payload]="contentlet.payloadAttribute"
+                    [style]="contentlet.area | dotPosition"
+                    [attr.data-dropzone]="true"
+                    [attr.data-empty]="false"
+                    data-type="contentlet"></div>
+            }
         }
 
         @let error = container.container | dotError: dragItem();
