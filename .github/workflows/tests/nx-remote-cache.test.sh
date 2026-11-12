@@ -52,13 +52,12 @@ class NxRemoteCacheTests(unittest.TestCase):
         self.assertIn('{workspaceRoot}/tools/vitest-stub-scss.mts',
                       config['targetDefaults']['test']['inputs'])
 
-    def test_frontend_tests_hash_angular_vitest_tooling(self):
+    def test_builds_and_tests_hash_all_locked_dependency_versions(self):
         config = json.loads(Path('core-web/nx.json').read_text())
-        dependencies = next(item['externalDependencies']
-                            for item in config['targetDefaults']['test']['inputs']
-                            if isinstance(item, dict) and 'externalDependencies' in item)
-        for dependency in ('vitest', '@analogjs/vite-plugin-angular', '@analogjs/vitest-angular'):
-            self.assertIn(dependency, dependencies)
+        self.assertIn('default', config['targetDefaults']['test']['inputs'])
+        self.assertIn('sharedGlobals', config['namedInputs']['default'])
+        self.assertIn('default', config['namedInputs']['production'])
+        self.assertIn('{workspaceRoot}/pnpm-lock.yaml', config['namedInputs']['sharedGlobals'])
 
     def test_sdk_ai_hashes_backend_openapi_source(self):
         config = json.loads(Path('core-web/libs/sdk/ai/project.json').read_text())

@@ -101,13 +101,7 @@
                 "default",
                 "^production",
                 "{workspaceRoot}/tools/vitest-stub-scss.mts",
-                {
-                    "externalDependencies": [
-                        "vitest",
-                        "@analogjs/vite-plugin-angular",
-                        "@analogjs/vitest-angular"
-                    ]
-                }
+                { "externalDependencies": ["vitest"] }
             ],
             "outputs": [
                 "{workspaceRoot}/target/core-web-reports/{projectName}.xml",
@@ -184,6 +178,7 @@
             "{workspaceRoot}/angular.json",
             "{workspaceRoot}/tsconfig.base.json",
             "{workspaceRoot}/nx.json",
+            "{workspaceRoot}/pnpm-lock.yaml",
             "{workspaceRoot}/babel.config.json",
             "{workspaceRoot}/tools/rollup/types-first.cjs"
         ],
