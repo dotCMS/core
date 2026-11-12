@@ -1,8 +1,10 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.browser.BrowserAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -11,9 +13,8 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.links.model.Link;
@@ -25,8 +26,6 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
-import org.apache.velocity.context.Context;
-import org.apache.velocity.context.InternalContextAdapterImpl;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -42,17 +41,38 @@ import java.util.Set;
 
 public class DotCMSMacroWebAPI implements ViewTool {
 
-	private static final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 	private static final UserAPI userAPI = APILocator.getUserAPI();
 	private BrowserAPI browser = APILocator.getBrowserAPI();
-    Context ctx;
-	private InternalContextAdapterImpl ica;
 
+	/** The request the tool was initialised with; it carries the author of the rendered code. */
+	private HttpServletRequest request;
+
+	/**
+	 * Keeps the request the tool was created for.
+	 *
+	 * @param obj the {@link ViewContext} of the rendering
+	 */
+	@Override
 	public void init(Object obj) {
+		final ViewContext context = (ViewContext) obj;
+		this.request = context.getRequest();
+	}
 
-                ViewContext context = (ViewContext) obj;
-		ctx = context.getVelocityContext();
-	
+	/**
+	 * Returns the user making the current request, or the anonymous user when nobody is logged
+	 * in. The request bound to the current thread wins over the one the tool was created for, so
+	 * a tool instance shared between requests still answers for the current one.
+	 *
+	 * @return the user whose permissions folders, files and content are read with
+	 */
+	protected User getRequestUser() {
+		final HttpServletRequest threadRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		final HttpServletRequest currentRequest = null != threadRequest ? threadRequest : this.request;
+		User user = null;
+		if (null != currentRequest) {
+			user = WebAPILocator.getUserWebAPI().getUser(currentRequest);
+		}
+		return null != user ? user : APILocator.getUserAPI().getAnonymousUserNoThrow();
 	}
 
 	public List getfileRepository(String folderPath, String searchFolder,
@@ -207,17 +227,20 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	 * Get a list of x number of events, from a category inode list in a range of dates.
 	 * if startDayOffset is null or 0, the start date begin from today at 00:00:00.
 	 * if daysToShow is null or cero, en end date is today at 00:00:00, if not the
-	 * end date if from the start date + daysToShow
+	 * end date if from the start date + daysToShow.
+	 * Categories and events are read with the permissions of the user making the request (the
+	 * anonymous user when nobody is logged in); when one of the categories does not exist or that
+	 * user cannot read it, no events are returned.
 	 * @param categories a string list of comma separated categories inodes
 	 * @param limit max number of events to get
-	 * @param startDayOffset
-	 * @param daysToShow
+	 * @param startDayOffset days from today where the range starts
+	 * @param daysToShow number of days the range covers
 	 * @return a list of events
-	 * @throws DotSecurityException
-	 * @throws DotDataException
+	 * @throws DotSecurityException if the events cannot be read
+	 * @throws DotDataException if the categories or events cannot be loaded
 	 */
-	public List getEvents(String categories, int limit, int startDayOffset,
-			int daysToShow) throws DotDataException, DotSecurityException {
+	public List getEvents(final String categories, final int limit, final int startDayOffset,
+			final int daysToShow) throws DotDataException, DotSecurityException {
 
 		GregorianCalendar fromCal = new GregorianCalendar();
 		GregorianCalendar toCal = new GregorianCalendar();
@@ -239,13 +262,28 @@ public class DotCMSMacroWebAPI implements ViewTool {
 		toCal.set(GregorianCalendar.MINUTE, 59);
 		toCal.set(GregorianCalendar.SECOND, 58);
 
-		String[] categorieInodes=categories.split(",");
-		List<Category> categoriesList=new ArrayList<>(categorieInodes.length);
-		for(String inode : categorieInodes)
-			categoriesList.add(categoryAPI.find(inode, userAPI.getSystemUser(), false));
+		final User user = getRequestUser();
+		final String[] categoryInodes = categories.split(",");
+		final List<Category> categoriesList = new ArrayList<>(categoryInodes.length);
+		try {
+			for (final String inode : categoryInodes) {
+				final Category category = APILocator.getCategoryAPI().find(inode, user, true);
+				if (null == category) {
+					// Same reason as below: leaving it out would widen the filter.
+					Logger.debug(this, () -> String.format("Event category '%s' does not exist", inode));
+					return new ArrayList<>();
+				}
+				categoriesList.add(category);
+			}
+		} catch (final DotSecurityException e) {
+			// Searching with only the readable categories would widen the filter: answer nothing.
+			Logger.debug(this, () -> String.format("User '%s' cannot read one of the requested event categories",
+					user.getUserId()));
+			return new ArrayList<>();
+		}
 
 		return APILocator.getEventAPI().find(fromCal.getTime(), toCal.getTime(),
-				null, null, categoriesList, true, false, 0, limit, userAPI.getSystemUser(), false);
+				null, null, categoriesList, true, false, 0, limit, user, true);
 	}
 
 	/**
@@ -543,19 +581,46 @@ public class DotCMSMacroWebAPI implements ViewTool {
 	}
 
 
+	/**
+	 * Returns the files of a folder to show in a media gallery. The site, the folder and its files
+	 * are read with the permissions of the user making the request (the anonymous user when nobody
+	 * is logged in), so files that user cannot read are left out.
+	 *
+	 * @param folderPath path of the folder whose files are listed
+	 * @param hostId identifier of the site the folder belongs to
+	 * @return one map per file, with the keys 'movie' (null when the file is not a movie) and
+	 * 'photo' (the file, or the photo of the movie). Empty when the user cannot read the site or
+	 * the folder.
+	 * @throws DotDataException if the files cannot be loaded
+	 */
 	public List<HashMap<String, IFileAsset>> getMediaGalleryFolderFiles(String folderPath, String hostId) throws DotDataException {
         folderPath = (folderPath == null) ? "" : folderPath;
         folderPath = folderPath.trim().endsWith("/") ? folderPath.trim() : folderPath.trim() + "/";
-        Folder folder = new Folder();
+        final User user = getRequestUser();
+        Folder folder;
 		try {
-			folder = APILocator.getFolderAPI().findFolderByPath(folderPath, hostId,userAPI.getSystemUser(),false);
+			// Resolve the site here: the hostId overload of findFolderByPath reads the site
+			// without front-end roles.
+			final Host site = APILocator.getHostAPI().find(hostId, user, true);
+			folder = APILocator.getFolderAPI().findFolderByPath(folderPath, site, user, true);
+		} catch (final DotSecurityException e) {
+			Logger.debug(this, () -> String.format("User '%s' cannot read the requested gallery site or folder",
+					user.getUserId()));
+			return new ArrayList<>();
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(),e);
 		}
         List<IFileAsset> fileList = new ArrayList<>();
 		try {
-			fileList.addAll(APILocator.getFileAssetAPI().findFileAssetsByFolder(folder, "", true, APILocator.getUserAPI().getSystemUser(), false));
+			// The site and the folder were read as the viewer above. The listing itself runs as the
+			// system user because it reads the folder again with the page mode's front-end role
+			// setting (off in edit and preview mode); the files are then kept only if the viewer can
+			// read them.
+			final List<FileAsset> folderFiles = APILocator.getFileAssetAPI().findFileAssetsByFolder(
+					folder, "", true, APILocator.getUserAPI().getSystemUser(), false);
+			fileList.addAll(APILocator.getPermissionAPI().filterCollection(folderFiles,
+					PermissionAPI.PERMISSION_READ, true, user));
 		} catch (Exception e) {
 			Logger.error(this, e.getMessage());
 		}
@@ -612,25 +677,23 @@ public class DotCMSMacroWebAPI implements ViewTool {
         return getMediaGalleryFolderFiles(folderPath, String.valueOf(hostId));
     }
 	
+	/**
+	 * Decides whether the code that is calling this tool may run {@link #getSQLResults}.
+	 *
+	 * <p>Scripting has to be switched on, and the content whose code calls the tool has to have
+	 * been last saved by someone holding the
+	 * {@link com.dotmarketing.business.Role#SCRIPTING_DEVELOPER} role. That author comes from the
+	 * request, where the render that knows what content it is rendering puts it, rather than from
+	 * the current Velocity resource name: {@code #parse} lets the template author choose that
+	 * name, and the names dotCMS really produces do not parse at all.
+	 *
+	 * @return {@code true} when this tool may run
+	 */
 	protected boolean canUserEvaluate(){
-		if(!Config.getBooleanProperty("ENABLE_SCRIPTING", false)){
+		if (!Config.getBooleanProperty("ENABLE_SCRIPTING", false)) {
 			Logger.warn(this.getClass(), "Scripting called and ENABLE_SCRIPTING set to false");
 			return false;
 		}
-        try{
-            ica = new InternalContextAdapterImpl(ctx);
-            String fieldResourceName = ica.getCurrentTemplateName();
-            String conInode = fieldResourceName.substring(fieldResourceName.indexOf("/") + 1, fieldResourceName.indexOf("_"));
-
-            Contentlet con = APILocator.getContentletAPI().find(conInode, APILocator.getUserAPI().getSystemUser(), true);
-
-            User mu = userAPI.loadUserById(con.getModUser(), APILocator.getUserAPI().getSystemUser(), true);
-            Role scripting =APILocator.getRoleAPI().loadRoleByKey("Scripting Developer");
-            return APILocator.getRoleAPI().doesUserHaveRole(mu, scripting);
-		}
-		catch(Exception e){
-			Logger.warn(this.getClass(), "Scripting called with error" + e);
-			return false;	
-		}
+		return RestrictedViewToolAccess.renderingAuthorHasAccess(this.request);
 	}
 }

@@ -329,11 +329,6 @@
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.ldap</artifactId>
-                <version>ukv_2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.lesscss</artifactId>
                 <version>1.5.1-SNAPSHOT_3</version>
             </dependency>

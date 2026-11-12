@@ -2,6 +2,8 @@ package com.dotmarketing.db;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.enterprise.PasswordFactoryProxy;
+import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -75,7 +77,10 @@ public class DotCMSInitDb {
 
             Try.run(DotCMSInitDb::loadStarterSite).getOrElseThrow(DotRuntimeException::new);
 
-            Try.run(DotCMSInitDb::setUpInitialPassword).onFailure(DotRuntimeException::new);
+            Try.run(DotCMSInitDb::setUpInitialPassword)
+                    .onFailure(e -> Logger.error(DotCMSInitDb.class,
+                            "Unable to set up the initial admin password. The admin account keeps "
+                                    + "the password it was created with.", e));
 
         } else {
             Logger.info(DotCMSInitDb.class, "inodes exist, skipping initialization of db");
@@ -169,9 +174,11 @@ public class DotCMSInitDb {
 	}
 
     /**
-     * set the initial password to admin user and prints it out
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * Sets the initial password of the admin user, stored as a secure hash, and prints it out
+     * when it was generated rather than configured.
+     *
+     * @throws DotDataException     if the admin user cannot be found, or the password cannot be hashed or saved
+     * @throws DotSecurityException if the admin user cannot be saved
      */
     static void setUpInitialPassword() throws DotDataException, DotSecurityException {
         if(ConfigUtils.isDevMode()){
@@ -193,7 +200,14 @@ public class DotCMSInitDb {
             printNotice(initialPassword._2);
         }
 
-        admin.setPassword(initialPassword._2);
+        try {
+            admin.setPassword(PasswordFactoryProxy.generateHash(initialPassword._2));
+            // Flag the account as holding a hash rather than a plaintext password, the same way
+            // the SAML and OAuth account-creation paths do when they store a generated hash.
+            admin.setPasswordEncrypted(true);
+        } catch (final PasswordException e) {
+            throw new DotDataException("Unable to hash the initial admin password", e);
+        }
         userAPI.save(admin, APILocator.systemUser(), false);
 
     }

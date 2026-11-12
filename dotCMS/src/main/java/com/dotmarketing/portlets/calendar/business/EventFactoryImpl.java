@@ -241,7 +241,10 @@ public class EventFactoryImpl extends EventFactory {
 						if(baseEvent==null){
 							event.setDisconnectedFrom("");
 							try{
-								conAPI.checkin(event, categoryAPI.getParents(event, user, true), perAPI.getPermissions(event),  APILocator.getUserAPI().getSystemUser(),false);
+								// Saved as the system user, so it keeps all the event's categories, not
+								// only the ones the user running the search can read.
+								final User systemUser = APILocator.getUserAPI().getSystemUser();
+								conAPI.checkin(event, categoryAPI.getParents(event, systemUser, false), perAPI.getPermissions(event), systemUser, false);
 							}catch(Exception e){}
 						}
 					}

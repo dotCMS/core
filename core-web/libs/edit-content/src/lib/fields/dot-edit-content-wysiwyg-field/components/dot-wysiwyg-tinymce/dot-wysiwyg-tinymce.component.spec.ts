@@ -225,4 +225,67 @@ describe('DotWysiwygTinymceComponent', () => {
             })
         );
     });
+
+    describe('browse buttons in the image and link dialogs', () => {
+        const filePickerCallback = vi.fn();
+
+        /** Renders the field with `tinymceprops`, and the plugin service offering the picker. */
+        const renderWithFilePicker = (tinymceprops?: string) => {
+            const field = tinymceprops
+                ? {
+                      ...WYSIWYG_MOCK,
+                      fieldVariables: [
+                          {
+                              clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                              fieldId: '1',
+                              id: '1',
+                              key: 'tinymceprops',
+                              value: tinymceprops
+                          }
+                      ]
+                  }
+                : WYSIWYG_MOCK;
+
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-wysiwyg-tinymce [field]="field" [hasError]="hasError" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({ [field.variable]: new FormControl() }),
+                        field,
+                        hasError: false
+                    }
+                }
+            );
+
+            // `$editorConfig` is computed on first read, so the stub only has to be in place
+            // before change detection.
+            vi.mocked(
+                spectator.inject(DotWysiwygPluginService, true).filePickerOptions
+            ).mockReturnValue({
+                file_picker_types: 'file image',
+                file_picker_callback: filePickerCallback
+            });
+            spectator.detectChanges();
+
+            return spectator.component.$editorConfig();
+        };
+
+        it('should hand TinyMCE the picker callback from the plugin service', () => {
+            const config = renderWithFilePicker();
+
+            expect(config.file_picker_types).toBe('file image');
+            expect(config.file_picker_callback).toBe(filePickerCallback);
+        });
+
+        it('should let the system-wide and field configs narrow which dialogs get a button', () => {
+            // Image dialog only — a customer who does not want editors browsing for links.
+            const config = renderWithFilePicker('{ "file_picker_types": "image" }');
+
+            expect(config.file_picker_types).toBe('image');
+            // A JSON config cannot carry a function, so the callback always survives the merge.
+            expect(config.file_picker_callback).toBe(filePickerCallback);
+        });
+    });
 });
