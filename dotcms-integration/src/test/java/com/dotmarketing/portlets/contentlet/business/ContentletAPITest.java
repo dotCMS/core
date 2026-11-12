@@ -20,6 +20,7 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESContentletAPIImpl;
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -4540,17 +4541,18 @@ public class ContentletAPITest extends ContentletBaseTest {
 
             final long count = APILocator.getContentletAPI().indexCount(q, user, false);
             if (count != 1) {
+                // The recounts read the index through a scroll query, which skips the search
+                // query cache; indexCount would return the cached first answer for q.
                 final String prefix = "+inode:" + c11.getInode() + " +" + testContentType.variable() + ".";
-                final ContentletAPI api = APILocator.getContentletAPI();
                 fail(String.format("Expected 1 index document for sibling %s with the new dates, found %d. "
                                 + "Now: documents for the inode: %d, with the old dates: %d, "
                                 + "with the new dates: %d; cached identifier dates: %s",
                         c11.getInode(), count,
-                        api.indexCount("+inode:" + c11.getInode(), user, false),
-                        api.indexCount(prefix + publishField.variable() + ":" + DateUtil.toLuceneDateTime(d1)
+                        uncachedIndexCount("+inode:" + c11.getInode()),
+                        uncachedIndexCount(prefix + publishField.variable() + ":" + DateUtil.toLuceneDateTime(d1)
                                 + " +" + testContentType.variable() + "." + expireField.variable() + ":"
-                                + DateUtil.toLuceneDateTime(d2), user, false),
-                        api.indexCount(q, user, false),
+                                + DateUtil.toLuceneDateTime(d2)),
+                        uncachedIndexCount(q),
                         Optional.ofNullable(APILocator.getIdentifierAPI().loadFromCache(c1.getIdentifier()))
                                 .map(i -> i.getSysPublishDate() + " / " + i.getSysExpireDate())
                                 .orElse("not cached")));
@@ -4558,6 +4560,22 @@ public class ContentletAPITest extends ContentletBaseTest {
         } finally {
             ContentletTransformer.setUniquePublishExpireDatePerLanguages(
                     uniquePublishExpireDatePerLanguages);
+        }
+    }
+
+    /**
+     * Counts the index documents matching a query without the search query cache. The count
+     * comes from a scroll query, which goes to the search client directly, so a repeated count
+     * reflects the index as it is now rather than an earlier cached answer.
+     *
+     * @param luceneQuery the query to count
+     * @return the number of matching documents in the index right now
+     * @throws Exception if the query fails
+     */
+    private static long uncachedIndexCount(final String luceneQuery) throws Exception {
+        try (IndexContentletScroll scroll = APILocator.getContentletAPI()
+                .createScrollQuery(luceneQuery, user, false, 1, "moddate desc")) {
+            return scroll.getTotalHits();
         }
     }
 
