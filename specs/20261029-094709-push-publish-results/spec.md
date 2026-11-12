@@ -140,9 +140,9 @@ is a `.tar.gz` file that does not exist yet. So the delivery skip depends on the
 publisher that runs later. It affects the static and S3 publishers (directory outputs) when anything
 ran before them in the same attempt, which includes the push publisher and each other; it does not
 affect the push publisher. Static after S3, or S3 after static, was not run live; it follows from the
-same code and the plan's test must prove it. The plan must test both orders. The audit rows in those two runs were written by the receiver, which
-was the same instance as the sender, so they could not show the sender's endpoint list. That was
-closed with a second instance (below).
+same code and the plan's test must prove it. The audit rows in those two runs were written by the
+receiver, which was the same instance as the sender, so they could not show the sender's endpoint
+list. That was closed with a second instance (below).
 
 **Two instances, static first (sender on port 8080, receiver on port 8081; bundle
 `01M6HHY3WYSA72FT3DXEZZSMGP`, live page, Default filter, environment "Push to All Endpoints" with one
@@ -165,7 +165,7 @@ closed with a second instance (below).
    publisher runs first records its endpoints. The publisher that runs second sees a non-empty history
    and records only failures, so its successful endpoints never appear. The order comes from a
    `HashSet` of publisher classes in `getPublishersForBundle`, so it is not deterministic.
-2. **The audit-collection step can overwrite one protocol's endpoints with the other's.** In
+2. **The audit-collection step mixes local and remote entries in one map and counts map entries, not endpoints.** In
    `PublisherQueueJob.collectEndpointInfoFromRemote`, static and S3 endpoints are not polled
    remotely; their local record is copied in. Dynamic endpoints are polled and their history is
    copied in. Both copies use a top-level `putAll` into one map. The status checks compare against
