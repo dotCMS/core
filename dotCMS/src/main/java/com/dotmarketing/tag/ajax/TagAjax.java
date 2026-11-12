@@ -17,6 +17,7 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -144,8 +145,7 @@ public class TagAjax {
 		final User user = getLoggedInUser();
 		checkCanManageTags(user);
 		if (!tagAPI.canDeleteTag(user, tagId)) {
-			throw new DotSecurityException(String.format(
-					"User '%s' lacks permission to change the tag", user.getUserId()));
+			throw refused(user, "change the tag");
 		}
 
 		HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
@@ -273,8 +273,7 @@ public class TagAjax {
 	public static List<TagInode> getTagInodeByInode(String inode) throws DotDataException, DotSecurityException {
 		final User user = getLoggedInUser();
 		if (!tagAPI.canReadTagInodes(user, inode)) {
-			throw new DotSecurityException(String.format(
-					"User '%s' lacks permission to see the tags of this object", user.getUserId()));
+			throw refused(user, "see the tags of this object");
 		}
 		try {
 			return APILocator.getTagAPI().getTagInodesByInode(inode);
@@ -296,8 +295,7 @@ public class TagAjax {
 	public void deleteTagInode ( String tagName, String inode ) throws DotDataException, DotSecurityException {
 		final User user = getLoggedInUser();
 		if (!tagAPI.canEditTagInodes(user, inode)) {
-			throw new DotSecurityException(String.format(
-					"User '%s' lacks permission to change the tags of this object", user.getUserId()));
+			throw refused(user, "change the tags of this object");
 		}
 		try {
 			APILocator.getTagAPI().deleteTagInode(tagName, inode, null);
@@ -323,8 +321,7 @@ public class TagAjax {
 		if (tagAPI.canEditUserTags(user, userId)) {
 			return;
 		}
-		throw new DotSecurityException(String.format(
-				"User '%s' lacks permission to work with the tags of another user", user.getUserId()));
+		throw refused(user, "work with the tags of another user");
 	}
 
 	/**
@@ -342,8 +339,7 @@ public class TagAjax {
 				|| layoutAPI.doesUserHaveAccessToPortlet(PortletID.TAGS_LEGACY.toString(), user)) {
 			return;
 		}
-		throw new DotSecurityException(String.format(
-				"User '%s' lacks permission to manage tags", user.getUserId()));
+		throw refused(user, "manage tags");
 	}
 
 	/**
@@ -359,6 +355,20 @@ public class TagAjax {
 			throw new DotSecurityException("There's no logged in user");
 		}
 		return user;
+	}
+
+	/**
+	 * Records a refused tag operation once in the security log and builds the exception to throw.
+	 * Only the logged in user's id is recorded, never the values sent with the request.
+	 *
+	 * @param user   the user whose request was refused
+	 * @param action what the user tried to do, e.g. "manage tags"
+	 * @return the {@link DotSecurityException} to throw
+	 */
+	private static DotSecurityException refused(final User user, final String action) {
+		final String message = String.format("User '%s' lacks permission to %s", user.getUserId(), action);
+		SecurityLogger.logInfo(TagAjax.class, message);
+		return new DotSecurityException(message);
 	}
 
 	/**

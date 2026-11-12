@@ -816,7 +816,7 @@ public class TagAPIImpl implements TagAPI {
         }
 
         Logger.debug(this, () -> String.format(
-                "Inode '%s' is neither a contentlet nor a user, only admins can use its tags", inode));
+                "Inode '%s' is neither a contentlet nor a user, only admin and system users can use its tags", inode));
         return false;
     }
 

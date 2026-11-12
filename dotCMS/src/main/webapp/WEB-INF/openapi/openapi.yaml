@@ -18809,8 +18809,9 @@ paths:
       - Tag (v1)
     get:
       deprecated: true
-      description: Retrieves all tag-inode associations for a given inode. This endpoint
-        is deprecated - use v2 TagResource instead.
+      description: "Retrieves all tag-inode associations for a given inode. Needs\
+        \ READ permission on the content; for a user id, the same access as reading\
+        \ that user's tags. This endpoint is deprecated - use v2 TagResource instead."
       operationId: findTagsByInodeV1
       parameters:
       - description: Inode identifier to retrieve associated tags for
@@ -18826,6 +18827,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagInodesView"
           description: Tag-inode associations retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the user's access could not be resolved
         "401":
           content:
             application/json: {}
@@ -18833,7 +18838,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: "Forbidden - no access to the Tags portlet, or no READ permission\
+            \ on the inode"
         "404":
           content:
             application/json: {}
@@ -18891,9 +18897,10 @@ paths:
   /v1/tags/user/{userId}:
     get:
       deprecated: true
-      description: Retrieves all tags owned by a given user. Returns tags that were
-        assigned an owner during creation. This endpoint is deprecated - use v2 TagResource
-        instead.
+      description: "Retrieves all tags owned by a given user. Returns tags that were\
+        \ assigned an owner during creation. Available to the user themselves, admins,\
+        \ and users with access to a Users portlet. This endpoint is deprecated -\
+        \ use v2 TagResource instead."
       operationId: getTagsByUserIdV1
       parameters:
       - description: User identifier to retrieve owned tags for
@@ -18909,6 +18916,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagsView"
           description: Tags retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the user's access could not be resolved
         "401":
           content:
             application/json: {}
@@ -18916,7 +18927,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: "Forbidden - no access to the Tags portlet, or not allowed\
+            \ to see this user's tags"
         "404":
           content:
             application/json: {}
@@ -24754,8 +24766,9 @@ paths:
       tags:
       - Tags
     get:
-      description: Retrieves all tags associated with a given inode. Returns tag-inode
-        relationships for the specified content.
+      description: "Retrieves all tags associated with a given inode. Returns tag-inode\
+        \ relationships for the specified content. Needs READ permission on the content;\
+        \ for a user id, the same access as reading that user's tags."
       operationId: getTagsByInode
       parameters:
       - description: Inode to retrieve tags for
@@ -24771,6 +24784,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagInodesMapView"
           description: Tags retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the user's access could not be resolved
         "401":
           content:
             application/json: {}
@@ -24778,7 +24795,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions to access tags
+          description: "Forbidden - no access to the Tags portlet, or no READ permission\
+            \ on the inode"
         "404":
           content:
             application/json: {}
@@ -24841,8 +24859,9 @@ paths:
       - Tags
   /v2/tags/user/{userId}:
     get:
-      description: Retrieves all tags owned by a specific user. Returns tags that
-        were explicitly linked to the user during creation.
+      description: "Retrieves all tags owned by a specific user. Returns tags that\
+        \ were explicitly linked to the user during creation. Available to the user\
+        \ themselves, admins, and users with access to a Users portlet."
       operationId: getTagsByUserId
       parameters:
       - description: User ID to retrieve tags for
@@ -24858,6 +24877,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagMapView"
           description: User tags retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the user's access could not be resolved
         "401":
           content:
             application/json: {}
@@ -24865,7 +24888,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions to access tags
+          description: "Forbidden - no access to the Tags portlet, or not allowed\
+            \ to see this user's tags"
         "404":
           content:
             application/json: {}

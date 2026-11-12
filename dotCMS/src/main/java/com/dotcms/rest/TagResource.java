@@ -355,6 +355,7 @@ public class TagResource {
             summary = "Get tags by user ID (deprecated)",
             description = "Retrieves all tags owned by a given user. " +
                     "Returns tags that were assigned an owner during creation. " +
+                    "Available to the user themselves, admins, and users with access to a Users portlet. " +
                     "This endpoint is deprecated - use v2 TagResource instead.",
             deprecated = true
     )
@@ -363,11 +364,14 @@ public class TagResource {
                     description = "Tags retrieved successfully",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                             schema = @Schema(implementation = ResponseEntityTagsView.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Bad request - the user's access could not be resolved",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
             @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)),
             @ApiResponse(responseCode = "403",
-                    description = "Forbidden - insufficient permissions",
+                    description = "Forbidden - no access to the Tags portlet, or not allowed to see this user's tags",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)),
             @ApiResponse(responseCode = "404",
                     description = "No tags found for the given user ID",
@@ -653,6 +657,7 @@ public class TagResource {
             operationId = "findTagsByInodeV1",
             summary = "Get tags by inode (deprecated)",
             description = "Retrieves all tag-inode associations for a given inode. " +
+                    "Needs READ permission on the content; for a user id, the same access as reading that user's tags. " +
                     "This endpoint is deprecated - use v2 TagResource instead.",
             deprecated = true
     )
@@ -661,11 +666,14 @@ public class TagResource {
                     description = "Tag-inode associations retrieved successfully",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON,
                             schema = @Schema(implementation = ResponseEntityTagInodesView.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Bad request - the user's access could not be resolved",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON)),
             @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)),
             @ApiResponse(responseCode = "403",
-                    description = "Forbidden - insufficient permissions",
+                    description = "Forbidden - no access to the Tags portlet, or no READ permission on the inode",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)),
             @ApiResponse(responseCode = "404",
                     description = "No tags found for the given inode",

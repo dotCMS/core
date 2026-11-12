@@ -505,18 +505,21 @@ public class TagResource {
     @Operation(
         operationId = "getTagsByUserId",
         summary = "Get tags by user ID",
-        description = "Retrieves all tags owned by a specific user. Returns tags that were explicitly linked to the user during creation."
+        description = "Retrieves all tags owned by a specific user. Returns tags that were explicitly linked to the user during creation. Available to the user themselves, admins, and users with access to a Users portlet."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200",
                     description = "User tags retrieved successfully",
                     content = @Content(mediaType = "application/json",
                                       schema = @Schema(implementation = ResponseEntityTagMapView.class))),
+        @ApiResponse(responseCode = "400",
+                    description = "Bad request - the user's access could not be resolved",
+                    content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "403",
-                    description = "Forbidden - insufficient permissions to access tags",
+                    description = "Forbidden - no access to the Tags portlet, or not allowed to see this user's tags",
                     content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "404",
                     description = "No tags found for the specified user",
@@ -866,18 +869,21 @@ public class TagResource {
     @Operation(
         operationId = "getTagsByInode",
         summary = "Get tags by inode",
-        description = "Retrieves all tags associated with a given inode. Returns tag-inode relationships for the specified content."
+        description = "Retrieves all tags associated with a given inode. Returns tag-inode relationships for the specified content. Needs READ permission on the content; for a user id, the same access as reading that user's tags."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200",
                     description = "Tags retrieved successfully",
                     content = @Content(mediaType = "application/json",
                                       schema = @Schema(implementation = ResponseEntityTagInodesMapView.class))),
+        @ApiResponse(responseCode = "400",
+                    description = "Bad request - the user's access could not be resolved",
+                    content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "403",
-                    description = "Forbidden - insufficient permissions to access tags",
+                    description = "Forbidden - no access to the Tags portlet, or no READ permission on the inode",
                     content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "404",
                     description = "No tags found for the specified inode",
