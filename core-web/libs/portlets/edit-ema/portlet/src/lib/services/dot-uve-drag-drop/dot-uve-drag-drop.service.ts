@@ -88,6 +88,10 @@ export class DotUveDragDropService {
 
         const stopScrolling = () => scrollAtVelocity(0);
 
+        // The page scrolls on its own until told to stop: leaving the editor mid-scroll must stop
+        // it, or it runs to the page's limit.
+        this.destroyRef.onDestroy(stopScrolling);
+
         /**
          * Pages on an older `@dotcms/uve` ignore the velocity and scroll a smooth 120px step per
          * request. Sending one per `dragover` made the steps interrupt each other, so they go

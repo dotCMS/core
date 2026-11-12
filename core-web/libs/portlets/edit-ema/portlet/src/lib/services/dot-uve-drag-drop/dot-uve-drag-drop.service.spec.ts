@@ -1,7 +1,8 @@
 import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
 import { Mock, vi } from 'vitest';
 
-import { ElementRef, signal } from '@angular/core';
+import { ElementRef, EnvironmentInjector, createEnvironmentInjector, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
 
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { WINDOW } from '@dotcms/utils';
@@ -33,9 +34,7 @@ function createUVEStoreMock() {
         editorDragItem: signal(EMA_DRAG_ITEM_CONTENTLET_MOCK),
         editorBounds,
         setEditorState: vi.fn(),
-        setEditorDragItem: vi.fn(),
-        // Like the store's: the editor hides the drop targets until the page sends fresh ones.
-        updateEditorScrollDragState: vi.fn(() => editorBounds.set([]))
+        setEditorDragItem: vi.fn()
     };
 }
 
@@ -66,6 +65,19 @@ describe('DotUveDragDropService', () => {
         posted().filter((message) => message.name === __DOTCMS_UVE_EVENT__.UVE_SCROLL_INSIDE_IFRAME)
             .length;
 
+    /** Has `service` listen to drags over an iframe at `IFRAME_RECT`. */
+    const setUp = (service: DotUveDragDropService) => {
+        const iframe = document.createElement('iframe');
+        vi.spyOn(iframe, 'getBoundingClientRect').mockReturnValue(IFRAME_RECT as DOMRect);
+
+        service.setupDragEvents(
+            store as unknown as InstanceType<typeof UVEStore>,
+            new ElementRef(iframe),
+            new ElementRef(document.createElement('div')),
+            handlers
+        );
+    };
+
     /** The pointer drags over the iframe at `clientY`, mid-way across. */
     const dragOver = (clientY: number) => {
         window.dispatchEvent(new MouseEvent('dragover', { clientX: 500, clientY }));
@@ -88,15 +100,7 @@ describe('DotUveDragDropService', () => {
 
         spectator.inject(UveIframeMessengerService).setIframeWindow(page as unknown as Window);
 
-        const iframe = document.createElement('iframe');
-        vi.spyOn(iframe, 'getBoundingClientRect').mockReturnValue(IFRAME_RECT as DOMRect);
-
-        spectator.service.setupDragEvents(
-            store as unknown as InstanceType<typeof UVEStore>,
-            new ElementRef(iframe),
-            new ElementRef(document.createElement('div')),
-            handlers
-        );
+        setUp(spectator.service);
     });
 
     afterEach(() => {
@@ -205,6 +209,27 @@ describe('DotUveDragDropService', () => {
             dragOver(400);
 
             expect(legacyScrolls()).toBe(0);
+        });
+    });
+
+    describe('when the drag service goes away', () => {
+        // The page scrolls on its own until told to stop, so leaving the editor mid-scroll must
+        // stop it, or it runs to the page's limit.
+        it('should ask the page to stop scrolling', () => {
+            // A service of its own, in an injector the test can destroy, as leaving the canvas
+            // destroys the canvas's. The shared one sends the same velocity and stays.
+            const injector = createEnvironmentInjector(
+                [DotUveDragDropService],
+                TestBed.inject(EnvironmentInjector)
+            );
+            setUp(injector.get(DotUveDragDropService));
+
+            dragOver(10);
+            expect(lastVelocity()).toBeLessThan(0);
+
+            injector.destroy();
+
+            expect(lastVelocity()).toBe(0);
         });
     });
 

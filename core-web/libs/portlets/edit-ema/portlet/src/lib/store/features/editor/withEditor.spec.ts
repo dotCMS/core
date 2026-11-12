@@ -1146,15 +1146,6 @@ describe('withEditor', () => {
             });
         });
 
-        describe('updateEditorScrollDragState', () => {
-            it('should update the store correctly', () => {
-                store.updateEditorScrollDragState();
-
-                expect(store.editorState()).toEqual(EDITOR_STATE.SCROLL_DRAG);
-                expect(store.editorBounds()).toEqual([]);
-            });
-        });
-
         describe('setEditorState', () => {
             it('should update the state correctly', () => {
                 store.setEditorState(EDITOR_STATE.SCROLLING);

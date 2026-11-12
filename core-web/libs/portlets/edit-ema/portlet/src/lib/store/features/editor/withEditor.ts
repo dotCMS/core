@@ -430,12 +430,6 @@ export function withEditor() {
                         editorState: dragItem ? EDITOR_STATE.DRAGGING : EDITOR_STATE.IDLE
                     });
                 },
-                updateEditorScrollDragState() {
-                    patchState(store, {
-                        editorState: EDITOR_STATE.SCROLL_DRAG,
-                        editorBounds: []
-                    });
-                },
                 /**
                  * Flag the editor as resizing the iframe; clears bounds/hover
                  * area so contentlet-tools and dropzone hide during the drag.
