@@ -4785,9 +4785,10 @@ paths:
         \ resolution: (1) look up by bundleId, (2) if not found, look up unsent bundles\
         \ by bundleName, (3) if still not found, auto-create a new bundle. A non-matching\
         \ bundleId does NOT return 404 — it falls through to name lookup and then\
-        \ auto-creation. Assets already in the bundle are silently skipped (idempotent).\
-        \ Individual asset failures (e.g., no publish permission) are reported in\
-        \ the errors list as human-readable strings, not as HTTP errors."
+        \ auto-creation. A bundleId that belongs to another user returns 403 unless\
+        \ the caller is a CMS Administrator. Assets already in the bundle are silently\
+        \ skipped (idempotent). Individual asset failures (e.g., no publish permission)\
+        \ are reported in the errors list as human-readable strings, not as HTTP errors."
       operationId: addAssetsToBundle
       requestBody:
         content:
@@ -4814,7 +4815,7 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: Forbidden - the bundle belongs to another user
         "404":
           content:
             application/json: {}
@@ -4833,9 +4834,9 @@ paths:
       - Publishing
   /v1/bundles/{bundleId}/assets:
     delete:
-      description: Removes one or more assets from an unpushed bundle. Each asset
-        is processed independently with per-asset results. Assets not found in the
-        bundle return success=false.
+      description: Removes one or more assets from an unpushed bundle. Only the bundle
+        owner or a CMS Administrator may remove assets. Each asset is processed independently
+        with per-asset results. Assets not found in the bundle return success=false.
       operationId: removeAssetsFromBundle
       parameters:
       - description: Bundle identifier
@@ -4870,7 +4871,7 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: Forbidden - the bundle belongs to another user
         "404":
           content:
             application/json: {}
@@ -7010,6 +7011,44 @@ paths:
           description: "Internal Server Error: An unexpected error occurred during\
             \ job creation or processing."
       summary: Imports content from a CSV file
+      tags:
+      - Content Import
+      - Content
+  /v1/content/_import/_template:
+    get:
+      description: "Returns a CSV file with one header line naming every field an\
+        \ import row can set, and one sample row showing the format each of those\
+        \ columns takes. Requires READ permission on the Content Type."
+      operationId: downloadContentImportTemplate
+      parameters:
+      - description: The id or the variable name of the Content Type
+        in: query
+        name: contentType
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            text/csv:
+              example: |-
+                title,body
+                "XXX","XXX"
+              schema:
+                type: string
+                description: "A header line of field variable names, and a sample\
+                  \ row."
+          description: "The CSV template, as a file attachment."
+        "400":
+          description: "Bad Request: No Content Type was given."
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: User does not have READ permission on the Content\
+            \ Type."
+        "404":
+          description: "Not Found: The Content Type could not be found."
+      summary: Downloads the CSV template of a Content Type
       tags:
       - Content Import
       - Content

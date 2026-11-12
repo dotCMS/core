@@ -2,16 +2,24 @@ package com.dotmarketing.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -22,11 +30,15 @@ import org.apache.logging.log4j.core.impl.Log4jLogEvent;
 import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.apache.logging.log4j.message.SimpleMessage;
 import org.junit.jupiter.api.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 /**
  * Checks the log layouts dotCMS ships: the webapp {@code log4j2.xml} and the default patterns the
  * Docker image exports. A line break inside a log message is written as text, so every message
- * stays on its own line, while stack traces keep one frame per line.
+ * stays on its own line, while stack traces keep one frame per line. Other control characters in
+ * a message or in exception text are written as {@code ?}.
  */
 class LogLayoutPatternTest {
 
@@ -35,6 +47,19 @@ class LogLayoutPatternTest {
             new File("src/main/docker/original/ROOT/srv/35-set-logging-defaults.sh");
 
     private static final String MESSAGE = "first part\r\nsecond part";
+    private static final File EXAMPLE_CONFIG =
+            new File("src/main/webapp/WEB-INF/log4j/log4j2-example.xml");
+    private static final String CR_EXCEPTION_TEXT = "cause\rnext";
+    private static final String CONTROL_MESSAGE =
+            "a\u001b[2Kb\u0007c\u2028d\u2029e\u0085f col1\tcol2 \u00e9\u65e5\u672c";
+    /**
+     * The first and last character of each range in the control-character class, which must be
+     * written as {@code ?}, followed by the characters right outside those ranges ({@code ~} and
+     * the no-break space), which must stay.
+     */
+    private static final String RANGE_EDGES_TEXT =
+            "e0\u0000e1\u0008e2\u000Be3\u000Ce4\u000Ee5\u001Fe6\u007Fe7\u009Fe8 kept~\u00A0kept";
+    private static final String RANGE_EDGES_WRITTEN = "e0?e1?e2?e3?e4?e5?e6?e7?e8 kept~\u00A0kept";
 
     /**
      * Given the console layout from the webapp log4j2.xml,
@@ -85,6 +110,227 @@ class LogLayoutPatternTest {
         }
     }
 
+    /**
+     * Given the console layout from the webapp log4j2.xml,
+     * When a message holds terminal control characters and Unicode line separators,
+     * Then each one is written as {@code ?}, while tabs and non-ASCII letters are kept.
+     */
+    @Test
+    void webappConsolePattern_writesControlCharactersAsPlaceholders() throws IOException {
+        assertControlCharactersReplaced(format(webappConsoleLayout(), event(CONTROL_MESSAGE, null)));
+    }
+
+    /**
+     * Given the console layout from the webapp log4j2.xml,
+     * When the exception text holds a terminal control character,
+     * Then it is written as {@code ?} and the stack trace is printed once, one frame per line.
+     */
+    @Test
+    void webappConsolePattern_writesControlCharactersInExceptionTextAsPlaceholders()
+            throws IOException {
+        assertExceptionTextReplaced(format(webappConsoleLayout(), event("failure", controlException())));
+    }
+
+    /**
+     * Given the default console and file patterns the Docker image exports,
+     * When a message holds terminal control characters and Unicode line separators,
+     * Then each one is written as {@code ?}, while tabs and non-ASCII letters are kept.
+     */
+    @Test
+    void dockerDefaultPatterns_writeControlCharactersAsPlaceholders() throws Exception {
+        for (final String pattern : dockerDefaultPatterns()) {
+            assertControlCharactersReplaced(format(layout(pattern), event(CONTROL_MESSAGE, null)));
+        }
+    }
+
+    /**
+     * Given the default console and file patterns the Docker image exports,
+     * When the exception text holds a terminal control character,
+     * Then it is written as {@code ?} and the stack trace is printed once, one frame per line.
+     */
+    @Test
+    void dockerDefaultPatterns_writeControlCharactersInExceptionTextAsPlaceholders()
+            throws Exception {
+        for (final String pattern : dockerDefaultPatterns()) {
+            assertExceptionTextReplaced(format(layout(pattern), event("failure", controlException())));
+        }
+    }
+
+    /**
+     * Given the console layout from the webapp log4j2.xml,
+     * When the exception text holds a carriage return that is not part of a line end,
+     * Then it is written as {@code ?}.
+     */
+    @Test
+    void webappConsolePattern_writesBareCarriageReturnInExceptionTextAsPlaceholder()
+            throws IOException {
+        assertBareCarriageReturnReplaced(format(webappConsoleLayout(),
+                event("failure", new IllegalStateException(CR_EXCEPTION_TEXT))));
+    }
+
+    /**
+     * Given the default console and file patterns the Docker image exports,
+     * When the exception text holds a carriage return that is not part of a line end,
+     * Then it is written as {@code ?}.
+     */
+    @Test
+    void dockerDefaultPatterns_writeBareCarriageReturnInExceptionTextAsPlaceholder()
+            throws Exception {
+        for (final String pattern : dockerDefaultPatterns()) {
+            assertBareCarriageReturnReplaced(format(layout(pattern),
+                    event("failure", new IllegalStateException(CR_EXCEPTION_TEXT))));
+        }
+    }
+
+    /**
+     * Given the console layout from the webapp log4j2.xml,
+     * When a message or exception text holds the first and last character of each control range,
+     * Then each of them is written as {@code ?}, while the characters right outside the ranges stay.
+     */
+    @Test
+    void webappConsolePattern_writesRangeEdgesAsPlaceholders() throws IOException {
+        assertRangeEdgesReplaced(webappConsoleLayout());
+    }
+
+    /**
+     * Given the default console and file patterns the Docker image exports,
+     * When a message or exception text holds the first and last character of each control range,
+     * Then each of them is written as {@code ?}, while the characters right outside the ranges stay.
+     */
+    @Test
+    void dockerDefaultPatterns_writeRangeEdgesAsPlaceholders() throws Exception {
+        for (final String pattern : dockerDefaultPatterns()) {
+            assertRangeEdgesReplaced(layout(pattern));
+        }
+    }
+
+    /**
+     * Given the webapp log4j2.xml and no CMS_LOG4J_CONSOLE_PATTERN in the environment,
+     * When the configuration builds its appenders,
+     * Then the Console appender is laid out with the default console pattern the other tests check.
+     */
+    @Test
+    void webappConsoleAppender_usesDefaultConsolePattern() throws IOException {
+        final XmlConfiguration configuration = webappConfiguration();
+        assumeTrue(configuration.getStrSubstitutor()
+                        .replace("${env:CMS_LOG4J_CONSOLE_PATTERN:-}").isEmpty(),
+                "CMS_LOG4J_CONSOLE_PATTERN is set, so the Console appender uses that pattern instead");
+
+        final Appender appender = configuration.getAppender("Console");
+
+        assertNotNull(appender, "log4j2.xml defines a Console appender");
+        final PatternLayout layout = assertInstanceOf(PatternLayout.class, appender.getLayout());
+        assertEquals(configuration.getStrSubstitutor().replace("${DEFAULT_CONSOLE_PATTERN}"),
+                layout.getConversionPattern());
+    }
+
+    /**
+     * Given the four message patterns in log4j2-example.xml,
+     * When a message or exception text holds control characters,
+     * Then each one is written as {@code ?}, and the stack trace is printed once.
+     */
+    @Test
+    void examplePatterns_writeControlCharactersAsPlaceholders() throws Exception {
+        for (final String pattern : examplePatterns()) {
+            assertControlCharactersReplaced(format(layout(pattern), event(CONTROL_MESSAGE, null)));
+            assertExceptionTextReplaced(format(layout(pattern), event("failure", controlException())));
+            assertBareCarriageReturnReplaced(format(layout(pattern),
+                    event("failure", new IllegalStateException(CR_EXCEPTION_TEXT))));
+            assertRangeEdgesReplaced(layout(pattern));
+        }
+    }
+
+    /**
+     * Formats a message and an exception whose text holds {@link #RANGE_EDGES_TEXT}, and checks
+     * that both come out as {@link #RANGE_EDGES_WRITTEN}, with the stack trace still one frame per
+     * line.
+     */
+    private static void assertRangeEdgesReplaced(final Layout<?> layout) {
+        final String message = format(layout, event(RANGE_EDGES_TEXT, null));
+        assertNoControlCharacters(message);
+        assertTrue(message.contains(RANGE_EDGES_WRITTEN), () -> "output: " + visible(message));
+
+        final String exception = format(layout,
+                event("failure", new IllegalStateException(RANGE_EDGES_TEXT)));
+        assertNoControlCharacters(exception);
+        assertTrue(exception.contains("IllegalStateException: " + RANGE_EDGES_WRITTEN),
+                () -> "output: " + visible(exception));
+        assertStackTraceFrames(exception.replace(RANGE_EDGES_WRITTEN, "cause"));
+    }
+
+    private static void assertBareCarriageReturnReplaced(final String output) {
+        assertTrue(output.contains("IllegalStateException: cause?next"),
+                () -> "output: " + visible(output));
+        assertStackTraceFrames(output.replace("cause?next", "cause"));
+    }
+
+    /**
+     * Reads the message patterns from log4j2-example.xml, with {@code ${CONTROL_CHARS}} resolved.
+     */
+    private static List<String> examplePatterns() throws Exception {
+        final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        final Document document = factory.newDocumentBuilder().parse(EXAMPLE_CONFIG);
+        final NodeList nodes = document.getElementsByTagName("Property");
+        final Map<String, String> properties = new HashMap<>();
+        for (int i = 0; i < nodes.getLength(); i++) {
+            final Element property = (Element) nodes.item(i);
+            properties.put(property.getAttribute("name"), property.getTextContent());
+        }
+        final List<String> patterns = new ArrayList<>();
+        for (final String name : List.of("PATTERN", "CONSOLE_PATTERN", "MESSAGE_PATTERN",
+                "MDC_MESSAGE_PATTERN")) {
+            assertTrue(properties.containsKey(name), () -> "missing property " + name);
+            final String pattern = properties.get(name)
+                    .replace("${CONTROL_CHARS}", properties.getOrDefault("CONTROL_CHARS", ""));
+            assertFalse(pattern.contains("${"), () -> name + " still has a property: " + pattern);
+            patterns.add(pattern);
+        }
+        return patterns;
+    }
+
+    private static IllegalStateException controlException() {
+        return new IllegalStateException("cause\u001b[1Aend");
+    }
+
+    private static void assertControlCharactersReplaced(final String output) {
+        assertNoControlCharacters(output);
+        assertTrue(output.contains("a?[2Kb?c?d?e?f"), () -> "output: " + visible(output));
+        assertTrue(output.contains("col1\tcol2"), () -> "output: " + visible(output));
+        assertTrue(output.contains("\u00e9\u65e5\u672c"), () -> "output: " + visible(output));
+    }
+
+    private static void assertExceptionTextReplaced(final String output) {
+        assertNoControlCharacters(output);
+        assertTrue(output.contains("IllegalStateException: cause?[1Aend"),
+                () -> "output: " + visible(output));
+        assertEquals(1, output.split("IllegalStateException", -1).length - 1,
+                () -> "the stack trace is printed once: " + visible(output));
+        assertStackTraceFrames(output.replace("cause?[1Aend", "cause"));
+    }
+
+    /** Fails on any character a terminal could act on, other than tab and line ends. */
+    private static void assertNoControlCharacters(final String output) {
+        for (final char c : output.toCharArray()) {
+            final boolean allowed = c == '\t' || c == '\n' || c == '\r';
+            assertFalse(!allowed && (Character.isISOControl(c) || c == '\u2028' || c == '\u2029'),
+                    () -> "output: " + visible(output));
+        }
+    }
+
+    /** Shows control characters as their code point, so a failure message is readable. */
+    private static String visible(final String output) {
+        final StringBuilder builder = new StringBuilder();
+        for (final char c : output.toCharArray()) {
+            if (c != '\n' && c != '\t' && (Character.isISOControl(c) || c == '\u2028' || c == '\u2029')) {
+                builder.append(String.format("<U+%04X>", (int) c));
+            } else {
+                builder.append(c);
+            }
+        }
+        return builder.toString();
+    }
+
     private static void assertMessageOnOneLine(final String output) {
         final String line = output.endsWith(System.lineSeparator())
                 ? output.substring(0, output.length() - System.lineSeparator().length())
@@ -99,13 +345,28 @@ class LogLayoutPatternTest {
         assertTrue(output.contains("\n\tat "), () -> "output: " + output);
     }
 
+    /**
+     * Builds a layout from the default console pattern of the webapp log4j2.xml. It does not use
+     * {@code ${CONSOLE_PATTERN}}, because that one takes CMS_LOG4J_CONSOLE_PATTERN from the
+     * environment when it is set; {@link #webappConsoleAppender_usesDefaultConsolePattern()}
+     * checks that the Console appender is wired to it.
+     */
     private static Layout<?> webappConsoleLayout() throws IOException {
+        final XmlConfiguration configuration = webappConfiguration();
+        return PatternLayout.newBuilder()
+                .withConfiguration(configuration)
+                .withPattern(configuration.getStrSubstitutor().replace("${DEFAULT_CONSOLE_PATTERN}"))
+                .build();
+    }
+
+    /** Loads and initializes the webapp log4j2.xml in its own logger context. */
+    private static XmlConfiguration webappConfiguration() throws IOException {
         final LoggerContext context = new LoggerContext("LogLayoutPatternTest");
         try (InputStream in = new FileInputStream(WEBAPP_CONFIG)) {
             final XmlConfiguration configuration =
                     new XmlConfiguration(context, new ConfigurationSource(in, WEBAPP_CONFIG));
             configuration.initialize();
-            return configuration.getAppender("Console").getLayout();
+            return configuration;
         }
     }
 
