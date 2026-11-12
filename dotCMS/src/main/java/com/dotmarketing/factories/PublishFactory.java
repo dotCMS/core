@@ -24,7 +24,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
-import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -353,7 +352,6 @@ public class PublishFactory {
 			// Removes static menues to provoke all possible dependencies be generated.
 			Folder parentFolder = (Folder)APILocator.getFolderAPI().findParentFolder((Treeable) webAsset,user,false);
 			Host host = (Host) hostAPI.findParentHost(parentFolder, APILocator.getUserAPI().getSystemUser(), respectFrontendRoles);
-			RefreshMenus.deleteMenu(host);
 			CacheLocator.getNavToolCache().removeNav(host.getIdentifier(), parentFolder.getInode());
 		}
 

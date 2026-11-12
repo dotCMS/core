@@ -1,4 +1,3 @@
-<%@page import="com.dotmarketing.portlets.calendar.business.EventAPI"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowAction"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowStep"%>
@@ -100,9 +99,6 @@
 	} else {
 		params.put("sibblingStructure", new String[] { (request.getParameter("selectedStructureFake") != null) ? request
 		.getParameter("selectedStructureFake") : "" });
-	}
-	if(structure.getVelocityVarName().equals(EventAPI.EVENT_STRUCTURE_VAR)){
-		params.put("struts_action",new String[] {"/ext/calendar/edit_event"});
 	}
 	// Include relationship params in editURL so changeLanguage() preserves them across
 	// language switches. Without this, switching language on a new child form loses the

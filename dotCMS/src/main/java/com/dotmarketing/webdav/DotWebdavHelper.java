@@ -35,7 +35,6 @@ import com.dotmarketing.cache.FolderCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -1561,8 +1560,6 @@ public class DotWebdavHelper {
 				path += "/";
 			folder = folderAPI.findFolderByPath(path, host,user,false);
 			if (folder.isShowOnMenu()) {
-				// RefreshMenus.deleteMenus();
-				RefreshMenus.deleteMenu(folder);
 				CacheLocator.getNavToolCache().removeNav(folder.getHostId(), folder.getInode());
 				if(!path.equals("/")) {
 					Identifier ii=APILocator.getIdentifierAPI().find(folder.getIdentifier());

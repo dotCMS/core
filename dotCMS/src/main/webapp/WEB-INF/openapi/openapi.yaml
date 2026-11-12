@@ -25,9 +25,6 @@ tags:
   name: Tag (v1)
 - description: Streaming a11y-fix agent proxy
   name: Accessibility Agent
-- description: Endpoints that perform operations related to validating accessibility
-    in content.
-  name: Accessibility Checker
 - description: Proxy endpoints that forward analytics requests to the dot-ca-event-manager
     service.
   name: Content Analytics
@@ -74,6 +71,8 @@ tags:
     description: Additional Page API information
     url: https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas
   name: Page
+- description: Web accessibility checking and compliance
+  name: Accessibility Checker
 - description: Push publishing job management endpoints
   name: Publishing
 - description: Content relationship management
@@ -2748,138 +2747,6 @@ paths:
           description: default response
       tags:
       - Administration
-  /v1/achecker/_validate:
-    post:
-      description: Validates the given content against the one or more Accessibility
-        Guidelines.
-      operationId: postValidateContent
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties:
-                type: string
-              properties:
-                empty:
-                  type: boolean
-        required: true
-      responses:
-        "200":
-          content:
-            application/json:
-              example: |-
-                {
-                    "entity": {
-                        "errors": [
-                            {
-                                "check": {
-                                    "check_id": 98,
-                                    "confidence": 2,
-                                    "confidenceEnum": "POTENTIAL",
-                                    "decision_fail": "Not all abbreviations are marked with the <code>abbr</code> element.",
-                                    "decision_pass": "All abbreviations are marked with the <code>abbr</code> element.",
-                                    "description": "If <code>body</code> element content is greater than 10 characters (English) this error will be generated.",
-                                    "err": "Abbreviations may not be marked with <code>abbr</code> element.",
-                                    "func": "return (BasicFunctions::getPlainTextLength() <= 10);",
-                                    "how_to_repair": "",
-                                    "html_tag": "body",
-                                    "lang": "en",
-                                    "long_description": null,
-                                    "name": "Abbreviations must be marked with <code>abbr</code> element.",
-                                    "note": "",
-                                    "open_to_public": 1,
-                                    "question": "Are there any abbreviations in the document that are not marked with the <code>abbr</code> element?",
-                                    "rationale": "_RATIONALE_98",
-                                    "repair_example": "",
-                                    "search_str": null,
-                                    "test_expected_result": "1. All abbreviations are expected to be marked with a valid <code>abbr</code> element.",
-                                    "test_failed_result": "1. Mark all abbreviations with a valid <code>abbr</code> element.",
-                                    "test_procedure": "1. Check the document for any text abbreviations.\\n2. If an abbreviation is found, check if it is properly marked with the <code>abbr</code> element.",
-                                    "user_id": 0
-                                },
-                                "col_number": 110,
-                                "cssCode": null,
-                                "htmlCode": "<body> Adventure travel done right  Wherever you want to go, whatever you want to get into, we’ve go...",
-                                "image": null,
-                                "imageAlt": null,
-                                "line_number": 0,
-                                "success": false
-                            },
-                            ...
-                            ...
-                        ],
-                        "lang": "en",
-                        "results": [
-                            {
-                                "check": {
-                                    "check_id": 29,
-                                    "confidence": 0,
-                                    "confidenceEnum": "KNOWN",
-                                    "decision_fail": "",
-                                    "decision_pass": "",
-                                    "description": "Each document must contain a valid <code>doctype</code> declaration.",
-                                    "err": "<code>doctype</code> declaration missing.",
-                                    "func": "return (BasicFunctions::getNumOfTagInWholeContent(\\\"doctype\\\") > 0);",
-                                    "how_to_repair": "Add a valid <code>doctype</code> declaration to the document.",
-                                    "html_tag": "html",
-                                    "lang": "en",
-                                    "long_description": null,
-                                    "name": "HTML content has a valid <code>doctype</code> declaration.",
-                                    "note": "",
-                                    "open_to_public": 1,
-                                    "question": "",
-                                    "rationale": "",
-                                    "repair_example": "",
-                                    "search_str": null,
-                                    "test_expected_result": "1. HTML content has a valid <code>doctype</code> declaration.",
-                                    "test_failed_result": "1. Add a valid <code>doctype</code> declaration to the document.",
-                                    "test_procedure": "1. Check for the presence of a <code>doctype</code> declaration at the start of the document.\\n2. Check the content of the <code>doctype</code> declaration.",
-                                    "user_id": 0
-                                },
-                                "col_number": 110,
-                                "cssCode": null,
-                                "htmlCode": "<html lang=\"en\" xml:lang=\"en\">     <body> Adventure travel done right  Wherever you want to go, what...",
-                                "image": null,
-                                "imageAlt": null,
-                                "line_number": 0,
-                                "success": true
-                            },
-                            ...
-                            ...
-                        ]
-                    },
-                    "errors": [],
-                    "i18nMessagesMap": {},
-                    "messages": [],
-                    "pagination": null,
-                    "permissions": []
-                }
-          description: Content validated successfully
-        "400":
-          description: Bad Request
-        "415":
-          description: Unsupported Media Type
-        "500":
-          description: Internal Server Error
-      summary: Validates content
-      tags:
-      - Accessibility Checker
-  /v1/achecker/guidelines:
-    get:
-      description: Returns the list of available Accessibility Guidelines that are
-        used to validate content.
-      operationId: getAccessibilityGuidelines
-      responses:
-        "200":
-          content:
-            application/json: {}
-          description: Guideline list retrieved successfully
-        "500":
-          description: Internal Server Error
-      summary: Retrieves Accessibility Guidelines
-      tags:
-      - Accessibility Checker
   /v1/agents/a11y/fix:
     post:
       description: "Resolves the page identifier to a live URL, URI and host id, mints\
@@ -13022,102 +12889,6 @@ paths:
             application/json: {}
           description: Internal server error
       summary: Replace the ordered tools of a navigation section
-      tags:
-      - Administration
-  /v1/link-checker/_run:
-    post:
-      description: "Queues one run of the link-check job, which refreshes the broken\
-        \ links stored for the contentlets. Nothing is queued when the caller is refused.\
-        \ Requires an authenticated back-end user with access to the link-checker\
-        \ tool; CMS Administrators included."
-      operationId: runLinkCheck
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityStringView"
-          description: Link check queued
-        "401":
-          content:
-            application/json: {}
-          description: "Unauthorized - authentication required, or the caller is not\
-            \ a back-end user"
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - the caller has no access to the link-checker tool
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error
-      summary: Run the link check now
-      tags:
-      - Administration
-  /v1/link-checker/broken-links:
-    get:
-      description: "Returns one page of the broken links the link-check job found\
-        \ in the contentlets of the given content type. Only the rows whose contentlet\
-        \ the caller can read are returned, and total counts those same rows. Paging\
-        \ uses offset (0 or greater) and limit (1 to 100). The last editor appears\
-        \ by full name only. An unknown content type, or one with no broken links,\
-        \ answers an empty list with total 0. Requires an authenticated back-end user\
-        \ with access to the link-checker tool; CMS Administrators included."
-      operationId: listBrokenLinks
-      parameters:
-      - description: Id of the content type whose broken links are listed; an id that
-          matches no content type answers an empty list
-        example: 2a3e91e4-fbbf-4876-8c5b-2233c1739b05
-        in: query
-        name: contentType
-        required: true
-        schema:
-          type: string
-      - description: Zero-based index of the first row to return
-        example: 0
-        in: query
-        name: offset
-        schema:
-          type: integer
-          format: int64
-          default: 0
-          minimum: 0
-      - description: "Maximum number of rows to return, 1 to 100"
-        example: 25
-        in: query
-        name: limit
-        schema:
-          type: integer
-          format: int64
-          default: 25
-          maximum: 100
-          minimum: 1
-      responses:
-        "200":
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityBrokenLinksView"
-          description: Broken links retrieved successfully
-        "400":
-          content:
-            application/json: {}
-          description: "Bad request - blank content type, offset not a whole number\
-            \ of 0 or more, or limit not a whole number between 1 and 100"
-        "401":
-          content:
-            application/json: {}
-          description: "Unauthorized - authentication required, or the caller is not\
-            \ a back-end user"
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - the caller has no access to the link-checker tool
-        "500":
-          content:
-            application/json: {}
-          description: Internal server error
-      summary: List broken links of a content type
       tags:
       - Administration
   /v1/logger:
@@ -26160,13 +25931,6 @@ components:
           type: string
         size:
           type: string
-    AccessibilityForm:
-      type: object
-      additionalProperties:
-        type: string
-      properties:
-        empty:
-          type: boolean
     AccruedTag:
       type: object
       properties:
@@ -26695,62 +26459,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TemplateLayoutRowView"
-    BrokenLinkView:
-      type: object
-      description: A broken link found in a contentlet the requesting user can read
-      properties:
-        contentTitle:
-          type: string
-          description: Title of the contentlet
-          example: Sample title
-        contentType:
-          type: string
-          description: Name of the contentlet's content type
-          example: Blog
-        field:
-          type: string
-          description: Name of the field that holds the link
-          example: Body
-        inode:
-          type: string
-          description: Inode of the contentlet that holds the link
-          example: 6a8a1f2c-3b4d-4e5f-8a9b-0c1d2e3f4a5b
-        linkTitle:
-          type: string
-          description: Title of the link
-          example: Read more
-        modDate:
-          type: string
-          description: "Last modification date, formatted as MM/dd/yyyy hh:mm a"
-          example: 03/14/2026 09:30 AM
-        modUserName:
-          type: string
-          description: Full name of the last editor; empty when the editor cannot
-            be resolved
-          example: Jane Doe
-        status:
-          type: string
-          description: "Contentlet status: archived, live, working or empty"
-          example: live
-        url:
-          type: string
-          description: URL of the link
-          example: https://example.com/page
-    BrokenLinksView:
-      type: object
-      description: A page of broken links and the total number of rows the requesting
-        user can read
-      properties:
-        list:
-          type: array
-          description: Rows of the requested page
-          items:
-            $ref: "#/components/schemas/BrokenLinkView"
-        total:
-          type: integer
-          format: int32
-          description: Number of rows the requesting user can read across all pages
-          example: 42
     BrowserQueryForm:
       type: object
       properties:
@@ -34816,29 +34524,6 @@ components:
       properties:
         entity:
           type: boolean
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityBrokenLinksView:
-      type: object
-      properties:
-        entity:
-          $ref: "#/components/schemas/BrokenLinksView"
         errors:
           type: array
           items:

@@ -180,11 +180,6 @@
 		<class>com.dotcms.rendering.velocity.viewtools.StringsWebApi</class>
 	</tool>
 	<tool>
-		<key>calendar</key>
-		<scope>request</scope>
-		<class>com.dotmarketing.portlets.calendar.viewtools.CalendarWebAPI</class>
-	</tool>
-	<tool>
 		<key>dateviewapi</key>
 		<scope>application</scope>
 		<class>com.dotcms.rendering.velocity.viewtools.DateViewWebAPI</class>

@@ -1743,52 +1743,6 @@
 		showDotCMSSystemMessage(userClicktrackingSavedMsg);
 	}
 
-	function viewFullClickHistory() {
-		if(currentUser == null)
-			return;
-		if(dijit.byId('userClickHistoryPane'))
-			dijit.registry.remove('userClickHistoryPane');
-
-		dojo.style('userClickHistoryPane', { display: '' });
-		dojo.style('userClickHistoryDetailPane', { display: 'none' });
-
-        var pane = new dijit.layout.ContentPane({
-         	href: "/html/portlet/ext/useradmin/view_users_click_history.jsp?userId=" + currentUser.userId,
-			preload: true,
-			refreshOnShow:true,
-			style: "height: auto; max-height: 500px; width: 650px"
-        }, "userClickHistoryPane");
-		dijit.byId('userClickHistoryDialog').show();
-
-		pane.startup();
-	}
-
-	function closeUserClickHistoryDetails() {
-		dojo.style('userClickHistoryPane', { display: '' });
-		dojo.style('userClickHistoryDetailPane', { display: 'none' });
-	}
-
-	function viewClickstreamDetails(clickstreamId, userId) {
-		if(currentUser == null)
-			return;
-		if(dijit.byId('userClickHistoryDetailPane'))
-			dijit.registry.remove('userClickHistoryDetailPane');
-
-        var pane = new dijit.layout.ContentPane({
-         	href: "/html/portlet/ext/useradmin/view_users_click_history_detail.jsp?clickstreamId=" + clickstreamId +
-				"&userId=" + currentUser.userId + "&layoutId=" + layoutId,
-			preload: true,
-			refreshOnShow:true,
-			style: "height: auto; max-height: 500px; width: 650px"
-        }, "userClickHistoryDetailPane");
-
-		pane.startup();
-
-		dojo.style('userClickHistoryPane', { display: 'none' });
-		dojo.style('userClickHistoryDetailPane', { display: '' });
-
-	}
-
 	//User Tags
 
 	function initTags() {

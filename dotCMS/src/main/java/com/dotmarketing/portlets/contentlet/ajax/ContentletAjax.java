@@ -8,7 +8,6 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.PageContentType;
-import com.dotcms.enterprise.FormAJAXProxy;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.keyvalue.model.KeyValue;
 import com.dotcms.languagevariable.business.LanguageVariable;
@@ -529,24 +528,7 @@ public class ContentletAjax {
 				page, perPage, orderBy, modDateFrom, modDateTo, variantName);
 	}
 
-	/**
-	 * This method is used by the backend to pull from lucene index the form widgets
-	 * if the widget doesn't exist then is created and also checks the user
-	 * permissions to see the content
-	 *
-	 * @param formStructureInode
-	 *            Inode of the structure content to be listed
-	 * @return The list of contents that match the parameters at the position 0
-	 *         the result included a hashmap with some useful information like
-	 *         the total number of results, ...
-	 * @throws DotDataException
-	 * @throws DotSecurityException
-	 */
-	@CloseDB
-	public Map<String, Object> searchFormWidget(String formStructureInode) throws DotDataException, DotSecurityException {
-		FormAJAXProxy fp = new FormAJAXProxy();
-		return fp.searchFormWidget(formStructureInode);
-	}
+
 
 	 public List searchContentletsByUser(String structureInode, List<String> fields, List<String> categories, boolean showDeleted, boolean filterSystemHost, boolean filterUnpublish, boolean filterLocked, int page, String orderBy,int perPage, final User currentUser, HttpSession sess,String  modDateFrom, String modDateTo) throws DotStateException, DotDataException, DotSecurityException {
 	   return searchContentletsByUser(ImmutableList.of(BaseContentType.ANY), structureInode, fields, categories, showDeleted, filterSystemHost, filterUnpublish, filterLocked, page, orderBy, perPage, currentUser, sess, modDateFrom, modDateTo);

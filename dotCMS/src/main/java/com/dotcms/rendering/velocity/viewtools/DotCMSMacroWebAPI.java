@@ -13,7 +13,6 @@ import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.IFileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -33,7 +32,6 @@ import javax.servlet.http.HttpServletRequest;
 import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -146,144 +144,6 @@ public class DotCMSMacroWebAPI implements ViewTool {
 			return folderPath;
 		}
 
-	}
-
-	//GET EVENTS
-	/**
-	 * Get a list of x number of events, from a category inode list in a range of dates.
-	 * if startDayOffset is null or 0, the start date begin from today at 00:00:00.
-	 * if daysToShow is null or cero, en end date is today at 00:00:00, if not the
-	 * end date if from the start date + daysToShow
-	 * @param categories a string list of comma separated categories inodes
-	 * @param limit max number of events to get
-	 * @param startDayOffset
-	 * @param daysToShow
-	 * @return a list of events
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
-	public List getEvents(String categories, int limit, int startDayOffset,
-			String daysToShow) throws DotDataException, DotSecurityException {
-
-		int daysToShowInt = 0;
-		if (UtilMethods.isSet(daysToShow)) {
-			daysToShowInt = Integer.parseInt(daysToShow);
-		}
-		return getEvents(categories, limit, startDayOffset, daysToShowInt);
-	}
-
-	/**
-	 * Get a list of x number of events, from a category inode list in a range of dates.
-	 * if startDayOffset is null or 0, the start date begin from today at 00:00:00.
-	 * if daysToShow is null or cero, en end date is today at 00:00:00, if not the
-	 * end date if from the start date + daysToShow
-	 * @param categories a string list of comma separated categories inodes
-	 * @param limit max number of events to get
-	 * @param startDayOffset
-	 * @param daysToShow
-	 * @return a list of events
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
-	public List getEvents(String categories, int limit, String startDayOffset,
-			int daysToShow) throws DotDataException, DotSecurityException {
-
-		int startDayOffsetInt = 0;
-		if (UtilMethods.isSet(startDayOffset)) {
-			startDayOffsetInt = Integer.parseInt(startDayOffset);
-		}
-
-		return getEvents(categories, limit, startDayOffsetInt, daysToShow);
-	}
-
-	/**
-	 * Get a list of x number of events, from a category inode list in a range of dates.
-	 * if startDayOffset is null or 0, the start date begin from today at 00:00:00.
-	 * if daysToShow is null or cero, en end date is today at 00:00:00, if not the
-	 * end date if from the start date + daysToShow
-	 * @param categories a string list of comma separated categories inodes
-	 * @param limit max number of events to get
-	 * @param startDayOffset
-	 * @param daysToShow
-	 * @return a list of events
-	 * @throws DotSecurityException
-	 * @throws DotDataException
-	 */
-	public List getEvents(String categories, int limit, String startDayOffset,
-			String daysToShow) throws DotDataException, DotSecurityException {
-
-		int startDayOffsetInt = 0;
-		if (UtilMethods.isSet(startDayOffset)) {
-			startDayOffsetInt = Integer.parseInt(startDayOffset);
-		}
-		int daysToShowInt = 0;
-		if (UtilMethods.isSet(daysToShow)) {
-			daysToShowInt = Integer.parseInt(daysToShow);
-		}
-		return getEvents(categories, limit, startDayOffsetInt, daysToShowInt);
-	}
-
-	/**
-	 * Get a list of x number of events, from a category inode list in a range of dates.
-	 * if startDayOffset is null or 0, the start date begin from today at 00:00:00.
-	 * if daysToShow is null or cero, en end date is today at 00:00:00, if not the
-	 * end date if from the start date + daysToShow.
-	 * Categories and events are read with the permissions of the user making the request (the
-	 * anonymous user when nobody is logged in); when one of the categories does not exist or that
-	 * user cannot read it, no events are returned.
-	 * @param categories a string list of comma separated categories inodes
-	 * @param limit max number of events to get
-	 * @param startDayOffset days from today where the range starts
-	 * @param daysToShow number of days the range covers
-	 * @return a list of events
-	 * @throws DotSecurityException if the events cannot be read
-	 * @throws DotDataException if the categories or events cannot be loaded
-	 */
-	public List getEvents(final String categories, final int limit, final int startDayOffset,
-			final int daysToShow) throws DotDataException, DotSecurityException {
-
-		GregorianCalendar fromCal = new GregorianCalendar();
-		GregorianCalendar toCal = new GregorianCalendar();
-
-		if (startDayOffset != 0) {
-			fromCal.add(GregorianCalendar.DATE, startDayOffset);
-			toCal.add(GregorianCalendar.DATE, startDayOffset);
-		}
-
-		if (daysToShow != 0 && daysToShow > 1) {
-			toCal.add(GregorianCalendar.DATE, daysToShow - 1);
-		}
-
-		fromCal.set(GregorianCalendar.HOUR_OF_DAY, 0);
-		fromCal.set(GregorianCalendar.MINUTE, 0);
-		fromCal.set(GregorianCalendar.SECOND, 1);
-
-		toCal.set(GregorianCalendar.HOUR_OF_DAY, 23);
-		toCal.set(GregorianCalendar.MINUTE, 59);
-		toCal.set(GregorianCalendar.SECOND, 58);
-
-		final User user = getRequestUser();
-		final String[] categoryInodes = categories.split(",");
-		final List<Category> categoriesList = new ArrayList<>(categoryInodes.length);
-		try {
-			for (final String inode : categoryInodes) {
-				final Category category = APILocator.getCategoryAPI().find(inode, user, true);
-				if (null == category) {
-					// Same reason as below: leaving it out would widen the filter.
-					Logger.debug(this, () -> String.format("Event category '%s' does not exist", inode));
-					return new ArrayList<>();
-				}
-				categoriesList.add(category);
-			}
-		} catch (final DotSecurityException e) {
-			// Searching with only the readable categories would widen the filter: answer nothing.
-			Logger.debug(this, () -> String.format("User '%s' cannot read one of the requested event categories",
-					user.getUserId()));
-			return new ArrayList<>();
-		}
-
-		return APILocator.getEventAPI().find(fromCal.getTime(), toCal.getTime(),
-				null, null, categoriesList, true, false, 0, limit, user, true);
 	}
 
 	/**

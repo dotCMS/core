@@ -23,7 +23,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.TreeFactory;
 import com.dotmarketing.factories.WebAssetFactory;
-import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portal.struts.DotPortletActionInterface;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -400,7 +399,6 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 
 		if ((cmd != null) && cmd.equals(Constants.ADD) ) 
 		{      	
-			//RefreshMenus.deleteMenus();        	
 		}
 
 		setForward(req, "portlet.ext.links.edit_link");
@@ -617,7 +615,6 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 		if (!(!previousShowMenu && !link.isShowOnMenu()))
 		{
 			//existing folder with different show on menu ... need to regenerate menu
-			RefreshMenus.deleteMenu(link);
 			CacheLocator.getNavToolCache().removeNav(parent.getHostId(), parent.getInode());
 		}
 

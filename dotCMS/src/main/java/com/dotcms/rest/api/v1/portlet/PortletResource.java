@@ -732,9 +732,7 @@ public class PortletResource implements Serializable {
                 .init();
         final User user = initData.getUser();
         final String contentTypeId = APILocator.getContentTypeAPI(user).find(contentTypeVariable).id();
-        final String strutsAction = "calendarEvent".equals(contentTypeVariable) ?
-                "/ext/calendar/edit_event" :
-                "/ext/contentlet/edit_contentlet";
+        final String strutsAction = "/ext/contentlet/edit_contentlet";
 
         return Response.ok(
                             new ResponseEntityView((

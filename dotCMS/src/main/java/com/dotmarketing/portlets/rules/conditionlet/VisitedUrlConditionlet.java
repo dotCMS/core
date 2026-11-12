@@ -74,6 +74,15 @@ public class VisitedUrlConditionlet extends Conditionlet<VisitedUrlConditionlet.
     	return evaluate(request, response, CMSFilter.CMS_INDEX_PAGE, instance);
     }
 
+    /**
+     * Checks the current URL and session history, initializing missing history before evaluation.
+     *
+     * @param request the current request
+     * @param response the current response
+     * @param index the default index page name used for folder URL comparisons
+     * @param instance the configured URL comparison
+     * @return whether the current URL or visit history satisfies the comparison
+     */
     public boolean evaluate(HttpServletRequest request, HttpServletResponse response,String index, Instance instance) {
         final String hostId = getHostId(request);
         
@@ -89,7 +98,11 @@ public class VisitedUrlConditionlet extends Conditionlet<VisitedUrlConditionlet.
           return returnValue;
         }
         Clickstream clickstream = (Clickstream) session.getAttribute("clickstream");
-        if (clickstream == null || clickstream.getClickstreamRequests()==null) {
+        if (clickstream == null) {
+            clickstream = new Clickstream();
+            session.setAttribute("clickstream", clickstream);
+        }
+        if (clickstream.getClickstreamRequests()==null) {
           return returnValue;
        }
 

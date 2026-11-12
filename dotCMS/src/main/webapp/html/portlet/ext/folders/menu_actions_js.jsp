@@ -699,7 +699,7 @@
 	function publishEvent (objId, userId, referer, live, working, write) {
 		//if (write=="1") {
 			var loc = '';
-			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="full_publish_list" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
+			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_publish_list" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
 			if(inFrame){
 				window.location = loc;
 			}else{
@@ -711,7 +711,7 @@
 	function unarchiveEvent (objId, userId, referer, live, working, write) {
 		//if (write=="1") {
 			var loc = '';
-			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="undelete" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
+			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="undelete" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
 			if(inFrame){
 				window.location = loc;
 			}else{
@@ -723,7 +723,7 @@
 	function copyEvent (objId, userId, referer, live, working, write) {
 		//if (write=="1") {
 			var loc = '';
-			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="copy" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
+			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="copy" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
 			if(inFrame){
 				window.location = loc;
 			}else{
@@ -735,7 +735,7 @@
 	function unpublishEvent (objId, userId, referer, live, working, write) {
 		//if (write=="1") {
 			var loc = '';
-			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="unpublish" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
+			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="unpublish" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
 			if(inFrame){
 				window.location = loc;
 			}else{
@@ -747,7 +747,7 @@
 	function unlockEvent (objId, userId, referer, live, working, write) {
 		//if (write=="1") {
 			var loc = '';
-			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="unlock" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
+			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="unlock" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
 			if(inFrame){
 				window.location = loc;
 			}else{
@@ -759,7 +759,7 @@
 	function fullDeleteEvent (objId, userId, referer, live, working, write) {
 		//if (write=="1") {
 			var loc = '';
-			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/calendar/edit_event" /><portlet:param name="cmd" value="full_delete" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
+			loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" /><portlet:param name="cmd" value="full_delete" /></portlet:actionURL>&inode=' + objId + '&referer=' + referer;
 			if(inFrame){
 				window.location = loc;
 			}else{

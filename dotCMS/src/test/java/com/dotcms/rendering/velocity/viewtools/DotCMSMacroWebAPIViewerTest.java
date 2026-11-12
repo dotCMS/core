@@ -8,7 +8,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -23,9 +22,6 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.calendar.business.EventAPI;
-import com.dotmarketing.portlets.categories.business.CategoryAPI;
-import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -45,8 +41,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 /**
- * Unit tests for the user that {@link DotCMSMacroWebAPI#getMediaGalleryFolderFiles(String, String)} and
- * {@link DotCMSMacroWebAPI#getEvents(String, int, int, int)} read folders, files, categories and events as.
+ * Unit tests for the user that {@link DotCMSMacroWebAPI#getMediaGalleryFolderFiles(String, String)}
+ * reads folders and files as.
  */
 class DotCMSMacroWebAPIViewerTest {
 
@@ -61,8 +57,6 @@ class DotCMSMacroWebAPIViewerTest {
     private FolderAPI folderAPI;
     private FileAssetAPI fileAssetAPI;
     private PermissionAPI permissionAPI;
-    private CategoryAPI categoryAPI;
-    private EventAPI eventAPI;
     private UserWebAPI userWebAPI;
 
     private User anonymous;
@@ -84,8 +78,6 @@ class DotCMSMacroWebAPIViewerTest {
         folderAPI = mock(FolderAPI.class);
         fileAssetAPI = mock(FileAssetAPI.class);
         permissionAPI = mock(PermissionAPI.class);
-        categoryAPI = mock(CategoryAPI.class);
-        eventAPI = mock(EventAPI.class);
         userWebAPI = mock(UserWebAPI.class);
         final UserAPI userAPI = mock(UserAPI.class);
 
@@ -99,8 +91,6 @@ class DotCMSMacroWebAPIViewerTest {
         apiLocator.when(APILocator::getFolderAPI).thenReturn(folderAPI);
         apiLocator.when(APILocator::getFileAssetAPI).thenReturn(fileAssetAPI);
         apiLocator.when(APILocator::getPermissionAPI).thenReturn(permissionAPI);
-        apiLocator.when(APILocator::getCategoryAPI).thenReturn(categoryAPI);
-        apiLocator.when(APILocator::getEventAPI).thenReturn(eventAPI);
         apiLocator.when(APILocator::getUserAPI).thenReturn(userAPI);
         webApiLocator.when(WebAPILocator::getUserWebAPI).thenReturn(userWebAPI);
 
@@ -229,61 +219,6 @@ class DotCMSMacroWebAPIViewerTest {
         // Then it reads as the anonymous user
         verify(folderAPI).findFolderByPath(NORMALIZED_PATH, site, anonymous, true);
         verifyFilesListedAs(anonymous);
-    }
-
-    @Test
-    void events_readCategoriesAndEventsAsRequestUser() throws Exception {
-        // Given a request with a logged-in user
-        final User viewer = user("viewer");
-        when(categoryAPI.find(anyString(), any(User.class), anyBoolean())).thenReturn(mock(Category.class));
-        final DotCMSMacroWebAPI macro = toolFor(requestOf(viewer));
-
-        // When the events of a category are listed
-        assertDoesNotThrow(() -> macro.getEvents("category-inode", 5, 0, 0));
-
-        // Then the category and the events are read as that user, honoring front-end roles
-        verify(categoryAPI).find("category-inode", viewer, true);
-        verify(eventAPI).find(any(), any(), isNull(), isNull(), anyList(), eq(true), eq(false), eq(0), eq(5),
-                eq(viewer), eq(true));
-    }
-
-    @Test
-    void events_whenACategoryIsNotReadable_returnsEmptyList() throws Exception {
-        // Given two categories, the second one not readable by the current user
-        when(categoryAPI.find(eq("readable-category"), any(User.class), anyBoolean()))
-                .thenReturn(mock(Category.class));
-        when(categoryAPI.find(eq("closed-category"), any(User.class), anyBoolean()))
-                .thenThrow(new DotSecurityException("no read"));
-        final DotCMSMacroWebAPI macro = toolFor(requestOf(null));
-
-        // When the events of both categories are listed
-        final List<?> events = assertDoesNotThrow(
-                () -> macro.getEvents("readable-category,closed-category", 5, 0, 0));
-
-        // Then it answers an empty list and never searches events with a partial category filter
-        assertTrue(events.isEmpty());
-        verify(eventAPI, never()).find(any(), any(), any(), any(), anyList(), anyBoolean(), anyBoolean(),
-                org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt(), any(),
-                anyBoolean());
-    }
-
-    @Test
-    void events_whenACategoryDoesNotExist_returnsEmptyList() throws Exception {
-        // Given two categories, the second one unknown
-        when(categoryAPI.find(eq("known-category"), any(User.class), anyBoolean()))
-                .thenReturn(mock(Category.class));
-        when(categoryAPI.find(eq("unknown-category"), any(User.class), anyBoolean())).thenReturn(null);
-        final DotCMSMacroWebAPI macro = toolFor(requestOf(null));
-
-        // When the events of both categories are listed
-        final List<?> events = assertDoesNotThrow(
-                () -> macro.getEvents("known-category,unknown-category", 5, 0, 0));
-
-        // Then it answers an empty list and never searches events with a partial category filter
-        assertTrue(events.isEmpty());
-        verify(eventAPI, never()).find(any(), any(), any(), any(), anyList(), anyBoolean(), anyBoolean(),
-                org.mockito.ArgumentMatchers.anyInt(), org.mockito.ArgumentMatchers.anyInt(), any(),
-                anyBoolean());
     }
 
     /**

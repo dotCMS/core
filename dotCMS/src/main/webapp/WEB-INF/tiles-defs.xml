@@ -721,25 +721,6 @@
 
 
 
-	<!-- UserClicks -->
-	<definition name="portlet.ext.userclicks.view" extends="portal">
-		<put name="content" value="/portlet/ext/userclicks/view.jsp" />
-	</definition>
-	<definition name="portlet.ext.userclicks" extends="portal">
-		<put name="portlet_sub_nav"
-			value="/portlet/ext/userclicks/sub_nav.jsp" />
-	</definition>
-	<definition name="portlet.ext.userclicks.view_user_clicks"
-		extends="portlet.ext.userclicks">
-		<put name="content"
-			value="/portlet/ext/userclicks/view_user_clicks.jsp" />
-	</definition>
-	<definition name="portlet.ext.userclicks.detail_user_clicks"
-		extends="portlet.ext.userclicks">
-		<put name="content"
-			value="/portlet/ext/userclicks/detail_user_clicks.jsp" />
-	</definition>
-	<!-- UserClicks -->
 
 	<!-- UserComments -->
 	<definition name="portlet.ext.usercomments.view" extends="portal">
@@ -1315,24 +1296,6 @@
 	</definition>
 	<!-- Schedulers -->
 
-	<!-- calendar -->
-	<definition name="portlet.ext.calendar.view" extends="portal">
-		<put name="portlet_sub_nav" value="/portlet/ext/calendar/sub_nav.jsp" />
-		<put name="content" value="/portlet/ext/calendar/view.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.calendar" extends="portal">
-		<put name="portlet_sub_nav"
-			value="/portlet/ext/calendar/sub_nav.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.calendar.view_calendar"
-		extends="portlet.ext.calendar">
-		<put name="content"
-			value="/portlet/ext/calendar/view_calendar.jsp" />
-	</definition>
-
-	<!-- calendar -->
 
 	<!-- product -->
 	<definition name="portlet.ext.merchant.product" extends="portal">
@@ -1394,27 +1357,11 @@
 		<put name="content"	value="/portlet/ext/hostadmin/view_hosts.jsp" />
 	</definition>
 
-	<!-- Dashboard -->
 
-	<definition name="portlet.ext.dashboard" extends="portal">
-		<put name="portlet_sub_nav"	value="/portlet/ext/dashboard/sub_nav.jsp" />
-	</definition>
 
-	<definition name="portlet.ext.dashboard.view_dashboard"	extends="portlet.ext.dashboard">
-		<put name="content"	value="/portlet/ext/dashboard/view_dashboard.jsp" />
-	</definition>
 
-    <definition name="portlet.ext.dashboard.view_host_report" extends="portlet.ext.dashboard">
-		<put name="content"	value="/portlet/ext/dashboard/view_host_report.jsp" />
-	</definition>
 
-	<definition name="portlet.ext.dashboard.view_workstream" extends="portlet.ext.dashboard">
-		<put name="content"	value="/portlet/ext/dashboard/view_workstream.jsp" />
-	</definition>
 
-	<definition name="portlet.ext.dashboard.view_workstream" extends="portlet.ext.dashboard">
-		<put name="content"	value="/portlet/ext/dashboard/view_workstream.jsp" />
-	</definition>
 
 	<definition name="portlet.ext.plugins.expCont.struts" extends="portal">
 		<put name="content" value="/portlet/ext/workflows/view_exp_tool.jsp" />

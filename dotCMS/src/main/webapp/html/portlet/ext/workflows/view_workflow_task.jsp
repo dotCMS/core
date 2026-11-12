@@ -202,11 +202,7 @@ public String getGravatar(String postedBy){
 
     function doEdit(){
         window.location="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
-        <%if(contentlet.getStructure().getName().equals("Event")){%>s
-            <portlet:param name="struts_action" value="/ext/calendar/edit_event" />
-        <%}else{%>
             <portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" />
-        <%}%>
         <portlet:param name="inode" value="<%= String.valueOf(contentlet.getInode()) %>" />
         <portlet:param name="cmd" value="edit" />
         <portlet:param name="referer" value="<%= referer %>" />

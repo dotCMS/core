@@ -113,7 +113,6 @@ import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.MultiTreeAPI;
 import com.dotmarketing.factories.PublishFactory;
 import com.dotmarketing.factories.TreeFactory;
-import com.dotmarketing.menubuilders.RefreshMenus;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -4076,7 +4075,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 final Folder folder = APILocator.getFolderAPI()
                         .findFolderByPath(identifier.getParentPath(),
                                 identifier.getHostId(), user, respectFrontendRoles);
-                RefreshMenus.deleteMenu(folder);
                 CacheLocator.getNavToolCache().removeNav(identifier.getHostId(), folder.getInode());
             }
         }
@@ -4537,7 +4535,6 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final Folder folder = APILocator.getFolderAPI()
                     .findFolderByPath(identifier.getParentPath(), identifier.getHostId(), user,
                             respectFrontEndPermissions);
-            RefreshMenus.deleteMenu(folder);
             CacheLocator.getNavToolCache().removeNav(identifier.getHostId(), folder.getInode());
         }
     }
@@ -6727,23 +6724,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     .findFolderByPath(identifier.getParentPath(), host,
                             systemUser, false);
 
-            final boolean shouldRefresh =
-                    (contentlet.isFileAsset()
-                            && RefreshMenus.shouldRefreshMenus(
-                            APILocator.getFileAssetAPI().fromContentlet(
-                                    workingContentlet)
-                            , APILocator.getFileAssetAPI().fromContentlet(contentlet),
-                            isNewContent))
-                            ||
-                            (contentlet.isHTMLPage()
-                                    && RefreshMenus.shouldRefreshMenus(
-                                    APILocator.getHTMLPageAssetAPI().fromContentlet(
-                                            workingContentlet)
-                                    , APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet),
-                                    isNewContent));
+            final boolean shouldRefresh;
+            if (contentlet.isFileAsset()) {
+                final var oldFile = APILocator.getFileAssetAPI().fromContentlet(workingContentlet);
+                final var newFile = APILocator.getFileAssetAPI().fromContentlet(contentlet);
+                shouldRefresh = isNewContent || oldFile == null || newFile == null
+                        || oldFile.isShowOnMenu() != newFile.isShowOnMenu();
+            } else {
+                final var oldPage = APILocator.getHTMLPageAssetAPI().fromContentlet(workingContentlet);
+                final var newPage = APILocator.getHTMLPageAssetAPI().fromContentlet(contentlet);
+                shouldRefresh = isNewContent || oldPage == null || newPage == null
+                        || oldPage.isShowOnMenu() != newPage.isShowOnMenu();
+            }
 
             if (shouldRefresh) {
-                RefreshMenus.deleteMenu(folder);
                 CacheLocator.getNavToolCache().removeNav(host.getIdentifier(), folder.getInode());
             }
         }
