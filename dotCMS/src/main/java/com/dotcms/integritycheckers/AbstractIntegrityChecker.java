@@ -71,7 +71,8 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
      * and the where clause must be fixed SQL written in code; every value goes in {@code params}.
      *
      * @param tableName the table to look in
-     * @param whereClause the where clause, using {@code ?} for each value
+     * @param whereClause the where clause, using {@code ?} for each value; nothing may follow it,
+     *        because {@code LIMIT 1} is appended so the database stops at the first match
      * @param params the values bound to the placeholders, in order
      * @return {@code true} when a matching row exists
      * @throws DotDataException when the query fails
@@ -79,11 +80,11 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
     protected static boolean hasRows(final String tableName, final String whereClause, final Object... params)
             throws DotDataException {
         // Callers pass table names and where clauses written in code; values are bound.
-        final DotConnect dc = new DotConnect().setSQL("SELECT 1 FROM " + tableName + " " + whereClause); // nosemgrep
+        final DotConnect dc = new DotConnect().setSQL("SELECT 1 FROM " + tableName + " " + whereClause + " LIMIT 1"); // nosemgrep
         for (final Object param : params) {
             dc.addParam(param);
         }
-        return !dc.setMaxRows(1).loadObjectResults().isEmpty();
+        return !dc.loadObjectResults().isEmpty();
     }
 
     /**
