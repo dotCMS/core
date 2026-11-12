@@ -991,9 +991,7 @@ describe('withEditor', () => {
             // them until the page settles.
             describe('when the page reports its scrollY', () => {
                 /** The page reports a scroll, at `scrollY` when it says where it is. */
-                const pageScrolled = (scrollY?: number) =>
-                    // `scrollY` is a new argument; the cast keeps this file compiling until it exists.
-                    (store.updateEditorScrollState as (scrollY?: number) => void)(scrollY);
+                const pageScrolled = (scrollY?: number) => store.updateEditorScrollState(scrollY);
 
                 /** Container y in the bounds, as the SDK measured them: 10. */
                 const BOUNDS = getBoundsMock(ACTION_MOCK);

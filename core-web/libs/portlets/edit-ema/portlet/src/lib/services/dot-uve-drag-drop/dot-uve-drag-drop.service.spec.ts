@@ -16,7 +16,7 @@ import {
     UveIframeMessengerService
 } from '../iframe-messenger/uve-iframe-messenger.service';
 
-/** The new editor → page message (#38575); the event name does not exist in `@dotcms/types` yet. */
+/** The editor → page message (#38575), by its wire name, so a rename of the constant shows up here. */
 const SCROLL_VELOCITY = 'uve-scroll-velocity';
 
 /** The fastest the editor asks the page to scroll, in px per frame (contract: clamped to 40). */
@@ -57,7 +57,7 @@ describe('DotUveDragDropService', () => {
     const velocities = (): number[] =>
         posted()
             .filter((message) => message.name === SCROLL_VELOCITY)
-            .map((message) => (message as IframeMessage & { velocity: number }).velocity);
+            .map((message) => message.velocity);
 
     const lastVelocity = (): number | undefined => velocities().at(-1);
 

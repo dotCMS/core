@@ -7,7 +7,11 @@ import { filter } from 'rxjs/operators';
 
 import { WINDOW } from '@dotcms/utils';
 
-import { IFRAME_SCROLL_ZONE } from '../../shared/consts';
+import {
+    IFRAME_LEGACY_SCROLL_THROTTLE_MS,
+    IFRAME_SCROLL_VELOCITY,
+    IFRAME_SCROLL_ZONE
+} from '../../shared/consts';
 import { EDITOR_STATE } from '../../shared/enums';
 import { UVEStore } from '../../store/dot-uve.store';
 import { TEMPORAL_DRAG_ITEM, getDragItemData } from '../../utils';
@@ -22,6 +26,39 @@ export interface DragDropHandlers {
     onDragStart: (event: DragEvent) => void;
 }
 
+/**
+ * The speed the page scrolls at while the pointer is in an edge zone of the iframe, in signed px
+ * per 60fps frame: negative near the top, positive near the bottom, 0 elsewhere. It eases
+ * quadratically from the minimum just inside the zone to the maximum at the edge.
+ *
+ * @param clientY the pointer's vertical position in the admin window
+ * @param iframeRect where the iframe is in the admin window
+ * @returns the velocity, 0 outside both edge zones
+ */
+function getEdgeScrollVelocity(clientY: number, iframeRect: DOMRect): number {
+    let depth = 0;
+    let sign = 0;
+
+    if (clientY > iframeRect.top && clientY < iframeRect.top + IFRAME_SCROLL_ZONE) {
+        depth = iframeRect.top + IFRAME_SCROLL_ZONE - clientY;
+        sign = -1;
+    }
+
+    if (clientY > iframeRect.bottom - IFRAME_SCROLL_ZONE && clientY <= iframeRect.bottom) {
+        depth = clientY - (iframeRect.bottom - IFRAME_SCROLL_ZONE);
+        sign = 1;
+    }
+
+    if (!sign) {
+        return 0;
+    }
+
+    const { MIN, MAX } = IFRAME_SCROLL_VELOCITY;
+    const eased = (Math.min(depth, IFRAME_SCROLL_ZONE) / IFRAME_SCROLL_ZONE) ** 2;
+
+    return sign * (MIN + (MAX - MIN) * eased);
+}
+
 @Injectable()
 export class DotUveDragDropService {
     private readonly window = inject(WINDOW);
@@ -34,6 +71,39 @@ export class DotUveDragDropService {
         customDragImage: ElementRef<HTMLDivElement>,
         handlers: DragDropHandlers
     ): void {
+        // The velocity the page was last asked to scroll at; 0 when it is not scrolling.
+        let lastVelocity = 0;
+        // When the last one-step scroll request went out, read from `Date.now()`.
+        let lastLegacyScrollAt = Number.NEGATIVE_INFINITY;
+
+        /** Ask the page to scroll at `velocity`, only when it differs from the last ask. */
+        const scrollAtVelocity = (velocity: number) => {
+            if (velocity === lastVelocity) {
+                return;
+            }
+
+            lastVelocity = velocity;
+            this.iframeMessenger.scrollAtVelocity(velocity);
+        };
+
+        const stopScrolling = () => scrollAtVelocity(0);
+
+        /**
+         * Pages on an older `@dotcms/uve` ignore the velocity and scroll a smooth 120px step per
+         * request. Sending one per `dragover` made the steps interrupt each other, so they go
+         * out at most once per throttle window. Newer pages ignore them.
+         */
+        const sendLegacyScroll = (direction: 'up' | 'down') => {
+            const now = Date.now();
+
+            if (now - lastLegacyScrollAt < IFRAME_LEGACY_SCROLL_THROTTLE_MS) {
+                return;
+            }
+
+            lastLegacyScrollAt = now;
+            this.iframeMessenger.scrollInsideIframe(direction);
+        };
+
         // Drag start
         fromEvent(this.window, 'dragstart')
             .pipe(takeUntilDestroyed(this.destroyRef))
@@ -94,6 +164,7 @@ export class DotUveDragDropService {
         fromEvent(this.window, 'dragend')
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe(() => {
+                stopScrolling();
                 handlers.onDragEnd();
             });
 
@@ -113,36 +184,21 @@ export class DotUveDragDropService {
                 const iframeRect = iframe.nativeElement.getBoundingClientRect();
                 const isInsideIframe =
                     event.clientX > iframeRect.left && event.clientX < iframeRect.right;
+                const velocity = isInsideIframe
+                    ? getEdgeScrollVelocity(event.clientY, iframeRect)
+                    : 0;
 
-                if (!isInsideIframe) {
+                if (!velocity) {
+                    stopScrolling();
                     uveStore.setEditorState(EDITOR_STATE.DRAGGING);
+
                     return;
                 }
 
-                let direction: 'up' | 'down' | undefined;
-
-                if (
-                    event.clientY > iframeRect.top &&
-                    event.clientY < iframeRect.top + IFRAME_SCROLL_ZONE
-                ) {
-                    direction = 'up';
-                }
-
-                if (
-                    event.clientY > iframeRect.bottom - IFRAME_SCROLL_ZONE &&
-                    event.clientY <= iframeRect.bottom
-                ) {
-                    direction = 'down';
-                }
-
-                if (!direction) {
-                    uveStore.setEditorState(EDITOR_STATE.DRAGGING);
-                    return;
-                }
-
-                uveStore.updateEditorScrollDragState();
-
-                this.iframeMessenger.scrollInsideIframe(direction);
+                // The page scrolls itself at this speed until told otherwise. The drop targets
+                // stay: a page that scrolls reports it, and at the top or bottom nothing scrolls.
+                scrollAtVelocity(velocity);
+                sendLegacyScroll(velocity < 0 ? 'up' : 'down');
 
                 handlers.onDragOver(event);
             });
@@ -154,6 +210,7 @@ export class DotUveDragDropService {
                 filter((event: DragEvent) => !event.relatedTarget)
             )
             .subscribe(() => {
+                stopScrolling();
                 handlers.onDragLeave();
             });
 
@@ -161,6 +218,7 @@ export class DotUveDragDropService {
         fromEvent(this.window, 'drop')
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe((event: DragEvent) => {
+                stopScrolling();
                 handlers.onDrop(event);
             });
     }

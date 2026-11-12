@@ -607,6 +607,8 @@ export class DotUveCanvasComponent implements AfterViewInit, OnDestroy {
 
     protected onIframePageLoad(): void {
         this.#iframeMessenger.setIframeWindow(this.iframe?.nativeElement.contentWindow ?? null);
+        // The new document starts at the top; drag scrolls are measured from there.
+        this.uveStore.resetEditorScrollY();
 
         if (this.uveStore.editorState() === EDITOR_STATE.INLINE_EDITING) {
             this.#inlineEditingService.initEditor();

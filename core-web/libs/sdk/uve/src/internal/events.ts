@@ -237,6 +237,33 @@ export function onIframeScroll(callback: UVEEventHandler) {
 }
 
 /**
+ * Subscribes to the scroll velocity the UVE editor sets during a drag. The callback gets the
+ * message's `velocity` as sent; the caller validates it.
+ *
+ * @param {UVEEventHandler} callback - Function called with each velocity the editor sends
+ * @returns {Object} Object containing unsubscribe function and event type
+ * @internal
+ */
+export function onIframeScrollVelocity(callback: UVEEventHandler) {
+    const messageCallback = (event: MessageEvent) => {
+        if (event.data?.name === __DOTCMS_UVE_EVENT__.UVE_SCROLL_VELOCITY) {
+            callback(event.data.velocity);
+        }
+    };
+
+    // Native binder: survives the iframe rewrite under Zone.js. See getNativeEventBinder.
+    const nativeWindow = getNativeEventBinder(window);
+    nativeWindow.addEventListener('message', messageCallback);
+
+    return {
+        unsubscribe: () => {
+            nativeWindow.removeEventListener('message', messageCallback);
+        },
+        event: UVEEventType.IFRAME_SCROLL_VELOCITY
+    };
+}
+
+/**
  * Listens for scroll-to-section requests from the UVE editor.
  *
  * Queries `#dot-section-{n}` first, then falls back to `#section-{n}`.

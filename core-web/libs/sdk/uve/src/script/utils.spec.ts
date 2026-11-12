@@ -32,7 +32,11 @@ describe('scrollHandler', () => {
         ({ destroyScrollHandler } = scrollHandler());
         window.dispatchEvent(new Event('scroll'));
 
-        expect(postMessageSpy).toHaveBeenCalledWith({ action: DotCMSUVEAction.IFRAME_SCROLL }, '*');
+        // The page reports where it scrolled to (#38575); jsdom starts at the top.
+        expect(postMessageSpy).toHaveBeenCalledWith(
+            { action: DotCMSUVEAction.IFRAME_SCROLL, payload: { scrollY: 0 } },
+            '*'
+        );
     });
 
     it('sends IFRAME_SCROLL_END on window scrollend', () => {
@@ -110,7 +114,7 @@ describe('scrollHandler', () => {
 // #38575: during a drag the editor sends a scroll velocity and the page scrolls itself, every
 // frame, until told to stop. Older editors still send the one-step direction request.
 describe('registerUVEEvents scroll during a drag', () => {
-    /** The new editor → page message; the event name does not exist in `@dotcms/types` yet. */
+    /** The editor → page message, by its wire name, so a rename of the constant shows up here. */
     const SCROLL_VELOCITY = 'uve-scroll-velocity';
 
     /** One frame at 60fps, in ms. */

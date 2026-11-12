@@ -90,6 +90,15 @@ export type UVEEventSubscription = {
 export type UVEEventSubscriber = (callback: UVEEventHandler) => UVEEventSubscription;
 
 /**
+ * Payload of the {@link DotCMSUVEAction.IFRAME_SCROLL} message.
+ *
+ * @property {number} [scrollY] - The page's vertical scroll offset. Absent on older SDKs.
+ */
+export interface DotCMSIframeScrollPayload {
+    scrollY?: number;
+}
+
+/**
  * Actions send to the dotcms editor
  *
  * @export
@@ -121,7 +130,8 @@ export enum DotCMSUVEAction {
      */
     SET_SELECTED_CONTENTLET = 'set-selected-contentlet',
     /**
-     * Tell the editor that the page is being scrolled
+     * Tell the editor that the page is being scrolled. The payload, a
+     * {@link DotCMSIframeScrollPayload}, carries the page's `scrollY`; older SDKs send none.
      */
     IFRAME_SCROLL = 'scroll',
     /**
@@ -211,6 +221,13 @@ export enum UVEEventType {
     IFRAME_SCROLL = 'iframe-scroll',
 
     /**
+     * Triggered when the editor sets the speed the page scrolls at during a drag, in signed
+     * pixels per 60fps frame; `0` stops it.
+     * @internal
+     */
+    IFRAME_SCROLL_VELOCITY = 'iframe-scroll-velocity',
+
+    /**
      * Triggered when a contentlet is hovered
      */
     CONTENTLET_HOVERED = 'contentlet-hovered',
@@ -258,6 +275,7 @@ export type UVEEventPayloadMap = {
     [UVEEventType.CONTENT_CHANGES]: DotCMSPageResponse;
     [UVEEventType.PAGE_RELOAD]: undefined;
     [UVEEventType.IFRAME_SCROLL]: 'up' | 'down';
+    [UVEEventType.IFRAME_SCROLL_VELOCITY]: number;
     // TODO: Add type here
     [UVEEventType.CONTENTLET_HOVERED]: unknown;
     [UVEEventType.CONTENTLET_CLICKED]: unknown;

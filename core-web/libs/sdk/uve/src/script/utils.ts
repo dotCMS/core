@@ -1,9 +1,99 @@
-import { DotCMSPageResponse, DotCMSUVEAction, UVEEventType } from '@dotcms/types';
+import {
+    DotCMSIframeScrollPayload,
+    DotCMSPageResponse,
+    DotCMSUVEAction,
+    UVEEventType
+} from '@dotcms/types';
 
 import { createUVESubscription } from '../lib/core/core.utils';
 import { computeScrollIsInBottom, getNativeEventBinder } from '../lib/dom/dom.utils';
 import { setBounds } from '../lib/editor/internal';
 import { initInlineEditing, sendMessageToUVE } from '../lib/editor/public';
+
+/** One frame at 60fps, in ms: the unit the editor's scroll velocity is expressed in. */
+const FRAME_MS = 1000 / 60;
+
+/** The fastest the page scrolls during a drag, in px per 60fps frame. */
+const MAX_SCROLL_VELOCITY = 40;
+
+/**
+ * The longest frame a scroll step accounts for, so a frame delayed by a busy or hidden tab does
+ * not jump the page.
+ */
+const MAX_FRAME_MS = 4 * FRAME_MS;
+
+/** A velocity the page can use: a finite number, clamped to the maximum; anything else is 0. */
+function toScrollVelocity(velocity: unknown): number {
+    if (typeof velocity !== 'number' || !Number.isFinite(velocity)) {
+        return 0;
+    }
+
+    return Math.max(-MAX_SCROLL_VELOCITY, Math.min(MAX_SCROLL_VELOCITY, velocity));
+}
+
+/**
+ * Scrolls the page continuously during a drag, at the velocity the editor sets, one instant step
+ * per animation frame scaled by how long the frame took. It stops at velocity 0, at the top when
+ * scrolling up, at the bottom when scrolling down, and on `stop()`.
+ */
+function createDragScroller() {
+    let velocity = 0;
+    let frameId: number | null = null;
+    let lastFrameTime: number | null = null;
+
+    const halt = () => {
+        if (frameId !== null) {
+            cancelAnimationFrame(frameId);
+        }
+
+        frameId = null;
+        lastFrameTime = null;
+    };
+
+    const step = (time: number) => {
+        frameId = null;
+
+        if (
+            velocity === 0 ||
+            (velocity < 0 && window.scrollY <= 0) ||
+            (velocity > 0 && computeScrollIsInBottom())
+        ) {
+            halt();
+
+            return;
+        }
+
+        const elapsed = lastFrameTime === null ? FRAME_MS : time - lastFrameTime;
+
+        lastFrameTime = time;
+        window.scrollBy({
+            left: 0,
+            top: velocity * (Math.min(elapsed, MAX_FRAME_MS) / FRAME_MS),
+            behavior: 'instant'
+        });
+        frameId = requestAnimationFrame(step);
+    };
+
+    return {
+        setVelocity: (next: unknown) => {
+            velocity = toScrollVelocity(next);
+
+            if (velocity === 0) {
+                halt();
+
+                return;
+            }
+
+            if (frameId === null) {
+                frameId = requestAnimationFrame(step);
+            }
+        },
+        stop: () => {
+            velocity = 0;
+            halt();
+        }
+    };
+}
 
 function escapeCssContentValue(value: string): string {
     return value
@@ -19,9 +109,11 @@ function escapeCssContentValue(value: string): string {
  * to the editor when these events occur.
  */
 export function scrollHandler() {
+    // The scroll offset lets the editor keep its drop targets aligned while a drag scrolls the page.
     const scrollCallback = () => {
-        sendMessageToUVE({
-            action: DotCMSUVEAction.IFRAME_SCROLL
+        sendMessageToUVE<DotCMSIframeScrollPayload>({
+            action: DotCMSUVEAction.IFRAME_SCROLL,
+            payload: { scrollY: window.scrollY }
         });
     };
 
@@ -75,6 +167,7 @@ export function addClassToEmptyContentlets(): void {
  * - Page reload events that refresh the window
  * - Bounds request events to update editor boundaries
  * - Iframe scroll events to handle smooth scrolling within bounds
+ * - Scroll velocity events, which scroll the page every frame during a drag
  * - Contentlet hover events to notify the editor
  *
  * @remarks
@@ -87,9 +180,27 @@ export function registerUVEEvents() {
         window.location.reload();
     });
 
+    // Both live per registration, so a later registration starts with a fresh flag and no loop.
+    const dragScroller = createDragScroller();
+    // Once the editor sends a velocity, it drives the scroll, and its one-step direction requests,
+    // which it keeps sending for older pages, are ignored.
+    let editorSendsVelocity = false;
+
+    const iframeScrollVelocitySubscription = createUVESubscription(
+        UVEEventType.IFRAME_SCROLL_VELOCITY,
+        (velocity) => {
+            editorSendsVelocity = true;
+            dragScroller.setVelocity(velocity);
+        }
+    );
+
     const iframeScrollSubscription = createUVESubscription(
         UVEEventType.IFRAME_SCROLL,
         (direction) => {
+            if (editorSendsVelocity) {
+                return;
+            }
+
             if (
                 (window.scrollY === 0 && direction === 'up') ||
                 (computeScrollIsInBottom() && direction === 'down')
@@ -148,6 +259,14 @@ export function registerUVEEvents() {
     return {
         subscriptions: [
             pageReloadSubscription,
+            {
+                ...iframeScrollVelocitySubscription,
+                unsubscribe: () => {
+                    iframeScrollVelocitySubscription.unsubscribe();
+                    dragScroller.stop();
+                    editorSendsVelocity = false;
+                }
+            },
             iframeScrollSubscription,
             contentletHoveredSubscription,
             contentletClickedSubscription,

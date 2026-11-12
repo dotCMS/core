@@ -11,6 +11,7 @@ import { switchMap, take, tap } from 'rxjs/operators';
 import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotTreeNode } from '@dotcms/dotcms-models';
 import {
+    DotCMSIframeScrollPayload,
     DotCMSInlineEditingPayload,
     DotCMSInlineEditingType,
     DotCMSUVEAction
@@ -125,8 +126,9 @@ export class DotUveActionsHandlerService {
                     payload: actionPayload
                 });
             },
-            [DotCMSUVEAction.IFRAME_SCROLL]: () => {
-                uveStore.updateEditorScrollState();
+            [DotCMSUVEAction.IFRAME_SCROLL]: (payload?: DotCMSIframeScrollPayload) => {
+                // A newer SDK says where the page is, so a drag can keep its drop targets.
+                uveStore.updateEditorScrollState(payload?.scrollY);
             },
             [DotCMSUVEAction.IFRAME_SCROLL_END]: () => {
                 // No-op on purpose. We used to flip IDLE here, but that

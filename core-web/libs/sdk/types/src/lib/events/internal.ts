@@ -32,6 +32,12 @@ export enum __DOTCMS_UVE_EVENT__ {
      */
     UVE_SCROLL_INSIDE_IFRAME = 'uve-scroll-inside-iframe',
     /**
+     * Scroll the page continuously during a drag. Carries `velocity`: signed pixels per 60fps
+     * frame, negative to scroll up, `0` to stop. A page that receives it once ignores
+     * `UVE_SCROLL_INSIDE_IFRAME` from then on.
+     */
+    UVE_SCROLL_VELOCITY = 'uve-scroll-velocity',
+    /**
      * TODO:
      * Set the page data - This is used to catch the "changes" event.
      * We must to re-check the name late.

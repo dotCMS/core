@@ -337,6 +337,7 @@ function createUVEStoreMock() {
             })
         ),
         editorSave: vi.fn(),
+        resetEditorScrollY: vi.fn(),
         pageLoad: vi.fn()
     };
 }
@@ -1078,6 +1079,13 @@ describe('DotUveCanvasComponent', () => {
             expect(iframeMessenger.setIframeWindow).toHaveBeenLastCalledWith(
                 pageFrame().contentWindow
             );
+        });
+
+        // #38575: drag scrolls are measured from where the page is, and a new document is at the top.
+        it('should measure later page scrolls from the top of the new document', () => {
+            loadPage();
+
+            expect(store.resetEditorScrollY).toHaveBeenCalled();
         });
 
         it('should start the inline editor again when the page loads during an inline edit', () => {
