@@ -49,6 +49,10 @@ public class ContentTypeInitializer implements DotInitializer {
     public static final String FAVORITE_PAGE_PERMISSIONS_RESET_KEY = "FAVORITE_PAGE_PERMISSIONS_RESET";
 
     private static final String FAVORITE_PAGE_PERMISSIONS_LOCK = "favorite-page-permissions";
+    private static final String REPAIR_LOCK_SQL = "SELECT pg_advisory_xact_lock(hashtext(?))";
+    private static final String COUNT_RESET_MARKER_SQL = "select count(*) as total from system_table where key = ?";
+    private static final String COUNT_FAVORITES_WITH_OWN_ROWS_SQL = "select count(distinct inode_id) as total from permission where inode_id in (select identifier from contentlet where structure_inode = ?)";
+    private static final String FAVORITES_OFF_SYSTEM_HOST_SQL = "select distinct i.id from identifier i join contentlet c on c.identifier = i.id where c.structure_inode = ? and (i.host_inode <> ? or i.parent_path <> ?)";
     /** Seconds after the repair commits before the permission cache is cleared a second time. */
     private static final long PERMISSION_CACHE_RECLEAR_SECONDS = 30;
 
@@ -302,10 +306,7 @@ public class ContentTypeInitializer implements DotInitializer {
     private int giveOwnerRowsToFavoritesOffSystemHost(final ContentType contentType, final int permissionType,
                                                       final Role role) throws DotDataException, DotSecurityException {
 
-        // The statement is three string literals; every value is bound.
-        final List<Map<String, Object>> rows = new DotConnect().setSQL( // nosemgrep
-                        "select distinct i.id from identifier i join contentlet c on c.identifier = i.id"
-                        + " where c.structure_inode = ? and (i.host_inode <> ? or i.parent_path <> ?)")
+        final List<Map<String, Object>> rows = new DotConnect().setSQL(FAVORITES_OFF_SYSTEM_HOST_SQL)
                 .addParam(contentType.inode()).addParam(Host.SYSTEM_HOST).addParam("/")
                 .loadObjectResults();
         int count = 0;
@@ -335,9 +336,7 @@ public class ContentTypeInitializer implements DotInitializer {
      */
     private void acquireRepairLock() throws DotDataException {
 
-        // The statement is a single literal; the lock name is bound.
-        // nosemgrep
-        new DotConnect().setSQL("SELECT pg_advisory_xact_lock(hashtext(?))")
+        new DotConnect().setSQL(REPAIR_LOCK_SQL)
                 .addParam(FAVORITE_PAGE_PERMISSIONS_LOCK)
                 .loadObjectResults();
     }
@@ -352,9 +351,7 @@ public class ContentTypeInitializer implements DotInitializer {
      */
     private boolean favoritesWereReset() throws DotDataException {
 
-        // The statement is a single literal; the key is bound.
-        // nosemgrep
-        return new DotConnect().setSQL("select count(*) as total from system_table where key = ?")
+        return new DotConnect().setSQL(COUNT_RESET_MARKER_SQL)
                 .addParam(FAVORITE_PAGE_PERMISSIONS_RESET_KEY).getInt("total") > 0;
     }
 
@@ -390,9 +387,7 @@ public class ContentTypeInitializer implements DotInitializer {
      */
     private int countFavoritesWithOwnRows(final ContentType contentType) throws DotDataException {
 
-        // The statement is two string literals; the content type inode is bound.
-        return new DotConnect().setSQL("select count(distinct inode_id) as total from permission where inode_id in" // nosemgrep
-                        + " (select identifier from contentlet where structure_inode = ?)")
+        return new DotConnect().setSQL(COUNT_FAVORITES_WITH_OWN_ROWS_SQL)
                 .addParam(contentType.inode()).getInt("total");
     }
 
