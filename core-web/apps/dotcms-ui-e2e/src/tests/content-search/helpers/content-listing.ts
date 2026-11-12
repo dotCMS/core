@@ -1,4 +1,4 @@
-import { type FrameLocator, type Page } from '@playwright/test';
+import { expect, type FrameLocator, type Page } from '@playwright/test';
 import { getLegacyFrame } from '@utils/iframe';
 import { Portlet } from '@utils/portlets';
 
@@ -84,6 +84,30 @@ export class ContentListingHelper {
             .waitFor({ state: 'visible', timeout: 20000 });
 
         await this.listViewButton.waitFor({ state: 'visible', timeout: 10000 });
+
+        // view_contentlets_js_inc.jsp starts a 900 ms timer on domReady (the global `t`) whose
+        // tick moves focus to the search box. A Dojo popup opened before that tick (the Search
+        // combo menu, the Add dropdown) is closed by the focus change, so the item the test then
+        // waits for or clicks disappears. Wait for the tick itself rather than for focus on the
+        // search box: on a slow load the tick fires before the box is focusable, focus never
+        // lands, and only the timer having stopped says the page has settled.
+        await expect
+            .poll(
+                () =>
+                    this.frame.locator('body').evaluate(() => {
+                        const timer = (
+                            window as unknown as {
+                                t?: { isRunning?: boolean; onTick?: unknown };
+                            }
+                        ).t;
+
+                        // Only the listing's dojox timer has onTick and isRunning; any other
+                        // global `t` must not count as "settled".
+                        return typeof timer?.onTick === 'function' && timer.isRunning === false;
+                    }),
+                { timeout: 10000, message: 'the delayed search-box autofocus timer never ticked' }
+            )
+            .toBe(true);
     }
 
     /**

@@ -4,6 +4,8 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDRE
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.BasicAuthentication;
+import com.dotcms.auth.LoginLockout;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.bradmcevoy.http.CollectionResource;
@@ -30,7 +32,6 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FolderCache;
-import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -52,11 +53,8 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.*;
 import com.google.common.annotations.VisibleForTesting;
-import com.liferay.portal.auth.AuthException;
-import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
 import java.io.File;
@@ -97,7 +95,6 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class DotWebdavHelper {
 
-	private static final String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
 	private static ThreadLocal<Perl5Matcher> localP5Matcher = new ThreadLocal<Perl5Matcher>(){
 		protected Perl5Matcher initialValue() {
 			return new Perl5Matcher();
@@ -171,35 +168,35 @@ public class DotWebdavHelper {
 		}
 	}
 
-	public User authorizePrincipal(final String username, final String passwd) throws DotSecurityException, NoSuchUserException, DotDataException {
+	/**
+	 * Checks the credentials a WebDAV client sent and returns the matching user, under the shared
+	 * Basic authentication policy ({@code ALLOW_BASIC_AUTH}). In token-only mode the credential must
+	 * be an API token and the stored password is not consulted. When passwords are allowed, the
+	 * password is checked against the one stored in dotCMS, or accepted as an API token.
+	 *
+	 * @param username the login sent by the client: an email address or a user id, depending on
+	 *                 the company's authentication type
+	 * @param passwd   the password or API token sent by the client
+	 * @return the authenticated {@link User}
+	 * @throws DotSecurityException if credentials are disabled or not accepted
+	 * @throws NoSuchUserException if the named user does not exist
+	 * @throws DotDataException if the user lookup fails
+	 */
+	public User authorizePrincipal(final String username, final String passwd)
+			throws DotSecurityException, NoSuchUserException, DotDataException {
 
-
-		final Company company         = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
-		final boolean useEmailAsLogin = !company.getAuthType().equals(Company.AUTH_TYPE_ID);
-
-		try {
-
-			if (PRE_AUTHENTICATOR != null && !PRE_AUTHENTICATOR.equals("")) {
-
-				final Authenticator authenticator = (Authenticator) new com.dotcms.repackage.bsh.
-						Interpreter().eval("new " + PRE_AUTHENTICATOR + "()");
-				if (useEmailAsLogin) {
-
-					authenticator.authenticateByEmailAddress(company.getCompanyId(), username, passwd);
-				} else {
-
-					authenticator.authenticateByUserId      (company.getCompanyId(), username, passwd);
-				}
-			}
-		} catch (AuthException ae) {
-
-			Logger.debug(this, "Username : " + username + " failed to login", ae);
-			throw new DotSecurityException(ae.getMessage(),ae);
-		} catch (Exception e) {
-
-			Logger.error(this, e.getMessage(), e);
-			throw new DotSecurityException(e.getMessage(),e);
+		final BasicAuthentication.Mode mode = BasicAuthentication.mode();
+		if (mode == BasicAuthentication.Mode.NONE) {
+			throw new DotSecurityException("Basic authentication is disabled");
 		}
+		if (mode == BasicAuthentication.Mode.JWT_TOKEN) {
+			final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+			final String ipAddress = request != null ? request.getRemoteAddr() : null;
+			return BasicAuthentication.authenticateApiToken(username, passwd, ipAddress)
+					.orElseThrow(() -> new DotSecurityException("Invalid API token credentials"));
+		}
+
+		final Company company = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
 
 		final UserAPI userAPI = APILocator.getUserAPI();
 		final User user       = company.getAuthType().equals(Company.AUTH_TYPE_ID)?
@@ -211,8 +208,11 @@ public class DotWebdavHelper {
 			throw new DotSecurityException("The user was returned NULL");
 		}
 
-		// Validate password and rehash when is needed
-		if (!LoginFactory.passwordMatch(passwd, user) && !this.tryMatchJsonWebToken(passwd, user)) {
+		// Validate password and rehash when is needed. Refused while locked out; WebDAV attempts are
+		// counted apart from other logins from this address, so a client retrying a stale password does
+		// not lock its user out of the backend.
+		if (!LoginLockout.getInstance().passwordMatch(passwd, user, LoginLockout.webdavSource(),
+				this::tryMatchJsonWebToken)) {
 
 			Logger.debug(this, ()-> "The user's passwords didn't match");
 			throw new DotSecurityException("The user's passwords didn't match");

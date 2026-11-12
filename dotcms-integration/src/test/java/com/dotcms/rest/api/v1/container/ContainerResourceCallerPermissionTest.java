@@ -16,6 +16,7 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -26,7 +27,9 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.SecurityException;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.PaginationUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -46,9 +49,11 @@ import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
 import io.vavr.control.Try;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -58,12 +63,14 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
@@ -72,6 +79,9 @@ import org.junit.Test;
  * find or create the widget a form is placed on a page with.
  */
 public class ContainerResourceCallerPermissionTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static final String PASSWORD = "admin";
     /** The key prefix ContainerResource locks a form's widget creation on. */
@@ -308,6 +318,10 @@ public class ContainerResourceCallerPermissionTest {
      * Given: a form with no widget yet
      * When: several requests ask for its widget to be created at the same time
      * Should: create a single widget and return it to all of them
+     * <p>
+     * The requests carry an API token rather than a password: login lockout refuses password logins
+     * from one address beyond {@code auth.max.failures.limit} in flight at once, which is not what
+     * this test is about.
      */
     @Test
     public void test_createForm_concurrentRequests_createOneWidget() throws Exception {
@@ -316,13 +330,16 @@ public class ContainerResourceCallerPermissionTest {
         final int requests = 6;
         final CountDownLatch start = new CountDownLatch(1);
         final ExecutorService pool = Executors.newFixedThreadPool(requests);
+        final ApiToken apiToken = APILocator.getApiTokenAPI().persistApiToken(adminUser.getUserId(),
+                Date.from(Instant.now().plus(Duration.ofHours(1))), adminUser.getUserId(), "127.0.0.1");
+        final String bearer = "Bearer " + APILocator.getApiTokenAPI().getJWT(apiToken, adminUser);
         try {
             final List<Future<String>> results = new ArrayList<>();
             for (int i = 0; i < requests; i++) {
                 results.add(pool.submit(() -> {
                     start.await();
                     return widgetIdentifier(resource.createContainerFormByQueryParam(
-                            request(adminUser), response, containerId, form.id()));
+                            request(bearer), response, containerId, form.id()));
                 }));
             }
             start.countDown();
@@ -335,6 +352,7 @@ public class ContainerResourceCallerPermissionTest {
             assertEquals("a single widget should be created", 1, widgetsFor(form.id()).size());
         } finally {
             pool.shutdownNow();
+            APILocator.getApiTokenAPI().deleteToken(apiToken, APILocator.systemUser());
         }
     }
 
@@ -639,6 +657,152 @@ public class ContainerResourceCallerPermissionTest {
     }
 
     /**
+     * Method to test: {@link ContainerResource#getContainers}
+     * Given: a content type used by two containers, one of them archived, and a back-end user
+     *        who can read the content type and both containers
+     * When: the user lists the containers that use the content type, archived ones included
+     * Should: get both containers, and a total that counts both
+     */
+    @Test
+    public void test_getContainers_byContentType_userReadsAllContainers_getsAll() throws Exception {
+        final ContainerUsage usage = new ContainerUsage();
+        try {
+            usage.create();
+            final User user = user(TestUserUtils.getBackendRole());
+            grantRead(user, usage.contentType);
+            grantRead(user, usage.active);
+            grantRead(user, usage.archived);
+
+            final Response result = usage.list(user);
+
+            assertEquals(Set.of(usage.active.getIdentifier(), usage.archived.getIdentifier()),
+                    identifiersIn(result));
+            assertEquals("2", result.getHeaderString(PaginationUtil.PAGINATION_TOTAL_ENTRIES_HEADER_NAME));
+        } finally {
+            usage.cleanUp();
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#getContainers}
+     * Given: a content type used by two containers, one of them archived, and a back-end user
+     *        who can read the content type but neither container
+     * When: the user lists the containers that use the content type, archived ones included
+     * Should: get an empty list and a total of zero, so no container is disclosed
+     */
+    @Test
+    public void test_getContainers_byContentType_userReadsNoContainer_getsNone() throws Exception {
+        final ContainerUsage usage = new ContainerUsage();
+        try {
+            usage.create();
+            final User user = user(TestUserUtils.getBackendRole());
+            grantRead(user, usage.contentType);
+
+            final Response result = usage.list(user);
+
+            assertEquals(Set.of(), identifiersIn(result));
+            assertEquals("0", result.getHeaderString(PaginationUtil.PAGINATION_TOTAL_ENTRIES_HEADER_NAME));
+        } finally {
+            usage.cleanUp();
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#getContainers}
+     * Given: a content type used by an active and an archived container, and a back-end user who
+     *        can read the content type and only one of the containers
+     * When: the user lists the containers that use the content type, archived ones included, once
+     *       with each container as the readable one
+     * Should: get only the readable container, and a total that counts only that one, whether it
+     *         is the active or the archived one
+     */
+    @Test
+    public void test_getContainers_byContentType_userReadsSomeContainers_getsOnlyThose()
+            throws Exception {
+        final ContainerUsage usage = new ContainerUsage();
+        try {
+            usage.create();
+            final User readsActive = user(TestUserUtils.getBackendRole());
+            grantRead(readsActive, usage.contentType);
+            grantRead(readsActive, usage.active);
+            final User readsArchived = user(TestUserUtils.getBackendRole());
+            grantRead(readsArchived, usage.contentType);
+            grantRead(readsArchived, usage.archived);
+
+            final Response activeOnly = usage.list(readsActive);
+            final Response archivedOnly = usage.list(readsArchived);
+
+            assertEquals(Set.of(usage.active.getIdentifier()), identifiersIn(activeOnly));
+            assertEquals("1", activeOnly.getHeaderString(PaginationUtil.PAGINATION_TOTAL_ENTRIES_HEADER_NAME));
+            assertEquals(Set.of(usage.archived.getIdentifier()), identifiersIn(archivedOnly));
+            assertEquals("1", archivedOnly.getHeaderString(PaginationUtil.PAGINATION_TOTAL_ENTRIES_HEADER_NAME));
+        } finally {
+            usage.cleanUp();
+        }
+    }
+
+    /**
+     * Reads the identifiers of the containers a listing returned.
+     *
+     * @param result the response of {@link ContainerResource#getContainers}
+     * @return the containers' identifiers
+     */
+    private static Set<String> identifiersIn(final Response result) {
+        return ((List<?>) ((ResponseEntityView<?>) result.getEntity()).getEntity()).stream()
+                .map(view -> ((ContainerView) view).getContainer().getIdentifier())
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * A content type used by an active and an archived container, owned by no one in particular.
+     * It removes itself, containers first, so a failed test leaves nothing behind that the class
+     * cleanup would remove in the wrong order.
+     */
+    private static class ContainerUsage {
+
+        private ContentType contentType;
+        private Container active;
+        private Container archived;
+
+        void create() throws Exception {
+            contentType = new ContentTypeDataGen().host(defaultSite()).nextPersisted();
+            active = newContainer();
+            archived = newContainer();
+            APILocator.getContainerAPI().archive(archived, APILocator.systemUser(), false);
+        }
+
+        private Container newContainer() {
+            return new ContainerDataGen().withContentType(contentType, "$!{body}").nextPersisted();
+        }
+
+        /**
+         * Lists the containers that use the content type, archived ones included, as the user.
+         *
+         * @param user the user who lists them
+         * @return the response
+         */
+        Response list(final User user) {
+            return resource.getContainers(request(user), response, null, 1, 40, "title", "ASC",
+                    null, false, true, contentType.id());
+        }
+
+        void cleanUp() {
+            for (final Container container : new Container[] {archived, active}) {
+                if (null != container) {
+                    Try.run(() -> ContainerDataGen.remove(container))
+                            .onFailure(e -> Logger.warn(ContainerResourceCallerPermissionTest.class,
+                                    "Could not remove container " + container.getIdentifier(), e));
+                }
+            }
+            if (null != contentType) {
+                Try.run(() -> ContentTypeDataGen.remove(contentType))
+                        .onFailure(e -> Logger.warn(ContainerResourceCallerPermissionTest.class,
+                                "Could not remove content type " + contentType.variable(), e));
+            }
+        }
+    }
+
+    /**
      * Creates a container stored as files on the default site.
      *
      * @param folderName the container's folder name, used by no other site
@@ -763,14 +927,29 @@ public class ContainerResourceCallerPermissionTest {
         }
     }
 
+    /**
+     * Builds a request carrying an API JWT owned by the given user.
+     *
+     * @param user the user the request authenticates as
+     * @return the request
+     */
     private static HttpServletRequest request(final User user) {
+        return request(TOKEN_UTILS.bearerHeader(user));
+    }
+
+    /**
+     * Builds a request that carries the given {@code Authorization} header.
+     *
+     * @param authorization the value of the {@code Authorization} header
+     * @return the request
+     */
+    private static HttpServletRequest request(final String authorization) {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
                         new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
                                 .request())
                         .request());
-        request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode((user.getEmailAddress() + ":" + PASSWORD).getBytes())));
+        request.setHeader("Authorization", authorization);
         return request;
     }
 

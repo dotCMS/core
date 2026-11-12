@@ -242,7 +242,7 @@ const PORTLETS_ANGULAR: Route[] = [
             import('@dotcms/portlets/dot-agents/portlet').then((m) => m.dotAgentsRoutes)
     },
     {
-        path: 'users-beta',
+        path: 'users',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         data: { reuseRoute: false },
@@ -260,7 +260,7 @@ const PORTLETS_ANGULAR: Route[] = [
             )
     },
     {
-        path: 'roles-beta',
+        path: 'roles',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         data: { reuseRoute: false },
@@ -268,7 +268,7 @@ const PORTLETS_ANGULAR: Route[] = [
             import('@dotcms/portlets/dot-roles/portlet').then((m) => m.dotRolesRoutes)
     },
     {
-        path: 'tools-beta',
+        path: 'tools',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         data: { reuseRoute: false },
@@ -377,6 +377,7 @@ export const appRoutes: Routes = [
     {
         path: 'fromCore',
         canActivate: [AuthGuardService],
+        canActivateChild: [AuthGuardService],
         children: [
             {
                 path: 'rules',
@@ -393,6 +394,7 @@ export const appRoutes: Routes = [
     {
         path: '',
         canActivate: [AuthGuardService],
+        canActivateChild: [AuthGuardService],
         component: MainComponentLegacyComponent,
         children: [...PORTLETS_IFRAME, ...PORTLETS_ANGULAR]
     },

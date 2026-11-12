@@ -34,6 +34,7 @@ import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.thoughtworks.xstream.XStream;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
+import com.thoughtworks.xstream.security.ForbiddenClassException;
 
 import java.io.BufferedInputStream;
 import java.io.File;
@@ -353,10 +354,17 @@ public class BundlerUtil {
      *
      * @param f file to deserialize
      * @return A deserialized object
+     * @throws ForbiddenClassException if the document names a type outside the trusted list
      */
     public static Object xmlToObject(File f){
         try (InputStream input = Files.newInputStream(f.toPath())) {
             return xmlToObject(input);
+        } catch (final ForbiddenClassException e) {
+            //Not a parse failure, so the retry below has nothing to offer: no prologue changes
+            //whether a type is trusted. Letting it fall through would rewrite the received file
+            //on disk to read it a second time, fail the same way, and replace a message naming
+            //the refused type with a generic deserialization error.
+            throw e;
 		} catch (Exception e) {
 			Logger.warnAndDebug(BundlerUtil.class,e.getMessage(),e);
 			return xmlToObjectWithPrologue(f);

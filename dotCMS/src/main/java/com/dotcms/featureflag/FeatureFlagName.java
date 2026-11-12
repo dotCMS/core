@@ -59,6 +59,21 @@ public interface FeatureFlagName {
      */
     String FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER = "FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER";
 
+    /**
+     * Kill switch for the destination check on checkin. On by default: creating a contentlet
+     * somewhere other than where its content type places content by default (the type's own
+     * folder or site, or the default site for a type on the System Host) requires, besides WRITE
+     * on the content type, "Can Add Children" or WRITE on that folder or site; the former is what
+     * the content editor and the move operation already enforce. Saving an existing contentlet
+     * with a different site or folder, which moves it there, requires the same grant on the new
+     * place besides WRITE on the contentlet. Off: only the content-type or contentlet WRITE check
+     * runs, as before. Default placements, content on the System Host, Host contentlets
+     * themselves, existing contentlets that stay where they are, and the system user are not
+     * affected either way. Environment form:
+     * {@code DOT_FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK}.
+     */
+    String FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK = "FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK";
+
     // others
     String FULLSCREEN_FIELD_FEATURE_FLAG = "content.edit.ui.fullscreen";
 
@@ -87,8 +102,6 @@ public interface FeatureFlagName {
     String FEATURE_FLAG_UVE_STYLE_EDITOR = "FEATURE_FLAG_UVE_STYLE_EDITOR";
 
     String FEATURE_FLAG_PAGE_SCANNER = "FEATURE_FLAG_PAGE_SCANNER";
-
-    String FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION = "FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION";
 
     /**
      * Controls the active ES → OpenSearch migration phase (integer ordinal 0–3).
@@ -189,4 +202,21 @@ public interface FeatureFlagName {
      * the credential fields cleared.
      */
     String FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES = "FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES";
+
+    /**
+     * Also sends the dotCMS version headers ({@code X-DotCMS-Version}, {@code X-DotCMS-Min-SDK})
+     * and the {@code x-dot-server} node header on requests that carry no valid credentials. Off by
+     * default: those headers go only to requests with a logged-in session or a valid bearer token,
+     * which is what the {@code @dotcms/client} SDK sends. Turn it on to restore the earlier
+     * behavior of sending them on every response.
+     *
+     * <p>Does not override {@code RESPONSE_HEADER_ADD_NODE_ID=false}, which still removes
+     * {@code x-dot-server} from every response, nor the {@code ?nodeid=true} request parameter,
+     * which still requests it on a single response.
+     *
+     * @see com.dotcms.filters.interceptor.meta.SdkVersionWebInterceptor
+     * @see com.dotcms.filters.interceptor.meta.ResponseMetaDataWebInterceptor
+     */
+    String FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS =
+            "FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS";
 }

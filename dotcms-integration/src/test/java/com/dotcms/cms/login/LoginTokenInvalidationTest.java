@@ -14,6 +14,7 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.rest.api.v1.user.UserForm;
 import com.dotcms.rest.api.v1.user.UserResource;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -26,7 +27,6 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.WebKeys;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -35,6 +35,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
@@ -44,6 +45,9 @@ import org.junit.Test;
  * the earlier token still resolves to a user.
  */
 public class LoginTokenInvalidationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static final String IP_ADDRESS = "127.0.0.1";
     private static final String NEW_PASSWORD = "Neutral-Value-2026!";
@@ -243,7 +247,7 @@ public class LoginTokenInvalidationTest {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockHttpRequestIntegrationTest("localhost", "/api/v1/users").request());
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+                TOKEN_UTILS.adminBearerHeader());
         final Response response = new UserResource().update(request, mock(HttpServletResponse.class),
                 new UserForm.Builder()
                         .userId(user.getUserId())

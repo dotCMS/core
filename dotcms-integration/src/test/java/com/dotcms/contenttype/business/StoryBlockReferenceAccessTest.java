@@ -43,6 +43,7 @@ import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.page.CopyContentletForm;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.rest.api.v1.workflow.WorkflowResource;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.model.Variant;
@@ -71,7 +72,6 @@ import com.liferay.portal.util.WebKeys;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -81,6 +81,7 @@ import javax.ws.rs.core.Response;
 import org.apache.velocity.context.Context;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
@@ -94,6 +95,9 @@ import org.junit.Test;
  * the Story Block hydration.
  */
 public class StoryBlockReferenceAccessTest extends IntegrationTestBase {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static final String BASE_STORY_BLOCK = "{\"type\":\"doc\",\"content\":["
             + "{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"intro\"}]}]}";
@@ -728,8 +732,7 @@ public class StoryBlockReferenceAccessTest extends IntegrationTestBase {
             final HttpServletRequest request = new MockHeaderRequest(new MockSessionRequest(
                     new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
                             .request()).request());
-            ((MockHeaderRequest) request).setHeader("Authorization", "Basic " + Base64.getEncoder()
-                    .encodeToString((editor.getEmailAddress() + ":" + password).getBytes(StandardCharsets.UTF_8)));
+            ((MockHeaderRequest) request).setHeader("Authorization", TOKEN_UTILS.bearerHeader(editor));
             HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
             final FireActionForm form = new FireActionForm(new FireActionForm.Builder().contentlet(Map.of(
                     "identifier", editedCarrier.getIdentifier(),
@@ -799,8 +802,7 @@ public class StoryBlockReferenceAccessTest extends IntegrationTestBase {
             final HttpServletRequest request = new MockHeaderRequest(new MockSessionRequest(
                     new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
                             .request()).request());
-            ((MockHeaderRequest) request).setHeader("Authorization", "Basic " + Base64.getEncoder()
-                    .encodeToString((editor.getEmailAddress() + ":" + password).getBytes(StandardCharsets.UTF_8)));
+            ((MockHeaderRequest) request).setHeader("Authorization", TOKEN_UTILS.bearerHeader(editor));
             HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
             final CopyContentletForm form = new CopyContentletForm.Builder()
                     .pageId(page.getIdentifier())

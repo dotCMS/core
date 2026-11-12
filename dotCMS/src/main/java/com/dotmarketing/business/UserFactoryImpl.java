@@ -494,6 +494,20 @@ public class UserFactoryImpl implements UserFactory {
         HibernateUtil.addSyncCommitListener(() -> userCache.remove(id));
     }
 
+    @Override
+    public boolean clearIcqId(final String userId, final String expectedValue)
+            throws DotDataException {
+        if (!UtilMethods.isSet(userId)) {
+            throw new DotDataException("Can't update a user without a userId");
+        }
+        final String id = userId.trim().toLowerCase();
+        final int updated = new DotConnect().executeUpdate(
+                "update user_ set icqid = '' where userid = ? and icqid = ?", id, expectedValue);
+        userCache.remove(id);
+        HibernateUtil.addSyncCommitListener(() -> userCache.remove(id));
+        return updated > 0;
+    }
+
     private User createUser(final User user) throws DotDataException {
 
         final DotConnect dotConnect = new DotConnect();
@@ -968,5 +982,8 @@ public class UserFactoryImpl implements UserFactory {
         dotConnect.setSQL("delete from user_ where userid = ?");
         dotConnect.addParam(userToDelete.getUserId());
         dotConnect.loadResult();
+        // Login lockout state (see com.dotcms.auth.LoginLockout) belongs to the user and goes with them
+        new DotConnect().setSQL("delete from login_lockout where user_id = ?")
+                .addParam(userToDelete.getUserId()).loadResult();
     }
 }

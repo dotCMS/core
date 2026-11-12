@@ -12,7 +12,6 @@ import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
@@ -74,9 +73,6 @@ public class IndexAjaxAction extends AjaxAction {
 		try {
 			// Check permissions if the user has access to the CMS Maintenance Portlet
 			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
-				String userName = map.get("u");
-				String password = map.get("p");
-				LoginFactory.doLogin(userName, password, false, request, response);
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
 				if(user==null) {
 				    setUser(request);
