@@ -4,7 +4,7 @@
     "sourceRoot": "libs/sdk/angular/src",
     "prefix": "lib",
     "projectType": "library",
-    "tags": [],
+    "tags": ["skip:build"],
     "targets": {
         "build": {
             "metadata": {

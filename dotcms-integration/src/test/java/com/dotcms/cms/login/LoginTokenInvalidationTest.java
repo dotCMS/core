@@ -3,13 +3,18 @@ package com.dotcms.cms.login;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.listeners.SessionMonitor;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -17,6 +22,9 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSession;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.filters.interceptor.Result;
+import com.dotcms.filters.interceptor.dotcms.DefaultAutoLoginWebInterceptor;
+import com.dotcms.rest.annotation.HeaderFilter;
 import com.dotcms.rest.api.v1.user.UserForm;
 import com.dotcms.rest.api.v1.user.UserResource;
 import com.dotcms.test.util.ApiTokenTestUtils;
@@ -30,14 +38,17 @@ import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.ejb.CompanyManagerUtil;
+import com.dotmarketing.util.Config;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
@@ -50,12 +61,14 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 /**
  * A login token (the JWT set as the login cookie, also accepted as a Bearer header) must stop
  * working once its user logs out or has the password changed, while a token issued afterwards keeps
  * working. Each test drives the real logout and password APIs and then asks the token API whether
- * the earlier token still resolves to a user.
+ * the earlier token still resolves to a user. A login without "remember me" issues a token that
+ * expires after the configured session token lifetime.
  */
 public class LoginTokenInvalidationTest {
 
@@ -626,6 +639,278 @@ public class LoginTokenInvalidationTest {
                 request.getAttribute(WebKeys.USER_ID));
         assertNull("the refused session no longer names the user",
                 request.getSession().getAttribute(WebKeys.USER_ID));
+    }
+
+    /**
+     * A login without "remember me" sets a session cookie whose token expires after the default
+     * session token lifetime (60 minutes) and schedules its renewal on the session.
+     */
+    @Test
+    public void test_sessionLogin_tokenExpiresAfterSessionLifetime() throws Exception {
+        final HttpServletRequest request =
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/authentication").request();
+        request.getSession(); // a login always has its HTTP session by the time the cookie is set
+        final long before = System.currentTimeMillis();
+
+        final Cookie cookie = loginCookie(request, newUser(), false);
+
+        assertEquals("the session cookie has no max age", -1, cookie.getMaxAge());
+        assertExpiresIn(cookie, before, TimeUnit.MINUTES.toMillis(
+                LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT));
+        final Object renewAt =
+                request.getSession().getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT);
+        assertTrue("renewal must be scheduled within the token lifetime", renewAt instanceof Long
+                && (Long) renewAt > before && (Long) renewAt < expiryMillis(cookie));
+    }
+
+    /**
+     * The session token lifetime follows its configuration property.
+     */
+    @Test
+    public void test_sessionLogin_tokenLifetimeIsConfigurable() throws Exception {
+        Config.setProperty(LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES, 15);
+        try {
+            final long before = System.currentTimeMillis();
+            final Cookie cookie = loginCookie(new MockHttpRequestIntegrationTest("localhost",
+                    "/api/v1/authentication").request(), newUser(), false);
+            assertExpiresIn(cookie, before, TimeUnit.MINUTES.toMillis(15));
+        } finally {
+            Config.setProperty(LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES,
+                    LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT);
+        }
+    }
+
+    /**
+     * A "remember me" login keeps its persistent cookie and a token that lasts the configured
+     * number of days, and clears any renewal scheduled on the session.
+     */
+    @Test
+    public void test_rememberMeLogin_keepsDaysLifetime() throws Exception {
+        final HttpServletRequest request =
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/authentication").request();
+        request.getSession().setAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT, 0L);
+        final long before = System.currentTimeMillis();
+
+        final Cookie cookie = loginCookie(request, newUser(), true);
+
+        assertTrue("the remember-me cookie is persistent", cookie.getMaxAge() > 0);
+        assertExpiresIn(cookie, before,
+                TimeUnit.DAYS.toMillis(LoginServiceAPI.JWT_TOKEN_MAX_AGE_DAYS.get()));
+        assertNull(request.getSession().getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
+    }
+
+    /**
+     * A plugin login that sets a persistent cookie through the days overload clears a renewal
+     * scheduled earlier on the same session, so the persistent cookie is never replaced.
+     */
+    @Test
+    public void test_persistentCookieFromDaysOverload_clearsScheduledRenewal() throws Exception {
+        final HttpServletRequest request =
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/authentication").request();
+        request.getSession().setAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT, 0L);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        APILocator.getLoginServiceAPI().doRememberMe(request, response, newUser(), 7);
+
+        final ArgumentCaptor<Cookie> cookie = ArgumentCaptor.forClass(Cookie.class);
+        verify(response).addCookie(cookie.capture());
+        assertTrue("the cookie is persistent", cookie.getValue().getMaxAge() > 0);
+        assertNull(request.getSession().getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
+    }
+
+    /**
+     * A session token lifetime below one minute is ignored and the default is used.
+     */
+    @Test
+    public void test_sessionLogin_invalidLifetimeFallsBackToDefault() throws Exception {
+        Config.setProperty(LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES, 0);
+        try {
+            final long before = System.currentTimeMillis();
+            final Cookie cookie = loginCookie(new MockHttpRequestIntegrationTest("localhost",
+                    "/api/v1/authentication").request(), newUser(), false);
+            assertExpiresIn(cookie, before, TimeUnit.MINUTES.toMillis(
+                    LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT));
+        } finally {
+            Config.setProperty(LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES,
+                    LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT);
+        }
+    }
+
+    /**
+     * A login restored from a session login token cookie schedules the renewal of that cookie on
+     * the new session, while one restored from a "remember me" cookie does not.
+     */
+    @Test
+    public void test_cookieLogin_schedulesRenewalOnlyForSessionLoginToken() throws Exception {
+        final User user = newUser();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadBackEndUserRole(), user);
+        final String sessionToken = JsonWebTokenUtils.getInstance().createSessionLoginToken(user,
+                Duration.ofMinutes(LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT));
+        final String rememberMeToken = JsonWebTokenUtils.getInstance().createUserToken(user,
+                LoginServiceAPI.JWT_TOKEN_MAX_AGE_DAYS.get());
+
+        assertEquals(0L, sessionAfterCookieLogin(sessionToken)
+                .getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
+        assertNull(sessionAfterCookieLogin(rememberMeToken)
+                .getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
+    }
+
+    /**
+     * A back-end request on a logged-in session whose renewal time has passed, carrying a valid
+     * session login token cookie, gets a new browser-session cookie whose token expires later, and
+     * the renewal time moves into the future. A second request right after it renews nothing.
+     */
+    @Test
+    public void test_dueBackEndRequest_renewsSessionLoginToken() throws Exception {
+        final User user = newUser();
+        final String original = JsonWebTokenUtils.getInstance().createSessionLoginToken(user, Duration.ofMinutes(30));
+        final HttpServletRequest base =
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/users/current").request();
+        final HttpSession session = base.getSession();
+        session.setAttribute(WebKeys.USER_ID, user.getUserId());
+        session.setAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT, System.currentTimeMillis() - 1_000L);
+        final DefaultAutoLoginWebInterceptor interceptor = new DefaultAutoLoginWebInterceptor();
+
+        final HttpServletResponse firstResponse = mock(HttpServletResponse.class);
+        assertRenewedWithNoStoreResponse(interceptor.intercept(withLoginCookie(base, original), firstResponse),
+                firstResponse);
+
+        final ArgumentCaptor<Cookie> renewed = ArgumentCaptor.forClass(Cookie.class);
+        verify(firstResponse).addCookie(renewed.capture());
+        assertEquals(CookieKeys.REMEMBER_ME_COOKIE.get(), renewed.getValue().getName());
+        assertEquals("the renewed cookie is a browser-session cookie", -1, renewed.getValue().getMaxAge());
+        assertTrue("the renewed token must expire later than the one it replaces",
+                expiryMillis(renewed.getValue()) > JsonWebTokenFactory.getInstance()
+                        .getJsonWebTokenService().parseToken(original).getExpiresDate().getTime());
+        final Object renewAt = session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT);
+        assertTrue("the renewal time must move into the future",
+                renewAt instanceof Long && (Long) renewAt > System.currentTimeMillis());
+
+        final HttpServletResponse secondResponse = mock(HttpServletResponse.class);
+        assertEquals(Result.SKIP, interceptor.intercept(
+                withLoginCookie(base, renewed.getValue().getValue()), secondResponse));
+        verify(secondResponse, never()).addCookie(any(Cookie.class));
+        assertEquals(renewAt, session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
+    }
+
+    /**
+     * A front-end user whose session is restored from a session login token cookie has that cookie
+     * renewed on a back-end request, and the next request, which logs in from the cookie again,
+     * does not renew it a second time.
+     */
+    @Test
+    public void test_frontEndCookieLogin_renewsSessionLoginTokenOnce() throws Exception {
+        final User user = newUser();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadFrontEndUserRole(), user);
+        final String original = JsonWebTokenUtils.getInstance().createSessionLoginToken(user, Duration.ofMinutes(30));
+        final HttpServletRequest base =
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/content").request();
+        final DefaultAutoLoginWebInterceptor interceptor = new DefaultAutoLoginWebInterceptor();
+
+        final HttpServletResponse firstResponse = mock(HttpServletResponse.class);
+        assertRenewedWithNoStoreResponse(interceptor.intercept(withLoginCookie(base, original), firstResponse),
+                firstResponse);
+
+        final ArgumentCaptor<Cookie> renewed = ArgumentCaptor.forClass(Cookie.class);
+        verify(firstResponse).addCookie(renewed.capture());
+        assertEquals(-1, renewed.getValue().getMaxAge());
+        assertTrue("the renewed token must expire later than the one it replaces",
+                expiryMillis(renewed.getValue()) > JsonWebTokenFactory.getInstance()
+                        .getJsonWebTokenService().parseToken(original).getExpiresDate().getTime());
+
+        final HttpServletResponse secondResponse = mock(HttpServletResponse.class);
+        assertEquals(Result.SKIP, interceptor.intercept(
+                withLoginCookie(base, renewed.getValue().getValue()), secondResponse));
+        verify(secondResponse, never()).addCookie(any(Cookie.class));
+    }
+
+    /**
+     * A session login token whose lifetime is longer than the "remember me" limit stays a
+     * browser-session cookie when it restores a login: it is not reissued as a persistent cookie.
+     */
+    @Test
+    public void test_cookieLogin_keepsLongSessionLoginTokenAsSessionCookie() throws Exception {
+        final User user = newUser();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadBackEndUserRole(), user);
+        final String sessionToken = JsonWebTokenUtils.getInstance().createSessionLoginToken(user,
+                Duration.ofDays(LoginServiceAPI.JWT_TOKEN_MAX_AGE_DAYS.get() + 6L));
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        assertEquals(Result.SKIP, new DefaultAutoLoginWebInterceptor().intercept(withLoginCookie(
+                new MockHttpRequestIntegrationTest("localhost", "/").request(), sessionToken), response));
+
+        verify(response, never()).addCookie(any(Cookie.class));
+    }
+
+    /**
+     * A renewal lets the chain go on (a skip of the remaining interceptors) with a wrapped response,
+     * and marks the original response as not to be stored.
+     */
+    private static void assertRenewedWithNoStoreResponse(final Result result,
+            final HttpServletResponse response) {
+        assertEquals(Result.SKIP.getType(), result.getType());
+        assertNotNull("a renewal continues with a wrapped response", result.getResponse());
+        assertNotSame(response, result.getResponse());
+        verify(response).setHeader(HeaderFilter.CACHE_CONTROL, HeaderFilter.NO_CACHE_CONTROL);
+    }
+
+    /**
+     * Wraps the request so it carries the given token as its login cookie, keeping its session.
+     */
+    private static HttpServletRequest withLoginCookie(final HttpServletRequest request, final String token) {
+        return new HttpServletRequestWrapper(request) {
+            @Override
+            public Cookie[] getCookies() {
+                return new Cookie[]{new Cookie(CookieKeys.REMEMBER_ME_COOKIE.get(), token)};
+            }
+        };
+    }
+
+    /**
+     * Sends a site page request with no session and the given token as its login cookie through
+     * the auto-login interceptor, and returns the session it logged in.
+     */
+    private static HttpSession sessionAfterCookieLogin(final String token) {
+        final HttpServletRequest request = new HttpServletRequestWrapper(
+                new MockHttpRequestIntegrationTest("localhost", "/").request()) {
+            @Override
+            public Cookie[] getCookies() {
+                return new Cookie[]{new Cookie(CookieKeys.REMEMBER_ME_COOKIE.get(), token)};
+            }
+        };
+        assertEquals(Result.SKIP, new DefaultAutoLoginWebInterceptor()
+                .intercept(request, mock(HttpServletResponse.class)));
+        final HttpSession session = request.getSession(false);
+        assertNotNull("the cookie must log the request in", session);
+        return session;
+    }
+
+    /**
+     * Issues the login cookie for the user through the login service and returns it.
+     */
+    private static Cookie loginCookie(final HttpServletRequest request, final User user,
+            final boolean rememberMe) {
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        APILocator.getLoginServiceAPI().doRememberMe(request, response, user, rememberMe);
+        final ArgumentCaptor<Cookie> cookie = ArgumentCaptor.forClass(Cookie.class);
+        verify(response).addCookie(cookie.capture());
+        assertEquals(CookieKeys.REMEMBER_ME_COOKIE.get(), cookie.getValue().getName());
+        return cookie.getValue();
+    }
+
+    private static long expiryMillis(final Cookie cookie) {
+        return JsonWebTokenFactory.getInstance().getJsonWebTokenService()
+                .parseToken(cookie.getValue()).getExpiresDate().getTime();
+    }
+
+    /**
+     * Asserts the cookie's token expires the given lifetime after {@code before}, within a minute.
+     */
+    private static void assertExpiresIn(final Cookie cookie, final long before, final long lifetime) {
+        final long expiresIn = expiryMillis(cookie) - before;
+        assertTrue("token lifetime was " + expiresIn + " ms, expected about " + lifetime + " ms",
+                expiresIn >= lifetime - TimeUnit.MINUTES.toMillis(1)
+                        && expiresIn <= lifetime + TimeUnit.MINUTES.toMillis(1));
     }
 
     /**
