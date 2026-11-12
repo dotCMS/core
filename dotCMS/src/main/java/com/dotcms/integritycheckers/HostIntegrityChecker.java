@@ -385,6 +385,13 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                 ? Long.valueOf(((BigDecimal) row.get("language_id")).toPlainString())
                 : (Long) row.get("language_id");
 
+        // Refuse before any write: reusing an inode another contentlet row holds would point the
+        // site at that row and delete the site's own version.
+        refuseInodeInUse(remoteWorkingInode);
+        if (UtilMethods.isSet(remoteLiveInode) && !remoteLiveInode.equals(remoteWorkingInode)) {
+            refuseInodeInUse(remoteLiveInode);
+        }
+
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final HostAPI hostAPI = APILocator.getHostAPI();
         final ContentletJsonAPI contentletJsonAPI = APILocator.getContentletJsonAPI();
@@ -578,6 +585,21 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
 
         // Remove the Lucene index for the old page
         cleanIndex(existingWorkingHost, existingLiveHost);
+    }
+
+    /**
+     * Stops the site fix when a remote inode is already the inode of a local contentlet row, so
+     * the surrounding transaction rolls back and every local row is kept.
+     *
+     * @param remoteInode the working or live inode the remote end point uses for the site
+     * @throws DotDataException when a local contentlet row already has that inode
+     */
+    private void refuseInodeInUse(final String remoteInode) throws DotDataException {
+        if (hasRows("contentlet", "WHERE inode = ?", remoteInode)) {
+            throw new DotDataException(String.format(
+                    "Cannot move the site to remote inode '%s': a local contentlet already uses it",
+                    remoteInode));
+        }
     }
 
     /**
