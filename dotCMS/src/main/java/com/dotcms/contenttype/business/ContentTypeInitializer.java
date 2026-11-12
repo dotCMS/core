@@ -55,6 +55,8 @@ public class ContentTypeInitializer implements DotInitializer {
     private static final String COUNT_FAVORITES_WITH_OWN_ROWS_SQL = "select count(distinct inode_id) as total from permission where inode_id in (select identifier from contentlet where structure_inode = ?)";
     private static final String FAVORITES_OFF_SYSTEM_HOST_SQL = "select i.id, min(c.inode) as inode from identifier i join contentlet c on c.identifier = i.id where c.structure_inode = ? and (i.host_inode <> ? or i.parent_path <> ?) group by i.id";
     private static final String DELETE_OTHER_ROLES_ROWS_SQL = "delete from permission where inode_id = ? and roleid <> ?";
+    private static final String DELETE_ROWS_SQL = "delete from permission where inode_id = ?";
+    private static final String INSERT_ROW_SQL = "insert into permission (id, permission_type, inode_id, roleid, permission) values (nextval('permission_seq'), ?, ?, ?, ?)";
     /** Seconds after the repair commits before the permission cache is cleared a second time. */
     private static final long PERMISSION_CACHE_RECLEAR_SECONDS = 30;
 
@@ -303,7 +305,7 @@ public class ContentTypeInitializer implements DotInitializer {
      * @param role           the CMS Owner role
      * @return how many favorites were given their own rows
      * @throws DotDataException     if the favorites cannot be read or their permissions saved
-     * @throws DotSecurityException if the permissions cannot be saved
+     * @throws DotSecurityException if a favorite cannot be loaded
      */
     private int giveOwnerRowsToFavoritesOffSystemHost(final ContentType contentType, final int permissionType,
                                                       final Role role) throws DotDataException, DotSecurityException {
@@ -317,9 +319,9 @@ public class ContentTypeInitializer implements DotInitializer {
             // or archived, is found too; the inode comes from the row, so it always exists
             final Contentlet favorite = APILocator.getContentletAPI()
                     .find(String.valueOf(row.get("inode")), APILocator.systemUser(), false);
-            this.assignRoleOnlyPermissions(List.of(
+            this.replacePermissions(List.of(
                     new Permission(favorite.getPermissionId(), role.getId(), permissionType, true)),
-                    favorite, role);
+                    favorite);
         }
         return rows.size();
     }
@@ -328,13 +330,14 @@ public class ContentTypeInitializer implements DotInitializer {
      * Gives a permissionable the given rows of one role and no rows of any other role.
      * {@link PermissionAPI#assignPermissions} also saves, as the permissionable's own rows, what
      * locked roles and roles whose permissions cannot be edited get from its parent at that
-     * moment, so a grant a site gives such a role would follow a favorite onto its own rows; those
-     * rows are deleted again here. Permission references point at a permissionable, not at a
-     * role, so deleting them leaves the references valid; the caller clears the permission cache
-     * and queues the favorites for reindex once the repair commits.
+     * moment, so a grant its site gives such a role would follow it onto its own rows; those rows
+     * are deleted again here. Permission references point at a permissionable, not at a role, so
+     * deleting them leaves the references valid; the caller clears the permission cache and
+     * queues the favorites for reindex once the repair commits. Favorites use
+     * {@link #replacePermissions} instead.
      *
      * @param permissions    the rows to give, all belonging to {@code role}
-     * @param permissionable the content type or favorite that gets them
+     * @param permissionable the content type that gets them
      * @param role           the only role left with rows on it
      * @throws DotDataException     if the rows cannot be saved or deleted
      * @throws DotSecurityException if the rows cannot be saved
@@ -346,6 +349,35 @@ public class ContentTypeInitializer implements DotInitializer {
         permissionAPI.assignPermissions(permissions, permissionable, APILocator.systemUser(), false);
         new DotConnect().executeUpdate(DELETE_OTHER_ROLES_ROWS_SQL, permissionable.getPermissionId(), role.getId());
         permissionAPI.removePermissionableFromCache(permissionable.getPermissionId());
+    }
+
+    /**
+     * Replaces every permission row of a favorite with exactly the given rows, written directly in
+     * the calling transaction. {@link PermissionAPI#assignPermissions} is not used here because it
+     * first reads the favorite's current permissions; with no own rows that read inherits from the
+     * favorite's site or folder and queues an asynchronous write of a permission reference to it,
+     * which can land after this repair commits. Permission loading adds the rows of the referenced
+     * parent to the favorite's own rows, so the favorite would get its site's grants back.
+     * Resetting the references afterwards removes any reference from the favorite and queues it
+     * for reindex, as saving new rows through the API does. The content type keeps going through
+     * {@link #assignRoleOnlyPermissions}: its new inheritable row must repoint the references of
+     * favorites that inherit through it, which only the API does, and a late reference from the
+     * type to its site adds content type rows, not rows its favorites inherit.
+     *
+     * @param permissions    the rows the permissionable keeps, each with its inode set to the
+     *                       permissionable's permission id
+     * @param permissionable the favorite that gets them
+     * @throws DotDataException if the rows or references cannot be written
+     */
+    private void replacePermissions(final List<Permission> permissions, final Permissionable permissionable)
+            throws DotDataException {
+
+        new DotConnect().executeUpdate(DELETE_ROWS_SQL, permissionable.getPermissionId());
+        for (final Permission permission : permissions) {
+            new DotConnect().executeUpdate(INSERT_ROW_SQL, permission.getType(), permission.getInode(),
+                    permission.getRoleId(), permission.getPermission());
+        }
+        APILocator.getPermissionAPI().resetPermissionReferences(permissionable);
     }
 
     /**

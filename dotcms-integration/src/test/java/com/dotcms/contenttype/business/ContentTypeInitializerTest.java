@@ -1,6 +1,9 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotConcurrentFactory.SubmitterConfigBuilder;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
@@ -43,6 +46,8 @@ import com.dotcms.test.util.ApiTokenTestUtils;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import org.junit.Assert;
@@ -615,6 +620,75 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
             if (null != favorite) {
                 final Contentlet saved = favorite;
                 Try.run(() -> ContentletDataGen.destroy(saved));
+            }
+            APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
+            APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentTypeInitializer#init()}
+     * Given Scenario: The favorites have not been reset yet, a site gives CMS Anonymous READ on its
+     * content, a favorite is saved on that site, permission references are written in the
+     * background as by default, and the worker that writes them is busy while the repair runs,
+     * so anything the repair queues there is written only after it commits.
+     * ExpectedResult: Once that worker has caught up, the favorite has no permission reference,
+     * only its own CMS Owner rows, and cannot be read anonymously.
+     */
+    @Test
+    public void test_first_init_leaves_a_favorite_on_a_site_no_reference_to_the_site() throws Exception {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final ContentType contentType = prepareFirstInit();
+        final Host site = new SiteDataGen().nextPersisted();
+        // the same name and settings PermissionBitFactoryImpl uses, so this is its submitter
+        final DotSubmitter referenceWriter = DotConcurrentFactory.getInstance().getSubmitter("permissionreferences",
+                new SubmitterConfigBuilder().poolSize(1).maxPoolSize(5).queueCapacity(10000).build());
+        final CountDownLatch writerBusy = new CountDownLatch(1);
+        final CountDownLatch releaseWriter = new CountDownLatch(1);
+        // the test configuration writes references inline; the default is in the background
+        final boolean referencesAsync = Config.getBooleanProperty("PERMISSION_REFERENCES_UPDATE_ASYNC", true);
+        Contentlet favorite = null;
+        try {
+
+            permissionAPI.assignPermissions(List.of(
+                    new Permission(Contentlet.class.getCanonicalName(), site.getPermissionId(),
+                            APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                            PermissionAPI.PERMISSION_READ, true)),
+                    site, APILocator.systemUser(), false);
+            favorite = new ContentletDataGen(contentType).host(site).setPolicy(IndexPolicy.WAIT_FOR)
+                    .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                    .nextPersisted();
+
+            Config.setProperty("PERMISSION_REFERENCES_UPDATE_ASYNC", true);
+            referenceWriter.submit(() -> {
+                writerBusy.countDown();
+                Try.run(() -> releaseWriter.await(2, TimeUnit.MINUTES));
+            });
+            Assert.assertTrue("The permission reference writer did not start the blocking task",
+                    writerBusy.await(1, TimeUnit.MINUTES));
+
+            new ContentTypeInitializer().init();
+
+            releaseWriter.countDown();
+            referenceWriter.submit(() -> { }).get(1, TimeUnit.MINUTES);
+            CacheLocator.getPermissionCache().clearCache();
+
+            Assert.assertEquals("The favorite must not reference a parent for its permissions: "
+                            + describePermissions(favorite, "favorite"), 0,
+                    new DotConnect().setSQL("select count(*) as total from permission_reference where asset_id = ?")
+                            .addParam(favorite.getPermissionId()).getInt("total"));
+            assertOnlyCMSOwnerRows(favorite);
+            Assert.assertFalse("A favorite on a site must not be readable anonymously: "
+                            + describePermissions(favorite, "favorite"),
+                    permissionAPI.doesUserHavePermission(favorite, PermissionAPI.PERMISSION_READ,
+                            APILocator.getUserAPI().getAnonymousUser(), true));
+        } finally {
+
+            releaseWriter.countDown();
+            Config.setProperty("PERMISSION_REFERENCES_UPDATE_ASYNC", referencesAsync);
+            if (null != favorite) {
+                ContentletDataGen.destroy(favorite);
             }
             APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
             APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
