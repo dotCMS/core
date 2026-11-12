@@ -6,8 +6,10 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -16,6 +18,7 @@ import com.dotcms.repackage.org.directwebremoting.guice.ApplicationScoped;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.workflow.WorkflowResource;
+import com.dotcms.variant.model.Variant;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.workflow.form.FireActionForm;
 import com.dotmarketing.beans.Host;
@@ -543,6 +546,83 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link ContentTypeInitializer#init()}
+     * Given Scenario: The favorites have not been reset yet, a site gives a locked role READ on
+     * its content, and a favorite is saved on that site.
+     * ExpectedResult: The first repair gives the favorite its own CMS Owner rows and no row of the
+     * locked role, so that role cannot read it.
+     */
+    @Test
+    public void test_first_init_gives_a_favorite_on_a_site_no_rows_of_a_locked_role() throws Exception {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final ContentType contentType = prepareFirstInit();
+        final Role lockedRole = new RoleDataGen().nextPersisted();
+        final Host site = new SiteDataGen().nextPersisted();
+        Contentlet favorite = null;
+        try {
+
+            permissionAPI.assignPermissions(List.of(
+                    new Permission(Contentlet.class.getCanonicalName(), site.getPermissionId(),
+                            lockedRole.getId(), PermissionAPI.PERMISSION_READ, true)),
+                    site, APILocator.systemUser(), false);
+            APILocator.getRoleAPI().lock(lockedRole);
+            favorite = new ContentletDataGen(contentType).host(site).setPolicy(IndexPolicy.WAIT_FOR)
+                    .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                    .nextPersisted();
+
+            new ContentTypeInitializer().init();
+
+            assertOnlyCMSOwnerRows(favorite);
+            Assert.assertFalse("The locked role must not read the favorite: "
+                            + describePermissions(favorite, "favorite"),
+                    permissionAPI.doesRoleHavePermission(favorite, PermissionAPI.PERMISSION_READ, lockedRole));
+        } finally {
+
+            if (null != favorite) {
+                ContentletDataGen.destroy(favorite);
+            }
+            APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
+            APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+            APILocator.getRoleAPI().unLock(lockedRole);
+            RoleDataGen.remove(lockedRole, true);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentTypeInitializer#init()}
+     * Given Scenario: The favorites have not been reset yet, and a favorite saved on a site has
+     * versions only in a variant other than DEFAULT.
+     * ExpectedResult: The first repair still gives the favorite its own CMS Owner rows.
+     */
+    @Test
+    public void test_first_init_gives_owner_rows_to_a_favorite_only_in_another_variant() throws Exception {
+
+        final ContentType contentType = prepareFirstInit();
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Host site = new SiteDataGen().nextPersisted();
+        Contentlet favorite = null;
+        try {
+
+            favorite = new ContentletDataGen(contentType).host(site).variant(variant)
+                    .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                    .nextPersisted();
+
+            new ContentTypeInitializer().init();
+
+            assertOnlyCMSOwnerRows(favorite);
+        } finally {
+
+            if (null != favorite) {
+                final Contentlet saved = favorite;
+                Try.run(() -> ContentletDataGen.destroy(saved));
+            }
+            APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
+            APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentTypeInitializer#init()}
      * Given Scenario: The favorites were already reset by an earlier repair, the row the favorite
      * page contentlets inherit is missing one CMS Owner bit, and a favorite has its own rows
      * sharing it with another back-end user.
@@ -571,6 +651,42 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
                         Contentlet.class.getCanonicalName().equals(permission.getType())
                                 && cmsOwnerId.equals(permission.getRoleId())
                                 && (permission.getPermission() & OWNER_BITS) == OWNER_BITS));
+    }
+
+    /**
+     * Gives the favorite page content type its correct CMS Owner rows and marks the favorites as
+     * not reset yet, as on the first start after upgrading, and returns the type.
+     */
+    private static ContentType prepareFirstInit() throws Exception {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME);
+        permissionAPI.removePermissions(contentType);
+        permissionAPI.assignPermissions(List.of(
+                new Permission(contentType.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true),
+                new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
+                        cmsOwner.getId(), OWNER_BITS, true)),
+                contentType, APILocator.systemUser(), false);
+        APILocator.getSystemAPI().getSystemTable().delete(ContentTypeInitializer.FAVORITE_PAGE_PERMISSIONS_RESET_KEY);
+        return contentType;
+    }
+
+    /**
+     * Checks in the database that a favorite has its own CMS Owner row and no row of another role.
+     */
+    private static void assertOnlyCMSOwnerRows(final Contentlet favorite) throws DotDataException {
+
+        final String cmsOwnerId = APILocator.getRoleAPI().loadCMSOwnerRole().getId();
+        final List<Map<String, Object>> rows = new DotConnect()
+                .setSQL("select roleid from permission where inode_id = ?")
+                .addParam(favorite.getPermissionId()).loadObjectResults();
+        Assert.assertFalse("The favorite must have its own CMS Owner rows: "
+                + describePermissions(favorite, "favorite"), rows.isEmpty());
+        Assert.assertTrue("The favorite must have no row of another role: "
+                        + describePermissions(favorite, "favorite"),
+                rows.stream().allMatch(row -> cmsOwnerId.equals(row.get("roleid"))));
     }
 
     /**

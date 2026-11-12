@@ -14,6 +14,7 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
@@ -52,7 +53,8 @@ public class ContentTypeInitializer implements DotInitializer {
     private static final String REPAIR_LOCK_SQL = "SELECT pg_advisory_xact_lock(hashtext(?))";
     private static final String COUNT_RESET_MARKER_SQL = "select count(*) as total from system_table where key = ?";
     private static final String COUNT_FAVORITES_WITH_OWN_ROWS_SQL = "select count(distinct inode_id) as total from permission where inode_id in (select identifier from contentlet where structure_inode = ?)";
-    private static final String FAVORITES_OFF_SYSTEM_HOST_SQL = "select distinct i.id from identifier i join contentlet c on c.identifier = i.id where c.structure_inode = ? and (i.host_inode <> ? or i.parent_path <> ?)";
+    private static final String FAVORITES_OFF_SYSTEM_HOST_SQL = "select i.id, min(c.inode) as inode from identifier i join contentlet c on c.identifier = i.id where c.structure_inode = ? and (i.host_inode <> ? or i.parent_path <> ?) group by i.id";
+    private static final String DELETE_OTHER_ROLES_ROWS_SQL = "delete from permission where inode_id = ? and roleid <> ?";
     /** Seconds after the repair commits before the permission cache is cleared a second time. */
     private static final long PERMISSION_CACHE_RECLEAR_SECONDS = 30;
 
@@ -273,7 +275,7 @@ public class ContentTypeInitializer implements DotInitializer {
         // picks up the new rows whether or not resetFavorites is set; the caller queues them
         // again after it clears the permission cache, in case this reindex reads cached old rows.
         APILocator.getPermissionAPI().removePermissions(savedContentType);
-        APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, savedContentType, APILocator.systemUser(), false);
+        this.assignRoleOnlyPermissions(newSetOfPermissions, savedContentType, backendRole);
         // reset here rather than through ResetPermissionsJob, which needs a logged-in
         // request user and has none at startup
         int favoritesOffSystemHost = 0;
@@ -309,19 +311,41 @@ public class ContentTypeInitializer implements DotInitializer {
         final List<Map<String, Object>> rows = new DotConnect().setSQL(FAVORITES_OFF_SYSTEM_HOST_SQL)
                 .addParam(contentType.inode()).addParam(Host.SYSTEM_HOST).addParam("/")
                 .loadObjectResults();
-        int count = 0;
         for (final Map<String, Object> row : rows) {
 
+            // by inode, so a favorite whose only versions are in a variant other than DEFAULT,
+            // or archived, is found too; the inode comes from the row, so it always exists
             final Contentlet favorite = APILocator.getContentletAPI()
-                    .findContentletByIdentifierAnyLanguage(String.valueOf(row.get("id")), true);
-            if (null != favorite) {
-                APILocator.getPermissionAPI().assignPermissions(List.of(
-                        new Permission(favorite.getPermissionId(), role.getId(), permissionType, true)),
-                        favorite, APILocator.systemUser(), false);
-                count++;
-            }
+                    .find(String.valueOf(row.get("inode")), APILocator.systemUser(), false);
+            this.assignRoleOnlyPermissions(List.of(
+                    new Permission(favorite.getPermissionId(), role.getId(), permissionType, true)),
+                    favorite, role);
         }
-        return count;
+        return rows.size();
+    }
+
+    /**
+     * Gives a permissionable the given rows of one role and no rows of any other role.
+     * {@link PermissionAPI#assignPermissions} also saves, as the permissionable's own rows, what
+     * locked roles and roles whose permissions cannot be edited get from its parent at that
+     * moment, so a grant a site gives such a role would follow a favorite onto its own rows; those
+     * rows are deleted again here. Permission references point at a permissionable, not at a
+     * role, so deleting them leaves the references valid; the caller clears the permission cache
+     * and queues the favorites for reindex once the repair commits.
+     *
+     * @param permissions    the rows to give, all belonging to {@code role}
+     * @param permissionable the content type or favorite that gets them
+     * @param role           the only role left with rows on it
+     * @throws DotDataException     if the rows cannot be saved or deleted
+     * @throws DotSecurityException if the rows cannot be saved
+     */
+    private void assignRoleOnlyPermissions(final List<Permission> permissions, final Permissionable permissionable,
+                                           final Role role) throws DotDataException, DotSecurityException {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        permissionAPI.assignPermissions(permissions, permissionable, APILocator.systemUser(), false);
+        new DotConnect().executeUpdate(DELETE_OTHER_ROLES_ROWS_SQL, permissionable.getPermissionId(), role.getId());
+        permissionAPI.removePermissionableFromCache(permissionable.getPermissionId());
     }
 
     /**
