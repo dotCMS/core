@@ -79,6 +79,7 @@ public final class InteractiveIdentityWrapper {
         @Override
         public void setAttribute(final String name, final Object value) {
             if (hidden(name, value)) {
+                InteractiveUserRefusalLog.record(this, null);
                 return;
             }
             super.setAttribute(name, value);
@@ -87,7 +88,11 @@ public final class InteractiveIdentityWrapper {
         @Override
         public Object getAttribute(final String name) {
             final Object value = super.getAttribute(name);
-            return hidden(name, value) ? null : value;
+            if (hidden(name, value)) {
+                InteractiveUserRefusalLog.record(this, null);
+                return null;
+            }
+            return value;
         }
 
         @Override
@@ -122,11 +127,16 @@ public final class InteractiveIdentityWrapper {
             try {
                 if (("setAttribute".equals(name) || "putValue".equals(name)) && args.length == 2
                         && hidden((String) args[0], args[1])) {
+                    InteractiveUserRefusalLog.record(null, session);
                     return null;
                 }
                 if (("getAttribute".equals(name) || "getValue".equals(name)) && args.length == 1) {
                     final Object value = method.invoke(session, args);
-                    return hidden((String) args[0], value) ? null : value;
+                    if (hidden((String) args[0], value)) {
+                        InteractiveUserRefusalLog.record(null, session);
+                        return null;
+                    }
+                    return value;
                 }
                 if ("getAttributeNames".equals(name) && args == null) {
                     return Collections.enumeration(Collections.list(session.getAttributeNames()).stream()

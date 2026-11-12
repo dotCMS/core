@@ -38,18 +38,18 @@ public final class RequestUserResolver {
         if (request == null) {
             return null;
         }
-        User user = eligible((User) request.getAttribute(WebKeys.USER));
+        User user = eligible((User) request.getAttribute(WebKeys.USER), request, null);
         if (user == null) {
             user = resolveSessionUser(request.getSession(false));
         }
         if (user == null) {
             final String userId = resolveRequestUserId(request);
             if (userId != null) {
-                user = eligible(Try.of(() -> UserLocalManagerUtil.getUserById(userId)).getOrNull());
+                user = eligible(Try.of(() -> UserLocalManagerUtil.getUserById(userId)).getOrNull(), request, null);
             }
         }
         if (user == null) {
-            user = eligible(PortalUtil.getUserFromAuthHeader(request));
+            user = eligible(PortalUtil.getUserFromAuthHeader(request), request, null);
         }
         if (user != null) {
             request.setAttribute(WebKeys.USER, user);
@@ -71,13 +71,13 @@ public final class RequestUserResolver {
         if (session == null) {
             return null;
         }
-        User user = eligible((User) session.getAttribute(WebKeys.USER));
+        User user = eligible((User) session.getAttribute(WebKeys.USER), null, session);
         if (user == null) {
             final String userId = resolveSessionUserId(session);
             if (userId == null) {
                 return null;
             }
-            user = eligible(Try.of(() -> UserLocalManagerUtil.getUserById(userId)).getOrNull());
+            user = eligible(Try.of(() -> UserLocalManagerUtil.getUserById(userId)).getOrNull(), null, session);
             if (user != null) {
                 session.setAttribute(WebKeys.USER, user);
             }
@@ -98,7 +98,7 @@ public final class RequestUserResolver {
         if (request == null) {
             return null;
         }
-        String userId = eligibleId((String) request.getAttribute(WebKeys.USER_ID));
+        String userId = eligibleId((String) request.getAttribute(WebKeys.USER_ID), request, null);
         if (userId == null) {
             userId = resolveSessionUserId(request.getSession(false));
         }
@@ -118,7 +118,7 @@ public final class RequestUserResolver {
         if (SystemUserScope.isActive()) {
             return UserAPI.SYSTEM_USER_ID;
         }
-        return session == null ? null : eligibleId((String) session.getAttribute(WebKeys.USER_ID));
+        return session == null ? null : eligibleId((String) session.getAttribute(WebKeys.USER_ID), null, session);
     }
 
     private static User systemUser() {
@@ -128,11 +128,23 @@ public final class RequestUserResolver {
                 .getOrNull();
     }
 
-    private static User eligible(final User user) {
-        return InteractiveUserPolicy.refuseIfNotEligible(user, null, null);
+    private static User eligible(final User user, final HttpServletRequest request, final HttpSession session) {
+        final User allowed = InteractiveUserPolicy.refuseIfNotEligible(user, request, session);
+        if (user != null && allowed == null) {
+            InteractiveUserRefusalLog.record(request, session);
+        }
+        return allowed;
     }
 
-    private static String eligibleId(final String userId) {
-        return InteractiveUserPolicy.isEligibleUserId(userId) ? userId : null;
+    private static String eligibleId(final String userId, final HttpServletRequest request,
+            final HttpSession session) {
+        if (userId == null) {
+            return null;
+        }
+        if (InteractiveUserPolicy.isEligibleUserId(userId)) {
+            return userId;
+        }
+        InteractiveUserRefusalLog.record(request, session);
+        return null;
     }
 }
