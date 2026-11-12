@@ -2,7 +2,10 @@ package com.dotmarketing.util;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,6 +19,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.Layout;
 import org.apache.logging.log4j.core.LogEvent;
 import org.apache.logging.log4j.core.LoggerContext;
@@ -48,6 +52,14 @@ class LogLayoutPatternTest {
     private static final String CR_EXCEPTION_TEXT = "cause\rnext";
     private static final String CONTROL_MESSAGE =
             "a\u001b[2Kb\u0007c\u2028d\u2029e\u0085f col1\tcol2 \u00e9\u65e5\u672c";
+    /**
+     * The first and last character of each range in the control-character class, which must be
+     * written as {@code ?}, followed by the characters right outside those ranges ({@code ~} and
+     * the no-break space), which must stay.
+     */
+    private static final String RANGE_EDGES_TEXT =
+            "e0\u0000e1\u0008e2\u000Be3\u000Ce4\u000Ee5\u001Fe6\u007Fe7\u009Fe8 kept~\u00A0kept";
+    private static final String RANGE_EDGES_WRITTEN = "e0?e1?e2?e3?e4?e5?e6?e7?e8 kept~\u00A0kept";
 
     /**
      * Given the console layout from the webapp log4j2.xml,
@@ -171,6 +183,48 @@ class LogLayoutPatternTest {
     }
 
     /**
+     * Given the console layout from the webapp log4j2.xml,
+     * When a message or exception text holds the first and last character of each control range,
+     * Then each of them is written as {@code ?}, while the characters right outside the ranges stay.
+     */
+    @Test
+    void webappConsolePattern_writesRangeEdgesAsPlaceholders() throws IOException {
+        assertRangeEdgesReplaced(webappConsoleLayout());
+    }
+
+    /**
+     * Given the default console and file patterns the Docker image exports,
+     * When a message or exception text holds the first and last character of each control range,
+     * Then each of them is written as {@code ?}, while the characters right outside the ranges stay.
+     */
+    @Test
+    void dockerDefaultPatterns_writeRangeEdgesAsPlaceholders() throws Exception {
+        for (final String pattern : dockerDefaultPatterns()) {
+            assertRangeEdgesReplaced(layout(pattern));
+        }
+    }
+
+    /**
+     * Given the webapp log4j2.xml and no CMS_LOG4J_CONSOLE_PATTERN in the environment,
+     * When the configuration builds its appenders,
+     * Then the Console appender is laid out with the default console pattern the other tests check.
+     */
+    @Test
+    void webappConsoleAppender_usesDefaultConsolePattern() throws IOException {
+        final XmlConfiguration configuration = webappConfiguration();
+        assumeTrue(configuration.getStrSubstitutor()
+                        .replace("${env:CMS_LOG4J_CONSOLE_PATTERN:-}").isEmpty(),
+                "CMS_LOG4J_CONSOLE_PATTERN is set, so the Console appender uses that pattern instead");
+
+        final Appender appender = configuration.getAppender("Console");
+
+        assertNotNull(appender, "log4j2.xml defines a Console appender");
+        final PatternLayout layout = assertInstanceOf(PatternLayout.class, appender.getLayout());
+        assertEquals(configuration.getStrSubstitutor().replace("${DEFAULT_CONSOLE_PATTERN}"),
+                layout.getConversionPattern());
+    }
+
+    /**
      * Given the four message patterns in log4j2-example.xml,
      * When a message or exception text holds control characters,
      * Then each one is written as {@code ?}, and the stack trace is printed once.
@@ -182,7 +236,26 @@ class LogLayoutPatternTest {
             assertExceptionTextReplaced(format(layout(pattern), event("failure", controlException())));
             assertBareCarriageReturnReplaced(format(layout(pattern),
                     event("failure", new IllegalStateException(CR_EXCEPTION_TEXT))));
+            assertRangeEdgesReplaced(layout(pattern));
         }
+    }
+
+    /**
+     * Formats a message and an exception whose text holds {@link #RANGE_EDGES_TEXT}, and checks
+     * that both come out as {@link #RANGE_EDGES_WRITTEN}, with the stack trace still one frame per
+     * line.
+     */
+    private static void assertRangeEdgesReplaced(final Layout<?> layout) {
+        final String message = format(layout, event(RANGE_EDGES_TEXT, null));
+        assertNoControlCharacters(message);
+        assertTrue(message.contains(RANGE_EDGES_WRITTEN), () -> "output: " + visible(message));
+
+        final String exception = format(layout,
+                event("failure", new IllegalStateException(RANGE_EDGES_TEXT)));
+        assertNoControlCharacters(exception);
+        assertTrue(exception.contains("IllegalStateException: " + RANGE_EDGES_WRITTEN),
+                () -> "output: " + visible(exception));
+        assertStackTraceFrames(exception.replace(RANGE_EDGES_WRITTEN, "cause"));
     }
 
     private static void assertBareCarriageReturnReplaced(final String output) {
@@ -272,18 +345,28 @@ class LogLayoutPatternTest {
         assertTrue(output.contains("\n\tat "), () -> "output: " + output);
     }
 
+    /**
+     * Builds a layout from the default console pattern of the webapp log4j2.xml. It does not use
+     * {@code ${CONSOLE_PATTERN}}, because that one takes CMS_LOG4J_CONSOLE_PATTERN from the
+     * environment when it is set; {@link #webappConsoleAppender_usesDefaultConsolePattern()}
+     * checks that the Console appender is wired to it.
+     */
     private static Layout<?> webappConsoleLayout() throws IOException {
+        final XmlConfiguration configuration = webappConfiguration();
+        return PatternLayout.newBuilder()
+                .withConfiguration(configuration)
+                .withPattern(configuration.getStrSubstitutor().replace("${DEFAULT_CONSOLE_PATTERN}"))
+                .build();
+    }
+
+    /** Loads and initializes the webapp log4j2.xml in its own logger context. */
+    private static XmlConfiguration webappConfiguration() throws IOException {
         final LoggerContext context = new LoggerContext("LogLayoutPatternTest");
         try (InputStream in = new FileInputStream(WEBAPP_CONFIG)) {
             final XmlConfiguration configuration =
                     new XmlConfiguration(context, new ConfigurationSource(in, WEBAPP_CONFIG));
             configuration.initialize();
-            // The default pattern, not ${CONSOLE_PATTERN}: that one takes CMS_LOG4J_CONSOLE_PATTERN
-            // from the environment when it is set.
-            return PatternLayout.newBuilder()
-                    .withConfiguration(configuration)
-                    .withPattern(configuration.getStrSubstitutor().replace("${DEFAULT_CONSOLE_PATTERN}"))
-                    .build();
+            return configuration;
         }
     }
 
