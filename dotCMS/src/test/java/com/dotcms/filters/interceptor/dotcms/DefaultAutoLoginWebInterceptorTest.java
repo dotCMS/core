@@ -215,6 +215,36 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
     }
 
     /**
+     * The path is read as the request is dispatched: a path parameter in the URI
+     * ({@code /api;v=1/...}, served by the REST servlet) still renews.
+     */
+    @Test
+    public void renewsSessionLoginToken_onDispatchPath_whenUriHasPathParameter() {
+        cookieOwnedBy(cookieOwner);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final HttpServletRequest request = request("/api;v=1/v1/users/current", session(pastRenewal()), true);
+        dispatchedOn(request, "/api", "/v1/users/current");
+
+        assertContinuesWithNoStoreResponse(interceptor.intercept(request, response));
+
+        verify(loginServiceAPI).issueSessionLoginToken(request, response, cookieOwner, TOKEN_ID);
+    }
+
+    /**
+     * A scripted endpoint stays out of renewal when a path parameter hides its prefix in the URI.
+     */
+    @Test
+    public void keepsSessionLoginToken_onScriptedEndpoint_whenUriHasPathParameter() {
+        cookieOwnedBy(cookieOwner);
+        final HttpServletRequest request = request("/api/;v=1/vtl/page", session(pastRenewal()), true);
+        dispatchedOn(request, "/api", "/vtl/page");
+
+        assertEquals(Result.SKIP, interceptor.intercept(request, mock(HttpServletResponse.class)));
+
+        verifyNoRenewal();
+    }
+
+    /**
      * Site pages never receive a renewed cookie, so their responses stay cacheable.
      */
     @Test
@@ -614,6 +644,12 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
         when(session.getAttribute(WebKeys.USER_ID)).thenReturn(sessionUser.getUserId());
         when(session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT)).thenReturn(renewAt);
         return session;
+    }
+
+    private static void dispatchedOn(final HttpServletRequest request, final String servletPath,
+            final String pathInfo) {
+        when(request.getServletPath()).thenReturn(servletPath);
+        when(request.getPathInfo()).thenReturn(pathInfo);
     }
 
     private static HttpServletRequest request(final String uri, final HttpSession session,

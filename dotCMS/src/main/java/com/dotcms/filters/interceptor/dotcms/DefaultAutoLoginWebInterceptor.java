@@ -7,6 +7,7 @@ import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.rest.annotation.HeaderFilter;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.security.Encryptor;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.business.APILocator;
@@ -207,7 +208,8 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
     private Result renewSessionLoginTokenIfDue(final HttpServletRequest request,
                                                final HttpServletResponse response) {
 
-        if (!isSessionLoginTokenRenewalDue(request) || !isBackEndApplicationPath(request.getRequestURI())) {
+        if (!isSessionLoginTokenRenewalDue(request)
+                || !isBackEndApplicationPath(HttpRequestDataUtil.getDispatchPath(request))) {
             return Result.SKIP;
         }
         final HttpSession session = request.getSession(false);
@@ -298,12 +300,18 @@ public class DefaultAutoLoginWebInterceptor implements WebInterceptor {
     }
 
     /**
-     * Whether the path is a dynamic back-end path on which a due login cookie is renewed.
+     * Whether the path is a dynamic back-end path on which a due login cookie is renewed. The
+     * path is the one the request is dispatched on (servlet path plus path info), the same path
+     * the interceptors are matched against, so path parameters such as {@code /api;v=1/} and the
+     * context path do not change the outcome.
+     *
+     * @param path the request's dispatch path
+     * @return {@code true} when a due renewal may run on this path
      */
-    private static boolean isBackEndApplicationPath(final String uri) {
+    private static boolean isBackEndApplicationPath(final String path) {
 
-        return null != uri && BACK_END_APPLICATION_PREFIXES.stream().anyMatch(uri::startsWith)
-                && SCRIPTED_API_PREFIXES.stream().noneMatch(uri::startsWith);
+        return null != path && BACK_END_APPLICATION_PREFIXES.stream().anyMatch(path::startsWith)
+                && SCRIPTED_API_PREFIXES.stream().noneMatch(path::startsWith);
     }
 
     private static Set<String> caseInsensitiveSet(final String... values) {

@@ -3,6 +3,7 @@ package com.dotcms.cms.login;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
@@ -19,6 +20,7 @@ import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.dotcms.DefaultAutoLoginWebInterceptor;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.rest.annotation.HeaderFilter;
 import com.dotcms.rest.api.v1.user.UserForm;
 import com.dotcms.rest.api.v1.user.UserResource;
 import com.dotcms.test.util.ApiTokenTestUtils;
@@ -486,7 +488,8 @@ public class LoginTokenInvalidationTest {
         final DefaultAutoLoginWebInterceptor interceptor = new DefaultAutoLoginWebInterceptor();
 
         final HttpServletResponse firstResponse = mock(HttpServletResponse.class);
-        assertEquals(Result.SKIP, interceptor.intercept(withLoginCookie(base, original), firstResponse));
+        assertRenewedWithNoStoreResponse(interceptor.intercept(withLoginCookie(base, original), firstResponse),
+                firstResponse);
 
         final ArgumentCaptor<Cookie> renewed = ArgumentCaptor.forClass(Cookie.class);
         verify(firstResponse).addCookie(renewed.capture());
@@ -521,7 +524,8 @@ public class LoginTokenInvalidationTest {
         final DefaultAutoLoginWebInterceptor interceptor = new DefaultAutoLoginWebInterceptor();
 
         final HttpServletResponse firstResponse = mock(HttpServletResponse.class);
-        assertEquals(Result.SKIP, interceptor.intercept(withLoginCookie(base, original), firstResponse));
+        assertRenewedWithNoStoreResponse(interceptor.intercept(withLoginCookie(base, original), firstResponse),
+                firstResponse);
 
         final ArgumentCaptor<Cookie> renewed = ArgumentCaptor.forClass(Cookie.class);
         verify(firstResponse).addCookie(renewed.capture());
@@ -552,6 +556,18 @@ public class LoginTokenInvalidationTest {
                 new MockHttpRequestIntegrationTest("localhost", "/").request(), sessionToken), response));
 
         verify(response, never()).addCookie(any(Cookie.class));
+    }
+
+    /**
+     * A renewal lets the chain go on (a skip of the remaining interceptors) with a wrapped response,
+     * and marks the original response as not to be stored.
+     */
+    private static void assertRenewedWithNoStoreResponse(final Result result,
+            final HttpServletResponse response) {
+        assertEquals(Result.SKIP.getType(), result.getType());
+        assertNotNull("a renewal continues with a wrapped response", result.getResponse());
+        assertNotSame(response, result.getResponse());
+        verify(response).setHeader(HeaderFilter.CACHE_CONTROL, HeaderFilter.NO_CACHE_CONTROL);
     }
 
     /**
