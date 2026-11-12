@@ -959,7 +959,7 @@ public class VariantAPITest {
      * Should: throw a Exception
      */
     @Test
-    public void promoteNonExistingVariant() throws DotDataException {
+    public void promoteNonExistingVariant() throws DotDataException, DotSecurityException {
 
         final Variant doesNotExistsVariant = new VariantDataGen().next();
         try {
@@ -976,7 +976,7 @@ public class VariantAPITest {
      * Should: throw a Exception
      */
     @Test
-    public void promoteDefaultVariant() throws DotDataException {
+    public void promoteDefaultVariant() throws DotDataException, DotSecurityException {
         try {
             APILocator.getVariantAPI().promote(VariantAPI.DEFAULT_VARIANT, APILocator.systemUser());
             fail("Should throw a Exception");
@@ -991,7 +991,7 @@ public class VariantAPITest {
      * Should: not fail
      */
     @Test
-    public void promoteAlreadyPromoteVariant() throws DotDataException {
+    public void promoteAlreadyPromoteVariant() throws DotDataException, DotSecurityException {
         final Variant variant = new VariantDataGen().nextPersisted();
         APILocator.getVariantAPI().promote(variant, APILocator.systemUser());
         APILocator.getVariantAPI().promote(variant, APILocator.systemUser());

@@ -59,6 +59,21 @@ public interface FeatureFlagName {
      */
     String FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER = "FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER";
 
+    /**
+     * Kill switch for the destination check on checkin. On by default: creating a contentlet
+     * somewhere other than where its content type places content by default (the type's own
+     * folder or site, or the default site for a type on the System Host) requires, besides WRITE
+     * on the content type, "Can Add Children" or WRITE on that folder or site; the former is what
+     * the content editor and the move operation already enforce. Saving an existing contentlet
+     * with a different site or folder, which moves it there, requires the same grant on the new
+     * place besides WRITE on the contentlet. Off: only the content-type or contentlet WRITE check
+     * runs, as before. Default placements, content on the System Host, Host contentlets
+     * themselves, existing contentlets that stay where they are, and the system user are not
+     * affected either way. Environment form:
+     * {@code DOT_FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK}.
+     */
+    String FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK = "FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK";
+
     // others
     String FULLSCREEN_FIELD_FEATURE_FLAG = "content.edit.ui.fullscreen";
 
@@ -204,4 +219,24 @@ public interface FeatureFlagName {
      */
     String FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS =
             "FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS";
+
+    /**
+     * Opt-in protection against the scheduled publish job re-publishing content that someone
+     * deliberately unpublished. Off by default.
+     *
+     * <p>The publish job normally skips not-live content whose publish date it already covered in
+     * an earlier run. When it cannot tell when it last ran (typically its first run after a
+     * restart), it publishes every not-live item whose publish date has passed. With this flag on,
+     * it instead skips any such item that was modified after its publish date, which is what a
+     * manual unpublish leaves behind, and logs each skip. Content last saved before its publish
+     * date is still published.
+     *
+     * <p>Has no effect on runs where the previous run time is known, and is overridden by
+     * {@code PUBLISH_JOB_QUEUE_FORCE_INCLUDE_PAST_CONTENT=true}.
+     *
+     * @see com.dotcms.enterprise.publishing.PublishDateUpdater#shouldPublishContent(
+     *      com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Date, boolean)
+     */
+    String FEATURE_FLAG_PUBLISH_JOB_QUEUE_PROTECT_UNPUBLISHED_CONTENT =
+            "FEATURE_FLAG_PUBLISH_JOB_QUEUE_PROTECT_UNPUBLISHED_CONTENT";
 }

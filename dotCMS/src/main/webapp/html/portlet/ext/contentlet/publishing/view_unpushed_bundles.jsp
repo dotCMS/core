@@ -32,7 +32,10 @@
 	if(null!=request.getParameter("delAsset")){
 		String assetId = request.getParameter("delAsset");
 		String bundleId = request.getParameter("bundleId");
-		APILocator.getBundleAPI().deleteAssetFromBundleAndAuditStatus(assetId, bundleId);
+		// A bundle that no longer exists has nothing left to remove
+		if (null != APILocator.getBundleAPI().getBundleById(bundleId)) {
+			APILocator.getBundleAPI().deleteAssetFromBundleAndAuditStatus(assetId, bundleId, user);
+		}
 	}
 
 	PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
