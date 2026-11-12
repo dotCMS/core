@@ -60,6 +60,7 @@
     "name": "default-split",
     "collections": [
       "ApiToken_Resource.postman_collection",
+      "Interactive_User_Resolution.postman_collection",
       "BulkRefreshResource.postman_collection",
       "BulkUploadResource.postman_collection",
       "FolderBulkDeleteResource.postman_collection",
