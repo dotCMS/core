@@ -318,8 +318,9 @@ public class RoleFactoryImpl extends RoleFactory {
 	 * Inserts or updates a role and recomputes the qualified names of the role and its
 	 * descendants. When the role is created under a parent, or an existing role moves to a
 	 * different parent, the cached role lists of all users are dropped, because those lists
-	 * include roles inherited through the tree. They are dropped again after the commit, together
-	 * with the short-lived permission decisions.
+	 * include roles inherited through the tree. After the commit, before the calling thread goes
+	 * on, the cached roles, role lists and short-lived permission decisions are dropped again,
+	 * since another request may have cached them from the old tree in the meantime.
 	 *
 	 * @param role the role to store
 	 * @return the stored role
@@ -421,10 +422,17 @@ public class RoleFactoryImpl extends RoleFactory {
 		}
 		if(hierarchyChanged){
 			// cached role lists include inherited roles, so a move must be seen by every user now;
-			// flush again after the commit in case a list was rebuilt from the old tree meanwhile
+			// flush again after the commit in case another request rebuilt roles, role lists or
+			// permission decisions from the old tree meanwhile; synchronous, so the caller only
+			// returns once the new tree is what everyone reads
 			rc.clearUserRoleCache();
-			HibernateUtil.addCommitListener("role-hierarchy-flush-user-roles", rc::clearUserRoleCache);
-			flushPermissionShortTermCacheOnCommit();
+			HibernateUtil.addCommitListener("role-hierarchy-flush-caches",
+					new HibernateUtil.DotSyncRunnable(() -> {
+						rc.clearRoleCache();
+						rc.clearRootRoleCache();
+						rc.clearUserRoleCache();
+						CacheLocator.getPermissionCache().flushShortTermCache();
+					}));
 		}
 		rc.add(r);
 		HibernateUtil.evict(r);

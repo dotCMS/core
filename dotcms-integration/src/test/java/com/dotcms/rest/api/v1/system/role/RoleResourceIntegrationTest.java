@@ -28,6 +28,8 @@ import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
@@ -52,6 +54,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -1138,6 +1141,77 @@ public class RoleResourceIntegrationTest {
 
             assertFalse(permissionAPI.doesUserHavePermission(site, PermissionAPI.PERMISSION_READ, user, false));
         } finally {
+            Config.setProperty("cache.permissionshortlived.size", originalShortLivedSize);
+            CacheLocator.getPermissionCache().clearCache();
+        }
+    }
+
+    /**
+     * Given Scenario: A user holds role P and reads a site through a permission granted to C, a
+     * child of P. An admin moves C to the root; before that transaction commits, another request
+     * resolves the user's roles and the read permission from the committed (old) tree, caching
+     * P with C still among its children, the user's role list and the permission decision.
+     * Commit listeners run on a background thread, as they do by default outside tests.
+     * Expected Result: as soon as the move returns, the user no longer holds C and cannot read
+     * the site; what was cached from the old tree is dropped before the caller goes on.
+     */
+    @Test
+    public void testUpdateRole_moveWhileOldTreeIsCached_newTreeReadRightAfterCommit() throws Exception {
+        final int originalShortLivedSize = Config.getIntProperty("cache.permissionshortlived.size", 0);
+        // production default: ordinary commit listeners, including the cache wrapper's repeated
+        // removes, run on a background thread (the test config turns this off)
+        final boolean originalAsyncListeners = Config.getBooleanProperty("ASYNC_COMMIT_LISTENERS", true);
+        Config.setProperty("ASYNC_COMMIT_LISTENERS", true);
+        Config.setProperty("cache.permissionshortlived.size", 1000);
+        CacheLocator.getPermissionCache().clearCache();
+        try {
+            final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+            final User systemUser = APILocator.getUserAPI().getSystemUser();
+            final Host site = new SiteDataGen().nextPersisted();
+            createdSites.add(site);
+            permissionAPI.permissionIndividually(site.getParentPermissionable(), site, systemUser);
+
+            final Role parent = newRole();
+            final Role child = trackRole(new RoleDataGen().parent(parent.getId()).nextPersisted());
+            final User user = trackUser(UserTestUtil.getUser("inheritrace" + uniq(), false, true));
+            roleAPI.addRoleToUser(parent, user);
+
+            final Permission read = new Permission();
+            read.setPermission(PermissionAPI.PERMISSION_READ);
+            read.setRoleId(child.getId());
+            read.setInode(site.getIdentifier());
+            permissionAPI.save(read, site, systemUser, false);
+            assertTrue(roleAPI.doesUserHaveRole(user, child));
+
+            final AtomicReference<Throwable> otherRequestFailure = new AtomicReference<>();
+            LocalTransaction.wrapReturn(() -> {
+                resource.updateRole(adminRequest(), new MockHttpResponse().response(), child.getId(),
+                        formFrom(roleAPI.loadRoleById(child.getId())).parentRoleId(null).build());
+                // another request, on its own connection, still sees the committed old tree
+                final Thread otherRequest = new Thread(() -> {
+                    try {
+                        assertTrue(roleAPI.doesUserHaveRole(user, child));
+                        assertTrue(permissionAPI.doesUserHavePermission(
+                                site, PermissionAPI.PERMISSION_READ, user, false));
+                    } catch (final Throwable e) {
+                        otherRequestFailure.set(e);
+                    } finally {
+                        DbConnectionFactory.closeSilently();
+                    }
+                });
+                otherRequest.start();
+                otherRequest.join();
+                return null;
+            });
+            if (otherRequestFailure.get() != null) {
+                throw new AssertionError("the other request did not read the old tree",
+                        otherRequestFailure.get());
+            }
+
+            assertFalse(roleAPI.doesUserHaveRole(user, roleAPI.loadRoleById(child.getId())));
+            assertFalse(permissionAPI.doesUserHavePermission(site, PermissionAPI.PERMISSION_READ, user, false));
+        } finally {
+            Config.setProperty("ASYNC_COMMIT_LISTENERS", originalAsyncListeners);
             Config.setProperty("cache.permissionshortlived.size", originalShortLivedSize);
             CacheLocator.getPermissionCache().clearCache();
         }
