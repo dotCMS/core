@@ -23,7 +23,6 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.PropsUtil;
 import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -49,6 +48,7 @@ import org.junit.Test;
 public class LoginFactoryTest extends IntegrationTestBase {
 
     private static final String PASSWORD = "Str0ng-Test-Passw0rd!";
+    private static final String PRE_AUTHENTICATOR_KEY = "auth.pipeline.pre";
     private static final String DIRECTORY_IMPLEMENTATION = "LDAP_FRONTEND_AUTH_IMPLEMENTATION";
 
     private final List<User> createdUsers = new ArrayList<>();
@@ -63,13 +63,13 @@ public class LoginFactoryTest extends IntegrationTestBase {
 
     @Before
     public void saveAuthenticationSettings() {
-        originalPreAuthenticator = Config.getStringProperty(PropsUtil.AUTH_PIPELINE_PRE, null);
+        originalPreAuthenticator = Config.getStringProperty(PRE_AUTHENTICATOR_KEY, null);
         originalDirectoryImplementation = Config.getStringProperty(DIRECTORY_IMPLEMENTATION, null);
     }
 
     @After
     public void cleanup() {
-        Config.setProperty(PropsUtil.AUTH_PIPELINE_PRE, originalPreAuthenticator);
+        Config.setProperty(PRE_AUTHENTICATOR_KEY, originalPreAuthenticator);
         Config.setProperty(DIRECTORY_IMPLEMENTATION, originalDirectoryImplementation);
         createdUsers.forEach(UserDataGen::remove);
         createdUsers.clear();
@@ -192,6 +192,18 @@ public class LoginFactoryTest extends IntegrationTestBase {
         assertFalse(LoginFactory.doLogin(loginName(user), PASSWORD + "-wrong"));
     }
 
+    /** Both native login paths must reject an inactive account before checking its password. */
+    @Test
+    public void test_doLogin_deactivatedAccount_isRefused() throws Exception {
+        final User user = userWithStoredPassword(PasswordFactoryProxy.generateHash(PASSWORD));
+        deactivate(user);
+
+        assertFalse(LoginFactory.doLogin(loginName(user), PASSWORD));
+        assertFalse(LoginFactory.doLogin(loginName(user), PASSWORD, false, requestWithSession(),
+                mock(HttpServletResponse.class)));
+    }
+
+    /** Returns the identifier accepted by the configured native login mode. */
     private String loginName(final User user) {
         return com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany().getAuthType()
                 .equals(com.liferay.portal.model.Company.AUTH_TYPE_EA)
@@ -283,7 +295,7 @@ public class LoginFactoryTest extends IntegrationTestBase {
      * @param authenticator the {@link Authenticator} named by the stale configuration
      */
     private static void usePreAuthenticator(final Class<? extends Authenticator> authenticator) {
-        Config.setProperty(PropsUtil.AUTH_PIPELINE_PRE, authenticator.getName());
+        Config.setProperty(PRE_AUTHENTICATOR_KEY, authenticator.getName());
         Config.setProperty(DIRECTORY_IMPLEMENTATION, authenticator.getName());
     }
 

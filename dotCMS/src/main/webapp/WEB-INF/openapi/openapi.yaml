@@ -25,9 +25,6 @@ tags:
   name: Tag (v1)
 - description: Streaming a11y-fix agent proxy
   name: Accessibility Agent
-- description: Endpoints that perform operations related to validating accessibility
-    in content.
-  name: Accessibility Checker
 - description: Proxy endpoints that forward analytics requests to the dot-ca-event-manager
     service.
   name: Content Analytics
@@ -74,6 +71,8 @@ tags:
     description: Additional Page API information
     url: https://www.dotcms.com/docs/latest/page-rest-api-layout-as-a-service-laas
   name: Page
+- description: Web accessibility checking and compliance
+  name: Accessibility Checker
 - description: Push publishing job management endpoints
   name: Publishing
 - description: Content relationship management
@@ -25900,7 +25899,6 @@ components:
           type: string
         size:
           type: string
-
     AccruedTag:
       type: object
       properties:

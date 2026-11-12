@@ -81,7 +81,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v3.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v3.contenttype.MoveFieldFormTest.class,
         com.dotcms.rest.api.CorsFilterTest.class,
-        com.dotmarketing.webdav.DotWebdavHelperAuthorizePrincipalTest.class,
         com.dotcms.rest.elasticsearch.ESContentResourcePortletTest.class,
         com.dotcms.filters.VanityUrlFilterTest.class,
         com.dotcms.vanityurl.business.VanityUrlAPITest.class,
@@ -165,6 +164,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.security.multipart.MultiPartRequestSecurityWebInterceptorTest.class,
         com.dotcms.rest.api.v1.temp.TempFileNamingTest.class,
         com.dotcms.content.elasticsearch.business.ESContentletAPIImplTrailingBackslashQueryTest.class,
+        com.dotmarketing.webdav.DotWebdavHelperAuthorizePrincipalTest.class,
         com.dotmarketing.webdav.DotWebdavHelperTest.class,
         com.dotcms.enterprise.publishing.remote.handler.UserHandlerTest.class,
         com.dotcms.contenttype.business.StoryBlockReferenceAccessTest.class

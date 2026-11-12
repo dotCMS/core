@@ -33,6 +33,7 @@ import org.junit.Test;
 public class DotWebdavHelperAuthorizePrincipalTest extends IntegrationTestBase {
 
     private static final String PASSWORD = "Str0ng-Test-Passw0rd!";
+    private static final String PRE_AUTHENTICATOR_KEY = "auth.pipeline.pre";
     private static final String LEGACY_PRE_AUTHENTICATOR = "com.dotcms.enterprise.LDAPProxy";
 
     private static User user;
@@ -44,10 +45,10 @@ public class DotWebdavHelperAuthorizePrincipalTest extends IntegrationTestBase {
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
         previousBasicAuthMode = Config.getStringProperty("ALLOW_BASIC_AUTH", null);
-        previousPreAuthenticator = Config.getStringProperty(PropsUtil.AUTH_PIPELINE_PRE, null);
+        previousPreAuthenticator = Config.getStringProperty(PRE_AUTHENTICATOR_KEY, null);
         Config.setProperty("ALLOW_BASIC_AUTH", "ALL");
         // Keep legacy configuration in place for every public-path check, including the first helper construction.
-        Config.setProperty(PropsUtil.AUTH_PIPELINE_PRE, LEGACY_PRE_AUTHENTICATOR);
+        Config.setProperty(PRE_AUTHENTICATOR_KEY, LEGACY_PRE_AUTHENTICATOR);
 
         user = new UserDataGen()
                 .emailAddress("webdav-auth-" + UUIDGenerator.generateUuid() + "@dotcms.test")
@@ -66,14 +67,14 @@ public class DotWebdavHelperAuthorizePrincipalTest extends IntegrationTestBase {
     @AfterClass
     public static void cleanup() {
         Config.setProperty("ALLOW_BASIC_AUTH", previousBasicAuthMode);
-        Config.setProperty(PropsUtil.AUTH_PIPELINE_PRE, previousPreAuthenticator);
+        Config.setProperty(PRE_AUTHENTICATOR_KEY, previousPreAuthenticator);
         UserDataGen.remove(user);
     }
 
     /** The removed LDAP class must not be instantiated, even when its old property is still set. */
     @Test
     public void test_authorizePrincipal_removedLdapPreAuthenticator_acceptsNativePassword() throws Exception {
-        assertEquals(LEGACY_PRE_AUTHENTICATOR, PropsUtil.get(PropsUtil.AUTH_PIPELINE_PRE));
+        assertEquals(LEGACY_PRE_AUTHENTICATOR, PropsUtil.get(PRE_AUTHENTICATOR_KEY));
 
         assertEquals(user.getUserId(),
                 new DotWebdavHelper().authorizePrincipal(login, PASSWORD).getUserId());

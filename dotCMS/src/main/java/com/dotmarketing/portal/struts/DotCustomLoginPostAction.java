@@ -25,8 +25,9 @@ import com.liferay.util.StringPool;
 public class DotCustomLoginPostAction extends Action {
 
 	/**
-	 * Value older versions stored as the local password of directory users. It is no longer
-	 * written, and it never matches as a password.
+	 * Value older versions stored as the local password of users synced from an external directory.
+	 * The directory integration is gone, so nothing writes it any more, and it never matches as a
+	 * password.
 	 */
 	public static final String FAKE_PASSWORD = "fake_dotCMS_LDAP_password";
 

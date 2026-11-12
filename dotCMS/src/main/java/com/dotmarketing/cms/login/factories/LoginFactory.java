@@ -37,7 +37,6 @@ import javax.servlet.http.HttpSession;
 public class LoginFactory {
 
 
-
     private static final String LOCK_PREFIX = "UserIdLogin:";
     private static final DotKeyLockManager<String> lockManager = DotKeyLockManagerBuilder.newLockManager("LOGIN_LOCK");
     
@@ -164,43 +163,42 @@ public class LoginFactory {
 			}
 
             if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
-	            	user = APILocator.getUserAPI().loadByUserByEmail(userName, APILocator.getUserAPI().getSystemUser(), false);
-	            } else {
-	            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
-	            }
+            	user = APILocator.getUserAPI().loadByUserByEmail(userName, APILocator.getUserAPI().getSystemUser(), false);
+            } else {
+            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
+            }
 
-	            if ((user == null) || (!UtilMethods.isSet(user.getEmailAddress()))) {
-	        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login or no email set for " + userName + " from IP: " + request.getRemoteAddr());
+            if ((user == null) || (!UtilMethods.isSet(user.getEmailAddress()))) {
+        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login or no email set for " + userName + " from IP: " + request.getRemoteAddr());
 
-	            	throw new NoSuchUserException();
-	            }
+            	throw new NoSuchUserException();
+            }
 
-	            if (user.isNew() ||
-	            		(!Config.getBooleanProperty("ALLOW_INACTIVE_ACCOUNTS_TO_LOGIN", false) && !user.isActive())) {
-	        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login to an inactive account as " + userName + " from IP: " + request.getRemoteAddr());
+            if (user.isNew() ||
+            		(!Config.getBooleanProperty("ALLOW_INACTIVE_ACCOUNTS_TO_LOGIN", false) && !user.isActive())) {
+        		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login to an inactive account as " + userName + " from IP: " + request.getRemoteAddr());
 
-	            	return false;
-	            }
-	            match = true;
-	            if (!skipPasswordCheck) {
-	            // Validate password and rehash when is needed. Refused while a lockout applies to this
-	            // address or account; a failure counts toward the lock.
-	            match = LoginLockout.getInstance().passwordMatch(password, user,
-	            		LoginLockout.clientAddress(request), (secret, candidate) -> false);
-	            }
+            	return false;
+            }
+            match = true;
+            if (!skipPasswordCheck) {
+            // Validate password and rehash when is needed. Refused while a lockout applies to this
+            // address or account; a failure counts toward the lock.
+            match = LoginLockout.getInstance().passwordMatch(password, user,
+            		LoginLockout.clientAddress(request), (secret, candidate) -> false);
+            }
 
-	            if (match) {
+            if (match) {
 
-	            	user.setLastLoginDate(new java.util.Date());
-					user.setLastLoginIP(request.getRemoteAddr());
-	            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
+            	user.setLastLoginDate(new java.util.Date());
+				user.setLastLoginIP(request.getRemoteAddr());
+            	APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
 
-	            } else {
+            } else {
 
-					SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " from IP: " + request.getRemoteAddr());
+				SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login as " + userName + " from IP: " + request.getRemoteAddr());
 
-	            }
-
+            }
 
             // if passwords match
             if (match) {
@@ -236,8 +234,10 @@ public class LoginFactory {
         return false;
     }
 
+
 	/**
-    * Checks a user's credentials against the password stored in dotCMS without creating a session.
+    * Checks a user's credentials without creating a session. The password stored in dotCMS is
+    * always checked, under the same login lockout as a login that does create a session.
     *
     * @param userName the email address or user id, depending on the company's authentication type
     * @param password the password typed by the user
@@ -262,7 +262,7 @@ public class LoginFactory {
  					return false;
  				}
  			}
-            // Native authentication
+
  	            if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
  	            	user = APILocator.getUserAPI().loadByUserByEmail(userName, APILocator.getUserAPI().getSystemUser(), false);
  	            } else {
@@ -284,7 +284,6 @@ public class LoginFactory {
 
                 // Refused while a lockout applies to this address or account; a failure counts toward the lock.
                 match = LoginLockout.getInstance().passwordMatch(password, user);
-
 
             // if passwords match
             if (match) {
@@ -322,8 +321,9 @@ public class LoginFactory {
      * stored value is never compared directly with the typed text. When an older format matches,
      * the stored value is upgraded to a secure hash and saved.
      *
-     * <p>The value {@link DotCustomLoginPostAction#FAKE_PASSWORD} is reserved for accounts that
-     * authenticate against a directory service and never matches.</p>
+     * <p>The value {@link DotCustomLoginPostAction#FAKE_PASSWORD} is what older versions stored
+     * for accounts synced from an external directory. Nothing writes it any more, and it never
+     * matches, so a row left holding it cannot be signed in to.</p>
      *
      * @param password the password typed by the user
      * @param user     the {@link User}, loaded from the database with all its information,
