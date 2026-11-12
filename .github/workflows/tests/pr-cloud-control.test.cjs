@@ -18,8 +18,9 @@ function script(id) {
         .map(line => line.startsWith('            ') ? line.slice(12) : line).join('\n').trim();
 }
 
-async function deploy({ metadata = {}, pr = {}, existing = null, status = 200,
-    mutationStatus = 200, afterConflict = null, run = {} } = {}) {
+async function deploy({ metadata = {}, pr = {}, existing = null, status = 200, calls = [],
+    mutationStatus = 200, afterConflict = null, run = {}, registryStatus = 200,
+    immutableDigest = 'sha256:' + 'a'.repeat(64), mutableDigest = immutableDigest } = {}) {
     const sha = 'a'.repeat(40);
     const pull = {
         number: 1234, state: 'open', labels: [{ name: 'PR: docker image' }],
@@ -27,7 +28,7 @@ async function deploy({ metadata = {}, pr = {}, existing = null, status = 200,
         ...pr,
     };
     const manifest = { pr: 1234, sha, ...metadata };
-    const calls = [];
+    const registryCalls = [];
     const logs = [];
     let reads = 0;
     const context = { repo: { owner: 'dotcms', repo: 'core' }, payload: {
@@ -38,6 +39,12 @@ async function deploy({ metadata = {}, pr = {}, existing = null, status = 200,
         addRaw: () => core.summary, write: async () => {},
     } };
     const fetch = async (url, options = {}) => {
+        if (url.startsWith('https://hub.docker.com/')) {
+            registryCalls.push(url);
+            assert.equal(options.headers?.Authorization, undefined, 'Cloud Control credentials must not reach Docker Hub');
+            return { status: registryStatus, ok: registryStatus === 200,
+                json: async () => ({ digest: registryCalls.length === 1 ? immutableDigest : mutableDigest }) };
+        }
         const method = options.method || 'GET';
         calls.push({ url, ...options, method, body: options.body && JSON.parse(options.body) });
         const responseStatus = method === 'GET'
@@ -54,7 +61,7 @@ async function deploy({ metadata = {}, pr = {}, existing = null, status = 200,
     };
     await new AsyncFunction('github', 'context', 'core', 'fetch', 'process', 'require', script('deploy'))(
         github, context, core, fetch, { env }, requireMock);
-    return { calls, logs };
+    return { calls, registryCalls, logs };
 }
 
 const image = 'dotcms/dotcms-test:pr-1234-feat-my_branch.with-dots';
@@ -78,7 +85,7 @@ test('trusted workflow covers both publishers and never checks out PR code', () 
 
 test('both entry points serialize publishing per PR without cancelling an active image push', () => {
     const publisher = fs.readFileSync(path.join(root, '.github/workflows/cicd_comp_publish-pr-test-image.yml'), 'utf8');
-    assert.match(publisher, /    concurrency:\n      group: publish-pr-image-job-\$\{\{ inputs\.pr \}\}\n      cancel-in-progress: false/);
+    assert.match(publisher, /    concurrency:\n      group: publish-pr-image-job-\$\{\{ inputs\.pr \}\}\n      cancel-in-progress: false\n      queue: max/);
     for (const file of ['cicd_1-pr.yml', 'cicd_publish-pr-test-image.yml']) {
         assert.match(fs.readFileSync(path.join(root, '.github/workflows', file), 'utf8'),
             /uses: \.\/\.github\/workflows\/cicd_comp_publish-pr-test-image\.yml/);
@@ -148,6 +155,24 @@ test('missing environment is provisioned with the existing mutable image tag', a
     assert.deepEqual(calls[1].body, { wizard: true, org: { org_key: 'dotpr' },
         env: { env_key: '1234-feat-my-branch-with-dots', image, replicas: 1 } });
     assert.equal(calls[1].headers.Authorization, 'Bearer test-token');
+});
+
+test('trusted deployment verifies matching immutable and mutable registry digests before Cloud Control access', async () => {
+    const { calls, registryCalls } = await deploy({ existing: { ...stopped, deploy_status: 'deployed', replicas: 1 } });
+    assert.deepEqual(registryCalls, [
+        'https://hub.docker.com/v2/repositories/dotcms/dotcms-test/tags/pr-1234-feat-my_branch.with-dots_aaaaaaa',
+        'https://hub.docker.com/v2/repositories/dotcms/dotcms-test/tags/pr-1234-feat-my_branch.with-dots',
+    ]);
+    assert.equal(calls.length, 1);
+});
+
+test('a forged publication manifest cannot provision an absent, invalid or mismatched image', async () => {
+    for (const registry of [{ registryStatus: 404 }, { registryStatus: 500 },
+        { immutableDigest: null }, { mutableDigest: 'sha256:' + 'b'.repeat(64) }]) {
+        const calls = [];
+        await assert.rejects(deploy({ calls, ...registry }), /image|publication|registry/i);
+        assert.equal(calls.length, 0);
+    }
 });
 
 test('stopped matching environment starts without changing its image', async () => {

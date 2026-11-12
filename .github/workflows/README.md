@@ -48,7 +48,8 @@ Welcome to the dotCMS CI/CD documentation! This guide will help you understand a
 
 The `PR: docker image` label publishes a multi-architecture image to `dotcms/dotcms-test`
 on label application and subsequent commits. Both entry points share a per-PR publisher
-lock; queued publishers check the current PR head before resolving artifacts or pushing
+lock with `queue: max` so stale arrivals cannot evict a pending current build; queued
+publishers check the current PR head before resolving artifacts or pushing
 so an older build cannot overwrite an already-published newer image. After the publishing workflow completes,
 `cicd_post-pr-cloud-control.yml` creates or starts an environment in the `dotpr` organization
 using the mutable image tag. Its key is `<PR number>-<sanitized branch>`, truncated to
@@ -65,6 +66,8 @@ Control bearer token that can provision into `dotpr` and start its environments
 (`PATCH /api/envs/dotpr/detail` requires admin access for personal tokens).
 The secret is only used by the default-branch `workflow_run`, which never checks out
 PR code and validates that the publication belongs to a current, open, labeled internal PR.
+Before using the token, it independently checks Docker Hub: the commit-specific and mutable
+tags must exist with the same manifest digest. The PR artifact alone cannot authorize provisioning.
 This workflow must be on the default branch before deployment triggers will run.
 
 Missing environments are provisioned with Cloud Control defaults and one replica.

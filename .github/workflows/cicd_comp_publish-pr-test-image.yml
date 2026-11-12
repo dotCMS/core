@@ -47,6 +47,7 @@ jobs:
     concurrency:
       group: publish-pr-image-job-${{ inputs.pr }}
       cancel-in-progress: false
+      queue: max
     permissions:
       contents: read
       actions: read
