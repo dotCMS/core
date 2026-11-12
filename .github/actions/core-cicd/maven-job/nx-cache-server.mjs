@@ -42,7 +42,7 @@ const CACHE_PATH = /^\/v1\/cache\/(\w+)$/;
 
 const isFile = (path) => statSync(path, { throwIfNoEntry: false })?.isFile() ?? false;
 
-const server = createServer(async (req, res) => {
+const handle = async (req, res) => {
     const hash = CACHE_PATH.exec(req.url ?? '')?.[1];
     if (!hash) {
         res.writeHead(404).end();
@@ -99,7 +99,20 @@ const server = createServer(async (req, res) => {
     }
 
     res.writeHead(405).end();
-});
+};
+
+// Any failure not handled above (a stat or link that fails on the cache directories, say) still
+// answers the request, so Nx sees a failed request instead of waiting on one that never ends.
+const server = createServer((req, res) =>
+    handle(req, res).catch((e) => {
+        console.error(`nx-cache-server: ${req.method} ${req.url} failed: ${e.message}`);
+        if (res.headersSent) {
+            res.destroy();
+        } else {
+            res.writeHead(500).end();
+        }
+    })
+);
 
 // A failed request must not take the server down: Nx fails the whole build once the server
 // stops answering.

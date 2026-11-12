@@ -127,6 +127,16 @@ if [[ "$(id -u)" != 0 ]]; then
     "$( (( rc != 0 && rc != 28 )) && echo yes || echo "no (curl exit $rc)")"
   check "a failed GET does not stop the server" "built here" "$(curl -s --max-time 5 "$URL/333")"
   rm -f "$CACHE/555"
+
+  # A lookup that throws before the response starts (the restored directory cannot be read, or
+  # the cache directory cannot) answers 500 instead of leaving Nx waiting.
+  chmod 000 "$CACHE-restored"
+  check "a GET whose lookup fails is 500" 500 "$(status "$URL/666")"
+  chmod 755 "$CACHE-restored"
+  chmod 000 "$CACHE"
+  check "a PUT whose lookup fails is 500" 500 "$(status -X PUT --data-binary 'x' "$URL/777")"
+  chmod 755 "$CACHE"
+  check "and the server keeps serving" "built here" "$(curl -s --max-time 5 "$URL/333")"
 fi
 
 check "the saved directory holds only what this run used or built" "111 333" \
