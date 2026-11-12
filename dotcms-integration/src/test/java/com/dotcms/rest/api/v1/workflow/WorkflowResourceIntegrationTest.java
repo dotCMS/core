@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_ID;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_MAIL;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_NAME;
@@ -150,6 +153,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static WorkflowAPI workflowAPI;
     private static RoleAPI roleAPI;
@@ -2664,6 +2670,11 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
 
     }
 
+    /**
+     * Builds an admin request authenticated with a Bearer API token.
+     *
+     * @return the request
+     */
     private static HttpServletRequest getHttpRequest() {
         MockHeaderRequest request = new MockHeaderRequest(
                 (
@@ -2674,7 +2685,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         );
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                TOKEN_UTILS.adminBearerHeader());
 
         return request;
     }

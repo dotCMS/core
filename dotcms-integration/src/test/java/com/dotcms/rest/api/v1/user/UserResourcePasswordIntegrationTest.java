@@ -17,6 +17,7 @@ import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ErrorResponseHelper;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.DotRestInstanceProvider;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.UserPaginator;
@@ -29,6 +30,7 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -38,6 +40,7 @@ import javax.ws.rs.core.Response.Status;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
@@ -47,7 +50,10 @@ import org.junit.Test;
  */
 public class UserResourcePasswordIntegrationTest {
 
-    /** Meets the default policy in portal.properties: 8+ characters from the allowed set. */
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
+
+    /** Meets the default policy in portal.properties: 15 to 64 characters with all four classes. */
     private static final String VALID_PASSWORD = "Changed-Pass-2026!";
     /** Too short for the default policy, which requires at least 8 characters. */
     private static final String SHORT_PASSWORD = "abcdef";
@@ -240,7 +246,7 @@ public class UserResourcePasswordIntegrationTest {
                                 .request())
                         .request());
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+                TOKEN_UTILS.adminBearerHeader());
         request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
         request.getSession().setAttribute(WebKeys.CMS_SELECTED_HOST_ID, host.getIdentifier());
         // the password policy reads the request from this thread-local to localize its error,

@@ -127,3 +127,4 @@ Release-25.07.10 LTS
 121. https://github.com/dotCMS/private-issues/issues/707 : Widget REST double-evaluation SSTI + anonymous disclosure of administrator credential material #38108 #38100 #38282 #707
 122. https://github.com/dotCMS/private-issues/issues/752 : [GLM AI Scanner] Anonymous SSTI toolbox chain: credential disclosure ($config), system-user content access ($filetool), filesystem enumeration ($macro) + LinkChecker internal-network SSRF (no subnet guard) #38085 #752
 123. https://github.com/dotCMS/private-issues/issues/842 : Ubaid Raza F4: Story Block reference hydration uses the system user, bypassing contentlet read permissions (6.5 Medium) #38222 #842
+124. https://github.com/dotCMS/core/issues/5818 : allow to disable basic auth on WebResource #38090 #5818

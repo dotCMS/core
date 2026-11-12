@@ -49,7 +49,8 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.internal.util.Base64;
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -60,6 +61,9 @@ import org.junit.runner.RunWith;
  */
 @RunWith(DataProviderRunner.class)
 public class ESContentResourcePortletTest extends IntegrationTestBase {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static LanguageAPI languageAPI;
     private static ContentletAPI contentletAPI;
@@ -276,7 +280,7 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
 
         if (!anonymous){
             request.setHeader("Authorization",
-                    "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                    TOKEN_UTILS.adminBearerHeader());
         }
 
         when(request.getContentType()).thenReturn(MediaType.APPLICATION_JSON);

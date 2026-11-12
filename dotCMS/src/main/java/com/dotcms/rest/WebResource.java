@@ -1,5 +1,7 @@
 package com.dotcms.rest;
 
+import com.dotcms.auth.BasicAuthentication;
+import com.dotcms.auth.BasicAuthentication.Mode;
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.enterprise.LicenseUtil;
@@ -705,13 +707,10 @@ public  class WebResource {
         // Extract authentication credentials
         String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
 
-        if(StringUtils.isNotEmpty(authentication) && authentication.startsWith(BASIC)) {
+        if(StringUtils.isNotEmpty(authentication) && authentication.regionMatches(true, 0, BASIC, 0, BASIC.length())) {
             authentication = authentication.substring(BASIC.length());
-            // @todo ggranum: this should be a split limit 1.
-            // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
-            // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = decodeBase64Credentials(authentication).split(":");
-            if(values.length < 2) {
+            String[] values = decodeBase64Credentials(authentication).split(":", 2);
+            if(values.length < 2 || values[1].isEmpty()) {
                 // "Invalid syntax for username and password"
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
             }
@@ -726,11 +725,8 @@ public  class WebResource {
 
         String authentication = request.getHeader("DOTAUTH");
         if(StringUtils.isNotEmpty(authentication)) {
-            // @todo ggranum: this should be a split limit 1.
-            // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
-            // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = decodeBase64Credentials(authentication).split(":");
-            if(values.length < 2) {
+            String[] values = decodeBase64Credentials(authentication).split(":", 2);
+            if(values.length < 2 || values[1].isEmpty()) {
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
             }
             result = Optional.of(new UsernamePassword(values[0], values[1]));
@@ -763,6 +759,21 @@ public  class WebResource {
                                  final UserAPI userAPI) throws SecurityException {
         User user       = null;
         final String ip = request != null ? request.getRemoteAddr() : BLANK;
+        final Mode mode = BasicAuthentication.mode();
+        if (mode == Mode.NONE) {
+            throw new SecurityException("Username and credential authentication is disabled",
+                    Response.Status.UNAUTHORIZED);
+        }
+        // Avoid false JWT audit failures for ordinary passwords in legacy mode.
+        if (mode == Mode.JWT_TOKEN || StringUtils.countMatches(password, ".") == 2) {
+            final Optional<User> tokenUser = BasicAuthentication.authenticateApiToken(username, password, ip);
+            if (tokenUser.isPresent()) {
+                return tokenUser.get();
+            }
+            if (mode != Mode.ALL) {
+                throw new SecurityException("Invalid API token credentials", Response.Status.UNAUTHORIZED);
+            }
+        }
 
         if(StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) { // providing login and password so let's try to authenticate
 
@@ -1070,7 +1081,7 @@ public  class WebResource {
                 }
 
                 Logger.debug(InitBuilder.class,
-                        () -> request.getRequestURI()+" calling webResource.init(..) with AnonymousAccess set to `" + anonAccess + "`");
+                        () -> "Calling webResource.init(..) with AnonymousAccess set to `" + anonAccess + "`");
             }
 
             if(requireLicense){
@@ -1082,7 +1093,7 @@ public  class WebResource {
             try {
                 return webResource.init(this);
             } catch (final Exception e) {
-                 Logger.warnAndDebug(WebResource.class,"InitDataObject Error: uri:" + request.getRequestURI() + " err:" + e.getMessage() ,e);
+                 Logger.warnAndDebug(WebResource.class,"InitDataObject Error: " + e.getMessage(), e);
                  throw e;
             }
         }

@@ -1,5 +1,8 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
@@ -37,6 +40,9 @@ import java.util.Map;
 import java.util.Optional;
 
 public class DotAssetBaseTypeToContentTypeStrategyImplTest  extends IntegrationTestBase {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -98,7 +104,7 @@ public class DotAssetBaseTypeToContentTypeStrategyImplTest  extends IntegrationT
                 ).request()
         );
 
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
         request.setHeader("User-Agent", "Fake-Agent");
         request.setHeader("Host", "localhost");
         request.setHeader("Origin", "localhost");

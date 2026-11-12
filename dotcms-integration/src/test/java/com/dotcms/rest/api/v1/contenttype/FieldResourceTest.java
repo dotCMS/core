@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.contenttype;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -58,6 +61,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class FieldResourceTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
 	private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -2386,6 +2392,11 @@ public class FieldResourceTest {
 		return APILocator.getContentTypeAPI(user).find(typeName);
 	}
 
+	/**
+	 * Builds an admin request authenticated with a Bearer API token.
+	 *
+	 * @return the request
+	 */
 	private static HttpServletRequest getHttpRequest() {
 		MockHeaderRequest request = new MockHeaderRequest(
 			(
@@ -2393,7 +2404,7 @@ public class FieldResourceTest {
 			).request()
 		);
 
-		request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+		request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
 
 		return request;
 	}

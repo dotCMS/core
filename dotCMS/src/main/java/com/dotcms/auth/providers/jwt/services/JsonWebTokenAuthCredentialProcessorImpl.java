@@ -117,6 +117,7 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
         return user;
     } // processAuthCredentialsFromJWT.
 
+    /** Resolves the request's JWT and stores its authenticated identity only on this request. */
     @Override
     public Optional<JWToken> processJWTAuthHeader(final HttpServletRequest request) {
 

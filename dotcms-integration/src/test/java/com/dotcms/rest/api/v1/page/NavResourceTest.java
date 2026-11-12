@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.page;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import static org.mockito.Mockito.mock;
 
 import com.dotcms.datagen.FolderDataGen;
@@ -27,6 +30,9 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 public class NavResourceTest{
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static Host site;
 
@@ -87,7 +93,7 @@ public class NavResourceTest{
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                TOKEN_UTILS.adminBearerHeader());
 
         Mockito.when(request.getParameter("host_id")).thenReturn(site.getIdentifier());
 

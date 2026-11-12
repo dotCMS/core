@@ -1,5 +1,8 @@
 package com.dotcms.rest;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsFactory;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -82,6 +85,9 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 public class BundleResourceTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static BundleResource bundleResource;
     private static User adminUser;
@@ -194,7 +200,7 @@ public class BundleResourceTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                TOKEN_UTILS.adminBearerHeader());
 
         return request;
     }

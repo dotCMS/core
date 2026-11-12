@@ -19,12 +19,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
-import org.glassfish.jersey.internal.util.Base64;
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 import static org.junit.Assert.*;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class UserResourceIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     static HttpServletResponse response;
     static HttpServletRequest request;
@@ -65,7 +69,7 @@ public class UserResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                TOKEN_UTILS.adminBearerHeader());
 
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,host);
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID,host.getIdentifier());

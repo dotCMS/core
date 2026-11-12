@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v3.contenttype;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.ColumnField;
 import com.dotcms.contenttype.model.field.Field;
@@ -53,6 +56,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 public class FieldResourceTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -1047,6 +1053,11 @@ public class FieldResourceTest {
     }
 
 
+    /**
+     * Builds an admin request authenticated with a Bearer API token.
+     *
+     * @return the request
+     */
     private static HttpServletRequest getHttpRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(
                 (
@@ -1054,7 +1065,7 @@ public class FieldResourceTest {
                 ).request()
         );
 
-        request.setHeader("Authorization", "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+        request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
 
         return request;
     }

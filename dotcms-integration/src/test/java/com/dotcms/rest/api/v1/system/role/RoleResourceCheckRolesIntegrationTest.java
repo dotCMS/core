@@ -12,6 +12,7 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
@@ -20,7 +21,6 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +28,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Response;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
@@ -37,6 +38,9 @@ import org.junit.Test;
  * both the Roles and the Users portlets.
  */
 public class RoleResourceCheckRolesIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static RoleResource resource;
     private static RoleAPI roleAPI;
@@ -108,7 +112,7 @@ public class RoleResourceCheckRolesIntegrationTest {
     private static HttpServletRequest adminRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(baseRequest().request());
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+                TOKEN_UTILS.adminBearerHeader());
         return request;
     }
 
