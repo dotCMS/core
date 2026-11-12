@@ -15,8 +15,10 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -26,6 +28,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
@@ -35,7 +38,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Initialiaze content types
@@ -50,14 +55,18 @@ public class ContentTypeInitializer implements DotInitializer {
     public static final String FAVORITE_PAGE_PERMISSIONS_RESET_KEY = "FAVORITE_PAGE_PERMISSIONS_RESET";
 
     /**
-     * System table key written by every repair and deleted once the second permission cache clear
-     * and reindex after it have run, so a start that finds it finishes that step.
+     * System table key written by every repair, with a value unique to that repair, and deleted
+     * once the second permission cache clear and reindex after it have run, so a start that finds
+     * it finishes that step.
      */
     public static final String FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY = "FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING";
 
     private static final String FAVORITE_PAGE_PERMISSIONS_LOCK = "favorite-page-permissions";
     private static final String REPAIR_LOCK_SQL = "SELECT pg_advisory_xact_lock(hashtext(?))";
     private static final String COUNT_SYSTEM_TABLE_KEY_SQL = "select count(*) as total from system_table where key = ?";
+    private static final String SYSTEM_TABLE_VALUE_SQL = "select value from system_table where key = ?";
+    private static final String DELETE_SYSTEM_TABLE_KEY_WITH_VALUE_SQL = "delete from system_table where key = ? and value = ?";
+    private static final String FAVORITE_IDENTIFIERS_SQL = "select id from identifier where asset_subtype = ?";
     private static final String COUNT_FAVORITES_WITH_OWN_ROWS_SQL = "select count(distinct inode_id) as total from permission where inode_id in (select identifier from contentlet where structure_inode = ?)";
     private static final String FAVORITES_OFF_SYSTEM_HOST_SQL = "select i.id, min(c.inode) as inode from identifier i join contentlet c on c.identifier = i.id where c.structure_inode = ? and (i.host_inode <> ? or i.parent_path <> ?) group by i.id";
     private static final String DELETE_OTHER_ROLES_ROWS_SQL = "delete from permission where inode_id = ? and roleid <> ?";
@@ -67,6 +76,25 @@ public class ContentTypeInitializer implements DotInitializer {
     private static final long PERMISSION_CACHE_RECLEAR_SECONDS = 30;
 
     private static final Lazy<Boolean> doDefaultPagePermissions = Lazy.of(()->Config.getBooleanProperty("DO_DEFAULT_PAGE_PERMISSIONS", true));
+
+    private final ReindexQueueAPI reindexQueueAPI;
+
+    /**
+     * Creates the initializer with the default reindex queue.
+     */
+    public ContentTypeInitializer() {
+        this(APILocator.getReindexQueueAPI());
+    }
+
+    /**
+     * Creates the initializer with the given reindex queue, so a test can make queuing fail.
+     *
+     * @param reindexQueueAPI the queue the favorites are added to for reindex
+     */
+    @VisibleForTesting
+    ContentTypeInitializer(final ReindexQueueAPI reindexQueueAPI) {
+        this.reindexQueueAPI = reindexQueueAPI;
+    }
 
     @Override
     public void init() {
@@ -185,9 +213,10 @@ public class ContentTypeInitializer implements DotInitializer {
      * cleared and the favorites are queued for reindex again, and both are done once more a short
      * time later, so that rows a lookup read before the commit and cached after the first clear
      * neither stay cached nor stay in the index. The repair also writes
-     * {@link #FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY}, which is deleted once that later
-     * clear and reindex have run; a start that still finds it, because the node stopped before
-     * they ran, clears the cache and reindexes the favorites again the same way.
+     * {@link #FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY} with a value of its own, which is
+     * deleted once that later clear and reindex have run, and only if no later repair has written
+     * its own value since; a start that still finds it, because the node stopped before they ran,
+     * clears the cache and reindexes the favorites again the same way.
      *
      * @param savedContentType the favorite page content type
      */
@@ -200,7 +229,8 @@ public class ContentTypeInitializer implements DotInitializer {
                 final String repair = LocalTransaction.wrapReturn(() -> this.repairDefaultPermissions(savedContentType));
                 // the repair writes this key in its transaction, so it is set after any repair,
                 // and still set on a later start if a node stopped before the delayed step ran
-                if (this.systemTableHasKey(FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY)) {
+                final String cleanupId = this.pendingCleanupId();
+                if (null != cleanupId) {
                     Logger.info(this, null != repair ? repair
                             : "Favorite pages: finishing the permission cache clear and reindex of an earlier repair");
                     // the repair evicts cached rows before it commits, so a read on this or
@@ -213,7 +243,7 @@ public class ContentTypeInitializer implements DotInitializer {
                     // prune: time-bounded, a lookup stalled longer than the delay can still cache
                     // the old rows; fence the cache put itself if that is ever seen
                     DotConcurrentFactory.getScheduledThreadPoolExecutor().schedule(
-                            () -> this.finishPermissionCleanup(savedContentType),
+                            () -> this.finishPermissionCleanup(savedContentType, cleanupId),
                             PERMISSION_CACHE_RECLEAR_SECONDS, TimeUnit.SECONDS);
                 }
             } catch (final Throwable e) {
@@ -227,8 +257,10 @@ public class ContentTypeInitializer implements DotInitializer {
      * Clears both permission cache groups, the rows and the read decisions, then queues every
      * favorite for reindex, so each index document is rebuilt from permissions read after the
      * clear. The repair already queues them inside its transaction, but that reindex can run
-     * before the cache is cleared and index the old permissions. Failures are logged, since this
-     * also runs on a scheduler thread where they would otherwise be lost.
+     * before the cache is cleared and index the old permissions. The favorites are queued by
+     * identifier rather than with {@link ReindexQueueAPI#addStructureReindexEntries}, which logs a
+     * failed insert and returns normally, so a failure here is seen. Failures are logged, since
+     * this also runs on a scheduler thread where they would otherwise be lost.
      *
      * @param contentType the favorite page content type
      * @return {@code true} if the favorites were queued for reindex
@@ -238,7 +270,10 @@ public class ContentTypeInitializer implements DotInitializer {
         CacheLocator.getPermissionCache().clearCache();
         try {
 
-            APILocator.getReindexQueueAPI().addStructureReindexEntries(contentType);
+            LocalTransaction.wrapReturn(() -> this.reindexQueueAPI.addIdentifierReindex(
+                    new DotConnect().setSQL(FAVORITE_IDENTIFIERS_SQL)
+                            .addParam(contentType.variable()).loadObjectResults().stream()
+                            .map(row -> String.valueOf(row.get("id"))).collect(Collectors.toList())));
             return true;
         } catch (final Throwable e) {
 
@@ -249,19 +284,29 @@ public class ContentTypeInitializer implements DotInitializer {
 
     /**
      * Runs the delayed permission cache clear and reindex, then deletes
-     * {@link #FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY}. The reindex queue is a database
+     * {@link #FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY} if it still holds the value this step
+     * was scheduled with. A repair that committed after that value was read wrote its own, and
+     * its own delayed step deletes it, so this one leaves it. The reindex queue is a database
      * table, so once the favorites are queued the step survives a restart. If they could not be
      * queued the key stays, and the next start runs the step again. Failures are logged, since
      * this runs on a scheduler thread.
      *
      * @param contentType the favorite page content type
+     * @param cleanupId   the key's value when this step was scheduled
      */
-    private void finishPermissionCleanup(final ContentType contentType) {
+    @VisibleForTesting
+    void finishPermissionCleanup(final ContentType contentType, final String cleanupId) {
 
         if (this.clearPermissionCacheAndReindex(contentType)) {
             try {
 
-                APILocator.getSystemAPI().getSystemTable().delete(FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY);
+                // the system table API has no conditional delete; when a row goes, drop the
+                // system table cache as the API's own delete does
+                final int deleted = LocalTransaction.wrapReturn(() -> new DotConnect().executeUpdate(
+                        DELETE_SYSTEM_TABLE_KEY_WITH_VALUE_SQL, FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY, cleanupId));
+                if (deleted > 0) {
+                    FactoryLocator.getSystemTableFactory().clearCache();
+                }
             } catch (final Throwable e) {
 
                 Logger.error(this, "Favorite pages: could not record the finished permission cleanup: " + e.getMessage(), e);
@@ -323,7 +368,7 @@ public class ContentTypeInitializer implements DotInitializer {
             favoritesOffSystemHost = this.giveOwnerRowsToFavoritesOffSystemHost(savedContentType, permissionType, backendRole);
             APILocator.getSystemAPI().getSystemTable().set(FAVORITE_PAGE_PERMISSIONS_RESET_KEY, "true");
         }
-        APILocator.getSystemAPI().getSystemTable().set(FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY, "true");
+        APILocator.getSystemAPI().getSystemTable().set(FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY, UUID.randomUUID().toString());
         return resetFavorites
                 ? "Favorite pages: reset the content type permissions to CMS Owner only, removed the own permissions of "
                         + favoritesWithOwnRows + " favorite(s) and gave " + favoritesOffSystemHost
@@ -446,6 +491,20 @@ public class ContentTypeInitializer implements DotInitializer {
     private boolean favoritesWereReset() throws DotDataException {
 
         return this.systemTableHasKey(FAVORITE_PAGE_PERMISSIONS_RESET_KEY);
+    }
+
+    /**
+     * Reads the value of {@link #FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY} directly rather
+     * than through the system table cache, so a value another node committed is seen.
+     *
+     * @return the value of the pending cleanup key, or {@code null} if there is none
+     * @throws DotDataException if the system table cannot be read
+     */
+    private String pendingCleanupId() throws DotDataException {
+
+        final List<Map<String, Object>> rows = new DotConnect().setSQL(SYSTEM_TABLE_VALUE_SQL)
+                .addParam(FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY).loadObjectResults();
+        return rows.isEmpty() ? null : String.valueOf(rows.get(0).get("value"));
     }
 
     /**

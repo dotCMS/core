@@ -33,6 +33,8 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionCache;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.common.reindex.ReindexQueueAPI;
+import com.dotmarketing.common.reindex.ReindexQueueAPIImpl;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -45,7 +47,9 @@ import io.vavr.control.Try;
 import com.dotcms.test.util.ApiTokenTestUtils;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
@@ -483,6 +487,84 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
         return new DotConnect().setSQL("select count(*) as total from system_table where key = ?")
                 .addParam(ContentTypeInitializer.FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY)
                 .getInt("total") > 0;
+    }
+
+    private static String pendingCleanupValue() throws DotDataException {
+
+        final List<Map<String, Object>> rows = new DotConnect()
+                .setSQL("select value from system_table where key = ?")
+                .addParam(ContentTypeInitializer.FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY)
+                .loadObjectResults();
+        return rows.isEmpty() ? null : String.valueOf(rows.get(0).get("value"));
+    }
+
+    /**
+     * Method to test: {@link ContentTypeInitializer#finishPermissionCleanup(ContentType, String)}
+     * Given Scenario: A repair left the pending cleanup key, and the delayed step runs while
+     * adding the favorites to the reindex queue fails.
+     * ExpectedResult: The key stays, so the next start runs the step again. Once queuing works,
+     * the step deletes it.
+     */
+    @Test
+    public void test_delayed_cleanup_keeps_the_pending_key_when_the_favorites_cannot_be_queued() throws Exception {
+
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME);
+        final String cleanupId = UUID.randomUUID().toString();
+        try {
+
+            APILocator.getSystemAPI().getSystemTable()
+                    .set(ContentTypeInitializer.FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY, cleanupId);
+            final ReindexQueueAPI failingQueue = new ReindexQueueAPIImpl() {
+                @Override
+                public int addIdentifierReindex(final Collection<String> ids) throws DotDataException {
+                    throw new DotDataException("queue unavailable");
+                }
+            };
+
+            new ContentTypeInitializer(failingQueue).finishPermissionCleanup(contentType, cleanupId);
+            Assert.assertEquals("The key must stay when the favorites could not be queued",
+                    cleanupId, pendingCleanupValue());
+
+            new ContentTypeInitializer().finishPermissionCleanup(contentType, cleanupId);
+            Assert.assertNull("The key must be deleted once the favorites are queued", pendingCleanupValue());
+        } finally {
+
+            new DotConnect().executeUpdate("delete from system_table where key = ? and value = ?",
+                    ContentTypeInitializer.FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY, cleanupId);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentTypeInitializer#finishPermissionCleanup(ContentType, String)}
+     * Given Scenario: The delayed step of an older repair runs after a newer repair has written
+     * its own value to the pending cleanup key.
+     * ExpectedResult: The older step leaves the newer value, and the newer repair's own step
+     * deletes it.
+     */
+    @Test
+    public void test_delayed_cleanup_of_an_older_repair_keeps_a_newer_pending_key() throws Exception {
+
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME);
+        final String olderId = UUID.randomUUID().toString();
+        final String newerId = UUID.randomUUID().toString();
+        try {
+
+            APILocator.getSystemAPI().getSystemTable()
+                    .set(ContentTypeInitializer.FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY, newerId);
+
+            new ContentTypeInitializer().finishPermissionCleanup(contentType, olderId);
+            Assert.assertEquals("An older repair's step must leave a newer repair's key",
+                    newerId, pendingCleanupValue());
+
+            new ContentTypeInitializer().finishPermissionCleanup(contentType, newerId);
+            Assert.assertNull("The newer repair's step must delete its own key", pendingCleanupValue());
+        } finally {
+
+            new DotConnect().executeUpdate("delete from system_table where key = ? and value = ?",
+                    ContentTypeInitializer.FAVORITE_PAGE_PERMISSIONS_CLEANUP_PENDING_KEY, newerId);
+        }
     }
 
     /**
