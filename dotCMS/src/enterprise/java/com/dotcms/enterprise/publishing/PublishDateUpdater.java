@@ -63,6 +63,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
@@ -281,11 +282,14 @@ public class PublishDateUpdater {
      * so the usual "was the publish date already covered by the previous run" check is impossible.
      * <p>
      * dotCMS keeps no record of a past live version once content is unpublished: unpublishing
-     * clears both the live inode and the publish date in {@code contentlet_version_info}. It does,
-     * however, stamp the working version's mod date with the moment of the unpublish. Content
-     * whose mod date is later than its scheduled publish date was therefore touched after it
-     * became due (most likely published and then manually unpublished, or saved as a draft with a
-     * date already in the past) and is skipped. Content last saved before its publish date is a
+     * clears both the live inode and the publish date in {@code contentlet_version_info}. It does
+     * leave two timestamps behind: the unpublished inode's mod date, and the identifier's
+     * {@code version_ts}, which is refreshed whenever its version info changes. The second one
+     * matters when the live and working versions are different inodes, because an unpublish that
+     * targets the live inode leaves the working draft's mod date untouched. Content whose latest
+     * of the two is later than its scheduled publish date was therefore touched after it became
+     * due (most likely published and then manually unpublished, or saved as a draft with a date
+     * already in the past) and is skipped. Content last touched before its publish date is a
      * genuine pending scheduled publish and is published as before.
      *
      * @param contentlet         the {@link Contentlet} the publish query matched
@@ -295,20 +299,58 @@ public class PublishDateUpdater {
     @VisibleForTesting
     static boolean shouldPublishWithoutPreviousRunTime(final Contentlet contentlet,
             final Date contentPublishDate) {
-        final Date modDate = contentlet.getModDate();
-        if (UtilMethods.isSet(modDate) && modDate.after(contentPublishDate)) {
+        final Date lastTouched = latest(contentlet.getModDate(), findVersionTs(contentlet));
+        if (UtilMethods.isSet(lastTouched) && lastTouched.after(contentPublishDate)) {
             Logger.info(PublishDateUpdater.class, String.format(
                     "Skipping auto-publish of contentlet %s: previous job run time is unknown and the "
                             + "contentlet was modified (%s) after its publish date (%s), so it was most "
                             + "likely published before and then unpublished",
-                    contentlet.getIdentifier(), modDate, contentPublishDate));
+                    contentlet.getIdentifier(), lastTouched, contentPublishDate));
             return false;
         }
         Logger.debug(PublishDateUpdater.class, String.format(
                 "Previous job run time is unknown - publishing contentlet %s: last modified (%s) "
                         + "before its publish date (%s)",
-                contentlet.getIdentifier(), modDate, contentPublishDate));
+                contentlet.getIdentifier(), lastTouched, contentPublishDate));
         return true;
+    }
+
+    /**
+     * Returns when the contentlet's version info last changed (its {@code version_ts}), which an
+     * unpublish refreshes even when it targets a different inode than the one being checked.
+     * A failed lookup returns {@code null} so the caller falls back to the mod date alone instead
+     * of failing the whole decision, which would default to publishing.
+     *
+     * @param contentlet the {@link Contentlet} whose version info to read
+     * @return the version timestamp, or {@code null} when it is unavailable
+     */
+    private static Date findVersionTs(final Contentlet contentlet) {
+        try {
+            return APILocator.getVersionableAPI()
+                    .getContentletVersionInfo(contentlet.getIdentifier(),
+                            contentlet.getLanguageId(), contentlet.getVariantId())
+                    .map(ContentletVersionInfo::getVersionTs)
+                    .orElse(null);
+        } catch (final Exception e) {
+            Logger.warn(PublishDateUpdater.class, String.format(
+                    "Could not read version info for contentlet %s, using its mod date only: %s",
+                    contentlet.getIdentifier(), e.getMessage()));
+            return null;
+        }
+    }
+
+    /**
+     * Returns the later of two dates, ignoring {@code null}s.
+     *
+     * @param first  a date, or {@code null}
+     * @param second a date, or {@code null}
+     * @return the later date, or {@code null} when both are {@code null}
+     */
+    private static Date latest(final Date first, final Date second) {
+        if (first == null) {
+            return second;
+        }
+        return second != null && second.after(first) ? second : first;
     }
 
     public static PublishDateUpdaterResult updatePublishExpireDates(final Date fireTime) throws DotDataException, DotSecurityException {
