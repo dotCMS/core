@@ -318,6 +318,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                 .addParam(endpointId);
 
         final List<Map<String, Object>> results = dc.loadObjectResults();
+        requireWellFormedIds(results, "remote_identifier", "remote_working_inode", "remote_live_inode");
         final Map<String, Integer> versionCount = new HashMap<>();
         results.forEach(result -> {
             final String oldIdentifier = (String) result.get("local_identifier");

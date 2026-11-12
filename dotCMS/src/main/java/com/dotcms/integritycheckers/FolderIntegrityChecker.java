@@ -236,6 +236,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                     + getIntegrityType().getResultsTableName() + " where endpoint_id = ?");
             dc.addParam(key);
             final List<Map<String, Object>> results = dc.loadObjectResults();
+            requireWellFormedIds(results, "remote_inode", "remote_identifier");
 
             for (final Map<String, Object> result : results) {
 

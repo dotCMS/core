@@ -198,8 +198,10 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
         dc.setSQL("select name, local_role_id, remote_role_id from "+ getIntegrityType().getResultsTableName() +
             	 " where endpoint_id = ? order by name asc");
         dc.addParam(key);
+        final List<Map<String, Object>> results = dc.loadObjectResults();
+        requireWellFormedIds(results, "remote_role_id");
 
-        for (Map<String, Object> result : dc.loadObjectResults()) {
+        for (Map<String, Object> result : results) {
         	String oldRoleId = (String) result.get("local_role_id");
         	String newRoleId = (String) result.get("remote_role_id");
 

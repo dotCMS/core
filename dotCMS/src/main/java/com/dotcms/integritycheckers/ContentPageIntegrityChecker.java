@@ -141,6 +141,7 @@ public class ContentPageIntegrityChecker extends AbstractIntegrityChecker {
                 + getIntegrityType().getResultsTableName() + " WHERE endpoint_id = ? ORDER BY " + getIntegrityType().getFirstDisplayColumnLabel());
         dc.addParam(key);
         List<Map<String, Object>> results = dc.loadObjectResults();
+        requireWellFormedIds(results, "remote_identifier", "remote_working_inode", "remote_live_inode");
 
         // We need to load the map with the affected identifiers, inodes and languages
         Map<String, AffectedIdentifierInfoBucket> affectedIdentifiers = new HashMap<>();

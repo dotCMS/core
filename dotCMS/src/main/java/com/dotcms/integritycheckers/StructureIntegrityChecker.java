@@ -201,7 +201,8 @@ public class StructureIntegrityChecker extends AbstractIntegrityChecker {
                     + getIntegrityType().getResultsTableName() + " where endpoint_id = ?");
             dc.addParam(key);
             final List<Map<String, Object>> results = dc.loadObjectResults();
-            
+            requireWellFormedIds(results, "remote_inode");
+
             for (final Map<String, Object> result : results) {
                 final String oldStructureInode = (String) result.get("local_inode");
                 final String newStructureInode = (String) result.get("remote_inode");

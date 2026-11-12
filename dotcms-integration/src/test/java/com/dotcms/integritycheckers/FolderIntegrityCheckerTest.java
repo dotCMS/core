@@ -31,6 +31,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.Connection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -105,21 +106,20 @@ public class FolderIntegrityCheckerTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link FolderIntegrityChecker#executeFix(String)}
-     * When: A folder conflict carries a remote inode that contains a single quote, and a content type
-     * and a permission point at the folder
-     * Should: Move the folder, the content type's folder and the permission to the remote inode,
-     * stored exactly as received
+     * When: A folder conflict carries a remote inode, and a content type and a permission point at the
+     * folder
+     * Should: Move the folder, the content type's folder and the permission to the remote inode
      * @throws Exception
      */
     @Test
-    public void test_executeFix_storesRemoteInodeAsData() throws Exception {
+    public void test_executeFix_movesReferencesToRemoteInode() throws Exception {
         final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
         final Folder folder = new FolderDataGen().name("testFolder" + UUID.randomUUID()).site(host).nextPersisted();
         final ContentType contentType = new ContentTypeDataGen().host(host).folder(folder).nextPersisted();
         final Role role = new RoleDataGen().nextPersisted();
         APILocator.getPermissionAPI().save(new Permission(folder.getPermissionId(), role.getId(),
                 PermissionAPI.PERMISSION_READ), folder, user, false);
-        final String remoteInode = "f'" + UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+        final String remoteInode = UUID.randomUUID().toString();
         final String remoteIdentifier = introduceConflict(folder, endpointId, remoteInode);
 
         try {
@@ -192,6 +192,83 @@ public class FolderIntegrityCheckerTest extends IntegrationTestBase {
             Try.run(() -> FolderDataGen.remove(folder));
             Try.run(() -> FolderDataGen.remove(otherFolder));
             DbConnectionFactory.closeSilently();
+        }
+    }
+
+    /**
+     * Method to test: {@link FolderIntegrityChecker#executeFix(String)}
+     * When: A folder conflict carries a remote inode that contains a single quote
+     * Should: Refuse the fix with the inode in the message, before anything is written: the original
+     * folder and its permission stay, and no folder exists under the remote inode
+     * @throws Exception
+     */
+    @Test
+    public void test_executeFix_refusesQuotedRemoteInode() throws Exception {
+        final Host host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+        final Folder folder = new FolderDataGen().name("testFolder" + UUID.randomUUID()).site(host).nextPersisted();
+        final Role role = new RoleDataGen().nextPersisted();
+        APILocator.getPermissionAPI().save(new Permission(folder.getPermissionId(), role.getId(),
+                PermissionAPI.PERMISSION_READ), folder, user, false);
+        final String remoteInode = "f'" + UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+        introduceConflict(folder, endpointId, remoteInode);
+
+        try {
+            final DotDataException error = Assert.assertThrows(DotDataException.class,
+                    () -> new IntegrityUtil().fixConflicts(endpointId, IntegrityType.FOLDERS));
+            Assert.assertTrue(error.getMessage(), error.getMessage().contains(remoteInode));
+
+            Assert.assertEquals(folder.getIdentifier(), new DotConnect()
+                    .setSQL("SELECT identifier FROM folder WHERE inode = ?")
+                    .addParam(folder.getInode())
+                    .loadObjectResults().get(0).get("identifier"));
+            Assert.assertTrue(new DotConnect()
+                    .setSQL("SELECT inode FROM folder WHERE inode = ?")
+                    .addParam(remoteInode)
+                    .loadObjectResults().isEmpty());
+            Assert.assertEquals(1, new DotConnect()
+                    .setSQL("SELECT inode_id FROM permission WHERE inode_id = ? AND roleid = ?")
+                    .addParam(folder.getInode())
+                    .addParam(role.getId())
+                    .loadObjectResults().size());
+        } finally {
+            integrityChecker.discardConflicts(endpointId);
+            new DotConnect().setSQL("DELETE FROM permission WHERE roleid = ?").addParam(role.getId()).loadResult();
+            Try.run(() -> FolderDataGen.remove(folder));
+            DbConnectionFactory.closeSilently();
+        }
+    }
+
+    /**
+     * Method to test: {@link AbstractIntegrityChecker#requireWellFormedIds(List, String...)}
+     * When: Remote ids are UUIDs, older ids without dashes, the fixed SYSTEM_HOST and SYSTEM_FOLDER
+     * ids, or missing or empty optional values
+     * Should: Accept them all
+     */
+    @Test
+    public void test_requireWellFormedIds_acceptsDotcmsIds() throws DotDataException {
+        final Map<String, Object> row = new HashMap<>();
+        row.put("empty", "");
+        row.put("missing", null);
+        for (final String id : List.of(UUID.randomUUID().toString(), "432399507d3763eac90d34209c056e01",
+                "SYSTEM_HOST", "SYSTEM_FOLDER")) {
+            row.put("remote_inode", id);
+            integrityChecker.requireWellFormedIds(List.of(row), "remote_inode", "empty", "missing");
+        }
+    }
+
+    /**
+     * Method to test: {@link AbstractIntegrityChecker#requireWellFormedIds(List, String...)}
+     * When: A remote id holds a quote, a dot, a space, a semicolon or a double quote
+     * Should: Refuse it with the checker, the column and the value in the message
+     */
+    @Test
+    public void test_requireWellFormedIds_refusesOtherCharacters() {
+        for (final String id : List.of("abc'def", "abc.def", "abc def", "abc;def", "abc\"def")) {
+            final DotDataException error = Assert.assertThrows(id, DotDataException.class,
+                    () -> integrityChecker.requireWellFormedIds(
+                            List.of(Map.of("remote_inode", id)), "remote_inode"));
+            Assert.assertTrue(error.getMessage(), error.getMessage().contains(IntegrityType.FOLDERS.name())
+                    && error.getMessage().contains("remote_inode") && error.getMessage().contains(id));
         }
     }
 

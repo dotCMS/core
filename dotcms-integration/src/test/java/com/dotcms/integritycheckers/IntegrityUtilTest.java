@@ -3,6 +3,7 @@ package com.dotcms.integritycheckers;
 import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.type.ContentType;
@@ -26,6 +27,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -477,16 +479,19 @@ public class IntegrityUtilTest  {
     /**
      * Method to test: {@link IntegrityUtil#fixConflicts(java.io.InputStream, String, IntegrityType)}
      * When: The uploaded roles-to-fix file carries a remote role id that contains a single quote
-     * Should: Apply the fix and store the remote id exactly as received, keeping the original role key
+     * Should: Refuse the fix with the id in the message, keep the local role as it was and write no
+     * row under the remote id
      */
     @Test
-    public void roleFixFromRemoteStoresRemoteIdAsData() throws Exception {
+    public void roleFixWithQuotedRemoteIdIsRefused() throws Exception {
         final Role role = new RoleDataGen().nextPersisted();
         final String endPointID = "endpointID_" + System.currentTimeMillis();
         final String remoteRoleId = "r'" + UUID.randomUUID().toString().replace("-", "").substring(0, 30);
 
         try {
-            fixRoleFromRemote(role, remoteRoleId, endPointID);
+            final DotDataException error = assertThrows(DotDataException.class,
+                    () -> fixRoleFromRemote(role, remoteRoleId, endPointID));
+            assertTrue(error.getMessage(), error.getMessage().contains(remoteRoleId));
 
             final List<Map<String, Object>> rows = new DotConnect()
                     .setSQL("select id, role_key from cms_role where id in (?, ?)")
@@ -494,7 +499,7 @@ public class IntegrityUtilTest  {
                     .addParam(role.getId())
                     .loadObjectResults();
             assertEquals(1, rows.size());
-            assertEquals(remoteRoleId, rows.get(0).get("id"));
+            assertEquals(role.getId(), rows.get(0).get("id"));
             assertEquals(role.getRoleKey(), rows.get(0).get("role_key"));
         } finally {
             new DotConnect().setSQL("delete from cms_role where id = ?").addParam(remoteRoleId).loadResult();
@@ -504,23 +509,33 @@ public class IntegrityUtilTest  {
 
     /**
      * Method to test: {@link IntegrityUtil#fixConflicts(java.io.InputStream, String, IntegrityType)}
-     * When: A role with a child role and a user is moved to a remote role id that contains a single
-     * quote
-     * Should: Leave the moved role loadable with its child, and deletable through the Role API once the
-     * child is gone, which reads the users of the role and its children by id
+     * When: A role with a child role and a user is moved to a well-formed remote role id: a UUID, an
+     * older id without dashes, or a fixed id made of letters and underscores
+     * Should: Store the remote id with the original role key, and leave the moved role loadable with
+     * its child and deletable through the Role API once the child is gone
      */
     @Test
-    public void roleFixWithQuotedRemoteIdKeepsRoleLoadableAndDeletable() throws Exception {
+    @UseDataProvider("wellFormedRemoteRoleIds")
+    public void roleFixWithWellFormedRemoteIdKeepsRoleLoadableAndDeletable(final String remoteRoleId)
+            throws Exception {
         final RoleAPI roleAPI = APILocator.getRoleAPI();
         final Role role = new RoleDataGen().nextPersisted();
         final Role child = new RoleDataGen().parent(role.getId()).nextPersisted();
         final User user = new UserDataGen().roles(role).nextPersisted();
         final String endPointID = "endpointID_" + System.currentTimeMillis();
-        final String remoteRoleId = "r'" + UUID.randomUUID().toString().replace("-", "").substring(0, 30);
 
         try {
             fixRoleFromRemote(role, remoteRoleId, endPointID);
             CacheLocator.getRoleCache().clearCache();
+
+            final List<Map<String, Object>> rows = new DotConnect()
+                    .setSQL("select id, role_key from cms_role where id in (?, ?)")
+                    .addParam(remoteRoleId)
+                    .addParam(role.getId())
+                    .loadObjectResults();
+            assertEquals(1, rows.size());
+            assertEquals(remoteRoleId, rows.get(0).get("id"));
+            assertEquals(role.getRoleKey(), rows.get(0).get("role_key"));
 
             final Role moved = roleAPI.loadRoleById(remoteRoleId);
             assertNotNull(moved);
@@ -542,6 +557,20 @@ public class IntegrityUtilTest  {
             CacheLocator.getRoleCache().clearCache();
             IntegrityUtil.completeDiscardConflicts(endPointID);
         }
+    }
+
+    /**
+     * Remote role ids of the shapes dotCMS uses: a UUID, an older id without dashes, and a fixed id
+     * made of letters and underscores.
+     */
+    @DataProvider
+    public static Object[] wellFormedRemoteRoleIds() {
+        final String suffix = UUID.randomUUID().toString().replace("-", "");
+        return new Object[]{
+                UUID.randomUUID().toString(),
+                suffix,
+                "LEGACY_ROLE_" + suffix.substring(0, 20)
+        };
     }
 
     /**
@@ -574,18 +603,18 @@ public class IntegrityUtilTest  {
 
     /**
      * Method to test: {@link IntegrityUtil#fixConflicts(String, IntegrityType)}
-     * When: A content type conflict carries a remote inode that contains a single quote, and the type
-     * has a contentlet and is the default file type of a folder
+     * When: A content type conflict carries a remote inode, and the type has a contentlet and is the
+     * default file type of a folder
      * Should: Move the content type, the contentlet's type (column and JSON) and the folder's default
-     * file type to the remote inode, stored exactly as received
+     * file type to the remote inode
      */
     @Test
-    public void contentTypeFixStoresRemoteInodeAsData() throws Exception {
+    public void contentTypeFixMovesReferencesToRemoteInode() throws Exception {
         final ContentType contentType = new ContentTypeDataGen().nextPersisted();
         final Contentlet contentlet = new ContentletDataGen(contentType).nextPersisted();
         final Folder folder = new FolderDataGen().defaultFileType(contentType.inode()).nextPersisted();
         final String endPointID = "endpointID_" + System.currentTimeMillis();
-        final String remoteInode = "s'" + UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+        final String remoteInode = UUID.randomUUID().toString();
 
         new DotConnect()
                 .setSQL("insert into structures_ir (velocity_name, local_inode, remote_inode, endpoint_id) values (?,?,?,?)")

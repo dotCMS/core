@@ -33,8 +33,38 @@ import java.util.regex.Pattern;
  */
 public abstract class AbstractIntegrityChecker implements IntegrityChecker {
 
-    /** Characters an end point id may contain, since it becomes part of a table name. */
-    private static final Pattern TABLE_NAME_PART = Pattern.compile("[A-Za-z0-9_-]+");
+    /**
+     * Characters a dotCMS id may contain: UUIDs, older ids without dashes and fixed ids such as
+     * {@code SYSTEM_HOST} or {@code SYSTEM_FOLDER} all fit. End point ids follow the same rule, since
+     * they become part of a table name.
+     */
+    private static final Pattern WELL_FORMED_ID = Pattern.compile("[A-Za-z0-9_-]+");
+
+    /**
+     * Checks the ids a fix is about to write locally. The remote ids in the results table come from
+     * the end point's data, so each one must be a well-formed dotCMS id before any fix statement
+     * runs; other code builds statements and queries from stored ids. Missing or empty values are
+     * allowed, since some columns, such as a remote live inode, are optional.
+     *
+     * @param rows the results rows the fix will apply
+     * @param columns the columns of each row that hold remote ids
+     * @throws DotDataException when a value holds any character other than letters, digits, '-' and '_'
+     */
+    protected void requireWellFormedIds(final List<Map<String, Object>> rows, final String... columns)
+            throws DotDataException {
+        for (final Map<String, Object> row : rows) {
+            for (final String column : columns) {
+                final Object value = row.get(column);
+                if (value != null && !value.toString().isEmpty()
+                        && !WELL_FORMED_ID.matcher(value.toString()).matches()) {
+                    throw new DotDataException(String.format(
+                            "The %s integrity fix was not applied: %s '%s' from the end point can only"
+                                    + " contain letters, digits, '-' and '_'",
+                            getIntegrityType(), column, value));
+                }
+            }
+        }
+    }
 
     /**
      * Tells whether the given table has at least one row matching the where clause. The table name
@@ -105,7 +135,7 @@ public abstract class AbstractIntegrityChecker implements IntegrityChecker {
             return null;
         }
 
-        if (!TABLE_NAME_PART.matcher(endpointId).matches()) {
+        if (!WELL_FORMED_ID.matcher(endpointId).matches()) {
             throw new IllegalArgumentException("End point id '" + endpointId
                     + "' can only contain letters, digits, '-' and '_'");
         }

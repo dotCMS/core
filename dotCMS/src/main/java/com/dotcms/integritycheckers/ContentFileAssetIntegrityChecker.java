@@ -75,6 +75,14 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
         }
     }
 
+    /**
+     * Moves each conflicting local file asset to the identifier and inodes the end point uses for it.
+     * The remote ids are checked before anything is changed.
+     *
+     * @param key the end point the conflicts were recorded for
+     * @throws DotDataException when a remote id is not well formed or a statement fails
+     * @throws DotSecurityException when the content cannot be reindexed
+     */
     @Override
     public void executeFix(final String key) throws DotDataException, DotSecurityException {
         DotConnect dc = new DotConnect();
@@ -87,6 +95,7 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
         dc.setSQL(getResultsQuery);
         dc.addParam(key);
         List<Map<String, Object>> results = dc.loadObjectResults();
+        requireWellFormedIds(results, "remote_identifier", "remote_working_inode", "remote_live_inode");
 
         // Generate counter to know how many version are for each identifier
         // with conflicts

@@ -37,6 +37,7 @@ import java.util.UUID;
 import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -349,26 +350,25 @@ public class HostIntegrityCheckerTest extends IntegrationTestBase {
     /**
      * Method to test: {@link HostIntegrityChecker#executeFix(String)}
      * When: A site conflict carries a remote working inode that contains a single quote
-     * Should: Move the site to the remote inode, stored exactly as received
+     * Should: Refuse the fix with the inode in the message, keep the site's contentlet row and write
+     * nothing under the remote inode or identifier
      * @throws Exception
      */
     @Test
-    public void test_executeFix_storesRemoteInodeAsData() throws Exception {
+    public void test_executeFix_refusesQuotedRemoteInode() throws Exception {
         final Host newSite = new SiteDataGen().nextPersisted();
         final String remoteInode = "h'" + UUID.randomUUID().toString().replace("-", "").substring(0, 30);
         final String remoteIdentifier = introduceConflict(newSite, endpointId, remoteInode);
 
         try {
-            new IntegrityUtil().fixConflicts(endpointId, IntegrityType.HOSTS);
+            final DotDataException error = Assert.assertThrows(DotDataException.class,
+                    () -> new IntegrityUtil().fixConflicts(endpointId, IntegrityType.HOSTS));
+            assertTrue(error.getMessage(), error.getMessage().contains(remoteInode));
 
-            final List<Map<String, Object>> rows = new DotConnect()
-                    .setSQL("SELECT inode, identifier FROM contentlet WHERE inode IN (?, ?)")
-                    .addParam(remoteInode)
-                    .addParam(newSite.getInode())
-                    .loadObjectResults();
-            assertEquals(1, rows.size());
-            assertEquals(remoteInode, rows.get(0).get("inode"));
-            assertEquals(remoteIdentifier, rows.get(0).get("identifier"));
+            assertEquals(newSite.getIdentifier(), identifierOfInode(newSite.getInode()));
+            assertNull(identifierOfInode(remoteInode));
+            assertTrue(new DotConnect().setSQL("SELECT 1 FROM identifier WHERE id = ?")
+                    .addParam(remoteIdentifier).loadObjectResults().isEmpty());
         } finally {
             integrityChecker.discardConflicts(endpointId);
             new DotConnect().setSQL("DELETE FROM contentlet_version_info WHERE working_inode = ?")
