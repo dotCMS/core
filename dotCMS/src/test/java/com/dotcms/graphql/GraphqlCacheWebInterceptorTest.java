@@ -6,6 +6,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
@@ -15,9 +16,11 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.mock.request.DotCMSMockRequest;
+import com.dotcms.mock.response.MockHttpWriterCaptureResponse;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.UserAPI;
@@ -29,6 +32,7 @@ import java.util.Optional;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
 import org.mockito.MockedConstruction;
 import org.mockito.MockedStatic;
@@ -99,6 +103,88 @@ public class GraphqlCacheWebInterceptorTest {
             verify(request, never()).getReader();
             assertEquals(body, request.getReader().readLine());
         }
+    }
+
+    /**
+     * A request whose session is due to renew its login cookie is not answered from the cache, so
+     * it reaches AutoLoginFilter, where the renewal happens. It is still authenticated and marked
+     * as uncached, so its response is not stored either.
+     */
+    @Test
+    public void dueLoginCookieRenewalSkipsTheCache() throws Exception {
+        final GraphQLCache cache = mock(GraphQLCache.class);
+        final LicenseManager license = mock(LicenseManager.class);
+        when(license.isEnterprise()).thenReturn(true);
+        final DotCMSMockRequest request = dueRenewalRequest();
+        when(cache.get(anyString())).thenReturn(Optional.of("{\"data\":\"cached\"}"));
+
+        try (MockedStatic<CacheLocator> caches = mockStatic(CacheLocator.class);
+             MockedStatic<LicenseManager> licenses = mockStatic(LicenseManager.class);
+             MockedConstruction<DotGraphQLContextBuilder> contexts = mockConstruction(
+                     DotGraphQLContextBuilder.class)) {
+            caches.when(CacheLocator::getGraphQLCache).thenReturn(cache);
+            licenses.when(LicenseManager::getInstance).thenReturn(license);
+
+            final Result result = new GraphqlCacheWebInterceptor().intercept(request,
+                    mock(HttpServletResponse.class));
+
+            assertFalse(Result.SKIP_NO_CHAIN == result);
+            verify(cache, never()).get(anyString());
+            verify(contexts.constructed().get(0)).build(any(HttpServletRequest.class),
+                    any(HttpServletResponse.class));
+            assertEquals(Boolean.TRUE, request.getAttribute(GraphqlCacheWebInterceptor.GRAPHQL_BYPASS_CACHE));
+            assertTrue(request.getAttribute(GraphqlCacheWebInterceptor.GRAPHQL_CACHE_KEY) instanceof String);
+        }
+    }
+
+    /**
+     * A credentialed request with {@code dotcachettl=-1} still removes its cache entry when it is
+     * also due to renew the login cookie, and its response is not stored.
+     */
+    @Test
+    public void dueLoginCookieRenewal_stillInvalidatesTheEntry() throws Exception {
+        final GraphQLCache cache = mock(GraphQLCache.class);
+        final LicenseManager license = mock(LicenseManager.class);
+        when(license.isEnterprise()).thenReturn(true);
+        final DotCMSMockRequest request = dueRenewalRequest();
+        request.addHeader("dotcachettl", "-1");
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        when(response.getStatus()).thenReturn(HttpServletResponse.SC_OK);
+        when(response.getWriter()).thenReturn(new PrintWriter(new StringWriter()));
+
+        try (MockedStatic<CacheLocator> caches = mockStatic(CacheLocator.class);
+             MockedStatic<LicenseManager> licenses = mockStatic(LicenseManager.class);
+             MockedConstruction<DotGraphQLContextBuilder> contexts = mockConstruction(
+                     DotGraphQLContextBuilder.class)) {
+            caches.when(CacheLocator::getGraphQLCache).thenReturn(cache);
+            licenses.when(LicenseManager::getInstance).thenReturn(license);
+            final GraphqlCacheWebInterceptor interceptor = new GraphqlCacheWebInterceptor();
+
+            final Result result = interceptor.intercept(request, response);
+            final String key = (String) request.getAttribute(GraphqlCacheWebInterceptor.GRAPHQL_CACHE_KEY);
+            assertEquals(Boolean.TRUE, request.getAttribute(GraphqlCacheWebInterceptor.GRAPHQL_CACHE_CREDENTIALED));
+            ((MockHttpWriterCaptureResponse) result.getResponse()).writer.write("{\"data\":{\"content\":[]}}");
+            interceptor.afterIntercept(result.getRequest(), result.getResponse());
+
+            verify(cache).remove(key);
+            verify(cache, never()).put(anyString(), anyString(), anyLong());
+            verify(cache, never()).put(anyString(), anyString());
+        }
+    }
+
+    /**
+     * A GraphQL POST from a logged-in session whose login cookie renewal is due.
+     */
+    private static DotCMSMockRequest dueRenewalRequest() {
+        final DotCMSMockRequest request = spy(new DotCMSMockRequest());
+        request.setMethod("POST");
+        request.setContent("{\"query\":\"{ content { title } }\"}");
+        final HttpSession session = mock(HttpSession.class);
+        when(session.getAttribute(WebKeys.USER_ID)).thenReturn("session-user");
+        when(session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT))
+                .thenReturn(System.currentTimeMillis() - 1_000L);
+        when(request.getSession(false)).thenReturn(session);
+        return request;
     }
 
     /**
