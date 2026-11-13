@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.velocity.util.introspection.SecureIntrospectorImpl;
 
 /**
@@ -294,17 +293,13 @@ public class SortTool
      */
     protected static Comparable getComparable(Object object, String property)
     {
-        if (SecureIntrospectorImpl.isRestrictedPropertyPath(object, property))
-        {
-            throw new IllegalArgumentException("The property '" + property + "' cannot be used to sort");
-        }
         try
         {
         	if(object instanceof ContentMap){
         		ContentMap cm = (ContentMap) object;
         		return (Comparable)cm.get(property);
         	}
-            return (Comparable)PropertyUtils.getProperty(object, property);
+            return (Comparable)SecureIntrospectorImpl.readPropertyPath(object, property);
         }
         catch (Exception e)
         {

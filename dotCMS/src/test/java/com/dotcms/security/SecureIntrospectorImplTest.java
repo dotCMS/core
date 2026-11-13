@@ -1,5 +1,6 @@
 package com.dotcms.security;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -281,10 +282,10 @@ public class SecureIntrospectorImplTest {
 
     /**
      * Template helpers that resolve a property path by reflection refuse a path that reads the company key at any
-     * step, and still resolve every other path.
+     * step, and still read every other path.
      */
     @Test
-    public void property_paths_through_the_company_key_are_restricted() {
+    public void property_paths_through_the_company_key_are_refused() throws Exception {
         final Company company = new Company("sample.company");
         company.setName("Sample Company");
         company.setKeyObj(new SecretKeySpec("0123456789abcdef".getBytes(StandardCharsets.UTF_8), "AES"));
@@ -292,14 +293,24 @@ public class SecureIntrospectorImplTest {
         holder.put("company", company);
         holder.put("key", "a map value");
 
-        assertTrue(SecureIntrospectorImpl.isRestrictedPropertyPath(company, "key"));
-        assertTrue(SecureIntrospectorImpl.isRestrictedPropertyPath(company, "key.bytes[0]"));
-        assertTrue(SecureIntrospectorImpl.isRestrictedPropertyPath(company, "keyObj.encoded[0]"));
-        assertTrue(SecureIntrospectorImpl.isRestrictedPropertyPath(holder, "company.key.bytes[0]"));
-        assertFalse(SecureIntrospectorImpl.isRestrictedPropertyPath(company, "name"));
-        assertFalse(SecureIntrospectorImpl.isRestrictedPropertyPath(company, "keyDigest"));
-        assertFalse(SecureIntrospectorImpl.isRestrictedPropertyPath(holder, "key"));
-        assertFalse(SecureIntrospectorImpl.isRestrictedPropertyPath(holder, "company.name"));
+        assertRefused(company, "key");
+        assertRefused(company, "key.bytes[0]");
+        assertRefused(company, "keyObj.encoded[0]");
+        assertRefused(holder, "company.key.bytes[0]");
+        assertEquals("Sample Company", SecureIntrospectorImpl.readPropertyPath(company, "name"));
+        assertEquals(company.getKeyDigest(), SecureIntrospectorImpl.readPropertyPath(company, "keyDigest"));
+        assertEquals("a map value", SecureIntrospectorImpl.readPropertyPath(holder, "key"));
+        assertEquals("Sample Company", SecureIntrospectorImpl.readPropertyPath(holder, "company.name"));
+    }
+
+    private void assertRefused(final Object bean, final String path) throws Exception {
+        try {
+            SecureIntrospectorImpl.readPropertyPath(bean, path);
+        } catch (final SecureIntrospectorImpl.RestrictedPropertyException e) {
+            return;
+        }
+        // The value is not printed, so a failure does not write part of a key to the build log
+        throw new AssertionError("the path " + path + " must be refused");
     }
 
     /**

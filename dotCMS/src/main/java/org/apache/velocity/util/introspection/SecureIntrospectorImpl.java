@@ -60,6 +60,7 @@ import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.model.CompanyModel;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.commons.beanutils.BeanUtilsBean;
+import org.apache.commons.beanutils.NestedNullException;
 import org.apache.commons.beanutils.expression.Resolver;
 
 /**
@@ -594,33 +595,56 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
     }
 
     /**
-     * Tells whether a property path reads the company key at any step. Template helpers that resolve a path by
-     * reflection, such as {@code $math.getTotal} and {@code $sorter.sort}, never go through this introspector, so
-     * they call this before they read the path. The path is walked step by step the way {@link PropertyUtils}
-     * resolves it, and a step whose getter is one of {@link #COMPANY_KEY_ACCESSORS} on a company restricts the
-     * whole path.
+     * Reads a property path the way {@link PropertyUtils#getProperty(Object, String)} does, but refuses a path that
+     * reads the company key at any step. Template helpers that resolve a path by reflection, such as
+     * {@code $math.getTotal} and {@code $sorter.sort}, never go through this introspector, so they read paths with
+     * this method instead. Each step is checked and read once.
      *
      * @param bean the object the path starts from
      * @param path the property path, in {@link PropertyUtils} syntax (for example {@code item.price} or
      *             {@code items[0].name})
-     * @return {@code true} if the path reads the company key (deny), {@code false} otherwise
+     * @return the value at the end of the path
+     * @throws RestrictedPropertyException if a step of the path reads the company key
+     * @throws Exception if the path cannot be read, as {@link PropertyUtils#getProperty(Object, String)} reports it
      */
-    public static boolean isRestrictedPropertyPath(final Object bean, final String path)
+    public static Object readPropertyPath(final Object bean, final String path) throws Exception
     {
         final Resolver resolver = BeanUtilsBean.getInstance().getPropertyUtils().getResolver();
         Object current = bean;
         String remaining = path;
-        while (current != null && remaining != null && !remaining.isEmpty())
+        while (remaining != null && !remaining.isEmpty())
         {
+            if (current == null)
+            {
+                throw new NestedNullException("Null value in the property path '" + path + "'");
+            }
             final String step = resolver.next(remaining);
             if (readsCompanyKey(current, resolver.getProperty(step)))
             {
-                return true;
+                throw new RestrictedPropertyException(path);
             }
-            current = readStep(current, step);
+            current = PropertyUtils.getProperty(current, step);
             remaining = resolver.remove(remaining);
         }
-        return false;
+        return current;
+    }
+
+    /**
+     * Thrown by {@link #readPropertyPath(Object, String)} when a path reads the company key.
+     */
+    public static class RestrictedPropertyException extends IllegalArgumentException
+    {
+        private static final long serialVersionUID = 1L;
+
+        /**
+         * Creates the exception for a refused path.
+         *
+         * @param path the path that was refused
+         */
+        public RestrictedPropertyException(final String path)
+        {
+            super("The property path '" + path + "' cannot be read from a template");
+        }
     }
 
     /**
@@ -645,25 +669,6 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
         catch (Exception e)
         {
             return false;
-        }
-    }
-
-    /**
-     * Reads one step of a property path, or returns {@code null} when it cannot be read, which ends the walk.
-     *
-     * @param bean the object the step is read from
-     * @param step one step of the path, with its index or key if it has one
-     * @return the value of the step, or {@code null}
-     */
-    private static Object readStep(final Object bean, final String step)
-    {
-        try
-        {
-            return PropertyUtils.getProperty(bean, step);
-        }
-        catch (Exception e)
-        {
-            return null;
         }
     }
 

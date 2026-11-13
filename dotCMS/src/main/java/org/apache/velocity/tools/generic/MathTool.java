@@ -19,7 +19,6 @@ package org.apache.velocity.tools.generic;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.velocity.util.introspection.SecureIntrospectorImpl;
 
 /**
@@ -595,12 +594,7 @@ public class MathTool
             Number first = null;
             for (Iterator i = collection.iterator(); i.hasNext();)
             {
-                final Object item = i.next();
-                if (SecureIntrospectorImpl.isRestrictedPropertyPath(item, field))
-                {
-                    return null;
-                }
-                Object property = PropertyUtils.getProperty(item, field);
+                Object property = SecureIntrospectorImpl.readPropertyPath(i.next(), field);
                 Number value = toNumber(property);
                 if (first == null)
                 {

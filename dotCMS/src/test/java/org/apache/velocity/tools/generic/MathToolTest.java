@@ -45,4 +45,42 @@ class MathToolTest {
         assertEquals(5, new MathTool().getTotal(
                 List.of(Map.of("item", Map.of("price", 2)), Map.of("item", Map.of("price", 3))), "item.price"));
     }
+
+    /**
+     * Method to test: {@link MathTool#getTotal(java.util.Collection, String)}.
+     * Given scenario: a template totals a property whose getter counts how often it is called.
+     * Expected result: the getter runs once per item, so checking the path does not read it a second time.
+     */
+    @Test
+    void getTotal_readsEachPropertyOnce() {
+        final Counted first = new Counted(2);
+        final Counted second = new Counted(3);
+
+        assertEquals(5, new MathTool().getTotal(List.of(first, second), "price"));
+        assertEquals(1, first.reads);
+        assertEquals(1, second.reads);
+    }
+
+    /**
+     * A bean that counts the calls to its getter.
+     */
+    public static class Counted {
+
+        private final int price;
+        private int reads;
+
+        Counted(final int price) {
+            this.price = price;
+        }
+
+        /**
+         * Returns the price and counts the call.
+         *
+         * @return the price
+         */
+        public int getPrice() {
+            reads++;
+            return price;
+        }
+    }
 }
