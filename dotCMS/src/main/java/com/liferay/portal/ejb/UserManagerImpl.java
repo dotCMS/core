@@ -532,7 +532,9 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
     }
 
     /**
-     * Authenticates the user based on their e-mail or user ID.
+     * Authenticates the user based on their e-mail or user ID. When no account matches the login, the password is
+     * still checked, against a placeholder hash, so that the login does the same password hashing work as one with a
+     * wrong password.
      *
      * @param companyId      The ID of the company that the user belongs to.
      * @param login          The identification mechanism: The user e-mail, or the user ID.
@@ -553,6 +555,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         this.validateInputData(login, password, byEmailAddress);
         final User user = this.findUser(companyId, login, byEmailAddress);
         if (null == user) {
+            checkPasswordWithoutAccount(password);
             this.delayRequest(1);
             return Authenticator.DNE;
         }
@@ -593,6 +596,50 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             this.processFailedLogin(user, login, companyId, byEmailAddress, attempt, false);
         }
         return authResult;
+    }
+
+    /**
+     * Runs the password hash verifier for a login that matches no account, against {@link PlaceholderHash}, so the
+     * login costs the same as checking a stored password. The result is ignored: such a login always fails.
+     *
+     * @param password The password typed by the user.
+     */
+    private static void checkPasswordWithoutAccount(final String password) {
+        final String placeholder = PlaceholderHash.VALUE;
+        if (null == placeholder) {
+            return;
+        }
+        try {
+            PasswordFactoryProxy.authPassword(password, placeholder);
+        } catch (final PasswordException | RuntimeException e) {
+            // This check only evens out the work done; it must never turn a refused login into an error
+            Logger.debug(UserManagerImpl.class, "Unable to check a password for a login with no account", e);
+        }
+    }
+
+    /**
+     * Holds the hash of a random secret that is never kept anywhere, made once with the current password hashing
+     * settings the first time a login matches no account. No password matches it.
+     */
+    private static final class PlaceholderHash {
+
+        private static final String VALUE = create();
+
+        /**
+         * Creates the placeholder hash.
+         *
+         * @return The hash, or {@code null} if it cannot be created; logins with no account then skip the check until
+         * the next restart.
+         */
+        private static String create() {
+            try {
+                return PasswordFactoryProxy.generateRandomHash();
+            } catch (final PasswordException | RuntimeException e) {
+                Logger.error(UserManagerImpl.class, "Unable to prepare the placeholder password hash; logins with no "
+                        + "matching account skip the password check until the next restart", e);
+                return null;
+            }
+        }
     }
 
     /**
