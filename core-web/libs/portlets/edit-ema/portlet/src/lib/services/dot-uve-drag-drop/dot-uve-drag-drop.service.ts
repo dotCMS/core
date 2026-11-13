@@ -3,7 +3,7 @@ import { fromEvent } from 'rxjs';
 import { Injectable, inject, DestroyRef, ElementRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { filter } from 'rxjs/operators';
+import { filter, take } from 'rxjs/operators';
 
 import { WINDOW, isEqual } from '@dotcms/utils';
 
@@ -102,6 +102,20 @@ export class DotUveDragDropService {
             this.iframeMessenger.scrollInsideIframe(direction);
         };
 
+        // The `dragend` already handled. A drag source still in the document sends the same
+        // event to its own listener and then to `window`; the drag ends once.
+        let handledDragEnd: Event | null = null;
+
+        const endDrag = (event: Event) => {
+            if (event === handledDragEnd) {
+                return;
+            }
+
+            handledDragEnd = event;
+            stopScrolling();
+            handlers.onDragEnd();
+        };
+
         // Drag start
         fromEvent(this.window, 'dragstart')
             .pipe(takeUntilDestroyed(this.destroyRef))
@@ -118,6 +132,15 @@ export class DotUveDragDropService {
 
                 if (!data) {
                     return;
+                }
+
+                // A move drag starts on the handle in `dot-uve-contentlet-tools`, which is
+                // removed once the editor is DRAGGING. Its `dragend` then fires on a node outside
+                // the document and never reaches `window`, so the end is heard on the source too.
+                if (event.target) {
+                    fromEvent(event.target, 'dragend')
+                        .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+                        .subscribe(endDrag);
                 }
 
                 // Flush bounds at drag start. `setEditorDragItem` is deferred to
@@ -161,10 +184,7 @@ export class DotUveDragDropService {
         // Drag end
         fromEvent(this.window, 'dragend')
             .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe(() => {
-                stopScrolling();
-                handlers.onDragEnd();
-            });
+            .subscribe(endDrag);
 
         // Drag over
         fromEvent(this.window, 'dragover')
@@ -213,9 +233,10 @@ export class DotUveDragDropService {
             .subscribe(() => {
                 const dragItem = uveStore.editorDragItem();
 
-                // A drag from the editor comes back or ends with dragend, so it keeps its
-                // scroll, its drag item and its drop targets while the pointer is outside the
-                // app window. A file from the desktop gets no dragend, so it stops here.
+                // A drag from the editor comes back, or ends with a `dragend` heard on its drag
+                // source (even after the source left the document) or on `window`, so it keeps
+                // its scroll, its drag item and its drop targets while the pointer is outside the
+                // app window. A file from the desktop gets no `dragend`, so it stops here.
                 if (dragItem && !isEqual(dragItem, TEMPORAL_DRAG_ITEM)) {
                     return;
                 }
