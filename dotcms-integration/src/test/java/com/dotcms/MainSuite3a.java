@@ -135,6 +135,7 @@ import org.junit.runners.Suite;
         PublisherQueueJobTest.class,
         ContentToStringUtilTest.class,
     com.dotcms.enterprise.publishing.remote.BundleTrustedListRoundTripTest.class,
+    com.dotcms.rest.CMSConfigResourceIntegrationTest.class,
         CacheResourceIntegrationTest.class,
     com.dotmarketing.portlets.contentlet.action.ImportContentletsActionTest.class,
         InodeExistenceCheckIntegrationTest.class,

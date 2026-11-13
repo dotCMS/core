@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.company;
 
+import com.dotcms.company.CompanyLogoPath;
 import com.dotcms.rest.api.Validated;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -194,13 +195,13 @@ public class CompanyBasicInfoForm extends Validated {
         // Logo paths must be dotAsset references (matches the read-side filter in
         // CompanyConfigHelper.toView). backgroundImage follows isAcceptedBackgroundImage, applied
         // in CompanyConfigHelper.saveBasicInfo because it also accepts the stored value.
-        if (UtilMethods.isSet(loginScreenLogo) && !loginScreenLogo.startsWith("/dA")) {
+        if (UtilMethods.isSet(loginScreenLogo) && !CompanyLogoPath.isValid(loginScreenLogo)) {
             throw new BadRequestException(
-                    "loginScreenLogo must be a dotAsset path starting with /dA");
+                    "loginScreenLogo must be a dotAsset path starting with /dA/");
         }
-        if (UtilMethods.isSet(navBarLogo) && !navBarLogo.startsWith("/dA")) {
+        if (UtilMethods.isSet(navBarLogo) && !CompanyLogoPath.isValid(navBarLogo)) {
             throw new BadRequestException(
-                    "navBarLogo must be a dotAsset path starting with /dA");
+                    "navBarLogo must be a dotAsset path starting with /dA/");
         }
     }
 
@@ -224,8 +225,18 @@ public class CompanyBasicInfoForm extends Validated {
         }
     }
 
+    /**
+     * Tells whether a value is a hex color: {@code #} followed by 3, 4, 6 or 8 hex digits.
+     *
+     * @param value the value to check, may be {@code null}
+     * @return {@code true} if the value is a hex color
+     */
+    public static boolean isHexColor(final String value) {
+        return value != null && HEX_COLOR_PATTERN.matcher(value).matches();
+    }
+
     private static void validateHexColor(final String field, final String value) {
-        if (!HEX_COLOR_PATTERN.matcher(value).matches()) {
+        if (!isHexColor(value)) {
             throw new BadRequestException(
                     field + " must be a valid hex color (e.g. #FF0000)");
         }
