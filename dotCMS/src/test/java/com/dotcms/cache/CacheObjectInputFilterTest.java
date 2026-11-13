@@ -173,7 +173,9 @@ class CacheObjectInputFilterTest {
         final Map<String, String> map = (Map<String, String>) create.invoke(null);
         map.put("k", "v");
         final byte[] forged = serialize(map);
-        // writeObject writes the entry count as a 4-byte block (0x77 0x04) before the entries
+        // writeObject writes the entry count as a 4-byte block (0x77 0x04) before the entries.
+        // This relies on how the current Guava lays out a CompactHashMap on the wire: if a later
+        // Guava changes that framing, the assertTrue below fails and this pattern needs updating.
         final byte[] count = {0x77, 0x04, 0, 0, 0, 1};
         final int at = indexOf(forged, count);
         assertTrue(at >= 0, "entry count not found in the serialized map");
