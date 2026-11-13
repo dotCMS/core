@@ -43,11 +43,12 @@ on:
         type: string
         default: ''
 
-# Write runs and dry runs queue separately: a newly queued run replaces a pending one in the same
-# group, and a dry run must never replace a pending write. (Replacing a pending write with a newer
-# one is fine: every run syncs all pages from main.)
+# A newly queued run replaces a pending one in the same group, so only full write runs (merges,
+# unfiltered manual runs) share a group: replacing one of those with a newer one loses nothing.
+# Dry runs and page-filtered writes queue on their own. If a filtered write overlaps a full one, a
+# page both try to publish fails in one of them (the action is pinned to the version it checked).
 concurrency:
-  group: publish-readme-docs-${{ inputs.dry_run && 'dry-run' || 'write' }}
+  group: publish-readme-docs-${{ inputs.dry_run && 'dry-run' || inputs.pages && 'filtered-write' || 'write' }}
   cancel-in-progress: false
 
 permissions:
@@ -191,16 +192,19 @@ jobs:
               seen, bundle = set(before), None
               deadline = time.time() + PUSH_TIMEOUT
               while time.time() < deadline:
-                  for b in recent_bundles():
-                      if bundle and b["bundleId"] == bundle["bundleId"]:
-                          bundle = b  # refresh status
-                      elif not bundle and b["bundleId"] not in seen:
-                          status, assets = call("GET", f"/api/bundle/{b['bundleId']}/assets")
-                          if status != 200:
-                              continue  # look again on the next pass
-                          seen.add(b["bundleId"])
-                          if any(a.get("asset") == ident for a in assets):
-                              bundle = b
+                  try:
+                      for b in recent_bundles():
+                          if bundle and b["bundleId"] == bundle["bundleId"]:
+                              bundle = b  # refresh status
+                          elif not bundle and b["bundleId"] not in seen:
+                              status, assets = call("GET", f"/api/bundle/{b['bundleId']}/assets")
+                              if status != 200:
+                                  continue  # look again on the next pass
+                              seen.add(b["bundleId"])
+                              if any(a.get("asset") == ident for a in assets):
+                                  bundle = b
+                  except (RuntimeError, OSError):
+                      pass  # queue unreadable this pass; production is still checked below
                   if bundle:
                       if bundle["status"] in ("SUCCESS", "SUCCESS_WITH_WARNINGS"):
                           return bundle["bundleId"]
