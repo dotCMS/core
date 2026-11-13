@@ -26,6 +26,8 @@ import javax.servlet.http.HttpSession;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotcms.rendering.velocity.viewtools.VelocitySessionWrapper;
 import com.dotmarketing.util.Config;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.CompanyModel;
 import org.apache.velocity.util.introspection.SecureIntrospectorImpl;
 import org.junit.Test;
 
@@ -257,6 +259,21 @@ public class SecureIntrospectorImplTest {
         assertDenied(VelocitySessionWrapper.class, "getServletContext");
         assertDeniedIfPresent("org.apache.catalina.connector.RequestFacade", "getServletContext");
         assertDeniedIfPresent("org.apache.catalina.session.StandardSessionFacade", "getServletContext");
+    }
+
+    /**
+     * The company key is only for server code: a template can read a company's other values, including the key
+     * digest, but not the key itself, whichever way it got hold of the company.
+     */
+    @Test
+    public void company_key_accessors_are_denied() {
+        assertDenied(Company.class, "getKey");
+        assertDenied(Company.class, "getKeyObj");
+        assertDenied(CompanyModel.class, "getKey");
+        assertAllowed(Company.class, "getKeyDigest");
+        assertAllowed(Company.class, "getEmailAddress");
+        assertAllowed(Company.class, "getName");
+        assertAllowed(Company.class, "getPortalURL");
     }
 
     /**

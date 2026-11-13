@@ -173,7 +173,7 @@ public class Company extends CompanyModel {
 	 */
 	@JsonIgnore
 	public String getBackgroundColor() {
-		return colorSource().getSize();
+		return protectedCopyOrSelf().getSize();
 	}
 
 	/**
@@ -183,7 +183,7 @@ public class Company extends CompanyModel {
 	 */
 	@JsonIgnore
 	public String getPrimaryColor() {
-		return colorSource().getType();
+		return protectedCopyOrSelf().getType();
 	}
 
 	/**
@@ -193,7 +193,7 @@ public class Company extends CompanyModel {
 	 */
 	@JsonIgnore
 	public String getSecondaryColor() {
-		return colorSource().getStreet();
+		return protectedCopyOrSelf().getStreet();
 	}
 
 	/**
@@ -202,7 +202,7 @@ public class Company extends CompanyModel {
 	 *
 	 * @return the {@link Company} that holds the colors
 	 */
-	private Company colorSource() {
+	private Company protectedCopyOrSelf() {
 		return _company != null ? _company : this;
 	}
 	

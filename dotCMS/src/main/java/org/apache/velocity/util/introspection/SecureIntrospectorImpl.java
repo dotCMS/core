@@ -55,6 +55,7 @@ import javax.servlet.http.PushBuilder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.liferay.portal.model.CompanyModel;
 
 /**
  * <p>Prevent "dangerous" classloader/reflection related calls.  Use this
@@ -183,6 +184,11 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
         }
 
         if (isRequestValueMutator(clazz, methodName))
+        {
+            return false;
+        }
+
+        if (isCompanyKeyAccessor(clazz, methodName))
         {
             return false;
         }
@@ -559,6 +565,26 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
         }
 
         return false;
+    }
+
+    /**
+     * Methods that return the company key. The key is only for server code, so a template that gets hold of a
+     * company, through {@code $UtilMethods}, a request attribute or any other value, can read everything on it
+     * except the key. The key digest stays readable: it cannot be turned back into the key.
+     */
+    private static final Set<String> COMPANY_KEY_ACCESSORS = Set.of("getKey", "getKeyObj");
+
+    /**
+     * Determines whether the call is one of {@link #COMPANY_KEY_ACCESSORS} on a company.
+     *
+     * @param clazz class a method is about to be resolved on
+     * @param methodName name of the method to be called
+     * @return {@code true} if the call is restricted (deny), {@code false} otherwise
+     */
+    static boolean isCompanyKeyAccessor(final Class<?> clazz, final String methodName)
+    {
+        return clazz != null && methodName != null && CompanyModel.class.isAssignableFrom(clazz)
+                && COMPANY_KEY_ACCESSORS.contains(methodName);
     }
 
     /**

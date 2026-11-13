@@ -12,6 +12,8 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.util.WebKeys;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -57,6 +59,24 @@ public class SecureIntrospectorRenderTest {
         final Context ctx = VelocityUtil.getBasicContext();
         ctx.put("greeting", "Hello World");
         assertEquals("HELLO WORLD", VelocityUtil.eval("$greeting.toUpperCase()", ctx).trim());
+    }
+
+    /**
+     * A template that gets hold of the company, here through {@code $UtilMethods}, which every context carries,
+     * must not read its key in any form, while the company's other values still render.
+     */
+    @Test
+    public void company_key_does_not_render() throws Exception {
+        final Company company = APILocator.getCompanyAPI().getDefaultCompany();
+        assertTrue("the default company holds a key", company.getKey() != null);
+
+        final Context ctx = VelocityUtil.getBasicContext();
+        final String rendered = VelocityUtil.eval("#set($c = $UtilMethods.getDefaultCompany())"
+                + "[$!c.key][$!c.getKey()][$!c.keyObj][$!c.emailAddress]", ctx).trim();
+
+        // Compared without printing the output, so a failure does not write a key to the build log
+        assertTrue("the template must not read the key",
+                ("[][][][" + company.getEmailAddress() + "]").equals(rendered));
     }
 
     /**
