@@ -391,12 +391,18 @@ export function withEditor() {
                         // containers moves everything. Each report shifts by the change since
                         // the last one, which adds up to the change since the bounds were taken.
                         const delta = scrollY - store.editorScrollY();
+                        // The page reports each frame twice with the same scrollY. New bounds
+                        // make the dropzone resolve its target again, so a zero shift keeps them.
+                        const editorBounds =
+                            delta === 0
+                                ? store.editorBounds()
+                                : store
+                                      .editorBounds()
+                                      .map((container) => ({ ...container, y: container.y - delta }));
 
                         patchState(store, {
                             editorScrollY: scrollY,
-                            editorBounds: store
-                                .editorBounds()
-                                .map((container) => ({ ...container, y: container.y - delta })),
+                            editorBounds,
                             editorContentArea: null,
                             editorState: EDITOR_STATE.DRAGGING
                         });

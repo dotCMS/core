@@ -97,6 +97,13 @@ export class EmaPageDropzoneComponent {
     protected readonly $pointerPosition = signal<Record<string, string>>(POINTER_INITIAL_POSITION);
 
     /**
+     * The payloads read on the last recompute, by the JSON the page sent. The bounds are rebuilt
+     * on every scroll report while the page auto-scrolls, with the same payloads: each is read
+     * once. Rebuilt from the current containers each time, so it holds only what is on the page.
+     */
+    #readPayloads = new Map<string, ClientData>();
+
+    /**
      * The containers and contentlets to draw, with their payloads read. The contentlet being
      * moved is marked as the source, only in the container it is moved from: the same contentlet
      * can sit in another container too.
@@ -107,8 +114,22 @@ export class EmaPageDropzoneComponent {
             draggedPayload?.type === 'contentlet' && draggedPayload.move
                 ? draggedPayload.item
                 : null;
+        const previous = this.#readPayloads;
+        const current = new Map<string, ClientData>();
 
-        return this.containers().map((container) => {
+        /** The page sends payloads as JSON; tests and older paths may hand the object itself. */
+        const readPayload = (payload: unknown): ClientData => {
+            if (typeof payload !== 'string') {
+                return payload as ClientData;
+            }
+
+            const read = current.get(payload) ?? previous.get(payload) ?? JSON.parse(payload);
+            current.set(payload, read);
+
+            return read;
+        };
+
+        const containers = this.containers().map((container) => {
             const payload = readPayload(container.payload);
             const isSourceContainer =
                 !!source?.container &&
@@ -134,6 +155,10 @@ export class EmaPageDropzoneComponent {
                 })
             };
         });
+
+        this.#readPayloads = current;
+
+        return containers;
     });
 
     constructor() {
@@ -302,11 +327,6 @@ export class EmaPageDropzoneComponent {
     }
 }
 
-/** The page sends payloads as JSON; tests and older paths may hand the object itself. */
-function readPayload(payload: unknown): ClientData {
-    return typeof payload === 'string' ? JSON.parse(payload) : (payload as ClientData);
-}
-
 function writePayload(payload: unknown): string {
     return typeof payload === 'string' ? payload : JSON.stringify(payload ?? null);
 }
@@ -354,15 +374,27 @@ function leavesOrderUnchanged(
     });
 }
 
+/**
+ * Whether two targets are the same place: the same kind, in the same container, and for a
+ * contentlet the same contentlet and side. Payloads are compared by what they name, not by
+ * reference, so a payload read again is still the same target.
+ */
 function isSameTarget(a: EmaDropTarget, b: EmaDropTarget): boolean {
     if (a.kind === 'none' || b.kind === 'none') {
         return a.kind === b.kind;
     }
 
-    return (
-        a.kind === b.kind &&
-        a.payload === b.payload &&
-        (a.kind === 'contentlet' ? a.position : undefined) ===
-            (b.kind === 'contentlet' ? b.position : undefined)
-    );
+    const sameContainer =
+        a.payload?.container?.identifier === b.payload?.container?.identifier &&
+        a.payload?.container?.uuid === b.payload?.container?.uuid;
+
+    if (a.kind === 'contentlet' && b.kind === 'contentlet') {
+        return (
+            sameContainer &&
+            a.payload?.contentlet?.identifier === b.payload?.contentlet?.identifier &&
+            a.position === b.position
+        );
+    }
+
+    return a.kind === b.kind && sameContainer;
 }
