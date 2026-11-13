@@ -13,6 +13,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.commons.codec.digest.DigestUtils;
 import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.Initialized;
@@ -77,16 +78,22 @@ public class RequestCostPublisher {
         return MAPPER.writeValueAsString(snapshot);
     }
 
+    /** Captures a non-secret destination identity alongside the immutable window. */
+    public String destinationFingerprint() {
+        final String url = getUrl();
+        return UtilMethods.isSet(url) ? DigestUtils.sha256Hex(url) : null;
+    }
+
     /**
-     * Durably admits an already-frozen body. A false result leaves the captured counters owned
-     * by the monitor; this method never submits HTTP work or evicts older snapshots.
+     * Durably admits an already-frozen body only for its captured destination. A false result
+     * leaves captured counters owned by the monitor, including when the configured URL changes.
      */
-    public boolean publish(final String payload) {
+    public boolean publish(final String destination, final String payload) {
         if (!isEnabled()) {
             return false;
         }
         final String url = getUrl();
-        if (!validDestination(url)) {
+        if (!validDestination(url) || !DigestUtils.sha256Hex(url).equals(destination)) {
             return false;
         }
         try {
@@ -143,7 +150,7 @@ public class RequestCostPublisher {
                     .setMaxResponseBytes(64 * 1024)
                     .build();
             // doString logs error bodies; discard them instead so credentials cannot be echoed.
-            call.doOut(OutputStream.nullOutputStream());
+            call.doOutUnmetered(OutputStream.nullOutputStream());
             return call.isProcessed() ? call.response() : -1;
         } catch (final Exception e) {
             Logger.warnEvery(getClass(), "REQUEST_COST_PUSH_TRANSPORT",
@@ -155,6 +162,9 @@ public class RequestCostPublisher {
 
     /** Refuses URL-embedded credentials that the shared HTTP client's own diagnostics could log. */
     private boolean validDestination(final String url) {
+        if (!UtilMethods.isSet(url)) {
+            return false;
+        }
         try {
             final URI uri = URI.create(url);
             if (uri.getHost() != null && ("https".equalsIgnoreCase(uri.getScheme())

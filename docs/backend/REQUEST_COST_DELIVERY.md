@@ -10,7 +10,7 @@ URLs with userinfo, query strings or fragments are refused: the shared HTTP clie
 
 Clearing either setting pauses new publication and delivery without deleting pending records. Restore the settings to resume. If a candidate was already frozen but not durably admitted, its normal local summary is deferred rather than retiring/discarding that accounting; a rate-limited status reports retained counters. Request headers remain unaffected. Credentials are read at send time, so correcting/rotating a token does not rewrite snapshot bodies or store credentials in the outbox.
 
-The outbox stores only a SHA-256 destination digest, not a URL or token. Changing the URL does **not** redirect existing records to a different receiver: records for the previous URL remain paused. Restore that exact URL with an authorized current credential to drain them. Do not delete them as part of configuration cleanup.
+The frozen candidate and outbox store only a SHA-256 destination digest, not a URL or token. The digest is captured with the original body, before admission is attempted. Changing the URL does **not** redirect either an unadmitted candidate or existing records to a different receiver: work for the previous URL remains paused. Restore that exact URL with an authorized current credential to drain them. Do not delete them as part of configuration cleanup.
 
 ## Bounds and failure behavior
 
@@ -26,7 +26,7 @@ The outbox stores only a SHA-256 destination digest, not a URL or token. Changin
 
 If persistence is unavailable/full, the monitor retains its frozen candidate and does not subtract captured counters. Subsequent increments remain in its counters; after admission recovers, the following snapshot reports the actual extended window duration. These uncommitted in-memory values are not crash-durable. Neither HTTP retry nor database admission runs on customer request threads.
 
-Idle windows still publish; successful admissions do not wait for delivery. A failed record's delayed retry does not prevent other due records from being selected. Polling/recovery starts at application initialization, independently of new traffic.
+Telemetry delivery uses the shared HTTP client's unmetered streaming path, so neither successful sends nor retries add customer request/job tokens; ordinary outbound application calls remain metered. Idle windows still publish; successful admissions do not wait for delivery. A failed record's delayed retry does not prevent other due records from being selected. Polling/recovery starts at application initialization, independently of new traffic.
 
 ## Observe and recover
 
@@ -52,7 +52,7 @@ GROUP BY destination;
 
 ## Upgrade, rollback and limits
 
-Fresh-install SQL and the additive `Task261112CreateRequestCostOutbox` migration create the same table/index. Existing content/accounting tables and receiver schemas are unchanged.
+Fresh-install SQL and the additive `Task261112CreateRequestCostOutbox` migration create the same table/index. A failed schema metadata lookup aborts the migration instead of recording it as skipped/completed. Existing content/accounting tables and receiver schemas are unchanged.
 
 Older binaries do not read or purge this table but also cannot drain it. Prefer draining before rollback; otherwise preserve the table and resume with a compatible sender later. Do not drop pending data or restore an older application database over it without accounting for that loss.
 

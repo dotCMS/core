@@ -56,8 +56,8 @@ public class RequestCostApiImpl implements RequestCostApi {
     private PendingWindow pendingWindow;
 
     /** One frozen candidate bounds memory while persistence is unavailable or at capacity. */
-    private record PendingWindow(RequestCostSnapshot snapshot, String payload, long requestUnits,
-                                 long jobUnits, long capturedNanos) {}
+    private record PendingWindow(RequestCostSnapshot snapshot, String payload, String destination,
+                                 long requestUnits, long jobUnits, long capturedNanos) {}
     // make the request cost points look like $$
     private double requestCostDenominator = 1.0d;
 
@@ -126,6 +126,10 @@ public class RequestCostApiImpl implements RequestCostApi {
                 final int windowSeconds = (int) Math.max(1L, Math.min(Integer.MAX_VALUE,
                         Math.round((capturedNanos - windowStartedNanos) / 1_000_000_000d)));
                 final boolean publishing = publisher.isEnabled();
+                final String destination = publishing ? publisher.destinationFingerprint() : null;
+                if (publishing && destination == null) {
+                    return;
+                }
                 final RequestCostSnapshot snapshot = new RequestCostSnapshot(
                         publishing ? nullSafe(Try.of(ClusterFactory::getClusterId).getOrNull()) : "unknown",
                         publishing ? nullSafe(Try.of(ConfigUtils::getServerId).getOrNull()) : "unknown",
@@ -136,11 +140,12 @@ public class RequestCostApiImpl implements RequestCostApi {
                         lifetimeRequests == 0 ? 0 : lifetimeTokens / lifetimeRequests,
                         jobTokens, Math.round(jobCostTotal.sum() / getRequestCostDenominator()));
                 final String payload = publishing ? RequestCostPublisher.serializeSnapshot(snapshot) : null;
-                pendingWindow = new PendingWindow(snapshot, payload, requestUnits, jobUnits, capturedNanos);
+                pendingWindow = new PendingWindow(snapshot, payload, destination,
+                        requestUnits, jobUnits, capturedNanos);
             }
 
             final PendingWindow window = pendingWindow;
-            if (window.payload() != null && !publisher.publish(window.payload())) {
+            if (window.payload() != null && !publisher.publish(window.destination(), window.payload())) {
                 Logger.infoEvery(getClass(), "Request cost window awaiting durable admission; counters retained, "
                         + "currentRequests=" + requestCountForWindow.sum(), 10 * 60 * 1000);
                 return;

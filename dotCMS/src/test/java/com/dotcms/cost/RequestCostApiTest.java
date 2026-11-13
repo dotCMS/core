@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.times;
@@ -315,7 +316,8 @@ public class RequestCostApiTest extends UnitTestBase {
         final RequestCostApiImpl impl = (RequestCostApiImpl) requestCostApi;
         final RequestCostPublisher publisher = mock(RequestCostPublisher.class);
         when(publisher.isEnabled()).thenReturn(true);
-        when(publisher.publish(anyString()))
+        when(publisher.destinationFingerprint()).thenReturn("original-destination", "changed-destination");
+        when(publisher.publish(anyString(), anyString()))
                 .thenReturn(false, true);
         final Field field = RequestCostApiImpl.class.getDeclaredField("publisher");
         field.setAccessible(true);
@@ -341,7 +343,8 @@ public class RequestCostApiTest extends UnitTestBase {
 
         final ArgumentCaptor<String> bodies =
                 ArgumentCaptor.forClass(String.class);
-        verify(publisher, times(2)).publish(bodies.capture());
+        verify(publisher, times(2)).publish(eq("original-destination"), bodies.capture());
+        verify(publisher, times(1)).destinationFingerprint();
         assertEquals(bodies.getAllValues().get(0), bodies.getAllValues().get(1));
         assertEquals(4, impl.requestCountForWindow.sum());
         assertEquals(40, impl.requestCostForWindow.sum());
@@ -352,7 +355,8 @@ public class RequestCostApiTest extends UnitTestBase {
         final RequestCostApiImpl impl = (RequestCostApiImpl) requestCostApi;
         final RequestCostPublisher publisher = mock(RequestCostPublisher.class);
         when(publisher.isEnabled()).thenReturn(true);
-        when(publisher.publish(anyString()))
+        when(publisher.destinationFingerprint()).thenReturn("destination");
+        when(publisher.publish(anyString(), anyString()))
                 .thenAnswer(invocation -> {
                     impl.requestCountForWindow.add(3);
                     impl.requestCostForWindow.add(30);

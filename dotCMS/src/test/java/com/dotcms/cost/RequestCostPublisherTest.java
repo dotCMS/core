@@ -84,7 +84,7 @@ public class RequestCostPublisherTest extends UnitTestBase {
         // Given — both keys absent
 
         // When / Then — must not throw, must not submit anything to the executor
-        assertFalse(publisher.publish("{}"));
+        assertFalse(publisher.publish(publisher.destinationFingerprint(), "{}"));
     }
 
     /**
@@ -153,7 +153,7 @@ public class RequestCostPublisherTest extends UnitTestBase {
         org.mockito.Mockito.when(call.isProcessed()).thenReturn(true);
         org.mockito.Mockito.when(call.response()).thenReturn(201);
         org.mockito.Mockito.doThrow(new java.io.IOException("partial response"))
-                .when(call).doOut(org.mockito.ArgumentMatchers.any(java.io.OutputStream.class));
+                .when(call).doOutUnmetered(org.mockito.ArgumentMatchers.any(java.io.OutputStream.class));
 
         try (org.mockito.MockedStatic<com.dotcms.http.CircuitBreakerUrl> http =
                      org.mockito.Mockito.mockStatic(com.dotcms.http.CircuitBreakerUrl.class)) {
@@ -163,6 +163,8 @@ public class RequestCostPublisherTest extends UnitTestBase {
             post.setAccessible(true);
             assertEquals(-1, post.invoke(publisher, "https://example.com/cost", "{\"frozen\":1}"));
         }
+        org.mockito.Mockito.verify(call, org.mockito.Mockito.never())
+                .doOut(org.mockito.ArgumentMatchers.any(java.io.OutputStream.class));
         org.mockito.Mockito.verify(builder).setRawData("{\"frozen\":1}");
         org.mockito.Mockito.verify(builder).setRaiseFailsafe(true);
         org.mockito.Mockito.verify(builder).setAllowRedirects(false);
@@ -176,8 +178,23 @@ public class RequestCostPublisherTest extends UnitTestBase {
                 "https://example.com/cost?token=secret",
                 "https://example.com/cost#secret")) {
             Config.setProperty("REQUEST_COST_PUSH_URL", url);
-            assertFalse(publisher.publish("{}"));
+            assertFalse(publisher.publish(publisher.destinationFingerprint(), "{}"));
         }
+    }
+
+    @Test
+    public void test_changedDestinationDoesNotAdmitFrozenWindow() throws Exception {
+        Config.setProperty("REQUEST_COST_PUSH_URL", "https://original.example.com/cost");
+        Config.setProperty("REQUEST_COST_PUSH_TOKEN", "current-token");
+        final String destination = publisher.destinationFingerprint();
+        final RequestCostOutbox outbox = org.mockito.Mockito.mock(RequestCostOutbox.class);
+        final java.lang.reflect.Field field = RequestCostPublisher.class.getDeclaredField("outbox");
+        field.setAccessible(true);
+        field.set(publisher, outbox);
+        Config.setProperty("REQUEST_COST_PUSH_URL", "https://other.example.com/cost");
+
+        assertFalse(publisher.publish(destination, "{}"));
+        org.mockito.Mockito.verifyNoInteractions(outbox);
     }
 
 }

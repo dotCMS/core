@@ -3,7 +3,7 @@ package com.dotmarketing.startup.runonce;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.startup.AbstractJDBCStartupTask;
-import com.dotmarketing.util.Logger;
+import com.dotmarketing.exception.DotRuntimeException;
 import java.sql.SQLException;
 
 /** Adds isolated durable telemetry storage without changing existing accounting or content tables. */
@@ -16,8 +16,7 @@ public class Task261112CreateRequestCostOutbox extends AbstractJDBCStartupTask {
             return !new DotDatabaseMetaData().tableExists(
                     DbConnectionFactory.getConnection(), "request_cost_outbox");
         } catch (final SQLException e) {
-            Logger.error(getClass(), "Cannot inspect request-cost outbox schema", e);
-            return false;
+            throw new DotRuntimeException("Cannot inspect request-cost outbox schema", e);
         }
     }
 
