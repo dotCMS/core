@@ -9,6 +9,8 @@ import io.vavr.control.Try;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.stream.Collectors;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -394,25 +396,57 @@ public class IPUtils {
     public static InetAddress[] permittedAddresses(final InetAddress[] resolved, final AddressPolicy policy) {
 
         final InetAddress[] none = new InetAddress[0];
-        if (resolved == null || resolved.length == 0) {
-            return none;
-        }
-        final List<InetAddress> candidates = new ArrayList<>(resolved.length);
-        for (final InetAddress address : resolved) {
-            if (address == null) {
-                return none;
-            }
-            if (address instanceof Inet6Address && !policy.ipv6Allowed()) {
-                continue;
-            }
-            candidates.add(address);
-        }
+        final List<InetAddress> candidates = candidateAddresses(resolved, policy);
         for (final InetAddress address : candidates) {
             if (isInternalAddress(address, policy)) {
                 return none;
             }
         }
         return candidates.toArray(none);
+    }
+
+    /**
+     * The addresses of a host that a client may consider under the configured policy, before
+     * any of them is checked: IPv6 addresses are left out while {@code REMOTE_CALL_ALLOW_IPV6}
+     * is off, so a host with addresses in both families is reached over IPv4. A caller that
+     * checks each address itself, such as a socket factory, starts from this list so that it
+     * applies the same family rule as {@link #permittedAddresses(InetAddress[])}.
+     *
+     * @param resolved every address the host resolved to
+     * @return the addresses to consider, in the resolved order; empty when there is none, when
+     *         an entry is missing, or when the input is missing
+     */
+    public static List<InetAddress> candidateAddresses(final InetAddress[] resolved) {
+
+        if (disabledIpPrivateSubnet.get()) {
+            return resolved == null ? List.of() : Arrays.stream(resolved).filter(Objects::nonNull).collect(Collectors.toList());
+        }
+        return candidateAddresses(resolved, configuredPolicy.get());
+    }
+
+    /**
+     * Same as {@link #candidateAddresses(InetAddress[])} under the given policy.
+     *
+     * @param resolved every address the host resolved to
+     * @param policy   the policy to apply
+     * @return the addresses to consider, in the resolved order
+     */
+    public static List<InetAddress> candidateAddresses(final InetAddress[] resolved, final AddressPolicy policy) {
+
+        if (resolved == null || resolved.length == 0) {
+            return List.of();
+        }
+        final List<InetAddress> candidates = new ArrayList<>(resolved.length);
+        for (final InetAddress address : resolved) {
+            if (address == null) {
+                return List.of();
+            }
+            if (address instanceof Inet6Address && !policy.ipv6Allowed()) {
+                continue;
+            }
+            candidates.add(address);
+        }
+        return candidates;
     }
 
     /**

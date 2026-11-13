@@ -291,6 +291,22 @@ public class IPUtilsTest {
     }
 
     /**
+     * The candidate list applies the family rule only: an internal IPv4 address stays a
+     * candidate (the policy check comes later), IPv6 addresses are left out while IPv6 is off,
+     * and a missing entry or input leaves no candidate.
+     */
+    @Test
+    public void test_candidate_addresses_apply_the_family_rule_only() throws Exception {
+        final InetAddress[] dualStack = {address("2606:4700:4700::1111"), address("10.0.0.1"), address("1.1.1.1")};
+
+        assertEquals(List.of(address("10.0.0.1"), address("1.1.1.1")),
+                IPUtils.candidateAddresses(dualStack, policy(null, null, false)));
+        assertEquals(List.of(dualStack), IPUtils.candidateAddresses(dualStack, policy(null, null, true)));
+        assertEquals(List.of(), IPUtils.candidateAddresses(new InetAddress[]{address("1.1.1.1"), null}, policy(null, null, true)));
+        assertEquals(List.of(), IPUtils.candidateAddresses(null, policy(null, null, true)));
+    }
+
+    /**
      * A missing address, or a missing entry among a host's addresses, is refused: the check
      * fails closed rather than guessing.
      */
