@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.saml.Attributes;
@@ -20,6 +21,7 @@ import com.dotcms.saml.SamlName;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.security.EncryptorFactory;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -667,5 +669,145 @@ public class SAMLHelperTest extends IntegrationTestBase {
         Assert.assertNotNull(roleMappedKeys);
         Assert.assertEquals(1, roleMappedKeys.size());
         Assert.assertTrue(roleMappedKeys.contains("roleGroupKey"));
+    }
+
+    /** Key of the role that SAML sign-in used to create and assign on its own. */
+    private static final String SAML_USER_ROLE_KEY = "SAML User";
+
+    /**
+     * Signs a fresh active user in through {@link SAMLHelper#resolveUser(Attributes, IdentityProviderConfiguration)},
+     * the same path a SAML assertion takes, with the given role settings.
+     *
+     * @param buildRolesStrategy value of {@code build.roles}
+     * @param roleExtra          value of {@code role.extra}, or {@code null} to leave it unset
+     * @param enableBackend      value of the {@code enableBackend} optional property
+     * @param idpRoleKeys        role keys the IdP sends in the assertion (may be empty)
+     * @return the signed-in user
+     */
+    private User signIn(final String buildRolesStrategy, final String roleExtra,
+                        final boolean enableBackend, final String... idpRoleKeys) {
+
+        final IdentityProviderConfiguration identityProviderConfiguration = mock(IdentityProviderConfiguration.class);
+        final CompanyAPI companyAPI = mock(CompanyAPI.class);
+        final Company company = new Company();
+        company.setAuthType(Company.AUTH_TYPE_ID);
+        when(companyAPI.getDefaultCompany()).thenReturn(company);
+
+        when(identityProviderConfiguration.containsOptionalProperty("enableBackend")).thenReturn(enableBackend);
+        when(identityProviderConfiguration.getOptionalProperty("enableBackend")).thenReturn(enableBackend);
+
+        final SamlConfigurationService samlConfigurationService = mock(SamlConfigurationService.class);
+        SAMLHelper.setThirdPartySamlConfigurationService(samlConfigurationService);
+        when(samlConfigurationService.getConfigAsBoolean(identityProviderConfiguration,
+                SamlName.DOT_SAML_ALLOW_USER_SYNCHRONIZATION)).thenReturn(true);
+        when(samlConfigurationService.getConfigAsString(identityProviderConfiguration,
+                SamlName.DOTCMS_SAML_BUILD_ROLES)).thenReturn(buildRolesStrategy);
+        when(samlConfigurationService.getConfigAsString(identityProviderConfiguration,
+                SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE)).thenReturn(roleExtra);
+
+        final User existing = new UserDataGen().active(true).nextPersisted();
+        final Attributes attributes = new Attributes.Builder()
+                .firstName(existing.getFirstName()).lastName(existing.getLastName())
+                .email(existing.getEmailAddress()).nameID(testNameID(existing.getUserId()))
+                .addRoles(idpRoleKeys.length > 0).roles(idpRoleKeys).build();
+
+        final User user = new SAMLHelper(new MockSamlAuthenticationService(), companyAPI)
+                .resolveUser(attributes, identityProviderConfiguration);
+        Assert.assertEquals(existing.getUserId(), user.getUserId());
+        return user;
+    }
+
+    /** Whether the user holds the role with the given key; {@code false} when the role does not exist. */
+    private static boolean hasRole(final User user, final String roleKey) throws DotDataException {
+        final Role role = APILocator.getRoleAPI().loadRoleByKey(roleKey);
+        return null != role && APILocator.getRoleAPI().doesUserHaveRole(user, role);
+    }
+
+    /** Makes sure a {@code SAML User} role exists, creating a plain (non-system) one when missing. */
+    private static void ensureSamlUserRole() throws DotDataException {
+        if (null == APILocator.getRoleAPI().loadRoleByKey(SAML_USER_ROLE_KEY)) {
+            new RoleDataGen().name(SAML_USER_ROLE_KEY).key(SAML_USER_ROLE_KEY).nextPersisted();
+        }
+    }
+
+    /**
+     * Method to test: {@link SAMLHelper#resolveUser(Attributes, IdentityProviderConfiguration)}
+     * Given Scenario: strategy {@code all}, no {@code role.extra}, the IdP sends one existing role, and no
+     *                 {@code SAML User} role exists before the sign-in.
+     * ExpectedResult: the user gets the IdP role, the {@code SAML User} role is not created and not assigned.
+     */
+    @Test
+    public void test_signIn_all_withoutRoleExtra_doesNotCreateOrAssignSamlUserRole() throws DotDataException {
+
+        final Role existingSamlUserRole = APILocator.getRoleAPI().loadRoleByKey(SAML_USER_ROLE_KEY);
+        if (null != existingSamlUserRole && !existingSamlUserRole.isSystem()) {
+            RoleDataGen.remove(existingSamlUserRole, false); // left behind by another test in this class
+        }
+        final boolean roleExistedBefore = null != APILocator.getRoleAPI().loadRoleByKey(SAML_USER_ROLE_KEY);
+
+        final String idpRoleKey = "saml-idp-role-" + UUID.randomUUID();
+        new RoleDataGen().name(idpRoleKey).key(idpRoleKey).nextPersisted();
+
+        final User user = signIn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_ALL_VALUE, null, false, idpRoleKey);
+
+        Assert.assertTrue("IdP role must still be assigned", hasRole(user, idpRoleKey));
+        Assert.assertFalse("SAML User role must not be assigned", hasRole(user, SAML_USER_ROLE_KEY));
+        if (!roleExistedBefore) {
+            Assert.assertNull("SAML User role must not be created",
+                    APILocator.getRoleAPI().loadRoleByKey(SAML_USER_ROLE_KEY));
+        }
+    }
+
+    /**
+     * Method to test: {@link SAMLHelper#resolveUser(Attributes, IdentityProviderConfiguration)}
+     * Given Scenario: strategies {@code idp} and {@code staticonly} with no {@code role.extra}, and {@code idp}
+     *                 with {@code role.extra = SAML User}; the role exists.
+     * ExpectedResult: none of these sign-ins assign {@code SAML User} ({@code idp} does not apply {@code role.extra}).
+     */
+    @Test
+    public void test_signIn_idpAndStaticOnly_withoutRoleExtra_doNotAssignSamlUserRole() throws DotDataException {
+
+        ensureSamlUserRole();
+
+        Assert.assertFalse(hasRole(signIn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_IDP_VALUE, null, false),
+                SAML_USER_ROLE_KEY));
+        Assert.assertFalse(hasRole(signIn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_STATIC_ONLY_VALUE, null, false),
+                SAML_USER_ROLE_KEY));
+        Assert.assertFalse("idp must not apply role.extra",
+                hasRole(signIn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_IDP_VALUE, SAML_USER_ROLE_KEY, false),
+                        SAML_USER_ROLE_KEY));
+    }
+
+    /**
+     * Method to test: {@link SAMLHelper#resolveUser(Attributes, IdentityProviderConfiguration)}
+     * Given Scenario: {@code role.extra = SAML User} with the role present, under {@code all}, {@code staticonly}
+     *                 and {@code staticadd}.
+     * ExpectedResult: each sign-in assigns {@code SAML User} through {@code role.extra}.
+     */
+    @Test
+    public void test_signIn_withRoleExtra_assignsSamlUserRole() throws DotDataException {
+
+        ensureSamlUserRole();
+
+        for (final String strategy : List.of(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_ALL_VALUE,
+                DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_STATIC_ONLY_VALUE,
+                DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_STATIC_ADD_VALUE)) {
+            Assert.assertTrue("role.extra must assign SAML User under " + strategy,
+                    hasRole(signIn(strategy, SAML_USER_ROLE_KEY, false), SAML_USER_ROLE_KEY));
+        }
+    }
+
+    /**
+     * Method to test: {@link SAMLHelper#resolveUser(Attributes, IdentityProviderConfiguration)}
+     * Given Scenario: strategy {@code all} with {@code enableBackend=true}, then with it off.
+     * ExpectedResult: the back-end role is assigned only when {@code enableBackend} is on.
+     */
+    @Test
+    public void test_signIn_enableBackend_assignsBackEndRole() throws DotDataException {
+
+        Assert.assertTrue(hasRole(signIn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_ALL_VALUE, null, true),
+                Role.DOTCMS_BACK_END_USER));
+        Assert.assertFalse(hasRole(signIn(DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_ALL_VALUE, null, false),
+                Role.DOTCMS_BACK_END_USER));
     }
 }

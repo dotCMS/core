@@ -38,16 +38,15 @@ public class DotSamlConstants {
 	public static final String DOT_SAML_AUTHENTICATION_SERVICE_CLASS_NAME = "authentication.service.classname";
 
 	/**
-	 * Optional key to configure the strategy to sync the roles from IDP to
-	 * DOTCMS Remove user from all roles, add to roles from IdP & saml_user_role
-	 * (if set) DOTCMS_SAML_BUILD_ROLES_ALL_VALUE = " all"; Remove user from all
-	 * roles, add to roles from IdP DOTCMS_SAML_BUILD_ROLES_IDP_VALUE = "idp";
-	 * Remove user from all roles, add to roles from saml_user_role (if set).
-	 * Ignore roles from IdP. DOTCMS_SAML_BUILD_ROLES_STATIC_ONLY_VALUE =
-	 * "staticonly; Do not alter existing user roles, add to roles from
-	 * saml_user_role (if set). Ignore roles from IdP.
-	 * DOTCMS_SAML_BUILD_ROLES_STATIC_ADD_VALUE = "staticadd;
-	 * DOTCMS_SAML_BUILD_ROLES_NONE_VALUE Do not alter user roles in any way
+	 * Optional key to configure how a SAML sign-in syncs the user's roles. "role.extra" below is
+	 * the comma-separated list of existing roles in {@code role.extra}.
+	 * <ul>
+	 * <li>{@code all}: remove all the user's roles, then add the IdP roles and the role.extra roles.</li>
+	 * <li>{@code idp}: remove all the user's roles, then add the IdP roles. role.extra is not applied.</li>
+	 * <li>{@code staticonly}: remove all the user's roles, then add the role.extra roles. IdP roles are ignored.</li>
+	 * <li>{@code staticadd}: keep the user's roles and add the role.extra roles. IdP roles are ignored.</li>
+	 * <li>{@code none}: do not change the user's roles.</li>
+	 * </ul>
 	 */
 
 	public static final String DOTCMS_SAML_BUILD_ROLES_ALL_VALUE = "all";
@@ -78,11 +77,6 @@ public class DotSamlConstants {
 	 * default logout path values
 	 */
 	public static final String DOT_SAML_LOGOUT_PATH_DEFAULT_VALUES = "/api/v1/logout,/c/portal/logout,/dotCMS/logout,/dotsaml/request/logout";
-
-	/**
-	 * Default SAML User role
-	 */
-	public static final String DOTCMS_SAML_USER_ROLE = "SAML User";
 
 	// defines the method to do the authentication, redirect by default
 	public static final String DOTCMS_SAML_AUTHN_PROTOCOL_BINDING_REDIRECT = "Http-Redirect";

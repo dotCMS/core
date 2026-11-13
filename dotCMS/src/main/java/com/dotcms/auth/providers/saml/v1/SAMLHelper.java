@@ -461,15 +461,24 @@ public class SAMLHelper {
         }
     }
 
+    /**
+     * Assigns the roles a SAML sign-in grants, after {@link #addRoles} has cleared the user's roles (unless the
+     * strategy is {@code staticadd}). The user gets the IdP roles (strategies {@code all} and {@code idp}), the
+     * back-end and front-end roles when {@code enableBackend} / {@code enableFrontend} are on, and the existing
+     * roles listed in {@code role.extra} (every strategy except {@code idp}). No role is created here, and no
+     * role is assigned unless one of these settings names it.
+     *
+     * @param user                          the signed-in user
+     * @param attributesBean                attributes from the assertion, including the IdP roles
+     * @param identityProviderConfiguration the SAML configuration of the site
+     * @param buildRolesStrategy            the {@code build.roles} strategy in use
+     * @throws DotDataException if a role cannot be loaded or assigned
+     */
     private void handleRoles(final User user, final Attributes attributesBean,
                              final IdentityProviderConfiguration identityProviderConfiguration,
                              final String buildRolesStrategy) throws DotDataException {
 
         this.addRolesFromIDP(user, attributesBean, identityProviderConfiguration, buildRolesStrategy);
-
-        // Add SAML User role
-        UserHelper.getInstance().addRole(user, DotSamlConstants.DOTCMS_SAML_USER_ROLE, true, true);
-        Logger.debug(this, ()->"Default SAML User role has been assigned");
 
         // System access roles based on enableBackend/enableFrontend config flags.
         // addRole dedupes against DOTCMS_SAML_OPTIONAL_USER_ROLE entries.
@@ -482,7 +491,7 @@ public class SAMLHelper {
             UserHelper.getInstance().addRole(user, Role.DOTCMS_FRONT_END_USER, false, false);
         }
 
-        // the only strategy that does not include the saml user role is the "idp"
+        // role.extra applies to every strategy except "idp", which takes its roles from the IdP alone
         if (!DotSamlConstants.DOTCMS_SAML_BUILD_ROLES_IDP_VALUE.equalsIgnoreCase(buildRolesStrategy)) {
             // Add DOTCMS_SAML_OPTIONAL_USER_ROLE
             if (this.getSamlConfigurationService().getConfigAsString(identityProviderConfiguration,
@@ -501,7 +510,7 @@ public class SAMLHelper {
             }
         } else {
 
-            Logger.info(this, "The build roles strategy is 'idp'. No saml_user_role has been added");
+            Logger.info(this, "The build roles strategy is 'idp'. The role.extra roles have not been added");
         }
     }
 
