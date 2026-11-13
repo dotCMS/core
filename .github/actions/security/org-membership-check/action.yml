@@ -28,6 +28,19 @@ runs:
 
         set +e  # Don't exit on error, we want to handle it gracefully
 
+        # A GitHub App's <name>[bot] login is never an org member, so allow-listed
+        # bot users are matched by numeric user ID, not by login string.
+        # 356409590 = dot-factory[bot]
+        allowed_bot_ids=" 356409590 "
+        user_id=$(gh api "users/${USERNAME}" --jq .id 2>/dev/null)
+        if [[ "$user_id" =~ ^[0-9]+$ && "$allowed_bot_ids" == *" ${user_id} "* ]]; then
+          echo "✅ User ${USERNAME} is an allow-listed bot (ID ${user_id})"
+          echo "is_member=true" >> $GITHUB_OUTPUT
+          echo "membership_status=member" >> $GITHUB_OUTPUT
+          echo "::notice::✅ AUTHORIZED: ${USERNAME} is an allow-listed bot"
+          exit 0
+        fi
+
         # Check organization membership using GitHub API
         #
         # API Behavior:
@@ -78,3 +91,4 @@ runs:
         fi
       env:
         GITHUB_TOKEN: ${{ github.token }}
+        USERNAME: ${{ inputs.username }}
