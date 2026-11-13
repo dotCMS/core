@@ -26,6 +26,7 @@ package com.dotcms.enterprise.de.qaware.heimdall;
 import com.dotcms.enterprise.de.qaware.heimdall.algorithm.HashAlgorithm;
 import com.dotcms.enterprise.de.qaware.heimdall.algorithm.HashAlgorithmRegistryImpl;
 import com.dotcms.enterprise.de.qaware.heimdall.algorithm.PBKDF2;
+import com.dotcms.enterprise.de.qaware.heimdall.algorithm.PBKDF2_256;
 import com.dotcms.enterprise.de.qaware.heimdall.config.ConfigCoderImpl;
 import com.dotcms.enterprise.de.qaware.heimdall.salt.SecureSaltProvider;
 
@@ -33,17 +34,19 @@ import com.dotcms.enterprise.de.qaware.heimdall.salt.SecureSaltProvider;
  * Factory to create an instance of {@link Password}.
  */
 public final class PasswordFactory {
-    /**
-     * PBKDF#2.
-     */
-    private static final HashAlgorithm PBKDF2 = new PBKDF2();
+    /** Profile used for writes until the reader-capable release is the rollback floor. */
+    private static final HashAlgorithm LEGACY_PBKDF2 = new PBKDF2();
 
-    /**
-     * Singleton instance.
-     */
-    private static Password password = new PasswordImpl(new SecureSaltProvider(), new ConfigCoderImpl(), new HashAlgorithmRegistryImpl(
-            PBKDF2
-    ), PBKDF2);
+    /** Future write profile registered now for 256-bit verification only. */
+    private static final HashAlgorithm CURRENT_PBKDF2 = new PBKDF2_256();
+
+    /** Activate a newer writer only after its reader is present in every rollback target. */
+    private static final HashAlgorithm WRITE_PROFILE = LEGACY_PBKDF2;
+
+    /** Singleton instance with additive readers and an independently selected writer. */
+    private static final Password password = new PasswordImpl(new SecureSaltProvider(),
+            new ConfigCoderImpl(),
+            new HashAlgorithmRegistryImpl(LEGACY_PBKDF2, CURRENT_PBKDF2), WRITE_PROFILE);
 
     /**
      * Static class - no instances allowed.
