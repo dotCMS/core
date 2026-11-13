@@ -1,4 +1,4 @@
-"""Reconcile the corpsites `EvergreenState` record with a Hub snapshot (`sync-site`)."""
+"""Reconcile the auth instance's `EvergreenState` record with a Hub snapshot (`sync-site`)."""
 from __future__ import annotations
 
 import json
@@ -9,8 +9,8 @@ from dataclasses import dataclass, field
 
 import requests
 
-from .client import CorpsitesClient
-from .publisher import AmbiguousMatchError
+from .client import CorpsitesClient, wait_for_prod
+from .publisher import AmbiguousMatchError, ParityError
 from .version import is_current_track
 
 log = logging.getLogger("changelog_publisher.sync")
@@ -29,6 +29,7 @@ class SyncResult:
     desired: dict
     current: dict
     missing_rows: dict[str, str] = field(default_factory=dict)
+    prod_current: dict | None = None  # prod's live record, when prod was compared
 
 
 def load_state_file(path: str) -> dict:
@@ -65,35 +66,82 @@ def diff_fields(current: dict, desired: dict) -> list[str]:
     return changed
 
 
-def reconcile(client: CorpsitesClient, hub: dict, *, apply: bool) -> SyncResult:
+def reconcile(
+    client: CorpsitesClient, hub: dict, *, apply: bool, prod: CorpsitesClient | None = None
+) -> SyncResult:
+    """Bring the record in line with Hub.
+
+    With a `prod` reader, prod is compared as well as auth: a push that failed earlier
+    leaves auth matching Hub but prod stale, and only reading prod notices that and
+    re-fires. Release rows are then checked on prod, and a write waits until it is live
+    there.
+    """
     hits = client.find_evergreen_state()
     if not hits:
         raise RuntimeError(
-            "EvergreenState record 'evergreen-state' not found on corpsites (prerequisite FR-044)"
+            "EvergreenState record 'evergreen-state' not found on the auth instance (prerequisite FR-044)"
         )
     if len(hits) > 1:
         raise AmbiguousMatchError("more than one 'evergreen-state' EvergreenState record")
     current = parse_record_state(hits[0].get("state"))
+    prod_current = current
+    if prod is not None:
+        # Duplicates and parity are judged on every prod version, working and live: an
+        # unpublished record under another identifier would still collide with the push,
+        # and a draft whose title changed would hide the live record from the working
+        # lookup. Versions are counted by identifier, since a draft over a live version is
+        # one record; the limit leaves room for that and a second record.
+        prod_hits = prod.find_evergreen_state(live=True, limit=10)
+        prod_ids = {h.get("identifier") for h in prod.find_evergreen_state(limit=10) + prod_hits}
+        if len(prod_ids) > 1:
+            raise AmbiguousMatchError("more than one 'evergreen-state' EvergreenState record on prod")
+        if prod_ids and prod_ids != {hits[0].get("identifier")}:
+            # Auth's record would reach prod as a second record, and every later sync would
+            # then fail as ambiguous.
+            raise ParityError(
+                "EvergreenState identifiers differ on auth and prod "
+                f"({hits[0].get('identifier')} vs {next(iter(prod_ids))}); "
+                "restore auth/prod parity"
+            )
+        # The comparison itself uses the live record: that is what visitors see.
+        prod_current = parse_record_state(prod_hits[0].get("state")) if prod_hits else {}
 
     desired: dict = {"tainted": hub["tainted"]}
     missing_rows: dict[str, str] = {}
+    # With prod in play, rows and the fallback both come from prod: keeping auth's value
+    # for a track whose row is missing could carry a version to prod that has no row there.
+    rows, fallback = (prod, prod_current) if prod is not None else (client, current)
     for t in TRACKS:
-        if client.has_release_row(hub[t]):
+        if rows.has_release_row(hub[t]):
             desired[t] = hub[t]
         else:
             missing_rows[t] = hub[t]
-            if t in current:
-                desired[t] = current[t]
+            if t in fallback:
+                desired[t] = fallback[t]
+            elif prod is not None:
+                # Nothing on prod to keep, and writing without the track would remove it
+                # from the site; wait for the row instead.
+                raise RuntimeError(
+                    f"cannot keep track {t}: {hub[t]} has no release row on prod "
+                    "and prod has no previous value for it"
+                )
 
-    fields = diff_fields(current, desired)
-    result = SyncResult("unchanged", fields, desired, current, missing_rows)
+    # One write fixes both sides, so the fields to report are the union of auth's and
+    # prod's differences, in the usual track order.
+    auth_fields = diff_fields(current, desired)
+    prod_fields = diff_fields(prod_current, desired) if prod is not None else []
+    fields = [f for f in (*TRACKS, "tainted") if f in auth_fields or f in prod_fields]
+    if prod_fields and not auth_fields:
+        log.info("auth matches but prod differs in %s; re-pushing", ",".join(prod_fields))
+    result = SyncResult("unchanged", fields, desired, current, missing_rows,
+                        prod_current if prod is not None else None)
     if not fields:
         return result
     if not apply:
         result.status = "would-update"
         return result
 
-    client.fire({
+    inode = client.fire({
         "contentType": "EvergreenState",
         "identifier": hits[0]["identifier"],
         "title": RECORD_TITLE,
@@ -106,17 +154,23 @@ def reconcile(client: CorpsitesClient, hub: dict, *, apply: bool) -> SyncResult:
         time.sleep(_READBACK_DELAY_SECONDS)
     else:
         print("warning: EvergreenState read-back did not match after publish", file=sys.stderr)
+    if prod is not None:
+        if not inode:
+            raise RuntimeError("fire response for EvergreenState had no inode; cannot confirm the push to prod")
+        wait_for_prod(lambda: prod.is_live(inode), "EvergreenState record")
     result.status = "updated"
     return result
 
 
-def sync_with_retries(client: CorpsitesClient, hub: dict) -> SyncResult:
+def sync_with_retries(
+    client: CorpsitesClient, hub: dict, *, prod: CorpsitesClient | None = None
+) -> SyncResult:
     attempts = len(_RETRY_DELAYS_SECONDS) + 1
     for i in range(1, attempts + 1):
         try:
-            return reconcile(client, hub, apply=True)
-        except AmbiguousMatchError:
-            raise  # duplicate record is a permanent data-integrity error, not transient
+            return reconcile(client, hub, apply=True, prod=prod)
+        except (AmbiguousMatchError, ParityError):
+            raise  # duplicates and parity breaks are permanent data-integrity errors, not transient
         except (requests.RequestException, RuntimeError) as exc:
             log.error("attempt %d/%d failed: %s", i, attempts, exc)
             if i == attempts:
