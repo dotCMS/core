@@ -43,8 +43,11 @@ on:
         type: string
         default: ''
 
+# Write runs and dry runs queue separately: a newly queued run replaces a pending one in the same
+# group, and a dry run must never replace a pending write. (Replacing a pending write with a newer
+# one is fine: every run syncs all pages from main.)
 concurrency:
-  group: publish-readme-docs
+  group: publish-readme-docs-${{ inputs.dry_run && 'dry-run' || 'write' }}
   cancel-in-progress: false
 
 permissions:
@@ -144,7 +147,8 @@ jobs:
               return text.strip() + "\n"
 
           def normalize(text):
-              return "\n".join(l.rstrip() for l in text.replace("\r\n", "\n").strip().split("\n"))
+              # Trailing spaces stay: two of them are a Markdown line break (dotCMS stores them as sent).
+              return text.replace("\r\n", "\n").strip("\n")
 
           def source_path(url):
               """Repo path from a readmeSource URL; None if the URL is not for this repo."""
@@ -205,7 +209,7 @@ jobs:
                   # Checked even before the bundle is found: the queue listing is only one page.
                   try:
                       on_prod = production_page(ident)
-                  except RuntimeError:
+                  except (RuntimeError, OSError):  # OSError: timeouts and connection errors
                       on_prod = None  # check again on the next pass
                   if on_prod and on_prod.get("inode") == inode:
                       return bundle["bundleId"] if bundle else "not found in the queue"
