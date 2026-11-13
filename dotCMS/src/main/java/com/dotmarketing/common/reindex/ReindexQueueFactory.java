@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
+import org.apache.commons.configuration.ConversionException;
 import org.apache.commons.lang.StringUtils;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -309,42 +310,109 @@ public class ReindexQueueFactory {
     }
 
 
+    /**
+     * Admits one batch using current configuration and membership, including prefetched work.
+     * Excluded entries leave only the local queue; their journal rows remain for eligible owners.
+     *
+     * @param recordsToReturn maximum distinct identifiers in the batch
+     * @return eligible entries, retaining the newest journal row for each identifier
+     * @throws DotDataException if membership or journal lookup fails
+     */
     protected Map<String, ReindexEntry> findContentToReindex(final int recordsToReturn)
             throws DotDataException {
-        Map<String, ReindexEntry> contentToIndex = new HashMap<>();
-
-        if (queue.isEmpty()) {
-            loadUpLocalQueue();
+        final ReindexPartition partition = readPartition();
+        if (partition == null) {
+            return Map.of();
         }
-
-        for (ReindexEntry entry; (entry = queue.poll()) != null; ) {
-            // One outcome per identifier per batch, resolved by row id rather than by the order
-            // the entries happened to be polled in. Two entries for the same identifier are
-            // successive statements about what the index should hold, and only the newest is
-            // true: a DELETE written after a REINDEX means the content is gone, so applying the
-            // REINDEX afterwards would re-add a document for content that no longer exists.
-            //
-            // The losing row is discarded rather than retried, and that is deliberate — it has
-            // been superseded, so re-applying it could only undo the outcome just applied. The
-            // ack drops it along with the winner (deleteReindexEntry bounds its sweep by
-            // id <= winner), which is also what stops the ack from reaching a row queued after
-            // this batch was loaded.
-            contentToIndex.merge(entry.getIdentToIndex(), entry,
-                    (existing, candidate) -> candidate.getId() > existing.getId()
-                            ? candidate : existing);
-            if (contentToIndex.size() >= recordsToReturn) {
-                while (entry.equals(queue.peek())) {
-                    // drain duplicate items
-                    queue.poll();
+        if (!partition.equals(lastPartition)) {
+            resetLastIdReindexed();
+            starvedSliceDetector = null;
+            bulkStarvedSliceDetector = null;
+            announcedTakeovers.clear();
+            announcedBulkTakeovers.clear();
+            lastPartition = partition;
+        }
+        final Map<String, ReindexEntry> contentToIndex = new HashMap<>();
+        boolean loaded = false;
+        for (int pass = 0; pass < 2; pass++) {
+            if (queue.isEmpty()) {
+                if (loaded) {
+                    break;
                 }
+                loadUpLocalQueue(partition);
+                loaded = true;
+            }
+            for (ReindexEntry entry; (entry = queue.poll()) != null; ) {
+                if (!partition.admits(entry)) {
+                    continue;
+                }
+                // Newest id wins regardless of priority/arrival order; acknowledgement removes
+                // only superseded rows up to that id, preserving later updates and deletes.
+                contentToIndex.merge(entry.getIdentToIndex(), entry,
+                        (existing, candidate) -> candidate.getId() > existing.getId()
+                                ? candidate : existing);
+                if (contentToIndex.size() >= recordsToReturn) {
+                    while (entry.equals(queue.peek())) {
+                        queue.poll();
+                    }
+                    break;
+                }
+            }
+            if (!contentToIndex.isEmpty() || loaded) {
                 break;
             }
+            // Stale prefetch containing only capped work must not hide normal work in the DB.
         }
-
         return contentToIndex;
     }
 
+    /** One batch's ownership snapshot; provider adapters retain the full server membership. */
+    private record ReindexPartition(List<String> servers, int myIndex, int bulkNodes,
+                                    int minPriority) {
+        /** Whether this node can admit this entry under the current priority cutoff. */
+        boolean admits(final ReindexEntry entry) {
+            return entry.getPriority() < minPriority || myIndex < bulkNodes;
+        }
+    }
+
+    private ReindexPartition lastPartition;
     private static long lastIdIndexed = 0;
+
+    /**
+     * Resolves both runtime settings once per batch; no setting is latched at JVM startup.
+     *
+     * @return the current ownership split, or null when this node has no eligible membership
+     * @throws DotDataException if cluster membership cannot be read
+     */
+    private ReindexPartition readPartition() throws DotDataException {
+        final int maximum = readWorkerSetting("MAX_REINDEXING_NODES", 2);
+        int minimum = readWorkerSetting("REINDEX_NODE_LIMIT_MIN_PRIORITY", 200);
+        if (minimum < 0) {
+            Logger.warnEvery(this.getClass(), "invalid-reindex-node-priority",
+                    "Negative REINDEX_NODE_LIMIT_MIN_PRIORITY; using 200", 60000);
+            minimum = 200;
+        }
+        final List<String> servers = APILocator.getServerAPI().getReindexingServers();
+        final int myIndex = servers == null ? -1
+                : servers.indexOf(APILocator.getServerAPI().readServerId());
+        if (myIndex < 0) {
+            Logger.warn(this.getClass(), "This node has no eligible reindex membership; waiting for heartbeat");
+            return null;
+        }
+        final int bulkNodes = maximum <= 0 ? servers.size() : Math.min(maximum, servers.size());
+        return new ReindexPartition(List.copyOf(servers), myIndex, bulkNodes, minimum);
+    }
+
+    /** Reads an integer setting without letting a malformed live value stop journal consumption. */
+    private int readWorkerSetting(final String key, final int defaultValue) {
+        try {
+            return Config.getIntProperty(key, defaultValue);
+        } catch (NumberFormatException | ConversionException e) {
+            Logger.warnEvery(this.getClass(), "invalid-reindex-setting-" + key,
+                    "Invalid " + key + "; using " + defaultValue, 60000);
+            return defaultValue;
+        }
+    }
 
     /**
      * Moves the journal cursor back to the start, so the next load reads every row this node owns
@@ -355,31 +423,40 @@ public class ReindexQueueFactory {
         lastIdIndexed = 0;
     }
 
+    /**
+     * Refills prefetch with all-node normal ownership and capped ownership for higher priorities.
+     *
+     * @param partition the configuration/membership snapshot used for this batch
+     * @throws DotDataException if the journal query fails
+     */
     @CloseDBIfOpened
-    private void loadUpLocalQueue() throws DotDataException {
-        List<String> reindexingServers = APILocator.getServerAPI().getReindexingServers();
-        if (reindexingServers == null || reindexingServers.size() == 0) {
-            Logger.warn(this.getClass(),
-                    "There are no servers in cluster - something is wrong with server heartbeat");
-            return;
-        }
-        int myIndex = reindexingServers.indexOf(APILocator.getServerAPI().readServerId());
+    private void loadUpLocalQueue(final ReindexPartition partition) throws DotDataException {
         final int priorityLevel = Priority.ERROR.dbValue();
-        DotConnect db = new DotConnect();
-
+        final DotConnect db = new DotConnect();
+        final String modulo = DbConnectionFactory.isMsSql() ? "id % ? = ?" : "MOD(id, ?) = ?";
+        final boolean limited = partition.bulkNodes() < partition.servers().size();
+        final String ownership = limited
+                ? "((priority < ? and " + modulo + ") or (priority >= ? and " + modulo + "))"
+                : modulo;
+        final String query = "from dist_reindex_journal where " + ownership
+                + " and priority <= ? and id > ? ORDER BY priority ASC";
         if (DbConnectionFactory.isOracle()) {
-            db.setSQL("select * from (select * from dist_reindex_journal where MOD(id, ?) = ?"
-                    + " and priority <= ? and id > ? ORDER BY priority ASC) where ROWNUM <= 2000");
+            db.setSQL("select * from (select * " + query + ") where ROWNUM <= 2000");
         } else if (DbConnectionFactory.isMsSql()) {
-            db.setSQL("select TOP 2000 * from dist_reindex_journal where id % ? = ?"
-                    + " and priority <= ? and id > ? ORDER BY priority ASC");
+            db.setSQL("select TOP 2000 * " + query);
         } else {
-            db.setSQL("select * from dist_reindex_journal where MOD(id, ?) = ?"
-                    + " and priority <= ? and id > ? ORDER BY priority ASC LIMIT 2000");
+            db.setSQL("select * " + query + " LIMIT 2000");
         }
-
-        db.addParam(reindexingServers.size());
-        db.addParam(myIndex);
+        if (limited) {
+            db.addParam(partition.minPriority());
+        }
+        db.addParam(partition.servers().size());
+        db.addParam(partition.myIndex());
+        if (limited) {
+            db.addParam(partition.minPriority());
+            db.addParam(partition.bulkNodes());
+            db.addParam(partition.myIndex() < partition.bulkNodes() ? partition.myIndex() : -1);
+        }
         db.addParam(priorityLevel);
         db.addParam(lastIdIndexed);
 
@@ -388,18 +465,23 @@ public class ReindexQueueFactory {
             lastIdIndexed = entry.getId();
             queue.add(entry);
         }
-
         if (queue.isEmpty()) {
-            lastIdIndexed = 0;
-            if (reindexingServers.size() > 1) {
-                // A safety net must never break what it protects: a failure here is logged and the
-                // normal path carries on as it did before this check existed.
-                try {
-                    takeOverStarvedSlices(reindexingServers, myIndex, priorityLevel);
-                } catch (final Exception e) {
-                    Logger.warn(this.getClass(), "Could not check the other servers' reindex "
-                            + "shares for stalls: " + e.getMessage(), e);
+            resetLastIdReindexed();
+            try {
+                if (limited) {
+                    takeOverStarvedSlices(partition.servers(), partition.myIndex(),
+                            Integer.MIN_VALUE, Math.min(partition.minPriority() - 1, priorityLevel), false);
+                    if (partition.myIndex() < partition.bulkNodes()) {
+                        takeOverStarvedSlices(partition.servers().subList(0, partition.bulkNodes()),
+                                partition.myIndex(), partition.minPriority(), priorityLevel, true);
+                    }
+                } else {
+                    takeOverStarvedSlices(partition.servers(), partition.myIndex(),
+                            Integer.MIN_VALUE, priorityLevel, false);
                 }
+            } catch (final Exception e) {
+                Logger.warn(this.getClass(), "Could not check the other servers' reindex "
+                        + "shares for stalls: " + e.getMessage(), e);
             }
         }
     }
@@ -411,13 +493,22 @@ public class ReindexQueueFactory {
     private static final Lazy<Duration> STARVED_SLICE_THRESHOLD = Lazy.of(() -> Duration.ofSeconds(
             Config.getIntProperty("REINDEX_STARVED_SLICE_SECONDS", 120)));
 
-    private static StarvedSliceDetector starvedSliceDetector;
+    private StarvedSliceDetector starvedSliceDetector;
+    private StarvedSliceDetector bulkStarvedSliceDetector;
 
-    /** Shares whose takeover has already been logged; used only from the reindex thread. */
-    private static final Set<Integer> announcedTakeovers = new HashSet<>();
+    /** Normal and capped partitions need independent progress histories and takeover notices. */
+    private final Set<Integer> announcedTakeovers = new HashSet<>();
+    private final Set<Integer> announcedBulkTakeovers = new HashSet<>();
 
-    private static synchronized StarvedSliceDetector starvedSliceDetector() {
-        if (null == starvedSliceDetector) {
+    /** Returns the stalled-share detector for this priority class. */
+    private synchronized StarvedSliceDetector starvedSliceDetector(final boolean bulk) {
+        if (bulk) {
+            if (bulkStarvedSliceDetector == null) {
+                bulkStarvedSliceDetector = new StarvedSliceDetector(STARVED_SLICE_THRESHOLD.get());
+            }
+            return bulkStarvedSliceDetector;
+        }
+        if (starvedSliceDetector == null) {
             starvedSliceDetector = new StarvedSliceDetector(STARVED_SLICE_THRESHOLD.get());
         }
         return starvedSliceDetector;
@@ -427,8 +518,9 @@ public class ReindexQueueFactory {
      * Called when this server's own share of the journal is empty: loads the rows of any other
      * share that has stopped moving.
      *
-     * <p>The journal is split by {@code MOD(id, servers)} across every server that pinged in the
-     * last few minutes. A server that keeps pinging but does not index leaves its share untouched
+     * <p>Each priority class is split by {@code MOD(id, servers)} across its eligible participants.
+     * Recovery uses the same priority bounds, so normal-work recovery cannot bypass the bulk cap.
+     * A server that keeps pinging but does not index leaves its share untouched
      * for as long as it keeps pinging, and a full reindex then hangs part-way with no error, no
      * failed entries and nothing in the log (issue #36482). An idle server now picks those rows
      * up. The worst case is indexing a document twice, which is harmless; the alternative was
@@ -438,17 +530,21 @@ public class ReindexQueueFactory {
      * to do and the journal is split more than one way.</p>
      */
     private void takeOverStarvedSlices(final List<String> reindexingServers, final int myIndex,
-            final int priorityLevel) throws DotDataException {
+            final int minimumPriority, final int priorityLevel, final boolean bulk)
+            throws DotDataException {
         final int sliceCount = reindexingServers.size();
+        if (sliceCount <= 1 || minimumPriority > priorityLevel) {
+            return;
+        }
         final Map<Integer, StarvedSliceDetector.SliceSnapshot> snapshot =
-                loadShareSnapshot(sliceCount, priorityLevel);
-
-        final List<Integer> starved = starvedSliceDetector().starvedSlices(snapshot, myIndex,
+                loadShareSnapshot(sliceCount, minimumPriority, priorityLevel);
+        final List<Integer> starved = starvedSliceDetector(bulk).starvedSlices(snapshot, myIndex,
                 sliceCount, Instant.now());
+        final Set<Integer> announced = bulk ? announcedBulkTakeovers : announcedTakeovers;
         // One WARN per takeover, not one per poll while it lasts.
-        announcedTakeovers.retainAll(starved);
+        announced.retainAll(starved);
         for (final int slice : starved) {
-            if (announcedTakeovers.add(slice)) {
+            if (announced.add(slice)) {
                 Logger.warn(this.getClass(), String.format("Reindex share %d of %d, assigned to "
                                 + "server %s, has held %d entries without progress for over %d s. "
                                 + "That server is listed as alive but is not indexing its share; "
@@ -457,7 +553,7 @@ public class ReindexQueueFactory {
                         STARVED_SLICE_THRESHOLD.get().getSeconds()));
             }
 
-            queue.addAll(loadShareEntries(sliceCount, slice, priorityLevel));
+            queue.addAll(loadShareEntries(sliceCount, slice, minimumPriority, priorityLevel));
         }
     }
 
@@ -471,12 +567,19 @@ public class ReindexQueueFactory {
     @CloseDBIfOpened
     Map<Integer, StarvedSliceDetector.SliceSnapshot> loadShareSnapshot(final int sliceCount,
             final int priorityLevel) throws DotDataException {
+        return loadShareSnapshot(sliceCount, Integer.MIN_VALUE, priorityLevel);
+    }
+
+    /** Samples stalled shares only within the priority class assigned to this participant set. */
+    private Map<Integer, StarvedSliceDetector.SliceSnapshot> loadShareSnapshot(final int sliceCount,
+            final int minimumPriority, final int priorityLevel) throws DotDataException {
         final DotConnect shares = new DotConnect();
         // Grouped by position: PostgreSQL does not treat two bound MOD(id, ?) expressions as the
         // same one, so "group by MOD(id, ?)" is rejected.
         shares.setSQL("select MOD(id, ?) as slice, count(*) as rows_left, min(id) as min_id"
-                + " from dist_reindex_journal where priority <= ? group by 1");
+                + " from dist_reindex_journal where priority >= ? and priority <= ? group by 1");
         shares.addParam(sliceCount);
+        shares.addParam(minimumPriority);
         shares.addParam(priorityLevel);
 
         final Map<Integer, StarvedSliceDetector.SliceSnapshot> snapshot = new HashMap<>();
@@ -501,11 +604,18 @@ public class ReindexQueueFactory {
     @CloseDBIfOpened
     List<ReindexEntry> loadShareEntries(final int sliceCount, final int slice,
             final int priorityLevel) throws DotDataException {
+        return loadShareEntries(sliceCount, slice, Integer.MIN_VALUE, priorityLevel);
+    }
+
+    /** Recovers one stalled share without taking work from the other priority class. */
+    private List<ReindexEntry> loadShareEntries(final int sliceCount, final int slice,
+            final int minimumPriority, final int priorityLevel) throws DotDataException {
         final DotConnect rows = new DotConnect();
         rows.setSQL("select * from dist_reindex_journal where MOD(id, ?) = ?"
-                + " and priority <= ? ORDER BY priority ASC LIMIT 2000");
+                + " and priority >= ? and priority <= ? ORDER BY priority ASC LIMIT 2000");
         rows.addParam(sliceCount);
         rows.addParam(slice);
+        rows.addParam(minimumPriority);
         rows.addParam(priorityLevel);
         return rows.loadObjectResults().stream()
                 .map(this::mapToReindexEntry)

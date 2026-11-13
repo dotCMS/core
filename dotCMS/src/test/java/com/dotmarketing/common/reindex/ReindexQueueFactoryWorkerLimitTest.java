@@ -2,6 +2,7 @@ package com.dotmarketing.common.reindex;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -9,6 +10,7 @@ import static org.mockito.Mockito.RETURNS_SELF;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.withSettings;
 
@@ -23,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.commons.configuration.ConversionException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -258,6 +261,56 @@ public class ReindexQueueFactoryWorkerLimitTest {
         settings.put(MIN_PRIORITY, 200);
 
         assertEquals(Set.of("normal"), factory.findContentToReindex(10).keySet());
+    }
+
+    /** A batch uses one configuration snapshot rather than re-reading settings per document. */
+    @Test
+    public void testSettingsAreReadOnceBeforeEachBatch() throws DotDataException {
+        assertEquals(3, batchAt("node-1", 100, 200, 300).size());
+        config.verify(() -> Config.getIntProperty(MAX_NODES, 2), times(1));
+        config.verify(() -> Config.getIntProperty(MIN_PRIORITY, 200), times(1));
+    }
+
+    /** Missing membership must not consume prefetch or discard the persisted work it represents. */
+    @Test
+    public void testMissingMembershipLeavesPrefetchUntouched() throws DotDataException {
+        members = List.of();
+        factory.getLocalQueue().add(entry(1, "normal", 100, false));
+        factory.getLocalQueue().add(entry(2, "structure", 200, false));
+
+        assertTrue(factory.findContentToReindex(10).isEmpty());
+        assertEquals(2, factory.getLocalQueue().size());
+        assertTrue(queries.constructed().isEmpty());
+    }
+
+    /** Malformed runtime or property-file cutoffs must not stop ordinary saves from indexing. */
+    @Test
+    public void testMalformedCutoffFallsBackWithoutStoppingIndexing() throws DotDataException {
+        for (final RuntimeException error : List.of(new NumberFormatException("invalid cutoff"),
+                new ConversionException("invalid cutoff"))) {
+            config.when(() -> Config.getIntProperty(MIN_PRIORITY, 200)).thenThrow(error);
+            try {
+                assertEquals(6, admittedNodes(100));
+                assertEquals(2, admittedNodes(200));
+            } catch (NumberFormatException | ConversionException failure) {
+                fail("Malformed cutoff must fall back to 200, not stop the journal consumer");
+            }
+        }
+    }
+
+    /** A malformed maximum must retain the two-worker safety default rather than stop indexing. */
+    @Test
+    public void testMalformedMaximumFallsBackWithoutStoppingIndexing() throws DotDataException {
+        for (final RuntimeException error : List.of(new NumberFormatException("invalid maximum"),
+                new ConversionException("invalid maximum"))) {
+            config.when(() -> Config.getIntProperty(MAX_NODES, 2)).thenThrow(error);
+            try {
+                assertEquals(6, admittedNodes(100));
+                assertEquals(2, admittedNodes(200));
+            } catch (NumberFormatException | ConversionException failure) {
+                fail("Malformed maximum must fall back to 2, not stop the journal consumer");
+            }
+        }
     }
 
     /** Creates a fresh consumer and clears static journal state between configuration scenarios. */

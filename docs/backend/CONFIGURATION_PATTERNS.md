@@ -156,6 +156,58 @@ Config.getStringProperty("ES_ENDPOINTS", "http://localhost:9200")
 Config.getIntProperty("HEARTBEAT_TIMEOUT", 600)
 ```
 
+### Runtime Reindex Worker Limits
+
+Background journal consumption has two settings in `dotcms-config-cluster.properties`:
+
+| Property | Default | Meaning |
+| --- | --- | --- |
+| `MAX_REINDEXING_NODES` | `2` | Maximum workers for capped entries. Explicit `0` or a negative value restores unrestricted participation. |
+| `REINDEX_NODE_LIMIT_MIN_PRIORITY` | `200` | Inclusive priority cutoff. A negative value is reported and falls back to `200`. |
+
+Malformed integer values are reported and fall back to the documented defaults rather than
+stopping the journal consumer. Both values are read through `Config.getIntProperty` before
+every batch, not cached at startup. Changes visible to Config apply to the same consumer's next batch, including prefetched work;
+a batch already in flight can finish. Use the existing runtime/system-table configuration
+mechanism. Environment variables (`DOT_MAX_REINDEXING_NODES` and
+`DOT_REINDEX_NODE_LIMIT_MIN_PRIORITY`) take precedence over system-table changes: do not pin
+an environment override if the property must be adjustable through the system table.
+
+With six application nodes and the default settings, the first two nodes in the existing
+startup-time/server-ID membership order process structure updates (`200`) and full reindexes
+(`300`); ASAP (`0`) and normal saves (`100`, including retries such as `101`) remain eligible
+on all six. Queue deletes follow the same priority rule. A one-node installation keeps its
+one available worker; a maximum above the membership size uses every available node.
+
+Alternative cutoffs: `0` caps all eligible journal work, `100` also caps normal saves, and
+`300` leaves structure updates unrestricted. Equality with the cutoff is capped. The cutoff
+does not revive failed entries outside the journal's existing retry/eligibility rules.
+
+Admission and journal partitions use the same priority-aware ownership. A nonselected node
+cannot bypass the cap through stale prefetch or stalled-share recovery. When membership or
+settings change the ownership split, cursors and recovery history reset so newly assigned
+older rows remain reachable. Membership-based failover and normal worker wake-up rules still apply; this is
+not a distributed lease or an instantaneous cluster-wide configuration transaction.
+
+**Bulk size is unchanged:** provider adapters still divide the configured bulk-action value
+by the full eligible membership. A value of `20` with six application nodes retains a count
+threshold of `3`; selecting two bulk workers does not silently increase it to `10`.
+`REINDEX_THREAD_CONCURRENT_REQUESTS=0` makes a processor synchronous; it is not a substitute
+for a worker cap or a guarantee of half the traffic. `REINDEX_THREAD_SLEEP` controls paused
+waiting, and `REINDEX_THREAD_MINIMUM_RUNTIME_IN_SEC` delays full-reindex switchover; neither
+paces active ingestion in this path.
+
+**Upgrade/rollback:** two capped workers is a changed default for existing clusters. Set
+`MAX_REINDEXING_NODES=0` explicitly to retain unrestricted participation. All nodes must run
+the supporting binary with the same configuration. Older binaries ignore these properties,
+so mixed-version deployment or rollback can restore unrestricted bulk processing. Existing
+in-flight work and membership/configuration propagation can temporarily overlap.
+
+This limits background worker participation, not documents per second or search traffic.
+Fewer workers can delay structure propagation and full-reindex completion. Direct synchronous
+indexing and explicit save-request `indexPolicy` overrides are unchanged. Validate queue-drain
+speed and search CPU/latency under a representative workload before production rollout.
+
 ### Shutdown Configuration (Main Config)
 ```properties
 # In dotmarketing-config.properties  
