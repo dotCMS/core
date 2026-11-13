@@ -16,18 +16,20 @@ public class PreviewFactory {
 
 
 
+	/**
+	 * Stores in the session the portlet URLs that legacy back-end pages use to open the Site
+	 * Browser, preview a page and pick content: {@link WebKeys#VIEW_BROWSER_URL},
+	 * {@link WebKeys#PREVIEW_PAGE_URL} and {@link WebKeys#VIEW_CONTENTS_URL}.
+	 *
+	 * @param hreq the current back-end request; its session receives the URLs
+	 */
 	public static void setVelocityURLS(HttpServletRequest hreq) {
 
 		HttpSession session = hreq.getSession();
 
-		java.util.Map<String, String[]> params = new java.util.HashMap<>();
-		params.put("struts_action",new String[] {"/ext/director/direct"});
-		String directorURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params);
-		session.setAttribute(WebKeys.DIRECTOR_URL, directorURL);
-
 		String portletId=null;
 
-		params = new java.util.HashMap<String, String[]>();
+		java.util.Map<String, String[]> params = new java.util.HashMap<>();
 		params.put("struts_action",new String[] {"/ext/browser/view_browser"});
 		portletId="site-browser";
 		String viewBrowserURL = null;
@@ -57,19 +59,20 @@ public class PreviewFactory {
 
 	}
 
+	/**
+	 * Sets the layout on the request and stores in the session the Site Browser portlet URLs of
+	 * that layout: {@link WebKeys#VIEW_BROWSER_URL}, {@link WebKeys#PREVIEW_PAGE_URL} and
+	 * {@link WebKeys#VIEW_CONTENTS_URL}.
+	 *
+	 * @param hreq the current back-end request; its session receives the URLs
+	 * @param layout the layout the URLs belong to
+	 */
 	public static void setVelocityURLS(HttpServletRequest hreq, Layout layout) {
 		hreq.setAttribute(WebKeys.LAYOUT, layout);
 		HttpSession session = hreq.getSession();
 
 		String portletId=null;
 		java.util.Map<String, String[]> params = new java.util.HashMap<>();
-		params.put("struts_action",new String[] {"/ext/director/direct"});
-		// director portlet
-		portletId="site-browser";
-		String directorURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params, portletId);
-		session.setAttribute(WebKeys.DIRECTOR_URL, directorURL);
-
-		params = new java.util.HashMap<String, String[]>();
 		params.put("struts_action",new String[] {"/ext/browser/view_browser"});
 		portletId="site-browser";
 		String viewBrowserURL = com.dotmarketing.util.PortletURLUtil.getActionURL(hreq,WindowState.MAXIMIZED.toString(),params, portletId);
