@@ -11,6 +11,8 @@ import org.apache.hc.client5.http.auth.AuthScope;
 import org.apache.hc.client5.http.auth.UsernamePasswordCredentials;
 import org.apache.hc.client5.http.impl.auth.BasicCredentialsProvider;
 import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
+import org.apache.hc.client5.http.psl.PublicSuffixMatcherLoader;
+import org.apache.hc.client5.http.ssl.DefaultHostnameVerifier;
 import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.apache.hc.client5.http.ssl.TrustAllStrategy;
 import org.apache.hc.client5.http.ssl.TrustSelfSignedStrategy;
@@ -22,10 +24,16 @@ import org.opensearch.client.transport.OpenSearchTransport;
 import org.opensearch.client.transport.httpclient5.ApacheHttpClient5TransportBuilder;
 
 import javax.net.ssl.SSLContext;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.GeneralSecurityException;
+import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 import java.util.Arrays;
 import java.util.List;
 
@@ -135,7 +143,7 @@ class ConfigurableOpenSearchProvider {
         // OS_TLS_ENABLED=false but the endpoint scheme is https://
         boolean tlsEnabled = IndexConfigHelper.getBoolean(OSIndexProperty.TLS_ENABLED, false);
         builder.tlsEnabled(tlsEnabled);
-        builder.certRequired(IndexConfigHelper.getBoolean(OSIndexProperty.TLS_CERT_REQUIRED, false));
+        builder.certRequired(IndexConfigHelper.getBoolean(OSIndexProperty.TLS_CERT_REQUIRED, true));
         builder.trustSelfSigned(IndexConfigHelper.getBoolean(OSIndexProperty.TLS_TRUST_SELF_SIGNED, false));
 
         String caCert = IndexConfigHelper.getString(OSIndexProperty.TLS_CA_CERT, null);
@@ -253,15 +261,22 @@ class ConfigurableOpenSearchProvider {
     }
 
     /**
-     * Configure the async connection manager with TLS strategy and connection pool settings.
+     * Configures the async connection manager: TLS trust and hostname verification, plus the
+     * connection pool limits.
      *
-     * <p>TLS is applied whenever the config has {@code tlsEnabled=true} OR any endpoint uses
-     * the {@code https} scheme. The trust strategy is resolved in priority order:
-     * skip-cert (default) → {@code trustSelfSigned} → JVM strict (when {@code certRequired=true}).
+     * <p>TLS is applied whenever the config has {@code tlsEnabled=true} OR any endpoint uses the
+     * {@code https} scheme. With {@code certRequired=true} (the default) the server certificate is
+     * validated against the trust anchors chosen in {@link #buildSSLContext} and the server name
+     * must match it. With {@code certRequired=false} neither is checked.
+     *
+     * @param httpClientBuilder the HTTP client being configured
+     * @param config the resolved client configuration
+     * @throws GeneralSecurityException if the trust material cannot be set up
+     * @throws IOException if the configured CA file cannot be read
      */
     private void configureConnectionManager(
             org.apache.hc.client5.http.impl.async.HttpAsyncClientBuilder httpClientBuilder,
-            OSClientConfig config) throws GeneralSecurityException {
+            OSClientConfig config) throws GeneralSecurityException, IOException {
 
         org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder connManagerBuilder =
             org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder.create()
@@ -272,8 +287,15 @@ class ConfigurableOpenSearchProvider {
             SSLContext sslContext = buildSSLContext(config);
             ClientTlsStrategyBuilder tlsBuilder = ClientTlsStrategyBuilder.create()
                 .setSslContext(sslContext);
-            if (!config.certRequired()) {
+            if (config.certRequired()) {
+                // Set explicitly on purpose: without a verifier the client leaves the name check to the
+                // JVM trust manager, and the trust manager installed for OS_TLS_TRUST_SELF_SIGNED skips it.
+                tlsBuilder.setHostnameVerifier(new DefaultHostnameVerifier(PublicSuffixMatcherLoader.getDefault()));
+            } else {
                 tlsBuilder.setHostnameVerifier(NoopHostnameVerifier.INSTANCE);
+                Logger.warn(this.getClass(), "OpenSearch TLS server certificate and hostname verification"
+                    + " is turned off (OS_TLS_CERT_REQUIRED=false). Set it to true, and set OS_TLS_CA_CERT"
+                    + " when the server certificate is signed by a private CA.");
             }
             connManagerBuilder.setTlsStrategy(tlsBuilder.build());
             Logger.info(this.getClass(), "OpenSearch TLS configured (certRequired=" + config.certRequired()
@@ -291,10 +313,26 @@ class ConfigurableOpenSearchProvider {
             .anyMatch(e -> e.toLowerCase().startsWith("https://"));
     }
 
-    private SSLContext buildSSLContext(OSClientConfig config) throws GeneralSecurityException {
+    /**
+     * Chooses the trust anchors for the TLS connection.
+     *
+     * <p>With {@code certRequired=false} every certificate is accepted. Otherwise, in priority order:
+     * the CA file in {@code caCertPath}, then {@code trustSelfSigned}, then the JVM truststore.</p>
+     *
+     * @param config the resolved client configuration
+     * @return the {@link SSLContext} the client uses for its connections
+     * @throws GeneralSecurityException if the trust material cannot be set up
+     * @throws IOException if the configured CA file cannot be read
+     */
+    private SSLContext buildSSLContext(OSClientConfig config) throws GeneralSecurityException, IOException {
         if (!config.certRequired()) {
             return SSLContexts.custom()
                 .loadTrustMaterial(TrustAllStrategy.INSTANCE)
+                .build();
+        }
+        if (config.caCertPath().isPresent()) {
+            return SSLContexts.custom()
+                .loadTrustMaterial(loadCaKeyStore(config.caCertPath().get()), null)
                 .build();
         }
         if (config.trustSelfSigned()) {
@@ -303,6 +341,29 @@ class ConfigurableOpenSearchProvider {
                 .build();
         }
         return SSLContext.getDefault();
+    }
+
+    /**
+     * Reads the PEM file at the given path into a trust store holding every certificate in it.
+     *
+     * @param caCertPath path of the PEM file given in {@code OS_TLS_CA_CERT}
+     * @return a {@link KeyStore} usable as the set of trust anchors
+     * @throws GeneralSecurityException if the file holds no valid certificate
+     * @throws IOException if the file cannot be read
+     */
+    private static KeyStore loadCaKeyStore(String caCertPath) throws GeneralSecurityException, IOException {
+        KeyStore trustStore = KeyStore.getInstance(KeyStore.getDefaultType());
+        trustStore.load(null, null);
+        try (InputStream in = Files.newInputStream(Paths.get(caCertPath))) {
+            int index = 0;
+            for (Certificate certificate : CertificateFactory.getInstance("X.509").generateCertificates(in)) {
+                trustStore.setCertificateEntry("ca-" + index++, certificate);
+            }
+            if (index == 0) {
+                throw new GeneralSecurityException("No certificate found in OS_TLS_CA_CERT file " + caCertPath);
+            }
+        }
+        return trustStore;
     }
 
     /**

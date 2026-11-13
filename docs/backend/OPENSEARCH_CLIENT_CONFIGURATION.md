@@ -53,11 +53,11 @@ caller default is used directly if the OS key is missing.
 | Property | ES Fallback | Type | Default | Description |
 |---|---|---|---|---|
 | `OS_TLS_ENABLED` | `ES_TLS_ENABLED` | `boolean` | `false` | Explicitly enables TLS. Not required when `OS_ENDPOINTS` already uses `https://` — TLS is activated automatically from the endpoint scheme. |
-| `OS_TLS_CERT_REQUIRED` | _(none)_ | `boolean` | `false` | When `true`, enforces certificate and hostname verification. Disabled by default — set to `true` only when the server certificate is trusted by the JVM truststore or `OS_TLS_CA_CERT` is configured. |
-| `OS_TLS_TRUST_SELF_SIGNED` | _(none)_ | `boolean` | `false` | When `true`, accepts self-signed server certificates without a CA chain. Useful for local/dev clusters. |
+| `OS_TLS_CERT_REQUIRED` | _(none)_ | `boolean` | `true` | Enforces server certificate and hostname verification. Enabled by default; the certificate must be trusted by the JVM truststore or by the CA in `OS_TLS_CA_CERT`. Set to `false` only to connect to a server whose certificate cannot be verified; a warning is logged at startup. |
+| `OS_TLS_TRUST_SELF_SIGNED` | _(none)_ | `boolean` | `false` | When `true` (and `OS_TLS_CERT_REQUIRED=true`, with no `OS_TLS_CA_CERT`), accepts a self-signed server certificate; the server name must still match it. Useful for local/dev clusters. |
 | `OS_TLS_CLIENT_CERT` | _(none)_ | `String` (path) | _(none)_ | Path to the PEM client certificate for mutual TLS (mTLS / `CERT` auth). |
 | `OS_TLS_CLIENT_KEY` | _(none)_ | `String` (path) | _(none)_ | Path to the PEM client private key for mutual TLS. |
-| `OS_TLS_CA_CERT` | _(none)_ | `String` (path) | _(none)_ | Path to the PEM CA certificate used to verify the server. |
+| `OS_TLS_CA_CERT` | _(none)_ | `String` (path) | _(none)_ | Path to the PEM file of the CA that signed the server certificate. Used as the trust anchor when `OS_TLS_CERT_REQUIRED=true`. |
 
 ---
 
@@ -132,22 +132,33 @@ OS_AUTH_BASIC_USER=admin
 OS_AUTH_BASIC_PASSWORD=admin
 ```
 
-## HTTPS Without a Certificate (Private CA / Internal PKI)
+## HTTPS With a Private CA / Internal PKI
 
-Certificate verification is skipped by default (`OS_TLS_CERT_REQUIRED=false`), so no additional
-configuration is needed when the OpenSearch server uses HTTPS with a private CA or self-signed cert.
+The server certificate and its host name are verified by default (`OS_TLS_CERT_REQUIRED=true`).
+When the OpenSearch server uses a certificate signed by a private CA, point dotCMS at that CA:
 
 ```properties
 OS_ENDPOINTS=https://opensearch-host:9200
 OS_AUTH_BASIC_USER=admin
 OS_AUTH_BASIC_PASSWORD=secret
+OS_TLS_CA_CERT=/path/to/ca.pem
 ```
 
-To enforce strict certificate validation, set `OS_TLS_CERT_REQUIRED=true` and ensure the server
-certificate is trusted by the JVM truststore (or configure `OS_TLS_CA_CERT`).
+The host in `OS_ENDPOINTS` must appear in the certificate (subject alternative names). A connection that
+cannot be verified fails at startup with an error that names these settings. The underlying cause is
+`PKIX path building failed` when the certificate is not trusted, or
+`Certificate for <host> doesn't match any of the subject alternative names` when the name does not match.
 
-> **Note:** `OS_TLS_CERT_REQUIRED=true` requires a valid CA chain in the JVM truststore or an
-> explicit `OS_TLS_CA_CERT` path. Misconfigured trust will cause a `PKIX path building failed` error.
+### Upgrading from earlier releases
+
+Earlier releases did not verify the server certificate by default. After upgrading, an installation that
+connects to an `https` OpenSearch endpoint with a certificate that is self-signed, or that does not match
+the host name, must either configure `OS_TLS_CA_CERT` (preferred) or explicitly set
+`OS_TLS_CERT_REQUIRED=false` to keep the previous behaviour. The legacy Elasticsearch client keeps its previous behaviour by default, so existing installations are
+not affected. To validate the server certificate and host name there, set `ES_TLS_CERT_REQUIRED=true`
+(default `false`) and either add the CA to the JVM truststore or configure it with `ES_TLS_ENABLED=true`,
+`ES_AUTH_TLS_CA_CERT`, `ES_AUTH_TLS_CLIENT_CERT` and `ES_AUTH_TLS_CLIENT_KEY` (all three are required in
+that mode). A warning is logged while validation is off.
 
 ## Full Configuration Example (HTTPS + mTLS)
 

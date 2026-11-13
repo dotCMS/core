@@ -51,8 +51,10 @@ import org.apache.http.Header;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
 import org.apache.http.auth.UsernamePasswordCredentials;
-import org.apache.http.conn.ssl.AllowAllHostnameVerifier;
-import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
+import org.apache.http.conn.util.PublicSuffixMatcherLoader;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.TrustAllStrategy;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContexts;
@@ -121,6 +123,18 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
         return credentialsProvider;
     }
 
+    /**
+     * Builds the low-level client builder for the configured endpoints, including TLS settings.
+     *
+     * <p>By default an {@code https} endpoint stays lenient: a PEM bundle is used if one is loaded,
+     * otherwise any server certificate is accepted, and the server name is not checked. Setting
+     * {@code ES_TLS_CERT_REQUIRED=true} validates the server certificate and requires the server name
+     * to match it, against the PEM bundle when one is loaded and the JVM truststore otherwise. A
+     * warning is logged while validation is off.</p>
+     *
+     * @param credentialsProvider the credentials sent with each request
+     * @return the configured {@link RestClientBuilder}
+     */
     private RestClientBuilder getClientBuilder(final BasicCredentialsProvider credentialsProvider) {
         final String esAuthType = getESAuthType();
         
@@ -140,9 +154,17 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
         
         
         final boolean securedConnection = esEndpoints[0].getSchemeName().equalsIgnoreCase("https");
+        final boolean certRequired = Config.getBooleanProperty("ES_TLS_CERT_REQUIRED", false);
         if (securedConnection){
             Logger.info(this.getClass(),
                     "Initializing Elastic RestHighLevelClient using a secured https connection");
+            if (!certRequired) {
+                Logger.warn(this.getClass(), "Elastic RestHighLevelClient is not validating the TLS server"
+                        + " certificate or host name (ES_TLS_CERT_REQUIRED=false). To turn validation on, set"
+                        + " ES_TLS_CERT_REQUIRED=true and either add the CA to the JVM truststore or set"
+                        + " ES_TLS_ENABLED=true with ES_AUTH_TLS_CA_CERT, ES_AUTH_TLS_CLIENT_CERT and"
+                        + " ES_AUTH_TLS_CLIENT_KEY.");
+            }
         } else{
             Logger.warn(this.getClass(),
                     "Initializing Elastic RestHighLevelClient using an unsecured http connection");
@@ -156,20 +178,21 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                     if (sslContextFromPem != null) {
                         httpClientBuilder.setSSLContext(sslContextFromPem);
 
-                    } else if (securedConnection){
+                    } else if (securedConnection && !certRequired){
                         try {
                             httpClientBuilder.setSSLContext(SSLContexts
-                                    .custom().loadTrustMaterial(new TrustSelfSignedStrategy()).build());
+                                    .custom().loadTrustMaterial(TrustAllStrategy.INSTANCE).build());
                         } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
                             Logger.error(this.getClass(),
-                                    "Error setting TrustSelfSignedStrategy for Elastic RestHighLevelClient",
+                                    "Error setting TrustAllStrategy for Elastic RestHighLevelClient",
                                     e);
                             throw new DotRuntimeException(e);
                         }
                     }
                     httpClientBuilder
                             .setDefaultCredentialsProvider(credentialsProvider);
-                    httpClientBuilder.setHostnameVerifier(AllowAllHostnameVerifier.INSTANCE);
+                    httpClientBuilder.setSSLHostnameVerifier(certRequired
+                            ? new DefaultHostnameVerifier(PublicSuffixMatcherLoader.getDefault()) : NoopHostnameVerifier.INSTANCE);
                     
                     return httpClientBuilder;
                 })
