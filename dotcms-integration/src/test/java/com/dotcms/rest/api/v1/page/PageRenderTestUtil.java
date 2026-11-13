@@ -65,10 +65,25 @@ public final class PageRenderTestUtil {
     }
 
     public static PageRenderTest createPage(final int containersNumber, final Host host, final boolean publish) {
+        return createPage(containersNumber, host, publish, "testing");
+    }
+
+    /**
+     * Creates a page whose template holds the given number of containers, each rendering its
+     * contentlets with the given Velocity code.
+     *
+     * @param containersNumber how many containers the template holds
+     * @param host             the site the page is created on
+     * @param publish          whether the page is also published
+     * @param contentCode      the Velocity code each container renders for a contentlet
+     * @return the page with its template and containers
+     */
+    public static PageRenderTest createPage(final int containersNumber, final Host host, final boolean publish,
+            final String contentCode) {
         try {
             final PageRenderTest pageRenderTest = new PageRenderTest(host);
 
-            PageRenderTestUtil.addContainers(pageRenderTest, containersNumber);
+            PageRenderTestUtil.addContainers(pageRenderTest, containersNumber, contentCode);
             pageRenderTest.persist();
 
             final Template template = pageRenderTest.getTemplate();
@@ -82,7 +97,8 @@ public final class PageRenderTestUtil {
         }
     }
 
-    private static void addContainers(final PageRenderTest templateTest , final int containersNumber)
+    private static void addContainers(final PageRenderTest templateTest , final int containersNumber,
+            final String contentCode)
             throws DotDataException, DotSecurityException {
 
         final ContentType webPageContent = APILocator.getContentTypeAPI(APILocator.systemUser())
@@ -93,7 +109,7 @@ public final class PageRenderTestUtil {
         for (int i = 0; i < containersNumber; i++) {
 
             final Container container = new ContainerDataGen()
-                    .withStructure(structure, "testing")
+                    .withStructure(structure, contentCode)
                     .friendlyName(String.format("container-%d-friendly-name", i))
                     .title(String.format("container-%d-title", i))
                     .nextPersisted();

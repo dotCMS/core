@@ -82,6 +82,12 @@ import org.apache.velocity.context.Context;
 public class PageRenderUtil implements Serializable {
 
     public static String CONTAINER_UUID_PREFIX = "uuid-";
+    /**
+     * Prefix of the Velocity context key, followed by the page identifier, that holds the
+     * personalization whose content an edit or preview render shows. Containers read it so the
+     * HTML shows the same content as the page's JSON.
+     */
+    public static final String PERSONALIZATION_TO_RENDER_PREFIX = "dotPersonalizationToRender";
     private static final long serialVersionUID = 1L;
 
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -100,6 +106,9 @@ public class PageRenderUtil implements Serializable {
     final long languageId;
     final Host site;
     final TemplateLayout templateLayout;
+    // Kept out of contextMap: asString() writes contextMap into the page's cached Velocity code,
+    // which must not depend on the user rendering it
+    private String personalizationToRender;
 
 
 
@@ -264,6 +273,9 @@ public class PageRenderUtil implements Serializable {
         final List<ContainerRaw> rawContainers  = Lists.newArrayList();
         final String includeContentFor = this.getPersonaTagToIncludeContent(request, personalizationsForPage,
                 pageContents, currentVariantId);
+        if (PageTreeReadFilter.appliesTo(this.mode)) {
+            this.personalizationToRender = includeContentFor;
+        }
 
         for (final String containerId : pageContents.rowKeySet()) {
 
@@ -848,10 +860,21 @@ public class PageRenderUtil implements Serializable {
     }
 
 
-    public Context addAll(Context incoming) {
+    /**
+     * Adds the page's variables to a Velocity context the page is rendered with: the content of
+     * each container and, in edit and preview mode, the personalization the containers show (see
+     * {@link #personalizationToRenderKey}).
+     *
+     * @param incoming the {@link Context} of the current render
+     * @return the same context, with the page's variables added
+     */
+    public Context addAll(final Context incoming) {
 
-        for (String key : this.contextMap.keySet()) {
+        for (final String key : this.contextMap.keySet()) {
             incoming.put(key, this.contextMap.get(key));
+        }
+        if (null != this.personalizationToRender) {
+            incoming.put(personalizationToRenderKey(this.htmlPage.getIdentifier()), this.personalizationToRender);
         }
 
         return incoming;
@@ -881,6 +904,17 @@ public class PageRenderUtil implements Serializable {
      */
     public List<ContainerRaw> getContainersRaw() {
         return this.containersRaw;
+    }
+
+    /**
+     * Returns the Velocity context key holding the personalization an edit or preview render of a
+     * page shows, as chosen by {@link #getPersonaTagToIncludeContent}.
+     *
+     * @param pageIdentifier identifier of the rendered page
+     * @return the context key for that page
+     */
+    public static String personalizationToRenderKey(final String pageIdentifier) {
+        return PERSONALIZATION_TO_RENDER_PREFIX + pageIdentifier;
     }
 
     /**

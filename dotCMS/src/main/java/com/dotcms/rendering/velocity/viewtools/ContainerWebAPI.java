@@ -2,6 +2,7 @@ package com.dotcms.rendering.velocity.viewtools;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
+import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -106,24 +107,24 @@ public class ContainerWebAPI implements ViewTool {
 
 	}
 	/**
-	 * This method returns the personalized list of content ids that match
-	 * the persona of the visitor
-	 * @param pageId
-	 * @param containerId
-	 * @param uuid
-	 * @return
+	 * Returns the identifiers of the content a container shows on a page for the visitor's
+	 * persona. In edit and preview mode the page render has already chosen the personalization,
+	 * falling back to the default one when the user can see none of the persona's content, so the
+	 * container shows the same content as the page's JSON. Otherwise the visitor's persona is used
+	 * when the page has content for it, and the default personalization when it does not.
+	 *
+	 * @param pageId      identifier of the page being rendered
+	 * @param containerId identifier of the container
+	 * @param uuid        the container's instance on the page
+	 * @return the identifiers of the content to show, in order
 	 */
-    public List<String> getPersonalizedContentList(String pageId, String containerId, String uuid) {
+    public List<String> getPersonalizedContentList(final String pageId, final String containerId, final String uuid) {
 
-		Set<String> availablePersonalizations = UtilMethods.isSet(pageId)
-                        ? Try.of(() -> getPageById(pageId))
-                                        .getOrElse(ImmutableSet.of(MultiTree.DOT_PERSONALIZATION_DEFAULT))
-                        : ImmutableSet.of(MultiTree.DOT_PERSONALIZATION_DEFAULT);
-
-        String pTag = WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(request);
         final PageMode pageMode = PageMode.get(request);
-
-        pTag = (!availablePersonalizations.contains(pTag)) ? MultiTree.DOT_PERSONALIZATION_DEFAULT : pTag;
+        final Object chosenPersonalization = UtilMethods.isSet(pageId)
+                ? ctx.get(PageRenderUtil.personalizationToRenderKey(pageId)) : null;
+        final String pTag = chosenPersonalization instanceof String
+                ? (String) chosenPersonalization : getVisitorPersonalization(pageId);
 
 		List<String> contentlets = new ArrayList<>();
 		if (ContainerUUID.UUID_LEGACY_VALUE.equals(uuid)) {
@@ -156,6 +157,24 @@ public class ContainerWebAPI implements ViewTool {
         
         return new ArrayList<>();
     }
+
+	/**
+	 * Returns the visitor's persona tag when the page has content for it, otherwise the default
+	 * personalization.
+	 *
+	 * @param pageId identifier of the page being rendered, may be empty
+	 * @return the personalization tag to show
+	 */
+	private String getVisitorPersonalization(final String pageId) {
+
+		final Set<String> availablePersonalizations = UtilMethods.isSet(pageId)
+				? Try.of(() -> getPageById(pageId))
+						.getOrElse(ImmutableSet.of(MultiTree.DOT_PERSONALIZATION_DEFAULT))
+				: ImmutableSet.of(MultiTree.DOT_PERSONALIZATION_DEFAULT);
+
+		final String pTag = WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(request);
+		return availablePersonalizations.contains(pTag) ? pTag : MultiTree.DOT_PERSONALIZATION_DEFAULT;
+	}
 
 	private Set<String> getPageById(final String pageId) throws DotDataException {
 		final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
