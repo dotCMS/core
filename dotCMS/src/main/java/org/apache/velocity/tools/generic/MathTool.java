@@ -19,7 +19,7 @@ package org.apache.velocity.tools.generic;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.velocity.util.introspection.SecureIntrospectorImpl;
 
 /**
  * <p>Tool for performing math in Velocity.</p>
@@ -578,7 +578,8 @@ public class MathTool
      * @param collection  A collection containing Java beans
      * @param field A Java Bean field for the objects in <i>collection</i> that
      *              will return a number.
-     * @return The sum of the values in <i>collection</i>.
+     * @return The sum of the values in <i>collection</i>, or {@code null} when a value cannot be read,
+     *         including a path that a template may not read, such as the company key.
      */
     public Number getTotal(Collection collection, String field)
     {
@@ -593,7 +594,7 @@ public class MathTool
             Number first = null;
             for (Iterator i = collection.iterator(); i.hasNext();)
             {
-                Object property = PropertyUtils.getProperty(i.next(), field);
+                Object property = SecureIntrospectorImpl.readPropertyPath(i.next(), field);
                 Number value = toNumber(property);
                 if (first == null)
                 {

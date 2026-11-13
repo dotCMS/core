@@ -39,6 +39,7 @@ import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.util.introspection.SecureIntrospectorImpl;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -2656,12 +2657,25 @@ public class UtilMethods {
     }
 
     /**
-     * This methods receives an object and builds a map based on the object
-     * simple properties (integers, longs, strings, floats, doubles, dates,
-     * chars, booleans) of the object
+     * Tells whether a template may not read a property, by the same rule the Velocity introspector applies to its
+     * getter.
      *
-     * @param obj
-     * @return
+     * @param obj the object the property belongs to
+     * @param desc the property
+     * @return {@code true} if a template may not read the property
+     */
+    private static boolean isTemplateRestricted(final Object obj, final PropertyDescriptor desc) {
+        return desc.getReadMethod() != null && SecureIntrospectorImpl.isCompanyKeyAccessor(obj.getClass(),
+                desc.getReadMethod().getName());
+    }
+
+    /**
+     * Builds a map of an object's simple properties (integers, longs, strings, floats, doubles, dates, chars and
+     * booleans). Templates call it, so it leaves out the properties a template may not read, such as the company
+     * key.
+     *
+     * @param obj the object to read
+     * @return the object's simple properties, by name
      */
     public static Map<String, Object> toMap(Object obj) {
 
@@ -2677,7 +2691,8 @@ public class UtilMethods {
                                 || propertyType.equals(long.class) || propertyType.equals(String.class) || propertyType.equals(Float.class)
                                 || propertyType.equals(float.class) || propertyType.equals(Double.class) || propertyType.equals(double.class)
                                 || propertyType.equals(Character.class) || propertyType.equals(char.class) || propertyType.equals(Date.class)
-                                || propertyType.equals(boolean.class) || propertyType.equals(Boolean.class))) {
+                                || propertyType.equals(boolean.class) || propertyType.equals(Boolean.class))
+                        && !isTemplateRestricted(obj, desc)) {
                     try {
                         map.put(desc.getName(), PropertyUtils.getSimpleProperty(obj, desc.getName()));
                     } catch (Exception e) {
@@ -3584,10 +3599,24 @@ public class UtilMethods {
         }
     }
 
+    /**
+     * Builds a map of the elements of a list, keyed by what the named method returns for each element. Templates call
+     * it, so a method a template may not call, such as the one that returns the company key, is refused.
+     *
+     * @param arli the elements to put in the map
+     * @param methodToInvoke the name of the method, with no parameters, whose result keys each element
+     * @param T the type the method must return
+     * @return the elements, keyed by the method's result
+     * @throws IllegalArgumentException if a template may not call the method
+     * @throws Exception if the method cannot be found or called, or returns another type
+     */
     @SuppressWarnings("unchecked")
     public static <T, E> HashMap<T, E> convertListToHashMap(List<E> arli, String methodToInvoke, Class T) throws Exception {
         HashMap<T, E> hashi = new HashMap<>();
         for (E e : arli) {
+            if (SecureIntrospectorImpl.isCompanyKeyAccessor(e.getClass(), methodToInvoke)) {
+                throw new IllegalArgumentException("The method '" + methodToInvoke + "' cannot be called from a template");
+            }
             Method m = e.getClass().getMethod(methodToInvoke);
             if (m.getReturnType() != T) {
                 throw new ClassCastException();
