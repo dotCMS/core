@@ -359,8 +359,10 @@ jobs:
                       else:
                           result = "unchanged"
                       if dry_run and normalize(current) != normalize(body):
+                          # The summary is public: diff against production's text, never authoring's.
+                          public = (on_prod.get("documentation") or "") if on_prod else ""
                           diffs.append((slug, "".join(difflib.unified_diff(
-                              current.splitlines(True), body.splitlines(True), "dotCMS", path))))
+                              public.splitlines(True), body.splitlines(True), "production", path))))
               except PushStalled as exc:
                   failed += 1
                   stalled = slug
