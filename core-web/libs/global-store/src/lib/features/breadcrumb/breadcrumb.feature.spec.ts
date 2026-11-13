@@ -8,7 +8,7 @@ import { Event, NavigationEnd, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
 
-import { MenuItemEntity } from '@dotcms/dotcms-models';
+import { DotTitleStatus, MenuItemEntity } from '@dotcms/dotcms-models';
 
 import { withBreadcrumbs } from './breadcrumb.feature';
 
@@ -559,6 +559,87 @@ describe('withBreadcrumbs Feature', () => {
             // Home + Content + Empty URL + Null URL
             expect(store.breadcrumbs().length).toBe(4);
             expect(store.selectLastBreadcrumbLabel()).toBe('Null URL');
+        });
+    });
+
+    describe('Title status', () => {
+        const publishedStatus: DotTitleStatus = {
+            state: { live: true, working: true, hasLiveVersion: true }
+        };
+
+        it('should start with no title status', () => {
+            expect(store.titleStatus()).toBeNull();
+        });
+
+        it('should keep a published status as given', () => {
+            store.setTitleStatus(publishedStatus);
+
+            expect(store.titleStatus()).toEqual(publishedStatus);
+        });
+
+        it('should keep the "New" status (a null state) as given', () => {
+            store.setTitleStatus({ state: null });
+
+            expect(store.titleStatus()).toEqual({ state: null });
+        });
+
+        it('should hide the chip when the status is set to null', () => {
+            store.setTitleStatus(publishedStatus);
+
+            store.setTitleStatus(null);
+
+            expect(store.titleStatus()).toBeNull();
+        });
+
+        it('should clear the title status', () => {
+            store.setTitleStatus(publishedStatus);
+
+            store.clearTitleStatus();
+
+            expect(store.titleStatus()).toBeNull();
+        });
+
+        it('should leave the title status alone when breadcrumbs are set, appended or cleared', () => {
+            store.setTitleStatus(publishedStatus);
+
+            store.setBreadcrumbs(mockBreadcrumbs);
+            store.appendCrumb({ label: 'Extra', url: '/extra' });
+            store.clearBreadcrumbs();
+
+            expect(store.titleStatus()).toEqual(publishedStatus);
+        });
+
+        it('should leave the breadcrumbs alone when the title status changes', () => {
+            store.setBreadcrumbs(mockBreadcrumbs);
+
+            store.setTitleStatus(publishedStatus);
+            store.clearTitleStatus();
+
+            expect(store.breadcrumbs()).toEqual([
+                { label: 'Home', disabled: true },
+                ...mockBreadcrumbs
+            ]);
+        });
+
+        it('should not write to sessionStorage when only the title status changes', () => {
+            TestBed.flushEffects();
+            sessionStorageSetItemSpy.mockClear();
+
+            store.setTitleStatus(publishedStatus);
+            TestBed.flushEffects();
+
+            expect(sessionStorageSetItemSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not restore a title status from sessionStorage', () => {
+            store.setTitleStatus(publishedStatus);
+            TestBed.flushEffects();
+
+            const hasStatusInStorage = sessionStorageSetItemSpy.mock.calls.some(([, value]) =>
+                String(value).includes('hasLiveVersion')
+            );
+
+            expect(hasStatusInStorage).toBe(false);
         });
     });
 

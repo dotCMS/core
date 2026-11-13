@@ -20,6 +20,7 @@ import {
 } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotTitleStatus } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotSidePanelOutletComponent } from './dot-side-panel-outlet.component';
@@ -215,6 +216,65 @@ describe('DotSidePanelOutletComponent', () => {
         expect(
             spectator.query('.p-drawer-content', { root: true })?.classList.contains('flex')
         ).toBe(true);
+    });
+
+    describe('title status chip', () => {
+        it('starts with no status on a new panel ref', () => {
+            const ref = open();
+
+            expect(ref.titleStatus()).toBeNull();
+            expect(all('title-status-chip')).toHaveLength(0);
+        });
+
+        it("shows the chip a content binds on its panel's ref, after that panel's heading", () => {
+            const ref = open();
+
+            ref.bindTitleStatus(signal({ state: null }));
+            spectator.detectChanges();
+
+            expect(all('title-status-chip')).toHaveLength(1);
+            expect(all('title-status-chip')[0].textContent?.trim()).toBe('New');
+        });
+
+        it('follows the bound signal and removes the chip when it goes back to null', () => {
+            const ref = open();
+            const status = signal<DotTitleStatus>({
+                state: { live: true, working: true, hasLiveVersion: true }
+            });
+            ref.bindTitleStatus(status);
+            spectator.detectChanges();
+            expect(all('title-status-chip')[0].textContent?.trim()).toBe('Published');
+
+            status.set(null);
+            spectator.detectChanges();
+
+            expect(all('title-status-chip')).toHaveLength(0);
+        });
+
+        it('switches to another source when the content binds a new one', () => {
+            const ref = open();
+            ref.bindTitleStatus(signal({ state: null }));
+            spectator.detectChanges();
+            expect(all('title-status-chip')[0].textContent?.trim()).toBe('New');
+
+            ref.bindTitleStatus(
+                signal({ state: { live: true, working: true, hasLiveVersion: true } })
+            );
+            spectator.detectChanges();
+
+            expect(all('title-status-chip')[0].textContent?.trim()).toBe('Published');
+        });
+
+        it('leaves other panels without a chip', () => {
+            const first = open(TestContentComponent, signal('one.vtl'));
+            open(TestContentComponent, signal('two.vtl'));
+
+            first.bindTitleStatus(signal({ state: null }));
+            spectator.detectChanges();
+
+            expect(all('title-status-chip')).toHaveLength(1);
+            expect(all('side-panel')).toHaveLength(2);
+        });
     });
 });
 

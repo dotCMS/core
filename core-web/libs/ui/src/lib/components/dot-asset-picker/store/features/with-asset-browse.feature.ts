@@ -17,7 +17,10 @@ import { DotContentDriveService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotContentDriveSearchRequest,
-    DotContentDriveSearchResponse
+    DOT_SEARCH_SCOPE,
+    DotContentDriveSearchResponse,
+    DotSearchScope,
+    SEARCH_SCOPE_FILTER_KEY
 } from '@dotcms/dotcms-models';
 
 import { buildUserSearchablePayload } from '../../../dot-filter-bar/chips/dot-field-filter/user-searchable.util';
@@ -159,7 +162,21 @@ export function withAssetBrowse() {
                             includeSystemHost:
                                 currentFilters?.[SHARED_ASSETS_FILTER_KEY] !==
                                 SHARED_ASSETS_DISABLED_VALUE,
-                            filters: { text: currentFilters?.title || '', filterFolders: true },
+                            filters: {
+                                text: currentFilters?.title || '',
+                                filterFolders: true,
+                                // The scope only means something with a term, so an empty box sends
+                                // none. Title is named explicitly rather than left to the server's
+                                // default (All Fields), which is what the picker used to get.
+                                ...(currentFilters?.title
+                                    ? {
+                                          searchScope:
+                                              (currentFilters[
+                                                  SEARCH_SCOPE_FILTER_KEY
+                                              ] as DotSearchScope) ?? DOT_SEARCH_SCOPE.TITLE
+                                      }
+                                    : {})
+                            },
                             language: currentFilters?.languageId,
                             contentTypes: currentFilters?.contentType,
                             // Base-type NAMES. Content Drive maps these to numbers so they survive the

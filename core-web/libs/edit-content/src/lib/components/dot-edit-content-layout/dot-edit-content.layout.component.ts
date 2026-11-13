@@ -252,6 +252,15 @@ export class DotEditContentLayoutComponent {
             untracked(() => this.#relatedNav.registerTitle(contentlet.inode, contentlet.title));
         });
 
+        // Keep the chip next to the title in step with the editor. One effect for every surface: the
+        // host decides where it is drawn (global header, side panel header or dialog header), so a
+        // workflow action, a save or a locale switch refreshes it with no reload.
+        effect(() => {
+            const status = this.$store.titleStatus();
+
+            untracked(() => this.#host.setTitleStatus(status));
+        });
+
         // Initialize from the identity resolved by the host (route params in
         // full-screen, dialog config in overlay). Presentation-agnostic — the
         // editor no longer branches on a "dialog mode".

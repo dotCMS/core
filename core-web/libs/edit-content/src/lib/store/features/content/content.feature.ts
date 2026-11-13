@@ -21,6 +21,7 @@ import {
     ComponentStatus,
     DotCMSBaseTypesContentTypes,
     DotContentletDepth,
+    DotTitleStatus,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
@@ -49,6 +50,52 @@ export function withContent() {
              * @returns {boolean} - Returns true if the store's status is LOADED, otherwise false.
              */
             isLoaded: computed(() => store.state() === ComponentStatus.LOADED),
+
+            /**
+             * Whether the sidebar shows the Preview button: existing content that is an HTML page or has
+             * a URL map, and never while a historical version is viewed.
+             *
+             * @returns {boolean} True when there is something to preview
+             */
+            showPreviewLink: computed(() => {
+                const contentlet = store.contentlet();
+
+                return (
+                    store.initialContentletState() !== 'new' &&
+                    !store.isViewingHistoricalVersion() &&
+                    (contentlet?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE ||
+                        !!contentlet?.['URL_MAP_FOR_CONTENT'])
+                );
+            }),
+
+            /**
+             * What the chip next to the content title shows (the global header, the side panel header or
+             * the dialog header), derived once here so every surface renders the same thing.
+             *
+             * Hidden (`null`) until the real state is known: while loading, including an in-place reload
+             * that still holds the previous content, and while a historical version is viewed. Content
+             * that has not been saved reads "New" (a `null` state); existing content hands its
+             * contentlet to the badge, so a workflow action that changes it updates the chip.
+             *
+             * @returns {DotTitleStatus} `null` to hide the chip, otherwise the state for the badge
+             */
+            titleStatus: computed<DotTitleStatus>(() => {
+                const settled =
+                    store.state() === ComponentStatus.LOADED ||
+                    store.state() === ComponentStatus.SAVING;
+
+                if (!settled || store.isViewingHistoricalVersion()) {
+                    return null;
+                }
+
+                if (store.initialContentletState() === 'new') {
+                    return { state: null };
+                }
+
+                const contentlet = store.contentlet();
+
+                return contentlet ? { state: contentlet } : null;
+            }),
 
             /**
              * A computed property that checks if an error exists in the store.
