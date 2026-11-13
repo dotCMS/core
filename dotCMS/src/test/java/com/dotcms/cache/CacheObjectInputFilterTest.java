@@ -16,6 +16,7 @@ import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -156,6 +157,51 @@ class CacheObjectInputFilterTest {
         try (ObjectInputStream in = CacheObjectInputFilter.newObjectInputStream(forged)) {
             assertThrows(InvalidClassException.class, in::readObject);
         }
+    }
+
+    /**
+     * Given: a Guava {@code CompactHashMap} (allowed by {@code com.google.common.collect.**}) whose
+     * stream declares 2^30 - 1 entries but carries one
+     * Expected: the read fails on the missing entries instead of sizing its tables from the declared
+     * count, which takes gigabytes and ends in an OutOfMemoryError (CVE-2026-102554)
+     */
+    @Test
+    void readsGuavaCompactHashMapWithoutTrustingItsDeclaredSize() throws Exception {
+        final Method create = Class.forName("com.google.common.collect.CompactHashMap").getMethod("create");
+        create.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        final Map<String, String> map = (Map<String, String>) create.invoke(null);
+        map.put("k", "v");
+        final byte[] forged = serialize(map);
+        // writeObject writes the entry count as a 4-byte block (0x77 0x04) before the entries
+        final byte[] count = {0x77, 0x04, 0, 0, 0, 1};
+        final int at = indexOf(forged, count);
+        assertTrue(at >= 0, "entry count not found in the serialized map");
+        ByteBuffer.wrap(forged).putInt(at + 2, (1 << 30) - 1);
+
+        try (ObjectInputStream in = CacheObjectInputFilter.newObjectInputStream(forged)) {
+            assertThrows(IOException.class, in::readObject);
+        }
+    }
+
+    /**
+     * Finds the first occurrence of a byte sequence.
+     *
+     * @param bytes   the bytes to search
+     * @param pattern the sequence to find
+     * @return the offset of the first match, or -1 when there is none
+     */
+    private static int indexOf(final byte[] bytes, final byte[] pattern) {
+        outer:
+        for (int i = 0; i <= bytes.length - pattern.length; i++) {
+            for (int j = 0; j < pattern.length; j++) {
+                if (bytes[i + j] != pattern[j]) {
+                    continue outer;
+                }
+            }
+            return i;
+        }
+        return -1;
     }
 
     /**
