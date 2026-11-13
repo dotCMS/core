@@ -45,8 +45,9 @@ on:
 
 # A newly queued run replaces a pending one in the same group, so a group only holds runs that do
 # the same work: full writes (merges, unfiltered manual runs), filtered writes with the same page
-# list, or dry runs (which change nothing). If two write runs overlap on a page, publishing it fails
-# in one of them (the action is pinned to the version it checked).
+# list, or dry runs (which change nothing). Runs in different groups can overlap: each page's README
+# is taken from the newest main, and publishing fails in one of two runs that race on a page (the
+# action is pinned to the version it checked).
 concurrency:
   group: publish-readme-docs-${{ inputs.dry_run && 'dry-run' || inputs.pages && format('filtered-{0}', inputs.pages) || 'write' }}
   cancel-in-progress: false
@@ -83,7 +84,7 @@ jobs:
           PAGES_FILTER: ${{ inputs.pages }}
         run: |
           python3 - <<'PY'
-          import difflib, json, os, posixpath, re, sys, time, urllib.error, urllib.request
+          import difflib, json, os, posixpath, re, subprocess, sys, time, urllib.error, urllib.request
 
           REPO = "dotCMS/core"
           # Authoring server's "Push Publish" action: Save, Publish, Unlock, Push/Remove Now (to `prod`).
@@ -186,8 +187,8 @@ jobs:
           def wait_for_push(ident, before, inode):
               """Wait until production serves the version just published (same inode).
 
-              The push bundle is watched only to fail fast and explain a stall: a bundle holding this
-              page may belong to another push of it, so its SUCCESS proves nothing about this version."""
+              The push bundle is watched only to explain a stall: a bundle holding this page may belong
+              to another push of it, so its status proves nothing about this version."""
               seen, bundle = set(before), None
               deadline = time.time() + PUSH_TIMEOUT
               while time.time() < deadline:
@@ -210,20 +211,22 @@ jobs:
                       on_prod = None  # check again on the next pass
                   if on_prod and on_prod.get("inode") == inode:
                       return bundle["bundleId"] if bundle else "not found in the queue"
-                  if bundle and "FAIL" in bundle["status"]:
-                      raise RuntimeError(f"published, but push bundle {bundle['bundleId']} {bundle['status']}")
                   time.sleep(5)
               if not bundle:
                   raise PushStalled(f"published, but no push bundle appeared within {PUSH_TIMEOUT}s")
-              if bundle["status"] in ("SUCCESS", "SUCCESS_WITH_WARNINGS"):
-                  raise PushStalled(f"push bundle {bundle['bundleId']} reports {bundle['status']}, but production "
-                                    f"did not serve the published version within {PUSH_TIMEOUT}s")
               # The action succeeds even when the user may not push anywhere: the bundle then gets no
               # environment and never leaves BUNDLE_REQUESTED. (A new bundle briefly shows 0 environments too.)
               hint = (" (no environment: is the role allowed on the `prod` push environment?)"
-                      if not bundle.get("environmentCount") else "")
-              raise PushStalled(f"published, but push bundle {bundle['bundleId']} still {bundle['status']} "
-                                f"after {PUSH_TIMEOUT}s{hint}")
+                      if bundle["status"] == "BUNDLE_REQUESTED" and not bundle.get("environmentCount") else "")
+              raise PushStalled(f"published, but production did not serve it within {PUSH_TIMEOUT}s; "
+                                f"push bundle {bundle['bundleId']} is {bundle['status']}{hint}")
+
+          def refresh_main():
+              """Move the checkout to the newest main, right after a page is read. A run that published
+              newer text before that read had fetched main before publishing, so this fetch is at least
+              as new; one that publishes after the read changes the page's inode, which fire() refuses."""
+              subprocess.run(["git", "fetch", "-q", "--depth=1", "origin", "main"], check=True, timeout=120)
+              subprocess.run(["git", "checkout", "-q", "--detach", "FETCH_HEAD"], check=True, timeout=60)
 
           def unlock(ident):
               """Best effort: must not hide the error that led here. dotCMS only lets this (non-admin)
@@ -311,6 +314,7 @@ jobs:
                   if status != 200:
                       raise RuntimeError(f"read failed: HTTP {status} {data}")
                   content = data["entity"]
+                  refresh_main()
                   url = (content.get("readmeSource") or "").strip()
                   path = source_path(url)
                   if path is None:
