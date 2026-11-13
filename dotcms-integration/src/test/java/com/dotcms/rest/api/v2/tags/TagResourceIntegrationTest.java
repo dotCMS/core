@@ -914,6 +914,55 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         assertEquals(tag.getTagName(), tagAPI.getTagByTagId(tag.getTagId()).getTagName());
     }
 
+    /**
+     * Given: a Tags portlet user reads the tags stored under another user's id as the inode
+     * Expected: 403
+     */
+    @Test
+    public void test_findTagsByInode_otherUserInode_shouldBeForbidden() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
+        final User other = fixtures.backEndUser();
+        tagAPI.addUserTagInode(fixtures.tag("user-inode-read"), other.getUserId());
+
+        assertThrows(ForbiddenException.class, () -> createTagResource(user).findTagsByInode(
+                tagsRequest(), new MockHttpResponse(), other.getUserId()));
+    }
+
+    /**
+     * Given: a Tags portlet user links a tag to another user's id as the inode
+     * Expected: 403 and the other user gets no tag
+     */
+    @Test
+    public void test_linkTagsAndInode_otherUserInode_shouldBeForbidden() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
+        final User other = fixtures.backEndUser();
+        final Tag tag = fixtures.tag("user-inode-link");
+
+        assertThrows(ForbiddenException.class, () -> createTagResource(user).linkTagsAndInode(
+                tagsRequest(), new MockHttpResponse(), tag.getTagId(), other.getUserId()));
+        assertTrue(tagAPI.getTagInodesByInode(other.getUserId()).isEmpty());
+    }
+
+    /**
+     * Given: a user with the Tags and Users portlets creates a tag whose owner is a contentlet inode
+     * Expected: 403 and the content gets no tag
+     */
+    @Test
+    public void test_createTags_contentInodeAsOwner_shouldBeForbidden() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString(), PortletID.USERS.toString());
+        final Contentlet contentlet = fixtures.contentWithPermission(user, 0);
+        final String tagName = "content-owner-" + UUIDGenerator.shorty();
+
+        try {
+            assertThrows(ForbiddenException.class, () -> createTagResource(user).createTags(
+                    tagsRequest(), new MockHttpResponse(),
+                    List.of(new TagForm(tagName, Host.SYSTEM_HOST, contentlet.getInode(), null))));
+        } finally {
+            cleanup(tagName, Host.SYSTEM_HOST);
+        }
+        assertTrue(tagAPI.getTagInodesByInode(contentlet.getInode()).isEmpty());
+    }
+
     private static HttpServletRequest tagsRequest() {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getRequestURI()).thenReturn("/api/v2/tags");

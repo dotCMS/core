@@ -23,9 +23,11 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.business.TagTestFixtures;
 import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +36,10 @@ import org.junit.AfterClass;
 import org.junit.ClassRule;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+import javax.xml.parsers.DocumentBuilderFactory;
 
 /**
  * Integration tests for the permission checks in {@link TagAjax}.
@@ -475,6 +481,151 @@ public class TagAjaxTest extends IntegrationTestBase {
             fixtures.track(tagAPI.getTagByNameAndHost(tagName, Host.SYSTEM_HOST));
         }
         assertNotNull(tagAPI.getTagByNameAndHost(tagName, Host.SYSTEM_HOST));
+    }
+
+    /**
+     * Method to test: {@link TagAjax#addTag(String, String, String)}
+     * Given: a user with the Users portlet passes a contentlet inode as the user id
+     * Expected: a {@link DotSecurityException} is thrown and the content gets no tag
+     */
+    @Test
+    public void test_addTag_contentInodeAsUserId_shouldThrow() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.USERS.toString());
+        final Contentlet contentlet = fixtures.contentWithPermission(user, 0);
+        final String tagName = "ajax-content-owner-" + UUIDGenerator.shorty();
+        dwrContext.loginAs(user);
+
+        try {
+            assertThrows(DotSecurityException.class,
+                    () -> TagAjax.addTag(tagName, contentlet.getInode(), ""));
+        } finally {
+            fixtures.track(tagAPI.getTagByNameAndHost(tagName, Host.SYSTEM_HOST));
+        }
+        assertTrue(tagAPI.getTagInodesByInode(contentlet.getInode()).isEmpty());
+    }
+
+    /**
+     * Method to test: {@link TagAjax#getTagsByUser(String)}
+     * Given: a user with the Users portlet passes a contentlet inode as the user id
+     * Expected: a {@link DotSecurityException} is thrown
+     */
+    @Test
+    public void test_getTagsByUser_contentInodeAsUserId_shouldThrow() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.USERS.toString());
+        final Contentlet contentlet = fixtures.contentWithPermission(user, 0);
+        tagAPI.addContentletTagInode(fixtures.tag("ajax-content-read"), contentlet.getInode(), TAGS_FIELD);
+        dwrContext.loginAs(user);
+
+        assertThrows(DotSecurityException.class,
+                () -> new TagAjax().getTagsByUser(contentlet.getInode()));
+    }
+
+    /**
+     * Method to test: {@link TagAjax#addTag(String, String, String)}
+     * Given: a user with the Tags portlet but no Users portlet tags another user
+     * Expected: a {@link DotSecurityException} is thrown and the other user gets no tag
+     */
+    @Test
+    public void test_addTag_otherUserWithTagsPortletOnly_shouldThrow() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
+        final User other = fixtures.backEndUser();
+        final String tagName = "ajax-tags-only-" + UUIDGenerator.shorty();
+        dwrContext.loginAs(user);
+
+        try {
+            assertThrows(DotSecurityException.class,
+                    () -> TagAjax.addTag(tagName, other.getUserId(), ""));
+        } finally {
+            fixtures.track(tagAPI.getTagByNameAndHost(tagName, Host.SYSTEM_HOST));
+        }
+        assertFalse(userTagNames(other).contains(tagName));
+    }
+
+    /**
+     * Method to test: {@link TagAjax#getTagInodeByInode(String)}
+     * Given: another user's id as the inode, read by a user without a Users portlet
+     * Expected: a {@link DotSecurityException} is thrown
+     */
+    @Test
+    public void test_getTagInodeByInode_otherUserInode_shouldThrow() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
+        final User other = fixtures.backEndUser();
+        tagAPI.addUserTagInode(fixtures.tag("ajax-user-inode"), other.getUserId());
+        dwrContext.loginAs(user);
+
+        assertThrows(DotSecurityException.class,
+                () -> TagAjax.getTagInodeByInode(other.getUserId()));
+    }
+
+    /**
+     * Method to test: {@link TagAjax#getTagInodeByInode(String)}
+     * Given: another user's id as the inode, read by a user with the Users portlet
+     * Expected: the other user's tags are returned
+     */
+    @Test
+    public void test_getTagInodeByInode_otherUserInodeWithUsersPortlet_shouldReturnTags() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.USERS.toString());
+        final User other = fixtures.backEndUser();
+        final Tag tag = fixtures.tag("ajax-user-inode");
+        tagAPI.addUserTagInode(tag, other.getUserId());
+        dwrContext.loginAs(user);
+
+        assertTrue(TagAjax.getTagInodeByInode(other.getUserId()).stream()
+                .anyMatch(tagInode -> tagInode.getTagId().equals(tag.getTagId())));
+    }
+
+    /**
+     * Method to test: {@link TagAjax#deleteTagInode(String, String)}
+     * Given: another user's id as the inode, changed by a user without a Users portlet
+     * Expected: a {@link DotSecurityException} is thrown
+     */
+    @Test
+    public void test_deleteTagInode_otherUserInode_shouldThrow() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
+        final User other = fixtures.backEndUser();
+        final Tag tag = fixtures.tag("ajax-user-inode");
+        tagAPI.addUserTagInode(tag, other.getUserId());
+        dwrContext.loginAs(user);
+
+        assertThrows(DotSecurityException.class,
+                () -> new TagAjax().deleteTagInode(tag.getTagName(), other.getUserId()));
+    }
+
+    /**
+     * Given: the DWR configuration in {@code WEB-INF/dwr.xml}
+     * Expected: the converter for {@link Tag} leaves out the {@code userId} property
+     */
+    @Test
+    public void test_dwrTagConverter_excludesUserId() throws Exception {
+        // The integration build unpacks the dotCMS web app into TEST_WEBAPP_ROOT
+        final File dwrXml = new File(Config.getStringProperty("TEST_WEBAPP_ROOT", "src/main/webapp"),
+                "WEB-INF/dwr.xml");
+        assertTrue("WEB-INF/dwr.xml should be found at " + dwrXml.getAbsolutePath(), dwrXml.isFile());
+
+        final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        final Document document = factory.newDocumentBuilder().parse(dwrXml);
+
+        final NodeList converters = document.getElementsByTagName("convert");
+        Element tagConverter = null;
+        for (int i = 0; i < converters.getLength(); i++) {
+            final Element converter = (Element) converters.item(i);
+            if (Tag.class.getName().equals(converter.getAttribute("match"))) {
+                tagConverter = converter;
+            }
+        }
+        assertNotNull("dwr.xml should have a converter for Tag", tagConverter);
+
+        final NodeList params = tagConverter.getElementsByTagName("param");
+        boolean excludesUserId = false;
+        for (int i = 0; i < params.getLength(); i++) {
+            final Element param = (Element) params.item(i);
+            if ("exclude".equals(param.getAttribute("name"))
+                    && List.of(param.getAttribute("value").split("\\s*,\\s*")).contains("userId")) {
+                excludesUserId = true;
+            }
+        }
+        assertTrue("The Tag converter should exclude userId", excludesUserId);
     }
 
     private static List<String> userTagNames(final User user) throws Exception {

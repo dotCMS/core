@@ -1804,6 +1804,29 @@ public class TagAPITest extends IntegrationTestBase {
 	}
 
 	/**
+	 * Method to test: {@link TagAPI#canEditUserTags(User, String)}
+	 * Given: a user with the Users portlet and a contentlet inode in place of a user id
+	 * Expected: false, the Users portlet only covers user profiles
+	 */
+	@Test
+	public void test_canEditUserTags_contentInodeWithUsersPortlet_shouldReturnFalse() throws Exception {
+		final User user = fixtures.backEndUser(PortletID.USERS.toString());
+		final Contentlet contentlet = fixtures.contentWithPermission(user, 0);
+		assertFalse(APILocator.getTagAPI().canEditUserTags(user, contentlet.getInode()));
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#canEditUserTags(User, String)}
+	 * Given: a user with the Users portlet and an id that matches no user
+	 * Expected: false
+	 */
+	@Test
+	public void test_canEditUserTags_unknownUserIdWithUsersPortlet_shouldReturnFalse() throws Exception {
+		final User user = fixtures.backEndUser(PortletID.USERS.toString());
+		assertFalse(APILocator.getTagAPI().canEditUserTags(user, UUIDGenerator.generateUuid()));
+	}
+
+	/**
 	 * Method to test: {@link TagAPI#canEditTagInodes(User, String)}
 	 * Given: a contentlet the user can edit
 	 * Expected: true

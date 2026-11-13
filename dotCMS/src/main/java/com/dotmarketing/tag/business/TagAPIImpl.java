@@ -752,7 +752,8 @@ public class TagAPIImpl implements TagAPI {
         if (isAdminOrSystemUser(user) || user.getUserId().equals(userId)) {
             return true;
         }
-        return APILocator.getLayoutAPI().doesUserHaveAccessToUsersPortlet(user);
+        // The Users portlets cover user profiles only, so the id must belong to a user
+        return isUserId(userId) && APILocator.getLayoutAPI().doesUserHaveAccessToUsersPortlet(user);
     }
 
     @Override
@@ -800,24 +801,36 @@ public class TagAPIImpl implements TagAPI {
         }
 
         // User profile tags are stored with the user id as their inode
-        User tagOwner = null;
-        try {
-            tagOwner = APILocator.getUserAPI().loadUserById(inode, APILocator.systemUser(), false);
-        } catch (final NoSuchUserException e) {
-            // not a user id either
-        } catch (final DotSecurityException e) {
-            // Not expected with the system user; deny rather than guess
-            Logger.warn(this, String.format("Could not load user '%s' to check its tags: %s",
-                    inode, e.getMessage()));
-            return false;
-        }
-        if (tagOwner != null) {
-            return canEditUserTags(user, tagOwner.getUserId());
+        if (isUserId(inode)) {
+            return canEditUserTags(user, inode);
         }
 
         Logger.debug(this, () -> String.format(
                 "Inode '%s' is neither a contentlet nor a user, only admin and system users can use its tags", inode));
         return false;
+    }
+
+    /**
+     * Tells whether the given id belongs to an existing user.
+     *
+     * @param userId the id to look up
+     * @return true if a user with that id exists, false otherwise
+     * @throws DotDataException if the user can't be loaded
+     */
+    private boolean isUserId(final String userId) throws DotDataException {
+        if (!UtilMethods.isSet(userId)) {
+            return false;
+        }
+        try {
+            return APILocator.getUserAPI().loadUserById(userId, APILocator.systemUser(), false) != null;
+        } catch (final NoSuchUserException e) {
+            return false;
+        } catch (final DotSecurityException e) {
+            // Not expected with the system user; deny rather than guess
+            Logger.warn(this, String.format("Could not load user '%s' to check its tags: %s",
+                    userId, e.getMessage()));
+            return false;
+        }
     }
 
     /**

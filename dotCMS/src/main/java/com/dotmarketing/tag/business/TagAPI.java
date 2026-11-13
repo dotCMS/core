@@ -422,7 +422,7 @@ public interface TagAPI {
 	/**
 	 * Checks if a user can see or change the Tags that belong to a given user's profile. Allowed
 	 * for the user themselves, admin and system users, and users with access to one of the Users
-	 * portlets.
+	 * portlets when {@code userId} belongs to an existing user.
 	 *
 	 * @param user   the {@link User} making the request
 	 * @param userId id of the user whose Tags are read or changed
