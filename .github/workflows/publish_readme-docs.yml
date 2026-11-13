@@ -1,0 +1,410 @@
+# Publish README Docs
+#
+# Copies markdown files from this repo (mostly SDK and example READMEs) into their
+# documentation pages (DotcmsDocumentation contentlets) on the dotCMS authoring server, so
+# dev.dotcms.com serves and indexes the same text instead of mirroring it at request time.
+# The file is the single source of truth: each run overwrites the page body. dotCMS keeps
+# the version history.
+#
+# Which pages: every DotcmsDocumentation page whose `readmeSource` field holds a URL of the
+# form https://github.com/dotCMS/core/blob/main/<path>.md. Pages are added or removed by
+# editing that field in dotCMS; no change to this workflow is needed. URLs pointing anywhere
+# else are left alone.
+#
+# Each changed page goes through the authoring server's Push Publish workflow action (save,
+# publish, unlock, push to the `prod` environment), and the run waits for that push to
+# succeed. The token belongs to the CI Autodoc Publish User, which needs the Dev Publish role
+# on the site, on the Documentation content type, on the Push Publish action and on the
+# `prod` push environment.
+#
+# Production is read too (with the read-only AI search account's token), so a page whose
+# earlier push failed is pushed again. A page that is not on production at all (e.g. an
+# unreleased SDK) is published on authoring only and never pushed. A page with a pending
+# draft fails the run instead of being published: the draft may hold unreviewed edits.
+#
+# Runs on every merge that touches a markdown file, and manually (dry run by default).
+# Every run checks all mapped pages and writes only those that differ.
+
+name: Publish README Docs
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.md'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Compare only and show the diffs in the run summary; write nothing to dotCMS'
+        type: boolean
+        default: true
+      pages:
+        description: 'Space-separated page urlTitles to sync (empty = all mapped pages)'
+        type: string
+        default: ''
+
+# A newly queued run replaces a pending one in the same group, so a group only holds runs that do
+# the same work: full writes (merges, unfiltered manual runs), filtered writes with the same page
+# list, or dry runs (which change nothing). Runs in different groups can overlap: each page's README
+# is taken from the newest main, and publishing fails in one of two runs that race on a page (the
+# action is pinned to the version it checked).
+concurrency:
+  group: publish-readme-docs-${{ inputs.dry_run && 'dry-run' || inputs.pages && format('filtered-{0}', inputs.pages) || 'write' }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  # GitHub users DMed by dotBot when a sync fails (looked up in .github/data/slack-mappings.json).
+  NOTIFY_GITHUB_USERS: 'jdcmsd'
+
+jobs:
+  sync:
+    name: Sync READMEs to dotCMS
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Manual runs can be started from any branch; only main's files are published.
+          ref: main
+          fetch-depth: 1
+
+      - name: Sync pages
+        env:
+          DOTCMS_URL: ${{ vars.AUTODOC_DOTCMS_BASE_URL }}
+          DOTCMS_TOKEN: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_PUBLISH }}
+          # Production, read only: the AI search account sees the live docs pages.
+          PROD_URL: ${{ vars.DOTCMS_DEVSITE_URL }}
+          PROD_TOKEN: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_AISEARCH }}
+          # Empty on push, so merges always write.
+          DRY_RUN: ${{ inputs.dry_run }}
+          PAGES_FILTER: ${{ inputs.pages }}
+        run: |
+          python3 - <<'PY'
+          import difflib, json, os, posixpath, re, subprocess, sys, time, urllib.error, urllib.request
+
+          REPO = "dotCMS/core"
+          # Authoring server's "Push Publish" action: Save, Publish, Unlock, Push/Remove Now (to `prod`).
+          PUSH_PUBLISH_ACTION = "0c5239e8-4aef-4dcd-b31f-ab5ca0394ea2"
+          # "Publish" action: Save, Publish on authoring only (for pages not on production).
+          PUBLISH_ACTION = "b9d89c80-3d88-4311-8365-187323c96436"
+          PUSH_TIMEOUT = 180  # seconds to wait for a page's push bundle to succeed
+          SOURCE_PREFIX = f"https://github.com/{REPO}/blob/main/"
+          LINK_BASE = f"https://github.com/{REPO}/blob/main"
+          ASSET_BASE = f"https://raw.githubusercontent.com/{REPO}/main"
+          # Working versions of mapped pages. size is well above the number of pages.
+          PAGE_QUERY = ("+contenttype:dotcmsdocumentation +working:true +languageid:1 +deleted:false "
+                        "+dotcmsdocumentation.readmesource:*")
+
+          base = os.environ["DOTCMS_URL"].rstrip("/")
+          token = os.environ["DOTCMS_TOKEN"]
+          prod_base = os.environ["PROD_URL"].rstrip("/")
+          prod_token = os.environ["PROD_TOKEN"]
+          dry_run = os.environ.get("DRY_RUN") == "true"
+          selected = set(os.environ.get("PAGES_FILTER", "").split())
+          summary = open(os.environ["GITHUB_STEP_SUMMARY"], "a")
+
+          # --- README clean-up, matching the devsite's former live mirror ---
+          NOT_ABSOLUTE = r"(?!https?://)(?!/)(?!#)(?!data:)(?!mailto:)(?!tel:)(?:\./)?"
+
+          def outside_fences(lines):
+              """Indexes of lines not inside ``` / ~~~ code blocks."""
+              fence = None
+              for i, line in enumerate(lines):
+                  m = re.match(r"\s*(```|~~~)", line)
+                  if m:
+                      fence = None if fence == m[1] else (fence or m[1])
+                  elif fence is None:
+                      yield i
+
+          def clean(readme, path):
+              lines = readme.replace("\r\n", "\n").split("\n")
+              # Drop a "Table of Contents" section: its heading up to the next heading.
+              heads = [i for i in outside_fences(lines) if re.match(r"#+\s", lines[i])]
+              toc = next((i for i in heads if re.search(r"table\s+of\s+contents", lines[i], re.I)), None)
+              if toc is not None:
+                  end = next((i for i in heads if i > toc), len(lines))
+                  del lines[toc:end]
+              # Drop the first H1; the page renders its own title.
+              h1 = next((i for i in outside_fences(lines) if re.match(r"#\s", lines[i])), None)
+              if h1 is not None:
+                  del lines[h1]
+
+              # Relative links and images would resolve against dev.dotcms.com; point them at GitHub.
+              # Fenced code blocks are left as written.
+              directory = posixpath.dirname(path)
+              def absolute(ref):
+                  target, sep, anchor = ref.partition("#")
+                  resolved = posixpath.normpath(posixpath.join(directory, target)) if target else directory
+                  return resolved + sep + anchor
+              def rewrite(text):
+                  text = re.sub(r"!\[([^\]]*)\]\(" + NOT_ABSOLUTE + r"([^)]+)\)",
+                                lambda m: f"![{m[1]}]({ASSET_BASE}/{absolute(m[2])})", text)
+                  text = re.sub(r"(?<!!)\[([^\]]+)\]\(" + NOT_ABSOLUTE + r"([^)]+)\)",
+                                lambda m: f"[{m[1]}]({LINK_BASE}/{absolute(m[2])})", text)
+                  return re.sub(r"<img([^>]*)\s+src=[\"']" + NOT_ABSOLUTE + r"([^\"']+)[\"']",
+                                lambda m: f'<img{m[1]} src="{ASSET_BASE}/{absolute(m[2])}"', text)
+              for i in outside_fences(lines):
+                  lines[i] = rewrite(lines[i])
+              return "\n".join(lines).strip() + "\n"
+
+          def normalize(text):
+              # Trailing spaces stay: two of them are a Markdown line break (dotCMS stores them as sent).
+              return text.replace("\r\n", "\n").strip("\n")
+
+          def source_path(url):
+              """Repo path from a readmeSource URL; None if the URL is not for this repo."""
+              if not url.startswith(SOURCE_PREFIX):
+                  return None
+              path = url[len(SOURCE_PREFIX):]
+              if (posixpath.normpath(path) != path or path.startswith(("/", "..")) or not path.lower().endswith(".md")):
+                  raise RuntimeError(f"readmeSource is not a markdown file path: {url}")
+              if not os.path.isfile(path):
+                  raise RuntimeError(f"readmeSource file not found on main: {path}")
+              return path
+
+          def call(method, url, payload=None, prod=False):
+              req = urllib.request.Request((prod_base if prod else base) + url, method=method,
+                                           data=json.dumps(payload).encode() if payload is not None else None)
+              req.add_header("Authorization", f"Bearer {prod_token if prod else token}")
+              req.add_header("Content-Type", "application/json")
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as resp:
+                      return resp.status, json.loads(resp.read() or b"{}")
+              except urllib.error.HTTPError as e:
+                  return e.code, {"error": e.read().decode(errors="replace")[:300]}
+
+          class PushStalled(RuntimeError):
+              """A push never finished; most likely a setup problem that affects every page."""
+
+          def recent_bundles():
+              # Generous page size: scheduled bundles can be listed ahead of new pushes.
+              status, data = call("GET", "/api/v1/publishing?page=1&per_page=100")
+              if status != 200:
+                  raise RuntimeError(f"publishing queue unreadable: HTTP {status} {data}")
+              return data.get("entity") or []
+
+          def wait_for_push(ident, before, inode):
+              """Wait until production serves the version just published (same inode), or a newer
+              version that another run or an editor published since.
+
+              The push bundle is watched only to explain a stall: a bundle holding this page may belong
+              to another push of it, so its status proves nothing about this version."""
+              seen, bundle = set(before), None
+              deadline = time.time() + PUSH_TIMEOUT
+              while time.time() < deadline:
+                  try:
+                      for b in recent_bundles():
+                          if bundle and b["bundleId"] == bundle["bundleId"]:
+                              bundle = b  # refresh status
+                          elif not bundle and b["bundleId"] not in seen:
+                              status, assets = call("GET", f"/api/bundle/{b['bundleId']}/assets")
+                              if status != 200:
+                                  continue  # look again on the next pass
+                              seen.add(b["bundleId"])
+                              if any(a.get("asset") == ident for a in assets):
+                                  bundle = b
+                  except (RuntimeError, OSError):
+                      pass  # queue unreadable this pass; production is still checked below
+                  try:
+                      on_prod = production_page(ident)
+                  except (RuntimeError, OSError):  # OSError: timeouts and connection errors
+                      on_prod = None  # check again on the next pass
+                  if on_prod and on_prod.get("inode") == inode:
+                      return f"bundle {bundle['bundleId']}" if bundle else "bundle not found in the queue"
+                  try:
+                      status, data = call("GET", f"/api/v1/content/{ident}?language=1")
+                  except OSError:
+                      status = None
+                  newer = data["entity"] if status == 200 else {}
+                  if (newer.get("live") and newer.get("inode") != inode
+                          and on_prod and on_prod.get("inode") == newer.get("inode")):
+                      return "superseded: a newer version reached production"
+                  time.sleep(5)
+              if not bundle:
+                  raise PushStalled(f"published, but no push bundle appeared within {PUSH_TIMEOUT}s")
+              # The action succeeds even when the user may not push anywhere: the bundle then gets no
+              # environment and never leaves BUNDLE_REQUESTED. (A new bundle briefly shows 0 environments too.)
+              hint = (" (no environment: is the role allowed on the `prod` push environment?)"
+                      if bundle["status"] == "BUNDLE_REQUESTED" and not bundle.get("environmentCount") else "")
+              raise PushStalled(f"published, but production did not serve it within {PUSH_TIMEOUT}s; "
+                                f"push bundle {bundle['bundleId']} is {bundle['status']}{hint}")
+
+          def refresh_main():
+              """Move the checkout to the newest main, right after a page is read. A run that published
+              newer text before that read had fetched main before publishing, so this fetch is at least
+              as new; one that publishes after the read changes the page's inode, which fire() refuses."""
+              subprocess.run(["git", "fetch", "-q", "--depth=1", "origin", "main"], check=True, timeout=120)
+              subprocess.run(["git", "checkout", "-q", "--detach", "FETCH_HEAD"], check=True, timeout=60)
+
+          def unlock(ident):
+              """Best effort: must not hide the error that led here. dotCMS only lets this (non-admin)
+              account release its own lock, so this never removes someone else's."""
+              try:
+                  call("PUT", f"/api/v1/content/_unlock/{ident}?language=1")
+              except Exception:
+                  pass
+
+          def fire(action, ident, body, read):
+              """Save the new body over the version read earlier (read) and fire the action.
+
+              The action is fired on that version's inode, not the identifier, so dotCMS builds the new
+              version from exactly the content checked here: a draft saved meanwhile is never published.
+              The lock keeps other users from saving while this runs. If someone else already holds it,
+              dotCMS refuses this (non-admin) account's lock and the run fails: rerun once the page is
+              unlocked. CMS admins can still take the lock over mid-run: the re-read below fails the run
+              if they have, and a draft they save at any point is refused by the inode-pinned action.
+              The workflow actions release the lock; every failure here releases it too."""
+              try:
+                  status, data = call("PUT", f"/api/v1/content/_lock/{ident}?language=1")
+                  if status != 200:
+                      raise RuntimeError(f"could not lock the page (locked by someone else?); rerun once it is "
+                                         f"unlocked: HTTP {status} {data}")
+                  status, data = call("GET", f"/api/v1/content/{ident}?language=1")
+                  if status != 200:
+                      raise RuntimeError(f"read after lock failed: HTTP {status} {data}")
+                  now = data["entity"]
+                  if (now.get("inode") != read["inode"] or now.get("live") is not True
+                          or (now.get("lockedBy") or {}).get("userId") != me):
+                      raise RuntimeError("page changed while syncing (new draft or lock?); check it in dotCMS, then rerun")
+                  payload = {"contentlet": {"identifier": ident, "languageId": 1, "documentation": body,
+                                            "disabledWYSIWYG": ["documentation"]}}
+                  url = f"/api/v1/workflow/actions/{action}/fire?inode={read['inode']}"
+                  status, data = call("PUT", url, payload)
+                  if status >= 500:  # dotCMS intermittently fails a save; a retry has always gone through
+                      status, data = call("PUT", url, payload)
+                  if status != 200 or data.get("errors"):
+                      raise RuntimeError(f"save/publish failed: HTTP {status} {data.get('errors') or data}")
+                  return data["entity"].get("inode")
+              except Exception:
+                  unlock(ident)  # also covers timeouts and connection errors, which call() does not catch
+                  raise
+
+          def push_publish(ident, body, read):
+              before = {b["bundleId"] for b in recent_bundles()}
+              inode = fire(PUSH_PUBLISH_ACTION, ident, body, read)
+              return wait_for_push(ident, before, inode)
+
+          def production_page(ident):
+              """The page as production serves it, or None if the page is not there."""
+              status, data = call("GET", f"/api/v1/content/{ident}?language=1", prod=True)
+              if status == 404:
+                  return None
+              if status != 200:
+                  raise RuntimeError(f"production read failed: HTTP {status} {data}")
+              return data["entity"]
+
+          # A bad token still reads the public pages as anonymous, so check it before anything else.
+          status, data = call("GET", "/api/v1/users/current/")
+          if status != 200:
+              sys.exit(f"dotCMS token rejected: HTTP {status} {data}")
+          me = data.get("userId")
+
+          status, data = call("POST", "/api/es/search", {"query": {"query_string": {"query": PAGE_QUERY}}, "size": 1000})
+          pages = data.get("contentlets") if status == 200 else None
+          if not pages:
+              # Never a valid state; most likely a token, permission or search index problem.
+              sys.exit(f"no mapped pages found (HTTP {status}): {data if status != 200 else 'empty result'}")
+          unknown = selected - {p.get("urlTitle") for p in pages}
+          if unknown:
+              sys.exit(f"not a mapped page urlTitle: {' '.join(sorted(unknown))}")
+
+          rows, diffs, failed, stalled, synced = [], [], 0, None, 0
+          for page in sorted(pages, key=lambda p: p.get("urlTitle") or ""):
+              slug, ident = page.get("urlTitle"), page["identifier"]
+              if selected and slug not in selected:
+                  continue
+              url, path = page.get("readmeSource", "").strip(), None
+              try:
+                  if stalled:
+                      raise RuntimeError(f"not attempted: an earlier push stalled ({stalled})")
+                  # Search results can lag behind recent saves; read the page itself.
+                  status, data = call("GET", f"/api/v1/content/{ident}?language=1")
+                  if status != 200:
+                      raise RuntimeError(f"read failed: HTTP {status} {data}")
+                  content = data["entity"]
+                  refresh_main()
+                  url = (content.get("readmeSource") or "").strip()
+                  path = source_path(url)
+                  if path is None:
+                      result = "other source, skipped"
+                  elif content.get("live") is not True:
+                      # Publishing would also publish whatever else the draft changed, unreviewed.
+                      raise RuntimeError("pending draft: publish or discard it in dotCMS, then rerun")
+                  else:
+                      synced += 1
+                      body = clean(open(path, encoding="utf-8").read(), path)
+                      current = content.get("documentation") or ""
+                      on_prod = production_page(ident)
+                      if on_prod is None:
+                          # Not released to production (or removed from it); keep it that way.
+                          if normalize(current) == normalize(body):
+                              result = "unchanged (not on production)"
+                          elif dry_run:
+                              result = "would update on authoring only (not on production)"
+                          else:
+                              fire(PUBLISH_ACTION, ident, body, content)
+                              result = "published on authoring only (not on production)"
+                      elif normalize(current) != normalize(body):
+                          if dry_run:
+                              result = "would update"
+                          else:
+                              result = f"published and pushed ({push_publish(ident, body, content)})"
+                      elif normalize(on_prod.get("documentation") or "") != normalize(body):
+                          # Authoring is current but production is not: an earlier push failed.
+                          if dry_run:
+                              result = "would push again (production is behind)"
+                          else:
+                              result = f"pushed again, production was behind ({push_publish(ident, body, content)})"
+                      else:
+                          result = "unchanged"
+                      if dry_run and result.startswith("would"):
+                          # The summary is public: diff against production's text, never authoring's.
+                          public = (on_prod.get("documentation") or "") if on_prod else ""
+                          diffs.append((slug, "".join(difflib.unified_diff(
+                              public.splitlines(True), body.splitlines(True), "production", path))))
+              except PushStalled as exc:
+                  failed += 1
+                  stalled = slug
+                  result = f"FAILED: {exc}"
+              except Exception as exc:
+                  failed += 1
+                  result = f"FAILED: {exc}"
+              print(f"{slug:24} {result}")
+              rows.append(f"| `{slug}` | {f'`{path}`' if path else url} | {result} |")
+
+          summary.write(f"## README docs sync{' (dry run)' if dry_run else ''}\n\n| Page | Source | Result |\n|---|---|---|\n")
+          summary.write("\n".join(rows) + "\n")
+          if not synced and not failed:
+              # Never a valid state: most likely the readmeSource URLs or SOURCE_PREFIX changed.
+              print(f"no mapped page has a readmeSource under {SOURCE_PREFIX}")
+              summary.write(f"\n**No mapped page has a readmeSource under {SOURCE_PREFIX}.**\n")
+              failed = 1
+          for slug, diff in diffs:
+              summary.write(f"\n<details><summary>{slug}</summary>\n\n```diff\n{diff}\n```\n</details>\n")
+          sys.exit(1 if failed else 0)
+          PY
+
+      - name: Notify on failure
+        if: failure()
+        env:
+          SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          text=":x: README docs sync failed. ${RUN_URL}"
+          for user in $NOTIFY_GITHUB_USERS; do
+            slack_id=$(jq -r --arg u "$user" '.[] | select(.github_user == $u) | .slack_id' .github/data/slack-mappings.json)
+            if [ -z "$slack_id" ]; then
+              echo "::warning::No Slack mapping for GitHub user ${user}"
+              continue
+            fi
+            jq -n --arg c "$slack_id" --arg t "$text" '{channel: $c, text: $t}' \
+              | curl -s -X POST https://slack.com/api/chat.postMessage \
+                  -H "Content-type: application/json; charset=utf-8" \
+                  -H "Authorization: Bearer ${SLACK_BOT_TOKEN}" \
+                  --data @- \
+              | jq -e '.ok' > /dev/null || echo "::warning::Slack DM to ${user} failed"
+          done
