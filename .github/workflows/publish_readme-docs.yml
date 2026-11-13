@@ -219,19 +219,24 @@ jobs:
               raise PushStalled(f"published, but push bundle {bundle['bundleId']} still {bundle['status']} "
                                 f"after {PUSH_TIMEOUT}s{hint}")
 
-          def unlock(ident):
-              """Best effort: a failure here must not hide the error that led to it."""
+          def unlock_if_mine(ident):
+              """Release the lock if this account holds it; another editor may have taken it over, and
+              dotCMS would let us remove theirs too. Best effort: must not hide the error that led here."""
               try:
-                  call("PUT", f"/api/v1/content/_unlock/{ident}?language=1")
+                  status, data = call("GET", f"/api/v1/content/{ident}?language=1")
+                  if status == 200 and (data["entity"].get("lockedBy") or {}).get("userId") == me:
+                      call("PUT", f"/api/v1/content/_unlock/{ident}?language=1")
               except Exception:
                   pass
 
           def fire(action, ident, body, read):
-              """Save the new body over the version read earlier (read) and fire the action, holding the lock.
+              """Save the new body over the version read earlier (read) and fire the action.
 
-              Without the lock, a draft saved in between would be merged into this publish, unreviewed.
-              dotCMS lets any editor take over a lock, so a page someone else has locked fails instead.
-              The workflow actions release the lock; every failure here releases it too."""
+              The action is fired on that version's inode, not the identifier, so dotCMS builds the new
+              version from exactly the content checked here: a draft saved meanwhile is never published.
+              The lock keeps editors from saving while this runs; dotCMS lets any editor take over a
+              lock, so a page someone else has locked fails instead. The workflow actions release the
+              lock; every failure here releases it too, if it is still ours."""
               if read.get("locked") and (read.get("lockedBy") or {}).get("userId") != me:
                   raise RuntimeError("locked by another user (editing it?); rerun once it is unlocked")
               try:
@@ -247,7 +252,7 @@ jobs:
                       raise RuntimeError("page changed while syncing (new draft or lock?); check it in dotCMS, then rerun")
                   payload = {"contentlet": {"identifier": ident, "languageId": 1, "documentation": body,
                                             "disabledWYSIWYG": ["documentation"]}}
-                  url = f"/api/v1/workflow/actions/{action}/fire?identifier={ident}&language=1"
+                  url = f"/api/v1/workflow/actions/{action}/fire?inode={read['inode']}"
                   status, data = call("PUT", url, payload)
                   if status >= 500:  # dotCMS intermittently fails a save; a retry has always gone through
                       status, data = call("PUT", url, payload)
@@ -255,7 +260,7 @@ jobs:
                       raise RuntimeError(f"save/publish failed: HTTP {status} {data.get('errors') or data}")
                   return data["entity"].get("inode")
               except Exception:
-                  unlock(ident)  # also covers timeouts and connection errors, which call() does not catch
+                  unlock_if_mine(ident)  # also covers timeouts and connection errors, which call() does not catch
                   raise
 
           def push_publish(ident, body, read):
