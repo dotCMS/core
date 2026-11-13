@@ -219,13 +219,11 @@ jobs:
               raise PushStalled(f"published, but push bundle {bundle['bundleId']} still {bundle['status']} "
                                 f"after {PUSH_TIMEOUT}s{hint}")
 
-          def unlock_if_mine(ident):
-              """Release the lock if this account holds it; another editor may have taken it over, and
-              dotCMS would let us remove theirs too. Best effort: must not hide the error that led here."""
+          def unlock(ident):
+              """Best effort: must not hide the error that led here. dotCMS only lets this (non-admin)
+              account release its own lock, so this never removes someone else's."""
               try:
-                  status, data = call("GET", f"/api/v1/content/{ident}?language=1")
-                  if status == 200 and (data["entity"].get("lockedBy") or {}).get("userId") == me:
-                      call("PUT", f"/api/v1/content/_unlock/{ident}?language=1")
+                  call("PUT", f"/api/v1/content/_unlock/{ident}?language=1")
               except Exception:
                   pass
 
@@ -234,15 +232,16 @@ jobs:
 
               The action is fired on that version's inode, not the identifier, so dotCMS builds the new
               version from exactly the content checked here: a draft saved meanwhile is never published.
-              The lock keeps editors from saving while this runs; dotCMS lets any editor take over a
-              lock, so a page someone else has locked fails instead. The workflow actions release the
-              lock; every failure here releases it too, if it is still ours."""
-              if read.get("locked") and (read.get("lockedBy") or {}).get("userId") != me:
-                  raise RuntimeError("locked by another user (editing it?); rerun once it is unlocked")
+              The lock keeps other users from saving while this runs. If someone else already holds it,
+              dotCMS refuses this (non-admin) account's lock and the run fails: rerun once the page is
+              unlocked. CMS admins can still take the lock over mid-run: the re-read below fails the run
+              if they have, and a draft they save at any point is refused by the inode-pinned action.
+              The workflow actions release the lock; every failure here releases it too."""
               try:
                   status, data = call("PUT", f"/api/v1/content/_lock/{ident}?language=1")
                   if status != 200:
-                      raise RuntimeError(f"could not lock the page: HTTP {status} {data}")
+                      raise RuntimeError(f"could not lock the page (locked by someone else?); rerun once it is "
+                                         f"unlocked: HTTP {status} {data}")
                   status, data = call("GET", f"/api/v1/content/{ident}?language=1")
                   if status != 200:
                       raise RuntimeError(f"read after lock failed: HTTP {status} {data}")
@@ -260,7 +259,7 @@ jobs:
                       raise RuntimeError(f"save/publish failed: HTTP {status} {data.get('errors') or data}")
                   return data["entity"].get("inode")
               except Exception:
-                  unlock_if_mine(ident)  # also covers timeouts and connection errors, which call() does not catch
+                  unlock(ident)  # also covers timeouts and connection errors, which call() does not catch
                   raise
 
           def push_publish(ident, body, read):
