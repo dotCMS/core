@@ -84,6 +84,7 @@ import org.junit.runners.Suite;
         MetricTimeoutTest.class,
         Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
         TotalSizeOfFilesPerThemeMetricTypeTest.class,
+        com.dotmarketing.startup.runonce.Task261112WidenSiteSearchAuditTextColumnsTest.class,
         TimeMachineUtilTest.class,
         Task250604UpdateFolderInodesTest.class,
         com.dotcms.rendering.js.FileJavascriptReaderTest.class,
