@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,9 +28,12 @@ import com.dotcms.rest.tag.RestTag;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.tag.business.TagAPI;
+import com.dotmarketing.tag.business.TagTestFixtures;
 import com.dotmarketing.tag.model.Tag;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import java.io.ByteArrayOutputStream;
@@ -47,6 +51,7 @@ import javax.ws.rs.core.StreamingOutput;
 import org.glassfish.jersey.media.multipart.ContentDisposition;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataMultiPart;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -61,8 +66,15 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
 
     private static final String TAGS_FIELD = "tags";
 
+    private static final TagTestFixtures fixtures = new TagTestFixtures();
+
     private static TagAPI tagAPI;
     private static User systemUser;
+
+    @AfterClass
+    public static void cleanUpTagPermissionFixtures() throws Exception {
+        fixtures.cleanUp();
+    }
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -726,6 +738,235 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         } finally {
             UserDataGen.remove(limitedUser);
         }
+    }
+
+    /**
+     * Given: a Tags portlet user creates a tag owned by another user
+     * Expected: 403 and the other user gets no tag
+     */
+    @Test
+    public void test_createTags_ownerIsOtherUser_shouldBeForbidden() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
+        final User other = fixtures.backEndUser();
+        final String tagName = "owner-other-" + UUIDGenerator.shorty();
+
+        try {
+            assertThrows(ForbiddenException.class, () -> createTagResource(user).createTags(
+                    tagsRequest(), new MockHttpResponse(),
+                    List.of(new TagForm(tagName, Host.SYSTEM_HOST, other.getUserId(), null))));
+        } finally {
+            cleanup(tagName, Host.SYSTEM_HOST);
+        }
+        assertTrue("The other user should get no tag",
+                tagAPI.getTagsForUserByUserId(other.getUserId()).isEmpty());
+    }
+
+    /**
+     * Given: a Tags portlet user creates a tag with no owner
+     * Expected: 201 and the tag is created
+     */
+    @Test
+    public void test_createTags_noOwner_shouldCreateTag() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
+        final String tagName = "no-owner-" + UUIDGenerator.shorty();
+
+        try {
+            final Response result = createTagResource(user).createTags(tagsRequest(),
+                    new MockHttpResponse(), List.of(new TagForm(tagName, Host.SYSTEM_HOST, null, null)));
+            assertEquals(201, result.getStatus());
+        } finally {
+            cleanup(tagName, Host.SYSTEM_HOST);
+        }
+    }
+
+    /**
+     * Given: a batch where only the second tag is owned by another user
+     * Expected: 403 and none of the tags is created
+     */
+    @Test
+    public void test_createTags_secondOwnerIsOtherUser_shouldCreateNothing() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
+        final User other = fixtures.backEndUser();
+        final String firstName = "batch-first-" + UUIDGenerator.shorty();
+        final String secondName = "batch-second-" + UUIDGenerator.shorty();
+
+        try {
+            assertThrows(ForbiddenException.class, () -> createTagResource(user).createTags(
+                    tagsRequest(), new MockHttpResponse(), List.of(
+                            new TagForm(firstName, Host.SYSTEM_HOST, null, null),
+                            new TagForm(secondName, Host.SYSTEM_HOST, other.getUserId(), null))));
+            assertNull(tagAPI.getTagByNameAndHost(firstName, Host.SYSTEM_HOST));
+        } finally {
+            cleanup(firstName, Host.SYSTEM_HOST);
+            cleanup(secondName, Host.SYSTEM_HOST);
+        }
+    }
+
+    /**
+     * Given: a Tags portlet user renames a tag nothing uses
+     * Expected: the tag is renamed
+     */
+    @Test
+    public void test_updateTag_unusedTagWithTagsPortlet_shouldRename() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
+        final Tag tag = fixtures.tag("rename-allowed");
+        final String newName = tag.getTagName() + "-renamed";
+        final UpdateTagForm form = new UpdateTagForm.Builder()
+                .tagName(newName).siteId(Host.SYSTEM_HOST).build();
+
+        createTagResource(user).updateTag(tagsRequest(), new MockHttpResponse(), tag.getTagId(), null, form);
+
+        assertEquals(newName, tagAPI.getTagByTagId(tag.getTagId()).getTagName());
+    }
+
+    /**
+     * Given: a Tags portlet user reads another user's tags
+     * Expected: 403
+     */
+    @Test
+    public void test_getTagsByUserId_otherUser_shouldBeForbidden() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
+        final User other = fixtures.backEndUser();
+        tagAPI.addUserTagInode(fixtures.tag("owner-read"), other.getUserId());
+
+        assertThrows(ForbiddenException.class, () -> createTagResource(user).getTagsByUserId(
+                tagsRequest(), new MockHttpResponse(), other.getUserId()));
+    }
+
+    /**
+     * Given: a user with the Tags and Users portlets reads another user's tags
+     * Expected: the other user's tags are returned
+     */
+    @Test
+    public void test_getTagsByUserId_usersPortlet_shouldReturnTags() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString(), PortletID.USERS.toString());
+        final User other = fixtures.backEndUser();
+        final Tag tag = fixtures.tag("owner-read");
+        tagAPI.addUserTagInode(tag, other.getUserId());
+
+        final ResponseEntityTagMapView result = createTagResource(user).getTagsByUserId(
+                tagsRequest(), new MockHttpResponse(), other.getUserId());
+
+        assertTrue(result.getEntity().containsKey(tag.getTagName()));
+    }
+
+    /**
+     * Given: a Tags portlet user links a tag to content they can only read
+     * Expected: 403 and the content keeps no link to the tag
+     */
+    @Test
+    public void test_linkTagsAndInode_contentWithoutEdit_shouldBeForbidden() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
+        final Contentlet contentlet = fixtures.contentWithPermission(user, PermissionAPI.PERMISSION_READ);
+        final Tag tag = fixtures.tag("link-denied");
+
+        assertThrows(ForbiddenException.class, () -> createTagResource(user).linkTagsAndInode(
+                tagsRequest(), new MockHttpResponse(), tag.getTagId(), contentlet.getInode()));
+        assertTrue(tagAPI.getTagInodesByInode(contentlet.getInode()).isEmpty());
+    }
+
+    /**
+     * Given: a Tags portlet user links a tag to content they can edit
+     * Expected: the tag is linked
+     */
+    @Test
+    public void test_linkTagsAndInode_contentWithEdit_shouldLink() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
+        final Contentlet contentlet = fixtures.contentWithPermission(user,
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT);
+        final Tag tag = fixtures.tag("link-allowed");
+
+        createTagResource(user).linkTagsAndInode(tagsRequest(), new MockHttpResponse(),
+                tag.getTagId(), contentlet.getInode());
+
+        assertFalse(tagAPI.getTagInodesByInode(contentlet.getInode()).isEmpty());
+    }
+
+    /**
+     * Given: a Tags portlet user reads the tags of content they can't read
+     * Expected: 403
+     */
+    @Test
+    public void test_findTagsByInode_contentWithoutRead_shouldBeForbidden() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
+        final Contentlet contentlet = fixtures.contentWithPermission(user, 0);
+        tagAPI.addContentletTagInode(fixtures.tag("inode-read"), contentlet.getInode(), TAGS_FIELD);
+
+        assertThrows(ForbiddenException.class, () -> createTagResource(user).findTagsByInode(
+                tagsRequest(), new MockHttpResponse(), contentlet.getInode()));
+    }
+
+    /**
+     * Given: a Tags portlet user renames a tag on content they can't edit
+     * Expected: 403 and the name is kept
+     */
+    @Test
+    public void test_updateTag_tagOnContentWithoutEdit_shouldBeForbidden() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
+        final Contentlet contentlet = fixtures.contentWithPermission(user, PermissionAPI.PERMISSION_READ);
+        final Tag tag = fixtures.tag("rename-denied");
+        tagAPI.addContentletTagInode(tag, contentlet.getInode(), TAGS_FIELD);
+        final UpdateTagForm form = new UpdateTagForm.Builder()
+                .tagName(tag.getTagName() + "-renamed").siteId(Host.SYSTEM_HOST).build();
+
+        assertThrows(ForbiddenException.class, () -> createTagResource(user).updateTag(
+                tagsRequest(), new MockHttpResponse(), tag.getTagId(), null, form));
+        assertEquals(tag.getTagName(), tagAPI.getTagByTagId(tag.getTagId()).getTagName());
+    }
+
+    /**
+     * Given: a Tags portlet user reads the tags stored under another user's id as the inode
+     * Expected: 403
+     */
+    @Test
+    public void test_findTagsByInode_otherUserInode_shouldBeForbidden() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
+        final User other = fixtures.backEndUser();
+        tagAPI.addUserTagInode(fixtures.tag("user-inode-read"), other.getUserId());
+
+        assertThrows(ForbiddenException.class, () -> createTagResource(user).findTagsByInode(
+                tagsRequest(), new MockHttpResponse(), other.getUserId()));
+    }
+
+    /**
+     * Given: a Tags portlet user links a tag to another user's id as the inode
+     * Expected: 403 and the other user gets no tag
+     */
+    @Test
+    public void test_linkTagsAndInode_otherUserInode_shouldBeForbidden() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
+        final User other = fixtures.backEndUser();
+        final Tag tag = fixtures.tag("user-inode-link");
+
+        assertThrows(ForbiddenException.class, () -> createTagResource(user).linkTagsAndInode(
+                tagsRequest(), new MockHttpResponse(), tag.getTagId(), other.getUserId()));
+        assertTrue(tagAPI.getTagInodesByInode(other.getUserId()).isEmpty());
+    }
+
+    /**
+     * Given: a user with the Tags and Users portlets creates a tag whose owner is a contentlet inode
+     * Expected: 403 and the content gets no tag
+     */
+    @Test
+    public void test_createTags_contentInodeAsOwner_shouldBeForbidden() throws Exception {
+        final User user = fixtures.backEndUser(PortletID.TAGS.toString(), PortletID.USERS.toString());
+        final Contentlet contentlet = fixtures.contentWithPermission(user, 0);
+        final String tagName = "content-owner-" + UUIDGenerator.shorty();
+
+        try {
+            assertThrows(ForbiddenException.class, () -> createTagResource(user).createTags(
+                    tagsRequest(), new MockHttpResponse(),
+                    List.of(new TagForm(tagName, Host.SYSTEM_HOST, contentlet.getInode(), null))));
+        } finally {
+            cleanup(tagName, Host.SYSTEM_HOST);
+        }
+        assertTrue(tagAPI.getTagInodesByInode(contentlet.getInode()).isEmpty());
+    }
+
+    private static HttpServletRequest tagsRequest() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRequestURI()).thenReturn("/api/v2/tags");
+        return request;
     }
 
     private TagResource createTagResource() {
