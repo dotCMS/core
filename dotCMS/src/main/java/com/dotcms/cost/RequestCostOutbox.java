@@ -80,10 +80,11 @@ final class RequestCostOutbox {
             if (!Boolean.TRUE.equals(lock.get("locked"))) {
                 return null;
             }
-            final List<Map<String, Object>> due = new DotConnect().setSQL(
-                    "SELECT id, payload, attempts FROM request_cost_outbox"
-                            + " WHERE destination = ? AND next_attempt <= clock_timestamp()"
-                            + " ORDER BY next_attempt, created_at, id LIMIT 1 FOR UPDATE SKIP LOCKED")
+            final List<Map<String, Object>> due = new DotConnect().setSQL("""
+                    SELECT id, payload, attempts FROM request_cost_outbox
+                    WHERE destination = ? AND next_attempt <= clock_timestamp()
+                    ORDER BY next_attempt, created_at, id LIMIT 1 FOR UPDATE SKIP LOCKED
+                    """)
                     .addParam(DigestUtils.sha256Hex(destination)).loadObjectResults();
             if (due.isEmpty()) {
                 return null;
@@ -95,9 +96,10 @@ final class RequestCostOutbox {
                 new DotConnect().executeUpdate("DELETE FROM request_cost_outbox WHERE id = ?", id);
             } else {
                 final int attempts = ((Number) row.get("attempts")).intValue();
-                new DotConnect().executeUpdate(
-                        "UPDATE request_cost_outbox SET attempts = LEAST(attempts + 1, 16),"
-                                + " next_attempt = clock_timestamp() + (? * INTERVAL '1 second') WHERE id = ?",
+                new DotConnect().executeUpdate("""
+                        UPDATE request_cost_outbox SET attempts = LEAST(attempts + 1, 16),
+                            next_attempt = clock_timestamp() + (? * INTERVAL '1 second') WHERE id = ?
+                        """,
                         retryDelaySeconds(attempts, status), id);
                 Logger.warnEvery(getClass(), "REQUEST_COST_PUSH_PENDING",
                         "Request cost delivery unconfirmed: HTTP " + status + "; body retained for retry",
@@ -111,10 +113,12 @@ final class RequestCostOutbox {
     @CloseDBIfOpened
     void logStatistics() throws Exception {
         LocalTransaction.externalizeTransaction(() -> {
-            final Map<String, Object> stats = new DotConnect().setSQL(
-                    "SELECT COUNT(*) AS pending, COALESCE(EXTRACT(EPOCH FROM"
-                            + " (clock_timestamp() - MIN(created_at)))::bigint, 0) AS oldest_seconds"
-                            + " FROM request_cost_outbox").loadObjectResults().get(0);
+            new DotConnect().executeUpdate("SET LOCAL statement_timeout = '10s'");
+            final Map<String, Object> stats = new DotConnect().setSQL("""
+                    SELECT COUNT(*) AS pending, COALESCE(EXTRACT(EPOCH FROM
+                        (clock_timestamp() - MIN(created_at)))::bigint, 0) AS oldest_seconds
+                    FROM request_cost_outbox
+                    """).loadObjectResults().get(0);
             Logger.info(getClass(), "Request cost outbox: pending=" + stats.get("pending")
                     + ", oldestSeconds=" + stats.get("oldest_seconds"));
             return null;
