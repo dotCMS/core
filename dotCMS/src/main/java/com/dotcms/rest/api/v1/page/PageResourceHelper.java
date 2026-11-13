@@ -59,6 +59,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.PageTreeReadFilter;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FileField;
@@ -173,14 +174,20 @@ public class PageResourceHelper implements Serializable {
     }
 
     /**
-     * Saves the list of Containers and their respective Contentlet IDs for a given HTML Page.
+     * Saves the list of Containers and their respective Contentlet IDs for a given HTML Page. Each
+     * personalization in the request has its rows replaced, except the page's content that the
+     * user could not see in the page editor: it stays in its container slot (see
+     * {@link HiddenPageRows}). CMS administrators see all content, so their save is applied exactly
+     * as sent.
      *
      * @param pageId           The Identifier of the HTML Page whose contents are being updated.
      * @param containerEntries The list of Containers and Contentlets in the form of
      *                         {@link ContainerEntry} objects.
      * @param language         The {@link Language} of the Contentlets for this page.
      * @param variantName      The variant name
+     * @param user             The {@link User} saving the page.
      * @return The list of saved Contentlets with the containerId, contentletId, uuid and styleProperties.
+     *         Content kept because the user could not see it is not listed.
      * @throws DotDataException An error occurred when interacting with the data source.
      * @throws BadRequestException if style validation fails
      */
@@ -238,8 +245,19 @@ public class PageResourceHelper implements Serializable {
                 multiTreesMap.computeIfAbsent(personalization, key -> new ArrayList<>());
             }
         }
+        // CMS administrators see all content in the page editor; nothing is hidden from them
+        final boolean keepHiddenRows = null != user && !user.isAdmin();
+        final List<MultiTree> pageRows = keepHiddenRows
+                ? Optional.ofNullable(multiTreeAPI.getMultiTreesByVariant(pageId, variantName)).orElse(List.of())
+                : List.of();
+        final PageTreeReadFilter editorView = keepHiddenRows
+                ? PageTreeReadFilter.forRender(user, PageMode.EDIT_MODE)
+                : null;
         for (final String personalization : multiTreesMap.keySet()) {
-            final List<MultiTree> multiTrees = multiTreesMap.get(personalization);
+            final List<MultiTree> multiTrees = keepHiddenRows
+                    ? this.withRowsHiddenFromUser(pageId, pageRows, personalization,
+                            multiTreesMap.get(personalization), editorView, variantName)
+                    : multiTreesMap.get(personalization);
             if (multiTrees.isEmpty()) {
                 Logger.warn(this, String.format(
                         "Empty contentlet payload for page '%s', personalization='%s', variant='%s', " +
@@ -255,6 +273,46 @@ public class PageResourceHelper implements Serializable {
         }
 
         return responseViews;
+    }
+
+    /**
+     * Adds, to the rows a user is saving for one personalization, the page's rows of that
+     * personalization holding content the user could not see in the page editor, so the save does
+     * not remove them. "Could not see" follows the edit-mode render
+     * ({@link PageTreeReadFilter#forRender} in {@link PageMode#EDIT_MODE}): content the user has no
+     * READ permission on (counting the anonymous user's, which the editor falls back to), archived
+     * content, and content that cannot be loaded.
+     *
+     * @param pageId          the page being saved
+     * @param pageRows        the page's current rows in the tree the variant shows, for every
+     *                        personalization
+     * @param personalization the personalization being saved
+     * @param sentRows        the rows built from the request for that personalization
+     * @param editorView      decides which content the user can see; it remembers its answers for
+     *                        the whole save
+     * @param variantName     the variant being saved
+     * @return the rows to save
+     * @throws DotDataException if the permissions of a contentlet cannot be loaded
+     */
+    private List<MultiTree> withRowsHiddenFromUser(final String pageId, final List<MultiTree> pageRows,
+            final String personalization, final List<MultiTree> sentRows, final PageTreeReadFilter editorView,
+            final String variantName) throws DotDataException {
+
+        final List<MultiTree> currentRows = pageRows.stream()
+                .filter(row -> personalization.equals(row.getPersonalization()))
+                .collect(Collectors.toList());
+        final Set<String> hiddenContentIds = new HashSet<>();
+        for (final MultiTree row : currentRows) {
+            if (UtilMethods.isSet(row.getContentlet()) && !editorView.canRead(row.getContentlet(), variantName)) {
+                hiddenContentIds.add(row.getContentlet());
+            }
+        }
+        if (!hiddenContentIds.isEmpty()) {
+            Logger.debug(this, () -> String.format(
+                    "Page '%s' save keeps %d contentlet(s) the user cannot see (personalization='%s', variant='%s')",
+                    pageId, hiddenContentIds.size(), personalization, variantName));
+        }
+        return HiddenPageRows.keep(currentRows, sentRows, hiddenContentIds, variantName);
     }
 
     /**

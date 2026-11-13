@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -65,11 +66,13 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -991,6 +994,192 @@ public class PageResourceReadAccessTest {
                 returnedRows.stream().map(MultiTree::getContentlet).collect(Collectors.toList()));
     }
 
+    /**
+     * Given a page the reader can edit, whose container holds content the reader can read followed
+     * by content the reader has no READ on,
+     * When the reader removes the content they can read, saving the container empty,
+     * Then only that content leaves the page: the content the reader could not see stays.
+     */
+    @Test
+    public void saveContent_removingVisibleContent_keepsContentTheUserCannotSee() throws Exception {
+        final PageRenderTestUtil.PageRenderTest page = newPageEditableByReader();
+        final String containerId = page.getFirstContainer().getIdentifier();
+        placeRows(page.getPage(), containerId, "1", MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                VariantAPI.DEFAULT_VARIANT.name(), content, unreadableContent);
+
+        final Response response = saveContent(reader, page.getPage(), null, entry(null, containerId, "1"));
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(List.of(unreadableContent.getIdentifier()), slotContentIds(page.getPage(), containerId, "1",
+                MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name()));
+    }
+
+    /**
+     * Given a page the reader can edit, whose container holds readable content, content the reader
+     * has no READ on, and more readable content, in that order,
+     * When the reader saves the readable content in reverse order,
+     * Then the content the reader could not see stays, right after the content that preceded it.
+     */
+    @Test
+    public void saveContent_reorderingVisibleContent_keepsHiddenContentAfterItsPredecessor() throws Exception {
+        final PageRenderTestUtil.PageRenderTest page = newPageEditableByReader();
+        final String containerId = page.getFirstContainer().getIdentifier();
+        placeRows(page.getPage(), containerId, "1", MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                VariantAPI.DEFAULT_VARIANT.name(), content, unreadableContent, defaultContent);
+
+        final Response response = saveContent(reader, page.getPage(), null,
+                entry(null, containerId, "1", defaultContent, content));
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(List.of(defaultContent.getIdentifier(), content.getIdentifier(),
+                        unreadableContent.getIdentifier()),
+                slotContentIds(page.getPage(), containerId, "1", MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                        VariantAPI.DEFAULT_VARIANT.name()));
+    }
+
+    /**
+     * Given a page the reader can edit, with readable content in one container slot and content the
+     * reader has no READ on in another slot,
+     * When the reader saves only the first slot,
+     * Then the other slot keeps the content the reader could not see.
+     */
+    @Test
+    public void saveContent_slotNotSent_keepsItsHiddenContent() throws Exception {
+        final PageRenderTestUtil.PageRenderTest page = newPageEditableByReader();
+        final String containerId = page.getFirstContainer().getIdentifier();
+        placeRows(page.getPage(), containerId, "1", MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                VariantAPI.DEFAULT_VARIANT.name(), content);
+        placeRows(page.getPage(), containerId, "2", MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                VariantAPI.DEFAULT_VARIANT.name(), unreadableContent);
+
+        final Response response = saveContent(reader, page.getPage(), null,
+                entry(null, containerId, "1", content, defaultContent));
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(List.of(content.getIdentifier(), defaultContent.getIdentifier()),
+                slotContentIds(page.getPage(), containerId, "1", MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                        VariantAPI.DEFAULT_VARIANT.name()));
+        assertEquals(List.of(unreadableContent.getIdentifier()), slotContentIds(page.getPage(), containerId, "2",
+                MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name()));
+    }
+
+    /**
+     * Given a page the reader can edit, personalized for a persona with content the reader has no
+     * READ on,
+     * When the reader saves that persona's container with content they can read,
+     * Then the persona keeps the content the reader could not see, and the default content is not
+     * touched.
+     */
+    @Test
+    public void saveContent_inPersona_keepsThePersonaContentTheUserCannotSee() throws Exception {
+        final PageRenderTestUtil.PageRenderTest page = newPageEditableByReader();
+        final String containerId = page.getFirstContainer().getIdentifier();
+        final Persona persona = newPersona("save");
+        placeRows(page.getPage(), containerId, "1", MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                VariantAPI.DEFAULT_VARIANT.name(), defaultContent);
+        placeRows(page.getPage(), containerId, "1", personaTag(persona), VariantAPI.DEFAULT_VARIANT.name(),
+                unreadableContent);
+
+        final Response response = saveContent(reader, page.getPage(), null,
+                entry(persona.getKeyTag(), containerId, "1", content));
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(List.of(unreadableContent.getIdentifier(), content.getIdentifier()),
+                slotContentIds(page.getPage(), containerId, "1", personaTag(persona),
+                        VariantAPI.DEFAULT_VARIANT.name()));
+        assertEquals(List.of(defaultContent.getIdentifier()), slotContentIds(page.getPage(), containerId, "1",
+                MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name()));
+    }
+
+    /**
+     * Given a page the reader can edit, with no rows in a variant, so the variant shows the default
+     * variant's tree, which holds readable content followed by content the reader has no READ on,
+     * When the reader saves the variant with the readable content and more readable content,
+     * Then the variant's new tree also holds the content the reader could not see, and the default
+     * variant's tree is not touched.
+     */
+    @Test
+    public void saveContent_inVariantWithoutRows_keepsTheHiddenContentItShowed() throws Exception {
+        final PageRenderTestUtil.PageRenderTest page = newPageEditableByReader();
+        final String containerId = page.getFirstContainer().getIdentifier();
+        placeRows(page.getPage(), containerId, "1", MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                VariantAPI.DEFAULT_VARIANT.name(), content, unreadableContent);
+
+        final Response response = saveContent(reader, page.getPage(), variant.name(),
+                entry(null, containerId, "1", content, defaultContent));
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(List.of(content.getIdentifier(), unreadableContent.getIdentifier(),
+                        defaultContent.getIdentifier()),
+                slotContentIds(page.getPage(), containerId, "1", MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                        variant.name()));
+        assertEquals(List.of(content.getIdentifier(), unreadableContent.getIdentifier()),
+                slotContentIds(page.getPage(), containerId, "1", MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                        VariantAPI.DEFAULT_VARIANT.name()));
+    }
+
+    /**
+     * Given a page the reader can edit, whose container holds readable content and archived content
+     * the reader can read, which the page editor never shows,
+     * When the reader saves the container empty,
+     * Then the archived content stays on the page.
+     */
+    @Test
+    public void saveContent_keepsArchivedContentTheEditorDoesNotShow() throws Exception {
+        final PageRenderTestUtil.PageRenderTest page = newPageEditableByReader();
+        final String containerId = page.getFirstContainer().getIdentifier();
+        placeRows(page.getPage(), containerId, "1", MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                VariantAPI.DEFAULT_VARIANT.name(), content, archivedContent);
+
+        final Response response = saveContent(reader, page.getPage(), null, entry(null, containerId, "1"));
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(List.of(archivedContent.getIdentifier()), slotContentIds(page.getPage(), containerId, "1",
+                MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name()));
+    }
+
+    /**
+     * Given a page the reader can edit, whose container holds readable content and content readable
+     * only through the anonymous role, which the page editor shows to the reader,
+     * When the reader removes the anonymous-readable content and saves,
+     * Then it leaves the page: the user saw it, so they can remove it.
+     */
+    @Test
+    public void saveContent_removingContentTheEditorShowsThroughTheAnonymousRole_removesIt() throws Exception {
+        final PageRenderTestUtil.PageRenderTest page = newPageEditableByReader();
+        final String containerId = page.getFirstContainer().getIdentifier();
+        placeRows(page.getPage(), containerId, "1", MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                VariantAPI.DEFAULT_VARIANT.name(), content, anonymousOnlyContent);
+
+        final Response response = saveContent(reader, page.getPage(), null,
+                entry(null, containerId, "1", content));
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(List.of(content.getIdentifier()), slotContentIds(page.getPage(), containerId, "1",
+                MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name()));
+    }
+
+    /**
+     * Given a page whose container holds content the reader can read and content the reader has no
+     * READ on,
+     * When a CMS administrator saves the container empty,
+     * Then the page is saved exactly as sent: both contents leave the page.
+     */
+    @Test
+    public void saveContent_byAdmin_savesExactlyTheSentContent() throws Exception {
+        final PageRenderTestUtil.PageRenderTest page = newPageEditableByReader();
+        final String containerId = page.getFirstContainer().getIdentifier();
+        placeRows(page.getPage(), containerId, "1", MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                VariantAPI.DEFAULT_VARIANT.name(), content, unreadableContent);
+
+        final Response response = saveContent(TestUserUtils.getAdminUser(), page.getPage(), null,
+                entry(null, containerId, "1"));
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertTrue(slotContentIds(page.getPage(), containerId, "1", MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                VariantAPI.DEFAULT_VARIANT.name()).isEmpty());
+    }
+
     private static Response requestPersonas(final PageResource resource, final String pageId) throws Exception {
         return requestPersonas(resource, pageId, false);
     }
@@ -1029,6 +1218,8 @@ public class PageResourceReadAccessTest {
 
         final WebResource webResource = mock(WebResource.class);
         when(webResource.init(any(WebResource.InitBuilder.class))).thenReturn(initDataObject);
+        when(webResource.init(any(HttpServletRequest.class), any(HttpServletResponse.class), anyBoolean()))
+                .thenReturn(initDataObject);
 
         return new PageResource(PageResourceHelper.getInstance(), webResource,
                 new HTMLPageAssetRenderedAPIImpl(), APILocator.getContentletAPI(),
@@ -1165,6 +1356,76 @@ public class PageResourceReadAccessTest {
                         personaTag(persona), VariantAPI.DEFAULT_VARIANT.name()).stream()
                 .map(MultiTree::getContentlet)
                 .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Creates a page with one container that the reader can read and edit, and no content.
+     */
+    private static PageRenderTestUtil.PageRenderTest newPageEditableByReader() throws Exception {
+        final PageRenderTestUtil.PageRenderTest page = PageRenderTestUtil.createPage(1, site, true);
+        breakInheritance(page.getPage());
+        PermissionUtilTest.addPermission(page.getPage(), reader, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT);
+        return page;
+    }
+
+    /**
+     * Places the contents, in the given order, in one slot of the page's container for a
+     * personalization and variant.
+     */
+    private static void placeRows(final HTMLPageAsset page, final String containerId, final String uuid,
+            final String personalization, final String variantName, final Contentlet... contents)
+            throws Exception {
+        for (int order = 0; order < contents.length; order++) {
+            APILocator.getMultiTreeAPI().saveMultiTree(new MultiTree(page.getIdentifier(), containerId,
+                    contents[order].getIdentifier(), uuid, order, personalization, variantName, null));
+        }
+    }
+
+    /**
+     * Builds one container slot of a page content save, as the page editor sends it.
+     *
+     * @param personaKeyTag the persona's key tag, or {@code null} for the default content
+     */
+    private static ContainerEntry entry(final String personaKeyTag, final String containerId, final String uuid,
+            final Contentlet... contents) {
+        final ContainerEntry entry = new ContainerEntry(personaKeyTag, containerId, uuid);
+        for (final Contentlet contentlet : contents) {
+            entry.addContentId(contentlet.getIdentifier());
+        }
+        return entry;
+    }
+
+    /**
+     * Saves the page's content as the given user, through the page content endpoint.
+     *
+     * @param variantName the variant to save, or {@code null} for the default variant
+     */
+    private static Response saveContent(final User user, final HTMLPageAsset page, final String variantName,
+            final ContainerEntry... entries) throws Exception {
+        final HttpServletRequest request = requestWithUser(user);
+        final HttpServletRequest previous = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        try {
+            return resourceFor(user).addContent(request, new EmptyHttpResponse(), page.getIdentifier(),
+                    variantName, new PageContainerForm(List.of(entries), null));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previous);
+        }
+    }
+
+    /**
+     * Returns the identifiers of the contents placed in one slot of the page's container, in tree
+     * order, read from the database.
+     */
+    private static List<String> slotContentIds(final HTMLPageAsset page, final String containerId,
+            final String uuid, final String personalization, final String variantName) throws Exception {
+        return APILocator.getMultiTreeAPI().getMultiTreesByPersonalizedPage(page.getIdentifier(),
+                        personalization, variantName).stream()
+                .filter(row -> containerId.equals(row.getContainer()) && uuid.equals(row.getRelationType()))
+                .sorted(Comparator.comparingInt(MultiTree::getTreeOrder))
+                .map(MultiTree::getContentlet)
                 .collect(Collectors.toList());
     }
 
