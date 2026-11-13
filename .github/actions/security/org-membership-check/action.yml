@@ -30,7 +30,7 @@ runs:
 
         # A GitHub App's <name>[bot] login is never an org member, so allow-listed
         # bot users are matched by numeric user ID, not by login string.
-        # 356409590 = dot-factory[bot]
+        # 356409590 = dot-factory[bot], the dotCMS org's GitHub App (see #38599)
         allowed_bot_ids=" 356409590 "
         user_id=$(gh api "users/${USERNAME}" --jq .id 2>/dev/null)
         if [[ "$user_id" =~ ^[0-9]+$ && "$allowed_bot_ids" == *" ${user_id} "* ]]; then
