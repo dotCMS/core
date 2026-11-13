@@ -167,7 +167,9 @@ public class RequestCostPublisher {
         }
         try {
             final URI uri = URI.create(url);
-            if (uri.getHost() != null && ("https".equalsIgnoreCase(uri.getScheme())
+            final int port = uri.getPort();
+            if (uri.getHost() != null && (port == -1 || (port >= 1 && port <= 65535))
+                    && ("https".equalsIgnoreCase(uri.getScheme())
                     || "http".equalsIgnoreCase(uri.getScheme())) && uri.getRawUserInfo() == null
                     && uri.getRawQuery() == null && uri.getRawFragment() == null) {
                 return true;

@@ -177,7 +177,9 @@ public class RequestCostPublisherTest extends UnitTestBase {
         for (final String url : java.util.List.of(
                 "https://user:password@example.com/cost",
                 "https://example.com/cost?token=secret",
-                "https://example.com/cost#secret")) {
+                "https://example.com/cost#secret",
+                "https://example.com:65536/cost",
+                "https://example.com:0/cost")) {
             Config.setProperty("REQUEST_COST_PUSH_URL", url);
             assertNull("invalid destinations must not be frozen", publisher.destinationFingerprint());
             assertFalse(publisher.publish(publisher.destinationFingerprint(), "{}"));
