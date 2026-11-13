@@ -14745,12 +14745,16 @@ paths:
       description: "Replaces all container-to-contentlet assignments for the page\
         \ (DEFAULT variant, or a named variant when 'variantName' is provided). This\
         \ is a full replacement, not a patch: omitting a container slot removes its\
-        \ content. The body is a bare JSON array of container entries; each entry\
-        \ maps one container instance to its ordered list of contentlets. Duplicate\
-        \ entries are merged automatically. To build the payload, fetch GET /api/v1/page/json/{uri}\
-        \ first (faster than /render — no Velocity execution): use 'page.containers'\
-        \ for the path-based identifier and 'page.layout.body.rows[].columns[].containers[]'\
-        \ for the uuid of each slot."
+        \ content. Content the user cannot see in the page editor (no READ permission,\
+        \ or archived) is the exception: it stays in its slot, after the content that\
+        \ preceded it, and is not listed in the response. CMS administrators see all\
+        \ content, so their save is applied exactly as sent. The body is a bare JSON\
+        \ array of container entries; each entry maps one container instance to its\
+        \ ordered list of contentlets. Duplicate entries are merged automatically.\
+        \ To build the payload, fetch GET /api/v1/page/json/{uri} first (faster than\
+        \ /render — no Velocity execution): use 'page.containers' for the path-based\
+        \ identifier and 'page.layout.body.rows[].columns[].containers[]' for the\
+        \ uuid of each slot."
       operationId: addContentToPage
       parameters:
       - description: Identifier of the HTML Page to update
@@ -14777,7 +14781,8 @@ paths:
               items:
                 $ref: "#/components/schemas/PageContainerEntryView"
         description: "Array of container entries. Full replacement: omitting a slot\
-          \ removes its content from the page."
+          \ removes its content from the page, except content the user cannot see\
+          \ in the page editor, which stays."
         required: true
       responses:
         "200":

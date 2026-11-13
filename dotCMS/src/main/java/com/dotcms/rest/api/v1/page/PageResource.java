@@ -907,9 +907,14 @@ public class PageResource {
      *      ]
      *     }
      * </pre>
+     * Content on the page that the user cannot see in the page editor (no READ permission, or
+     * archived) is kept in its container slot even though the request leaves it out; see
+     * {@link PageResourceHelper#saveContent}.
      *
      * @param request The current instance of the {@link HttpServletRequest}.
+     * @param response The current instance of the {@link HttpServletResponse}.
      * @param pageId The ID of the HTML Page whose contents are being updated.
+     * @param variantNameParam The variant to save, or {@code null} for the default variant.
      * @param pageContainerForm The {@link PageContainerForm} containing the basic information of every Container and
      *                          their respective Contentlets.
      * @return The {@link Response} entity.
@@ -919,7 +924,10 @@ public class PageResource {
             summary = "Replace the content mapping of a page",
             description = "Replaces all container-to-contentlet assignments for the page (DEFAULT variant, "
                     + "or a named variant when 'variantName' is provided). This is a full replacement, not a patch: "
-                    + "omitting a container slot removes its content. The body is a bare JSON array of container "
+                    + "omitting a container slot removes its content. Content the user cannot see in the page "
+                    + "editor (no READ permission, or archived) is the exception: it stays in its slot, after the "
+                    + "content that preceded it, and is not listed in the response. CMS administrators see all "
+                    + "content, so their save is applied exactly as sent. The body is a bare JSON array of container "
                     + "entries; each entry maps one container instance to its ordered list of contentlets. "
                     + "Duplicate entries are merged automatically. To build the payload, fetch "
                     + "GET /api/v1/page/json/{uri} first (faster than /render — no Velocity execution): use "
@@ -970,7 +978,8 @@ public class PageResource {
             @Parameter(description = "Variant name for A/B testing (defaults to DEFAULT)")
             @QueryParam("variantName") final String variantNameParam,
             @RequestBody(description = "Array of container entries. Full replacement: "
-                    + "omitting a slot removes its content from the page.",
+                    + "omitting a slot removes its content from the page, except content the user "
+                    + "cannot see in the page editor, which stays.",
                     required = true,
                     content = @Content(
                             mediaType = "application/json",
