@@ -4,6 +4,15 @@
     "sourceRoot": "libs/sdk/ai/src",
     "projectType": "library",
     "tags": ["scope:ai", "skip:build"],
+    "namedInputs": {
+        "default": [
+            "{projectRoot}/**/*",
+            "sharedGlobals",
+            {
+                "runtime": "node -e \"console.log(require('node:crypto').createHash('sha256').update(require('node:fs').readFileSync('../dotCMS/src/main/webapp/WEB-INF/openapi/openapi.yaml')).digest('hex'))\""
+            }
+        ]
+    },
     "targets": {
         "generate-spec": {
             "executor": "nx:run-commands",

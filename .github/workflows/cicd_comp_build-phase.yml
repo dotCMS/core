@@ -93,6 +93,9 @@ on:
         type: boolean
         default: true
     secrets:
+      NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN:
+        description: 'Nx remote cache token. Only pass from trusted build refs, never pull requests.'
+        required: false
       # Remote build cache (S3). Absent secrets simply disable the cache, so any
       # caller that does not pass these -- every release workflow -- builds from
       # scratch exactly as it does today.
@@ -204,7 +207,13 @@ jobs:
       # Run the Maven build job
       - id: maven-build
         uses: ./.github/actions/core-cicd/maven-job
+        env:
+          # PRs/forks use the server-enforced public reader, never the writer credential.
+          NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: >-
+            ${{ vars.BUILD_CACHE_DISABLED != 'true' && !contains(github.event.pull_request.labels.*.name, 'CI : No Build Cache') && github.event_name != 'pull_request' && secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN || '' }}
         with:
+          nx-remote-cache-server: >-
+            ${{ vars.BUILD_CACHE_DISABLED != 'true' && !contains(github.event.pull_request.labels.*.name, 'CI : No Build Cache') && (github.event_name == 'pull_request' && vars.NX_SELF_HOSTED_REMOTE_CACHE_READ_SERVER || github.event_name != 'pull_request' && secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN != '' && vars.NX_SELF_HOSTED_REMOTE_CACHE_SERVER) || '' }}
           stage-name: "Initial Artifact Build"
           # No -Dgithub.event.name: its only effect was activating core-web's is_pr profile,
           # which made the PR effective pom differ from trunk's for that module.
