@@ -337,17 +337,18 @@ function leavesOrderUnchanged(
     pivot: DropzoneContentlet,
     position: 'before' | 'after'
 ): boolean {
+    const identifierOf = ({ payload }: DropzoneContentlet) => payload?.contentlet?.identifier;
     const source = contentlets.find(({ isSource }) => isSource);
+    const sourceId = source && identifierOf(source);
 
-    if (!source) {
+    if (!sourceId) {
         return false;
     }
 
-    const identifierOf = ({ payload }: DropzoneContentlet) => payload?.contentlet?.identifier;
-
     return !doesMoveChangeOrder({
-        contentletsId: contentlets.map(identifierOf),
-        contentletId: identifierOf(source),
+        // The container's order holds identifiers only, so an area without one is not in it.
+        contentletsId: contentlets.map(identifierOf).filter((id): id is string => !!id),
+        contentletId: sourceId,
         pivotId: identifierOf(pivot),
         position
     });

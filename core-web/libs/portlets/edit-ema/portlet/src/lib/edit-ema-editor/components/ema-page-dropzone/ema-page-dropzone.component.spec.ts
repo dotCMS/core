@@ -42,6 +42,15 @@ const messageServiceMock = new MockDotMessageService({
     'edit.ema.page.dropzone.one.max.contentlet': 'Container only accepts one contentlet'
 });
 
+/** `element`, which the test needs on the page; a missing one fails the test by name. */
+function rendered<T extends Element>(element: T | null | undefined, what: string): T {
+    if (!element) {
+        throw new Error(`Expected ${what} to be rendered`);
+    }
+
+    return element;
+}
+
 describe('EmaPageDropzoneComponent', () => {
     let spectator: Spectator<EmaPageDropzoneComponent>;
     let dotMessageService: DotMessageService;
@@ -209,8 +218,9 @@ describe('EmaPageDropzoneComponent', () => {
                 spectator.dispatchMouseEvent('div[data-type="contentlet"]', 'dragover', 100, 130);
                 spectator.detectChanges();
 
-                const { left, opacity, top, width, height } = spectator.query<HTMLElement>(
-                    byTestId('dropzone-insertion-line')
+                const { left, opacity, top, width, height } = rendered(
+                    spectator.query<HTMLElement>(byTestId('dropzone-insertion-line')),
+                    'the insertion line'
                 ).style;
 
                 expect({ left, opacity, top, width, height }).toEqual({
@@ -257,8 +267,9 @@ describe('EmaPageDropzoneComponent', () => {
                 spectator.dispatchMouseEvent('div[data-type="container"]', 'dragover', 100, 100);
                 spectator.detectChanges();
 
-                const { left, opacity, top, width, height } = spectator.query<HTMLElement>(
-                    byTestId('dropzone-insertion-line')
+                const { left, opacity, top, width, height } = rendered(
+                    spectator.query<HTMLElement>(byTestId('dropzone-insertion-line')),
+                    'the insertion line'
                 ).style;
 
                 // An empty container is highlighted whole.
@@ -400,8 +411,14 @@ describe('EmaPageDropzoneComponent drop target', () => {
     const contentletElements = (): HTMLElement[] =>
         spectator.queryAll<HTMLElement>('[data-type="contentlet"]');
 
-    /** The rendered contentlet whose payload names `identifier`, in the given container. */
-    const contentletElement = (identifier: string, container = CONTAINER_A): HTMLElement =>
+    /**
+     * The rendered contentlet whose payload names `identifier`, in the given container; none for
+     * the moved contentlet, which is drawn as the placeholder instead.
+     */
+    const contentletElement = (
+        identifier: string,
+        container = CONTAINER_A
+    ): HTMLElement | undefined =>
         contentletElements().find((element) => {
             const payload = JSON.parse(element.dataset['payload'] ?? '{}');
 
@@ -411,9 +428,12 @@ describe('EmaPageDropzoneComponent drop target', () => {
             );
         });
 
-    const insertionLine = (): HTMLElement => spectator.query<HTMLElement>('.pointer');
+    const insertionLine = (): HTMLElement =>
+        rendered(spectator.query<HTMLElement>('.pointer'), 'the insertion line');
 
-    const placeholder = (): HTMLElement => spectator.query<HTMLElement>(byTestId(PLACEHOLDER));
+    /** The moved contentlet's placeholder; none while nothing on the page is moved. */
+    const placeholder = (): HTMLElement | null =>
+        spectator.query<HTMLElement>(byTestId(PLACEHOLDER));
 
     /** jsdom lays nothing out: give each drop target the rectangle the bounds describe, at zoom 1. */
     const layOut = () => {
@@ -452,9 +472,14 @@ describe('EmaPageDropzoneComponent drop target', () => {
     };
 
     /** The pointer moves over `element` at `clientY`, mid-way across the page. */
-    const dragOver = (element: HTMLElement, clientY: number) => {
+    const dragOver = (element: HTMLElement | null | undefined, clientY: number) => {
         layOut();
-        spectator.dispatchMouseEvent(element, 'dragover', 500, clientY);
+        spectator.dispatchMouseEvent(
+            rendered(element, 'the drop target'),
+            'dragover',
+            500,
+            clientY
+        );
         spectator.detectChanges();
     };
 
@@ -560,9 +585,7 @@ describe('EmaPageDropzoneComponent drop target', () => {
             spectator.setHostInput({ containers: [...CONTAINERS, CONTAINER_C_WITH_C2] });
 
             expect(spectator.queryAll(byTestId(PLACEHOLDER))).toHaveLength(1);
-            expect(spectator.query(byTestId(PLACEHOLDER)).closest('[data-type="container"]')).toBe(
-                containerElements()[0]
-            );
+            expect(placeholder()?.closest('[data-type="container"]')).toBe(containerElements()[0]);
         });
 
         it('should resolve to no target and hide the insertion line when the pointer is over the placeholder', () => {

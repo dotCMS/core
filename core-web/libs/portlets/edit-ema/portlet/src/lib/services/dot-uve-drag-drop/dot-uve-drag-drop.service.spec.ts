@@ -56,10 +56,24 @@ describe('DotUveDragDropService', () => {
     /** The velocities the editor asked the page to scroll at, in order. */
     const velocities = (): number[] =>
         posted()
-            .filter((message) => message.name === SCROLL_VELOCITY)
+            .filter(
+                (message): message is IframeMessage & { velocity: number } =>
+                    message.name === SCROLL_VELOCITY && typeof message.velocity === 'number'
+            )
             .map((message) => message.velocity);
 
     const lastVelocity = (): number | undefined => velocities().at(-1);
+
+    /** The last velocity sent, which the test needs to compare against; none fails the test. */
+    const lastSentVelocity = (): number => {
+        const velocity = lastVelocity();
+
+        if (velocity === undefined) {
+            throw new Error('Expected the editor to have sent a velocity');
+        }
+
+        return velocity;
+    };
 
     /** How many legacy one-step scroll requests the editor sent. */
     const legacyScrolls = (): number =>
@@ -129,10 +143,10 @@ describe('DotUveDragDropService', () => {
 
         it('should scroll faster the closer the pointer is to the edge', () => {
             dragOver(90);
-            const nearInnerBoundary = lastVelocity();
+            const nearInnerBoundary = lastSentVelocity();
 
             dragOver(10);
-            const nearEdge = lastVelocity();
+            const nearEdge = lastSentVelocity();
 
             expect(velocities()).toHaveLength(2);
             expect(Math.abs(nearEdge)).toBeGreaterThan(Math.abs(nearInnerBoundary));
@@ -291,7 +305,7 @@ describe('DotUveDragDropService', () => {
 
             it('should follow the pointer up and down by the same rule as inside the iframe', () => {
                 dragOver(750);
-                const atZoneMiddle = lastVelocity();
+                const atZoneMiddle = lastSentVelocity();
 
                 dragOverAt(BESIDE, 790);
                 expect(lastVelocity()).toBeGreaterThan(atZoneMiddle);
@@ -352,7 +366,7 @@ describe('DotUveDragDropService', () => {
 
             it('should follow the pointer again at the next dragover', () => {
                 dragOver(10);
-                const atEdge = lastVelocity();
+                const atEdge = lastSentVelocity();
 
                 leaveWindow();
                 dragOver(50);

@@ -203,6 +203,8 @@ describe('DotUveActionsHandlerService – IFRAME_SCROLL', () => {
             mockProvider(DotMessageService),
             mockProvider(MessageService),
             mockProvider(DotCopyContentModalService),
+            // Not used by a scroll report; the handler's dependencies require one.
+            mockProvider(InlineEditService),
             { provide: UVEStore, useValue: buildMockStore() }
         ]
     });
@@ -213,7 +215,7 @@ describe('DotUveActionsHandlerService – IFRAME_SCROLL', () => {
             { action: DotCMSUVEAction.IFRAME_SCROLL, payload },
             {
                 uveStore: uveStore as unknown as InstanceType<typeof UVEStore>,
-                inlineEditingService: null,
+                inlineEditingService: spectator.inject(InlineEditService),
                 contentWindow: null,
                 host: 'http://localhost',
                 onCopyContent: vi.fn()

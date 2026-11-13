@@ -412,7 +412,7 @@ export function doesMoveChangeOrder({
     position: 'before' | 'after' | undefined;
 }): boolean {
     const remaining = contentletsId.filter((id) => id !== contentletId);
-    const pivotIndex = remaining.indexOf(pivotId);
+    const pivotIndex = pivotId === undefined ? -1 : remaining.indexOf(pivotId);
 
     if (pivotIndex === -1) {
         return false;
@@ -524,7 +524,8 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
                 return pageContainer;
             }
 
-            const index = pageContainer.contentletsId.indexOf(contentlet?.identifier);
+            const pivotId = contentlet?.identifier;
+            const index = pivotId === undefined ? -1 : pageContainer.contentletsId.indexOf(pivotId);
 
             if (index !== -1) {
                 const offset = position === 'before' ? index : index + 1;

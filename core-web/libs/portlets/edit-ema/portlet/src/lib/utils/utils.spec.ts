@@ -863,7 +863,7 @@ describe('utils functions', () => {
             containers.map(({ identifier, uuid, contentletsId }) => ({
                 identifier,
                 uuid,
-                contentletsId: [...contentletsId]
+                contentletsId: [...(contentletsId ?? [])]
             }));
 
         /** Moves `id` out of `from` and drops it `position` the `pivot` in `to`. */
@@ -902,7 +902,10 @@ describe('utils functions', () => {
         };
 
         /** The order of the contentlets of a container after a move. */
-        const orderOf = (pageContainers: PageContainer[], identifier: string): string[] =>
+        const orderOf = (
+            pageContainers: PageContainer[],
+            identifier: string
+        ): string[] | undefined =>
             pageContainers.find((container) => container.identifier === identifier)?.contentletsId;
 
         it('should not move it to the end of its container when it is dropped next to itself', () => {

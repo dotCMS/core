@@ -309,7 +309,7 @@ describe('registerUVEEvents scroll during a drag', () => {
     it('should report where the page is right after each step, in the same frame', () => {
         const editor = window.parent.postMessage as unknown as MockInstance;
         scrollBy.mockImplementation((options: ScrollToOptions) =>
-            pageAt(window.scrollY + options.top)
+            pageAt(window.scrollY + (options.top ?? 0))
         );
         scrollAtVelocity(12);
 
