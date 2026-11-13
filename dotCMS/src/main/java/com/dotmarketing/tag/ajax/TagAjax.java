@@ -14,7 +14,6 @@ import com.dotmarketing.tag.business.InvalidTagNameLengthException;
 import com.dotmarketing.tag.business.TagAPI;
 import com.dotmarketing.tag.business.TagAlreadyExistsException;
 import com.dotmarketing.tag.model.Tag;
-import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
@@ -179,25 +178,6 @@ public class TagAjax {
 	 * Gets the tags of a user's profile. Follows {@link TagAPI#canEditUserTags(User, String)}.
 	 *
 	 * @param userId id of the user
-	 * @return the user's tags
-	 * @throws DotSecurityException if the logged in user can't see that user's tags
-	 * @throws DotDataException     if there's a data access error
-	 */
-	public List<Tag> getTagByUser ( String userId ) throws DotSecurityException, DotDataException {
-		checkCanEditUserTags(getLoggedInUser(), userId);
-		try {
-			return APILocator.getTagAPI().getTagsForUserByUserId(userId);
-		} catch (Exception e) {
-			//Logging the error because DWR tends to swallow the exceptions
-			Logger.error(TagAjax.class, "Error retrieving tags", e);
-			throw e;
-		}
-	}
-
-	/**
-	 * Gets the tags of a user's profile. Follows {@link TagAPI#canEditUserTags(User, String)}.
-	 *
-	 * @param userId id of the user
 	 * @return a Map with the user's tags under {@code tags}
 	 * @throws DotSecurityException if the logged in user can't see that user's tags
 	 * @throws DotDataException     if there's a data access error
@@ -247,64 +227,6 @@ public class TagAjax {
 		}
 	}
 
-	/**
-	 * Gets a tag with the owner information, searching by name
-	 * @param tagName name of the tag
-	 * @return the tag with the owner information
-	 */
-	public static List<Tag> getTagByName ( String tagName ) throws DotDataException {
-		try {
-			return APILocator.getTagAPI().getTagsByName(tagName);
-		} catch (DotDataException e) {
-			//Logging the error because DWR tends to swallow the exceptions
-			Logger.error(TagAjax.class, "Error retrieving tag", e);
-			throw e;
-		}
-	}
-
-	/**
-	 * Gets all tags associated to an object. Follows {@link TagAPI#canReadTagInodes(User, String)}.
-	 *
-	 * @param inode inode of the object tagged
-	 * @return list of all the TagInode where the tags are associated to the object
-	 * @throws DotSecurityException if the logged in user can't see the object's tags
-	 * @throws DotDataException     if there's a data access error
-	 */
-	public static List<TagInode> getTagInodeByInode(String inode) throws DotDataException, DotSecurityException {
-		final User user = getLoggedInUser();
-		if (!tagAPI.canReadTagInodes(user, inode)) {
-			throw refused(user, "see the tags of this object");
-		}
-		try {
-			return APILocator.getTagAPI().getTagInodesByInode(inode);
-		} catch (DotDataException e) {
-			//Logging the error because DWR tends to swallow the exceptions
-			Logger.error(TagAjax.class, "Error retrieving tags", e);
-			throw e;
-		}
-	}
-
-	/**
-	 * Removes the given tag(s) from an object. Follows {@link TagAPI#canEditTagInodes(User, String)}.
-	 *
-	 * @param tagName name(s) of the tag(s)
-	 * @param inode   inode of the object tagged
-	 * @throws DotSecurityException if the logged in user can't change the object's tags
-	 * @throws DotDataException     if there's a data access error
-	 */
-	public void deleteTagInode ( String tagName, String inode ) throws DotDataException, DotSecurityException {
-		final User user = getLoggedInUser();
-		if (!tagAPI.canEditTagInodes(user, inode)) {
-			throw refused(user, "change the tags of this object");
-		}
-		try {
-			APILocator.getTagAPI().deleteTagInode(tagName, inode, null);
-		} catch (Exception e) {
-			//Logging the error because DWR tends to swallow the exceptions
-			Logger.error(TagAjax.class, "Error deleting tag", e);
-			throw e;
-		}
-	}
 
 	/**
 	 * Checks that a user may see or change the tags of a given user, following

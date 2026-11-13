@@ -464,7 +464,8 @@ public class TagAPIImpl implements TagAPI {
      *   <li>The tag has no contentlet associations (orphan tag)</li>
      *   <li>The user has EDIT permission on ALL associated contentlets</li>
      * </ul>
-     * User ownership records (fieldVarName=null) are ignored as they represent tag ownership, not content tagging.</p>
+     * Associations whose inode isn't a contentlet are ignored, such as user profile tags, which store the user id as
+     * their inode and field.</p>
      *
      * @param user  the user requesting deletion
      * @param tagId the tag ID to check
@@ -481,8 +482,8 @@ public class TagAPIImpl implements TagAPI {
 
         final List<TagInode> associations = tagFactory.getTagInodesByTagId(tagId);
 
-        // Filter to contentlet associations only (fieldVarName != null)
-        // User ownership records have null fieldVarName and should be ignored
+        // Keep associations that name a field. User profile tags also name one (the user id), so
+        // they are kept here and skipped below, when no contentlet is found for their inode
         final List<TagInode> contentletAssociations = associations.stream()
                 .filter(ti -> UtilMethods.isSet(ti.getFieldVarName()))
                 .collect(Collectors.toList());

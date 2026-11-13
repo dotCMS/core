@@ -315,22 +315,6 @@ public class TagAjaxTest extends IntegrationTestBase {
     }
 
     /**
-     * Method to test: {@link TagAjax#getTagByUser(String)}
-     * Given: a back-end user without a Users portlet reads another user's tags
-     * Expected: a {@link DotSecurityException} is thrown
-     */
-    @Test
-    public void test_getTagByUser_otherUser_shouldThrow() throws Exception {
-        final User user = fixtures.backEndUser();
-        final User other = fixtures.backEndUser();
-        tagAPI.addUserTagInode(fixtures.tag("ajax-read"), other.getUserId());
-        dwrContext.loginAs(user);
-
-        assertThrows(DotSecurityException.class,
-                () -> new TagAjax().getTagByUser(other.getUserId()));
-    }
-
-    /**
      * Method to test: {@link TagAjax#getTagsByUser(String)}
      * Given: a user with the Users portlet reads another user's tags
      * Expected: the other user's tags are returned
@@ -410,39 +394,6 @@ public class TagAjaxTest extends IntegrationTestBase {
         assertThrows(DotSecurityException.class, () -> TagAjax.updateTag(tag.getTagId(),
                 tag.getTagName() + "-renamed", Host.SYSTEM_HOST));
         assertEquals(tag.getTagName(), tagAPI.getTagByTagId(tag.getTagId()).getTagName());
-    }
-
-    /**
-     * Method to test: {@link TagAjax#getTagInodeByInode(String)}
-     * Given: a contentlet the user can't read
-     * Expected: a {@link DotSecurityException} is thrown
-     */
-    @Test
-    public void test_getTagInodeByInode_contentWithoutRead_shouldThrow() throws Exception {
-        final User user = fixtures.backEndUser();
-        final Contentlet contentlet = fixtures.contentWithPermission(user, 0);
-        tagAPI.addContentletTagInode(fixtures.tag("ajax-inode"), contentlet.getInode(), TAGS_FIELD);
-        dwrContext.loginAs(user);
-
-        assertThrows(DotSecurityException.class,
-                () -> TagAjax.getTagInodeByInode(contentlet.getInode()));
-    }
-
-    /**
-     * Method to test: {@link TagAjax#deleteTagInode(String, String)}
-     * Given: a contentlet the user can only read
-     * Expected: a {@link DotSecurityException} is thrown
-     */
-    @Test
-    public void test_deleteTagInode_contentWithoutEdit_shouldThrow() throws Exception {
-        final User user = fixtures.backEndUser();
-        final Contentlet contentlet = fixtures.contentWithPermission(user, PermissionAPI.PERMISSION_READ);
-        final Tag tag = fixtures.tag("ajax-inode");
-        tagAPI.addContentletTagInode(tag, contentlet.getInode(), TAGS_FIELD);
-        dwrContext.loginAs(user);
-
-        assertThrows(DotSecurityException.class,
-                () -> new TagAjax().deleteTagInode(tag.getTagName(), contentlet.getInode()));
     }
 
     /**
@@ -539,56 +490,6 @@ public class TagAjaxTest extends IntegrationTestBase {
             fixtures.track(tagAPI.getTagByNameAndHost(tagName, Host.SYSTEM_HOST));
         }
         assertFalse(userTagNames(other).contains(tagName));
-    }
-
-    /**
-     * Method to test: {@link TagAjax#getTagInodeByInode(String)}
-     * Given: another user's id as the inode, read by a user without a Users portlet
-     * Expected: a {@link DotSecurityException} is thrown
-     */
-    @Test
-    public void test_getTagInodeByInode_otherUserInode_shouldThrow() throws Exception {
-        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
-        final User other = fixtures.backEndUser();
-        tagAPI.addUserTagInode(fixtures.tag("ajax-user-inode"), other.getUserId());
-        dwrContext.loginAs(user);
-
-        assertThrows(DotSecurityException.class,
-                () -> TagAjax.getTagInodeByInode(other.getUserId()));
-    }
-
-    /**
-     * Method to test: {@link TagAjax#getTagInodeByInode(String)}
-     * Given: another user's id as the inode, read by a user with the Users portlet
-     * Expected: the other user's tags are returned
-     */
-    @Test
-    public void test_getTagInodeByInode_otherUserInodeWithUsersPortlet_shouldReturnTags() throws Exception {
-        final User user = fixtures.backEndUser(PortletID.USERS.toString());
-        final User other = fixtures.backEndUser();
-        final Tag tag = fixtures.tag("ajax-user-inode");
-        tagAPI.addUserTagInode(tag, other.getUserId());
-        dwrContext.loginAs(user);
-
-        assertTrue(TagAjax.getTagInodeByInode(other.getUserId()).stream()
-                .anyMatch(tagInode -> tagInode.getTagId().equals(tag.getTagId())));
-    }
-
-    /**
-     * Method to test: {@link TagAjax#deleteTagInode(String, String)}
-     * Given: another user's id as the inode, changed by a user without a Users portlet
-     * Expected: a {@link DotSecurityException} is thrown
-     */
-    @Test
-    public void test_deleteTagInode_otherUserInode_shouldThrow() throws Exception {
-        final User user = fixtures.backEndUser(PortletID.TAGS.toString());
-        final User other = fixtures.backEndUser();
-        final Tag tag = fixtures.tag("ajax-user-inode");
-        tagAPI.addUserTagInode(tag, other.getUserId());
-        dwrContext.loginAs(user);
-
-        assertThrows(DotSecurityException.class,
-                () -> new TagAjax().deleteTagInode(tag.getTagName(), other.getUserId()));
     }
 
     /**
