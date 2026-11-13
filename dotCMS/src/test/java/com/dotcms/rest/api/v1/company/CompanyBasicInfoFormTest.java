@@ -102,16 +102,18 @@ class CompanyBasicInfoFormTest {
         assertEquals(expected, CompanyBasicInfoForm.backgroundImageToShow(stored));
     }
 
-    /** Colors made only of color characters are written as they are. */
+    /** Hex colors, color names and rgb/rgba/hsl/hsla values with numbers are written as they are. */
     @ParameterizedTest
-    @ValueSource(strings = {"#1b3359", "navy", "rgb(1, 2, 3)", "hsl(10, 50%, 40%)"})
+    @ValueSource(strings = {"#1b3359", "#FFF", "#1b335980", "navy", "RebeccaPurple", "transparent",
+            "rgb(1, 2, 3)", "rgba(1,2,3,0.5)", "hsl(10, 50%, 40%)", "HSLA(10,50%,40%,.5)"})
     void displayableColors(final String color) {
         assertTrue(CompanyBasicInfoForm.isDisplayableColor(color), color);
     }
 
-    /** A color with any other character, or no color, is not written. */
+    /** Any other value, including other functions or letters inside parentheses, is not written. */
     @ParameterizedTest
-    @ValueSource(strings = {"", "#1b3359;}", "navy\"", "#fff>", "url(//x)", "a:b"})
+    @ValueSource(strings = {"", "#1b3359;}", "navy\"", "#fff>", "url(//x)", "a:b", "url(x)",
+            "foo(1)", "rgb(a)", "navy blue", "#12", "rgb(1,2,3))"})
     void colorsNotDisplayable(final String color) {
         assertFalse(CompanyBasicInfoForm.isDisplayableColor(color), color);
     }

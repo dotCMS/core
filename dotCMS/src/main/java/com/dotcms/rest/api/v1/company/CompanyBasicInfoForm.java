@@ -31,7 +31,10 @@ public class CompanyBasicInfoForm extends Validated {
     /**
      * Accepts #RGB, #RGBA, #RRGGBB, #RRGGBBAA.
      */
-    private static final Pattern DISPLAYABLE_COLOR_PATTERN = Pattern.compile("[#A-Za-z0-9(),.% ]+");
+    private static final Pattern DISPLAYABLE_COLOR_PATTERN = Pattern.compile(
+            "#[0-9A-Fa-f]{3,8}"
+                    + "|[A-Za-z]+"
+                    + "|(?i:rgba?|hsla?)\\(\\s*[0-9.]+%?\\s*(?:,\\s*[0-9.]+%?\\s*){2,3}\\)");
     private static final Pattern HEX_COLOR_PATTERN =
             Pattern.compile("^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$");
 
@@ -240,8 +243,9 @@ public class CompanyBasicInfoForm extends Validated {
     }
 
     /**
-     * Whether a stored color may be written into a page as it is: it holds only characters used by
-     * CSS colors (hex digits, names, {@code rgb()}/{@code hsl()} values).
+     * Whether a stored color may be written into a page as it is: a hex color ({@code #} and 3 to 8
+     * hex digits), a color name made of letters only, or an {@code rgb()}, {@code rgba()},
+     * {@code hsl()} or {@code hsla()} value holding numbers.
      *
      * @param color the stored color, may be {@code null}
      * @return {@code true} if the color may be written as it is
