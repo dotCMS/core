@@ -580,6 +580,32 @@ public class RoleAPITest extends IntegrationTestBase {
     }
 
     /**
+     * Testing {@code RoleFactoryImpl.findUserIdsForRole(Role, true)}: the users of a role
+     * include the users holding any role on its path up to the root, and nobody holding only
+     * a sibling role. The role ids on the path are looked up in one query.
+     */
+    @Test
+    public void test_findUserIdsForRole_inherited_returnsUsersOfRoleAndAncestors() throws Exception {
+
+        final long now = System.currentTimeMillis();
+        final Role parent = new RoleDataGen().name("inhParent_" + now).nextPersisted();
+        final Role child = new RoleDataGen().name("inhChild_" + now).parent(parent.getId())
+                .nextPersisted();
+        final Role sibling = new RoleDataGen().name("inhSibling_" + now).parent(parent.getId())
+                .nextPersisted();
+
+        final User parentUser = new UserDataGen().roles(parent).nextPersisted();
+        final User childUser = new UserDataGen().roles(child).nextPersisted();
+        final User siblingUser = new UserDataGen().roles(sibling).nextPersisted();
+
+        final List<String> userIds = new RoleFactoryImpl().findUserIdsForRole(child, true);
+
+        assertTrue(userIds.contains(parentUser.getUserId()));
+        assertTrue(userIds.contains(childUser.getUserId()));
+        assertFalse(userIds.contains(siblingUser.getUserId()));
+    }
+
+    /**
      * Issue #37303 AC-004: the DBFQN cascade in {@code RoleFactoryImpl.save} must visit each
      * descendant exactly once per reparent (a subtree of N roles ⇒ N updates, not 4N).
      *

@@ -2,6 +2,9 @@ package com.dotcms.integritycheckers;
 
 import static com.dotcms.content.business.json.ContentletJsonAPI.SAVE_CONTENTLET_AS_JSON;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -13,14 +16,18 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.repackage.com.csvreader.CsvWriter;
 import com.google.common.io.Files;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -29,6 +36,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
+import com.liferay.portal.model.User;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -43,8 +51,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import io.vavr.control.Try;
 import org.apache.commons.io.FileUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -465,6 +475,186 @@ public class IntegrityUtilTest  {
         assertEquals(newInode_1, results.get(0).get("remote_inode"));
     }
 
+
+    /**
+     * Method to test: {@link IntegrityUtil#fixConflicts(java.io.InputStream, String, IntegrityType)}
+     * When: The uploaded roles-to-fix file carries a remote role id that contains a single quote
+     * Should: Refuse the fix with the id in the message, keep the local role as it was and write no
+     * row under the remote id
+     */
+    @Test
+    public void roleFixWithQuotedRemoteIdIsRefused() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final String endPointID = "endpointID_" + System.currentTimeMillis();
+        final String remoteRoleId = "r'" + UUID.randomUUID().toString().replace("-", "").substring(0, 30);
+
+        try {
+            final DotDataException error = assertThrows(DotDataException.class,
+                    () -> fixRoleFromRemote(role, remoteRoleId, endPointID));
+            assertTrue(error.getMessage(), error.getMessage().contains(remoteRoleId));
+
+            final List<Map<String, Object>> rows = new DotConnect()
+                    .setSQL("select id, role_key from cms_role where id in (?, ?)")
+                    .addParam(remoteRoleId)
+                    .addParam(role.getId())
+                    .loadObjectResults();
+            assertEquals(1, rows.size());
+            assertEquals(role.getId(), rows.get(0).get("id"));
+            assertEquals(role.getRoleKey(), rows.get(0).get("role_key"));
+        } finally {
+            new DotConnect().setSQL("delete from cms_role where id = ?").addParam(remoteRoleId).loadResult();
+            IntegrityUtil.completeDiscardConflicts(endPointID);
+        }
+    }
+
+    /**
+     * Method to test: {@link IntegrityUtil#fixConflicts(java.io.InputStream, String, IntegrityType)}
+     * When: A role with a child role and a user is moved to a well-formed remote role id: a UUID, an
+     * older id without dashes, or a fixed id made of letters and underscores
+     * Should: Store the remote id with the original role key, and leave the moved role loadable with
+     * its child and deletable through the Role API once the child is gone
+     */
+    @Test
+    @UseDataProvider("wellFormedRemoteRoleIds")
+    public void roleFixWithWellFormedRemoteIdKeepsRoleLoadableAndDeletable(final String remoteRoleId)
+            throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final Role role = new RoleDataGen().nextPersisted();
+        final Role child = new RoleDataGen().parent(role.getId()).nextPersisted();
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        final String endPointID = "endpointID_" + System.currentTimeMillis();
+
+        try {
+            fixRoleFromRemote(role, remoteRoleId, endPointID);
+            CacheLocator.getRoleCache().clearCache();
+
+            final List<Map<String, Object>> rows = new DotConnect()
+                    .setSQL("select id, role_key from cms_role where id in (?, ?)")
+                    .addParam(remoteRoleId)
+                    .addParam(role.getId())
+                    .loadObjectResults();
+            assertEquals(1, rows.size());
+            assertEquals(remoteRoleId, rows.get(0).get("id"));
+            assertEquals(role.getRoleKey(), rows.get(0).get("role_key"));
+
+            final Role moved = roleAPI.loadRoleById(remoteRoleId);
+            assertNotNull(moved);
+            assertEquals(List.of(child.getId()), moved.getRoleChildren());
+            assertTrue(roleAPI.doesUserHaveRole(user, moved));
+
+            roleAPI.delete(roleAPI.loadRoleById(child.getId()));
+            roleAPI.delete(moved);
+
+            assertTrue(new DotConnect().setSQL("select id from cms_role where id = ?")
+                    .addParam(remoteRoleId).loadObjectResults().isEmpty());
+            assertTrue(new DotConnect().setSQL("select id from users_cms_roles where role_id = ?")
+                    .addParam(remoteRoleId).loadObjectResults().isEmpty());
+        } finally {
+            new DotConnect().setSQL("delete from cms_role where id = ?").addParam(child.getId()).loadResult();
+            new DotConnect().setSQL("delete from users_cms_roles where role_id = ?").addParam(remoteRoleId).loadResult();
+            new DotConnect().setSQL("delete from cms_role where id = ?").addParam(remoteRoleId).loadResult();
+            UserDataGen.remove(user);
+            CacheLocator.getRoleCache().clearCache();
+            IntegrityUtil.completeDiscardConflicts(endPointID);
+        }
+    }
+
+    /**
+     * Remote role ids of the shapes dotCMS uses: a UUID, an older id without dashes, and a fixed id
+     * made of letters and underscores.
+     */
+    @DataProvider
+    public static Object[] wellFormedRemoteRoleIds() {
+        final String suffix = UUID.randomUUID().toString().replace("-", "");
+        return new Object[]{
+                UUID.randomUUID().toString(),
+                suffix,
+                "LEGACY_ROLE_" + suffix.substring(0, 20)
+        };
+    }
+
+    /**
+     * Uploads a roles-to-fix file that moves the given local role to the given remote role id, the way
+     * a push publishing end point sends it, and applies the fix.
+     *
+     * @param role the local role to move
+     * @param remoteRoleId the id the remote end point uses for the role
+     * @param endPointID the end point the conflict is recorded for
+     * @throws Exception when the file cannot be written or the fix fails
+     */
+    private static void fixRoleFromRemote(final Role role, final String remoteRoleId,
+            final String endPointID) throws Exception {
+        final File zip = File.createTempFile("roles-to-fix", ".zip");
+        try {
+            try (ZipOutputStream out = new ZipOutputStream(new FileOutputStream(zip))) {
+                out.putNextEntry(new ZipEntry(IntegrityType.CMS_ROLES.getDataToFixCSVName()));
+                final String row = String.join("|", role.getName(), role.getRoleKey(), role.getId(),
+                        remoteRoleId, role.getDBFQN(), remoteRoleId) + "\n";
+                out.write(row.getBytes(StandardCharsets.UTF_8));
+                out.closeEntry();
+            }
+            try (FileInputStream in = new FileInputStream(zip)) {
+                new IntegrityUtil().fixConflicts(in, endPointID, IntegrityType.CMS_ROLES);
+            }
+        } finally {
+            zip.delete();
+        }
+    }
+
+    /**
+     * Method to test: {@link IntegrityUtil#fixConflicts(String, IntegrityType)}
+     * When: A content type conflict carries a remote inode, and the type has a contentlet and is the
+     * default file type of a folder
+     * Should: Move the content type, the contentlet's type (column and JSON) and the folder's default
+     * file type to the remote inode
+     */
+    @Test
+    public void contentTypeFixMovesReferencesToRemoteInode() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType).nextPersisted();
+        final Folder folder = new FolderDataGen().defaultFileType(contentType.inode()).nextPersisted();
+        final String endPointID = "endpointID_" + System.currentTimeMillis();
+        final String remoteInode = UUID.randomUUID().toString();
+
+        new DotConnect()
+                .setSQL("insert into structures_ir (velocity_name, local_inode, remote_inode, endpoint_id) values (?,?,?,?)")
+                .addParam(contentType.variable())
+                .addParam(contentType.inode())
+                .addParam(remoteInode)
+                .addParam(endPointID)
+                .loadResult();
+
+        try {
+            new IntegrityUtil().fixConflicts(endPointID, IntegrityType.STRUCTURES);
+
+            final List<Map<String, Object>> rows = new DotConnect()
+                    .setSQL("select inode, velocity_var_name from structure where inode in (?, ?)")
+                    .addParam(remoteInode)
+                    .addParam(contentType.inode())
+                    .loadObjectResults();
+            assertEquals(1, rows.size());
+            assertEquals(remoteInode, rows.get(0).get("inode"));
+            assertEquals(contentType.variable(), rows.get(0).get("velocity_var_name"));
+
+            final Map<String, Object> contentRow = new DotConnect()
+                    .setSQL("select structure_inode, contentlet_as_json->>'contentType' as json_type"
+                            + " from contentlet where inode = ?")
+                    .addParam(contentlet.getInode())
+                    .loadObjectResults().get(0);
+            assertEquals(remoteInode, contentRow.get("structure_inode"));
+            assertEquals(remoteInode, contentRow.get("json_type"));
+
+            assertEquals(remoteInode, new DotConnect()
+                    .setSQL("select default_file_type from folder where inode = ?")
+                    .addParam(folder.getInode())
+                    .loadObjectResults().get(0).get("default_file_type"));
+        } finally {
+            IntegrityUtil.completeDiscardConflicts(endPointID);
+            Try.run(() -> FolderDataGen.remove(folder));
+            Try.run(() -> ContentTypeDataGen.remove(
+                    APILocator.getContentTypeAPI(APILocator.systemUser()).find(remoteInode), true));
+        }
+    }
 
     private String createCSVFile(final String endPointID, final IntegrityType integrityType) throws IOException {
         final String path = ConfigUtils.getIntegrityPath() + File.separator
