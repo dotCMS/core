@@ -43,12 +43,12 @@ on:
         type: string
         default: ''
 
-# A newly queued run replaces a pending one in the same group, so only full write runs (merges,
-# unfiltered manual runs) share a group: replacing one of those with a newer one loses nothing.
-# Dry runs and page-filtered writes queue on their own. If a filtered write overlaps a full one, a
-# page both try to publish fails in one of them (the action is pinned to the version it checked).
+# A newly queued run replaces a pending one in the same group, so a group only holds runs that do
+# the same work: full writes (merges, unfiltered manual runs), filtered writes with the same page
+# list, or dry runs (which change nothing). If two write runs overlap on a page, publishing it fails
+# in one of them (the action is pinned to the version it checked).
 concurrency:
-  group: publish-readme-docs-${{ inputs.dry_run && 'dry-run' || inputs.pages && 'filtered-write' || 'write' }}
+  group: publish-readme-docs-${{ inputs.dry_run && 'dry-run' || inputs.pages && format('filtered-{0}', inputs.pages) || 'write' }}
   cancel-in-progress: false
 
 permissions:
@@ -184,11 +184,10 @@ jobs:
               return data.get("entity") or []
 
           def wait_for_push(ident, before, inode):
-              """Wait until the push of this page has landed, watching its push bundle as well.
+              """Wait until production serves the version just published (same inode).
 
-              Landed means production serves the version just published (same inode), or the bundle
-              reports SUCCESS. Production usually has it within seconds; the authoring server can take
-              minutes to update the bundle's own status."""
+              The push bundle is watched only to fail fast and explain a stall: a bundle holding this
+              page may belong to another push of it, so its SUCCESS proves nothing about this version."""
               seen, bundle = set(before), None
               deadline = time.time() + PUSH_TIMEOUT
               while time.time() < deadline:
@@ -205,21 +204,20 @@ jobs:
                                   bundle = b
                   except (RuntimeError, OSError):
                       pass  # queue unreadable this pass; production is still checked below
-                  if bundle:
-                      if bundle["status"] in ("SUCCESS", "SUCCESS_WITH_WARNINGS"):
-                          return bundle["bundleId"]
-                      if "FAIL" in bundle["status"]:
-                          raise RuntimeError(f"published, but push bundle {bundle['bundleId']} {bundle['status']}")
-                  # Checked even before the bundle is found: the queue listing is only one page.
                   try:
                       on_prod = production_page(ident)
                   except (RuntimeError, OSError):  # OSError: timeouts and connection errors
                       on_prod = None  # check again on the next pass
                   if on_prod and on_prod.get("inode") == inode:
                       return bundle["bundleId"] if bundle else "not found in the queue"
+                  if bundle and "FAIL" in bundle["status"]:
+                      raise RuntimeError(f"published, but push bundle {bundle['bundleId']} {bundle['status']}")
                   time.sleep(5)
               if not bundle:
                   raise PushStalled(f"published, but no push bundle appeared within {PUSH_TIMEOUT}s")
+              if bundle["status"] in ("SUCCESS", "SUCCESS_WITH_WARNINGS"):
+                  raise PushStalled(f"push bundle {bundle['bundleId']} reports {bundle['status']}, but production "
+                                    f"did not serve the published version within {PUSH_TIMEOUT}s")
               # The action succeeds even when the user may not push anywhere: the bundle then gets no
               # environment and never leaves BUNDLE_REQUESTED. (A new bundle briefly shows 0 environments too.)
               hint = (" (no environment: is the role allowed on the `prod` push environment?)"
