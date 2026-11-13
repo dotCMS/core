@@ -95,7 +95,7 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
 
         final Optional<JWToken> jwToken = internalProcessAuthHeaderFromJWT(authorizationHeader, ipAddress, false);
         final User user = InteractiveUserPolicy.refuseIfNotEligible(
-                jwToken.isPresent() ? jwToken.get().getActiveUser().get() : null, null, null);
+                jwToken.isPresent() ? jwToken.get().getActiveUser().get() : null, null, session);
 
         if (user != null && null != session) {
             session.setAttribute(WebKeys.CMS_USER, user);
@@ -117,7 +117,7 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
 
         final Optional<JWToken> jwToken = internalProcessAuthHeaderFromJWT(authentication, request.getRemoteAddr(), false);
         final User user = InteractiveUserPolicy.refuseIfNotEligible(
-                jwToken.isPresent() ? jwToken.get().getActiveUser().get() : null, null, null);
+                jwToken.isPresent() ? jwToken.get().getActiveUser().get() : null, request, null);
 
         if(user != null) {
 
@@ -137,7 +137,7 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
         final Optional<JWToken> jwToken = internalProcessAuthHeaderFromJWT(authentication, request.getRemoteAddr(), false);
         final User user = InteractiveUserPolicy.refuseIfNotEligible(
                 jwToken.isPresent() && jwToken.get().getActiveUser().isPresent()
-                        ? jwToken.get().getActiveUser().get() : null, null, null);
+                        ? jwToken.get().getActiveUser().get() : null, request, null);
 
         if (jwToken.isPresent() && jwToken.get().getActiveUser().isPresent() && user == null) {
             return Optional.empty();

@@ -11,6 +11,12 @@ import java.util.concurrent.Callable;
  * It is for server-side work only: nothing a request, a session or a template carries can open it. It is
  * tied to the thread that opened it; to run work on another thread use {@link #wrap(Runnable)} or
  * {@link #wrap(Callable)} at the point where the work is handed over.
+ * <p>
+ * Accepted limitation: the scope is bound to the thread, not to a particular request. While it is open, any
+ * code on that thread resolves the system user, including a tool that prefers the client request bound to
+ * the thread. Today that applies to server-built renders that already run as the system user (for example
+ * the page render in {@code ContentToStringUtil.parsePage}, whose output feeds embeddings and is not
+ * returned to the client). Binding the scope to the server-built request would be a redesign.
  */
 public final class SystemUserScope implements AutoCloseable {
 

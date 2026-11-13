@@ -628,7 +628,9 @@ public  class WebResource {
             final String source = credentialSource;
             final String attemptedUsername = userPass.get().username;
             try {
-                user = authenticateUser(userPass.get().username, userPass.get().password, request, response, userAPI);
+                user = InteractiveUserPolicy.refuseIfNotEligible(
+                        authenticateUser(userPass.get().username, userPass.get().password, request, response, userAPI),
+                        request, null);
             } catch (SecurityException e) {
                 // The anonymous fallback only covers header-replayed credentials (BASIC/DOTAUTH).
                 // An explicit request-parameter login (user/password) must still fail hard so it is

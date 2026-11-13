@@ -67,7 +67,7 @@ public final class DotAuthSessionCredentialProcessorImpl implements DotAuthSessi
                 throw new SecurityException("User for session is no longer active",
                         Response.Status.UNAUTHORIZED);
             }
-            if (!InteractiveUserPolicy.isEligible(user)) {
+            if (InteractiveUserPolicy.refuseIfNotEligible(user, request, null) == null) {
                 sessionCache.invalidate(candidate);
                 throw new SecurityException("User not eligible for interactive use",
                         Response.Status.UNAUTHORIZED);

@@ -5,6 +5,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.BasicAuthentication;
+import com.dotcms.auth.InteractiveUserPolicy;
 import com.dotcms.auth.LoginLockout;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
@@ -192,8 +193,8 @@ public class DotWebdavHelper {
 		if (mode == BasicAuthentication.Mode.JWT_TOKEN) {
 			final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 			final String ipAddress = request != null ? request.getRemoteAddr() : null;
-			return BasicAuthentication.authenticateApiToken(username, passwd, ipAddress)
-					.orElseThrow(() -> new DotSecurityException("Invalid API token credentials"));
+			return requireInteractive(BasicAuthentication.authenticateApiToken(username, passwd, ipAddress)
+					.orElseThrow(() -> new DotSecurityException("Invalid API token credentials")));
 		}
 
 		final Company company = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
@@ -218,6 +219,22 @@ public class DotWebdavHelper {
 			throw new DotSecurityException("The user's passwords didn't match");
 		}
 
+		return requireInteractive(user);
+	}
+
+	/**
+	 * Refuses an account that cannot be used as the identity of a client request (the built-in
+	 * system account), so a token or password for it does not open WebDAV.
+	 *
+	 * @param user the account the credentials resolved to
+	 * @return the same account when it is eligible
+	 * @throws DotSecurityException if the account is not eligible for interactive use
+	 */
+	private User requireInteractive(final User user) throws DotSecurityException {
+		if (InteractiveUserPolicy.refuseIfNotEligible(user,
+				HttpServletRequestThreadLocal.INSTANCE.getRequest(), null) == null) {
+			throw new DotSecurityException("User not eligible for interactive use");
+		}
 		return user;
 	}
 

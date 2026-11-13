@@ -17,11 +17,15 @@ import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.util.CompanyUtils;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -157,5 +161,25 @@ public class InteractiveUserResolutionIT extends IntegrationTestBase {
         assertNotNull(jwt);
         final HttpServletRequest bearer = new MockHeaderRequest(freshRequest(), "Authorization", "Bearer " + jwt);
         assertEquals(controlStatus(), statusOf(bearer));
+    }
+
+    /** The same token sent as the Basic password must be refused like the Bearer form. */
+    @Test
+    public void basic_credentials_with_a_token_for_the_built_in_account_match_the_no_identity_control()
+            throws Exception {
+        final ApiToken token = APILocator.getApiTokenAPI().persistApiToken(ApiToken.builder()
+                .withUserId(UserAPI.SYSTEM_USER_ID)
+                .withExpires(Date.from(Instant.now().plus(1, ChronoUnit.DAYS)))
+                .withRequestingIp("127.0.0.1").withAllowNetwork("0.0.0.0/0").build(), APILocator.systemUser());
+        tokens.add(token);
+        final String jwt = APILocator.getApiTokenAPI().getJWT(token, APILocator.systemUser());
+        assertNotNull(jwt);
+        final User system = APILocator.systemUser();
+        final String login = Company.AUTH_TYPE_EA.equals(CompanyUtils.getDefaultCompany().getAuthType())
+                ? system.getEmailAddress() : system.getUserId();
+        final String basic = "Basic " + Base64.getEncoder()
+                .encodeToString((login + ":" + jwt).getBytes(StandardCharsets.UTF_8));
+        final HttpServletRequest request = new MockHeaderRequest(freshRequest(), "Authorization", basic);
+        assertEquals(controlStatus(), statusOf(request));
     }
 }

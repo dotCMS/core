@@ -297,13 +297,16 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
             return Optional.empty();
         }
 
-        final Context ctx = VelocityContextFactory.getMockContext(contentlet, APILocator.systemUser());
-        ctx.put("visionModel", getAiVisionModel(contentlet.getHost()));
-        ctx.put("maxTokens", getAiVisionMaxTokens(contentlet.getHost()));
-        ctx.put("base64Image", base64EncodeImage(fileToProcess.get()));
+        final String visionModel = getAiVisionModel(contentlet.getHost());
+        final String maxTokens = getAiVisionMaxTokens(contentlet.getHost());
+        final String base64Image = base64EncodeImage(fileToProcess.get());
 
         final String prompt = Try.of(() -> {
                     try (SystemUserScope ignored = SystemUserScope.open()) {
+                        final Context ctx = VelocityContextFactory.getMockContext(contentlet, APILocator.systemUser());
+                        ctx.put("visionModel", visionModel);
+                        ctx.put("maxTokens", maxTokens);
+                        ctx.put("base64Image", base64Image);
                         return VelocityUtil.eval(getAiVisionPrompt(contentlet.getHost()), ctx);
                     }
                 })

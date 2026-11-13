@@ -188,9 +188,9 @@ class EmbeddingsAPIImpl implements EmbeddingsAPI {
             return false;
         }
 
-        final Context ctx = VelocityContextFactory.getMockContext(contentlet);
         final String textToEmbed = Try.of(() -> {
             try (SystemUserScope ignored = SystemUserScope.open()) {
+                final Context ctx = VelocityContextFactory.getMockContext(contentlet);
                 return VelocityUtil.eval(velocityTemplate, ctx);
             }
         }).getOrNull();
