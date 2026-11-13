@@ -80,8 +80,11 @@ describe('DotUveDragDropService', () => {
         posted().filter((message) => message.name === __DOTCMS_UVE_EVENT__.UVE_SCROLL_INSIDE_IFRAME)
             .length;
 
-    /** Has `service` listen to drags over an iframe at `IFRAME_RECT`. */
-    const setUp = (service: DotUveDragDropService) => {
+    /** Has `service` listen to drags over an iframe at `IFRAME_RECT`, reporting to `to`. */
+    const setUp = (
+        service: DotUveDragDropService,
+        to: Record<keyof DragDropHandlers, Mock> = handlers
+    ) => {
         const iframe = document.createElement('iframe');
         vi.spyOn(iframe, 'getBoundingClientRect').mockReturnValue(IFRAME_RECT as DOMRect);
 
@@ -89,9 +92,18 @@ describe('DotUveDragDropService', () => {
             store as unknown as InstanceType<typeof UVEStore>,
             new ElementRef(iframe),
             new ElementRef(document.createElement('div')),
-            handlers
+            to
         );
     };
+
+    const createHandlers = (): Record<keyof DragDropHandlers, Mock> => ({
+        onDrop: vi.fn(),
+        onDragEnter: vi.fn(),
+        onDragOver: vi.fn(),
+        onDragLeave: vi.fn(),
+        onDragEnd: vi.fn(),
+        onDragStart: vi.fn()
+    });
 
     /** The pointer drags over the iframe at `clientY`, mid-way across. */
     const dragOver = (clientY: number) => {
@@ -104,14 +116,7 @@ describe('DotUveDragDropService', () => {
         spectator = createService();
         store = createUVEStoreMock();
         page = { postMessage: vi.fn() };
-        handlers = {
-            onDrop: vi.fn(),
-            onDragEnter: vi.fn(),
-            onDragOver: vi.fn(),
-            onDragLeave: vi.fn(),
-            onDragEnd: vi.fn(),
-            onDragStart: vi.fn()
-        };
+        handlers = createHandlers();
 
         spectator.inject(UveIframeMessengerService).setIframeWindow(page as unknown as Window);
 
@@ -450,6 +455,82 @@ describe('DotUveDragDropService', () => {
 
                 expect(legacyScrolls()).toBe(0);
             });
+        });
+    });
+
+    // A move drag starts on the handle in `dot-uve-contentlet-tools`, which is removed as soon as
+    // the editor is in DRAGGING. The `dragend` then fires on a node outside the document and never
+    // reaches `window`, so Escape or a release outside the window left the drag running.
+    describe('the end of a drag that started in the editor', () => {
+        const sources: HTMLElement[] = [];
+
+        /** A move handle, as `dot-uve-contentlet-tools` renders one, in the document. */
+        const moveHandle = (): HTMLElement => {
+            const handle = document.createElement('button');
+            handle.draggable = true;
+            handle.dataset.type = 'contentlet';
+            handle.dataset.item = JSON.stringify({
+                contentlet: { identifier: 'moved', baseType: 'CONTENT', contentType: 'Banner' },
+                container: { identifier: 'container', uuid: '1' },
+                move: true
+            });
+            document.body.appendChild(handle);
+            sources.push(handle);
+
+            return handle;
+        };
+
+        const dragStartOn = (source: HTMLElement) => {
+            source.dispatchEvent(new Event('dragstart', { bubbles: true }));
+        };
+
+        const dragEndOn = (source: HTMLElement) => {
+            source.dispatchEvent(new Event('dragend', { bubbles: true }));
+        };
+
+        afterEach(() => {
+            sources.splice(0).forEach((source) => source.remove());
+        });
+
+        it('should stop the scroll and end the drag when the handle left the page first', () => {
+            const handle = moveHandle();
+            dragStartOn(handle);
+            dragOver(10);
+            expect(lastVelocity()).toBeLessThan(0);
+
+            handle.remove();
+            dragEndOn(handle);
+
+            expect(lastVelocity()).toBe(0);
+            expect(handlers.onDragEnd).toHaveBeenCalledTimes(1);
+        });
+
+        it('should end the drag once when the drag source stays in the page', () => {
+            const source = moveHandle();
+            dragStartOn(source);
+            dragOver(10);
+
+            dragEndOn(source);
+
+            expect(handlers.onDragEnd).toHaveBeenCalledTimes(1);
+            expect(velocities().filter((velocity) => velocity === 0)).toHaveLength(1);
+        });
+
+        it('should stop listening on the drag source when the service goes away mid-drag', () => {
+            const injector = createEnvironmentInjector(
+                [DotUveDragDropService],
+                TestBed.inject(EnvironmentInjector)
+            );
+            const ownHandlers = createHandlers();
+            setUp(injector.get(DotUveDragDropService), ownHandlers);
+            const handle = moveHandle();
+            dragStartOn(handle);
+
+            injector.destroy();
+            handle.remove();
+            dragEndOn(handle);
+
+            expect(ownHandlers.onDragEnd).not.toHaveBeenCalled();
         });
     });
 
