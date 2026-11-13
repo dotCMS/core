@@ -91,18 +91,6 @@ public class Company extends CompanyModel {
 		setPortalURL(portalURL);
 	}
 
-	/**
-	 * Returns the company key, serialized as text. The key is only for server code, so it is left out of every JSON
-	 * view of a company; code that needs it calls this method directly.
-	 *
-	 * @return the company key, or {@code null} if the company has none
-	 */
-	@Override
-	@JsonIgnore
-	public String getKey() {
-		return super.getKey();
-	}
-
 	public void setKey(String key) {
 		_keyObj = (Key) Base64.stringToObject(key);
 

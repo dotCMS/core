@@ -17,6 +17,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.ObjectStreamClass;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 import javax.crypto.spec.SecretKeySpec;
@@ -121,6 +122,20 @@ class CompanyTest {
         assertEquals("#333333", copy.getSecondaryColor());
         assertNotNull(company.getKey());
         assertNotNull(company.getKeyObj());
+    }
+
+    /**
+     * Method to test: the serialized form of {@link Company} and {@link CompanyModel}.
+     * Given scenario: a company is cached with Java serialization, for example in Redis, and read back by a node
+     * running another version of dotCMS.
+     * Expected result: both classes keep the serial version they had before, so the cached company stays readable
+     * across versions. Neither class declares one, so it is computed from their members: changing a non-private
+     * member changes it.
+     */
+    @Test
+    void serialVersion_isUnchanged() {
+        assertEquals(-4397169985178733761L, ObjectStreamClass.lookup(Company.class).getSerialVersionUID());
+        assertEquals(-8744738597834842569L, ObjectStreamClass.lookup(CompanyModel.class).getSerialVersionUID());
     }
 
     /**
