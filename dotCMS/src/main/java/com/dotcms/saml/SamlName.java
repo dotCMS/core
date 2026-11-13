@@ -256,8 +256,9 @@ public enum SamlName {
 	DOTCMS_SAML_NAME_ID_POLICY_FORMAT("nameidpolicy.format"),
 	
 	/**
-	 * Optional key. Comma-separated list of existing role keys assigned to the user at every
-	 * SAML sign-in. Roles that do not exist are skipped, not created. Not applied under the
+	 * Optional key. Comma-separated list of existing role keys (spaces around each key are
+	 * ignored) assigned to the user at every SAML sign-in. Roles that do not
+	 * exist are skipped, not created. Not applied under the
 	 * {@code idp} build roles strategy.
 	 */
 	DOTCMS_SAML_OPTIONAL_USER_ROLE("role.extra"),

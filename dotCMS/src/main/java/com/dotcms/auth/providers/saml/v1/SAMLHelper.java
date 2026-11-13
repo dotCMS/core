@@ -502,10 +502,13 @@ public class SAMLHelper {
 
                 for (final String roleExtra : rolesExtra){
 
-                    UserHelper.getInstance().addRole(user, roleExtra, false, false);
-                    Logger.debug(this, () -> "Optional user role: " +
-                            this.getSamlConfigurationService().getConfigAsString(identityProviderConfiguration,
-                                    SamlName.DOTCMS_SAML_OPTIONAL_USER_ROLE) + " has been assigned");
+                    // "SAML User, Other" lists "Other", not " Other"
+                    final String roleKey = roleExtra.trim();
+                    if (roleKey.isEmpty()) {
+                        continue;
+                    }
+                    UserHelper.getInstance().addRole(user, roleKey, false, false);
+                    Logger.debug(this, () -> "Optional user role: " + roleKey + " has been processed");
                 }
             }
         } else {
