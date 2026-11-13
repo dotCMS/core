@@ -396,9 +396,10 @@ export function withEditor() {
                         const editorBounds =
                             delta === 0
                                 ? store.editorBounds()
-                                : store
-                                      .editorBounds()
-                                      .map((container) => ({ ...container, y: container.y - delta }));
+                                : store.editorBounds().map((container) => ({
+                                      ...container,
+                                      y: container.y - delta
+                                  }));
 
                         patchState(store, {
                             editorScrollY: scrollY,

@@ -468,8 +468,8 @@ describe('DotUveDragDropService', () => {
         const moveHandle = (): HTMLElement => {
             const handle = document.createElement('button');
             handle.draggable = true;
-            handle.dataset.type = 'contentlet';
-            handle.dataset.item = JSON.stringify({
+            handle.dataset['type'] = 'contentlet';
+            handle.dataset['item'] = JSON.stringify({
                 contentlet: { identifier: 'moved', baseType: 'CONTENT', contentType: 'Banner' },
                 container: { identifier: 'container', uuid: '1' },
                 move: true
