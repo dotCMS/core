@@ -471,13 +471,13 @@ describe('EmaPageDropzoneComponent drop target', () => {
         }
     };
 
-    /** The pointer moves over `element` at `clientY`, mid-way across the page. */
-    const dragOver = (element: HTMLElement | null | undefined, clientY: number) => {
+    /** The pointer moves over `element` at (`clientX`, `clientY`), mid-way across by default. */
+    const dragOver = (element: HTMLElement | null | undefined, clientY: number, clientX = 500) => {
         layOut();
         spectator.dispatchMouseEvent(
             rendered(element, 'the drop target'),
             'dragover',
-            500,
+            clientX,
             clientY
         );
         spectator.detectChanges();
@@ -568,6 +568,54 @@ describe('EmaPageDropzoneComponent drop target', () => {
         });
     });
 
+    // PR review of #38575: a container can lay its blocks out in a row, where every block has the
+    // same vertical centre. The gap between two of them goes to the nearer one, not the first.
+    describe('while a contentlet is dragged over blocks laid out in a row', () => {
+        const ROW_CONTAINER: ContainerPayload = { ...CONTAINER_A, identifier: 'container-row' };
+
+        /** A block 250px wide and 200px tall, `x` px from the left of the row. */
+        const blockInRow = (identifier: string, x: number): ContentletArea => ({
+            x,
+            y: 0,
+            width: 250,
+            height: 200,
+            payload: JSON.stringify({
+                container: ROW_CONTAINER,
+                contentlet: contentletOf(identifier)
+            }) as unknown as ActionPayload
+        });
+
+        /** r1 (0–250), r2 (350–600) and r3 (700–950), with 100px gaps between them. */
+        const ROW: Container[] = [
+            {
+                x: 0,
+                y: 0,
+                width: 1000,
+                height: 200,
+                contentlets: [blockInRow('r1', 0), blockInRow('r2', 350), blockInRow('r3', 700)],
+                payload: JSON.stringify({ container: ROW_CONTAINER })
+            }
+        ];
+
+        beforeEach(() => startDrag(PALETTE_ITEM, ROW));
+
+        it.each([
+            { clientX: 680, pivot: 'r3', nearer: 'the block on its right' },
+            { clientX: 620, pivot: 'r2', nearer: 'the block on its left' }
+        ])(
+            'should resolve the gap between two blocks at x=$clientX to $pivot, $nearer',
+            ({ clientX, pivot }) => {
+                dragOver(containerElements()[0], 50, clientX);
+
+                expect(lastTarget()).toEqual({
+                    kind: 'contentlet',
+                    payload: { container: ROW_CONTAINER, contentlet: contentletOf(pivot) },
+                    position: 'before'
+                });
+            }
+        );
+    });
+
     describe('while a contentlet on the page is moved', () => {
         beforeEach(() => startDrag(MOVED_C2));
 
@@ -653,6 +701,43 @@ describe('EmaPageDropzoneComponent drop target', () => {
                 });
                 expect(insertionLine().style.top).toBe('280px');
                 expect(insertionLine().style.opacity).toBe('1');
+            });
+
+            // The page reports twice a frame while it auto-scrolls; a report that leaves the same
+            // half of the same block under the pointer is no new target.
+            it('should not report the target again when the same half of the same block stays under the pointer', () => {
+                dragOver(contentletElement('c2'), 300);
+                const reported = spectator.hostComponent.targets.length;
+
+                // c2 (250–450) moves to 240–440: the pointer at 300 is still over its top half.
+                pageScrolls(-10);
+
+                expect(spectator.hostComponent.targets).toHaveLength(reported);
+            });
+
+            it('should report once when a scroll puts a different block under the pointer', () => {
+                dragOver(contentletElement('c2'), 300);
+                const reported = spectator.hostComponent.targets.length;
+
+                pageScrolls(-220);
+
+                expect(spectator.hostComponent.targets).toHaveLength(reported + 1);
+            });
+
+            it('should read an unchanged contentlet payload once, not again on every scroll', () => {
+                dragOver(contentletElement('c2'), 300);
+                const payloads: unknown[] = CONTAINERS.flatMap(({ contentlets }) =>
+                    contentlets.map(({ payload }) => payload)
+                );
+                const parse = vi.spyOn(JSON, 'parse');
+
+                pageScrolls(-10);
+                pageScrolls(-20);
+
+                const reread = parse.mock.calls.filter(([text]) => payloads.includes(text));
+                parse.mockRestore();
+
+                expect(reread).toEqual([]);
             });
 
             it('should not resolve anything before the pointer has been over a target', () => {

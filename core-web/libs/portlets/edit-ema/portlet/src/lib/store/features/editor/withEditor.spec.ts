@@ -1040,6 +1040,19 @@ describe('withEditor', () => {
                         expect(containerYs()).toEqual([-30]);
                     });
 
+                    // New bounds make the dropzone read every payload and resolve its target
+                    // again, twice a frame while the page auto-scrolls.
+                    it('should keep the same bounds when the page reports the same scrollY twice', () => {
+                        pageScrolled(40);
+                        const bounds = store.editorBounds();
+
+                        pageScrolled(40);
+
+                        expect(store.editorBounds()).toBe(bounds);
+                        expect(store.editorState()).toEqual(EDITOR_STATE.DRAGGING);
+                        expect(store.editorContentArea()).toBe(null);
+                    });
+
                     it('should take fresh bounds as they are and measure later scrolls from them', () => {
                         pageScrolled(40);
 
