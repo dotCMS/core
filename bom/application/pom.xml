@@ -167,21 +167,6 @@
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.cactus.integration.ant</artifactId>
-                <version>1.8.0_3</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.cargo-ant</artifactId>
-                <version>0.9_2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.cargo-core-uberjar</artifactId>
-                <version>0.9_2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.com.dotmarketing.jhlabs.images.filters</artifactId>
                 <version>ukv_2</version>
             </dependency>
