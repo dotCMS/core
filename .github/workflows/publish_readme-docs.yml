@@ -219,36 +219,48 @@ jobs:
               raise PushStalled(f"published, but push bundle {bundle['bundleId']} still {bundle['status']} "
                                 f"after {PUSH_TIMEOUT}s{hint}")
 
-          def lock_unchanged(ident, inode):
-              """Lock the page, then check nobody saved a new version since it was read (inode).
+          def unlock(ident):
+              """Best effort: a failure here must not hide the error that led to it."""
+              try:
+                  call("PUT", f"/api/v1/content/_unlock/{ident}?language=1")
+              except Exception:
+                  pass
+
+          def fire(action, ident, body, read):
+              """Save the new body over the version read earlier (read) and fire the action, holding the lock.
 
               Without the lock, a draft saved in between would be merged into this publish, unreviewed.
-              The workflow actions release the lock."""
-              status, data = call("PUT", f"/api/v1/content/_lock/{ident}?language=1")
-              if status != 200:
-                  raise RuntimeError(f"could not lock the page (is someone editing it?): HTTP {status} {data}")
-              status, data = call("GET", f"/api/v1/content/{ident}?language=1")
-              if status != 200 or data["entity"].get("inode") != inode or data["entity"].get("live") is not True:
-                  call("PUT", f"/api/v1/content/_unlock/{ident}?language=1")
-                  raise RuntimeError("page changed while syncing (new draft?); check it in dotCMS, then rerun")
-
-          def fire(action, ident, body, read_inode):
-              lock_unchanged(ident, read_inode)
-              payload = {"contentlet": {"identifier": ident, "languageId": 1, "documentation": body,
-                                        "disabledWYSIWYG": ["documentation"]}}
-              url = f"/api/v1/workflow/actions/{action}/fire?identifier={ident}&language=1"
-              status, data = call("PUT", url, payload)
-              if status >= 500:  # dotCMS intermittently fails a save; a retry has always gone through
+              dotCMS lets any editor take over a lock, so a page someone else has locked fails instead.
+              The workflow actions release the lock; every failure here releases it too."""
+              if read.get("locked") and (read.get("lockedBy") or {}).get("userId") != me:
+                  raise RuntimeError("locked by another user (editing it?); rerun once it is unlocked")
+              try:
+                  status, data = call("PUT", f"/api/v1/content/_lock/{ident}?language=1")
+                  if status != 200:
+                      raise RuntimeError(f"could not lock the page: HTTP {status} {data}")
+                  status, data = call("GET", f"/api/v1/content/{ident}?language=1")
+                  if status != 200:
+                      raise RuntimeError(f"read after lock failed: HTTP {status} {data}")
+                  now = data["entity"]
+                  if (now.get("inode") != read["inode"] or now.get("live") is not True
+                          or (now.get("lockedBy") or {}).get("userId") != me):
+                      raise RuntimeError("page changed while syncing (new draft or lock?); check it in dotCMS, then rerun")
+                  payload = {"contentlet": {"identifier": ident, "languageId": 1, "documentation": body,
+                                            "disabledWYSIWYG": ["documentation"]}}
+                  url = f"/api/v1/workflow/actions/{action}/fire?identifier={ident}&language=1"
                   status, data = call("PUT", url, payload)
-              if status != 200 or data.get("errors"):
-                  # A failed save can leave the page locked to this account; release it.
-                  call("PUT", f"/api/v1/content/_unlock/{ident}?language=1")
-                  raise RuntimeError(f"save/publish failed: HTTP {status} {data.get('errors') or data}")
-              return data["entity"].get("inode")
+                  if status >= 500:  # dotCMS intermittently fails a save; a retry has always gone through
+                      status, data = call("PUT", url, payload)
+                  if status != 200 or data.get("errors"):
+                      raise RuntimeError(f"save/publish failed: HTTP {status} {data.get('errors') or data}")
+                  return data["entity"].get("inode")
+              except Exception:
+                  unlock(ident)  # also covers timeouts and connection errors, which call() does not catch
+                  raise
 
-          def push_publish(ident, body, read_inode):
+          def push_publish(ident, body, read):
               before = {b["bundleId"] for b in recent_bundles()}
-              inode = fire(PUSH_PUBLISH_ACTION, ident, body, read_inode)
+              inode = fire(PUSH_PUBLISH_ACTION, ident, body, read)
               return wait_for_push(ident, before, inode)
 
           def production_page(ident):
@@ -264,6 +276,7 @@ jobs:
           status, data = call("GET", "/api/v1/users/current/")
           if status != 200:
               sys.exit(f"dotCMS token rejected: HTTP {status} {data}")
+          me = data.get("userId")
 
           status, data = call("POST", "/api/es/search", {"query": {"query_string": {"query": PAGE_QUERY}}, "size": 1000})
           pages = data.get("contentlets") if status == 200 else None
@@ -307,19 +320,19 @@ jobs:
                           elif dry_run:
                               result = "would update on authoring only (not on production)"
                           else:
-                              fire(PUBLISH_ACTION, ident, body, content["inode"])
+                              fire(PUBLISH_ACTION, ident, body, content)
                               result = "published on authoring only (not on production)"
                       elif normalize(current) != normalize(body):
                           if dry_run:
                               result = "would update"
                           else:
-                              result = f"published and pushed (bundle {push_publish(ident, body, content['inode'])})"
+                              result = f"published and pushed (bundle {push_publish(ident, body, content)})"
                       elif normalize(on_prod.get("documentation") or "") != normalize(body):
                           # Authoring is current but production is not: an earlier push failed.
                           if dry_run:
                               result = "would push again (production is behind)"
                           else:
-                              result = f"pushed again, production was behind (bundle {push_publish(ident, body, content['inode'])})"
+                              result = f"pushed again, production was behind (bundle {push_publish(ident, body, content)})"
                       else:
                           result = "unchanged"
                       if dry_run and normalize(current) != normalize(body):
