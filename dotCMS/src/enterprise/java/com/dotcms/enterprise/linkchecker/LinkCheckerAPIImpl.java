@@ -480,7 +480,9 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
 
     /**
      * Opens plain connections to an address of the host only after checking every address the
-     * host resolves to, and connects to the address that was checked.
+     * host resolves to that the address policy lets a client consider (see
+     * {@link IPUtils#candidateAddresses(InetAddress[])}: IPv6 addresses are left out while
+     * {@code REMOTE_CALL_ALLOW_IPV6} is off), and connects to the first address that was checked.
      */
     static class AddressCheckingSocketFactory implements ProtocolSocketFactory {
 
@@ -505,7 +507,10 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
         public Socket createSocket(final String host, final int port, final InetAddress localAddress,
                                    final int localPort, final HttpConnectionParams params)
                 throws IOException {
-            final InetAddress[] addresses = InetAddress.getAllByName(host);
+            final List<InetAddress> addresses = IPUtils.candidateAddresses(InetAddress.getAllByName(host));
+            if (addresses.isEmpty()) {
+                throw new AddressNotAllowedException(host);
+            }
             for (final InetAddress address : addresses) {
                 if (!isAddressAllowed.test(address)) {
                     throw new AddressNotAllowedException(host);
@@ -516,7 +521,7 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
                 if (null != localAddress) {
                     socket.bind(new InetSocketAddress(localAddress, localPort));
                 }
-                socket.connect(new InetSocketAddress(addresses[0], port),
+                socket.connect(new InetSocketAddress(addresses.get(0), port),
                         null == params ? 0 : params.getConnectionTimeout());
                 return socket;
             } catch (final IOException e) {

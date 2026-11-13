@@ -15,11 +15,11 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -33,6 +33,7 @@ import com.liferay.util.Encryptor;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
+import net.jodah.failsafe.CircuitBreaker;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.File;
@@ -43,11 +44,17 @@ import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
+import org.apache.http.Header;
+import org.apache.http.HttpStatus;
 
 import static com.dotcms.storage.FileMetadataAPIImpl.META_TMP;
 
@@ -74,6 +81,38 @@ public class TempFileAPI {
 
   private static final String WHO_CAN_USE_TEMP_FILE = "whoCanUse.tmp";
   private static final String TEMP_RESOURCE_BY_URL_ADMIN_ONLY="TEMP_RESOURCE_BY_URL_ADMIN_ONLY";
+
+  /**
+   * The extensions a file downloaded by URL may have, as a comma-separated list compared without
+   * regard to letter case. Defaults to {@link #DEFAULT_URL_DOWNLOAD_EXTENSIONS}.
+   */
+  public static final String TEMP_RESOURCE_BY_URL_ALLOWED_EXTENSIONS = "TEMP_RESOURCE_BY_URL_ALLOWED_EXTENSIONS";
+
+  /** Image formats and PDF: the kinds of file the URL download is meant for. */
+  static final List<String> DEFAULT_URL_DOWNLOAD_EXTENSIONS =
+          List.of("jpg", "jpeg", "png", "gif", "webp", "bmp", "tif", "tiff", "svg", "pdf");
+
+  /** How much of a response body the URL validation probe reads before it stops. */
+  static final int URL_PROBE_MAX_BYTES = 64 * 1024;
+
+  /**
+   * The content type family a response must declare for a given extension. Extensions outside
+   * this map are only checked against {@link #NEVER_ACCEPTED_CONTENT_TYPES}.
+   */
+  private static final Map<String, String> CONTENT_TYPE_FAMILY_BY_EXTENSION = Map.ofEntries(
+          Map.entry("jpg", "image/"), Map.entry("jpeg", "image/"), Map.entry("png", "image/"),
+          Map.entry("gif", "image/"), Map.entry("webp", "image/"), Map.entry("bmp", "image/"),
+          Map.entry("tif", "image/"), Map.entry("tiff", "image/"), Map.entry("svg", "image/"),
+          Map.entry("pdf", "application/pdf"),
+          Map.entry("md", "text/"), Map.entry("txt", "text/"));
+
+  /** Content types that are never stored under a name from the allow list. */
+  private static final Set<String> NEVER_ACCEPTED_CONTENT_TYPES = Set.of(
+          "text/html", "application/xhtml+xml", "text/javascript", "application/javascript",
+          "application/ecmascript");
+
+  /** Content types that carry no information about the body. */
+  private static final Set<String> UNSPECIFIC_CONTENT_TYPES = Set.of("application/octet-stream", FileAsset.UNKNOWN_MIME_TYPE);
   private static final Lazy<Boolean> allowAccessToPrivateSubnets = Lazy.of(()->Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
   private static final IllegalFileExtensionsValidator fileExtensionValidator = new IllegalFileExtensionsValidator();
   
@@ -253,37 +292,245 @@ public class TempFileAPI {
                                            final URL url,
                                            final int timeoutSeconds)
           throws DotSecurityException, IOException {
-      final boolean tempFilesByUrlAdminOnly = Config
-              .getBooleanProperty(TEMP_RESOURCE_BY_URL_ADMIN_ONLY, false);
-      // Only allow admins to use the URL functionality
       final User user = PortalUtil.getUser(request);
-      if (user == null || tempFilesByUrlAdminOnly && !user.isAdmin()) {
-        throw new DotRuntimeException("Only Admin Users can import files by URL via the Temp API.");
+      if (!isUrlDownloadPermitted(user)) {
+        throw new DotSecurityException("Downloads by URL are restricted to administrators");
       }
       if (!isAllowedRemoteUrl(url)) {
-        throw new DotRuntimeException(String.format(
-                "Failed to download file by URL: the host %s is not an allowed target", url.getHost()));
+        throw new IllegalArgumentException("Failed to download file by URL: the host is not an allowed target");
       }
-      final String fileName = resolveFileName(incomingFileName, url);
+      final String fileName = resolveDownloadFileName(incomingFileName, url);
+      if (!isAllowedDownloadName(fileName)) {
+        SecurityLogger.logInfo(this.getClass(), "Refused a download by URL: the file name's extension is not allowed");
+        throw new IllegalArgumentException("The file name's extension is not allowed for downloads by URL");
+      }
       final DotTempFile dotTempFile = createEmptyTempFile(fileName, request);
       final File tempFile = dotTempFile.file;
 
       // By adding the source IP, we give visibility to the remote server of who initiated the request
       final String sourceIpAddress = request.getRemoteAddr();
       final String finalUrl = url.toString().contains("?") ? url + "&sourceIp=" + sourceIpAddress :  url + "?sourceIp=" + sourceIpAddress ;
-      try(final OutputStream out = new BoundedOutputStream(maxFileSize(request),
-                      Files.newOutputStream(tempFile.toPath()))){
-        final CircuitBreakerUrl urlGetter =
-                CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(finalUrl)
-                        .setTimeout(timeoutSeconds * 1000L).build();
-        urlGetter.doOut(out);
+      final CircuitBreakerUrl urlGetter =
+              CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(finalUrl)
+                      .setTimeout(timeoutSeconds * 1000L).build();
+      try {
+        try(final OutputStream out = new BoundedOutputStream(maxFileSize(request),
+                        Files.newOutputStream(tempFile.toPath()))){
+          urlGetter.doOut(out);
+        }
+        // a connection failure during the download is not raised by the client: the status tells it apart
+        if (urlGetter.response() != HttpStatus.SC_OK) {
+          throw new IllegalArgumentException("Failed to download file by URL: the remote server did not return the file");
+        }
+        if (!isAllowedDownloadName(fileName, contentTypeOf(urlGetter.getResponseHeaders()))) {
+          SecurityLogger.logInfo(this.getClass(), "Discarded a download by URL: the declared content type does not match the file name's extension");
+          throw new IllegalArgumentException("The downloaded content type does not match the file name's extension");
+        }
+        return storedDownload(dotTempFile.id, tempFile);
+      } catch (final IOException | RuntimeException e) {
+        // nothing of a refused or failed download stays behind
+        com.liferay.util.FileUtil.deltree(tempFile.getParentFile());
+        throw e;
       }
+  }
 
-      if (dotTempFile.metadata == null && dotTempFile.file.exists()) {
+  /**
+   * The temp file as it is stored once the download completed: its type is detected from the
+   * content, which must agree with the name like the declared content type had to. A name with
+   * no extension gets the extension the detected type implies, so the file is always stored
+   * under a name with an allowed extension.
+   *
+   * @param id       the temp file id
+   * @param tempFile the downloaded file
+   * @return the stored temp file
+   * @throws IOException if the file cannot be renamed
+   */
+  private DotTempFile storedDownload(final String id, final File tempFile) throws IOException {
+    final DotTempFile stored = new DotTempFile(id, tempFile);
+    if (!isAllowedDownloadName(stored.fileName, stored.mimeType)) {
+      SecurityLogger.logInfo(this.getClass(), "Discarded a download by URL: the detected content type does not match the file name's extension");
+      throw new IllegalArgumentException("The downloaded content does not match the file name's extension");
+    }
+    // DotTempFile may already have renamed an image after its detected type; the file now lives under stored.fileName
+    final Path current = new File(tempFile.getParentFile(), stored.fileName).toPath();
+    if (UtilMethods.isSet(UtilMethods.getFileExtension(stored.fileName))) {
+      // describe the file under its final name, so the response reports the stored file and its length
+      return stored.fileName.equals(tempFile.getName()) ? stored : new DotTempFile(id, current.toFile());
+    }
+    final Path named = current.resolveSibling(stored.fileName + StringPool.PERIOD + extensionImpliedBy(mediaTypeOf(stored.mimeType)));
+    Files.move(current, named);
+    return new DotTempFile(id, named.toFile());
+  }
 
-        return new DotTempFile(dotTempFile.id, dotTempFile.file);
+  /**
+   * Tells whether a user may ask the server to download a file by URL. Nobody may without a
+   * user. When {@code TEMP_RESOURCE_BY_URL_ADMIN_ONLY} is on, only administrators may; otherwise
+   * every user the request admitted may, the anonymous user included when
+   * {@code TEMP_RESOURCE_ALLOW_ANONYMOUS} lets anonymous requests in.
+   *
+   * @param user the user making the request, or {@code null} when there is none
+   * @return {@code true} when the user may download files by URL
+   */
+  public boolean isUrlDownloadPermitted(final User user) {
+    return isUrlDownloadPermitted(user, Config.getBooleanProperty(TEMP_RESOURCE_BY_URL_ADMIN_ONLY, false));
+  }
+
+  /**
+   * The rule behind {@link #isUrlDownloadPermitted(User)}, with the setting passed in.
+   *
+   * @param user      the user making the request, or {@code null} when there is none
+   * @param adminOnly whether downloads by URL are restricted to administrators
+   * @return {@code true} when the user may download files by URL
+   */
+  @VisibleForTesting
+  static boolean isUrlDownloadPermitted(final User user, final boolean adminOnly) {
+    if (user == null) {
+      return false;
+    }
+    return !adminOnly || user.isAdmin();
+  }
+
+  /**
+   * The check that runs before a download by URL is attempted: a name whose extension is not on
+   * {@code TEMP_RESOURCE_BY_URL_ALLOWED_EXTENSIONS} (by default
+   * {@link #DEFAULT_URL_DOWNLOAD_EXTENSIONS}) is refused without contacting the remote server.
+   * A name with no extension passes here and is settled by
+   * {@link #isAllowedDownloadName(String, String)} once the response's content type is known.
+   *
+   * @param fileName the name the file would be stored under
+   * @return {@code false} when the name can be refused before the download
+   */
+  public boolean isAllowedDownloadName(final String fileName) {
+    return UtilMethods.isSet(fileName)
+            && (!UtilMethods.isSet(UtilMethods.getFileExtension(fileName))
+            || isAllowedDownloadName(fileName, null, configuredDownloadExtensions()));
+  }
+
+  /**
+   * Tells whether a file downloaded by URL may be stored under the given name once the remote
+   * server has answered: its extension must be on {@code TEMP_RESOURCE_BY_URL_ALLOWED_EXTENSIONS}
+   * (by default {@link #DEFAULT_URL_DOWNLOAD_EXTENSIONS}), and the content type, declared by the
+   * remote server or detected from the content, must agree with that extension when it says
+   * anything. A name with no extension is accepted only when the content type names an allowed
+   * kind of file. The download applies this rule twice, to the declared and to the detected type,
+   * and stores a file whose name had no extension under the extension the detected type implies.
+   *
+   * @param fileName    the name the file would be stored under
+   * @param contentType the content type, or {@code null} when none is known
+   * @return {@code true} when the file may be stored under that name
+   */
+  public boolean isAllowedDownloadName(final String fileName, final String contentType) {
+    return isAllowedDownloadName(fileName, contentType, configuredDownloadExtensions());
+  }
+
+  /**
+   * The rule behind {@link #isAllowedDownloadName(String, String)}, with the allowed extensions
+   * passed in. A content type that says nothing about the body, such as
+   * {@code application/octet-stream}, is accepted for a name with an allowed extension. A web
+   * page or script content type is never accepted. For an extension with a known family (images,
+   * PDF, plain text) the content type must then belong to that family; any other extension
+   * accepts the remaining content types. A name with no extension is accepted only when the
+   * content type's subtype is itself an allowed extension (for instance {@code image/jpeg} for
+   * {@code jpeg}).
+   *
+   * @param fileName          the name the file would be stored under
+   * @param contentType       the declared content type, or {@code null}
+   * @param allowedExtensions the allowed extensions, lower-cased and without their leading dot
+   * @return {@code true} when the file may be stored under that name
+   */
+  @VisibleForTesting
+  static boolean isAllowedDownloadName(final String fileName, final String contentType,
+                                       final List<String> allowedExtensions) {
+    if (!UtilMethods.isSet(fileName)) {
+      return false;
+    }
+    final String mediaType = mediaTypeOf(contentType);
+    if (NEVER_ACCEPTED_CONTENT_TYPES.contains(mediaType)) {
+      return false;
+    }
+    final String extension = UtilMethods.getFileExtension(fileName);
+    if (!UtilMethods.isSet(extension)) {
+      return allowedExtensions.contains(extensionImpliedBy(mediaType));
+    }
+    if (!allowedExtensions.contains(extension)) {
+      return false;
+    }
+    if (mediaType.isEmpty() || UNSPECIFIC_CONTENT_TYPES.contains(mediaType)) {
+      return true;
+    }
+    final String family = CONTENT_TYPE_FAMILY_BY_EXTENSION.get(extension);
+    return family == null || mediaType.startsWith(family);
+  }
+
+  /**
+   * The media type of a content type value: the first value, without its parameters, trimmed
+   * and lower-cased. Empty when there is none.
+   */
+  private static String mediaTypeOf(final String contentType) {
+    return UtilMethods.isSet(contentType)
+            ? contentType.split("[;,]")[0].trim().toLowerCase(Locale.ROOT) : "";
+  }
+
+  /**
+   * The extension a media type implies: its subtype, up to any {@code +} suffix, so
+   * {@code image/png} gives {@code png} and {@code application/pdf} gives {@code pdf}. Empty
+   * when the media type has no subtype.
+   */
+  private static String extensionImpliedBy(final String mediaType) {
+    final int slash = mediaType.indexOf('/');
+    if (slash < 0 || slash == mediaType.length() - 1) {
+      return "";
+    }
+    final String subtype = mediaType.substring(slash + 1);
+    final int plus = subtype.indexOf('+');
+    return plus < 0 ? subtype : subtype.substring(0, plus);
+  }
+
+  /**
+   * The configured allowed extensions, or the default list when none is configured.
+   */
+  private static List<String> configuredDownloadExtensions() {
+    return parseExtensions(Config.getStringArrayProperty(TEMP_RESOURCE_BY_URL_ALLOWED_EXTENSIONS, null));
+  }
+
+  /**
+   * Turns a configured list into extensions: entries are trimmed, lower-cased and stripped of a
+   * leading dot, blank entries are skipped, and a list that names no extension means the default.
+   *
+   * @param configured the configured entries, or {@code null} when the setting is unset
+   * @return the allowed extensions
+   */
+  @VisibleForTesting
+  static List<String> parseExtensions(final String[] configured) {
+    if (configured == null || configured.length == 0) {
+      return DEFAULT_URL_DOWNLOAD_EXTENSIONS;
+    }
+    final List<String> extensions = new ArrayList<>(configured.length);
+    for (final String entry : configured) {
+      if (UtilMethods.isSet(entry)) {
+        final String extension = entry.trim().toLowerCase(Locale.ROOT);
+        final String bare = extension.startsWith(StringPool.PERIOD) ? extension.substring(1) : extension;
+        if (!bare.isEmpty()) {
+          extensions.add(bare);
+        }
       }
-      return dotTempFile;
+    }
+    return extensions.isEmpty() ? DEFAULT_URL_DOWNLOAD_EXTENSIONS : extensions;
+  }
+
+  /**
+   * The {@code Content-Type} among the response headers, or {@code null} when there is none.
+   */
+  private static String contentTypeOf(final Header[] headers) {
+    if (headers == null) {
+      return null;
+    }
+    for (final Header header : headers) {
+      if ("Content-Type".equalsIgnoreCase(header.getName())) {
+        return header.getValue();
+      }
+    }
+    return null;
   }
 
   /**
@@ -319,6 +566,10 @@ public class TempFileAPI {
    * may contact it (see {@link #isAllowedRemoteUrl(URL)}). Only then it makes a request to the
    * URL: the URL is valid when that request returns 200, and invalid on any other response.
    *
+   * <p>The probe reads at most {@link #URL_PROBE_MAX_BYTES} of the body and discards them; the
+   * status decides, however long the body is. The probe keeps its own circuit breaker, so a
+   * probe cut off at the limit never counts against the URL's breaker for the download.</p>
+   *
    * @param url the URL to validate
    * @return boolean if the url is valid or not
    */
@@ -334,19 +585,30 @@ public class TempFileAPI {
     if (!isAllowedRemoteUrl(parsedUrl)) {
       return false;
     }
-      String done;
-      try {
-      final CircuitBreakerUrl urlGetter =
-              CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url).build();
-       done = urlGetter.doString();
+    final CircuitBreakerUrl urlGetter = CircuitBreakerUrl.builder().setMethod(Method.GET).setUrl(url)
+            .setMaxResponseBytes(URL_PROBE_MAX_BYTES)
+            .setCircuitBreaker(new CircuitBreaker().withFailureThreshold(Integer.MAX_VALUE))
+            .build();
+    try {
+      urlGetter.doOut(OutputStream.nullOutputStream());
+    } catch (CircuitBreakerUrl.ResponseSizeLimitExceededException e) {
+      return e.getStatusCode() == 200;
     } catch (IOException | BadRequestException e) {//If response is not 200, CircuitBreakerUrl throws BadRequestException
       return false;
     }
-
-    return StringUtils.isSet(done);
+    return urlGetter.response() == 200;
   }
 
-  private String resolveFileName(final String desiredName, final URL url) {
+  /**
+   * The name a file downloaded by URL is stored under: the requested name when one is given,
+   * otherwise the last segment of the URL path when it carries an extension, otherwise a random
+   * name. Only the file name part is kept.
+   *
+   * @param desiredName the name the caller asked for, or {@code null}
+   * @param url         the URL being downloaded
+   * @return the sanitized file name
+   */
+  public String resolveDownloadFileName(final String desiredName, final URL url) {
     final String path=(url!=null &&   url.getPath().contains(StringPool.PERIOD))? url.getPath() : UUIDGenerator.shorty();
     final String tryFileName = (desiredName!=null) 
         ? desiredName 

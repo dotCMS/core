@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import com.dotcms.util.network.IPUtils;
+import com.dotcms.util.network.IPUtils.AddressPolicy;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -110,5 +111,72 @@ public class RemoteCallDnsResolverTest {
         });
         server.start();
         return server;
+    }
+
+
+    /**
+     * With IPv6 off, a host that resolves to both families is handed to the client with its
+     * IPv4 addresses only, so the check and the connection use the same family.
+     */
+    @Test
+    public void ipv6Addresses_areDroppedWhenIpv6IsOff() throws Exception {
+        final InetAddress[] addresses = resolverWith(false, "2606:4700:4700::1111", "1.1.1.1")
+                .resolve("dual-stack.example");
+
+        assertEquals(1, addresses.length);
+        assertEquals("1.1.1.1", addresses[0].getHostAddress());
+    }
+
+    /**
+     * With IPv6 on, both families are handed to the client.
+     */
+    @Test
+    public void ipv6Addresses_areKeptWhenIpv6IsOn() throws Exception {
+        final InetAddress[] addresses = resolverWith(true, "2606:4700:4700::1111", "1.1.1.1")
+                .resolve("dual-stack.example");
+
+        assertEquals(2, addresses.length);
+    }
+
+    /**
+     * A host with IPv6 addresses only is unknown while IPv6 is off, and a host with one internal
+     * IPv4 address is refused as a whole.
+     */
+    @Test
+    public void hostsWithNoPermittedAddress_areRefused() {
+        for (final RemoteCallDnsResolver resolver : new RemoteCallDnsResolver[] {
+                resolverWith(false, "2606:4700:4700::1111"),
+                resolverWith(false, "1.1.1.1", "10.0.0.1"),
+                resolverWith(true, "1.1.1.1", "::1")}) {
+            try {
+                resolver.resolve("some.example");
+                fail("the host must be refused");
+            } catch (final UnknownHostException expected) {
+                assertEquals(true, expected.getMessage().contains("refused"));
+            }
+        }
+    }
+
+    /**
+     * A resolver whose lookup answers the given literals and whose policy has no lists and the
+     * given IPv6 setting, so the test does not depend on the environment.
+     */
+    private static RemoteCallDnsResolver resolverWith(final boolean ipv6Allowed, final String... literals) {
+        final AddressPolicy policy = AddressPolicy.of(null, null, ipv6Allowed);
+        return new RemoteCallDnsResolver() {
+            @Override
+            protected InetAddress[] lookup(final String host) throws UnknownHostException {
+                final InetAddress[] addresses = new InetAddress[literals.length];
+                for (int i = 0; i < literals.length; i++) {
+                    addresses[i] = InetAddress.getByName(literals[i]);
+                }
+                return addresses;
+            }
+
+            @Override
+            protected InetAddress[] permitted(final InetAddress[] addresses) {
+                return IPUtils.permittedAddresses(addresses, policy);
+            }
+        };
     }
 }

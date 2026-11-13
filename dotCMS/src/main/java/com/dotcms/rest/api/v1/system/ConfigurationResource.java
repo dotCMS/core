@@ -7,13 +7,16 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.api.v1.maintenance.JVMInfoResource;
 import com.dotcms.rest.api.v1.pagescanner.PageScannerResource;
+import com.dotcms.config.SystemTableConfigSource;
 import com.dotmarketing.util.StringUtils;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -304,10 +307,16 @@ public class ConfigurationResource implements Serializable {
 	}
 
 	/**
-	 * Set value to config properties in runtime
+	 * Sets configuration properties at runtime. Keys the server reads from the environment or
+	 * the properties file only are refused as a whole request, before any value is set, since a
+	 * runtime value for them would have no effect after a restart and must not differ from what
+	 * was provisioned.
 	 *
-	 * @param request
-	 * @return
+	 * @param request    the HTTP request
+	 * @param response   the HTTP response
+	 * @param properties the keys and values to set
+	 * @return 200 once every property is set
+	 * @throws BadRequestException if any key is a provisioning key
 	 */
 	@PUT
 	@JSONP
@@ -325,11 +334,33 @@ public class ConfigurationResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init();
 
+		rejectProvisioningKeys(properties.keySet());
 		for (Map.Entry<String, String> entry : properties.entrySet()) {
 			Config.setProperty(entry.getKey(), entry.getValue());
 		}
 
 		return Response.ok().build();
+	}
+
+	/**
+	 * Refuses the request when any of the given keys is a provisioning key (see
+	 * {@link SystemTableConfigSource#PROVISIONING_KEYS}), before any value is set, so a request
+	 * is applied whole or not at all.
+	 *
+	 * @param keys the keys the request wants to set; {@code null} passes
+	 * @throws BadRequestException if any key is a provisioning key, however it is spelled
+	 */
+	@VisibleForTesting
+	static void rejectProvisioningKeys(final Collection<String> keys) {
+		if (keys == null) {
+			return;
+		}
+		for (final String key : keys) {
+			if (SystemTableConfigSource.isProvisioningKey(key)) {
+				throw new BadRequestException("Key not allowed: " + key
+						+ " is set in the environment or the properties file only");
+			}
+		}
 	}
 
 	/**
