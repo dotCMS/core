@@ -141,6 +141,8 @@ public class RequestCostApiImpl implements RequestCostApi {
 
             final PendingWindow window = pendingWindow;
             if (window.payload() != null && !publisher.publish(window.payload())) {
+                Logger.infoEvery(getClass(), "Request cost window awaiting durable admission; counters retained, "
+                        + "currentRequests=" + requestCountForWindow.sum(), 10 * 60 * 1000);
                 return;
             }
             final RequestCostSnapshot snapshot = window.snapshot();
