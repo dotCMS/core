@@ -132,21 +132,24 @@ jobs:
               h1 = next((i for i in outside_fences(lines) if re.match(r"#\s", lines[i])), None)
               if h1 is not None:
                   del lines[h1]
-              text = "\n".join(lines)
 
               # Relative links and images would resolve against dev.dotcms.com; point them at GitHub.
+              # Fenced code blocks are left as written.
               directory = posixpath.dirname(path)
               def absolute(ref):
                   target, sep, anchor = ref.partition("#")
                   resolved = posixpath.normpath(posixpath.join(directory, target)) if target else directory
                   return resolved + sep + anchor
-              text = re.sub(r"!\[([^\]]*)\]\(" + NOT_ABSOLUTE + r"([^)]+)\)",
-                            lambda m: f"![{m[1]}]({ASSET_BASE}/{absolute(m[2])})", text)
-              text = re.sub(r"(?<!!)\[([^\]]+)\]\(" + NOT_ABSOLUTE + r"([^)]+)\)",
-                            lambda m: f"[{m[1]}]({LINK_BASE}/{absolute(m[2])})", text)
-              text = re.sub(r"<img([^>]*)\s+src=[\"']" + NOT_ABSOLUTE + r"([^\"']+)[\"']",
-                            lambda m: f'<img{m[1]} src="{ASSET_BASE}/{absolute(m[2])}"', text)
-              return text.strip() + "\n"
+              def rewrite(text):
+                  text = re.sub(r"!\[([^\]]*)\]\(" + NOT_ABSOLUTE + r"([^)]+)\)",
+                                lambda m: f"![{m[1]}]({ASSET_BASE}/{absolute(m[2])})", text)
+                  text = re.sub(r"(?<!!)\[([^\]]+)\]\(" + NOT_ABSOLUTE + r"([^)]+)\)",
+                                lambda m: f"[{m[1]}]({LINK_BASE}/{absolute(m[2])})", text)
+                  return re.sub(r"<img([^>]*)\s+src=[\"']" + NOT_ABSOLUTE + r"([^\"']+)[\"']",
+                                lambda m: f'<img{m[1]} src="{ASSET_BASE}/{absolute(m[2])}"', text)
+              for i in outside_fences(lines):
+                  lines[i] = rewrite(lines[i])
+              return "\n".join(lines).strip() + "\n"
 
           def normalize(text):
               # Trailing spaces stay: two of them are a Markdown line break (dotCMS stores them as sent).
@@ -358,7 +361,7 @@ jobs:
                               result = f"pushed again, production was behind ({push_publish(ident, body, content)})"
                       else:
                           result = "unchanged"
-                      if dry_run and normalize(current) != normalize(body):
+                      if dry_run and result.startswith("would"):
                           # The summary is public: diff against production's text, never authoring's.
                           public = (on_prod.get("documentation") or "") if on_prod else ""
                           diffs.append((slug, "".join(difflib.unified_diff(
