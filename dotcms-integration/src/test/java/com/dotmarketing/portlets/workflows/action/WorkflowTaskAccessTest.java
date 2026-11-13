@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.workflows.action;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -22,6 +23,7 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -29,6 +31,9 @@ import org.junit.Test;
 /**
  * Integration tests for {@link WorkflowTaskAccess}: a workflow task may be written to only by a
  * user who can read the contentlet that task belongs to.
+ *
+ * <p>The same question answers the read side: the task screen shows the contentlet, so it may
+ * only be rendered for a user who could have read that contentlet on their own.</p>
  *
  * <p>Commenting and attaching ask for READ, so that they match what
  * {@code POST /api/v1/workflow/{contentletId}/comments} already requires, and so that a user who
@@ -231,6 +236,47 @@ public class WorkflowTaskAccessTest {
         orphanTask.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
         assertFalse(WorkflowTaskAccess.canAccess(orphanTask, reader));
+    }
+
+    /**
+     * Given a back-end user granted READ on the contentlet,
+     * When the contentlet behind the task is asked for on that user's behalf,
+     * Then it comes back, so the screen that renders it has something to render.
+     */
+    @Test
+    public void contentletFor_userWithRead_returnsTheContentlet() throws Exception {
+        final WorkflowTask task = workflowAPI.findTaskByContentlet(content);
+
+        final Optional<Contentlet> resolved = WorkflowTaskAccess.contentletFor(task, reader);
+
+        assertTrue("A reader must get the task's contentlet", resolved.isPresent());
+        assertEquals(content.getIdentifier(), resolved.get().getIdentifier());
+    }
+
+    /**
+     * Given a back-end user with no permission on the contentlet,
+     * When the contentlet behind the task is asked for on that user's behalf,
+     * Then nothing comes back: the lookup is itself the refusal, and the screen is left with
+     * nothing to show.
+     */
+    @Test
+    public void contentletFor_userWithoutRead_isEmpty() throws Exception {
+        final WorkflowTask task = workflowAPI.findTaskByContentlet(content);
+
+        assertFalse(WorkflowTaskAccess.contentletFor(task, userWithoutAccess).isPresent());
+    }
+
+    /**
+     * Given a contentlet only the anonymous role can read, and a back-end user with no permission
+     * of their own on it,
+     * When the contentlet behind its task is asked for on that user's behalf,
+     * Then nothing comes back: a front-end grant does not open a back-end screen.
+     */
+    @Test
+    public void contentletFor_anonymousReadableContent_isEmpty() throws Exception {
+        final WorkflowTask task = workflowAPI.findTaskByContentlet(publishedContent);
+
+        assertFalse(WorkflowTaskAccess.contentletFor(task, userWithoutAccess).isPresent());
     }
 
     /**

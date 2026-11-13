@@ -17,6 +17,7 @@ import com.dotmarketing.portlets.workflows.model.WorkflowHistory;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.struts.WorkflowTaskForm;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
@@ -47,8 +48,9 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 	 * contentlet that task belongs to — or edit it, for removing an attachment. A refused caller
 	 * is rolled back and sent to the error page without the task being touched.</p>
 	 *
-	 * <p>Only the commands that write to the task are checked here. {@code view} renders the
-	 * screen and is outside the scope of this check.</p>
+	 * <p>{@code view} is checked the same way, before the screen is forwarded to. It names its
+	 * task with {@code taskId} rather than {@code inode}, which is the parameter the task dialog
+	 * sends, so the task it is checked against is read from there.</p>
 	 *
 	 * @param mapping the Struts mapping for this action
 	 * @param form    the {@link WorkflowTaskForm} bound to the request
@@ -83,6 +85,14 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 		 */
 		if ((cmd != null) && cmd.equals(Constants.VIEW)) {
 			try {
+				final WorkflowTask taskToView = _resolveTaskToView(req);
+				if (!WorkflowTaskAccess.canAccess(taskToView, user)) {
+					_handleException(new DotSecurityException(String.format(
+							"User '%s' is not allowed to view this workflow task",
+							null != user ? user.getUserId() : "<none>")), req, false);
+					return;
+				}
+				req.setAttribute(WebKeys.WORKFLOW_TASK_EDIT, taskToView);
 				Logger.debug(this, "Calling View Method");
 				_viewWorkflowTask(req, res, config, form, user);
 				setForward(req, "portlet.ext.workflows.view_workflow_task");
@@ -90,7 +100,7 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 			} catch (Exception ae) {
 				_handleException(ae, req);
 				return;
-			} 
+			}
 		}
 
 		final WorkflowTask requestedTask =
@@ -270,6 +280,26 @@ public class EditWorkflowTaskAction extends DotPortletAction {
 		return com.dotmarketing.util.Constants.REMOVE_FILE.equals(cmd)
 				? WorkflowTaskAccess.canEdit(task, user)
 				: WorkflowTaskAccess.canAccess(task, user);
+	}
+
+	/**
+	 * Reads the task the screen is being asked for.
+	 *
+	 * <p>The task dialog of the back-end names the task with {@code taskId} and sends no
+	 * {@code inode}, which is the parameter the commands that write to a task use. Both are read
+	 * here, {@code taskId} first, so that the task authorized against is the one the screen will
+	 * go on to render.</p>
+	 *
+	 * @param req the Struts wrapper for the HTTP request
+	 * @return the {@link WorkflowTask} the request names. A request that names none, or names one
+	 *         that does not exist, yields an empty task, which no user is allowed to open
+	 * @throws DotDataException if the task cannot be read
+	 */
+	private WorkflowTask _resolveTaskToView(final ActionRequest req) throws DotDataException {
+		final String taskId = UtilMethods.isSet(req.getParameter("taskId"))
+				? req.getParameter("taskId")
+				: req.getParameter("inode");
+		return wfAPI.findTaskById(taskId);
 	}
 
 	private void _retrieveWorkflowTask(ActionRequest req, String webkey) throws Exception {

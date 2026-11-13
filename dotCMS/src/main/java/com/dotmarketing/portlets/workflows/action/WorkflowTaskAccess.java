@@ -10,9 +10,10 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.model.User;
+import java.util.Optional;
 
 /**
- * Decides whether a user may write to a workflow task.
+ * Decides what a user may do with a workflow task: open it, write to it, or neither.
  *
  * <p>A workflow task carries no permissions of its own: the rows live on the contentlet the task
  * was opened for. So every question about a task is answered by asking about that contentlet.
@@ -44,7 +45,29 @@ public final class WorkflowTaskAccess {
      * @return {@code true} when the user may read the task's contentlet
      */
     public static boolean canAccess(final WorkflowTask task, final User user) {
-        return null != resolveContentlet(task, user);
+        return contentletFor(task, user).isPresent();
+    }
+
+    /**
+     * Reads the contentlet a workflow task belongs to, on behalf of the given user, for the
+     * screens that show it.
+     *
+     * <p>The lookup is the permission check: a user who may not read the contentlet gets nothing
+     * back, and a screen with no contentlet has nothing of the task to render. A screen shows
+     * what this returns, so that what is rendered and what was checked are the same object.</p>
+     *
+     * <p>A screen that can be reached without going through its action, as the legacy task screen
+     * can, calls this for itself even when the action has already decided. The repeated lookup is
+     * the point: the screen must not depend on an answer left on the request by someone else.
+     * Callers that only need the decision and render nothing use {@link #canAccess} instead.</p>
+     *
+     * @param task the {@link WorkflowTask} whose contentlet is wanted
+     * @param user the {@link User} making the request; {@code null} is refused
+     * @return the {@link Contentlet} the user may read, or empty when they may not, when the task
+     *         names no contentlet, or when the lookup could not be answered
+     */
+    public static Optional<Contentlet> contentletFor(final WorkflowTask task, final User user) {
+        return Optional.ofNullable(resolveContentlet(task, user));
     }
 
     /**
