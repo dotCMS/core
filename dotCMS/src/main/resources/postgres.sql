@@ -2487,6 +2487,18 @@ CREATE TABLE login_lockout (
 );
 CREATE INDEX idx_login_lockout_window ON login_lockout (window_start);
 
+-- Immutable telemetry bodies survive pod replacement; old binaries leave pending rows untouched.
+CREATE TABLE request_cost_outbox (
+    id varchar(64) PRIMARY KEY,
+    destination varchar(64) NOT NULL,
+    payload text NOT NULL CHECK (octet_length(payload) <= 8192),
+    created_at timestamptz NOT NULL DEFAULT clock_timestamp(),
+    next_attempt timestamptz NOT NULL DEFAULT clock_timestamp(),
+    attempts integer NOT NULL DEFAULT 0 CHECK (attempts BETWEEN 0 AND 16)
+);
+CREATE INDEX idx_request_cost_outbox_due
+    ON request_cost_outbox (destination, next_attempt, created_at, id);
+
 --Content Types improvement
 CREATE INDEX idx_lower_structure_name ON structure (LOWER(velocity_var_name));
 

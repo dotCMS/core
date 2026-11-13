@@ -1,32 +1,28 @@
 package com.dotcms.cost;
 
-import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.OutputStream;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.commons.codec.digest.DigestUtils;
+import javax.annotation.PreDestroy;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.context.Initialized;
+import javax.enterprise.event.Observes;
 
 /**
- * Ships {@link RequestCostSnapshot} payloads to an external REST endpoint on each tick of
- * {@link RequestCostApiImpl#logRequestCost()}.
- *
- * <p>Activates implicitly when both {@code REQUEST_COST_PUSH_URL} and
- * {@code REQUEST_COST_PUSH_TOKEN} are set. Failures are rate-limited warnings and the snapshot
- * is dropped — this is observational telemetry, not durable accounting.</p>
- *
- * <p>Config keys:
- * <ul>
- *   <li>{@code REQUEST_COST_PUSH_URL} (presence with token activates the publisher)</li>
- *   <li>{@code REQUEST_COST_PUSH_TOKEN} (bearer token; presence with url activates the publisher)</li>
- *   <li>{@code REQUEST_COST_PUSH_TIMEOUT_MS} (default 5000)</li>
- * </ul>
- * </p>
+ * Retains request-cost snapshots in the tenant database and retries their immutable bodies until
+ * insertion is confirmed. Activates when both REQUEST_COST_PUSH_URL and REQUEST_COST_PUSH_TOKEN
+ * are configured; disabling publishing pauses delivery without deleting pending work.
  */
 @ApplicationScoped
 public class RequestCostPublisher {
@@ -34,124 +30,177 @@ public class RequestCostPublisher {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final int FAIL_LOG_INTERVAL_MS = 10 * 60 * 1000;
     private final AtomicBoolean httpSchemeWarned = new AtomicBoolean(false);
+    private final RequestCostOutbox outbox = new RequestCostOutbox();
+    private ScheduledExecutorService scheduler;
+    private long lastStatisticsNanos;
 
+    /** Starts recovery at application initialization, even before fresh customer traffic arrives. */
+    public void start(@Observes @Initialized(ApplicationScoped.class) final Object event) {
+        scheduler = Executors.newSingleThreadScheduledExecutor(task -> {
+            final Thread thread = new Thread(task, "RequestCostDelivery");
+            thread.setDaemon(true);
+            return thread;
+        });
+        scheduler.scheduleWithFixedDelay(this::drain, 1, 1, TimeUnit.SECONDS);
+    }
+
+    /** Stops polling; unfinished transactions leave their bodies pending. */
+    @PreDestroy
+    public void destroy() {
+        if (scheduler != null) {
+            scheduler.shutdownNow();
+        }
+    }
+
+    /** Preserves the existing URL-and-sanitized-token activation gate. */
     public boolean isEnabled() {
-        // Use the sanitized token in the gate so a whitespace-or-CRLF-only token
-        // doesn't activate the publisher and cause an unauthenticated POST.
         return UtilMethods.isSet(getUrl()) && UtilMethods.isSet(sanitizeHeaderValue(getToken()));
     }
 
+    /** Reads the operator-configured destination without caching credentials or routing. */
     private String getUrl() {
         return Config.getStringProperty("REQUEST_COST_PUSH_URL", null);
     }
 
+    /** Resolves the current bearer credential at send time. */
     private String getToken() {
         return Config.getStringProperty("REQUEST_COST_PUSH_TOKEN", null);
     }
 
+    /** Keeps configured waits finite; the existing default remains five seconds. */
     private long getTimeoutMs() {
-        return Config.getLongProperty("REQUEST_COST_PUSH_TIMEOUT_MS", 5_000L);
+        return Math.max(1L, Math.min(60_000L,
+                Config.getLongProperty("REQUEST_COST_PUSH_TIMEOUT_MS", 5_000L)));
+    }
+
+    /** Serializes once when the monitor captures a window, not on each delivery attempt. */
+    static String serializeSnapshot(final RequestCostSnapshot snapshot) throws JsonProcessingException {
+        return MAPPER.writeValueAsString(snapshot);
+    }
+
+    /** Captures a non-secret destination identity alongside the immutable window. */
+    public String destinationFingerprint() {
+        final String url = getUrl();
+        return validDestination(url) ? DigestUtils.sha256Hex(url) : null;
     }
 
     /**
-     * Submits the snapshot to {@link DotConcurrentFactory}'s default submitter so the HTTP POST
-     * never blocks the request-cost monitor scheduler. Returns immediately. Transport errors are
-     * logged at most once every 10 minutes and the snapshot is dropped.
+     * Durably admits an already-frozen body only for its captured destination. A false result
+     * leaves captured counters owned by the monitor, including when the configured URL changes.
      */
-    public void publish(final RequestCostSnapshot snapshot) {
+    public boolean publish(final String destination, final String payload) {
         if (!isEnabled()) {
-            return;
+            return false;
         }
-        DotConcurrentFactory.getInstance().getSubmitter().submit(() -> post(snapshot));
+        final String url = getUrl();
+        if (!validDestination(url) || !DigestUtils.sha256Hex(url).equals(destination)) {
+            return false;
+        }
+        try {
+            return outbox.add(url, payload);
+        } catch (final Exception e) {
+            Logger.warnEvery(getClass(), "REQUEST_COST_OUTBOX_ADMISSION",
+                    "Request cost persistence unconfirmed; captured window retained in memory",
+                    FAIL_LOG_INTERVAL_MS);
+            return false;
+        }
     }
 
-    private void post(final RequestCostSnapshot snapshot) {
-        final String url = getUrl();
+    /** Drains one durable record per poll, independently of the request-cost monitor. */
+    private void drain() {
+        try {
+            if (!isEnabled()) {
+                return;
+            }
+            final String url = getUrl();
+            if (!validDestination(url)) {
+                return;
+            }
+            outbox.deliver(url, payload -> post(url, payload));
+            final long now = System.nanoTime();
+            if (lastStatisticsNanos == 0
+                    || now - lastStatisticsNanos >= TimeUnit.MILLISECONDS.toNanos(FAIL_LOG_INTERVAL_MS)) {
+                outbox.logStatistics();
+                lastStatisticsNanos = now;
+            }
+        } catch (final Exception e) {
+            Logger.warnEvery(getClass(), "REQUEST_COST_OUTBOX_DELIVERY",
+                    "Request cost outbox unavailable; durable work retained for retry",
+                    FAIL_LOG_INTERVAL_MS);
+        }
+    }
+
+    /** Returns a status only after consuming the complete bounded response; uncertainty is -1. */
+    private int post(final String url, final String payload) {
         final String token = sanitizeHeaderValue(getToken());
-        // Re-check both pieces — config may have been cleared between submit and execute, and
-        // posting without an Authorization header is a worse failure mode than not posting at all.
-        if (!UtilMethods.isSet(url) || !UtilMethods.isSet(token)) {
-            return;
+        if (!url.equals(getUrl()) || !UtilMethods.isSet(token)) {
+            return -1;
         }
         warnOncePlainHttp(url);
         try {
-            // CircuitBreakerUrl sniffs the rawData and applies Content-Type automatically when
-            // the payload starts with '{', so we don't set it explicitly (would risk a duplicate
-            // header on some Apache HttpClient versions).
-            final Map<String, String> headers = new HashMap<>();
-            headers.put("Authorization", "Bearer " + token);
-
             final CircuitBreakerUrl call = CircuitBreakerUrl.builder()
                     .setMethod(CircuitBreakerUrl.Method.POST)
                     .setUrl(url)
-                    .setHeaders(headers)
-                    .setRawData(MAPPER.writeValueAsString(snapshot))
+                    .setHeaders(Map.of("Authorization", "Bearer " + token))
+                    .setRawData(payload)
                     .setTimeout(getTimeoutMs())
+                    .setAllowRedirects(false)
                     .setThrowWhenError(false)
+                    .setRaiseFailsafe(true)
+                    .setMaxResponseBytes(64 * 1024)
                     .build();
-
-            call.doString();
-            if (!call.isProcessed()) {
-                Logger.warnEvery(this.getClass(),
-                        "REQUEST_COST_PUSH_FAIL_TRANSPORT",
-                        "Request cost push to " + sanitizeUrlForLog(url) + " did not complete (circuit open or transport error)",
-                        FAIL_LOG_INTERVAL_MS);
-                return;
-            }
-            final int response = call.response();
-            if (!CircuitBreakerUrl.isSuccessResponse(response)) {
-                Logger.warnEvery(this.getClass(),
-                        "REQUEST_COST_PUSH_FAIL_HTTP",
-                        "Request cost push to " + sanitizeUrlForLog(url) + " returned HTTP " + response,
-                        FAIL_LOG_INTERVAL_MS);
-            }
+            // doString logs error bodies; discard them instead so credentials cannot be echoed.
+            call.doOutUnmetered(OutputStream.nullOutputStream());
+            return call.isProcessed() ? call.response() : -1;
         } catch (final Exception e) {
-            Logger.warnEvery(this.getClass(),
-                    "REQUEST_COST_PUSH_ERR_EXCEPTION",
-                    "Request cost push to " + sanitizeUrlForLog(url) + " failed: " + e.getMessage(),
+            Logger.warnEvery(getClass(), "REQUEST_COST_PUSH_TRANSPORT",
+                    "Request cost delivery did not complete; body retained for retry",
                     FAIL_LOG_INTERVAL_MS);
-            Logger.debug(this.getClass(),
-                    "Request cost push to " + sanitizeUrlForLog(url) + " failed with exception",
-                    e);
+            return -1;
         }
     }
 
-    /**
-     * Warns once (per process lifetime) if the configured URL uses the plain {@code http://}
-     * scheme — the bearer token would otherwise traverse the wire in cleartext. Stays a warning
-     * rather than a refusal so a misconfiguration doesn't silently drop telemetry.
-     */
+    /** Refuses URL-embedded credentials that the shared HTTP client's own diagnostics could log. */
+    private boolean validDestination(final String url) {
+        if (!UtilMethods.isSet(url)) {
+            return false;
+        }
+        try {
+            final URI uri = URI.create(url);
+            final int port = uri.getPort();
+            if (uri.getHost() != null && (port == -1 || (port >= 1 && port <= 65535))
+                    && ("https".equalsIgnoreCase(uri.getScheme())
+                    || "http".equalsIgnoreCase(uri.getScheme())) && uri.getRawUserInfo() == null
+                    && uri.getRawQuery() == null && uri.getRawFragment() == null) {
+                return true;
+            }
+        } catch (final IllegalArgumentException ignored) {
+            // Invalid configuration is reported without echoing a possibly secret-bearing URL.
+        }
+        Logger.warnEvery(getClass(), "REQUEST_COST_PUSH_CONFIG",
+                "Request cost destination must be HTTP(S) without userinfo, query, or fragment; work retained",
+                FAIL_LOG_INTERVAL_MS);
+        return false;
+    }
+
+    /** Warns once if a legacy plain-HTTP destination would expose its bearer token. */
     private void warnOncePlainHttp(final String url) {
         if (httpSchemeWarned.get()) {
             return;
         }
-        try {
-            final String scheme = URI.create(url).getScheme();
-            if (scheme != null && scheme.equalsIgnoreCase("http")
-                    && httpSchemeWarned.compareAndSet(false, true)) {
-                Logger.warn(this.getClass(),
-                        "REQUEST_COST_PUSH_URL uses plain http:// — bearer token will be sent "
-                                + "in cleartext. Use https:// for any non-loopback destination.");
-            }
-        } catch (final Exception ignored) {
-            // sanitizer is best-effort
+        if ("http".equalsIgnoreCase(URI.create(url).getScheme())
+                && httpSchemeWarned.compareAndSet(false, true)) {
+            Logger.warn(getClass(), "REQUEST_COST_PUSH_URL uses plain http://; use https:// "
+                    + "for any non-loopback destination to protect the bearer token.");
         }
     }
 
-    /**
-     * Strips CR/LF and surrounding whitespace from a header value. A misconfigured
-     * {@code REQUEST_COST_PUSH_TOKEN} containing CRLF would otherwise enable HTTP header
-     * injection — low-risk since only operators set this, but cheap to harden.
-     */
+    /** Strips CR/LF and surrounding whitespace to prevent header injection. */
     static String sanitizeHeaderValue(final String value) {
         return value == null ? null : value.replace("\r", "").replace("\n", "").trim();
     }
 
-    /**
-     * Strips RFC-3986 userinfo (the {@code user:pass@} segment) from a URL before logging so a
-     * misconfigured {@code REQUEST_COST_PUSH_URL=https://user:secret@host/...} doesn't leak the
-     * credential into every failure log line.
-     */
+    /** Removes URL userinfo before a caller uses the URL in diagnostics. */
     static String sanitizeUrlForLog(final String url) {
         if (!UtilMethods.isSet(url)) {
             return url;
@@ -161,10 +210,8 @@ public class RequestCostPublisher {
             if (uri.getUserInfo() == null) {
                 return url;
             }
-            final URI safe = new URI(
-                    uri.getScheme(), null, uri.getHost(), uri.getPort(),
-                    uri.getPath(), uri.getQuery(), uri.getFragment());
-            return safe.toString();
+            return new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(),
+                    uri.getPath(), uri.getQuery(), uri.getFragment()).toString();
         } catch (final Exception ignored) {
             return "<unparseable-url>";
         }

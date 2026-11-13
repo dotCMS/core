@@ -39,6 +39,7 @@ Descriptions say **when to load** the doc, not what it contains.
 | [JANDEX_METADATA_SCANNING.md](backend/JANDEX_METADATA_SCANNING.md) | Looking up classes or annotations at runtime — prefer this over reflection |
 | [HEALTH_MONITORING.md](backend/HEALTH_MONITORING.md) | Working on health endpoints or runtime log levels |
 | [TELEMETRY_IMPLEMENTATION.md](backend/TELEMETRY_IMPLEMENTATION.md) | Adding a metric or working on the `/v1/usage` endpoints |
+| [REQUEST_COST_DELIVERY.md](backend/REQUEST_COST_DELIVERY.md) | Operating request-cost telemetry retry, outbox capacity, credentials, or rollback recovery |
 | [SYSTEM_EVENTS.md](backend/SYSTEM_EVENTS.md) | Producing or consuming cross-node events — at-least-once delivery and idempotency rules |
 | [INFERENCE_API.md](backend/INFERENCE_API.md) | Working on the OpenAI-compatible `/api/inference/v1` family |
 | [INDEX_FIELD_EMISSION.md](backend/INDEX_FIELD_EMISSION.md) | Changing how a contentlet becomes an index document — includes the `_dotraw` zero-padding sort invariant |

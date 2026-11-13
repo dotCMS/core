@@ -328,4 +328,39 @@ public class RemoteCallRedirectStrategyTest {
         server.start();
         return server;
     }
+    /** Telemetry successes and retries must never dispatch through the customer-metered overload. */
+    @Test
+    public void circuitBreakerUrl_unmeteredDelivery_doesNotDispatchToMeteredMethod() throws Exception {
+        final AtomicInteger attempts = new AtomicInteger();
+        final HttpServer server = HttpServer.create(
+                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+        server.createContext("/telemetry", exchange -> {
+            final byte[] body = "complete".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(attempts.incrementAndGet() == 1 ? 201 : 503, body.length);
+            try (OutputStream out = exchange.getResponseBody()) {
+                out.write(body);
+            }
+        });
+        server.start();
+        IPUtils.disabledIpPrivateSubnet(true);
+        try {
+            for (final int expectedStatus : new int[] {201, 503}) {
+                final CircuitBreakerUrl call = org.mockito.Mockito.spy(CircuitBreakerUrl.builder()
+                        .setUrl(url(server, "/telemetry"))
+                        .setMethod(CircuitBreakerUrl.Method.POST)
+                        .setRawData("{}")
+                        .setThrowWhenError(false)
+                        .setRaiseFailsafe(true)
+                        .build());
+                call.doOutUnmetered(OutputStream.nullOutputStream());
+                assertEquals(expectedStatus, call.response());
+                org.mockito.Mockito.verify(call, org.mockito.Mockito.never()).doOut(
+                        org.mockito.ArgumentMatchers.any(javax.servlet.http.HttpServletResponse.class));
+            }
+        } finally {
+            IPUtils.disabledIpPrivateSubnet(false);
+            server.stop(0);
+        }
+    }
+
 }

@@ -277,6 +277,7 @@ import com.dotmarketing.startup.runonce.Task261103RemoveContainersLegacyPortletF
 import com.dotmarketing.startup.runonce.Task261104CreateLoginLockoutTable;
 import com.dotmarketing.startup.runonce.Task261109AddMultiTreeParentIndexes;
 import com.dotmarketing.startup.runonce.Task261110PromoteUsersRolesToolsPortlets;
+import com.dotmarketing.startup.runonce.Task261112CreateRequestCostOutbox;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -626,6 +627,7 @@ public class TaskLocatorUtil {
         .add(Task261103RemoveContainersLegacyPortletFromLayouts.class)
         .add(Task261104CreateLoginLockoutTable.class)
         .add(Task261109AddMultiTreeParentIndexes.class)
+        .add(Task261112CreateRequestCostOutbox.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());

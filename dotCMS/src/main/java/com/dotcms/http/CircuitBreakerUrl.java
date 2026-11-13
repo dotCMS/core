@@ -282,8 +282,19 @@ public class CircuitBreakerUrl {
         }
     }
 
+    /** Streams a response through the ordinary customer-metered HTTP path. */
     public void doOut(final OutputStream out) throws IOException {
-        doOut(new EmptyHttpResponse() {
+        doOut(responseTo(out));
+    }
+
+    /** Streams internal telemetry without charging its delivery or retries to customer usage. */
+    public void doOutUnmetered(final OutputStream out) throws IOException {
+        streamResponse(responseTo(out));
+    }
+
+    /** Adapts a destination stream without changing the shared response handling. */
+    private HttpServletResponse responseTo(final OutputStream out) {
+        return new EmptyHttpResponse() {
             @Override
             public ServletOutputStream getOutputStream() {
                 return new ServletOutputStream(){
@@ -304,12 +315,17 @@ public class CircuitBreakerUrl {
                     }
                 };
             }
-        });
+        };
     }
 
+    /** Charges ordinary outbound calls before streaming their response. */
     @RequestCost(Price.HTTP_FETCH)
     public void doOut(final HttpServletResponse response) throws IOException {
+        streamResponse(response);
+    }
 
+    /** Shares the same TLS, circuit breaker, limits, and failure handling for both charge paths. */
+    private void streamResponse(final HttpServletResponse response) throws IOException {
         circuitBreakerConnectionControl.check(this.proxyUrl);
 
         try (final OutputStream out = response.getOutputStream()) {

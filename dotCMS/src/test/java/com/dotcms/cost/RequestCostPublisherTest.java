@@ -3,6 +3,7 @@ package com.dotcms.cost;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.UnitTestBase;
@@ -12,10 +13,8 @@ import org.junit.Test;
 
 /**
  * Unit tests for {@link RequestCostPublisher}. Focuses on the enable gate and the
- * disabled-is-a-no-op guarantee. The actual HTTP POST is covered indirectly by
- * {@link RequestCostSnapshotTest} (payload shape) and would need a localhost HTTP server plus
- * {@code ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true} set before {@code CircuitBreakerUrl}'s static
- * initializer fires — not a stable unit-test surface.
+ * disabled-is-a-no-op guarantee. Delivery completion is checked with a mocked HTTP boundary;
+ * no external receiver or live database is used.
  */
 public class RequestCostPublisherTest extends UnitTestBase {
 
@@ -26,12 +25,6 @@ public class RequestCostPublisherTest extends UnitTestBase {
         Config.setProperty("REQUEST_COST_PUSH_URL", null);
         Config.setProperty("REQUEST_COST_PUSH_TOKEN", null);
         Config.setProperty("REQUEST_COST_PUSH_TIMEOUT_MS", null);
-    }
-
-    private RequestCostSnapshot anySnapshot() {
-        return new RequestCostSnapshot(
-                "c", "e", "2026-05-19T00:00:00Z",
-                60, 0L, 0d, 0d, 0L, 0d, 0d, 0d, 0d);
     }
 
     @Test
@@ -92,7 +85,7 @@ public class RequestCostPublisherTest extends UnitTestBase {
         // Given — both keys absent
 
         // When / Then — must not throw, must not submit anything to the executor
-        publisher.publish(anySnapshot());
+        assertFalse(publisher.publish(publisher.destinationFingerprint(), "{}"));
     }
 
     /**
@@ -149,4 +142,65 @@ public class RequestCostPublisherTest extends UnitTestBase {
         assertEquals("token", RequestCostPublisher.sanitizeHeaderValue("token\n"));
         assertNull(RequestCostPublisher.sanitizeHeaderValue(null));
     }
+    @Test
+    public void test_partial201ResponseIsNotAcknowledged() throws Exception {
+        Config.setProperty("REQUEST_COST_PUSH_URL", "https://example.com/cost");
+        Config.setProperty("REQUEST_COST_PUSH_TOKEN", "current-token");
+        final com.dotcms.http.CircuitBreakerUrl call =
+                org.mockito.Mockito.mock(com.dotcms.http.CircuitBreakerUrl.class);
+        final com.dotcms.http.CircuitBreakerUrlBuilder builder = org.mockito.Mockito.mock(
+                com.dotcms.http.CircuitBreakerUrlBuilder.class, org.mockito.Mockito.RETURNS_SELF);
+        org.mockito.Mockito.when(builder.build()).thenReturn(call);
+        org.mockito.Mockito.when(call.isProcessed()).thenReturn(true);
+        org.mockito.Mockito.when(call.response()).thenReturn(201);
+        org.mockito.Mockito.doThrow(new java.io.IOException("partial response"))
+                .when(call).doOutUnmetered(org.mockito.ArgumentMatchers.any(java.io.OutputStream.class));
+
+        try (org.mockito.MockedStatic<com.dotcms.http.CircuitBreakerUrl> http =
+                     org.mockito.Mockito.mockStatic(com.dotcms.http.CircuitBreakerUrl.class)) {
+            http.when(com.dotcms.http.CircuitBreakerUrl::builder).thenReturn(builder);
+            final java.lang.reflect.Method post = RequestCostPublisher.class
+                    .getDeclaredMethod("post", String.class, String.class);
+            post.setAccessible(true);
+            assertEquals(-1, post.invoke(publisher, "https://example.com/cost", "{\"frozen\":1}"));
+        }
+        org.mockito.Mockito.verify(call, org.mockito.Mockito.never())
+                .doOut(org.mockito.ArgumentMatchers.any(java.io.OutputStream.class));
+        org.mockito.Mockito.verify(builder).setRawData("{\"frozen\":1}");
+        org.mockito.Mockito.verify(builder).setRaiseFailsafe(true);
+        org.mockito.Mockito.verify(builder).setAllowRedirects(false);
+    }
+
+    @Test
+    public void test_invalidSecretBearingDestinationDoesNotAdmitWork() {
+        Config.setProperty("REQUEST_COST_PUSH_TOKEN", "current-token");
+        for (final String url : java.util.List.of(
+                "https://user:password@example.com/cost",
+                "https://example.com/cost?token=secret",
+                "https://example.com/cost#secret",
+                "https://example.com:65536/cost",
+                "https://example.com:0/cost")) {
+            Config.setProperty("REQUEST_COST_PUSH_URL", url);
+            assertNull("invalid destinations must not be frozen", publisher.destinationFingerprint());
+            assertFalse(publisher.publish(publisher.destinationFingerprint(), "{}"));
+        }
+        Config.setProperty("REQUEST_COST_PUSH_URL", "https://example.com/cost");
+        assertNotNull("correcting configuration permits a fresh capture", publisher.destinationFingerprint());
+    }
+
+    @Test
+    public void test_changedDestinationDoesNotAdmitFrozenWindow() throws Exception {
+        Config.setProperty("REQUEST_COST_PUSH_URL", "https://original.example.com/cost");
+        Config.setProperty("REQUEST_COST_PUSH_TOKEN", "current-token");
+        final String destination = publisher.destinationFingerprint();
+        final RequestCostOutbox outbox = org.mockito.Mockito.mock(RequestCostOutbox.class);
+        final java.lang.reflect.Field field = RequestCostPublisher.class.getDeclaredField("outbox");
+        field.setAccessible(true);
+        field.set(publisher, outbox);
+        Config.setProperty("REQUEST_COST_PUSH_URL", "https://other.example.com/cost");
+
+        assertFalse(publisher.publish(destination, "{}"));
+        org.mockito.Mockito.verifyNoInteractions(outbox);
+    }
+
 }
