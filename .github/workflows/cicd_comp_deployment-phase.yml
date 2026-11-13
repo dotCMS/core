@@ -23,9 +23,8 @@
 #
 #   release: {version}           ← mutable, e.g. 25.02.16-01  (omit-environment-prefix=true)
 #            {version}_{sha}     ← immutable
-#            latest              ← mutable, points to the latest release (when latest=true).
-#                                 ONLY when latest=true; never set by nightly/trunk/feature/manual.
-#                                 Applies to both main (dotcms) and dev (dotcms-dev) images.
+#            (`latest` is never tagged here — the release pipeline moves it forward-only via
+#             .github/actions/core-cicd/evergreen-tracks/promote-latest, #38473.)
 #
 #   release (Java variant):     Same as release, plus:
 #            {suffix}            ← mutable floating tag (e.g. java-25), variant equivalent of latest.
@@ -80,9 +79,6 @@ on:
       artifact-run-id:
         default: ${{ github.run_id }}
         type: string
-      latest:
-        default: false
-        type: boolean
       deploy-dev-image:
         default: false
         type: boolean
@@ -310,7 +306,6 @@ jobs:
           ref: ${{ inputs.environment }}
           docker-use-ref: false
           version: ${{ steps.docker-tags.outputs.base_tag }}
-          latest: ${{ inputs.latest && steps.get-sdkman-version.outputs.docker_suffix == '' }}
           do_deploy: ${{ vars.DOCKER_DEPLOY || 'true' }}
           docker_io_username: ${{ secrets.DOCKER_USERNAME }}
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
@@ -355,7 +350,6 @@ jobs:
           ref: ${{ inputs.environment }}
           docker-use-ref: false
           version: ${{ steps.docker-tags.outputs.base_tag }}
-          latest: ${{ inputs.latest && steps.get-sdkman-version.outputs.docker_suffix == '' }}
           do_deploy: ${{ vars.DOCKER_DEPLOY || 'true' }}
           docker_io_username: ${{ secrets.DOCKER_USERNAME }}
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}

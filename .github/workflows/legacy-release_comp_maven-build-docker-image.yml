@@ -94,6 +94,7 @@ jobs:
       tags: ${{ steps.meta.outputs.tags }}
       formatted_tags: ${{ steps.format-tags.outputs.formatted_tags }}
       version: ${{ steps.set-common-vars.outputs.version }}
+      is_latest: ${{ steps.set-common-vars.outputs.is_latest }}
     if: success()
     steps:
       - run: echo 'GitHub context'
@@ -285,7 +286,6 @@ jobs:
             type=raw,value=${{ steps.set-common-vars.outputs.version }}_SNAPSHOT,enable=${{ steps.set-common-vars.outputs.is_snapshot }}
             type=raw,value=${{ steps.set-common-vars.outputs.version }}_latest_SNAPSHOT,enable=${{ steps.set-common-vars.outputs.is_trunk_snapshot }}
             type=raw,value=${{ steps.set-common-vars.outputs.version }},enable=${{ steps.set-common-vars.outputs.is_release }}
-            type=raw,value=latest,enable=${{ steps.set-common-vars.outputs.is_latest }}
             type=raw,value={{sha}},enable=${{ steps.set-common-vars.outputs.is_custom }}
             type=raw,value=${{ inputs.custom_tag }},enable=${{ inputs.custom_tag != '' }}
         if: success()
@@ -338,3 +338,28 @@ jobs:
           done
 
           echo "formatted_tags=${tags}" >> $GITHUB_OUTPUT
+
+  # `latest` is never tagged by the build above. A GA-shaped version (NN.NN.NN-N) asks the
+  # shared, forward-only evergreen-tracks engine instead, the same one the release pipeline
+  # uses: a backport older than the release already on `latest` is a no-op (#38473).
+  promote-latest:
+    name: Promote latest tag
+    needs: build-push-image
+    if: >-
+      needs.build-push-image.outputs.is_latest == 'true'
+      && inputs.docker_registry != 'GHCR.IO'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    permissions:
+      contents: read
+    # Same registry-mutation lock as cicd_6-release / evergreen-tracks promote and admin.
+    concurrency:
+      group: evergreen-tracks-registry
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: ./.github/actions/core-cicd/evergreen-tracks/promote-latest
+        with:
+          # This workflow builds only dotcms/dotcms, never dotcms-dev.
+          repos: dotcms/dotcms
+          docker_username: ${{ secrets.docker_io_username }}
+          docker_token: ${{ secrets.docker_io_token }}
