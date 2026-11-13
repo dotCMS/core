@@ -378,8 +378,9 @@ public class ContentTypeInitializer implements DotInitializer {
 
     /**
      * Gives every favorite that is not on the System Host its own CMS Owner rows. The dialog saves
-     * favorites on the System Host, where they inherit from the content type, but an API call can
-     * save one on a site or in a folder, and then it inherits from that site or folder instead.
+     * favorites on the System Host, where they inherit from the content type. The contentlet API
+     * now keeps every favorite there, but before it did, an API call could save one on a site or
+     * in a folder, and then it inherits from that site or folder instead.
      * Once the reset has removed its own rows, such a favorite would take the site's permissions,
      * which can let anyone read it; its own rows keep it readable only by its owner.
      *

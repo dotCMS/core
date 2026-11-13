@@ -685,9 +685,9 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
                             APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
                             PermissionAPI.PERMISSION_READ, true)),
                     site, APILocator.systemUser(), false);
-            favorite = new ContentletDataGen(contentType).host(site).setPolicy(IndexPolicy.WAIT_FOR)
+            favorite = moveToSite(new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
                     .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
-                    .nextPersisted();
+                    .nextPersisted(), site);
             permissionAPI.assignPermissions(List.of(
                     new Permission(favorite.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true)),
                     favorite, APILocator.systemUser(), false);
@@ -735,9 +735,9 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
                             lockedRole.getId(), PermissionAPI.PERMISSION_READ, true)),
                     site, APILocator.systemUser(), false);
             APILocator.getRoleAPI().lock(lockedRole);
-            favorite = new ContentletDataGen(contentType).host(site).setPolicy(IndexPolicy.WAIT_FOR)
+            favorite = moveToSite(new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
                     .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
-                    .nextPersisted();
+                    .nextPersisted(), site);
 
             new ContentTypeInitializer().init();
 
@@ -772,9 +772,9 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
         Contentlet favorite = null;
         try {
 
-            favorite = new ContentletDataGen(contentType).host(site).variant(variant)
+            favorite = moveToSite(new ContentletDataGen(contentType).variant(variant)
                     .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
-                    .nextPersisted();
+                    .nextPersisted(), site);
 
             new ContentTypeInitializer().init();
 
@@ -820,9 +820,9 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
                             APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
                             PermissionAPI.PERMISSION_READ, true)),
                     site, APILocator.systemUser(), false);
-            favorite = new ContentletDataGen(contentType).host(site).setPolicy(IndexPolicy.WAIT_FOR)
+            favorite = moveToSite(new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
                     .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
-                    .nextPersisted();
+                    .nextPersisted(), site);
 
             Config.setProperty("PERMISSION_REFERENCES_UPDATE_ASYNC", true);
             referenceWriter.submit(() -> {
@@ -854,6 +854,112 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
             if (null != favorite) {
                 ContentletDataGen.destroy(favorite);
             }
+            APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
+            APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+        }
+    }
+
+    /**
+     * Method to test: saving a favorite page through the contentlet API.
+     * Given Scenario: The first repair has already run, a site gives CMS Anonymous READ on its
+     * content, and a new favorite owned by a back-end user is saved on that site.
+     * ExpectedResult: The favorite is kept on the System Host, so it inherits from its content
+     * type: the owner can read and edit it, while another back-end user, a front-end user and an
+     * anonymous reader can neither read it nor find it in a content search.
+     */
+    @Test
+    public void test_favorite_saved_on_a_site_after_the_reset_is_readable_only_by_its_owner() throws Exception {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final ContentType contentType = prepareFirstInit();
+        new ContentTypeInitializer().init();
+
+        final Host site = new SiteDataGen().nextPersisted();
+        final User owner = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final User otherBackEndUser = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final User frontEndUser = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadFrontEndUserRole()).nextPersisted();
+        Contentlet favorite = null;
+        try {
+
+            permissionAPI.assignPermissions(List.of(
+                    new Permission(Contentlet.class.getCanonicalName(), site.getPermissionId(),
+                            APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                            PermissionAPI.PERMISSION_READ, true)),
+                    site, APILocator.systemUser(), false);
+            favorite = new ContentletDataGen(contentType).host(site).setPolicy(IndexPolicy.WAIT_FOR)
+                    .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                    .setProperty(Contentlet.OWNER_KEY, owner.getUserId())
+                    .nextPersisted();
+
+            Assert.assertTrue("The owner must read the favorite: " + describePermissions(favorite, "favorite"),
+                    permissionAPI.doesUserHavePermission(favorite, PermissionAPI.PERMISSION_READ, owner, true));
+            Assert.assertTrue("The owner must edit the favorite: " + describePermissions(favorite, "favorite"),
+                    permissionAPI.doesUserHavePermission(favorite, PermissionAPI.PERMISSION_EDIT, owner, true));
+            final String query = "+contentType:" + ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME
+                    + " +identifier:" + favorite.getIdentifier();
+            for (final User reader : List.of(APILocator.getUserAPI().getAnonymousUser(), frontEndUser, otherBackEndUser)) {
+
+                Assert.assertFalse(reader.getUserId() + " must not read a favorite owned by someone else: "
+                                + describePermissions(favorite, "favorite"),
+                        permissionAPI.doesUserHavePermission(favorite, PermissionAPI.PERMISSION_READ, reader, true));
+                Assert.assertTrue(reader.getUserId() + " must not find a favorite owned by someone else",
+                        APILocator.getContentletAPI().search(query, 10, 0, null, reader, true).isEmpty());
+            }
+        } finally {
+
+            if (null != favorite) {
+                ContentletDataGen.destroy(favorite);
+            }
+            APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
+            APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+            UserDataGen.remove(owner);
+            UserDataGen.remove(otherBackEndUser);
+            UserDataGen.remove(frontEndUser);
+        }
+    }
+
+    /**
+     * Method to test: moving a favorite page through the contentlet API.
+     * Given Scenario: The first repair has already run, a site gives CMS Anonymous READ on its
+     * content, and a favorite saved on the System Host is moved to that site.
+     * ExpectedResult: The move is refused, the favorite stays on the System Host and it cannot be
+     * read anonymously.
+     */
+    @Test
+    public void test_favorite_cannot_be_moved_off_the_system_host() throws Exception {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final ContentType contentType = prepareFirstInit();
+        new ContentTypeInitializer().init();
+
+        final Host site = new SiteDataGen().nextPersisted();
+        final Contentlet favorite = new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                .nextPersisted();
+        try {
+
+            permissionAPI.assignPermissions(List.of(
+                    new Permission(Contentlet.class.getCanonicalName(), site.getPermissionId(),
+                            APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                            PermissionAPI.PERMISSION_READ, true)),
+                    site, APILocator.systemUser(), false);
+
+            Assert.assertThrows(IllegalArgumentException.class, () -> APILocator.getContentletAPI()
+                    .move(favorite, APILocator.systemUser(), "//" + site.getHostname() + "/", false));
+
+            CacheLocator.getPermissionCache().clearCache();
+            Assert.assertEquals("The favorite must stay on the System Host", Host.SYSTEM_HOST,
+                    APILocator.getIdentifierAPI().loadFromDb(favorite.getIdentifier()).getHostId());
+            Assert.assertFalse("A favorite must not be readable anonymously: "
+                            + describePermissions(favorite, "favorite"),
+                    permissionAPI.doesUserHavePermission(favorite, PermissionAPI.PERMISSION_READ,
+                            APILocator.getUserAPI().getAnonymousUser(), true));
+        } finally {
+
+            ContentletDataGen.destroy(favorite);
             APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
             APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
         }
@@ -925,6 +1031,25 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
         Assert.assertTrue("The favorite must have no row of another role: "
                         + describePermissions(favorite, "favorite"),
                 rows.stream().allMatch(row -> cmsOwnerId.equals(row.get("roleid"))));
+    }
+
+    /**
+     * Puts a favorite on a site the way favorites could be saved before they were kept on the
+     * System Host: its identifier is moved to the site in the database, its cached copies are
+     * dropped and its permission reference is reset, so it inherits from the site. Returns the
+     * favorite as loaded again.
+     */
+    private static Contentlet moveToSite(final Contentlet favorite, final Host site) throws Exception {
+
+        new DotConnect().executeUpdate("update identifier set host_inode = ? where id = ?",
+                site.getIdentifier(), favorite.getIdentifier());
+        CacheLocator.getIdentifierCache().removeFromCacheByIdentifier(favorite.getIdentifier());
+        CacheLocator.getContentletCache().remove(favorite.getInode());
+        final Contentlet moved = APILocator.getContentletAPI().find(favorite.getInode(), APILocator.systemUser(), false);
+        Assert.assertEquals("The favorite must now be on the site", site.getIdentifier(), moved.getHost());
+        APILocator.getPermissionAPI().resetPermissionReferences(moved);
+        CacheLocator.getPermissionCache().clearCache();
+        return moved;
     }
 
     /**

@@ -19,6 +19,7 @@ import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.ContentTypeInitializer;
 import com.dotcms.contenttype.business.DotAssetValidationException;
 import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
 import com.dotcms.contenttype.business.uniquefields.UniqueFieldValidationStrategyResolver;
@@ -619,6 +620,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (user.isAnonymousUser() && AnonymousAccess.systemSetting() != AnonymousAccess.WRITE) {
             throw new DotSecurityException(
                     "CONTENT_APIS_ALLOW_ANONYMOUS setting does not allow anonymous content WRITEs");
+        }
+
+        if (isFavoritePage(contentlet) && !Host.SYSTEM_HOST.equals(host.getIdentifier())) {
+
+            throw new IllegalArgumentException("Favorite pages can only be on the System Host: "
+                    + contentlet.getIdentifier());
         }
 
         // if the user can write and add a children to the folder
@@ -11401,16 +11408,39 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * sets the host / folder if it is not set to either a sibling's host/folder or the content
-     * type's host folder
+     * Tells whether a contentlet is a favorite page. Favorite pages are always kept on the System
+     * Host: there they inherit their owner-only permissions from their content type, while on a
+     * site or in a folder they would inherit the site's or folder's permissions instead.
      *
-     * @param contentlet
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param contentlet the {@link Contentlet} to check
+     * @return {@code true} if its content type is the favorite page content type
+     */
+    private static boolean isFavoritePage(final Contentlet contentlet) {
+
+        final ContentType contentType = contentlet.getContentType();
+        return null != contentType
+                && ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME.equals(contentType.variable());
+    }
+
+    /**
+     * Sets the site and folder of a contentlet that has neither, to those of another language
+     * version of it or else to those of its content type, falling back to the System Host and
+     * System Folder. A favorite page is always put on the System Host and System Folder, whatever
+     * it was given; see {@link #isFavoritePage(Contentlet)}.
+     *
+     * @param contentlet the {@link Contentlet} being saved
+     * @return the same contentlet, with its site and folder set
+     * @throws DotDataException     if another version of it cannot be read
+     * @throws DotSecurityException if another version of it cannot be read
      */
     protected Contentlet populateHost(final Contentlet contentlet)
             throws DotDataException, DotSecurityException {
+        if (isFavoritePage(contentlet)) {
+
+            contentlet.setHost(Host.SYSTEM_HOST);
+            contentlet.setFolder(FolderAPI.SYSTEM_FOLDER);
+            return contentlet;
+        }
         // check contentlet Host
         // If host and folder are not set yet
         if (!UtilMethods.isSet(contentlet.getHost()) && !UtilMethods.isSet(
