@@ -3599,10 +3599,24 @@ public class UtilMethods {
         }
     }
 
+    /**
+     * Builds a map of the elements of a list, keyed by what the named method returns for each element. Templates call
+     * it, so a method a template may not call, such as the one that returns the company key, is refused.
+     *
+     * @param arli the elements to put in the map
+     * @param methodToInvoke the name of the method, with no parameters, whose result keys each element
+     * @param T the type the method must return
+     * @return the elements, keyed by the method's result
+     * @throws IllegalArgumentException if a template may not call the method
+     * @throws Exception if the method cannot be found or called, or returns another type
+     */
     @SuppressWarnings("unchecked")
     public static <T, E> HashMap<T, E> convertListToHashMap(List<E> arli, String methodToInvoke, Class T) throws Exception {
         HashMap<T, E> hashi = new HashMap<>();
         for (E e : arli) {
+            if (SecureIntrospectorImpl.isCompanyKeyAccessor(e.getClass(), methodToInvoke)) {
+                throw new IllegalArgumentException("The method '" + methodToInvoke + "' cannot be called from a template");
+            }
             Method m = e.getClass().getMethod(methodToInvoke);
             if (m.getReturnType() != T) {
                 throw new ClassCastException();
