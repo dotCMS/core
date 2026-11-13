@@ -575,13 +575,14 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
     private static final Set<String> COMPANY_KEY_ACCESSORS = Set.of("getKey", "getKeyObj");
 
     /**
-     * Determines whether the call is one of {@link #COMPANY_KEY_ACCESSORS} on a company.
+     * Determines whether the call is one of {@link #COMPANY_KEY_ACCESSORS} on a company. Template helpers that
+     * read an object's properties by reflection, outside this introspector, use it too, so they leave the key out.
      *
      * @param clazz class a method is about to be resolved on
      * @param methodName name of the method to be called
      * @return {@code true} if the call is restricted (deny), {@code false} otherwise
      */
-    static boolean isCompanyKeyAccessor(final Class<?> clazz, final String methodName)
+    public static boolean isCompanyKeyAccessor(final Class<?> clazz, final String methodName)
     {
         return clazz != null && methodName != null && CompanyModel.class.isAssignableFrom(clazz)
                 && COMPANY_KEY_ACCESSORS.contains(methodName);

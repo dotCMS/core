@@ -12,7 +12,11 @@ import static org.mockito.Mockito.when;
 import com.dotcms.UnitTestBase;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
 import org.junit.Assert;
 import org.junit.Test;
@@ -747,5 +751,27 @@ public class UtilMethodsTest extends UnitTestBase {
 		for (final String path : disallowed) {
 			assertNull("Should reject: " + path, UtilMethods.cleanFileSystemPathURI(path));
 		}
+	}
+
+	/**
+	 * Method to test: {@link UtilMethods#toMap(Object)}.
+	 * Given scenario: a company that holds its key is turned into a map, as a template can do with
+	 * {@code $UtilMethods.toMap(...)}.
+	 * Expected result: the map has the company's other simple values and no key.
+	 */
+	@Test
+	public void testToMap_WhenCompanyHoldsKey_ShouldLeaveKeyOut() {
+		final Company company = new Company("sample.company");
+		company.setName("Sample Company");
+		company.setEmailAddress("dotcms@sample.example");
+		company.setKeyObj(new SecretKeySpec("0123456789abcdef".getBytes(StandardCharsets.UTF_8), "AES"));
+
+		final Map<String, Object> map = UtilMethods.toMap(company);
+
+		assertEquals("Sample Company", map.get("name"));
+		assertEquals("dotcms@sample.example", map.get("emailAddress"));
+		// Checked without printing the map, so a failure does not write a key to the build log
+		assertFalse("the map must not hold the key", map.containsKey("key"));
+		assertNotNull(company.getKey());
 	}
 }

@@ -72,11 +72,12 @@ public class SecureIntrospectorRenderTest {
 
         final Context ctx = VelocityUtil.getBasicContext();
         final String rendered = VelocityUtil.eval("#set($c = $UtilMethods.getDefaultCompany())"
-                + "[$!c.key][$!c.getKey()][$!c.keyObj][$!c.emailAddress]", ctx).trim();
+                + "#set($m = $UtilMethods.toMap($c))"
+                + "[$!c.key][$!c.getKey()][$!c.keyObj][$!m.key][$!m.get('key')][$!c.emailAddress]", ctx).trim();
 
         // Compared without printing the output, so a failure does not write a key to the build log
         assertTrue("the template must not read the key",
-                ("[][][][" + company.getEmailAddress() + "]").equals(rendered));
+                ("[][][][][][" + company.getEmailAddress() + "]").equals(rendered));
     }
 
     /**
