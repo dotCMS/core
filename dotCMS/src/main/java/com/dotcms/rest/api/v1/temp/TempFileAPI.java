@@ -54,6 +54,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.http.Header;
+import org.apache.http.HttpStatus;
 
 import static com.dotcms.storage.FileMetadataAPIImpl.META_TMP;
 
@@ -316,6 +317,10 @@ public class TempFileAPI {
         try(final OutputStream out = new BoundedOutputStream(maxFileSize(request),
                         Files.newOutputStream(tempFile.toPath()))){
           urlGetter.doOut(out);
+        }
+        // a connection failure during the download is not raised by the client: the status tells it apart
+        if (urlGetter.response() != HttpStatus.SC_OK) {
+          throw new IllegalArgumentException("Failed to download file by URL: the remote server did not return the file");
         }
         if (!isAllowedDownloadName(fileName, contentTypeOf(urlGetter.getResponseHeaders()))) {
           SecurityLogger.logInfo(this.getClass(), "Discarded a download by URL: the declared content type does not match the file name's extension");
