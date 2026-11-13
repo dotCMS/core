@@ -179,7 +179,7 @@ jobs:
               return data.get("entity") or []
 
           def wait_for_push(ident, before, inode):
-              """Find the push bundle created for this page and wait until the push has landed.
+              """Wait until the push of this page has landed, watching its push bundle as well.
 
               Landed means production serves the version just published (same inode), or the bundle
               reports SUCCESS. Production usually has it within seconds; the authoring server can take
@@ -202,12 +202,13 @@ jobs:
                           return bundle["bundleId"]
                       if "FAIL" in bundle["status"]:
                           raise RuntimeError(f"published, but push bundle {bundle['bundleId']} {bundle['status']}")
-                      try:
-                          on_prod = production_page(ident)
-                      except RuntimeError:
-                          on_prod = None  # check again on the next pass
-                      if on_prod and on_prod.get("inode") == inode:
-                          return bundle["bundleId"]
+                  # Checked even before the bundle is found: the queue listing is only one page.
+                  try:
+                      on_prod = production_page(ident)
+                  except RuntimeError:
+                      on_prod = None  # check again on the next pass
+                  if on_prod and on_prod.get("inode") == inode:
+                      return bundle["bundleId"] if bundle else "not found in the queue"
                   time.sleep(5)
               if not bundle:
                   raise PushStalled(f"published, but no push bundle appeared within {PUSH_TIMEOUT}s")
@@ -218,10 +219,24 @@ jobs:
               raise PushStalled(f"published, but push bundle {bundle['bundleId']} still {bundle['status']} "
                                 f"after {PUSH_TIMEOUT}s{hint}")
 
-          def fire(action, ident, body):
+          def lock_unchanged(ident, inode):
+              """Lock the page, then check nobody saved a new version since it was read (inode).
+
+              Without the lock, a draft saved in between would be merged into this publish, unreviewed.
+              The workflow actions release the lock."""
+              status, data = call("PUT", f"/api/v1/content/_lock/{ident}?language=1")
+              if status != 200:
+                  raise RuntimeError(f"could not lock the page (is someone editing it?): HTTP {status} {data}")
+              status, data = call("GET", f"/api/v1/content/{ident}?language=1")
+              if status != 200 or data["entity"].get("inode") != inode or data["entity"].get("live") is not True:
+                  call("PUT", f"/api/v1/content/_unlock/{ident}?language=1")
+                  raise RuntimeError("page changed while syncing (new draft?); check it in dotCMS, then rerun")
+
+          def fire(action, ident, body, read_inode):
+              lock_unchanged(ident, read_inode)
               payload = {"contentlet": {"identifier": ident, "languageId": 1, "documentation": body,
                                         "disabledWYSIWYG": ["documentation"]}}
-              url = f"/api/v1/workflow/actions/{action}/fire?identifier={ident}"
+              url = f"/api/v1/workflow/actions/{action}/fire?identifier={ident}&language=1"
               status, data = call("PUT", url, payload)
               if status >= 500:  # dotCMS intermittently fails a save; a retry has always gone through
                   status, data = call("PUT", url, payload)
@@ -231,14 +246,14 @@ jobs:
                   raise RuntimeError(f"save/publish failed: HTTP {status} {data.get('errors') or data}")
               return data["entity"].get("inode")
 
-          def push_publish(ident, body):
+          def push_publish(ident, body, read_inode):
               before = {b["bundleId"] for b in recent_bundles()}
-              inode = fire(PUSH_PUBLISH_ACTION, ident, body)
+              inode = fire(PUSH_PUBLISH_ACTION, ident, body, read_inode)
               return wait_for_push(ident, before, inode)
 
           def production_page(ident):
               """The page as production serves it, or None if the page is not there."""
-              status, data = call("GET", f"/api/v1/content/{ident}", prod=True)
+              status, data = call("GET", f"/api/v1/content/{ident}?language=1", prod=True)
               if status == 404:
                   return None
               if status != 200:
@@ -259,7 +274,7 @@ jobs:
           if unknown:
               sys.exit(f"not a mapped page urlTitle: {' '.join(sorted(unknown))}")
 
-          rows, diffs, failed, stalled = [], [], 0, None
+          rows, diffs, failed, stalled, synced = [], [], 0, None, 0
           for page in sorted(pages, key=lambda p: p.get("urlTitle") or ""):
               slug, ident = page.get("urlTitle"), page["identifier"]
               if selected and slug not in selected:
@@ -269,7 +284,7 @@ jobs:
                   if stalled:
                       raise RuntimeError(f"not attempted: an earlier push stalled ({stalled})")
                   # Search results can lag behind recent saves; read the page itself.
-                  status, data = call("GET", f"/api/v1/content/{ident}")
+                  status, data = call("GET", f"/api/v1/content/{ident}?language=1")
                   if status != 200:
                       raise RuntimeError(f"read failed: HTTP {status} {data}")
                   content = data["entity"]
@@ -281,6 +296,7 @@ jobs:
                       # Publishing would also publish whatever else the draft changed, unreviewed.
                       raise RuntimeError("pending draft: publish or discard it in dotCMS, then rerun")
                   else:
+                      synced += 1
                       body = clean(open(path, encoding="utf-8").read(), path)
                       current = content.get("documentation") or ""
                       on_prod = production_page(ident)
@@ -291,19 +307,19 @@ jobs:
                           elif dry_run:
                               result = "would update on authoring only (not on production)"
                           else:
-                              fire(PUBLISH_ACTION, ident, body)
+                              fire(PUBLISH_ACTION, ident, body, content["inode"])
                               result = "published on authoring only (not on production)"
                       elif normalize(current) != normalize(body):
                           if dry_run:
                               result = "would update"
                           else:
-                              result = f"published and pushed (bundle {push_publish(ident, body)})"
+                              result = f"published and pushed (bundle {push_publish(ident, body, content['inode'])})"
                       elif normalize(on_prod.get("documentation") or "") != normalize(body):
                           # Authoring is current but production is not: an earlier push failed.
                           if dry_run:
                               result = "would push again (production is behind)"
                           else:
-                              result = f"pushed again, production was behind (bundle {push_publish(ident, body)})"
+                              result = f"pushed again, production was behind (bundle {push_publish(ident, body, content['inode'])})"
                       else:
                           result = "unchanged"
                       if dry_run and normalize(current) != normalize(body):
@@ -321,6 +337,11 @@ jobs:
 
           summary.write(f"## README docs sync{' (dry run)' if dry_run else ''}\n\n| Page | Source | Result |\n|---|---|---|\n")
           summary.write("\n".join(rows) + "\n")
+          if not synced and not failed:
+              # Never a valid state: most likely the readmeSource URLs or SOURCE_PREFIX changed.
+              print(f"no mapped page has a readmeSource under {SOURCE_PREFIX}")
+              summary.write(f"\n**No mapped page has a readmeSource under {SOURCE_PREFIX}.**\n")
+              failed = 1
           for slug, diff in diffs:
               summary.write(f"\n<details><summary>{slug}</summary>\n\n```diff\n{diff}\n```\n</details>\n")
           sys.exit(1 if failed else 0)
