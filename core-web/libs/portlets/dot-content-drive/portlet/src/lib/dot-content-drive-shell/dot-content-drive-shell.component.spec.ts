@@ -108,6 +108,22 @@ import { provideContentDriveFieldFilterHost } from '../store/content-drive-field
 import { provideContentDriveFilterFacade } from '../store/content-drive-filter-facade';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 
+/**
+ * The side panels open through a fake `DotSidePanelService`, so their content is never rendered.
+ * The real loaders start an `import()` nothing here waits for, which can still be loading when the
+ * file ends and then fails the run; these hand over a stand-in instead. Each still returns a
+ * promise, which is how `editPanel()` and `sourcePanel()` tell the lazily loaded panels apart.
+ */
+vi.mock('@dotcms/edit-content', async () => {
+    class SidePanelContentStub {}
+
+    return {
+        ...(await vi.importActual<typeof import('@dotcms/edit-content')>('@dotcms/edit-content')),
+        loadDotEditContentSidePanel: () => Promise.resolve(SidePanelContentStub),
+        loadDotSourceEditorSidePanel: () => Promise.resolve(SidePanelContentStub)
+    };
+});
+
 // Backs the navigation service mock's readonly `$editPanelRequest`. Typed (not cast) so tests get
 // a compile-checked payload; reset in the shared beforeEach for isolation.
 const editPanelRequestSignal: WritableSignal<EditContentDialogData | null> = signal(null);

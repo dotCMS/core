@@ -77,6 +77,7 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -98,6 +99,9 @@ import static org.mockito.Mockito.mock;
  */
 @RunWith(DataProviderRunner.class)
 public class ContentletAjaxTest {
+
+	/** Name of the session attribute the legacy edit screen used for its uploaded files. */
+	private static final String LEGACY_TEMP_BINARY_LIST_ATTRIBUTE = "tempBinaryImageInodesList";
 
 	private Language language;
 	private Contentlet contentlet;
@@ -770,6 +774,117 @@ public class ContentletAjaxTest {
 	}
 
 	/**
+	 * <b>Method to Test:</b> {@link ContentletAjax#saveContent(List, boolean, boolean, boolean)}<p>
+	 * <b>When:</b> new content is saved and the form carries a field whose name starts like a
+	 * binary column but is not one<p>
+	 * <b>Should:</b> save the content and leave the user's {@code tmp_binary} folder as it was
+	 */
+	@Test
+	public void test_saveContent_formFieldThatIsNotABinaryColumn_leavesTheUserTmpFolderAsItWas()
+			throws Exception {
+
+		final User user = new UserDataGen().nextPersisted();
+		final ContentType contentType = createEditableTypeWithBinaryField(user);
+		final File userTmpFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary(),
+				user.getUserId());
+
+		try {
+			final String column = legacyFormName(contentType, "doc");
+			assertTrue(new File(userTmpFolder, column).mkdirs());
+			Files.write(new File(userTmpFolder, "notes.txt").toPath(),
+					"notes".getBytes(StandardCharsets.UTF_8));
+			final List<String> before = Arrays.asList(userTmpFolder.list());
+
+			final Map<String, Object> callbackData = saveThroughLegacyForm(setUpContext(user),
+					contentType, "",
+					column + File.separator + ".."
+							+ com.dotmarketing.util.WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR
+							+ "notes.txt");
+
+			assertNull("The save should report no errors: " + callbackData,
+					callbackData.get("saveContentErrors"));
+			assertNotNull("The content should be saved: " + callbackData,
+					contentletAPI.find((String) callbackData.get("contentletInode"), systemUser, false));
+			assertTrue("Only a binary column has a folder to look in, found: "
+							+ Arrays.toString(userTmpFolder.list()),
+					before.containsAll(Arrays.asList(userTmpFolder.list())));
+			assertTrue(new File(userTmpFolder, "notes.txt").isFile());
+		} finally {
+			setUpContext();
+			FileUtil.deltree(userTmpFolder);
+			ContentTypeDataGen.remove(contentType);
+			removeUserAndPermissions(user);
+		}
+	}
+
+	/**
+	 * <b>Method to Test:</b> {@link ContentletAjax#cancelContentEdit(String, String, String, String)}<p>
+	 * <b>When:</b> a user without permissions on a file asset cancels an edit, and the user's
+	 * session holds the inode of that file asset under
+	 * {@code tempBinaryImageInodesList}<p>
+	 * <b>Should:</b> leave the file asset in place
+	 */
+	@Test
+	public void test_cancelContentEdit_leavesOtherContentInPlace() throws Exception {
+
+		final User user = new UserDataGen().nextPersisted();
+		final Folder folder = new FolderDataGen().nextPersisted();
+		final Contentlet fileAsset = new FileAssetDataGen(folder, "file asset body " + System.currentTimeMillis())
+				.nextPersisted();
+
+		try {
+			final HttpServletRequest request = setUpContext(user);
+			Mockito.when(request.getSession().getAttribute(LEGACY_TEMP_BINARY_LIST_ATTRIBUTE))
+					.thenReturn(new ArrayList<>(List.of(fileAsset.getInode())));
+
+			new ContentletAjax().cancelContentEdit("", "", "/c/portal/layout?p_l_id=1", "1");
+
+			assertNotNull("The file asset should still exist",
+					Try.of(() -> contentletAPI.find(fileAsset.getInode(), systemUser, false)).getOrNull());
+		} finally {
+			setUpContext();
+			FolderDataGen.remove(folder);
+			UserDataGen.remove(user);
+		}
+	}
+
+	/**
+	 * <b>Method to Test:</b> {@link ContentletAjax#saveContent(List, boolean, boolean, boolean)}<p>
+	 * <b>When:</b> a user who may edit any content saves new content, and the user's session
+	 * holds the inode of another content under {@code tempBinaryImageInodesList}<p>
+	 * <b>Should:</b> leave the other content in place and not archived
+	 */
+	@Test
+	public void test_saveContent_leavesOtherContentInPlace() throws Exception {
+
+		final User user = new UserDataGen().roles(APILocator.getRoleAPI().loadCMSAdminRole())
+				.nextPersisted();
+		final ContentType contentType = createEditableTypeWithBinaryField(user);
+		final Contentlet other = new ContentletDataGen(contentType)
+				.setProperty("title", "other " + System.currentTimeMillis())
+				.nextPersisted();
+
+		try {
+			final HttpServletRequest request = setUpContext(user);
+			Mockito.when(request.getSession().getAttribute(LEGACY_TEMP_BINARY_LIST_ATTRIBUTE))
+					.thenReturn(new ArrayList<>(List.of(other.getInode())));
+
+			final Map<String, Object> callbackData = saveThroughLegacyForm(request, contentType, "");
+			assertNotNull("The content should be saved: " + callbackData,
+					callbackData.get("contentletInode"));
+
+			final Contentlet reloaded = Try.of(
+					() -> contentletAPI.find(other.getInode(), systemUser, false)).getOrNull();
+			assertNotNull("The other content should still exist", reloaded);
+			assertFalse("The other content should not be archived", reloaded.isArchived());
+		} finally {
+			setUpContext();
+			ContentTypeDataGen.remove(contentType);
+			removeUserAndPermissions(user);
+		}
+	}
+
+	/**
 	 * Returns the name the legacy edit form uses for the field with the given variable.
 	 */
 	private static String legacyFormName(final ContentType contentType, final String variable) {
@@ -830,10 +945,12 @@ public class ContentletAjaxTest {
 
 	/**
 	 * Calls {@link ContentletAjax#saveContent(List, boolean, boolean, boolean)} the way the legacy
-	 * edit screen does for a new content of the given type, with the given binary field value.
+	 * edit screen does for a new content of the given type, with the given binary field value
+	 * and any other form fields to send along.
 	 */
 	private static Map<String, Object> saveThroughLegacyForm(final HttpServletRequest request,
-			final ContentType contentType, final String binaryValue) throws Exception {
+			final ContentType contentType, final String binaryValue,
+			final String... otherFormFields) throws Exception {
 
 		final String separator = com.dotmarketing.util.WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR;
 		final List<String> formData = new ArrayList<>();
@@ -849,6 +966,7 @@ public class ContentletAjaxTest {
 				formData.add(formName + separator + binaryValue);
 			}
 		}
+		formData.addAll(Arrays.asList(otherFormFields));
 
 		final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 		HttpServletRequestThreadLocal.INSTANCE.setRequest(request);

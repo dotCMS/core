@@ -3,6 +3,7 @@ package com.dotmarketing.business.ajax;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
@@ -11,6 +12,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -42,25 +44,65 @@ public class DwrUtil {
     }
 
     /**
-     * Validates if the logged in user has the required permissions to access the users portlet
+     * Rejects a caller who holds neither the Users portlet nor the old Users screen kept as
+     * {@code users-legacy}. The old screen calls these DWR methods, so a role that kept only that
+     * screen must still pass.
      *
-     * @param loggedInUser User to validate
+     * @param loggedInUser the {@link User} making the DWR call
+     * @throws DotSecurityException when there is no user or the user holds neither portlet
+     * @throws DotDataException     if the user's portlet access cannot be resolved
      */
     public static void validateUsersPortletPermissions(final User loggedInUser)
             throws DotSecurityException, DotDataException {
 
-        validatePortletPermissions("users", loggedInUser);
+        validateAnyPortletPermissions(loggedInUser, PortletID.USERS.toString(),
+                PortletID.USERS_LEGACY.toString());
     }
 
     /**
-     * Validates if the logged in user has the required permissions to access the roles portlet
+     * Rejects a caller who holds neither the Roles portlet nor the old Roles &amp; Tools screen kept
+     * as {@code roles-legacy}. The old screen calls these DWR methods, so a role that kept only that
+     * screen must still pass.
      *
-     * @param loggedInUser User to validate
+     * @param loggedInUser the {@link User} making the DWR call
+     * @throws DotSecurityException when there is no user or the user holds neither portlet
+     * @throws DotDataException     if the user's portlet access cannot be resolved
      */
     public static void validateRolesPortletPermissions(final User loggedInUser)
             throws DotSecurityException, DotDataException {
 
-        validatePortletPermissions("roles", loggedInUser);
+        validateAnyPortletPermissions(loggedInUser, PortletID.ROLES.toString(),
+                PortletID.ROLES_LEGACY.toString());
+    }
+
+    /**
+     * Rejects a caller who holds none of the given portlets. The refusal is written to the
+     * security log and names the first id, which is the portlet the screen is known by.
+     *
+     * @param loggedInUser the {@link User} making the DWR call
+     * @param portletIds   the ids that grant the call; holding any one of them is enough
+     * @throws DotSecurityException when there is no user or the user holds none of the portlets
+     * @throws DotDataException     if the user's portlet access cannot be resolved
+     */
+    private static void validateAnyPortletPermissions(final User loggedInUser, final String... portletIds)
+            throws DotSecurityException, DotDataException {
+
+        if (null == loggedInUser) {
+            throw new DotSecurityException(
+                    String.format("A logged in User is required to access to the [%s] Portlet",
+                            portletIds[0]));
+        }
+        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+        for (final String portletId : portletIds) {
+            if (layoutAPI.doesUserHaveAccessToPortlet(portletId, loggedInUser)) {
+                return;
+            }
+        }
+        final String errorMessage = String.format(
+                "User [%s] does not have access to the [%s] Portlet",
+                loggedInUser.getEmailAddress(), portletIds[0]);
+        SecurityLogger.logInfo(DwrUtil.class, errorMessage);
+        throw new DotSecurityException(errorMessage);
     }
 
     /**

@@ -6,8 +6,15 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertThrows;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -32,9 +39,13 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.rest.exception.ValidationException;
+import com.dotcms.rest.WebResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.init.DotInitScheduler;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.quartz.QuartzUtils;
@@ -46,6 +57,7 @@ import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
@@ -60,6 +72,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -86,6 +99,17 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
 
     /** Session ids planted in {@link SessionMonitor} by a test; cleaned up in {@link #cleanPlantedSessions()}. */
     private final Set<String> plantedSessionIds = new HashSet<>();
+
+    /** Users created by the session tests below, removed once after the class. */
+    private static final List<User> createdUsers = new ArrayList<>();
+
+    /**
+     * Removes the users the tests created.
+     */
+    @AfterClass
+    public static void removeCreatedUsers() {
+        createdUsers.forEach(UserDataGen::remove);
+    }
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -720,6 +744,39 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link MaintenanceResource#listSessions(HttpServletRequest, HttpServletResponse)}
+     * Given scenario: a session tracked on this node belongs to a user who was made inactive after
+     *                 the session was registered (as happens when the change is made on another
+     *                 node), and an administrator lists the sessions
+     * Expected result: the session is listed under that user, not as the anonymous user, and the
+     *                  listing leaves the session's user id in place, so a later kill still knows
+     *                  whose login tokens to invalidate
+     */
+    @Test
+    public void test_listSessions_sessionOfUserMadeInactive_isListedUnderThatUser() throws Exception {
+        final User inactive = newUser();
+        final User toSave = (User) APILocator.getUserAPI().loadUserById(inactive.getUserId()).clone();
+        toSave.setActive(false);
+        APILocator.getUserAPI().save(toSave, APILocator.systemUser(), false);
+        // registered after the status change, like a session this node tracks for a user made
+        // inactive elsewhere
+        final HttpSession session = newPlantedSession(inactive, "7.7.7.7");
+        final HttpServletRequest request = createAdminRequest();
+
+        final List<SessionView> sessions = resource.listSessions(request, mockResponse).getEntity();
+
+        final SessionView view = sessions.stream()
+                .filter(candidate -> "7.7.7.7".equals(candidate.address()))
+                .findFirst().orElse(null);
+        assertNotNull("the inactive user's session must be listed", view);
+        assertEquals("listed under the stored user, not the anonymous user",
+                inactive.getUserId(), view.userId());
+        assertEquals(inactive.getEmailAddress(), view.userEmail());
+        assertEquals("listing must not sign the session out",
+                inactive.getUserId(), session.getAttribute(WebKeys.USER_ID));
+    }
+
+    /**
      * Given scenario: a non-admin user calls listSessions
      * Expected result: SecurityException is thrown
      */
@@ -737,7 +794,7 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
      *                  by MockSession.invalidate()), the endpoint returns "Session invalidated"
      */
     @Test
-    public void test_killSession_validToken_invalidatesTarget() {
+    public void test_killSession_validToken_invalidatesTarget() throws DotDataException {
         final HttpSession target = newPlantedAdminSession("1.2.3.4");
         final HttpServletRequest request = createAdminRequest();
         request.getSession().setAttribute(WebKeys.USER_ID, adminUser.getUserId());
@@ -762,7 +819,7 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
      * Expected result: BadRequestException — self-invalidation is forbidden
      */
     @Test(expected = BadRequestException.class)
-    public void test_killSession_ownToken_throwsBadRequest() {
+    public void test_killSession_ownToken_throwsBadRequest() throws DotDataException {
         final HttpServletRequest request = createAdminRequest();
         final HttpSession callerSession = request.getSession();
         callerSession.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
@@ -782,7 +839,7 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
      * Expected result: ForbiddenException — there is no CSRF secret on the caller's session
      */
     @Test(expected = ForbiddenException.class)
-    public void test_killSession_missingCsrf_throwsForbidden() {
+    public void test_killSession_missingCsrf_throwsForbidden() throws DotDataException {
         final HttpServletRequest request = createAdminRequest();
         resource.killSession(request, mockResponse, "any-token");
     }
@@ -792,7 +849,7 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
      * Expected result: ForbiddenException — exceeds the 15-minute expiry window
      */
     @Test(expected = ForbiddenException.class)
-    public void test_killSession_expiredCsrf_throwsForbidden() {
+    public void test_killSession_expiredCsrf_throwsForbidden() throws DotDataException {
         final HttpServletRequest request = createAdminRequest();
         final HttpSession callerSession = request.getSession();
         callerSession.setAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE, "stale-csrf");
@@ -808,7 +865,7 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
      * Expected result: NotFoundException
      */
     @Test(expected = NotFoundException.class)
-    public void test_killSession_unknownToken_throwsNotFound() {
+    public void test_killSession_unknownToken_throwsNotFound() throws DotDataException {
         final HttpServletRequest request = createAdminRequest();
         resource.listSessions(request, mockResponse);
         final String unknown = SessionTokenUtil.obfuscateSessionId(
@@ -822,8 +879,96 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
      * Expected result: SecurityException — the auth gate runs before any session lookup
      */
     @Test(expected = SecurityException.class)
-    public void test_killSession_asNonAdmin_throwsSecurity() {
+    public void test_killSession_asNonAdmin_throwsSecurity() throws DotDataException {
         resource.killSession(createRequestForUser(nonAdminUser), mockResponse, "tok");
+    }
+
+    /**
+     * Given scenario: an administrator ends another user's session with a valid token
+     * Expected result: the login token that user held before is rejected afterwards, the
+     *                  administrator's own login token keeps working, and the target session
+     *                  is invalidated
+     */
+    @Test
+    public void test_killSession_rejectsTargetUsersLoginTokenAndKeepsCallers() throws Exception {
+        final User admin = newAdmin();
+        final User target = newUser();
+        final String adminToken = loginToken(admin);
+        final String targetToken = loginToken(target);
+        final HttpSession targetSession = newPlantedSession(target, "1.2.3.4");
+        final HttpServletRequest request = createRequestForUser(admin);
+        request.getSession().setAttribute(WebKeys.USER_ID, admin.getUserId());
+        plantSession(request.getSession());
+        assertTrue(resolves(targetToken));
+
+        resource.listSessions(request, mockResponse);
+        final String csrf = (String) request.getSession()
+                .getAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE);
+        resource.killSession(request, mockResponse,
+                SessionTokenUtil.obfuscateSessionId(targetSession.getId(), csrf));
+
+        assertFalse("the ended session's user must log in again", resolves(targetToken));
+        assertTrue("the caller's own token keeps working", resolves(adminToken));
+        assertNull(targetSession.getAttribute(WebKeys.USER_ID));
+    }
+
+    /**
+     * Given scenario: an administrator ends a Login As session, one whose user is impersonated
+     *                 by another administrator recorded as the principal
+     * Expected result: the login tokens of both the impersonated user and the principal are
+     *                  rejected afterwards
+     */
+    @Test
+    public void test_killSession_loginAsSession_rejectsTokensOfUserAndPrincipal() throws Exception {
+        final User admin = newAdmin();
+        final User impersonated = newUser();
+        final User principal = newUser();
+        final String impersonatedToken = loginToken(impersonated);
+        final String principalToken = loginToken(principal);
+        final HttpSession loginAsSession = newPlantedSession(impersonated, "2.3.4.5");
+        loginAsSession.setAttribute(WebKeys.PRINCIPAL_USER_ID, principal.getUserId());
+        final HttpServletRequest request = createRequestForUser(admin);
+        request.getSession().setAttribute(WebKeys.USER_ID, admin.getUserId());
+        plantSession(request.getSession());
+
+        resource.listSessions(request, mockResponse);
+        final String csrf = (String) request.getSession()
+                .getAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE);
+        resource.killSession(request, mockResponse,
+                SessionTokenUtil.obfuscateSessionId(loginAsSession.getId(), csrf));
+
+        assertFalse("the impersonated user's token must be rejected", resolves(impersonatedToken));
+        assertFalse("the principal's token must be rejected", resolves(principalToken));
+    }
+
+    /**
+     * Given scenario: an administrator ends a Login As session, and the login tokens of the
+     *                 principal behind it cannot be invalidated (the user API fails for that user)
+     * Expected result: the failure reaches the caller, the session is left as it was, and the
+     *                  impersonated user's login token still works: the two invalidations are one
+     *                  unit, so the first is undone when the second fails
+     */
+    @Test
+    public void test_killSession_loginAsSession_principalInvalidationFails_keepsTheUsersLoginToken() throws Exception {
+        final User impersonated = newUser();
+        final User principal = newUser();
+        final String impersonatedToken = loginToken(impersonated);
+        final HttpSession loginAsSession = newPlantedSession(impersonated, "2.3.4.6");
+        loginAsSession.setAttribute(WebKeys.PRINCIPAL_USER_ID, principal.getUserId());
+        final MaintenanceResource failing = resourceFailingToInvalidateTokensOnlyOf(principal.getUserId());
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession caller = request.getSession();
+        caller.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(caller);
+        failing.listSessions(request, mockResponse);
+        final String csrf = (String) caller.getAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE);
+        final String token = SessionTokenUtil.obfuscateSessionId(loginAsSession.getId(), csrf);
+
+        assertThrows(DotDataException.class, () -> failing.killSession(request, mockResponse, token));
+
+        assertEquals("the session must still be signed in",
+                impersonated.getUserId(), loginAsSession.getAttribute(WebKeys.USER_ID));
+        assertTrue("the impersonated user's token must still work", resolves(impersonatedToken));
     }
 
     // ==================== GET /_systemJobs ====================
@@ -985,6 +1130,312 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
     }
 
     /**
+     * Given scenario: the caller holds only its own session; two other users hold one session
+     *                 each, all tracked
+     * Expected result: every session but the caller's is ended, the count reports exactly those,
+     *                  the other users' login tokens are rejected and the caller's keeps working
+     */
+    @Test
+    public void test_killAllSessions_rejectsOtherUsersLoginTokensAndKeepsCallers() throws Exception {
+        final User admin = newAdmin();
+        final User userA = newUser();
+        final User userB = newUser();
+        final String adminToken = loginToken(admin);
+        final String tokenA = loginToken(userA);
+        final String tokenB = loginToken(userB);
+        newPlantedSession(userA, "4.4.4.4");
+        newPlantedSession(userB, "5.5.5.5");
+        final HttpServletRequest request = createRequestForUser(admin);
+        request.getSession().setAttribute(WebKeys.USER_ID, admin.getUserId());
+        plantSession(request.getSession());
+        final int trackedBefore = new SessionMonitor().getUserSessions().size();
+
+        final ResponseEntityKillSessionsResultView result =
+                resource.killAllSessions(request, mockResponse);
+
+        assertEquals("every tracked session but the caller's is ended",
+                trackedBefore - 1, result.getEntity().killedCount());
+        assertFalse("the first user's token must be rejected", resolves(tokenA));
+        assertFalse("the second user's token must be rejected", resolves(tokenB));
+        assertTrue("the caller's own token keeps working", resolves(adminToken));
+        assertEquals("the caller's session survives",
+                admin.getUserId(), request.getSession().getAttribute(WebKeys.USER_ID));
+    }
+
+    /**
+     * Given scenario: the caller holds another session besides the calling one
+     * Expected result: that other session is ended and, with it, the caller's login tokens are
+     *                  rejected too, while the calling session goes on
+     */
+    @Test
+    public void test_killAllSessions_callerWithAnotherSession_rejectsCallersLoginToken() throws Exception {
+        final User admin = newAdmin();
+        final String adminToken = loginToken(admin);
+        final HttpSession otherSessionOfCaller = newPlantedSession(admin, "6.6.6.6");
+        final HttpServletRequest request = createRequestForUser(admin);
+        request.getSession().setAttribute(WebKeys.USER_ID, admin.getUserId());
+        plantSession(request.getSession());
+        assertTrue(resolves(adminToken));
+
+        resource.killAllSessions(request, mockResponse);
+
+        assertNull(otherSessionOfCaller.getAttribute(WebKeys.USER_ID));
+        assertFalse("another session of the caller was ended, so its tokens are rejected",
+                resolves(adminToken));
+        assertEquals("the calling session survives",
+                admin.getUserId(), request.getSession().getAttribute(WebKeys.USER_ID));
+    }
+
+    /**
+     * Given scenario: kill-all ends a planted session that had lost its user id before (it was
+     *                 signed out on its last request); a planted session fires no container
+     *                 callback when it is invalidated
+     * Expected result: the ended session leaves the tracked map all the same, and the listing
+     *                  that follows answers with the caller's session
+     */
+    @Test
+    public void test_killAllSessions_signedOutSession_isForgottenAndListingAnswers() throws Exception {
+        final HttpSession signedOut = newPlantedAdminSession("6.6.6.6");
+        signedOut.removeAttribute(WebKeys.USER_ID);
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession caller = request.getSession();
+        caller.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(caller);
+
+        resource.killAllSessions(request, mockResponse);
+
+        assertNull("Ended session must leave the tracked map",
+                sessionCache().getIfPresent(signedOut.getId()));
+        final ResponseEntitySessionListView result = resource.listSessions(request, mockResponse);
+        assertTrue("Caller's session must be listed",
+                result.getEntity().stream().anyMatch(SessionView::isCurrent));
+    }
+
+    /**
+     * Given scenario: a single kill ends a planted session that had lost its user id before
+     * Expected result: the ended session leaves the tracked map
+     */
+    @Test
+    public void test_killSession_signedOutSession_isForgotten() throws Exception {
+        final HttpSession signedOut = newPlantedAdminSession("7.7.7.7");
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession caller = request.getSession();
+        caller.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(caller);
+        resource.listSessions(request, mockResponse);
+        final String csrf = (String) caller.getAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE);
+        signedOut.removeAttribute(WebKeys.USER_ID);
+
+        resource.killSession(request, mockResponse,
+                SessionTokenUtil.obfuscateSessionId(signedOut.getId(), csrf));
+
+        assertNull("Ended session must leave the tracked map",
+                sessionCache().getIfPresent(signedOut.getId()));
+    }
+
+    /**
+     * Given scenario: the session an administrator ends by token has already ended on its own
+     *                 (for example its user signed out between the listing and the kill)
+     * Expected result: the call answers as a successful kill instead of failing, and the ended
+     *                  session leaves the tracked map
+     */
+    @Test
+    public void test_killSession_alreadyEndedSession_answersAndIsForgotten() throws Exception {
+        final HttpSession ended = mock(HttpSession.class);
+        when(ended.getId()).thenReturn(UUIDGenerator.generateUuid());
+        doThrow(new IllegalStateException("invalidate: Session already invalidated"))
+                .when(ended).invalidate();
+        plantSession(ended);
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession caller = request.getSession();
+        caller.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(caller);
+        resource.listSessions(request, mockResponse);
+        final String csrf = (String) caller.getAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE);
+
+        final ResponseEntityStringView result = resource.killSession(request, mockResponse,
+                SessionTokenUtil.obfuscateSessionId(ended.getId(), csrf));
+
+        assertEquals("Session invalidated", result.getEntity());
+        assertNull("Ended session must leave the tracked map",
+                sessionCache().getIfPresent(ended.getId()));
+    }
+
+    /**
+     * Given scenario: an administrator ends a tracked session whose user id is the anonymous
+     *                 user, the shared record every unauthenticated request runs as
+     * Expected result: the session is ended, but the anonymous user record is left alone: its
+     *                  login token is not rotated
+     */
+    @Test
+    public void test_killSession_anonymousSession_leavesTheAnonymousUserAlone() throws Exception {
+        final HttpSession anonymous = new MockSession(UUIDGenerator.generateUuid());
+        anonymous.setAttribute(WebKeys.USER_ID, UserAPI.CMS_ANON_USER_ID);
+        plantSession(anonymous);
+        final String tokenBefore = storedLoginTokenOfAnonymousUser();
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession caller = request.getSession();
+        caller.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(caller);
+        resource.listSessions(request, mockResponse);
+        final String csrf = (String) caller.getAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE);
+
+        resource.killSession(request, mockResponse,
+                SessionTokenUtil.obfuscateSessionId(anonymous.getId(), csrf));
+
+        assertEquals("the anonymous user's login token must not change",
+                tokenBefore, storedLoginTokenOfAnonymousUser());
+        assertNull("Ended session must leave the tracked map",
+                sessionCache().getIfPresent(anonymous.getId()));
+    }
+
+    /**
+     * Given scenario: like the previous one, with the anonymous user id stored in another case
+     *                 than the constant, as the session monitor compares that id ignoring case
+     * Expected result: the anonymous user record is left alone all the same
+     */
+    @Test
+    public void test_killSession_anonymousSessionInOtherCase_leavesTheAnonymousUserAlone() throws Exception {
+        final HttpSession anonymous = new MockSession(UUIDGenerator.generateUuid());
+        anonymous.setAttribute(WebKeys.USER_ID, "Anonymous");
+        plantSession(anonymous);
+        final String tokenBefore = storedLoginTokenOfAnonymousUser();
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession caller = request.getSession();
+        caller.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(caller);
+        resource.listSessions(request, mockResponse);
+        final String csrf = (String) caller.getAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE);
+
+        resource.killSession(request, mockResponse,
+                SessionTokenUtil.obfuscateSessionId(anonymous.getId(), csrf));
+
+        assertEquals("the anonymous user's login token must not change",
+                tokenBefore, storedLoginTokenOfAnonymousUser());
+        assertNull("Ended session must leave the tracked map",
+                sessionCache().getIfPresent(anonymous.getId()));
+    }
+
+    /**
+     * Given scenario: an administrator ends a session by token, and the login tokens of its user
+     *                 cannot be invalidated (the user API fails)
+     * Expected result: the failure reaches the caller and the session is left as it was, still
+     *                  tracked and still signed in, so the kill can be tried again
+     */
+    @Test
+    public void test_killSession_loginTokenInvalidationFails_leavesTheSessionForARetry() throws Exception {
+        final User target = newUser();
+        final HttpSession targetSession = newPlantedSession(target, "8.8.8.8");
+        final MaintenanceResource failing = resourceFailingToInvalidateTokensOf(target.getUserId());
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession caller = request.getSession();
+        caller.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(caller);
+        failing.listSessions(request, mockResponse);
+        final String csrf = (String) caller.getAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE);
+        final String token = SessionTokenUtil.obfuscateSessionId(targetSession.getId(), csrf);
+
+        assertThrows(DotDataException.class, () -> failing.killSession(request, mockResponse, token));
+
+        assertEquals("the session must still be signed in",
+                target.getUserId(), targetSession.getAttribute(WebKeys.USER_ID));
+        assertNotNull("the session must still be tracked",
+                sessionCache().getIfPresent(targetSession.getId()));
+    }
+
+    /**
+     * Given scenario: an administrator ends every other session, and the login tokens of one of
+     *                 the users cannot be invalidated (the user API fails for that user)
+     * Expected result: that user's session is left as it was, still tracked and signed in, the
+     *                  other sessions are ended, and the count excludes the one left
+     */
+    @Test
+    public void test_killAllSessions_loginTokenInvalidationFails_skipsThatSessionAndEndsTheOthers() throws Exception {
+        final User kept = newUser();
+        final User ended = newUser();
+        final HttpSession keptSession = newPlantedSession(kept, "9.9.9.9");
+        final HttpSession endedSession = newPlantedSession(ended, "10.10.10.10");
+        final MaintenanceResource failing = resourceFailingToInvalidateTokensOf(kept.getUserId());
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession caller = request.getSession();
+        caller.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(caller);
+        final int trackedBefore = new SessionMonitor().getUserSessions().size();
+
+        final ResponseEntityKillSessionsResultView result = failing.killAllSessions(request, mockResponse);
+
+        assertEquals("every tracked session but the caller's and the one left is ended",
+                trackedBefore - 2, result.getEntity().killedCount());
+        assertEquals("the session whose tokens could not be invalidated must still be signed in",
+                kept.getUserId(), keptSession.getAttribute(WebKeys.USER_ID));
+        assertNotNull("that session must still be tracked",
+                sessionCache().getIfPresent(keptSession.getId()));
+        assertNull("the other session must be ended", endedSession.getAttribute(WebKeys.USER_ID));
+        assertNull("the other session must leave the tracked map",
+                sessionCache().getIfPresent(endedSession.getId()));
+    }
+
+    /**
+     * Given scenario: the tracked map still holds a session that has already ended, so its
+     *                 attributes can no longer be read
+     * Expected result: the listing answers without that session, and forgets it
+     */
+    @Test
+    public void test_listSessions_endedSessionInTrackedMap_isSkippedAndForgotten() throws Exception {
+        final HttpSession ended = mock(HttpSession.class);
+        when(ended.getId()).thenReturn(UUIDGenerator.generateUuid());
+        when(ended.getAttribute(anyString()))
+                .thenThrow(new IllegalStateException("getAttribute: Session already invalidated"));
+        plantSession(ended);
+        final HttpServletRequest request = createAdminRequest();
+        final HttpSession caller = request.getSession();
+        caller.setAttribute(WebKeys.USER_ID, adminUser.getUserId());
+        plantSession(caller);
+
+        final ResponseEntitySessionListView result = resource.listSessions(request, mockResponse);
+
+        assertNotNull(result.getEntity());
+        assertTrue("Caller's session must be listed",
+                result.getEntity().stream().anyMatch(SessionView::isCurrent));
+        assertNull("Ended session must leave the tracked map",
+                sessionCache().getIfPresent(ended.getId()));
+    }
+
+    /**
+     * A resource whose user API fails to invalidate the login tokens of the given user and does
+     * nothing for any other user, so a test can see what a kill does when that step fails.
+     */
+    private static MaintenanceResource resourceFailingToInvalidateTokensOf(final String userId)
+            throws DotDataException {
+        final UserAPI userAPI = mock(UserAPI.class);
+        doThrow(new DotDataException("the login tokens could not be invalidated"))
+                .when(userAPI).invalidateLoginTokens(userId);
+        return new MaintenanceResource(new WebResource(), () -> userAPI);
+    }
+
+    /**
+     * A resource whose user API behaves as the real one, except that invalidating the login
+     * tokens of the given user fails.
+     */
+    private static MaintenanceResource resourceFailingToInvalidateTokensOnlyOf(final String userId)
+            throws DotDataException {
+        final UserAPI userAPI = mock(UserAPI.class, delegatesTo(APILocator.getUserAPI()));
+        doThrow(new DotDataException("the login tokens could not be invalidated"))
+                .when(userAPI).invalidateLoginTokens(userId);
+        return new MaintenanceResource(new WebResource(), () -> userAPI);
+    }
+
+    /**
+     * Reads the login token id stored for the anonymous user straight from the table, as the
+     * user API keeps that user in memory once loaded and would hide a later update.
+     */
+    private static String storedLoginTokenOfAnonymousUser() throws Exception {
+        return new DotConnect().setSQL("select skinid from user_ where userid = ?")
+                .addParam(UserAPI.CMS_ANON_USER_ID)
+                .getString("skinid");
+    }
+
+    /**
      * Removes any sessions planted by the current test from {@link SessionMonitor} so that
      * subsequent tests start with a clean cache. Reflection is required because the cache
      * is a private static field with no public mutator beyond {@link SessionMonitor}'s own
@@ -1081,6 +1532,42 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
         final Field field = SessionMonitor.class.getDeclaredField("userSessions");
         field.setAccessible(true);
         return (com.dotcms.cache.DynamicTTLCache<String, HttpSession>) field.get(null);
+    }
+
+    /** A new CMS administrator, removed after the class. */
+    private static User newAdmin() throws Exception {
+        final User admin = new UserDataGen().roles(APILocator.getRoleAPI().loadCMSAdminRole(),
+                APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        createdUsers.add(admin);
+        return admin;
+    }
+
+    /** A new user, removed after the class. */
+    private static User newUser() {
+        final User user = new UserDataGen().nextPersisted();
+        createdUsers.add(user);
+        return user;
+    }
+
+    /**
+     * Like {@link #newPlantedAdminSession(String)}, for the given user.
+     */
+    private HttpSession newPlantedSession(final User user, final String remoteAddr) {
+        final HttpSession session = new MockSession(UUIDGenerator.generateUuid());
+        session.setAttribute(WebKeys.USER_ID, user.getUserId());
+        session.setAttribute(SessionMonitor.USER_REMOTE_ADDR, remoteAddr);
+        plantSession(session);
+        return session;
+    }
+
+    /** A login token (the login cookie's JWT) issued to the user as it is now. */
+    private static String loginToken(final User user) {
+        return JsonWebTokenUtils.getInstance().createUserToken(user, 1);
+    }
+
+    /** Whether the login token still resolves to its user. */
+    private static boolean resolves(final String token) {
+        return APILocator.getApiTokenAPI().fromJwt(token, "127.0.0.1").isPresent();
     }
 
     /** Schedules a {@link TestNoOpJob} with the scheduler's default misfire policy. */

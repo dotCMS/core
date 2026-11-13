@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -27,13 +28,26 @@ import org.mockito.MockedStatic;
 /**
  * Checks the {@code Strict-Transport-Security} header written by {@link DotHttpHeaderSecurityFilter}
  * for the default, a configured value, unusable values (set as a property or as the
- * {@code DOT_HSTS_MAX_AGE_SECONDS} environment variable) and an explicit {@code web.xml} init-param.
+ * {@code DOT_HSTS_MAX_AGE_SECONDS} environment variable) and an explicit {@code web.xml} init-param,
+ * and the {@code Content-Security-Policy} header it writes on back-end paths.
  */
 public class DotHttpHeaderSecurityFilterTest extends UnitTestBase {
 
     private static final String HSTS_HEADER = "Strict-Transport-Security";
 
     private static final String HSTS_ENV_VAR = "DOT_HSTS_MAX_AGE_SECONDS";
+
+    private static final String CSP_HEADER = "Content-Security-Policy";
+
+    private static final String CSP_REPORT_ONLY_HEADER = "Content-Security-Policy-Report-Only";
+
+    private static final String CSP_ENABLED = "CONTENT_SECURITY_POLICY_BACKEND_ENABLED";
+
+    private static final String CSP_POLICY = "CONTENT_SECURITY_POLICY_BACKEND_HEADER";
+
+    private static final String CSP_REPORT_ONLY = "CONTENT_SECURITY_POLICY_BACKEND_REPORT_ONLY";
+
+    private static final String DEFAULT_BACKEND_POLICY = "frame-ancestors 'self'; object-src 'none'";
 
     /**
      * Removes the environment variable and the property so each test starts from the shipped
@@ -45,6 +59,9 @@ public class DotHttpHeaderSecurityFilterTest extends UnitTestBase {
         EnvironmentVariablesService.getInstance().getenv().remove(HSTS_ENV_VAR);
         Config.setProperty(HSTS_ENV_VAR, null);
         Config.setProperty(DotHttpHeaderSecurityFilter.HSTS_MAX_AGE_SECONDS, null);
+        Config.setProperty(CSP_ENABLED, null);
+        Config.setProperty(CSP_POLICY, null);
+        Config.setProperty(CSP_REPORT_ONLY, null);
     }
 
     /**
@@ -203,6 +220,167 @@ public class DotHttpHeaderSecurityFilterTest extends UnitTestBase {
         final ArgumentCaptor<String> value = ArgumentCaptor.forClass(String.class);
         verify(response).setHeader(eq(HSTS_HEADER), value.capture());
         return value.getValue();
+    }
+
+    /**
+     * Method to test: {@link DotHttpHeaderSecurityFilter#doFilter}
+     * Given scenario: nothing configured; requests for the back-end UI, the REST API and the legacy
+     * JSP pages, with the path split between servlet path and path info
+     * the way the container maps each of them
+     * Expected result: every response carries the default back-end policy
+     */
+    @Test
+    public void testDoFilter_whenBackEndPath_shouldSendDefaultPolicy() throws Exception {
+        assertEquals(DEFAULT_BACKEND_POLICY, cspHeaderFor("/dotAdmin", "/"));
+        assertEquals(DEFAULT_BACKEND_POLICY, cspHeaderFor("/dotAdmin/index.html", null));
+        assertEquals(DEFAULT_BACKEND_POLICY, cspHeaderFor("/api", "/v1/users/current"));
+        assertEquals(DEFAULT_BACKEND_POLICY, cspHeaderFor("/html/portlet/ext/contentlet/view.jsp", null));
+    }
+
+    /**
+     * Method to test: {@link DotHttpHeaderSecurityFilter#doFilter}
+     * Given scenario: nothing configured; requests for site pages, assets and paths that only
+     * share a leading string with a back-end prefix
+     * Expected result: no policy header is written, so site pages keep their own configuration
+     */
+    @Test
+    public void testDoFilter_whenSitePath_shouldNotSendPolicy() throws Exception {
+        for (final String path : new String[]{"/", "/about-us/index", "/dotAdminX", "/application/x",
+                "/contentAsset/raw-data/abc/fileAsset", "/dA/abc", "/cars", "/htmlpages/x"}) {
+            final HttpServletResponse response = filter(path, null);
+            verify(response, never()).setHeader(eq(CSP_HEADER), anyString());
+            verify(response, never()).setHeader(eq(CSP_REPORT_ONLY_HEADER), anyString());
+        }
+    }
+
+    /**
+     * Method to test: {@link DotHttpHeaderSecurityFilter#doFilter}
+     * Given scenario: nothing configured; requests mapped to the portal servlet ({@code /c}), which
+     * may be a site page under a root folder named {@code c} that CMSFilter serves
+     * Expected result: the filter writes no policy; the portal servlet writes it on its own
+     * responses (see {@code MainServletTest})
+     */
+    @Test
+    public void testDoFilter_whenPortalServletPath_shouldLeaveItToTheServlet() throws Exception {
+        for (final String pathInfo : new String[]{null, "/", "/about/index", "/portal/layout"}) {
+            final HttpServletResponse response = filter("/c", pathInfo);
+            verify(response, never()).setHeader(eq(CSP_HEADER), anyString());
+            verify(response, never()).setHeader(eq(CSP_REPORT_ONLY_HEADER), anyString());
+        }
+    }
+
+    /**
+     * Method to test: {@link DotHttpHeaderSecurityFilter#doFilter}
+     * Given scenario: the back-end policy is switched off
+     * Expected result: no policy header is written on a back-end path
+     */
+    @Test
+    public void testDoFilter_whenDisabled_shouldNotSendPolicy() throws Exception {
+        Config.setProperty(CSP_ENABLED, false);
+
+        final HttpServletResponse response = filter("/dotAdmin", "/");
+        verify(response, never()).setHeader(eq(CSP_HEADER), anyString());
+        verify(response, never()).setHeader(eq(CSP_REPORT_ONLY_HEADER), anyString());
+    }
+
+    /**
+     * Method to test: {@link DotHttpHeaderSecurityFilter#doFilter}
+     * Given scenario: a custom policy is configured
+     * Expected result: the custom policy replaces the default
+     */
+    @Test
+    public void testDoFilter_whenPolicyConfigured_shouldSendConfiguredPolicy() throws Exception {
+        Config.setProperty(CSP_POLICY, "frame-ancestors 'none'");
+
+        assertEquals("frame-ancestors 'none'", cspHeaderFor("/api", "/v1/sites"));
+    }
+
+    /**
+     * Method to test: {@link DotHttpHeaderSecurityFilter#doFilter}
+     * Given scenario: the configured policy is blank
+     * Expected result: no policy header is written on a back-end path
+     */
+    @Test
+    public void testDoFilter_whenPolicyBlank_shouldNotSendPolicy() throws Exception {
+        Config.setProperty(CSP_POLICY, "  ");
+
+        final HttpServletResponse response = filter("/dotAdmin", "/");
+        verify(response, never()).setHeader(eq(CSP_HEADER), anyString());
+        verify(response, never()).setHeader(eq(CSP_REPORT_ONLY_HEADER), anyString());
+    }
+
+    /**
+     * Method to test: {@link DotHttpHeaderSecurityFilter#doFilter}
+     * Given scenario: report-only mode is switched on
+     * Expected result: the policy goes out as Content-Security-Policy-Report-Only and the
+     * enforcing header is not written
+     */
+    @Test
+    public void testDoFilter_whenReportOnly_shouldSendReportOnlyHeader() throws Exception {
+        Config.setProperty(CSP_REPORT_ONLY, true);
+
+        final HttpServletResponse response = filter("/dotAdmin", "/");
+        verify(response).setHeader(CSP_REPORT_ONLY_HEADER, DEFAULT_BACKEND_POLICY);
+        verify(response, never()).setHeader(eq(CSP_HEADER), anyString());
+    }
+
+    /**
+     * An unreadable value for the on/off switch must not fail the request: the default policy is
+     * still sent.
+     */
+    @Test
+    public void testDoFilter_whenEnabledValueUnreadable_shouldSendDefaultPolicy() throws Exception {
+        Config.setProperty(CSP_ENABLED, "flase");
+
+        final HttpServletResponse response = filter("/api", "/v1/sites");
+
+        verify(response).setHeader(CSP_HEADER, DEFAULT_BACKEND_POLICY);
+    }
+
+    /**
+     * An unreadable value for the report-only switch must not fail the request: the policy is
+     * still enforced.
+     */
+    @Test
+    public void testDoFilter_whenReportOnlyValueUnreadable_shouldEnforcePolicy() throws Exception {
+        Config.setProperty(CSP_REPORT_ONLY, "maybe");
+
+        final HttpServletResponse response = filter("/dotAdmin", null);
+
+        verify(response).setHeader(CSP_HEADER, DEFAULT_BACKEND_POLICY);
+        verify(response, never()).setHeader(eq(CSP_REPORT_ONLY_HEADER), anyString());
+    }
+
+    /**
+     * Sends one request with the given servlet path and path info through a filter initialized
+     * with no init-params and returns the Content-Security-Policy value it wrote.
+     */
+    private String cspHeaderFor(final String servletPath, final String pathInfo) throws Exception {
+        final HttpServletResponse response = filter(servletPath, pathInfo);
+        final ArgumentCaptor<String> value = ArgumentCaptor.forClass(String.class);
+        verify(response).setHeader(eq(CSP_HEADER), value.capture());
+        return value.getValue();
+    }
+
+    /**
+     * Sends one request with the given servlet path and path info through a filter initialized
+     * with no init-params and returns the mocked response.
+     */
+    private HttpServletResponse filter(final String servletPath, final String pathInfo)
+            throws Exception {
+        final FilterConfig filterConfig = mock(FilterConfig.class);
+        when(filterConfig.getInitParameterNames()).thenReturn(Collections.emptyEnumeration());
+
+        final DotHttpHeaderSecurityFilter filter = new DotHttpHeaderSecurityFilter();
+        filter.init(filterConfig);
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getServletPath()).thenReturn(servletPath);
+        when(request.getPathInfo()).thenReturn(pathInfo);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        filter.doFilter(request, response, mock(FilterChain.class));
+        return response;
     }
 
 }

@@ -8,6 +8,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
@@ -69,6 +70,21 @@ public class WidgetRendererTest {
         APILocator.getUserAPI().delete(scriptingDeveloper, admin, APILocator.systemUser(), false);
     }
 
+    /**
+     * @param user the user the widget records as its last modifier
+     * @param code the Velocity to put in the widget's own code field
+     *
+     * @return a persisted widget carrying that code
+     */
+    private static Contentlet widgetLastModifiedBy(final User user, final String code) {
+        final Contentlet widget = new ContentletDataGen(widgetType.id())
+                .setProperty("widgetTitle", "WidgetRendererTest")
+                .setProperty("code", code)
+                .nextPersisted();
+        widget.setModUser(user.getUserId());
+        return widget;
+    }
+
     private static Contentlet widgetLastModifiedBy(final User user) {
         final Contentlet widget = new ContentletDataGen(widgetType.id())
                 .setProperty("widgetTitle", "WidgetRendererTest")
@@ -94,6 +110,26 @@ public class WidgetRendererTest {
         } finally {
             Config.setProperty(FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER, previous);
         }
+    }
+
+    /**
+     * Method to test: {@link WidgetRenderer#render(HttpServletRequest, HttpServletResponse, Contentlet)}
+     * When: a widget's own code runs
+     * Should: find on the request the user that last modified that widget.
+     *
+     * <p>This is what the restricted view tools read to decide whether they may run, so the whole
+     * control rests on the renderer putting it there. The widget reads the value back itself,
+     * which is the only way to see what was on the request at the moment its code ran.
+     */
+    @Test
+    public void renderAnnouncesTheWidgetAuthorWhileItsCodeRuns() {
+        final Contentlet widget = widgetLastModifiedBy(scriptingDeveloper,
+                "$request.getAttribute('" + RestrictedViewToolAccess.RENDERING_AUTHOR_ID + "')");
+
+        final String rendered = render(widget);
+        assertTrue("The widget's code did not see its author on the request, so the view tools "
+                        + "cannot either. Rendered: " + rendered,
+                rendered.contains(scriptingDeveloper.getUserId()));
     }
 
     /**
@@ -277,6 +313,53 @@ public class WidgetRendererTest {
 
         assertEquals("[3]42", rendering.text().trim());
         assertFalse(rendering.fieldScriptingSkipped());
+    }
+
+    /**
+     * Method to test: {@link WidgetRenderer#render(HttpServletRequest, HttpServletResponse, Contentlet)}
+     * Given scenario: the widget type's own code encrypts a text and decrypts it again through
+     * {@code $crypt}, widget last modified by a user without the Scripting Developer role
+     * Expected result: decrypting gives nothing, so only the brackets around it are printed
+     */
+    @Test
+    public void cryptDecryptInWidgetCodeRendersNothingForAuthorWithoutScriptingRole() {
+        assertEquals("[]", renderCryptRoundTripLastModifiedBy(plainUser));
+    }
+
+    /**
+     * Method to test: {@link WidgetRenderer#render(HttpServletRequest, HttpServletResponse, Contentlet)}
+     * Given scenario: the widget type's own code encrypts a text and decrypts it again through
+     * {@code $crypt}, widget last modified by a Scripting Developer
+     * Expected result: the original text is printed
+     */
+    @Test
+    public void cryptDecryptInWidgetCodeReturnsTheTextForScriptingDeveloper() {
+        assertEquals("[x]", renderCryptRoundTripLastModifiedBy(scriptingDeveloper));
+    }
+
+    /**
+     * Renders a widget whose type's own code runs {@code $crypt}. The call sits in the type's
+     * code, which every author's widget evaluates, and not in a field value, which only a
+     * Scripting Developer's widget evaluates: that way the result depends on {@code $crypt} alone.
+     *
+     * @param user the user the widget records as its last modifier
+     *
+     * @return the rendered widget
+     */
+    private static String renderCryptRoundTripLastModifiedBy(final User user) {
+        final ContentType cryptType = TestDataUtils.getWidgetLikeContentType(
+                "WidgetRendererCryptType" + System.currentTimeMillis(), null,
+                () -> "[$!crypt.decrypt($crypt.crypt(\"x\"))]");
+        try {
+            final Contentlet widget = new ContentletDataGen(cryptType.id())
+                    .setProperty("widgetTitle", "WidgetRendererTest")
+                    .setProperty("code", "plain text")
+                    .nextPersisted();
+            widget.setModUser(user.getUserId());
+            return render(widget);
+        } finally {
+            ContentTypeDataGen.remove(cryptType);
+        }
     }
 
     private static WidgetRenderer.Rendering renderWithDetailsAndFlag(final Contentlet widget, final boolean flag) {

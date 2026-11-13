@@ -4,6 +4,8 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.LoginLockout;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.listeners.SessionMonitor;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.publisher.bundle.business.BundleAPI;
@@ -442,6 +444,21 @@ public class UserAPIImpl implements UserAPI {
         return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous, includeDefault,roleId);
     }
 
+    /**
+     * Saves the user after checking that {@code user} may edit it and that the names and email
+     * fit. When the save turns an active user into an inactive one, the login tokens issued to
+     * that user so far are invalidated and the user's sessions tracked on this node are ended once
+     * the transaction commits, so the account stops being usable at once. A user loaded through
+     * this API can be the cached instance, so a caller changing it before a save that then fails
+     * would leave the cache ahead of the data source; the entry is evicted in that case.
+     *
+     * @param userToSave            the {@link User} to store
+     * @param user                  the {@link User} making the change
+     * @param respectFrontEndRoles  whether front-end roles count for the permission check
+     * @throws DotDataException      the user cannot be saved, or a field does not fit
+     * @throws DotSecurityException  {@code user} may not edit {@code userToSave}
+     * @throws DuplicateUserException another user already has the same id or email
+     */
     @WrapInTransaction
     @Override
     public void save(final User userToSave, final User user, final boolean respectFrontEndRoles) throws DotDataException, DotSecurityException,DuplicateUserException {
@@ -449,14 +466,25 @@ public class UserAPIImpl implements UserAPI {
         if (userId == null) {
             throw new DotDataException("Can't save a user without a userId");
         }
-        if (!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(userToSave,
-                APILocator.getUserAPI().getSystemUser(), false),
-                PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)) {
-            throw new DotSecurityException(
-                    "User doesn't have permission to save the user which is trying to be saved");
+        final User storedUser;
+        try {
+            if (!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(userToSave,
+                    APILocator.getUserAPI().getSystemUser(), false),
+                    PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)) {
+                throw new DotSecurityException(
+                        "User doesn't have permission to save the user which is trying to be saved");
+            }
+            validateName(userToSave.getFirstName(), userToSave.getLastName());
+            validateMaximumLength(userToSave.getFirstName(),userToSave.getLastName(),userToSave.getEmailAddress());
+            // Only a change from active to inactive matters after the save. The stored record is read
+            // straight from the data source because the object being saved can be the cached instance,
+            // which already carries the new status.
+            storedUser = userToSave.isActive() ? null : userFactory.loadStoredUser(userId).orElse(null);
+        } catch (final DotDataException | DotSecurityException | DotRuntimeException e) {
+            // the object may be the cached instance, already changed by the caller: do not keep it
+            CacheLocator.getUserCache().remove(userId);
+            throw e;
         }
-        validateName(userToSave.getFirstName(), userToSave.getLastName());
-        validateMaximumLength(userToSave.getFirstName(),userToSave.getLastName(),userToSave.getEmailAddress());
         userFactory.save(userToSave);
         PasswordTrackerLocalManager passwordTracker = PasswordTrackerLocalManagerFactory
                 .getManager();
@@ -470,6 +498,39 @@ public class UserAPIImpl implements UserAPI {
                     + userId + "] could not be added for tracking.");
         }
         APILocator.getRoleAPI().getUserRole(userToSave);
+        if (deactivates(storedUser, userToSave)) {
+            userToSave.setRememberMeToken(invalidateLoginTokens(userId));
+            endTrackedSessionsOnCommit(userId);
+        }
+    }
+
+    /**
+     * Tells whether saving {@code userToSave} turns an active user into an inactive one. Only that
+     * change counts: saving a user that stays active or stays inactive, activating a user again,
+     * or creating a new user (no stored record) is not a deactivation.
+     *
+     * @param storedUser the {@link User} as currently stored, or {@code null} when there is none
+     * @param userToSave the {@link User} about to be saved
+     * @return {@code true} only when the stored user is active and the one being saved is not
+     */
+    static boolean deactivates(final User storedUser, final User userToSave) {
+        return null != storedUser && storedUser.isActive()
+                && null != userToSave && !userToSave.isActive();
+    }
+
+    /**
+     * Ends the sessions of the user tracked on this node (see
+     * {@link SessionMonitor#endSessionsOf(String)}) once the surrounding transaction commits, so
+     * the sessions only end when the change that made them unusable is stored. With no transaction
+     * open, the sessions end right away. The caller's own session is among them when it belongs
+     * to that user: a user making their own account inactive, or an administrator impersonating the
+     * user through Login As.
+     *
+     * @param userId the id of the user whose tracked sessions end
+     * @throws DotDataException if the commit listener cannot be registered
+     */
+    private void endTrackedSessionsOnCommit(final String userId) throws DotDataException {
+        HibernateUtil.addSyncCommitListener(() -> SessionMonitor.endSessionsOf(userId));
     }
 
     /**
@@ -530,6 +591,18 @@ public class UserAPIImpl implements UserAPI {
         delete(userToDelete,user, user, respectFrontEndRoles);
     }
 
+    /**
+     * Deletes the user after moving every reference it owns (content, folders, templates,
+     * workflows, bundles and the rest) to {@code replacementUser} and removing its roles. The
+     * deleted user's sessions tracked on this node are ended once the transaction commits.
+     *
+     * @param userToDelete          the {@link User} to delete
+     * @param replacementUser       the {@link User} that takes over its references
+     * @param user                  the {@link User} making the change
+     * @param respectFrontEndRoles  whether front-end roles count for the permission check
+     * @throws DotDataException      a reference cannot be moved or the user cannot be deleted
+     * @throws DotSecurityException  {@code user} may not delete {@code userToDelete}
+     */
     @WrapInTransaction
     @Override
     public void delete(User userToDelete, User replacementUser, User user, boolean respectFrontEndRoles) throws DotDataException,	DotSecurityException {
@@ -637,6 +710,7 @@ public class UserAPIImpl implements UserAPI {
         /*Delete role*/
         userFactory.delete(userToDelete);
 
+        endTrackedSessionsOnCommit(userToDelete.getUserId());
     }
 
     /**

@@ -6,6 +6,7 @@ import com.liferay.portal.model.User;
 
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 public interface UserFactory {
     /**
@@ -16,6 +17,18 @@ public interface UserFactory {
             throws DotDataException, com.dotmarketing.business.NoSuchUserException;
 
     User loadByUserEmail(String email) throws DotDataException;
+
+    /**
+     * Reads the user's record as it is stored in the data source right now, going past the user
+     * cache. {@link #loadUserById(String)} can return the cached instance, and a caller that
+     * changes that instance before saving it leaves the cache holding the new values already, so
+     * this method is the way to see what is stored before a save.
+     *
+     * @param userId the id of the user to read; trimmed and lower-cased like stored ids
+     * @return the stored {@link User}, or empty when the id is blank or no user has it
+     * @throws DotDataException if the record cannot be read
+     */
+    Optional<User> loadStoredUser(String userId) throws DotDataException;
 
     /**
      * Saves the user
@@ -38,6 +51,18 @@ public interface UserFactory {
      * @throws DotDataException if {@code userId} is blank or the update fails
      */
     void updateRememberMeToken(String userId, String rememberMeToken) throws DotDataException;
+
+    /**
+     * Clears the user's {@code icqid} column, with a single-column update that only applies while
+     * the stored value still equals {@code expectedValue}. Other user fields are left untouched.
+     *
+     * @param userId        the id of the user to update; trimmed and lower-cased like stored ids
+     * @param expectedValue the value the column must hold for the update to apply
+     * @return {@code true} if the column held {@code expectedValue} and was cleared, {@code false}
+     *         if it held anything else
+     * @throws DotDataException if {@code userId} is blank or the update fails
+     */
+    boolean clearIcqId(String userId, String expectedValue) throws DotDataException;
 
     List<User> findAllUsers(int begin, int end) throws DotDataException;
 

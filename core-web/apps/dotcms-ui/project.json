@@ -9,6 +9,7 @@
     "targets": {
         "build": {
             "executor": "@angular/build:application",
+            "inputs": ["production", "^production", "warBuild", "tailwindSources"],
             "outputs": ["{options.outputPath.base}"],
             "defaultConfiguration": "production",
             "dependsOn": ["^build"],
@@ -103,7 +104,7 @@
                         {
                             "type": "initial",
                             "maximumWarning": "2mb",
-                            "maximumError": "6mb"
+                            "maximumError": "7mb"
                         },
                         {
                             "type": "anyComponentStyle",

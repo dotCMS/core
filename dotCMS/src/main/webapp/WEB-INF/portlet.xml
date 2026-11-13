@@ -109,28 +109,6 @@
     </portlet>
 
     <portlet>
-        <portlet-name>content-types</portlet-name>
-        <display-name>Structures</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-        <init-param>
-            <name>view-action</name>
-            <value>/ext/structure/view_structure</value>
-        </init-param>
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-    </portlet>
-
-    <portlet>
-        <portlet-name>users</portlet-name>
-        <display-name>User Admin</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-        <init-param>
-            <name>view-action</name>
-            <value>/ext/useradmin/view_users</value>
-        </init-param>
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-    </portlet>
-
-    <portlet>
         <portlet-name>maintenance</portlet-name>
         <display-name>CMS Maintenance</display-name>
         <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
@@ -200,16 +178,6 @@
             <value>false</value>
         </init-param>
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-    </portlet>
-
-    <portlet>
-        <portlet-name>roles</portlet-name>
-        <display-name>Roles Admin</display-name>
-        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
-        <init-param>
-            <name>view-jsp</name>
-            <value>/portlet/ext/roleadmin/view_roles.jsp</value>
-        </init-param>
     </portlet>
 
     <portlet>
@@ -395,6 +363,37 @@
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
     </portlet>
 
+    <!--
+        The Users and Roles portlets moved to Angular; `users` and `roles` now live in the
+        Angular Portlets section below, next to the new `tools`. These twins keep the original
+        Struts/JSP screens reachable at /c/users-legacy and /c/roles-legacy. They are
+        intentionally in no layout: an administrator adds them to a section from Tools.
+
+        roles-legacy uses com.liferay.portlet.JSPPortlet with an explicit view-jsp, for the
+        same reason as dotai-legacy above: the REST JSPPortlet derives the JSP path from the
+        portlet id and would look for a page that does not exist.
+    -->
+    <portlet>
+        <portlet-name>users-legacy</portlet-name>
+        <display-name>Users (Legacy)</display-name>
+        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
+        <init-param>
+            <name>view-action</name>
+            <value>/ext/useradmin/view_users</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+    </portlet>
+
+    <portlet>
+        <portlet-name>roles-legacy</portlet-name>
+        <display-name>Roles &amp; Tools (Legacy)</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/portlet/ext/roleadmin/view_roles.jsp</value>
+        </init-param>
+    </portlet>
+
     <!-- Angular Portlets -->
 
     <portlet>
@@ -515,24 +514,24 @@
     </portlet>
 
     <portlet>
-        <portlet-name>users-beta</portlet-name>
-        <display-name>Users (Beta)</display-name>
+        <portlet-name>users</portlet-name>
+        <display-name>Users</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
-        <portlet-url>/users-beta</portlet-url>
+        <portlet-url>/users</portlet-url>
     </portlet>
 
     <portlet>
-        <portlet-name>roles-beta</portlet-name>
-        <display-name>Roles (Beta)</display-name>
+        <portlet-name>roles</portlet-name>
+        <display-name>Roles</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
-        <portlet-url>/roles-beta</portlet-url>
+        <portlet-url>/roles</portlet-url>
     </portlet>
 
     <portlet>
-        <portlet-name>tools-beta</portlet-name>
-        <display-name>Tools (Beta)</display-name>
+        <portlet-name>tools</portlet-name>
+        <display-name>Tools</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
-        <portlet-url>/tools-beta</portlet-url>
+        <portlet-url>/tools</portlet-url>
     </portlet>
 
     <portlet>
