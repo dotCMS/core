@@ -25,6 +25,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.beanutils.PropertyUtils;
+import org.apache.velocity.util.introspection.SecureIntrospectorImpl;
 
 /**
  * SortTool allows a user to sort a collection (or array, iterator, etc)
@@ -287,10 +288,16 @@ public class SortTool
      * Safely retrieves the comparable value for the specified property
      * from the specified object. Subclasses that wish to perform more 
      * advanced, efficient, or just different property retrieval methods
-     * should override this method to do so.
+     * should override this method to do so. A property that a template may not
+     * read, such as the company key, is refused, so the sort fails rather than
+     * ordering by it.
      */
     protected static Comparable getComparable(Object object, String property)
     {
+        if (SecureIntrospectorImpl.isRestrictedPropertyPath(object, property))
+        {
+            throw new IllegalArgumentException("The property '" + property + "' cannot be used to sort");
+        }
         try
         {
         	if(object instanceof ContentMap){

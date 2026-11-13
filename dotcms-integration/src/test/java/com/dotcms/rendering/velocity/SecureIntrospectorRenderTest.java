@@ -32,6 +32,8 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.generic.MathTool;
+import org.apache.velocity.tools.generic.SortTool;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -71,13 +73,18 @@ public class SecureIntrospectorRenderTest {
         assertTrue("the default company holds a key", company.getKey() != null);
 
         final Context ctx = VelocityUtil.getBasicContext();
+        ctx.put("math", new MathTool());
+        ctx.put("sorter", new SortTool());
         final String rendered = VelocityUtil.eval("#set($c = $UtilMethods.getDefaultCompany())"
                 + "#set($m = $UtilMethods.toMap($c))"
-                + "[$!c.key][$!c.getKey()][$!c.keyObj][$!m.key][$!m.get('key')][$!c.emailAddress]", ctx).trim();
+                + "#set($probe = {'key': 'rO0AB'})"
+                + "[$!c.key][$!c.getKey()][$!c.keyObj][$!m.key][$!m.get('key')]"
+                + "[$!math.getTotal([$c], 'key.bytes[0]')][$!sorter.sort([$c, $probe], 'key')]"
+                + "[$!c.emailAddress]", ctx).trim();
 
         // Compared without printing the output, so a failure does not write a key to the build log
         assertTrue("the template must not read the key",
-                ("[][][][][][" + company.getEmailAddress() + "]").equals(rendered));
+                ("[][][][][][][][" + company.getEmailAddress() + "]").equals(rendered));
     }
 
     /**

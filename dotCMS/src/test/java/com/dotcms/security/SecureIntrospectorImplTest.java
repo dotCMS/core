@@ -13,8 +13,11 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletRequestWrapper;
 import javax.servlet.ServletResponseWrapper;
@@ -274,6 +277,29 @@ public class SecureIntrospectorImplTest {
         assertAllowed(Company.class, "getEmailAddress");
         assertAllowed(Company.class, "getName");
         assertAllowed(Company.class, "getPortalURL");
+    }
+
+    /**
+     * Template helpers that resolve a property path by reflection refuse a path that reads the company key at any
+     * step, and still resolve every other path.
+     */
+    @Test
+    public void property_paths_through_the_company_key_are_restricted() {
+        final Company company = new Company("sample.company");
+        company.setName("Sample Company");
+        company.setKeyObj(new SecretKeySpec("0123456789abcdef".getBytes(StandardCharsets.UTF_8), "AES"));
+        final Map<String, Object> holder = new HashMap<>();
+        holder.put("company", company);
+        holder.put("key", "a map value");
+
+        assertTrue(SecureIntrospectorImpl.isRestrictedPropertyPath(company, "key"));
+        assertTrue(SecureIntrospectorImpl.isRestrictedPropertyPath(company, "key.bytes[0]"));
+        assertTrue(SecureIntrospectorImpl.isRestrictedPropertyPath(company, "keyObj.encoded[0]"));
+        assertTrue(SecureIntrospectorImpl.isRestrictedPropertyPath(holder, "company.key.bytes[0]"));
+        assertFalse(SecureIntrospectorImpl.isRestrictedPropertyPath(company, "name"));
+        assertFalse(SecureIntrospectorImpl.isRestrictedPropertyPath(company, "keyDigest"));
+        assertFalse(SecureIntrospectorImpl.isRestrictedPropertyPath(holder, "key"));
+        assertFalse(SecureIntrospectorImpl.isRestrictedPropertyPath(holder, "company.name"));
     }
 
     /**
