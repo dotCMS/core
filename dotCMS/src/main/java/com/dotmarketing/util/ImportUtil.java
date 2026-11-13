@@ -3740,32 +3740,16 @@ public class ImportUtil {
                     final URI uri = URI.create(uriOrIdentifier);
 
                     // Create a file asset from the temporary file or retrieve the existing one
-                    final Contentlet fileAsset = getFileAsset(uri, request, contentType, currentHost, user);
+                    final Contentlet fileAsset = getFileAsset(uri, request, contentType, currentHost, user,
+                            field.getVelocityVarName());
 
                     // Set the image field in the contentlet to the identifier of the file asset
                     // That's how image fields are constructed
                     cont.setProperty(field.getVelocityVarName(), fileAsset.getIdentifier());
 
-                } catch (final DotSecurityException e) {
-                    // the user of the request may not download by URL: reported the same way as in validation
-                    throw ImportLineException.builder()
-                            .message("The importing user is not permitted to download files by URL")
-                            .code(ImportLineValidationCodes.PERMISSION_ERROR.name())
-                            .field(field.getVelocityVarName())
-                            .invalidValue(uriOrIdentifier)
-                            .context(Map.of("errorHint", "Downloads by URL are restricted to administrators "
-                                    + "(TEMP_RESOURCE_BY_URL_ADMIN_ONLY)."))
-                            .build();
-                } catch (final IllegalArgumentException e) {
-                    // the name or the content did not pass the download rules
-                    throw ImportLineException.builder()
-                            .message("The file could not be downloaded by URL: " + e.getMessage())
-                            .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
-                            .field(field.getVelocityVarName())
-                            .invalidValue(uriOrIdentifier)
-                            .context(Map.of("errorHint", "The file's extension must be on "
-                                    + "TEMP_RESOURCE_BY_URL_ALLOWED_EXTENSIONS and the content must match it."))
-                            .build();
+                } catch (final ImportLineException e) {
+                    // a refusal of the download itself, already reported with its own code
+                    throw e;
                 } catch (Exception e) {
                     Logger.error(ImportUtil.class, "Error setting image field", e);
                     throw ImportLineException.builder()
@@ -3786,13 +3770,17 @@ public class ImportUtil {
      * @param request The HTTP request object, used to fetch the file.
      * @param contentType The content type for the file asset, used to define its structure.
      * @param site The default host where the file asset will be stored.
+     * @param user The importing user.
+     * @param fieldVar The variable name of the field being imported, for the line error.
      * @return A Contentlet object representing the file asset, either retrieved or created.
      * @throws DotDataException If there is a data-related exception during the process.
      * @throws DotSecurityException If the user does not have permission to access the requested
      * @throws IOException If an I/O error occurs while fetching the file.
+     * @throws ImportLineException If the download by URL is refused: the user may not download by
+     *                             URL, or the name or the content did not pass the download rules.
      */
     private static Contentlet getFileAsset(final URI uri, HttpServletRequest request, final ContentType contentType,
-            final Host site, final User user)
+            final Host site, final User user, final String fieldVar)
             throws DotDataException, DotSecurityException, IOException {
         final long langId = langAPI.getDefaultLanguage().getId();
 
@@ -3818,7 +3806,30 @@ public class ImportUtil {
                 return file;
             }
             // if we determine that the file does not exist, we proceed to fetch it
-            final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFileFromUrl(null, request, uri.toURL(), -1);
+            final DotTempFile tempFile;
+            try {
+                tempFile = APILocator.getTempFileAPI().createTempFileFromUrl(null, request, uri.toURL(), -1);
+            } catch (final DotSecurityException e) {
+                // the user of the request may not download by URL: reported the same way as in validation
+                throw ImportLineException.builder()
+                        .message("The importing user is not permitted to download files by URL")
+                        .code(ImportLineValidationCodes.PERMISSION_ERROR.name())
+                        .field(fieldVar)
+                        .invalidValue(uri.toString())
+                        .context(Map.of("errorHint", "Downloads by URL are restricted to administrators "
+                                + "(TEMP_RESOURCE_BY_URL_ADMIN_ONLY)."))
+                        .build();
+            } catch (final IllegalArgumentException e) {
+                // the name or the content did not pass the download rules
+                throw ImportLineException.builder()
+                        .message("The file could not be downloaded by URL: " + e.getMessage())
+                        .code(ImportLineValidationCodes.INVALID_BINARY_URL.name())
+                        .field(fieldVar)
+                        .invalidValue(uri.toString())
+                        .context(Map.of("errorHint", "The file's extension must be on "
+                                + "TEMP_RESOURCE_BY_URL_ALLOWED_EXTENSIONS and the content must match it."))
+                        .build();
+            }
             final File file = tempFile.file;
 
             // And create a new file asset from the temporary file we fetched
