@@ -307,7 +307,9 @@ approved this public-read posture. Storage remains private and only trusted work
 Missing writer URL/token disables the shared HTTP cache for trusted jobs; missing reader URL disables
 it for PR jobs, with no fallback to writer credentials. The build workflow passes the URL through
 `maven-job`'s `nx-remote-cache-server` input, selected at Maven execution time; an empty input preserves
-the existing artifact-backed localhost cache when available. Frontend test jobs do not start that server.
+the existing artifact-backed localhost cache when available. Builds with `save-nx-cache=true` prefer
+localhost so main's push and scheduled nightly keep refreshing that fallback. Other builds prefer the
+shared server. Frontend test jobs do not start the localhost server.
 Set `BUILD_CACHE_DISABLED=true` to disable Maven's remote cache and the shared Nx HTTP cache, including
 PR reads. The `CI : No Build Cache` PR label also disables the shared Nx HTTP cache for that PR's builds
 and frontend tests. The pre-existing localhost build cache and Nx's local cache are unchanged.

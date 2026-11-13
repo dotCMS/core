@@ -31,12 +31,14 @@ def value(block, key):
 def evaluate(expression, ref='refs/heads/main', protected=False,
              token='test-token', server='https://cache.example.test',
              test_type='frontend', disabled='false', event='push',
-             reader='https://reader.example.test', labels=(), remote_server='', local_server=''):
+             reader='https://reader.example.test', labels=(), remote_server='', local_server='',
+             save_cache='false'):
     # Only &&/||, !contains and startsWith are supported in this expression subset.
     expression = expression[3:-2].strip().replace('&&', ' and ').replace('||', ' or ')
     expression = expression.replace('!contains(', 'not contains(')
     expression = expression.replace('github.event.pull_request.labels.*.name', 'labels')
     expression = expression.replace('inputs.nx-remote-cache-server', 'remote_server')
+    expression = expression.replace('inputs.save-nx-cache', 'save_cache')
     return eval(expression, {'__builtins__': {}}, {
         'github': SimpleNamespace(ref=ref, ref_protected=protected, event_name=event),
         'secrets': SimpleNamespace(**{TOKEN: token}),
@@ -46,6 +48,7 @@ def evaluate(expression, ref='refs/heads/main', protected=False,
         'contains': lambda values, item: item in values,
         'labels': labels,
         'remote_server': remote_server,
+        'save_cache': save_cache,
         'env': SimpleNamespace(**{SERVER: local_server}),
     })
 
@@ -160,13 +163,18 @@ class NxRemoteCacheTests(unittest.TestCase):
         self.assertRegex(action, r'  nx-remote-cache-server:\n(?:    .*\n)*?    default: \'\'')
         maven_step = action.split('    - id: run-maven-build\n', 1)[1].split('    - ', 1)[0]
         expression = value(maven_step, SERVER)
-        for remote, local, expected in (
-                ('https://cache.example.test', 'http://127.0.0.1:47321', 'https://cache.example.test'),
-                ('https://cache.example.test', '', 'https://cache.example.test'),
-                ('', 'http://127.0.0.1:47321', 'http://127.0.0.1:47321'),
-                ('', '', '')):
-            with self.subTest(remote=remote, local=local):
-                self.assertEqual(evaluate(expression, remote_server=remote, local_server=local), expected)
+        for remote, local, save, expected in (
+                ('https://cache.example.test', 'http://127.0.0.1:47321', 'false', 'https://cache.example.test'),
+                ('https://cache.example.test', 'http://127.0.0.1:47321', 'true', 'http://127.0.0.1:47321'),
+                ('https://cache.example.test', '', 'false', 'https://cache.example.test'),
+                ('https://cache.example.test', '', 'true', 'https://cache.example.test'),
+                ('', 'http://127.0.0.1:47321', 'false', 'http://127.0.0.1:47321'),
+                ('', 'http://127.0.0.1:47321', 'true', 'http://127.0.0.1:47321'),
+                ('', '', 'false', ''),
+                ('', '', 'true', '')):
+            with self.subTest(remote=remote, local=local, save=save):
+                self.assertEqual(evaluate(expression, remote_server=remote, local_server=local,
+                                          save_cache=save), expected)
 
     def test_only_frontend_matrix_jobs_receive_credentials(self):
         text = (WORKFLOWS / 'cicd_comp_test-phase.yml').read_text()
