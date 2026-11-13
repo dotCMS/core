@@ -1,7 +1,6 @@
 package com.dotmarketing.common.reindex;
 
 import com.dotcms.contenttype.model.type.ContentType;
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.time.Duration;
 import java.time.Instant;
