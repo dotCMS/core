@@ -5,6 +5,19 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotmarketing.util.ConfigUtils;
+import java.lang.reflect.Field;
+import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
+
 import com.dotcms.UnitTestBase;
 import com.dotcms.cost.RequestCostApi.Accounting;
 import com.dotcms.cost.RequestPrices.Price;
@@ -297,4 +310,73 @@ public class RequestCostApiTest extends UnitTestBase {
         // Then
         assertNotNull("Account list should not be null", accountList);
     }
+    @Test
+    public void test_failedAdmissionRetainsCountersAndIdenticalWindow() throws Exception {
+        final RequestCostApiImpl impl = (RequestCostApiImpl) requestCostApi;
+        final RequestCostPublisher publisher = mock(RequestCostPublisher.class);
+        when(publisher.isEnabled()).thenReturn(true);
+        when(publisher.publish(anyString()))
+                .thenReturn(false, true);
+        final Field field = RequestCostApiImpl.class.getDeclaredField("publisher");
+        field.setAccessible(true);
+        field.set(impl, publisher);
+        final Method tick = RequestCostApiImpl.class.getDeclaredMethod("logRequestCost");
+        tick.setAccessible(true);
+        impl.requestCountForWindow.add(10);
+        impl.requestCostForWindow.add(100);
+
+        try (MockedStatic<ClusterFactory> cluster =
+                     mockStatic(ClusterFactory.class);
+             MockedStatic<ConfigUtils> server =
+                     mockStatic(ConfigUtils.class)) {
+            cluster.when(ClusterFactory::getClusterId).thenReturn("cluster");
+            server.when(ConfigUtils::getServerId).thenReturn("server");
+            tick.invoke(impl);
+            assertEquals(10, impl.requestCountForWindow.sum());
+            assertEquals(100, impl.requestCostForWindow.sum());
+            impl.requestCountForWindow.add(4);
+            impl.requestCostForWindow.add(40);
+            tick.invoke(impl);
+        }
+
+        final ArgumentCaptor<String> bodies =
+                ArgumentCaptor.forClass(String.class);
+        verify(publisher, times(2)).publish(bodies.capture());
+        assertEquals(bodies.getAllValues().get(0), bodies.getAllValues().get(1));
+        assertEquals(4, impl.requestCountForWindow.sum());
+        assertEquals(40, impl.requestCostForWindow.sum());
+    }
+
+    @Test
+    public void test_admissionDoesNotEraseConcurrentIncrements() throws Exception {
+        final RequestCostApiImpl impl = (RequestCostApiImpl) requestCostApi;
+        final RequestCostPublisher publisher = mock(RequestCostPublisher.class);
+        when(publisher.isEnabled()).thenReturn(true);
+        when(publisher.publish(anyString()))
+                .thenAnswer(invocation -> {
+                    impl.requestCountForWindow.add(3);
+                    impl.requestCostForWindow.add(30);
+                    return true;
+                });
+        final Field field = RequestCostApiImpl.class.getDeclaredField("publisher");
+        field.setAccessible(true);
+        field.set(impl, publisher);
+        final Method tick = RequestCostApiImpl.class.getDeclaredMethod("logRequestCost");
+        tick.setAccessible(true);
+        impl.requestCountForWindow.add(10);
+        impl.requestCostForWindow.add(100);
+
+        try (MockedStatic<ClusterFactory> cluster =
+                     mockStatic(ClusterFactory.class);
+             MockedStatic<ConfigUtils> server =
+                     mockStatic(ConfigUtils.class)) {
+            cluster.when(ClusterFactory::getClusterId).thenReturn("cluster");
+            server.when(ConfigUtils::getServerId).thenReturn("server");
+            tick.invoke(impl);
+        }
+
+        assertEquals(3, impl.requestCountForWindow.sum());
+        assertEquals(30, impl.requestCostForWindow.sum());
+    }
+
 }

@@ -52,6 +52,12 @@ public class RequestCostApiImpl implements RequestCostApi {
     //log an accounting every X seconds
     private int requestCostTimeWindowSeconds;
     private ScheduledExecutorService scheduler;
+    private long windowStartedNanos = System.nanoTime();
+    private PendingWindow pendingWindow;
+
+    /** One frozen candidate bounds memory while persistence is unavailable or at capacity. */
+    private record PendingWindow(RequestCostSnapshot snapshot, String payload, long requestUnits,
+                                 long jobUnits, long capturedNanos) {}
     // make the request cost points look like $$
     private double requestCostDenominator = 1.0d;
 
@@ -86,6 +92,7 @@ public class RequestCostApiImpl implements RequestCostApi {
                     return t;
                 }
         );
+        windowStartedNanos = System.nanoTime();
         // Start scheduled task to log current load
         scheduler.scheduleAtFixedRate(this::logRequestCost, requestCostTimeWindowSeconds,
                 requestCostTimeWindowSeconds, TimeUnit.SECONDS);
@@ -97,92 +104,68 @@ public class RequestCostApiImpl implements RequestCostApi {
         return UtilMethods.isSet(value) ? value : "unknown";
     }
 
+    /**
+     * Captures without resetting, then retires only the raw counters whose frozen body has a
+     * durable owner. Subtraction preserves increments arriving during database admission.
+     */
     private void logRequestCost() {
         try {
             if (!isAccountingEnabled()) {
                 return;
             }
+            if (pendingWindow == null) {
+                final long capturedNanos = System.nanoTime();
+                final long requests = requestCountForWindow.sum();
+                final long requestUnits = requestCostForWindow.sum();
+                final long jobUnits = jobCostForWindow.sum();
+                final double requestTokens = Math.round(requestUnits / getRequestCostDenominator());
+                final double jobTokens = Math.round(jobUnits / getRequestCostDenominator());
+                final long lifetimeRequests = requestCountTotal.sum();
+                final double lifetimeTokens = Math.round(
+                        requestCostTotal.sum() / getRequestCostDenominator());
+                final int windowSeconds = (int) Math.max(1L, Math.min(Integer.MAX_VALUE,
+                        Math.round((capturedNanos - windowStartedNanos) / 1_000_000_000d)));
+                final boolean publishing = publisher.isEnabled();
+                final RequestCostSnapshot snapshot = new RequestCostSnapshot(
+                        publishing ? nullSafe(Try.of(ClusterFactory::getClusterId).getOrNull()) : "unknown",
+                        publishing ? nullSafe(Try.of(ConfigUtils::getServerId).getOrNull()) : "unknown",
+                        Instant.now().truncatedTo(ChronoUnit.SECONDS).toString(),
+                        windowSeconds, requests, requestTokens,
+                        requests == 0 ? 0 : requestTokens / requests,
+                        lifetimeRequests, lifetimeTokens,
+                        lifetimeRequests == 0 ? 0 : lifetimeTokens / lifetimeRequests,
+                        jobTokens, Math.round(jobCostTotal.sum() / getRequestCostDenominator()));
+                final String payload = publishing ? RequestCostPublisher.serializeSnapshot(snapshot) : null;
+                pendingWindow = new PendingWindow(snapshot, payload, requestUnits, jobUnits, capturedNanos);
+            }
 
-            // The four counter reads below are not atomic relative to each other. Increments
-            // landing between them are counted in the next window's snapshot but already in
-            // the lifetime totals — Σ(window) can briefly trail lifetime by a few requests.
-            // Intentional: observational telemetry, atomic snapshot would need a lock.
-            final long totalRequestsForDuration = this.requestCountForWindow.sumThenReset();
-            // Token totals are rounded to whole numbers. They were always integral while the
-            // denominator was 1, and a collector that has been parsing them as ints would break
-            // on a fractional value. The per-request averages stay fractional — they always were.
-            final double requestCostForDuration = Math.round(
-                    this.requestCostForWindow.sumThenReset() / getRequestCostDenominator());
-            final double jobCostForDuration = Math.round(
-                    this.jobCostForWindow.sumThenReset() / getRequestCostDenominator());
+            final PendingWindow window = pendingWindow;
+            if (window.payload() != null && !publisher.publish(window.payload())) {
+                return;
+            }
+            final RequestCostSnapshot snapshot = window.snapshot();
+            requestCountForWindow.add(-snapshot.windowRequests);
+            requestCostForWindow.add(-window.requestUnits());
+            jobCostForWindow.add(-window.jobUnits());
+            windowStartedNanos = window.capturedNanos();
+            pendingWindow = null;
 
-            // windowTokens stays request-only, exactly as it has always been. Background work
-            // is reported alongside it in windowJobTokens rather than folded in, so every
-            // field keeps a single meaning and windowTokens / windowRequests still agrees with
-            // windowAvgTokensPerRequest. Total cluster consumption is the sum of the two, and
-            // the collector is where that sum belongs.
-            final double totalCostForDuration = requestCostForDuration;
-
-            final double costPerRequestForDuration = totalRequestsForDuration == 0
-                    ? 0
-                    : requestCostForDuration / totalRequestsForDuration;
-
-            final long totalRequestsTotal = requestCountTotal.longValue();
-            final double requestCostTotalValue = Math.round(
-                    requestCostTotal.longValue() / getRequestCostDenominator());
-            final double jobCostTotalValue = Math.round(
-                    jobCostTotal.longValue() / getRequestCostDenominator());
-            final double totalCostTotal = requestCostTotalValue;
-            final double costPerRequestTotal = totalRequestsTotal == 0
-                    ? 0
-                    : requestCostTotalValue / totalRequestsTotal;
-
-            // The log line is throttled on consecutive idle windows so dev consoles stay quiet.
-            // The publisher is NOT throttled — telemetry must emit a point every tick so an idle
-            // cluster and a downed cluster are distinguishable on the receiving side.
-            // An idle window is one with no requests AND no background work - a node doing
-            // nothing but reindexing is not idle and should still log.
-            final boolean idleWindow = totalRequestsForDuration == 0 && jobCostForDuration == 0;
+            final boolean idleWindow = snapshot.windowRequests == 0 && snapshot.windowJobTokens == 0;
             final boolean suppressLog = idleWindow && skipZeroRequests;
             skipZeroRequests = idleWindow;
-
             if (!suppressLog) {
                 Logger.info("REQUEST TOKEN MONITOR >",
                         String.format(
                                 "Last %ds: Reqs: %d, Tokens: %.2f, Avg Tokens: %.2f, Job Tokens: %.2f | Totals: Reqs: %d, Tokens: %.2f, Avg Tokens: %.2f, Job Tokens: %.2f",
-                                requestCostTimeWindowSeconds,
-                                totalRequestsForDuration,
-                                totalCostForDuration,
-                                costPerRequestForDuration,
-                                jobCostForDuration,
-                                totalRequestsTotal,
-                                totalCostTotal,
-                                costPerRequestTotal,
-                                jobCostTotalValue));
+                                snapshot.windowSeconds, snapshot.windowRequests, snapshot.windowTokens,
+                                snapshot.windowAvgTokensPerRequest, snapshot.windowJobTokens,
+                                snapshot.lifetimeRequests, snapshot.lifetimeTokens,
+                                snapshot.lifetimeAvgTokensPerRequest, snapshot.lifetimeJobTokens));
             }
-
-            if (publisher.isEnabled()) {
-                publisher.publish(new RequestCostSnapshot(
-                        // Try.getOrElse only fires on throw — also coalesce null returns since
-                        // these lookups can transiently return null during early startup.
-                        nullSafe(Try.of(ClusterFactory::getClusterId).getOrNull()),
-                        nullSafe(Try.of(ConfigUtils::getServerId).getOrNull()),
-                        Instant.now().truncatedTo(ChronoUnit.SECONDS).toString(),
-                        requestCostTimeWindowSeconds,
-                        totalRequestsForDuration,
-                        totalCostForDuration,
-                        costPerRequestForDuration,
-                        totalRequestsTotal,
-                        totalCostTotal,
-                        costPerRequestTotal,
-                        jobCostForDuration,
-                        jobCostTotalValue));
-            }
-        } catch (Exception e) {
-            Logger.warnAndDebug(this.getClass(), "Error logging request tokens:" + e.getMessage(), e);
+        } catch (final Exception e) {
+            Logger.warnAndDebug(getClass(), "Error logging request tokens; uncommitted accounting retained", e);
         }
     }
-
 
     @Override
     public double getRequestCostDenominator() {
