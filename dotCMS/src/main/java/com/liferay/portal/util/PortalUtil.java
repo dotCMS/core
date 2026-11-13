@@ -21,6 +21,7 @@ package com.liferay.portal.util;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
+import com.dotcms.cms.login.SessionUserResolver;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -400,15 +401,38 @@ public class PortalUtil {
       return req==null ? null : getUser(req);
   }
 
+  /**
+   * Returns the user making the request: the one already resolved for this request, returned
+   * without reading the session again, else the user of the request's session, else the user
+   * whose id was set on the request, else the user of a {@code Bearer} login token. The result is
+   * stored on the request for the rest of its processing.
+   * <p>
+   * A user taken from the session or from a user id must currently exist and be active (see
+   * {@link SessionUserResolver}); otherwise the next source is tried. The one exception is a user
+   * id on the request that is the session's own id: the front controller copies it there before
+   * the user is resolved, so once the session user has been refused that copy is not tried again,
+   * and it is removed from the request.
+   *
+   * @param req the current request
+   * @return the current {@link User}, or {@code null} when the request has none
+   */
   public static User getUser(HttpServletRequest req) {
-    User user = (User) req.getAttribute(WebKeys.USER);
-    if (user == null) {
-      user = getUser(req.getSession(false));
+    final Object resolved = req.getAttribute(WebKeys.USER);
+    if (resolved instanceof User) {
+      req.setAttribute(WebKeys.USER_ID, ((User) resolved).getUserId());
+      return (User) resolved;
     }
+    // read before the session user is resolved: a refused session loses its user id
+    final String sessionUserId = getUserId(req.getSession(false));
+    User user = getUser(req.getSession(false));
     if (user == null) {
-      String userId = PortalUtil.getUserId(req);
-      if (userId != null) {
-        user = Try.of(() -> UserLocalManagerUtil.getUserById(userId)).getOrNull();
+      // a user id set on the request itself, e.g. by a login filter; the session's own id was
+      // already checked above and is not tried again, even as a copy on the request
+      final Object userId = req.getAttribute(WebKeys.USER_ID);
+      if (userId instanceof String && ((String) userId).equalsIgnoreCase(sessionUserId)) {
+        req.removeAttribute(WebKeys.USER_ID);
+      } else if (userId instanceof String) {
+        user = SessionUserResolver.getInstance().resolveActive((String) userId).orElse(null);
       }
     }
     if (user == null) {
@@ -436,20 +460,17 @@ public class PortalUtil {
   }
 
 
+  /**
+   * Returns the user the session belongs to, provided that user still exists and is active. The
+   * user's current record is checked on every call, so a session whose user was removed or made
+   * inactive after login yields {@code null} from then on; see {@link SessionUserResolver}.
+   *
+   * @param session the HTTP session, may be {@code null}
+   * @return the session's current {@link User}, or {@code null} when the session has no usable
+   *         user
+   */
   public static User getUser(HttpSession session) {
-    User user = null;
-    if (session != null) {
-      user = (User) session.getAttribute(WebKeys.USER);
-      if (user == null) {
-        String userId = PortalUtil.getUserId(session);
-        if (userId == null) {
-          return null;
-        }
-        user = Try.of(() -> UserLocalManagerUtil.getUserById(userId)).getOrNull();
-        session.setAttribute(WebKeys.USER, user);
-      }
-    }
-    return user;
+    return SessionUserResolver.getInstance().resolve(session).orElse(null);
   }
 
   public static User getUser(ActionRequest req) {

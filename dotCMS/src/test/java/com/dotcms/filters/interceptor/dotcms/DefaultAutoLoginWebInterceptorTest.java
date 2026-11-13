@@ -12,8 +12,11 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -26,7 +29,9 @@ import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.util.security.Encryptor;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LoginAsSession;
+import com.dotmarketing.business.UserAPI;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
@@ -40,7 +45,10 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockedStatic;
 
 /**
  * Renewal of the session login token cookie by {@link DefaultAutoLoginWebInterceptor} for a user
@@ -57,10 +65,33 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
     private final JsonWebTokenUtils jsonWebTokenUtils = mock(JsonWebTokenUtils.class);
     private final DefaultAutoLoginWebInterceptor interceptor = new DefaultAutoLoginWebInterceptor(
             jsonWebTokenUtils, loginServiceAPI, mock(Encryptor.class));
+    /** The users the test made, by id, as the user API the session user resolution reads knows them. */
+    private final Map<String, User> knownUsers = new HashMap<>();
+    private MockedStatic<APILocator> apiLocator;
+
     /** The user held by the HTTP session. */
     private final User sessionUser = user("session-user");
     /** The same user as loaded from the login cookie's token. */
     private final User cookieOwner = user("session-user");
+
+    /**
+     * Resolving the session user reads the current user record through the user API; here it
+     * answers with the users the test made, so a session that names one of them resolves to that
+     * same object, as a session of a real user does.
+     */
+    @Before
+    public void resolveSessionUsersThroughTheUserApi() throws Exception {
+        final UserAPI userAPI = mock(UserAPI.class);
+        lenient().when(userAPI.loadUserById(anyString()))
+                .thenAnswer(call -> knownUsers.get(call.<String>getArgument(0)));
+        apiLocator = mockStatic(APILocator.class, CALLS_REAL_METHODS);
+        apiLocator.when(APILocator::getUserAPI).thenReturn(userAPI);
+    }
+
+    @After
+    public void restoreTheApiLocator() {
+        apiLocator.close();
+    }
 
     /**
      * A back-end request whose session is past its renewal time gets a new session login token,
@@ -609,9 +640,15 @@ public class DefaultAutoLoginWebInterceptorTest extends UnitTestBase {
         return Optional.ofNullable(owner).map(user -> new LoginTokenOwner(user, TOKEN_ID));
     }
 
-    private static User user(final String userId) {
+    /**
+     * An active user with the given id, known to the user API the session user resolution reads.
+     * The first user made with an id is the one a session naming that id resolves to.
+     */
+    private User user(final String userId) {
         final User user = new User();
         user.setUserId(userId);
+        user.setActive(true);
+        knownUsers.putIfAbsent(userId, user);
         return user;
     }
 
