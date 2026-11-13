@@ -34,6 +34,7 @@
 <%@ page import="com.dotmarketing.portlets.browser.BrowserUtil" %>
 <%@ page import="com.dotmarketing.portlets.folders.model.Folder" %>
 <%@ page import="com.dotcms.contenttype.transform.field.LegacyFieldTransformer" %>
+<%@ page import="com.dotcms.contenttype.transform.field.FieldVariableTransformer" %>
 <%@ page import="static com.dotmarketing.portlets.contentlet.business.ContentletAPI.dnsRegEx" %>
 <%@ page import="io.vavr.control.Try" %>
 <%@ page import="com.dotcms.contenttype.model.field.HostFolderField" %>
@@ -242,7 +243,7 @@
                 Logger.error(this.getClass(), e.getMessage());
             }
 
-            List<FieldVariable> acceptTypes = APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+            List<FieldVariable> acceptTypes = new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
             String fieldVariablesContent = StringEscapeUtils.escapeJavaScript(mapper.writeValueAsString(acceptTypes));
             String blockEditorTag = ConfigUtils.isFeatureFlagOn("FEATURE_FLAG_NEW_BLOCK_EDITOR")
                     ? "dotcms-block-editor"
@@ -343,7 +344,7 @@
                 textValue = textValue.replaceAll("<", "&lt;");
                 textValue = textValue.replaceAll(">", "&gt;");
             }
-            List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
+            List<FieldVariable> fieldVariables=new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
             for(FieldVariable fv : fieldVariables){
                 if(fv.getKey().equals( com.dotmarketing.util.WebKeys.TEXT_EDITOR)){
                     keyValue = fv.getValue();
@@ -473,7 +474,7 @@
 
                 boolean dragAndDrop = true;
 
-                List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
+                List<FieldVariable> fieldVariables=new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
                     for(FieldVariable fv : fieldVariables){
                         if (fv.getKey().equals("dragAndDrop")) {
                             dragAndDrop = !"false".equalsIgnoreCase(fv.getValue());
@@ -735,7 +736,7 @@
                     Logger.error(this.getClass(), e.getMessage());
                 }
 
-                List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+                List<FieldVariable> acceptTypes=new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
                 String fieldVariablesContent = mapper.writeValueAsString(acceptTypes); // Field Variables
 
                 for(FieldVariable fv : acceptTypes){
@@ -1030,7 +1031,7 @@
     <%
        String maxFileLength="-1";
        String accept="*/*";
-       List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+       List<FieldVariable> acceptTypes=new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
        for(FieldVariable fv : acceptTypes){
            if("accept".equalsIgnoreCase(fv.getKey())){
                accept = fv.getValue();
@@ -1535,7 +1536,7 @@
         keyValueDataRaw.append("}");
         dotKeyValueDataRaw.append("}");
 
-        List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
+        List<FieldVariable> fieldVariables=new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
         String whiteListKeyValues = "";
         for(FieldVariable fv : fieldVariables) {
             if (fv.getKey().equals("whiteList")) {

@@ -7,13 +7,13 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
-import com.dotmarketing.business.APILocator;
+import com.dotcms.contenttype.transform.field.FieldVariableTransformer;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.cache.FieldsCache;
-import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -50,10 +50,9 @@ public class SubmitContentWebAPI implements ViewTool{
 	 */
 	public List<FieldVariable> getFieldVariables(Field field){
 		try {
-			return APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
-		} catch (DotDataException e) {
-			Logger.error(StructuresWebAPI.class,e.getMessage(),e);
-		} catch (DotSecurityException e) {
+			return new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables())
+					.oldFieldList();
+		} catch (final DotStateException e) {
 			Logger.error(StructuresWebAPI.class,e.getMessage(),e);
 		}
 		return new ArrayList<>();
