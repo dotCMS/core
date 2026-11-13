@@ -1,6 +1,13 @@
 package com.dotcms.enterprise.publishing.staticpublishing;
 
 import com.dotcms.datagen.BundleDataGen;
+import com.dotcms.datagen.StaticPublishingEndPointDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.publisher.business.EndpointDetail;
+import com.dotcms.publisher.business.PublisherTestUtil;
+import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
+import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTestHelper.FileExpected;
@@ -501,5 +508,58 @@ public class StaticPublisherIntegrationTest {
                 "<createDate class=\"sql-timestamp\">.*/createDate>",
                 "<deleted>false</deleted>"
         );
+    }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)} with {@link StaticPublisher}
+     * Given Scenario: the bundle holds a plain content item, which is neither a page nor a file, so
+     * the bundlers produce nothing static, and the environment has a {@code static} endpoint
+     * Expected Result: the endpoint is recorded with the info "Bundle is empty: nothing to publish to
+     * this endpoint" and status {@code BUNDLE_SAVED_SUCCESSFULLY}, instead of reporting
+     * "Bundle sent" for a bundle with no content (issue #34434)
+     */
+    @Test
+    public void test_publish_emptyStaticBundle_recordsEmptyBundleMessage() throws Exception {
+        final Environment environment = PublisherTestUtil.createEnvironment(
+                TestUserUtils.getAdminUser(), true);
+        final PublishingEndPoint endpoint = new StaticPublishingEndPointDataGen()
+                .environment(environment)
+                .protocol(StaticPublisher.PROTOCOL_STATIC)
+                .nextPersisted();
+        Bundle bundle = null;
+        try {
+            final Contentlet content = TestDataUtils.getGenericContentContent(true, 1);
+
+            final PushPublisherConfig config = new PushPublisherConfig();
+            config.setPublishers(list(StaticPublisher.class));
+            config.setLanguages(Set.of("1"));
+
+            bundle = new BundleDataGen()
+                    .pushPublisherConfig(config)
+                    .addAssets(list(content))
+                    .nextPersisted();
+            APILocator.getBundleAPI().saveBundleEnvironment(bundle, environment);
+
+            final PublishAuditStatus status = new PublishAuditStatus(bundle.getId());
+            final PublishAuditHistory history = new PublishAuditHistory();
+            history.setAssets(Map.of(content.getIdentifier(), PusheableAsset.CONTENTLET.getType()));
+            status.setStatusPojo(history);
+            PublishAuditAPI.getInstance().insertPublishAuditStatus(status);
+
+            new PublisherAPIImpl().publish(config);
+
+            final EndpointDetail detail = PublishAuditAPI.getInstance()
+                    .getPublishAuditStatus(bundle.getId()).getStatusPojo().getEndpointsMap()
+                    .get(environment.getId()).get(endpoint.getId());
+
+            assertEquals(PublishAuditStatus.Status.BUNDLE_SAVED_SUCCESSFULLY.getCode(),
+                    detail.getStatus());
+            assertTrue(detail.getInfo(),
+                    detail.getInfo().contains("Bundle is empty: nothing to publish to this endpoint"));
+        } finally {
+            if (bundle != null) {
+                PublisherTestUtil.cleanBundleEndpointEnv(bundle, endpoint, environment);
+            }
+        }
     }
 }

@@ -11,10 +11,15 @@ import com.dotcms.datagen.BundleDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.StaticPublishingEndPointDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher;
+import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
+import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.publisher.pusher.PushPublishClientFactory;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
@@ -364,6 +369,280 @@ public class PublisherQueueJobTest {
             } catch (Exception e) {
                 // best-effort cleanup
             }
+        }
+    }
+
+    // ---- Per-endpoint status evaluation (issue #34434) ----
+
+    /**
+     * Method to test: {@link PublisherQueueJob} audit pass, bundle status for an environment with two
+     * static endpoints.
+     * <p>
+     * Given scenario: one endpoint is SUCCESS and the other FAILED_TO_PUBLISH, in the same environment.
+     * <p>
+     * Expected result: {@link Status#FAILED_TO_SEND_TO_SOME_GROUPS}. Today the job counts the
+     * environment once, so it reads as failed to every group, and an environment whose endpoints
+     * mix results can never be told apart from one that failed entirely.
+     */
+    @Test
+    public void test_status_oneSuccessOneFailedEndpoint_isFailedToSendToSome() throws Exception {
+        assertStatusForTwoStaticEndpoints(Status.SUCCESS, Status.FAILED_TO_PUBLISH,
+                Status.FAILED_TO_SEND_TO_SOME_GROUPS);
+    }
+
+    /**
+     * Method to test: same as above.
+     * <p>
+     * Given scenario: one endpoint is BUNDLE_SAVED_SUCCESSFULLY and the other FAILED_TO_PUBLISH.
+     * <p>
+     * Expected result: {@link Status#FAILED_TO_SEND_TO_SOME_GROUPS}, never
+     * {@link Status#BUNDLE_SAVED_SUCCESSFULLY} (AC-003: a failed endpoint is never hidden).
+     */
+    @Test
+    public void test_status_oneSavedOneFailedEndpoint_isNotSaved() throws Exception {
+        assertStatusForTwoStaticEndpoints(Status.BUNDLE_SAVED_SUCCESSFULLY, Status.FAILED_TO_PUBLISH,
+                Status.FAILED_TO_SEND_TO_SOME_GROUPS);
+    }
+
+    /**
+     * Method to test: same as above, single-endpoint environments (regression guard, AC-002).
+     * <p>
+     * Expected result: the final status is the one the job always produced for one endpoint.
+     */
+    @Test
+    public void test_status_singleEndpoint_keepsItsStatus() throws Exception {
+        assertStatusForOneStaticEndpoint(Status.SUCCESS, Status.SUCCESS);
+        assertStatusForOneStaticEndpoint(Status.FAILED_TO_PUBLISH, Status.FAILED_TO_SEND_TO_ALL_GROUPS);
+        assertStatusForOneStaticEndpoint(Status.PUBLISHING_BUNDLE, Status.PUBLISHING_BUNDLE);
+        assertStatusForOneStaticEndpoint(Status.BUNDLE_SAVED_SUCCESSFULLY, Status.BUNDLE_SAVED_SUCCESSFULLY);
+    }
+
+    /**
+     * Method to test: {@link PublisherQueueJob} merging of a polled remote history.
+     * <p>
+     * Given scenario: the local audit lists a static endpoint (BUNDLE_SAVED_SUCCESSFULLY) and an
+     * {@code http} endpoint (BUNDLE_SENT_SUCCESSFULLY); the receiver answers with its own history,
+     * keyed by the receiver's address, saying SUCCESS.
+     * <p>
+     * Expected result: the static endpoint keeps its entry and the {@code http} endpoint's entry
+     * becomes SUCCESS; no entry is replaced by the other protocol's.
+     */
+    @Test
+    public void test_merge_remoteHistory_updatesOnlyTheHttpEndpoint() throws Exception {
+        final PublishAuditHistory remote = new PublishAuditHistory();
+        remote.addOrUpdateEndpoint("127.0.0.1", "127.0.0.1", endpointDetail(Status.SUCCESS, "installed"));
+
+        try (AuditStub stub = new AuditStub(list(remote.getSerialized()))) {
+            final User user = TestUserUtils.getAdminUser();
+            final Environment environment = PublisherTestUtil.createEnvironment(user, true);
+            final PublishingEndPoint http = PublisherTestUtil.createEndpoint(environment);
+            http.setPort(String.valueOf(stub.port()));
+            APILocator.getPublisherEndPointAPI().updateEndPoint(http);
+            final PublishingEndPoint staticEndpoint = new StaticPublishingEndPointDataGen()
+                    .environment(environment).protocol(StaticPublisher.PROTOCOL_STATIC).nextPersisted();
+            final Bundle bundle = PublisherTestUtil.createBundle("bundle-" + System.nanoTime(), user, environment);
+            try {
+                seedAudit(bundle, environment, Map.of(
+                        staticEndpoint.getId(), Status.BUNDLE_SAVED_SUCCESSFULLY,
+                        http.getId(), Status.BUNDLE_SENT_SUCCESSFULLY));
+
+                invokeUpdateAuditStatus();
+
+                final Map<String, EndpointDetail> endpoints = endpointsOf(bundle, environment);
+                assertEquals(Status.BUNDLE_SAVED_SUCCESSFULLY.getCode(),
+                        endpoints.get(staticEndpoint.getId()).getStatus());
+                assertEquals(Status.SUCCESS.getCode(), endpoints.get(http.getId()).getStatus());
+                assertFalse("A merged success must not read as a failure: " + statusOf(bundle.getId()),
+                        statusOf(bundle.getId()) == Status.FAILED_TO_SEND_TO_ALL_GROUPS
+                                || statusOf(bundle.getId()) == Status.FAILED_TO_SEND_TO_SOME_GROUPS);
+            } finally {
+                cleanUpAudit(bundle);
+                APILocator.getPublisherEndPointAPI().deleteEndPointById(staticEndpoint.getId());
+                PublisherTestUtil.cleanBundleEndpointEnv(bundle, http, environment);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link PublisherQueueJob} handling of a remote answer it cannot process.
+     * <p>
+     * Given scenario: the receiver answers with a history that has no endpoints map, so merging it
+     * fails.
+     * <p>
+     * Expected result: the failure is recorded as FAILED_TO_PUBLISH on the {@code http} endpoint's
+     * own id, and no {@code failed-remote-group-<timestamp>} key is left in the audit.
+     */
+    @Test
+    public void test_merge_unprocessableRemoteHistory_failsTheEndpointByName() throws Exception {
+        try (AuditStub stub = new AuditStub(list("<com.dotcms.publisher.business.PublishAuditHistory/>"))) {
+            final User user = TestUserUtils.getAdminUser();
+            final Environment environment = PublisherTestUtil.createEnvironment(user, true);
+            final PublishingEndPoint http = PublisherTestUtil.createEndpoint(environment);
+            http.setPort(String.valueOf(stub.port()));
+            APILocator.getPublisherEndPointAPI().updateEndPoint(http);
+            final Bundle bundle = PublisherTestUtil.createBundle("bundle-" + System.nanoTime(), user, environment);
+            try {
+                seedAudit(bundle, environment, Map.of(http.getId(), Status.BUNDLE_SENT_SUCCESSFULLY));
+
+                invokeUpdateAuditStatus();
+
+                final Map<String, Map<String, EndpointDetail>> all = APILocator.getPublishAuditAPI()
+                        .getPublishAuditStatus(bundle.getId()).getStatusPojo().getEndpointsMap();
+                assertEquals(Status.FAILED_TO_PUBLISH.getCode(),
+                        all.get(environment.getId()).get(http.getId()).getStatus());
+                assertTrue("No synthetic failed-remote-group key may be left: " + all.keySet(),
+                        all.keySet().stream().noneMatch(key -> key.startsWith("failed-remote-group")));
+            } finally {
+                cleanUpAudit(bundle);
+                PublisherTestUtil.cleanBundleEndpointEnv(bundle, http, environment);
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@code PublisherQueueJob#getPublishersForBundle}
+     * Given scenario: an environment with an {@code awss3}, a {@code static} and an {@code http}
+     * endpoint, created in that order (#34434, US4).
+     * Expected result: the publishers come back in a fixed order, push, S3, static, so the logs of
+     * one bundle read the same on every server.
+     */
+    @Test
+    public void test_getPublishersForBundle_returnsAFixedOrder() throws Exception {
+        final PublisherTestUtil.MixedEndpointEnvironment mixed =
+                PublisherTestUtil.createMixedEndpointEnvironment(
+                        Collections.singletonList(PushPublisher.class), false);
+        PublishingEndPoint s3 = null;
+        try {
+            // The data generator's persist() reads the endpoint back as a static one, which
+            // fails for an S3 endpoint, so it is saved directly
+            s3 = new StaticPublishingEndPointDataGen()
+                    .environment(mixed.environment)
+                    .protocol(AWSS3Publisher.PROTOCOL_AWS_S3)
+                    .next();
+            APILocator.getPublisherEndPointAPI().saveEndPoint(s3);
+
+            final Method method = PublisherQueueJob.class
+                    .getDeclaredMethod("getPublishersForBundle", String.class);
+            method.setAccessible(true);
+            final java.util.Collection<?> publishers =
+                    (java.util.Collection<?>) method.invoke(new PublisherQueueJob(), mixed.bundle.getId());
+
+            assertEquals(list(PushPublisher.class, AWSS3Publisher.class, StaticPublisher.class),
+                    new java.util.ArrayList<>(publishers));
+        } finally {
+            if (s3 != null) {
+                APILocator.getPublisherEndPointAPI().deleteEndPointById(s3.getId());
+            }
+            mixed.cleanUp();
+        }
+    }
+
+    private void assertStatusForTwoStaticEndpoints(final Status first, final Status second,
+            final Status expected) throws Exception {
+        final User user = TestUserUtils.getAdminUser();
+        final Environment environment = PublisherTestUtil.createEnvironment(user, true);
+        final PublishingEndPoint one = new StaticPublishingEndPointDataGen().environment(environment)
+                .protocol(StaticPublisher.PROTOCOL_STATIC).nextPersisted();
+        final PublishingEndPoint two = new StaticPublishingEndPointDataGen().environment(environment)
+                .protocol(StaticPublisher.PROTOCOL_STATIC).nextPersisted();
+        final Bundle bundle = PublisherTestUtil.createBundle("bundle-" + System.nanoTime(), user, environment);
+        try {
+            seedAudit(bundle, environment, Map.of(one.getId(), first, two.getId(), second));
+
+            invokeUpdateAuditStatus();
+
+            assertEquals(expected, statusOf(bundle.getId()));
+        } finally {
+            cleanUpAudit(bundle);
+            APILocator.getPublisherEndPointAPI().deleteEndPointById(one.getId());
+            PublisherTestUtil.cleanBundleEndpointEnv(bundle, two, environment);
+        }
+    }
+
+    private void assertStatusForOneStaticEndpoint(final Status endpointStatus, final Status expected)
+            throws Exception {
+        final User user = TestUserUtils.getAdminUser();
+        final Environment environment = PublisherTestUtil.createEnvironment(user, true);
+        final PublishingEndPoint endpoint = new StaticPublishingEndPointDataGen().environment(environment)
+                .protocol(StaticPublisher.PROTOCOL_STATIC).nextPersisted();
+        final Bundle bundle = PublisherTestUtil.createBundle("bundle-" + System.nanoTime(), user, environment);
+        try {
+            seedAudit(bundle, environment, Map.of(endpoint.getId(), endpointStatus));
+
+            invokeUpdateAuditStatus();
+
+            assertEquals("Endpoint status " + endpointStatus, expected, statusOf(bundle.getId()));
+        } finally {
+            cleanUpAudit(bundle);
+            PublisherTestUtil.cleanBundleEndpointEnv(bundle, endpoint, environment);
+        }
+    }
+
+    /** Inserts an audit row for the bundle, with one entry per endpoint and one earlier attempt. */
+    private void seedAudit(final Bundle bundle, final Environment environment,
+            final Map<String, Status> endpointStatuses) throws Exception {
+        final PublishAuditStatus audit = new PublishAuditStatus(bundle.getId());
+        final PublishAuditHistory history = new PublishAuditHistory();
+        history.setNumTries(1);
+        endpointStatuses.forEach((endpointId, status) -> history.addOrUpdateEndpoint(
+                environment.getId(), endpointId, endpointDetail(status, "seeded")));
+        audit.setStatusPojo(history);
+        APILocator.getPublishAuditAPI().insertPublishAuditStatus(audit);
+        APILocator.getPublishAuditAPI().updatePublishAuditStatus(bundle.getId(),
+                Status.BUNDLE_SENT_SUCCESSFULLY, history);
+    }
+
+    private static EndpointDetail endpointDetail(final Status status, final String info) {
+        final EndpointDetail detail = new EndpointDetail();
+        detail.setStatus(status.getCode());
+        detail.setInfo(info);
+        return detail;
+    }
+
+    private Map<String, EndpointDetail> endpointsOf(final Bundle bundle, final Environment environment)
+            throws Exception {
+        return APILocator.getPublishAuditAPI().getPublishAuditStatus(bundle.getId()).getStatusPojo()
+                .getEndpointsMap().get(environment.getId());
+    }
+
+    private void cleanUpAudit(final Bundle bundle) {
+        try {
+            APILocator.getPublishAuditAPI().deletePublishAuditStatus(bundle.getId());
+        } catch (Exception e) {
+            // best-effort cleanup
+        }
+    }
+
+    /**
+     * Local HTTP server that plays the receiver's {@code /api/auditPublishing/getAll}: it answers with
+     * the serialized histories it was given. Closing it stops the server.
+     */
+    private static final class AuditStub implements AutoCloseable {
+
+        private final com.sun.net.httpserver.HttpServer server;
+
+        AuditStub(final List<String> serializedHistories) throws Exception {
+            server = com.sun.net.httpserver.HttpServer.create(
+                    new java.net.InetSocketAddress("127.0.0.1", 0), 0);
+            final byte[] body = new com.fasterxml.jackson.databind.ObjectMapper()
+                    .writeValueAsBytes(serializedHistories);
+            server.createContext("/api/auditPublishing/getAll", exchange -> {
+                exchange.getResponseHeaders().add("Content-Type", "application/json");
+                exchange.sendResponseHeaders(200, body.length);
+                try (java.io.OutputStream out = exchange.getResponseBody()) {
+                    out.write(body);
+                }
+            });
+            server.start();
+        }
+
+        int port() {
+            return server.getAddress().getPort();
+        }
+
+        @Override
+        public void close() {
+            server.stop(0);
         }
     }
 

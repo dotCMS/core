@@ -113,6 +113,18 @@ public class PublishAuditHistory implements Serializable {
 		}
 	}
 	
+	/**
+	 * Tells whether this history already holds a result for the given endpoint.
+	 *
+	 * @param groupId    the id of the environment the endpoint belongs to
+	 * @param endpointId the id of the endpoint
+	 * @return true if the environment has an entry for the endpoint
+	 */
+	public boolean hasEndpoint(final String groupId, final String endpointId) {
+		final Map<String, EndpointDetail> groupMap = endpointsMap.get(groupId);
+		return groupMap != null && groupMap.containsKey(endpointId);
+	}
+
 	static final XStreamHandler.Cached xstream = new XStreamHandler.Cached(null, null);
 	public String getSerialized() {
 

@@ -82,6 +82,16 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
         return publish( config, new PublishStatus() );
     }
 
+    /**
+     * Builds the bundle for each publisher of the given {@link PublisherConfig} and runs the
+     * publisher over it. A publisher reuses a bundle that already exists only when this is a real
+     * retry, meaning the bundle was attempted before this call started.
+     *
+     * @param config the bundle's configuration, including the publishers to run in order
+     * @param status the status that collects the outputs and bundler results
+     * @return the given {@link PublishStatus}, filled in
+     * @throws DotPublishingException if a bundler or a publisher fails
+     */
     @CloseDBIfOpened
     @Override
     public PublishStatus publish ( PublisherConfig config, PublishStatus status) throws DotPublishingException {
@@ -95,6 +105,11 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
         try {
 
             List<IBundler> confBundlers = new ArrayList<>();
+
+            // Read once, before any publisher runs. Every publisher raises numTries in process(), so
+            // reading it per publisher would make the second one look like a retry of the first
+            // (issue #34434).
+            final boolean isRealRetry = publishAuditAPI.isPublishRetry(config.getId());
 
             // init publishers
             for ( Class<? extends IPublisher> c : config.getPublishers() ) {
@@ -134,7 +149,7 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
                                 config.getOperation().name());
                     }
 
-                    if (!output.bundleFileExists() || !publishAuditAPI.isPublishRetry(config.getId())) {
+                    if (!output.bundleFileExists() || !isRealRetry) {
                         output.create();
                         config.setManifestBuilder(manifestBuilder);
                         status.addOutput(output);

@@ -36,6 +36,19 @@ public class DirectoryBundleOutput extends BundleOutput {
         directoryRootPath = directoryPath;
     }
 
+    /**
+     * Tells whether this directory already holds a bundle. The directory is created as soon as the
+     * output is opened, so an existing but empty directory is a bundle that has not been built yet,
+     * not one that can be reused.
+     *
+     * @return true only when the directory exists and has at least one entry
+     */
+    @Override
+    public boolean bundleFileExists() {
+        final String[] entries = directoryRootPath.list();
+        return entries != null && entries.length > 0;
+    }
+
     @Override
     public boolean useHardLinkByDefault() {
         return true;
