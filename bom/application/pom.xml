@@ -82,7 +82,8 @@
 
             <!-- grpc: imported before langchain4j-bom so every io.grpc artifact (grpc-netty-shaded
                  arrives transitively via langchain4j-vertex-ai-gemini) resolves to one version.
-                 Stay on 1.75.x: 1.76+ expects guava 33.4+, and guava is pinned to 32.0.1-jre below. -->
+                 Still on 1.75.x: 1.76+ expects guava 33.4+, which ${guava.version} now satisfies, so
+                 moving grpc forward is no longer blocked by guava and can be done as its own change. -->
             <dependency>
                 <groupId>io.grpc</groupId>
                 <artifactId>grpc-bom</artifactId>
