@@ -8,6 +8,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.PaginationUtil;
@@ -17,6 +18,8 @@ import com.dotcms.util.pagination.UserPaginator;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.DuplicateRoleException;
+import com.dotmarketing.business.DuplicateRoleKeyException;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -273,7 +276,8 @@ public class RoleResource implements Serializable {
 
 	/**
 	 * Add a new role
-	 * Only admins can add roles.
+	 * Only admins can add roles. A key that is already taken, or a name already used under
+	 * the same parent, is answered with a 409 carrying the same message as an update.
 	 */
 	@Operation(
 		operationId = "createRole",
@@ -291,8 +295,11 @@ public class RoleResource implements Serializable {
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
-		@ApiResponse(responseCode = "403", 
+		@ApiResponse(responseCode = "403",
 					description = "Forbidden - admin permissions required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "409",
+					description = "Conflict - duplicate role key, or duplicate role name under the same parent",
 					content = @Content(mediaType = "application/json"))
 	})
 	@POST
@@ -340,6 +347,16 @@ public class RoleResource implements Serializable {
 					Try.of(()->LanguageUtil.get(user,"Role-Save-Name-Failed")).getOrElse("Role Name not valid"),
 					"Role-Save-Name-Failed", e);
 
+		} catch (final DuplicateRoleKeyException e) {
+			ActivityLogger.logInfo(getClass(), "Error Adding Role. Duplicate Key", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			AdminLogger.log(getClass(), "Error Adding Role. Duplicate Key", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			throw new ConflictException(
+					"A role with key '" + roleForm.getRoleKey() + "' already exists", e);
+		} catch (final DuplicateRoleException e) {
+			ActivityLogger.logInfo(getClass(), "Error Adding Role. Duplicate Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			AdminLogger.log(getClass(), "Error Adding Role. Duplicate Name", "Date: " + date + ";  "+ "User:" + user.getUserId());
+			throw new ConflictException(
+					"A role named '" + roleForm.getRoleName() + "' already exists under the same parent", e);
 		} catch(DotDataException | DotStateException e) {
 			ActivityLogger.logInfo(getClass(), "Error Adding Role", "Date: " + date + ";  "+ "User:" + user.getUserId());
 			AdminLogger.log(getClass(), "Error Adding Role", "Date: " + date + ";  "+ "User:" + user.getUserId());
@@ -497,6 +514,101 @@ public class RoleResource implements Serializable {
 				.roleId(roleId)
 				.usersAffected(usersAffected)
 				.build());
+	}
+
+	/**
+	 * Locks a role so it cannot be edited or deleted until it is unlocked. The caller must be a
+	 * backend user with access to the Roles portlet and the CMS Administrator role.
+	 *
+	 * @param request  the current request
+	 * @param response the current response
+	 * @param roleId   id of the role to lock
+	 * @return the locked role, in the same shape as GET /v1/roles/{roleid}
+	 */
+	@Operation(
+		operationId = "lockRole",
+		summary = "Lock a role",
+		description = "Locks a role. A locked role cannot be updated or deleted until it is unlocked. " +
+				"Locking a role that is already locked changes nothing."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "Role locked",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleDetailView.class))),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - admin permissions required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404",
+					description = "Role not found",
+					content = @Content(mediaType = "application/json"))
+	})
+	@PUT
+	@Path("/{roleid}/_lock")
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntityRoleDetailView lockRole(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			@Parameter(description = "Id of the role to lock", required = true)
+			final @PathParam("roleid") String roleId) throws DotDataException, DotSecurityException {
+
+		return this.setRoleLocked(request, response, roleId, true);
+	}
+
+	/**
+	 * Unlocks a role so it can be edited and deleted again. The caller must be a backend user
+	 * with access to the Roles portlet and the CMS Administrator role.
+	 *
+	 * @param request  the current request
+	 * @param response the current response
+	 * @param roleId   id of the role to unlock
+	 * @return the unlocked role, in the same shape as GET /v1/roles/{roleid}
+	 */
+	@Operation(
+		operationId = "unlockRole",
+		summary = "Unlock a role",
+		description = "Unlocks a role so it can be updated and deleted again. Unlocking a role that is " +
+				"not locked changes nothing."
+	)
+	@ApiResponses(value = {
+		@ApiResponse(responseCode = "200",
+					description = "Role unlocked",
+					content = @Content(mediaType = "application/json",
+									  schema = @Schema(implementation = ResponseEntityRoleDetailView.class))),
+		@ApiResponse(responseCode = "401",
+					description = "Unauthorized - authentication required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - admin permissions required",
+					content = @Content(mediaType = "application/json")),
+		@ApiResponse(responseCode = "404",
+					description = "Role not found",
+					content = @Content(mediaType = "application/json"))
+	})
+	@PUT
+	@Path("/{roleid}/_unlock")
+	@Produces(MediaType.APPLICATION_JSON)
+	public ResponseEntityRoleDetailView unlockRole(
+			final @Context HttpServletRequest request,
+			final @Context HttpServletResponse response,
+			@Parameter(description = "Id of the role to unlock", required = true)
+			final @PathParam("roleid") String roleId) throws DotDataException, DotSecurityException {
+
+		return this.setRoleLocked(request, response, roleId, false);
+	}
+
+	/** Shared body of the lock and unlock endpoints: authorizes, applies the state, returns the role. */
+	private ResponseEntityRoleDetailView setRoleLocked(final HttpServletRequest request,
+			final HttpServletResponse response, final String roleId, final boolean locked)
+			throws DotDataException, DotSecurityException {
+
+		final User user = this.initRequireRolesPortletAndCmsAdmin(request, response);
+		final Role role = this.roleHelper.setRoleLocked(roleId, locked, user);
+		return new ResponseEntityRoleDetailView(
+				this.roleHelper.toRoleViews(List.of(role), true, this.roleAPI).get(0));
 	}
 
 	/**

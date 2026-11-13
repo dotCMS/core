@@ -7,6 +7,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.WorkflowActionDataGen;
 import com.dotcms.datagen.WorkflowDataGen;
 import com.dotcms.datagen.WorkflowStepDataGen;
@@ -17,33 +18,43 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
+import com.dotcms.rest.exception.mapper.DotConflictExceptionMapper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -77,6 +88,15 @@ public class RoleResourceIntegrationTest {
     private static Host testHost;
     private static User limitedUser;
 
+    /*
+     * What the tests below register here is removed in cleanup(). Older tests in this class
+     * do not register what they create yet.
+     */
+    private static final List<Role> createdRoles = new ArrayList<>();
+    private static final List<User> createdUsers = new ArrayList<>();
+    private static final List<Layout> createdLayouts = new ArrayList<>();
+    private static final List<Host> createdSites = new ArrayList<>();
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -92,6 +112,57 @@ public class RoleResourceIntegrationTest {
         if (!roleAPI.doesUserHaveRole(limitedUser, backendRole)) {
             roleAPI.addRoleToUser(backendRole, limitedUser);
         }
+    }
+
+    /**
+     * Removes the roles, users, tools and sites the tests registered. Roles go newest first so a
+     * child is deleted before its parent; deleting a role also drops its user grants,
+     * permissions and tool links. A deleted user's references go to the admin user, because
+     * the system user has no user role to take them over.
+     */
+    @AfterClass
+    public static void cleanup() {
+        final List<Role> roles = new ArrayList<>(createdRoles);
+        Collections.reverse(roles);
+        roles.forEach(role -> RoleDataGen.remove(role, true));
+        for (final User user : createdUsers) {
+            try {
+                APILocator.getUserAPI().delete(user, TestUserUtils.getAdminUser(),
+                        APILocator.systemUser(), false);
+            } catch (final Exception e) {
+                Logger.warn(RoleResourceIntegrationTest.class, "Could not remove test user: " + e.getMessage());
+            }
+        }
+        for (final Layout layout : createdLayouts) {
+            try {
+                APILocator.getLayoutAPI().removeLayout(layout);
+            } catch (final Exception e) {
+                Logger.warn(RoleResourceIntegrationTest.class, "Could not remove test tool: " + e.getMessage());
+            }
+        }
+        for (final Host site : createdSites) {
+            try {
+                APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
+                APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+            } catch (final Exception e) {
+                Logger.warn(RoleResourceIntegrationTest.class, "Could not remove test site: " + e.getMessage());
+            }
+        }
+    }
+
+    private static Role trackRole(final Role role) {
+        createdRoles.add(role);
+        return role;
+    }
+
+    private static User trackUser(final User user) {
+        createdUsers.add(user);
+        return user;
+    }
+
+    /** Persists a new role and registers it for cleanup. */
+    private static Role newRole() {
+        return trackRole(new RoleDataGen().nextPersisted());
     }
 
     // ==================== Helpers ====================
@@ -918,6 +989,402 @@ public class RoleResourceIntegrationTest {
         }
 
         assertNotNull(roleAPI.loadRoleById(role.getId()));
+    }
+
+    // ==================== PUT /v1/roles/{roleId}/_lock and /_unlock ====================
+
+    /**
+     * Builds a backend user whose only tool is the given portlet, without the CMS admin role.
+     */
+    private static User backendUserWithOnlyPortlet(final String portletId) throws Exception {
+        final Layout layout = new LayoutDataGen().portletIds(portletId).nextPersisted();
+        createdLayouts.add(layout);
+        final Role portletRole = trackRole(new RoleDataGen().layout(layout).nextPersisted());
+        final User user = trackUser(UserTestUtil.getUser(portletId + "only" + uniq(), false, true));
+        roleAPI.addRoleToUser(roleAPI.loadBackEndUserRole(), user);
+        roleAPI.addRoleToUser(portletRole, user);
+        return user;
+    }
+
+    /**
+     * Method to test: {@link RoleResource#lockRole(HttpServletRequest, HttpServletResponse, String)}
+     * and {@link RoleResource#unlockRole(HttpServletRequest, HttpServletResponse, String)}
+     * Given Scenario: An admin locks an unlocked role, then unlocks it.
+     * Expected Result: each call returns the role with the new state, and the state is stored.
+     */
+    @Test
+    public void testLockAndUnlockRole_admin_changesLockedState() throws Exception {
+        final Role role = newRole();
+        assertFalse(role.isLocked());
+
+        final ResponseEntityRoleDetailView locked = resource.lockRole(
+                adminRequest(), new MockHttpResponse().response(), role.getId());
+        assertTrue(locked.getEntity().isLocked());
+        assertTrue(roleAPI.loadRoleById(role.getId()).isLocked());
+
+        final ResponseEntityRoleDetailView unlocked = resource.unlockRole(
+                adminRequest(), new MockHttpResponse().response(), role.getId());
+        assertFalse(unlocked.getEntity().isLocked());
+        assertFalse(roleAPI.loadRoleById(role.getId()).isLocked());
+    }
+
+    /**
+     * Given Scenario: Backend users without the CMS admin role (one with only the Users tool, one
+     * with only the Roles tool) and an anonymous caller try to lock and unlock roles.
+     * Expected Result: every call is refused and the locked state does not change.
+     */
+    @Test
+    public void testLockAndUnlockRole_nonAdmin_refused() throws Exception {
+        final Role unlockedRole = newRole();
+        final Role lockedRole = newRole();
+        roleAPI.lock(lockedRole);
+
+        try {
+            final List<HttpServletRequest> callers = List.of(
+                    requestFor(backendUserWithOnlyPortlet("users")),
+                    requestFor(backendUserWithOnlyPortlet("roles")),
+                    requestFor(limitedUser),
+                    anonymousRequest());
+            for (final HttpServletRequest caller : callers) {
+                try {
+                    resource.lockRole(caller, new MockHttpResponse().response(), unlockedRole.getId());
+                    fail("lock should have been refused");
+                } catch (final DotSecurityException | com.dotcms.rest.exception.SecurityException e) {
+                    // expected
+                }
+                try {
+                    resource.unlockRole(caller, new MockHttpResponse().response(), lockedRole.getId());
+                    fail("unlock should have been refused");
+                } catch (final DotSecurityException | com.dotcms.rest.exception.SecurityException e) {
+                    // expected
+                }
+            }
+
+            assertFalse(roleAPI.loadRoleById(unlockedRole.getId()).isLocked());
+            assertTrue(roleAPI.loadRoleById(lockedRole.getId()).isLocked());
+        } finally {
+            roleAPI.unLock(lockedRole);
+        }
+    }
+
+    /**
+     * Given Scenario: An admin locks a role id that does not exist.
+     * Expected Result: DoesNotExistException (404).
+     */
+    @Test(expected = DoesNotExistException.class)
+    public void testLockRole_missingRole_notFound() throws Exception {
+        resource.lockRole(adminRequest(), new MockHttpResponse().response(),
+                "missing-role-" + UUID.randomUUID());
+    }
+
+    // ==================== role inheritance after a save ====================
+
+    /**
+     * Given Scenario: A user holds role P and has already had its roles resolved (and cached).
+     * An admin moves an unrelated root role C under P.
+     * Expected Result: the user holds C through P right away, without waiting for the cached
+     * role list to expire.
+     */
+    @Test
+    public void testUpdateRole_moveUnderHeldRole_userInheritsImmediately() throws Exception {
+        final Role parent = newRole();
+        final Role child = newRole();
+        final User user = trackUser(UserTestUtil.getUser("inheritmove" + uniq(), false, true));
+        roleAPI.addRoleToUser(parent, user);
+        assertFalse(roleAPI.doesUserHaveRole(user, child));
+
+        resource.updateRole(adminRequest(), new MockHttpResponse().response(), child.getId(),
+                formFrom(child).parentRoleId(parent.getId()).build());
+
+        assertTrue(roleAPI.doesUserHaveRole(user, roleAPI.loadRoleById(child.getId())));
+
+        // and moving it back to root takes the inherited role away right away too
+        resource.updateRole(adminRequest(), new MockHttpResponse().response(), child.getId(),
+                formFrom(roleAPI.loadRoleById(child.getId())).parentRoleId(null).build());
+
+        assertFalse(roleAPI.doesUserHaveRole(user, roleAPI.loadRoleById(child.getId())));
+    }
+
+    /**
+     * Given Scenario: A user holds role P and reads a site through a permission granted to C, a
+     * child of P; the permission decision is cached. An admin moves C to the root.
+     * Expected Result: the user loses the permission right away; the cached decision is dropped.
+     */
+    @Test
+    public void testUpdateRole_moveToRoot_dropsCachedPermissionDecisions() throws Exception {
+        final int originalShortLivedSize = Config.getIntProperty("cache.permissionshortlived.size", 0);
+        // the short-lived permission cache must be on for the cached decision to exist
+        Config.setProperty("cache.permissionshortlived.size", 1000);
+        CacheLocator.getPermissionCache().clearCache();
+        try {
+            final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+            final User systemUser = APILocator.getUserAPI().getSystemUser();
+            final Host site = new SiteDataGen().nextPersisted();
+            createdSites.add(site);
+            permissionAPI.permissionIndividually(site.getParentPermissionable(), site, systemUser);
+
+            final Role parent = newRole();
+            final Role child = trackRole(new RoleDataGen().parent(parent.getId()).nextPersisted());
+            final User user = trackUser(UserTestUtil.getUser("inheritperm" + uniq(), false, true));
+            roleAPI.addRoleToUser(parent, user);
+
+            final Permission read = new Permission();
+            read.setPermission(PermissionAPI.PERMISSION_READ);
+            read.setRoleId(child.getId());
+            read.setInode(site.getIdentifier());
+            permissionAPI.save(read, site, systemUser, false);
+
+            assertTrue(permissionAPI.doesUserHavePermission(site, PermissionAPI.PERMISSION_READ, user, false));
+
+            resource.updateRole(adminRequest(), new MockHttpResponse().response(), child.getId(),
+                    formFrom(roleAPI.loadRoleById(child.getId())).parentRoleId(null).build());
+
+            assertFalse(permissionAPI.doesUserHavePermission(site, PermissionAPI.PERMISSION_READ, user, false));
+        } finally {
+            Config.setProperty("cache.permissionshortlived.size", originalShortLivedSize);
+            CacheLocator.getPermissionCache().clearCache();
+        }
+    }
+
+    /**
+     * Given Scenario: A user holds role P and reads a site through a permission granted to C, a
+     * child of P. An admin moves C to the root; before that transaction commits, another request
+     * resolves the user's roles and the read permission from the committed (old) tree, caching
+     * P with C still among its children, the user's role list and the permission decision.
+     * Commit listeners run on a background thread, as they do by default outside tests.
+     * Expected Result: as soon as the move returns, the user no longer holds C and cannot read
+     * the site; what was cached from the old tree is dropped before the caller goes on.
+     */
+    @Test
+    public void testUpdateRole_moveWhileOldTreeIsCached_newTreeReadRightAfterCommit() throws Exception {
+        final int originalShortLivedSize = Config.getIntProperty("cache.permissionshortlived.size", 0);
+        // production default: ordinary commit listeners, including the cache wrapper's repeated
+        // removes, run on a background thread (the test config turns this off)
+        final boolean originalAsyncListeners = Config.getBooleanProperty("ASYNC_COMMIT_LISTENERS", true);
+        Config.setProperty("ASYNC_COMMIT_LISTENERS", true);
+        Config.setProperty("cache.permissionshortlived.size", 1000);
+        CacheLocator.getPermissionCache().clearCache();
+        try {
+            final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+            final User systemUser = APILocator.getUserAPI().getSystemUser();
+            final Host site = new SiteDataGen().nextPersisted();
+            createdSites.add(site);
+            permissionAPI.permissionIndividually(site.getParentPermissionable(), site, systemUser);
+
+            final Role parent = newRole();
+            final Role child = trackRole(new RoleDataGen().parent(parent.getId()).nextPersisted());
+            final User user = trackUser(UserTestUtil.getUser("inheritrace" + uniq(), false, true));
+            roleAPI.addRoleToUser(parent, user);
+
+            final Permission read = new Permission();
+            read.setPermission(PermissionAPI.PERMISSION_READ);
+            read.setRoleId(child.getId());
+            read.setInode(site.getIdentifier());
+            permissionAPI.save(read, site, systemUser, false);
+            assertTrue(roleAPI.doesUserHaveRole(user, child));
+
+            final AtomicReference<Throwable> otherRequestFailure = new AtomicReference<>();
+            LocalTransaction.wrapReturn(() -> {
+                resource.updateRole(adminRequest(), new MockHttpResponse().response(), child.getId(),
+                        formFrom(roleAPI.loadRoleById(child.getId())).parentRoleId(null).build());
+                // another request, on its own connection, still sees the committed old tree
+                final Thread otherRequest = new Thread(() -> {
+                    try {
+                        assertTrue(roleAPI.doesUserHaveRole(user, child));
+                        assertTrue(permissionAPI.doesUserHavePermission(
+                                site, PermissionAPI.PERMISSION_READ, user, false));
+                    } catch (final Throwable e) {
+                        otherRequestFailure.set(e);
+                    } finally {
+                        DbConnectionFactory.closeSilently();
+                    }
+                });
+                otherRequest.start();
+                otherRequest.join();
+                return null;
+            });
+            if (otherRequestFailure.get() != null) {
+                throw new AssertionError("the other request did not read the old tree",
+                        otherRequestFailure.get());
+            }
+
+            assertFalse(roleAPI.doesUserHaveRole(user, roleAPI.loadRoleById(child.getId())));
+            assertFalse(permissionAPI.doesUserHavePermission(site, PermissionAPI.PERMISSION_READ, user, false));
+        } finally {
+            Config.setProperty("ASYNC_COMMIT_LISTENERS", originalAsyncListeners);
+            Config.setProperty("cache.permissionshortlived.size", originalShortLivedSize);
+            CacheLocator.getPermissionCache().clearCache();
+        }
+    }
+
+    /**
+     * Given Scenario: A user holds role P and has already had its roles resolved (and cached).
+     * An admin creates a new role under P.
+     * Expected Result: the user holds the new role through P right away.
+     */
+    @Test
+    public void testAddNewRole_underHeldRole_userInheritsImmediately() throws Exception {
+        final Role parent = newRole();
+        final User user = trackUser(UserTestUtil.getUser("inheritnew" + uniq(), false, true));
+        roleAPI.addRoleToUser(parent, user);
+        assertTrue(roleAPI.doesUserHaveRole(user, parent));
+
+        final RoleForm form = new RoleForm.Builder()
+                .roleName("inherited-role-" + uniq())
+                .roleKey("inherited-key-" + uniq())
+                .parentRoleId(parent.getId())
+                .build();
+        final Response restResponse = resource.addNewRole(
+                adminRequest(), new MockHttpResponse().response(), form);
+        final String newRoleId = (String) ((RoleResponseEntityView) restResponse.getEntity())
+                .getEntity().get("id");
+        trackRole(roleAPI.loadRoleById(newRoleId));
+
+        assertTrue(roleAPI.doesUserHaveRole(user, roleAPI.loadRoleById(newRoleId)));
+    }
+
+    // ==================== create, update and delete: refused callers and duplicates ====================
+
+    /**
+     * Callers without the CMS admin role: a backend user with only the Users tool, one with only
+     * the Roles tool, one with neither, and an anonymous caller.
+     */
+    private static List<HttpServletRequest> callersWithoutAdmin() throws Exception {
+        return List.of(
+                requestFor(backendUserWithOnlyPortlet("users")),
+                requestFor(backendUserWithOnlyPortlet("roles")),
+                requestFor(limitedUser),
+                anonymousRequest());
+    }
+
+    /** Fails if a role with the key exists; a missing key loads as null or as an empty role. */
+    private static void assertNoRoleWithKey(final String key) throws Exception {
+        final Role found = roleAPI.loadRoleByKey(key);
+        assertTrue("no role should have key " + key, found == null || !UtilMethods.isSet(found.getId()));
+    }
+
+    /**
+     * Method to test: {@link RoleResource#addNewRole(HttpServletRequest, HttpServletResponse, RoleForm)}
+     * Given Scenario: Each caller without the CMS admin role tries to create a role.
+     * Expected Result: every call is refused and no role with the submitted key exists.
+     */
+    @Test
+    public void testAddNewRole_callersWithoutAdmin_refused() throws Exception {
+        for (final HttpServletRequest caller : callersWithoutAdmin()) {
+            final String key = "refused-create-key-" + uniq();
+            final RoleForm form = new RoleForm.Builder()
+                    .roleName("refused-create-" + uniq())
+                    .roleKey(key)
+                    .build();
+            try {
+                resource.addNewRole(caller, new MockHttpResponse().response(), form);
+                fail("create should have been refused");
+            } catch (final DotSecurityException | com.dotcms.rest.exception.SecurityException e) {
+                // expected
+            }
+            assertNoRoleWithKey(key);
+        }
+    }
+
+    /**
+     * Method to test: {@link RoleResource#updateRole(HttpServletRequest, HttpServletResponse, String, RoleForm)}
+     * Given Scenario: Each caller without the CMS admin role tries to rename a role and move it
+     * under another parent.
+     * Expected Result: every call is refused; the role keeps its name and its parent.
+     */
+    @Test
+    public void testUpdateRole_callersWithoutAdmin_refused() throws Exception {
+        final Role role = newRole();
+        final Role otherParent = newRole();
+        final String originalName = role.getName();
+        final String originalParent = roleAPI.loadRoleById(role.getId()).getParent();
+
+        for (final HttpServletRequest caller : callersWithoutAdmin()) {
+            final RoleForm form = formFrom(role)
+                    .roleName("refused-update-" + uniq())
+                    .parentRoleId(otherParent.getId())
+                    .build();
+            try {
+                resource.updateRole(caller, new MockHttpResponse().response(), role.getId(), form);
+                fail("update should have been refused");
+            } catch (final DotSecurityException | com.dotcms.rest.exception.SecurityException e) {
+                // expected
+            }
+            final Role reloaded = roleAPI.loadRoleById(role.getId());
+            assertEquals(originalName, reloaded.getName());
+            assertEquals(originalParent, reloaded.getParent());
+        }
+    }
+
+    /**
+     * Method to test: {@link RoleResource#deleteRole(HttpServletRequest, HttpServletResponse, String)}
+     * Given Scenario: Each caller without the CMS admin role tries to delete a role.
+     * Expected Result: every call is refused and the role still exists.
+     */
+    @Test
+    public void testDeleteRole_callersWithoutAdmin_refused() throws Exception {
+        final Role role = newRole();
+
+        for (final HttpServletRequest caller : callersWithoutAdmin()) {
+            try {
+                resource.deleteRole(caller, new MockHttpResponse().response(), role.getId());
+                fail("delete should have been refused");
+            } catch (final DotSecurityException | com.dotcms.rest.exception.SecurityException e) {
+                // expected
+            }
+            assertNotNull(roleAPI.loadRoleById(role.getId()));
+        }
+    }
+
+    /**
+     * Method to test: {@link RoleResource#addNewRole(HttpServletRequest, HttpServletResponse, RoleForm)}
+     * Given Scenario: An admin creates a role with a key another role already uses.
+     * Expected Result: 409 with the same message an update gives; the key still belongs to the
+     * existing role.
+     */
+    @Test
+    public void testAddNewRole_duplicateKey_conflict() throws Exception {
+        final Role existing = trackRole(new RoleDataGen().key("taken-key-" + uniq()).nextPersisted());
+        final RoleForm form = new RoleForm.Builder()
+                .roleName("dup-key-create-" + uniq())
+                .roleKey(existing.getRoleKey())
+                .build();
+
+        try {
+            resource.addNewRole(adminRequest(), new MockHttpResponse().response(), form);
+            fail("Should have thrown ConflictException for a duplicate role key");
+        } catch (final ConflictException e) {
+            assertEquals(409, new DotConflictExceptionMapper().toResponse(e).getStatus());
+            assertEquals("A role with key '" + existing.getRoleKey() + "' already exists", e.getMessage());
+        }
+        assertEquals(existing.getId(), roleAPI.loadRoleByKey(existing.getRoleKey()).getId());
+    }
+
+    /**
+     * Method to test: {@link RoleResource#addNewRole(HttpServletRequest, HttpServletResponse, RoleForm)}
+     * Given Scenario: An admin creates a role under a parent that already has a child of that name.
+     * Expected Result: 409 with the same message an update gives; no role with the new key exists.
+     */
+    @Test
+    public void testAddNewRole_duplicateNameUnderSameParent_conflict() throws Exception {
+        final Role parent = newRole();
+        final Role existing = trackRole(new RoleDataGen().parent(parent.getId()).nextPersisted());
+        final String key = "dup-name-create-key-" + uniq();
+        final RoleForm form = new RoleForm.Builder()
+                .roleName(existing.getName())
+                .roleKey(key)
+                .parentRoleId(parent.getId())
+                .build();
+
+        try {
+            resource.addNewRole(adminRequest(), new MockHttpResponse().response(), form);
+            fail("Should have thrown ConflictException for a duplicate role name");
+        } catch (final ConflictException e) {
+            assertEquals(409, new DotConflictExceptionMapper().toResponse(e).getStatus());
+            assertEquals("A role named '" + existing.getName() + "' already exists under the same parent",
+                    e.getMessage());
+        }
+        assertNoRoleWithKey(key);
     }
 
     // ==================== POST /v1/roles/{roleId}/users/{userId} — #36937 ====================
