@@ -1,6 +1,7 @@
 package com.dotcms.rest;
 
 import com.dotcms.company.CompanyAPI;
+import com.dotcms.company.CompanyLogoPath;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
@@ -9,6 +10,7 @@ import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.api.v1.company.CompanyBasicInfoForm;
 import com.dotcms.rest.api.v1.system.ConfigurationHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -55,23 +57,26 @@ public class CMSConfigResource {
     private final WebResource webResource = new WebResource();
 
     /**
-     * Updates some given basic information to the current company, this method will be call it from the CMS Config portlet
+     * Saves the basic information and branding of the default company. Called by the Basic Config
+     * tab of the Configuration portlet.
      *
-     * @param request
-     * @param user
-     * @param password
-     * @param portalURL
-     * @param mx
-     * @param emailAddress
-     * @param backgroundColor this one is the Background Color
-     * @param primaryColor this one is the Primary Color
-     * @param secondaryColor this one is the Secondary Color
-     * @param homeURL
-     * @param loginLogo dotAsset Path of the logo showed at the login screen
-     * @paramnavLogo dotAsset Path of the logo showed at the nav bar
-     * @return
-     * @throws IOException
-     * @throws JSONException
+     * @param request the current request
+     * @param response the current response
+     * @param user user id for the legacy path-based login, usually empty
+     * @param password password for the legacy path-based login, usually empty
+     * @param portalURL the portal URL
+     * @param mx the mail domain
+     * @param emailAddress the system sender address
+     * @param backgroundColor the background color: a hex color, or the stored value unchanged
+     * @param primaryColor the primary color: a hex color, or the stored value unchanged
+     * @param secondaryColor the secondary color: a hex color, or the stored value unchanged
+     * @param homeURL the login background image: a dotAsset path, a bundled background, or the stored value unchanged
+     * @param loginLogo the login screen logo; when set it must be a dotAsset path (see
+     *                  {@link CompanyLogoPath#isValid(String)})
+     * @param navLogo the navigation bar logo; same rule as {@code loginLogo}, empty clears it
+     * @return 200 with a success message, or 400 when a parameter is not valid
+     * @throws IOException if the response cannot be written
+     * @throws JSONException if the response body cannot be built
      */
     @POST
     @Path("/saveCompanyBasicInfo")
@@ -116,6 +121,28 @@ public class CMSConfigResource {
         //Validate the parameters
         if ( !responseResource.validate( responseMessage, "portalURL", "emailAddress", "size","type","street" ) ) {
             return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
+        }
+        final Company storedCompany = APILocator.getCompanyAPI().getDefaultCompany();
+        if ( !isAcceptedColor( backgroundColor, storedCompany.getSize() )
+                || !isAcceptedColor( primaryColor, storedCompany.getType() )
+                || !isAcceptedColor( secondaryColor, storedCompany.getStreet() ) ) {
+            return responseResource.responseError(
+                    "Colors must be hex colors (e.g. #FF0000)", HttpStatus.SC_BAD_REQUEST );
+        }
+        if ( !CompanyBasicInfoForm.isAcceptedBackgroundImage( homeURL )
+                && !homeURL.equals( storedCompany.getHomeURL() ) ) {
+            return responseResource.responseError(
+                    "The background image must be a dotAsset path starting with /dA/, one of the bundled backgrounds "
+                            + CompanyBasicInfoForm.BACKGROUND_PRESETS_TEXT + ", or the background currently saved",
+                    HttpStatus.SC_BAD_REQUEST );
+        }
+        if ( UtilMethods.isSet( loginLogo ) && !CompanyLogoPath.isValid( loginLogo ) ) {
+            return responseResource.responseError(
+                    "The login screen logo must be a dotAsset path starting with /dA/", HttpStatus.SC_BAD_REQUEST );
+        }
+        if ( UtilMethods.isSet( navLogo ) && !CompanyLogoPath.isValid( navLogo ) ) {
+            return responseResource.responseError(
+                    "The navigation bar logo must be a dotAsset path starting with /dA/", HttpStatus.SC_BAD_REQUEST );
         }
 
         try {
@@ -164,6 +191,18 @@ public class CMSConfigResource {
         }
 
         return responseResource.response( responseMessage.toString() );
+    }
+
+    /**
+     * Whether a color may be saved: a hex color, or the value already stored. The Basic Config
+     * tab sends back colors it does not show, such as the background color, as they are.
+     *
+     * @param color the submitted color
+     * @param storedColor the color currently stored on the company
+     * @return {@code true} if the color may be saved
+     */
+    private static boolean isAcceptedColor(final String color, final String storedColor) {
+        return CompanyBasicInfoForm.isHexColor(color) || (color != null && color.equals(storedColor));
     }
 
     /**

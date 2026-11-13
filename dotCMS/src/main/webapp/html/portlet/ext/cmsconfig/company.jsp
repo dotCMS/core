@@ -5,14 +5,18 @@
 <% request.setAttribute("requiredPortletAccess", PortletID.CONFIGURATION.toString()); %>
 <%@ include file="/html/common/uservalidation.jsp"%>
 <%@page import="com.dotcms.rest.api.v1.system.ConfigurationHelper"%>
+<%@page import="com.dotcms.company.CompanyLogoPath"%>
+<%@page import="org.owasp.encoder.Encode"%>
+<%@page import="com.dotcms.rest.api.v1.company.CompanyBasicInfoForm"%>
+<%@page import="java.util.Objects"%>
 
 <%
    final boolean hasAdminRole = user.isAdmin();
-   final String screenLogo = company.getCity();
-   final boolean screenLogoIsSet = screenLogo.startsWith("/dA");
-   final String navLogo = company.getState();
+   final String screenLogo = CompanyLogoPath.forwardPath(company.getCity()).orElse("");
+   final boolean screenLogoIsSet = UtilMethods.isSet(screenLogo);
+   final String navLogo = CompanyLogoPath.forwardPath(company.getState()).orElse("");
 
-   final boolean navLogoIsSet = UtilMethods.isSet(navLogo) && navLogo.startsWith("/dA");
+   final boolean navLogoIsSet = UtilMethods.isSet(navLogo);
    
    final boolean enterprise = (LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level);
 %>
@@ -56,10 +60,10 @@
 	}
 
 	dojo.addOnLoad(function () {
-		bgColorStyler("<%= company.getSize() %>");
-		PrimaryColorStyler("<%= company.getType()%>");
-		SecondaryColorStyler("<%= company.getStreet()%>");
-		imgSwap("<%= company.getHomeURL() %>");
+		bgColorStyler("<%= Encode.forJavaScript(company.getSize()) %>");
+		PrimaryColorStyler("<%= Encode.forJavaScript(company.getType()) %>");
+		SecondaryColorStyler("<%= Encode.forJavaScript(company.getStreet()) %>");
+		imgSwap("<%= Encode.forJavaScript(Objects.toString(CompanyBasicInfoForm.backgroundImageToShow(company.getHomeURL()), "")) %>");
 	});
 
 	function regenerateKeyProxy() {
@@ -356,13 +360,13 @@
             <div class="form-horizontal">
                <dl>
                   <dt><%= LanguageUtil.get(pageContext, "portal-url") %></dt>
-                  <dd><input dojoType="dijit.form.TextBox" id="companyPortalUrl" name="companyPortalUrl" size="25" type="text" value="<%= company.getPortalURL() %>" style="width: 250px"></dd>
+                  <dd><input dojoType="dijit.form.TextBox" id="companyPortalUrl" name="companyPortalUrl" size="25" type="text" value="<%= Encode.forHtmlAttribute(company.getPortalURL()) %>" style="width: 250px"></dd>
                </dl>
                <dl>
                   <dt><%= LanguageUtil.get(pageContext, "email-address") %></dt>
                   <dd>
                      <div class="inline-form">
-                        <input dojoType="dijit.form.TextBox" id="companyEmailAddress" name="companyEmailAddress" placeholder="dotCMS Website <website@dotcms.com>" size="20" type="text" value="<%= company.getEmailAddress() %>" style="width: 250px">
+                        <input dojoType="dijit.form.TextBox" id="companyEmailAddress" name="companyEmailAddress" placeholder="dotCMS Website <website@dotcms.com>" size="20" type="text" value="<%= Encode.forHtmlAttribute(company.getEmailAddress()) %>" style="width: 250px">
                         <button id="companyEmailButton" dojoType="dijit.form.Button" type="button" iconClass="saveIcon" onclick="validateEmail()" >
                            <%= LanguageUtil.get(pageContext, "email-address-validate") %>
                         </button>
@@ -380,7 +384,7 @@
                   <dd style="position:relative;">
                      <div id="bgColorBlock" style="position:absolute;left:75px;top: 7px;width:18px;height:18px;"></div>
                      <div class="inline-form">
-                        <input id="bgColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text" value="<%= company.getSize() %>" style="width: 250px">
+                        <input id="bgColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text" value="<%= Encode.forHtmlAttribute(company.getSize()) %>" style="width: 250px">
                         <button id="bgButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
                            <%= LanguageUtil.get(pageContext, "color.picker") %>
                            <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
@@ -395,7 +399,7 @@
                   <dd style="position:relative;">
                      <div id="pColorBlock" style="position:absolute;left:75px;top: 7px;width:18px;height:18px;"></div>
                      <div class="inline-form">
-                        <input id="pColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text" value="<%= company.getType() %>" style="width: 250px">
+                        <input id="pColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text" value="<%= Encode.forHtmlAttribute(company.getType()) %>" style="width: 250px">
                         <button id="pButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
                            <%= LanguageUtil.get(pageContext, "color.picker") %>
                            <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
@@ -410,7 +414,7 @@
                   <dd style="position:relative;">
                      <div id="sColorBlock" style="position:absolute;left:75px;top: 7px;width:18px;height:18px;"></div>
                      <div class="inline-form">
-                        <input id="sColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text" value="<%= company.getStreet() %>" style="width: 250px">
+                        <input id="sColor" dojoType="dijit.form.TextBox" name="companySize" size="5" type="text" value="<%= Encode.forHtmlAttribute(company.getStreet()) %>" style="width: 250px">
                         <button id="sButton" dojoType="dijit.form.Button" type="button" iconClass="colorIcon">
                            <%= LanguageUtil.get(pageContext, "color.picker") %>
                            <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
@@ -424,7 +428,7 @@
                   <dt><%= LanguageUtil.get(pageContext, "background.image") %></dt>
                   <dd>
                      <div class="inline-form">
-                        <input id="bgURL" dojoType="dijit.form.TextBox" name="companyHomeUrl" size="25" type="text" value="<%= company.getHomeURL() %>" style="width: 250px">
+                        <input id="bgURL" dojoType="dijit.form.TextBox" name="companyHomeUrl" size="25" type="text" value="<%= Encode.forHtmlAttribute(Objects.toString(CompanyBasicInfoForm.backgroundImageToShow(company.getHomeURL()), "")) %>" style="width: 250px">
                         <button id="buttonTwo" dojoType="dijit.form.Button" type="button" iconClass="bgIcon">
                            <%= LanguageUtil.get(pageContext, "backgrounds") %>
                            <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
@@ -444,7 +448,7 @@
                   <div id="bgPickerLive" dojoType="dojox.widget.ColorPicker"
                      webSafe="false"
                      liveUpdate="true"
-                     value="<%= company.getSize() %>"
+                     value="<%= Encode.forHtmlAttribute(company.getSize()) %>"
                      onChange="bgColorStyler(arguments[0])">
                   </div>
                </div>
@@ -452,7 +456,7 @@
                   <div id="pPickerLive" dojoType="dojox.widget.ColorPicker"
                      webSafe="false"
                      liveUpdate="true"
-                     value="<%= company.getType() %>"
+                     value="<%= Encode.forHtmlAttribute(company.getType()) %>"
                      onChange="PrimaryColorStyler(arguments[0])">
                   </div>
                </div>
@@ -460,7 +464,7 @@
                   <div id="sPickerLive" dojoType="dojox.widget.ColorPicker"
                      webSafe="false"
                      liveUpdate="true"
-                     value="<%= company.getStreet() %>"
+                     value="<%= Encode.forHtmlAttribute(company.getStreet()) %>"
                      onChange="SecondaryColorStyler(arguments[0])">
                   </div>
                </div>
@@ -514,18 +518,17 @@
             <div class="logo-upload__container">
                <div class="form__group">
                <h3 class="drop-zone__label"><%= LanguageUtil.get(pageContext, "loginlogo.label") %></h3>
-               <div class="logo">
+               <%-- Without a stored dotAsset logo, start as after removing it: upload area shown. --%>
+               <div class="logo" <%= ( screenLogoIsSet ? "" : "style='display: none;'" ) %>>
                   <button class="logo__delete">&times;</button>
                   <div class="logo__container">
                      <% if(screenLogoIsSet) { %>
-                        <img class="logo__image" border="1" hspace="0" src="<%= screenLogo %>" vspace="0" />
-                     <% } else { %>
-                        <img class="logo__image" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0" />
+                        <img class="logo__image" border="1" hspace="0" src="<%= Encode.forHtmlAttribute(screenLogo) %>" vspace="0" />
                      <% } %>
                   </div>
                </div>
-               <dot-asset-drop-zone id="dot-asset-drop-zone-main" style="display: none;" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
-               <input type="hidden" name="loginScreenLogoInput" id="loginScreenLogoInput" data-hidden="logo-input" value="<%= ( screenLogoIsSet ? screenLogo : "" ) %>">
+               <dot-asset-drop-zone id="dot-asset-drop-zone-main" <%= ( screenLogoIsSet ? "style='display: none;'" : "style='display: block;'" ) %> drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
+               <input type="hidden" name="loginScreenLogoInput" id="loginScreenLogoInput" data-hidden="logo-input" value="<%= ( screenLogoIsSet ? Encode.forHtmlAttribute(screenLogo) : "" ) %>">
                <p class="hint"><%= LanguageUtil.get(pageContext, "login-logo.hint") %></p>
                </div>
                <br />
@@ -545,7 +548,7 @@
                            if(navLogoIsSet)  {
                         %>            
                           <div class="logo__container">
-                              <img class="logo__image" src="<%= navLogo %>"/>
+                              <img class="logo__image" src="<%= Encode.forHtmlAttribute(navLogo) %>"/>
                            </div>
                         <%
                            } else {
@@ -556,7 +559,7 @@
                         %>
                      </div>
                      <dot-asset-drop-zone id="dot-asset-drop-zone-navbar" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true" <%= ( navLogoIsSet ? "style='display: none;'" : "style='display: block;'" ) %>></dot-asset-drop-zone>
-                     <input type="hidden" name="topNavLogoInput" id="topNavLogoInput" data-hidden="logo-input" value="<%= ( navLogoIsSet ? navLogo : "" ) %>">	
+                     <input type="hidden" name="topNavLogoInput" id="topNavLogoInput" data-hidden="logo-input" value="<%= ( navLogoIsSet ? Encode.forHtmlAttribute(navLogo) : "" ) %>">	
                      <p class="hint"><%= LanguageUtil.get(pageContext, "navlogo.hint") %></p>
                   </div>
                </div>
@@ -641,7 +644,7 @@
             <dl>
                <dt><%= LanguageUtil.get(pageContext, "authentication-type") %></dt>
                <dd>
-                  <select dojoType="dijit.form.FilteringSelect"  value="<%= company.getAuthType()%>"  id="companyAuthType" name="companyAuthType" style="width: 250px">
+                  <select dojoType="dijit.form.FilteringSelect"  value="<%= Encode.forHtmlAttribute(company.getAuthType()) %>"  id="companyAuthType" name="companyAuthType" style="width: 250px">
                      <option value="<%= Company.AUTH_TYPE_EA %>"><%= LanguageUtil.get(pageContext, "email-address") %></option>
                      <option value="<%= Company.AUTH_TYPE_ID %>"><%= LanguageUtil.get(pageContext, "user-id") %></option>
                   </select>

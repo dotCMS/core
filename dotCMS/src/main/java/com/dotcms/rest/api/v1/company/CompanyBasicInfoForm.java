@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.company;
 
+import com.dotcms.company.CompanyLogoPath;
 import com.dotcms.rest.api.Validated;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -30,6 +31,10 @@ public class CompanyBasicInfoForm extends Validated {
     /**
      * Accepts #RGB, #RGBA, #RRGGBB, #RRGGBBAA.
      */
+    private static final Pattern DISPLAYABLE_COLOR_PATTERN = Pattern.compile(
+            "#[0-9A-Fa-f]{3,8}"
+                    + "|[A-Za-z]+"
+                    + "|(?i:rgba?|hsla?)\\(\\s*[0-9.]+%?\\s*(?:,\\s*[0-9.]+%?\\s*){2,3}\\)");
     private static final Pattern HEX_COLOR_PATTERN =
             Pattern.compile("^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$");
 
@@ -41,7 +46,7 @@ public class CompanyBasicInfoForm extends Validated {
     /**
      * The bundled login backgrounds, as written in messages and API docs.
      */
-    static final String BACKGROUND_PRESETS_TEXT = "/html/images/backgrounds/bg-1.jpg to bg-"
+    public static final String BACKGROUND_PRESETS_TEXT = "/html/images/backgrounds/bg-1.jpg to bg-"
             + LAST_BACKGROUND_PRESET + ".jpg";
 
     /**
@@ -194,27 +199,59 @@ public class CompanyBasicInfoForm extends Validated {
         // Logo paths must be dotAsset references (matches the read-side filter in
         // CompanyConfigHelper.toView). backgroundImage follows isAcceptedBackgroundImage, applied
         // in CompanyConfigHelper.saveBasicInfo because it also accepts the stored value.
-        if (UtilMethods.isSet(loginScreenLogo) && !loginScreenLogo.startsWith("/dA")) {
+        if (UtilMethods.isSet(loginScreenLogo) && !CompanyLogoPath.isValid(loginScreenLogo)) {
             throw new BadRequestException(
-                    "loginScreenLogo must be a dotAsset path starting with /dA");
+                    "loginScreenLogo must be a dotAsset path starting with /dA/");
         }
-        if (UtilMethods.isSet(navBarLogo) && !navBarLogo.startsWith("/dA")) {
+        if (UtilMethods.isSet(navBarLogo) && !CompanyLogoPath.isValid(navBarLogo)) {
             throw new BadRequestException(
-                    "navBarLogo must be a dotAsset path starting with /dA");
+                    "navBarLogo must be a dotAsset path starting with /dA/");
         }
     }
 
     /**
      * Whether a login background may be saved without comparing it to the stored value: empty,
-     * a dotAsset path ({@code /dA/...} without {@code ..}), or one of the bundled backgrounds.
+     * a dotAsset path ({@link CompanyLogoPath#isValid(String)}), or one of the bundled backgrounds.
      *
      * @param backgroundImage the value sent by the client
      * @return {@code true} if the value is accepted on its own
      */
-    static boolean isAcceptedBackgroundImage(final String backgroundImage) {
+    public static boolean isAcceptedBackgroundImage(final String backgroundImage) {
         return !UtilMethods.isSet(backgroundImage)
-                || (backgroundImage.startsWith("/dA/") && !backgroundImage.contains(".."))
+                || CompanyLogoPath.isValid(backgroundImage)
                 || BACKGROUND_PRESETS.contains(backgroundImage);
+    }
+
+    /**
+     * The login background to show to clients and pages: a dotAsset background in its canonical
+     * form ({@link CompanyLogoPath#forwardPath(String)}), any other stored background as it is
+     * unless it has a dot segment ({@link CompanyLogoPath#hasDotSegment(String)}).
+     *
+     * @param storedBackground the value stored in {@code company.homeURL}, may be {@code null}
+     * @return the background to show, or {@code null} when none is set, the value is the
+     *         fresh-install {@code localhost}, a dotAsset path that is not valid, or a path with
+     *         a dot segment
+     */
+    public static String backgroundImageToShow(final String storedBackground) {
+        if (!UtilMethods.isSet(storedBackground) || "localhost".equals(storedBackground)) {
+            return null;
+        }
+        if (storedBackground.startsWith("/dA")) {
+            return CompanyLogoPath.forwardPath(storedBackground).orElse(null);
+        }
+        return CompanyLogoPath.hasDotSegment(storedBackground) ? null : storedBackground;
+    }
+
+    /**
+     * Whether a stored color may be written into a page as it is: a hex color ({@code #} and 3 to 8
+     * hex digits), a color name made of letters only, or an {@code rgb()}, {@code rgba()},
+     * {@code hsl()} or {@code hsla()} value holding numbers.
+     *
+     * @param color the stored color, may be {@code null}
+     * @return {@code true} if the color may be written as it is
+     */
+    public static boolean isDisplayableColor(final String color) {
+        return UtilMethods.isSet(color) && DISPLAYABLE_COLOR_PATTERN.matcher(color).matches();
     }
 
     private static void validateMaxLength(final String field, final String value) {
@@ -224,8 +261,18 @@ public class CompanyBasicInfoForm extends Validated {
         }
     }
 
+    /**
+     * Tells whether a value is a hex color: {@code #} followed by 3, 4, 6 or 8 hex digits.
+     *
+     * @param value the value to check, may be {@code null}
+     * @return {@code true} if the value is a hex color
+     */
+    public static boolean isHexColor(final String value) {
+        return value != null && HEX_COLOR_PATTERN.matcher(value).matches();
+    }
+
     private static void validateHexColor(final String field, final String value) {
-        if (!HEX_COLOR_PATTERN.matcher(value).matches()) {
+        if (!isHexColor(value)) {
             throw new BadRequestException(
                     field + " must be a valid hex color (e.g. #FF0000)");
         }

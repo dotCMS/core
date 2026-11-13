@@ -204,9 +204,14 @@ THIS FILE AND ITS INCLUDES
 
   </style>
 
-	<% String dotBackImage = (!UtilMethods.isSet(company.getHomeURL()) || "localhost".equals(company.getHomeURL())) ? "/html/images/backgrounds/bg-3.jpg" : company.getHomeURL();%>
+	<%
+		// The color is written only when it holds nothing but color characters; the image is encoded for a CSS url.
+		final String dotBackColor = com.dotcms.rest.api.v1.company.CompanyBasicInfoForm.isDisplayableColor(company.getSize()) ? company.getSize() : "transparent";
+		final String dotBackImageToShow = com.dotcms.rest.api.v1.company.CompanyBasicInfoForm.backgroundImageToShow(company.getHomeURL());
+		final String dotBackImage = dotBackImageToShow != null ? dotBackImageToShow : "/html/images/backgrounds/bg-3.jpg";
+	%>
 	<style>
-		.imageBG{background-color:<%= company.getSize() %>;background-image:url(<%= dotBackImage %>);background-repeat:no-repeat;background-position:top center;background-size:100% auto;height:75px;position:absolute;top:0;left:0;width:100%;z-index:-2;}
+		.imageBG{background-color:<%= dotBackColor %>;background-image:url('<%= org.owasp.encoder.Encode.forCssUrl(dotBackImage) %>');background-repeat:no-repeat;background-position:top center;background-size:100% auto;height:75px;position:absolute;top:0;left:0;width:100%;z-index:-2;}
 	</style>
 
 

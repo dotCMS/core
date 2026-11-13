@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.company;
 
 import com.dotcms.company.CompanyAPI;
+import com.dotcms.company.CompanyLogoPath;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -341,7 +342,11 @@ public class CompanyConfigHelper {
     }
 
     /**
-     * Maps a Liferay Company model to a CompanyConfigView with semantic field names.
+     * Maps a Liferay Company model to a CompanyConfigView with semantic field names. A stored
+     * logo is returned only when it is a dotAsset path, as {@link CompanyLogoPath#forwardPath(String)}.
+     *
+     * @param company the default company
+     * @return the configuration view of the company
      */
     private CompanyConfigView toView(final Company company) {
 
@@ -374,17 +379,12 @@ public class CompanyConfigHelper {
                         UtilMethods.isSet(company.getSize()) ? company.getSize() : null)
                 // Any stored background is returned so a client can save it back unchanged;
                 // "localhost" is the fresh-install value that means no background.
-                .backgroundImage(
-                        UtilMethods.isSet(company.getHomeURL())
-                                && !"localhost".equals(company.getHomeURL())
-                                ? company.getHomeURL() : null)
+                .backgroundImage(CompanyBasicInfoForm.backgroundImageToShow(company.getHomeURL()))
                 .loginScreenLogo(
-                        UtilMethods.isSet(loginLogo) && loginLogo.startsWith("/dA")
-                                ? loginLogo : null)
+                        CompanyLogoPath.forwardPath(loginLogo).orElse(null))
                 .navBarLogo(
                         LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level
-                                && UtilMethods.isSet(navLogo) && navLogo.startsWith("/dA")
-                                ? navLogo : null)
+                                ? CompanyLogoPath.forwardPath(navLogo).orElse(null) : null)
                 .authType(AuthType.fromStringOrDefault(company.getAuthType()))
                 .keyDigest(company.getKeyDigest())
                 .languageId(languageId)
