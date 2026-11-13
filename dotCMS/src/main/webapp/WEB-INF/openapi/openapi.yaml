@@ -12790,10 +12790,13 @@ paths:
       tags:
       - Administration
     post:
-      description: "Creates a section from a name and an icon. The new section is\
-        \ placed after every existing section and holds no tools. The name is trimmed,\
-        \ must be present, at most 255 characters and unique among sections; the icon\
-        \ is at most 255 characters and may be empty. Requires a CMS Administrator\
+      description: "Creates a section from a name and an icon. Unless tabOrder is\
+        \ sent, the new section is placed after every existing section; unless portletIds\
+        \ is sent, it holds no tools. The section, its position and its tools are\
+        \ saved in one transaction, so a failed create leaves nothing behind. The\
+        \ name is trimmed, must be present, at most 255 characters and unique among\
+        \ sections; the icon is at most 255 characters and may be empty; the tool\
+        \ ids follow the same rules as setting a section's tools. Requires a CMS Administrator\
         \ who also holds the tools portlet."
       operationId: createNavigationSection
       requestBody:
@@ -12801,7 +12804,8 @@ paths:
           application/json:
             schema:
               $ref: "#/components/schemas/SectionForm"
-        description: Name and icon of the new section
+        description: "Name and icon of the new section, optionally its position and\
+          \ tools"
         required: true
       responses:
         "200":
@@ -12813,8 +12817,8 @@ paths:
         "400":
           content:
             application/json: {}
-          description: "Bad request - blank or over-long name, over-long icon, or\
-            \ duplicate name"
+          description: "Bad request - blank or over-long name, over-long icon, duplicate\
+            \ name, or an unknown, repeated or disallowed tool id"
         "401":
           content:
             application/json: {}
@@ -12919,10 +12923,10 @@ paths:
       tags:
       - Administration
     put:
-      description: Changes a section's name and icon together; its position and its
-        tools are untouched. Same name and icon rules as create. Getting Started may
-        be renamed and re-iconed. Requires a CMS Administrator who also holds the
-        tools portlet.
+      description: "Changes a section's name and icon together; its position and its\
+        \ tools are untouched, and sending tabOrder or portletIds is refused. Same\
+        \ name and icon rules as create. Getting Started may be renamed and re-iconed.\
+        \ Requires a CMS Administrator who also holds the tools portlet."
       operationId: updateNavigationSection
       parameters:
       - description: Navigation section id
@@ -12948,8 +12952,8 @@ paths:
         "400":
           content:
             application/json: {}
-          description: "Bad request - blank or over-long name, over-long icon, or\
-            \ duplicate name"
+          description: "Bad request - blank or over-long name, over-long icon, duplicate\
+            \ name, or a position or tools sent"
         "401":
           content:
             application/json: {}
@@ -13515,8 +13519,9 @@ paths:
   /v1/maintenance/_sessions:
     delete:
       description: "Walks every active HTTP session tracked by SessionMonitor, skips\
-        \ the caller's own session, and invalidates the rest. Returns the count of\
-        \ invalidated sessions."
+        \ the caller's own session, and invalidates the rest. The login tokens of\
+        \ every user whose session was invalidated are invalidated as well, so those\
+        \ clients must log in again. Returns the count of invalidated sessions."
       operationId: killAllSessions
       responses:
         "200":
@@ -13564,10 +13569,12 @@ paths:
       - Maintenance
   /v1/maintenance/_sessions/{token}:
     delete:
-      description: Invalidates the session whose HMAC-obfuscated token is supplied.
-        The caller's own session cannot be invalidated this way. The CSRF secret must
-        have been issued by GET /v1/maintenance/_sessions within the last 15 minutes
-        — otherwise this endpoint returns 403 and the client must re-list to refresh.
+      description: "Invalidates the session whose HMAC-obfuscated token is supplied.\
+        \ The login tokens issued to the session's user are invalidated as well, so\
+        \ that user's clients must log in again. The caller's own session cannot be\
+        \ invalidated this way. The CSRF secret must have been issued by GET /v1/maintenance/_sessions\
+        \ within the last 15 minutes — otherwise this endpoint returns 403 and the\
+        \ client must re-list to refresh."
       operationId: killSession
       parameters:
       - description: HMAC-obfuscated session token returned by GET /_sessions
@@ -13586,7 +13593,9 @@ paths:
         "400":
           content:
             application/json: {}
-          description: Bad request - attempting to invalidate caller's own session
+          description: "Bad request - attempting to invalidate caller's own session,\
+            \ or the login tokens of the session's user could not be invalidated (the\
+            \ session is left untouched)"
         "401":
           content:
             application/json: {}
@@ -16637,6 +16646,11 @@ paths:
           content:
             application/json: {}
           description: Forbidden - admin permissions required
+        "409":
+          content:
+            application/json: {}
+          description: "Conflict - duplicate role key, or duplicate role name under\
+            \ the same parent"
       summary: Create new role
       tags:
       - Roles
@@ -17034,6 +17048,74 @@ paths:
           description: "Conflict - duplicate role key, or duplicate role name under\
             \ the same parent"
       summary: Update a role
+      tags:
+      - Roles
+  /v1/roles/{roleid}/_lock:
+    put:
+      description: Locks a role. A locked role cannot be updated or deleted until
+        it is unlocked. Locking a role that is already locked changes nothing.
+      operationId: lockRole
+      parameters:
+      - description: Id of the role to lock
+        in: path
+        name: roleid
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleDetailView"
+          description: Role locked
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin permissions required
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+      summary: Lock a role
+      tags:
+      - Roles
+  /v1/roles/{roleid}/_unlock:
+    put:
+      description: Unlocks a role so it can be updated and deleted again. Unlocking
+        a role that is not locked changes nothing.
+      operationId: unlockRole
+      parameters:
+      - description: Id of the role to unlock
+        in: path
+        name: roleid
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleDetailView"
+          description: Role unlocked
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin permissions required
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+      summary: Unlock a role
       tags:
       - Roles
   /v1/roles/{roleid}/rolehierarchyanduserroles:
@@ -39939,6 +40021,20 @@ components:
           type: string
           description: "Section name, unique among sections, at most 255 characters"
           example: Marketing
+        portletIds:
+          type: array
+          description: "Create only: tool (portlet) ids the section holds, in order;\
+            \ defaults to none"
+          items:
+            type: string
+            description: "Create only: tool (portlet) ids the section holds, in order;\
+              \ defaults to none"
+        tabOrder:
+          type: integer
+          format: int32
+          description: "Create only: position of the section in the navigation; defaults\
+            \ to after every existing section"
+          example: 3
       required:
       - name
     SectionOrderForm:

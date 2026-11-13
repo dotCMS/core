@@ -50,7 +50,6 @@ import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
 import com.liferay.util.servlet.SessionMessages;
 import java.net.URLDecoder;
-import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -138,28 +137,10 @@ public class EditLinkAction extends DotPortletAction implements DotPortletAction
 				_editWebAsset(req, res, config, form, user);
 
 			} catch (Exception ae) {
-				if (ae.getMessage().equals(WebKeys.EDIT_ASSET_EXCEPTION)) {
-
-					//The web asset edit threw an exception because it's
-					// locked so it should redirect back with message
-					java.util.Map<String,String[]> params = new java.util.HashMap<>();
-					params.put("struts_action",new String[] { "/ext/director/direct" });
-					params.put("cmd", new String[] { "editLink" });
-					params.put("link", new String[] { req.getParameter("inode") });
-					params.put("popup", new String[] { (req.getParameter("popup")!=null) ? req.getParameter("popup") : "" });
-					params.put("child", new String[] { (req.getParameter("child")!=null) ? req.getParameter("child") : "" });
-					params.put("browse", new String[] { (req.getParameter("browse")!=null) ? req.getParameter("browse") : "" });
-					params.put("page_width", new String[] { (req.getParameter("page_width")!=null) ? req.getParameter("page_width") : ""});
-
-					if (UtilMethods.isSet(referer)) {
-						params.put("referer", new String[] { URLEncoder.encode(referer, "UTF-8") });
-					}
-
-					String directorURL = com.dotmarketing.util.PortletURLUtil
-					.getActionURL(httpReq, WindowState.MAXIMIZED
-							.toString(), params);
-
-					_sendToReferral(req, res, directorURL);
+				if (WebKeys.EDIT_ASSET_EXCEPTION.equals(ae.getMessage()) && UtilMethods.isSet(referer)) {
+					// Locked by another user: the "locked" message is already in the session,
+					// so send the user back to the Site Browser, where it is shown
+					_sendToReferral(req, res, referer + "&p_p_state=" + WindowState.MAXIMIZED + "&p_p_id=site-browser&p_p_action=1");
 					return;
 				}
 				_handleException(ae, req);

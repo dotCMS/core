@@ -580,6 +580,32 @@ public class RoleAPITest extends IntegrationTestBase {
     }
 
     /**
+     * Testing {@code RoleFactoryImpl.findUserIdsForRole(Role, true)}: the users of a role
+     * include the users holding any role on its path up to the root, and nobody holding only
+     * a sibling role. The role ids on the path are looked up in one query.
+     */
+    @Test
+    public void test_findUserIdsForRole_inherited_returnsUsersOfRoleAndAncestors() throws Exception {
+
+        final long now = System.currentTimeMillis();
+        final Role parent = new RoleDataGen().name("inhParent_" + now).nextPersisted();
+        final Role child = new RoleDataGen().name("inhChild_" + now).parent(parent.getId())
+                .nextPersisted();
+        final Role sibling = new RoleDataGen().name("inhSibling_" + now).parent(parent.getId())
+                .nextPersisted();
+
+        final User parentUser = new UserDataGen().roles(parent).nextPersisted();
+        final User childUser = new UserDataGen().roles(child).nextPersisted();
+        final User siblingUser = new UserDataGen().roles(sibling).nextPersisted();
+
+        final List<String> userIds = new RoleFactoryImpl().findUserIdsForRole(child, true);
+
+        assertTrue(userIds.contains(parentUser.getUserId()));
+        assertTrue(userIds.contains(childUser.getUserId()));
+        assertFalse(userIds.contains(siblingUser.getUserId()));
+    }
+
+    /**
      * Issue #37303 AC-004: the DBFQN cascade in {@code RoleFactoryImpl.save} must visit each
      * descendant exactly once per reparent (a subtree of N roles ⇒ N updates, not 4N).
      *
@@ -654,6 +680,68 @@ public class RoleAPITest extends IntegrationTestBase {
         // the deepest descendant survived the reparent with intact linkage
         final Role grandchildReloaded = roleAPI.loadRoleById(grandchild.getId());
         assertEquals(childA.getId(), grandchildReloaded.getParent());
+    }
+
+    /**
+     * Method to test: {@link RoleAPI#loadRolesForUser(String, boolean)}
+     * Given Scenario: A user holds a role; another role is moved under it, which flushes every
+     *                 user's cached role list. The first lookup afterwards asks for direct roles only.
+     * Expected Result: The direct lookup returns only the assigned role, and a following lookup
+     *                  that includes inherited roles still returns the moved role.
+     */
+    @Test
+    public void test_loadRolesForUser_directLookupAfterMove_keepsInheritedRolesCached() throws Exception {
+
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final long now = System.currentTimeMillis();
+        final Role parent = new RoleDataGen().name("inheritParent_" + now).nextPersisted();
+        final Role moved = new RoleDataGen().name("inheritMoved_" + now).nextPersisted();
+        final User user = new UserDataGen().roles(parent).nextPersisted();
+
+        final Role copy = copyForSave(roleAPI.loadRoleById(moved.getId()), "move");
+        copy.setParent(parent.getId());
+        roleAPI.save(copy);
+
+        final List<Role> direct = roleAPI.loadRolesForUser(user.getUserId(), false);
+        assertTrue(direct.contains(parent));
+        assertFalse(direct.contains(moved));
+
+        final List<Role> all = roleAPI.loadRolesForUser(user.getUserId(), true);
+        assertTrue("an inherited role must survive a direct-only lookup filling the cache",
+                all.contains(moved));
+        assertTrue(roleAPI.doesUserHaveRole(user, moved));
+    }
+
+    /**
+     * Method to test: {@link RoleAPI#loadRolesForUser(String, boolean)}
+     * Given Scenario: A user holds both a role and that role's child, so the child is reachable
+     *                 directly and through its parent.
+     * Expected Result: The child appears once in a direct lookup and once in a lookup with
+     *                  inherited roles, whether the user's role list is built fresh or read from cache.
+     */
+    @Test
+    public void test_loadRolesForUser_userHoldsParentAndChild_childListedOnce() throws Exception {
+
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final long now = System.currentTimeMillis();
+        final Role parent = new RoleDataGen().name("dupParent_" + now).nextPersisted();
+        final Role child = new RoleDataGen().name("dupChild_" + now).parent(parent.getId()).nextPersisted();
+        // child first: addRoleToUser skips a role the user already inherits
+        final User user = new UserDataGen().roles(child, parent).nextPersisted();
+        assertTrue("precondition: the child must be listed under its parent",
+                roleAPI.loadRoleById(parent.getId()).getRoleChildren().contains(child.getId()));
+        assertTrue("precondition: the user must hold the child directly",
+                roleAPI.loadRolesForUser(user.getUserId(), false).contains(child));
+
+        for (final boolean includeImplicitRoles : new boolean[]{false, true}) {
+            CacheLocator.getRoleCache().clearUserRoleCache();
+            assertEquals("fresh lookup, implicit=" + includeImplicitRoles, 1,
+                    Collections.frequency(roleAPI.loadRolesForUser(user.getUserId(), includeImplicitRoles), child));
+            assertEquals("cached lookup, implicit=" + includeImplicitRoles, 1,
+                    Collections.frequency(roleAPI.loadRolesForUser(user.getUserId(), includeImplicitRoles), child));
+            assertEquals("cached lookup, implicit=" + !includeImplicitRoles, 1,
+                    Collections.frequency(roleAPI.loadRolesForUser(user.getUserId(), !includeImplicitRoles), child));
+        }
     }
 
     /**

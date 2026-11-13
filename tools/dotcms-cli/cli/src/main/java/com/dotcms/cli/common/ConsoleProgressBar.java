@@ -135,7 +135,8 @@ public class ConsoleProgressBar implements Runnable {
     }
 
     /**
-     * Prints the progress bar and current progress percentage.
+     * Prints the progress bar and current progress percentage. A current step beyond the total is
+     * shown as 100%, so a miscounted total can never make drawing the bar fail the task it tracks.
      *
      * @param builder     the string builder containing the progress bar characters
      * @param currentStep the current step of the progress
@@ -144,8 +145,9 @@ public class ConsoleProgressBar implements Runnable {
     private void printProgress(StringBuilder builder, final int currentStep, final int totalSteps) {
 
         if (totalSteps > 0) {
-            int progress = (int) ((double) currentStep / totalSteps * 100);
-            int charSizeProgress = (int) ((double) currentStep / totalSteps * animationCharSize);
+            final int step = Math.min(currentStep, totalSteps);
+            int progress = (int) ((double) step / totalSteps * 100);
+            int charSizeProgress = (int) ((double) step / totalSteps * animationCharSize);
 
             builder.replace(
                     0,

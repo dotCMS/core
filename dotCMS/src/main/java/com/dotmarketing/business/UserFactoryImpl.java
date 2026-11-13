@@ -27,6 +27,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -150,26 +151,55 @@ public class UserFactoryImpl implements UserFactory {
         dbLookupCount.set(0);
     }
 
+    /**
+     * Returns the user with the given id, from the user cache when it holds the record and from
+     * the data source otherwise. The id is trimmed before the cache is read or filled, as the data
+     * source lookup ignores surrounding spaces too, so one record never has more than one cache
+     * entry whatever spelling a caller used, and every eviction made under the stored id reaches
+     * it.
+     *
+     * @param userId the id of the user to load
+     * @return the {@link User} record
+     * @throws DotDataException   when the data source cannot be read
+     * @throws NoSuchUserException when no user has that id
+     */
     @Override
     public User loadUserById(final String userId) throws DotDataException, NoSuchUserException {
-        User user = userCache.get(userId);
+        final String key = null != userId ? userId.trim() : null;
+        User user = userCache.get(key);
         if (!UtilMethods.isSet(user)) {
 
             if (user == null) {
-                final DotConnect dc = new DotConnect();
-                dc.setSQL("select * from user_ where userid=?");
-                dc.addParam(userId.trim().toLowerCase());
-                List<Map<String, Object>> list = dc.loadObjectResults();
+                user = readFromDataSource(key);
                 incrementDbLookupCount();
-                if(list.isEmpty()) {
+                if (user == null) {
                     throw new NoSuchUserException(userId);
-                }else{
-                    user = TransformerLocator.createUserTransformer(list).findFirst();
-                    userCache.add(userId, user);
                 }
+                userCache.add(key, user);
             }
         }
         return user;
+    }
+
+    /**
+     * Reads the user's row from the data source, without looking at or filling the cache.
+     *
+     * @return the stored {@link User}, or {@code null} when no row has that id
+     */
+    private User readFromDataSource(final String userId) throws DotDataException {
+        final List<Map<String, Object>> rows = new DotConnect()
+                .setSQL("select * from user_ where userid=?")
+                .addParam(userId.trim().toLowerCase())
+                .loadObjectResults();
+        return rows.isEmpty() ? null : TransformerLocator.createUserTransformer(rows).findFirst();
+    }
+
+    @Override
+    public Optional<User> loadStoredUser(final String userId) throws DotDataException {
+        if (!UtilMethods.isSet(userId)) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(readFromDataSource(userId));
     }
 
     @Override

@@ -43,6 +43,11 @@ jobs:
   publish:
     name: Build and push to Docker Hub
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    # Both entry points write the same mutable tag; let an active push finish.
+    concurrency:
+      group: publish-pr-image-job-${{ inputs.pr }}
+      cancel-in-progress: false
+      queue: max
     permissions:
       contents: read
       actions: read
@@ -59,6 +64,12 @@ jobs:
           RUN_ID_IN: ${{ inputs.artifact_run_id }}
         run: |
           set -euo pipefail
+          # A queued label/commit run must not overwrite an image already built for a newer PR head.
+          current_sha=$(gh api "repos/${REPO}/pulls/${PR}" --jq '.head.sha')
+          if [ "$current_sha" != "$SHA" ]; then
+            echo "Skipping superseded PR image publication."
+            echo "found=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
           run_id="${RUN_ID_IN}"
           # Label path has no run id — find the newest run with a non-expired
           # docker-build-context artifact for this exact commit.
@@ -140,6 +151,27 @@ jobs:
           build-args: |
             SDKMAN_JAVA_VERSION=${{ steps.context.outputs.java_version }}
 
+      # Only data crosses into the trusted workflow_run deployment; never its token.
+      - name: Record Cloud Control deployment
+        if: steps.resolve.outputs.found == 'true' && steps.push.outcome == 'success'
+        env:
+          PR: ${{ inputs.pr }}
+          SHA: ${{ inputs.sha }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/pr-cloud-control"
+          jq -n --argjson pr "$PR" --arg sha "$SHA" '{pr: $pr, sha: $sha}' \
+            > "${RUNNER_TEMP}/pr-cloud-control/pr.json"
+
+      - name: Upload Cloud Control deployment manifest
+        if: steps.resolve.outputs.found == 'true' && steps.push.outcome == 'success'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr-cloud-control
+          path: ${{ runner.temp }}/pr-cloud-control/pr.json
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 3
+
       - name: Sticky comment with image tags
         if: steps.resolve.outputs.found == 'true' && steps.push.outcome == 'success'
         env:
@@ -149,6 +181,7 @@ jobs:
           SHA: ${{ inputs.sha }}
           TAGS: ${{ steps.resolve.outputs.tags }}
         run: |
+          set -euo pipefail
           MARKER='<!-- pr-docker-image-sticky -->'
           {
             echo "${MARKER}"
@@ -159,6 +192,11 @@ jobs:
             echo '```bash'
             for t in ${TAGS}; do echo "docker pull ${t}"; done
             echo '```'
+            echo ""
+            echo "[View or start the environment in Cloud Control](https://cloud.dotcms.dev/admin/envs/dotpr%2F${PR})"
+            echo ""
+            echo "Sign in to Cloud Control to view or start the instance if your permissions allow it."
+            echo "Environment provisioning is queued after this workflow completes."
           } > body.md
 
           id=$(gh api -X GET "repos/${REPO}/issues/${PR}/comments" -f per_page=100 \
