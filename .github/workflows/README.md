@@ -52,11 +52,11 @@ lock with `queue: max` so stale arrivals cannot evict a pending current build; q
 publishers check the current PR head before resolving artifacts or pushing
 so an older build cannot overwrite an already-published newer image. After the publishing workflow completes,
 `cicd_post-pr-cloud-control.yml` creates or starts an environment in the `dotpr` organization
-using the mutable image tag. Its key is `<PR number>-<sanitized branch>`, truncated to
-53 characters with no trailing hyphen, leaving room for the `dot-dotpr-` prefix inside
-PostgreSQL's 63-character database-name limit; Docker image tags are unchanged. Existing
-short-named environments are not renamed or deleted; a subsequent build may create a
-separate environment under the longer name. The sticky PR
+using the mutable image tag. Its key is only the PR number (for example, `dotpr/38557`),
+keeping generated resource names short and independent of branch names; Docker image tags
+are unchanged. Existing branch-based environments are not renamed or deleted; a subsequent
+build may create a separate numeric-keyed environment, so clean up the old one manually.
+The sticky PR
 image comment links to the environment's Cloud Control detail page, where users can
 view or start it if their Cloud Control permissions allow it. The link is published
 with the image; the environment is created after the publishing workflow completes.
