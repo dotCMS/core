@@ -69,6 +69,7 @@ import org.quartz.JobExecutionException;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -1089,8 +1090,9 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
      * closely.</p>
      *
      * <p>The exception must arrive intact rather than wrapped or replaced: whoever reads the job
-     * result needs to see which insert failed and why — including, via this same path, the separate
-     * {@code path varchar(500)} overflow of issue #36706.</p>
+     * result needs to see which insert failed and why — which is how the separate
+     * {@code path varchar(500)} overflow of issue #36706 surfaced before that column became
+     * {@code text}.</p>
      */
     @Test
     public void Test_Failed_Audit_Save_Propagates_Out_Of_Run()
@@ -1245,10 +1247,11 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
      *
      * <p>This is the assertion the rest of the suite could not make without mocking the thing under
      * test: {@link SiteSearchJobProxy} builds its own {@code SiteSearchJobImpl}, so there is nowhere
-     * to inject a failing audit API. Instead the failure is induced for real, the same way
-     * production hits it — the {@code path} column is {@code varchar(500)} and nothing truncates
-     * what the job writes into it, so an over-long path makes the genuine audit insert fail
-     * (issue #36706). No mock stands between the crawl and the database here.</p>
+     * to inject a failing audit API. Instead the failure is induced for real in Postgres: a
+     * temporary {@code CHECK} constraint that rejects only this test's job id makes the genuine
+     * audit insert fail. No mock stands between the crawl and the database here. (This used to rely
+     * on the {@code path varchar(500)} overflow, which issue #36706 removed by making the column
+     * {@code text}.)</p>
      *
      * <p>What it proves end to end: the exception leaves {@code SiteSearchJobImpl.run()}, the proxy
      * turns it into a {@link JobExecutionException} — which is what Quartz records as a failed run —
@@ -1263,14 +1266,17 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
      */
     @Test
     public void Test_Proxy_Reports_Failed_Audit_Save_As_Job_Execution_Exception()
-            throws DotDataException, IOException {
+            throws DotDataException, IOException, SQLException {
 
         deleteAllSiteSearchIndices();
 
         final String jobId = UUIDUtil.uuid();
-        // sitesearch_audit.path is varchar(500) and the job does not truncate (issue #36706),
-        // so this is a real insert failure, not a simulated one.
-        final String overlongPath = "/" + RandomStringUtils.randomAlphabetic(600);
+        // A real insert failure, not a mocked one: this constraint rejects only this job's id, so
+        // Postgres refuses the genuine audit insert and nothing else is affected. NOT VALID skips
+        // checking the rows already in the table.
+        final String constraint = "it_reject_audit_" + jobId.replace("-", "");
+        new DotConnect().executeStatement("ALTER TABLE sitesearch_audit ADD CONSTRAINT "
+                + constraint + " CHECK (job_id <> '" + jobId + "') NOT VALID");
 
         final JobDataMap jobDataMap = new JobDataMap();
         jobDataMap.put(SiteSearchJobImpl.RUN_NOW, Boolean.TRUE.toString());
@@ -1280,7 +1286,6 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         jobDataMap.put(SiteSearchJobImpl.INCLUDE_EXCLUDE, "all");
         jobDataMap.put(SiteSearchJobImpl.LANG_TO_INDEX, new String[]{Long.toString(defaultLang)});
         jobDataMap.put(SiteSearchJobImpl.INDEX_HOST, site.getIdentifier());
-        jobDataMap.put(SiteSearchJobImpl.PATHS, overlongPath);
 
         final JobDetail jobDetail = Mockito.mock(JobDetail.class);
         Mockito.when(jobDetail.getJobDataMap()).thenReturn(jobDataMap);
@@ -1305,6 +1310,9 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
                     cause instanceof DotDataException
                             && cause.getMessage() != null
                             && cause.getMessage().contains("sitesearch_audit"));
+        } finally {
+            new DotConnect().executeStatement(
+                    "ALTER TABLE sitesearch_audit DROP CONSTRAINT IF EXISTS " + constraint);
         }
 
         Assert.assertTrue(

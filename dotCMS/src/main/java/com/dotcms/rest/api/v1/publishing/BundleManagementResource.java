@@ -12,10 +12,12 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.NotFoundException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -107,6 +109,9 @@ public class BundleManagementResource {
      *   <li>If still not found, create a new bundle</li>
      * </ol>
      *
+     * <p>A bundle found by {@code bundleId} must belong to the caller, unless the caller is a
+     * CMS Administrator; otherwise the request is refused with 403.</p>
+     *
      * <p>Assets that cannot be added (e.g., no publish permission) are reported
      * in the {@code errors} list — they do not fail the entire request.
      * Assets already present in the bundle are silently skipped (idempotent).</p>
@@ -123,6 +128,8 @@ public class BundleManagementResource {
                     "look up unsent bundles by bundleName, (3) if still not found, " +
                     "auto-create a new bundle. A non-matching bundleId does NOT return " +
                     "404 — it falls through to name lookup and then auto-creation. " +
+                    "A bundleId that belongs to another user returns 403 unless the caller " +
+                    "is a CMS Administrator. " +
                     "Assets already in the bundle are silently skipped (idempotent). " +
                     "Individual asset failures (e.g., no publish permission) are reported " +
                     "in the errors list as human-readable strings, not as HTTP errors."
@@ -148,7 +155,7 @@ public class BundleManagementResource {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - insufficient permissions",
+                    description = "Forbidden - the bundle belongs to another user",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)
             ),
             @ApiResponse(
@@ -208,6 +215,9 @@ public class BundleManagementResource {
             // Step 2a: Try by ID
             if (UtilMethods.isSet(form.getBundleId())) {
                 bundle = bundleAPI.get().getBundleById(form.getBundleId());
+                if (bundle != null) {
+                    bundleAPI.get().checkCanModifyBundle(bundle, user);
+                }
             }
 
             // Step 2b: Try by name (unsent bundles only)
@@ -301,6 +311,8 @@ public class BundleManagementResource {
                             .errors(errors)
                             .build());
 
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e, e.getMessage());
         } catch (DotPublisherException | DotDataException e) {
             Logger.error(this, "Error adding assets to bundle: " + e.getMessage(), e);
             throw new DotRuntimeException(e.getMessage(), e);
@@ -314,6 +326,8 @@ public class BundleManagementResource {
      * do not prevent other assets from being removed. Results are returned
      * per-asset with success/failure status.</p>
      *
+     * <p>Only the bundle owner or a CMS Administrator may remove assets; anyone else gets 403.</p>
+     *
      * <p>The bundle must not be in an active publishing state (BUNDLING,
      * SENDING_TO_ENDPOINTS, or PUBLISHING_BUNDLE).</p>
      *
@@ -326,6 +340,7 @@ public class BundleManagementResource {
     @Operation(
             summary = "Remove assets from an unpushed bundle",
             description = "Removes one or more assets from an unpushed bundle. " +
+                    "Only the bundle owner or a CMS Administrator may remove assets. " +
                     "Each asset is processed independently with per-asset results. " +
                     "Assets not found in the bundle return success=false."
     )
@@ -350,7 +365,7 @@ public class BundleManagementResource {
             ),
             @ApiResponse(
                     responseCode = "403",
-                    description = "Forbidden - insufficient permissions",
+                    description = "Forbidden - the bundle belongs to another user",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)
             ),
             @ApiResponse(
@@ -430,6 +445,8 @@ public class BundleManagementResource {
                         String.format("Bundle not found: %s", bundleId));
             }
 
+            bundleAPI.get().checkCanModifyBundle(bundle, user);
+
             // Guard: bundle must NOT be in-progress
             final PublishAuditStatus auditStatus =
                     publishAuditAPI.get().getPublishAuditStatus(bundleId);
@@ -461,7 +478,7 @@ public class BundleManagementResource {
                 }
 
                 try {
-                    bundleAPI.get().deleteAssetFromBundleAndAuditStatus(assetId, bundleId);
+                    bundleAPI.get().deleteAssetFromBundleAndAuditStatus(assetId, bundleId, user);
                     results.add(RemoveAssetResultView.builder()
                             .assetId(assetId)
                             .success(true)
@@ -489,6 +506,8 @@ public class BundleManagementResource {
 
             return new ResponseEntityRemoveAssetsFromBundleView(results);
 
+        } catch (DotSecurityException e) {
+            throw new ForbiddenException(e, e.getMessage());
         } catch (DotDataException | DotPublisherException e) {
             Logger.error(this, "Error removing assets from bundle: " + e.getMessage(), e);
             throw new DotRuntimeException(e.getMessage(), e);

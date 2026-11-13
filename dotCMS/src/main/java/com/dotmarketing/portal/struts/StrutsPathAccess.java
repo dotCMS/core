@@ -27,27 +27,19 @@ import java.util.Set;
 public final class StrutsPathAccess {
 
     /**
-     * Beta-period ids of the Users and Roles portlets. {@code portlet.xml} declares {@code
-     * users-beta} and {@code roles-beta} alongside the shipped {@code users} and {@code roles},
-     * and a user may hold only the beta one; the legacy screens below are the same screens either
-     * way. {@link PortletID} has no constant for them yet, so they are named here as literals.
-     * Remove when the beta portlets are promoted and their ids disappear from {@code portlet.xml}.
-     */
-    private static final String USERS_BETA = "users-beta";
-    private static final String ROLES_BETA = "roles-beta";
-
-    /**
      * Administrative action directories and the portlets allowed to reach them. Keys have no
-     * leading slash and carry no action name, for example {@code ext/scheduler}.
+     * leading slash and carry no action name, for example {@code ext/scheduler}. The user and role
+     * directories accept both the Angular {@code users} / {@code roles} ids and the
+     * {@code users-legacy} / {@code roles-legacy} ids of the old screens that live in them.
      */
     private static final Map<String, Set<String>> RESTRICTED_DIRECTORIES = Map.of(
             "ext/scheduler", Set.of(PortletID.JOBS.toString()),
             "ext/cmsmaintenance", Set.of(PortletID.MAINTENANCE.toString()),
             "ext/hostadmin", Set.of(PortletID.SITES.toString()),
-            "ext/useradmin", Set.of(PortletID.USERS.toString(), USERS_BETA),
-            "ext/userfilter", Set.of(PortletID.USERS.toString(), USERS_BETA),
-            "ext/roleadmin", Set.of(PortletID.USERS.toString(), USERS_BETA,
-                    PortletID.ROLES.toString(), ROLES_BETA),
+            "ext/useradmin", Set.of(PortletID.USERS.toString(), PortletID.USERS_LEGACY.toString()),
+            "ext/userfilter", Set.of(PortletID.USERS.toString(), PortletID.USERS_LEGACY.toString()),
+            "ext/roleadmin", Set.of(PortletID.USERS.toString(), PortletID.USERS_LEGACY.toString(),
+                    PortletID.ROLES.toString(), PortletID.ROLES_LEGACY.toString()),
             "ext/languages_manager", Set.of(PortletID.LANGUAGES.toString(),
                     PortletID.LOCALES.toString()));
 

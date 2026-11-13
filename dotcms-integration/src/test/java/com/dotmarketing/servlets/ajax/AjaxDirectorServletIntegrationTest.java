@@ -6,8 +6,11 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishQueueElement;
@@ -22,6 +25,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
 import com.google.common.collect.ImmutableMap;
+import com.liferay.portal.model.User;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
@@ -238,6 +242,49 @@ public class AjaxDirectorServletIntegrationTest {
             testCase.getAssertion().executeAssertion();
         } finally {
             testCase.getDisposer().dispose();
+        }
+    }
+
+    /**
+     * Given: a bundle owned by one back-end user
+     * When: a different back-end user, who is not a CMS Administrator, adds an asset to it through
+     * the add-to-bundle action, selecting the bundle by id
+     * Then: 403, and nothing is added to the bundle
+     */
+    @Test
+    public void test_addToBundle_nonOwnerBundleId_returns403AndAddsNothing() throws Exception {
+        final User owner = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+        final User otherUser = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+        final Bundle bundle = new Bundle("add-to-bundle-non-owner-" + System.currentTimeMillis(),
+                null, null, owner.getUserId());
+        APILocator.getBundleAPI().saveBundle(bundle);
+        final String assetIdentifier = UUID.randomUUID().toString();
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final WebResource webResource = mock(WebResource.class);
+        final InitDataObject dataObject = mock(InitDataObject.class);
+        when(dataObject.getUser()).thenReturn(otherUser);
+        when(webResource.init(nullable(String.class), anyBoolean(), any(HttpServletRequest.class),
+                anyBoolean(), any()))
+                .thenReturn(dataObject);
+        when(request.getReader()).thenReturn(new BufferedReader(new StringReader("{\n"
+                + "    \"assetIdentifier\": \"" + assetIdentifier + "\",\n"
+                + "    \"bundleSelect\": \"" + bundle.getId() + "\"\n"
+                + "}")));
+        when(request.getRequestURI()).thenReturn(
+                "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/addToBundle");
+        when(request.getSession()).thenReturn(mock(HttpSession.class));
+        when(response.getWriter()).thenReturn(mock(PrintWriter.class));
+
+        try {
+            new AjaxDirectorServlet(webResource).service(request, response);
+
+            verify(response).sendError(HttpServletResponse.SC_FORBIDDEN);
+            assertTrue("Nothing should be added to the bundle", PublisherAPI.getInstance()
+                    .getQueueElementsByBundleId(bundle.getId()).isEmpty());
+        } finally {
+            APILocator.getBundleAPI().deleteBundle(bundle.getId());
         }
     }
 }
