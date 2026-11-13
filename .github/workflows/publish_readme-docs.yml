@@ -185,7 +185,9 @@ jobs:
               return data.get("entity") or []
 
           def wait_for_push(ident, before, inode):
-              """Wait until production serves the version just published (same inode).
+              """Wait until production serves the version just published (same inode), or a newer
+              version is live on authoring (another run or an editor published again; its own push
+              carries it).
 
               The push bundle is watched only to explain a stall: a bundle holding this page may belong
               to another push of it, so its status proves nothing about this version."""
@@ -210,7 +212,13 @@ jobs:
                   except (RuntimeError, OSError):  # OSError: timeouts and connection errors
                       on_prod = None  # check again on the next pass
                   if on_prod and on_prod.get("inode") == inode:
-                      return bundle["bundleId"] if bundle else "not found in the queue"
+                      return f"bundle {bundle['bundleId']}" if bundle else "bundle not found in the queue"
+                  try:
+                      status, data = call("GET", f"/api/v1/content/{ident}?language=1")
+                  except OSError:
+                      status = None
+                  if status == 200 and data["entity"].get("live") and data["entity"].get("inode") != inode:
+                      return "superseded: a newer version was published meanwhile"
                   time.sleep(5)
               if not bundle:
                   raise PushStalled(f"published, but no push bundle appeared within {PUSH_TIMEOUT}s")
@@ -340,13 +348,13 @@ jobs:
                           if dry_run:
                               result = "would update"
                           else:
-                              result = f"published and pushed (bundle {push_publish(ident, body, content)})"
+                              result = f"published and pushed ({push_publish(ident, body, content)})"
                       elif normalize(on_prod.get("documentation") or "") != normalize(body):
                           # Authoring is current but production is not: an earlier push failed.
                           if dry_run:
                               result = "would push again (production is behind)"
                           else:
-                              result = f"pushed again, production was behind (bundle {push_publish(ident, body, content)})"
+                              result = f"pushed again, production was behind ({push_publish(ident, body, content)})"
                       else:
                           result = "unchanged"
                       if dry_run and normalize(current) != normalize(body):
