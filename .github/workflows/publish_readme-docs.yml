@@ -186,8 +186,7 @@ jobs:
 
           def wait_for_push(ident, before, inode):
               """Wait until production serves the version just published (same inode), or a newer
-              version is live on authoring (another run or an editor published again; its own push
-              carries it).
+              version that another run or an editor published since.
 
               The push bundle is watched only to explain a stall: a bundle holding this page may belong
               to another push of it, so its status proves nothing about this version."""
@@ -217,8 +216,10 @@ jobs:
                       status, data = call("GET", f"/api/v1/content/{ident}?language=1")
                   except OSError:
                       status = None
-                  if status == 200 and data["entity"].get("live") and data["entity"].get("inode") != inode:
-                      return "superseded: a newer version was published meanwhile"
+                  newer = data["entity"] if status == 200 else {}
+                  if (newer.get("live") and newer.get("inode") != inode
+                          and on_prod and on_prod.get("inode") == newer.get("inode")):
+                      return "superseded: a newer version reached production"
                   time.sleep(5)
               if not bundle:
                   raise PushStalled(f"published, but no push bundle appeared within {PUSH_TIMEOUT}s")
