@@ -108,10 +108,11 @@ public class ContainerWebAPI implements ViewTool {
 	}
 	/**
 	 * Returns the identifiers of the content a container shows on a page for the visitor's
-	 * persona. In edit and preview mode the page render has already chosen the personalization,
-	 * falling back to the default one when the user can see none of the persona's content, so the
-	 * container shows the same content as the page's JSON. Otherwise the visitor's persona is used
-	 * when the page has content for it, and the default personalization when it does not.
+	 * persona: the visitor's persona when the page has content for it, otherwise the default
+	 * personalization. In edit and preview mode, when the page render showed the default content
+	 * because the user can see none of the persona's content, the default personalization is used
+	 * too (see {@link PageRenderUtil#personalizationToRender}), so the container shows the same
+	 * content as the page's JSON.
 	 *
 	 * @param pageId      identifier of the page being rendered
 	 * @param containerId identifier of the container
@@ -121,10 +122,7 @@ public class ContainerWebAPI implements ViewTool {
     public List<String> getPersonalizedContentList(final String pageId, final String containerId, final String uuid) {
 
         final PageMode pageMode = PageMode.get(request);
-        final Object chosenPersonalization = UtilMethods.isSet(pageId)
-                ? ctx.get(PageRenderUtil.personalizationToRenderKey(pageId)) : null;
-        final String pTag = chosenPersonalization instanceof String
-                ? (String) chosenPersonalization : getVisitorPersonalization(pageId);
+        final String pTag = PageRenderUtil.personalizationToRender(ctx, pageId, getVisitorPersonalization(pageId));
 
 		List<String> contentlets = new ArrayList<>();
 		if (ContainerUUID.UUID_LEGACY_VALUE.equals(uuid)) {

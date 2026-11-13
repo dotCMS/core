@@ -83,11 +83,11 @@ public class PageRenderUtil implements Serializable {
 
     public static String CONTAINER_UUID_PREFIX = "uuid-";
     /**
-     * Prefix of the Velocity context key, followed by the page identifier, that holds the
-     * personalization whose content an edit or preview render shows. Containers read it so the
-     * HTML shows the same content as the page's JSON.
+     * Prefix of the Velocity context key, followed by the page identifier, that holds the visitor's
+     * personalization when an edit or preview render shows the default content in its place,
+     * because the user can see none of that persona's content (see {@link #personalizationToRender}).
      */
-    public static final String PERSONALIZATION_TO_RENDER_PREFIX = "dotPersonalizationToRender";
+    public static final String HIDDEN_PERSONALIZATION_PREFIX = "dotHiddenPersonalization";
     private static final long serialVersionUID = 1L;
 
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -108,7 +108,7 @@ public class PageRenderUtil implements Serializable {
     final TemplateLayout templateLayout;
     // Kept out of contextMap: asString() writes contextMap into the page's cached Velocity code,
     // which must not depend on the user rendering it
-    private String personalizationToRender;
+    private String hiddenPersonalization;
 
 
 
@@ -273,8 +273,11 @@ public class PageRenderUtil implements Serializable {
         final List<ContainerRaw> rawContainers  = Lists.newArrayList();
         final String includeContentFor = this.getPersonaTagToIncludeContent(request, personalizationsForPage,
                 pageContents, currentVariantId);
-        if (PageTreeReadFilter.appliesTo(this.mode)) {
-            this.personalizationToRender = includeContentFor;
+        final String visitorPersonalization = WebAPILocator.getPersonalizationWebAPI()
+                .getContainerPersonalization(request);
+        if (PageTreeReadFilter.appliesTo(this.mode) && !visitorPersonalization.equals(includeContentFor)
+                && personalizationsForPage.contains(visitorPersonalization)) {
+            this.hiddenPersonalization = visitorPersonalization;
         }
 
         for (final String containerId : pageContents.rowKeySet()) {
@@ -862,8 +865,8 @@ public class PageRenderUtil implements Serializable {
 
     /**
      * Adds the page's variables to a Velocity context the page is rendered with: the content of
-     * each container and, in edit and preview mode, the personalization the containers show (see
-     * {@link #personalizationToRenderKey}).
+     * each container and, in edit and preview mode, the visitor's personalization when the page
+     * shows the default content in its place (see {@link #personalizationToRender}).
      *
      * @param incoming the {@link Context} of the current render
      * @return the same context, with the page's variables added
@@ -873,8 +876,8 @@ public class PageRenderUtil implements Serializable {
         for (final String key : this.contextMap.keySet()) {
             incoming.put(key, this.contextMap.get(key));
         }
-        if (null != this.personalizationToRender) {
-            incoming.put(personalizationToRenderKey(this.htmlPage.getIdentifier()), this.personalizationToRender);
+        if (null != this.hiddenPersonalization) {
+            incoming.put(HIDDEN_PERSONALIZATION_PREFIX + this.htmlPage.getIdentifier(), this.hiddenPersonalization);
         }
 
         return incoming;
@@ -907,14 +910,22 @@ public class PageRenderUtil implements Serializable {
     }
 
     /**
-     * Returns the Velocity context key holding the personalization an edit or preview render of a
-     * page shows, as chosen by {@link #getPersonaTagToIncludeContent}.
+     * Returns the personalization whose content a page's containers show, so the HTML of an edit or
+     * preview render shows the same content as its JSON: the default personalization when the
+     * render chose it in place of the visitor's persona (see {@link #getPersonaTagToIncludeContent}),
+     * otherwise the visitor's personalization. A persona set on the visitor while the page renders
+     * is used as it is.
      *
-     * @param pageIdentifier identifier of the rendered page
-     * @return the context key for that page
+     * @param context                the Velocity {@link Context} the page is rendered with
+     * @param pageIdentifier         identifier of the rendered page
+     * @param visitorPersonalization the visitor's current personalization tag
+     * @return the personalization tag to show
      */
-    public static String personalizationToRenderKey(final String pageIdentifier) {
-        return PERSONALIZATION_TO_RENDER_PREFIX + pageIdentifier;
+    public static String personalizationToRender(final Context context, final String pageIdentifier,
+            final String visitorPersonalization) {
+        final boolean hidden = null != context && UtilMethods.isSet(pageIdentifier)
+                && visitorPersonalization.equals(context.get(HIDDEN_PERSONALIZATION_PREFIX + pageIdentifier));
+        return hidden ? MultiTree.DOT_PERSONALIZATION_DEFAULT : visitorPersonalization;
     }
 
     /**
