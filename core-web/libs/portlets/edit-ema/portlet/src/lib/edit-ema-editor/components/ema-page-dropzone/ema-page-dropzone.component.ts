@@ -174,7 +174,8 @@ export class EmaPageDropzoneComponent {
     /**
      * Resolve the drop target under the pointer in a container, draw the insertion line there and
      * report the target. Over a contentlet, the target is before or after it, by which half the
-     * pointer is in. Between contentlets, it is the contentlet whose vertical centre is nearest.
+     * pointer is in. Between contentlets, it is the contentlet whose block is nearest the pointer,
+     * before or after it by the same vertical half.
      * The moved contentlet's own place, and the places right next to it, are no target.
      *
      * @param {DragEvent} event
@@ -222,7 +223,7 @@ export class EmaPageDropzoneComponent {
 
         const pivot =
             container.contentlets.find(({ area }) => isInside(area, localX, localY)) ??
-            nearestByCentre(container.contentlets, localY);
+            nearestToPoint(container.contentlets, localX, localY);
         const position = localY < pivot.area.y + pivot.area.height / 2 ? 'before' : 'after';
 
         if (leavesOrderUnchanged(container.contentlets, pivot, position)) {
@@ -339,8 +340,21 @@ function isInside(
     return x >= area.x && x <= area.x + area.width && y >= area.y && y <= area.y + area.height;
 }
 
-function nearestByCentre(contentlets: DropzoneContentlet[], y: number): DropzoneContentlet {
-    const distance = ({ area }: DropzoneContentlet) => Math.abs(y - (area.y + area.height / 2));
+/**
+ * The contentlet whose block is nearest the point (`x`, `y`): 0 inside a block, otherwise the
+ * distance to its nearest edge, so blocks laid out in a row or in a column both work. On a tie
+ * the earlier contentlet wins.
+ */
+function nearestToPoint(
+    contentlets: DropzoneContentlet[],
+    x: number,
+    y: number
+): DropzoneContentlet {
+    const distance = ({ area }: DropzoneContentlet) =>
+        Math.hypot(
+            Math.max(area.x - x, 0, x - (area.x + area.width)),
+            Math.max(area.y - y, 0, y - (area.y + area.height))
+        );
 
     return contentlets.reduce((nearest, contentlet) =>
         distance(contentlet) < distance(nearest) ? contentlet : nearest
