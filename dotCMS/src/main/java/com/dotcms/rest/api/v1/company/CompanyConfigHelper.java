@@ -379,10 +379,7 @@ public class CompanyConfigHelper {
                         UtilMethods.isSet(company.getSize()) ? company.getSize() : null)
                 // Any stored background is returned so a client can save it back unchanged;
                 // "localhost" is the fresh-install value that means no background.
-                .backgroundImage(
-                        UtilMethods.isSet(company.getHomeURL())
-                                && !"localhost".equals(company.getHomeURL())
-                                ? company.getHomeURL() : null)
+                .backgroundImage(CompanyBasicInfoForm.backgroundImageToShow(company.getHomeURL()))
                 .loginScreenLogo(
                         CompanyLogoPath.forwardPath(loginLogo).orElse(null))
                 .navBarLogo(

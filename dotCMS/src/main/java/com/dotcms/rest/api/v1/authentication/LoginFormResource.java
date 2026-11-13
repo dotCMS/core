@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.authentication;
 
+import com.dotcms.rest.api.v1.company.CompanyBasicInfoForm;
+import java.util.Objects;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.enterprise.LicenseUtil;
 import com.google.common.annotations.VisibleForTesting;
@@ -148,7 +150,8 @@ public class LoginFormResource implements Serializable {
                                     locale.getDisplayName(locale));
                         }))
                 .backgroundColor(defaultCompany.getSize())
-                .backgroundPicture(defaultCompany.getHomeURL())
+                .backgroundPicture(Objects.toString(
+                        CompanyBasicInfoForm.backgroundImageToShow(defaultCompany.getHomeURL()), ""))
                 .logo(this.companyAPI.getLogoPath(defaultCompany))
                 .authorizationType(defaultCompany.getAuthType())
                 .currentLanguage(new LanguageView(userLocale.getLanguage(), userLocale.getCountry(),

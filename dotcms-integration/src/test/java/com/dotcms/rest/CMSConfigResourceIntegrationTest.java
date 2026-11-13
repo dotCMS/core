@@ -35,6 +35,8 @@ public class CMSConfigResourceIntegrationTest extends IntegrationTestBase {
     private static final String DOT_ASSET_LOGO =
             "/dA/164bf10d3ef4fdf363d39011e8cab4f4/asset/dotCMS-400x200.png";
 
+    private static final String STORED_BACKGROUND = "/html/images/backgrounds/bg-11.jpg";
+
     private static CMSConfigResource resource;
     private static CompanyAPI companyAPI;
     private static User configurationUser;
@@ -74,6 +76,10 @@ public class CMSConfigResourceIntegrationTest extends IntegrationTestBase {
         final Company company = companyAPI.getDefaultCompany();
         company.setCity(DOT_ASSET_LOGO);
         company.setState("");
+        company.setSize("#1b3359");
+        company.setType("#4e65f1");
+        company.setStreet("#233f9b");
+        company.setHomeURL(STORED_BACKGROUND);
         CompanyManagerUtil.updateCompany(company);
     }
 
@@ -157,6 +163,67 @@ public class CMSConfigResourceIntegrationTest extends IntegrationTestBase {
     }
 
     /**
+     * Colors already stored that are not hex colors, sent back unchanged (the Basic Config tab
+     * resends the hidden background color as it is), are saved; a new value that is not a hex
+     * color is still refused.
+     */
+    @Test
+    public void saveCompanyBasicInfo_storedColorsNotHexSentUnchanged_areSaved() throws Exception {
+        final Company company = companyAPI.getDefaultCompany();
+        company.setSize("navy");
+        company.setType("rgb(1,2,3)");
+        company.setStreet("#233f9b ");
+        CompanyManagerUtil.updateCompany(company);
+
+        final Response unchanged = save(DOT_ASSET_LOGO, "", "navy", "rgb(1,2,3)", "#233f9b ");
+        assertEquals(200, unchanged.getStatus());
+
+        final Response changed = save(DOT_ASSET_LOGO, "", "navy", "teal", "#233f9b ");
+        assertEquals(400, changed.getStatus());
+        assertEquals("rgb(1,2,3)", companyAPI.getDefaultCompany().getType());
+    }
+
+    /**
+     * A new background image that is neither a dotAsset path nor a bundled background gets a 400,
+     * and the stored background is kept.
+     */
+    @Test
+    public void saveCompanyBasicInfo_backgroundImageNotAccepted_returns400() throws Exception {
+        for (final String invalid : new String[]{
+                "/images/bg.jpg",
+                "https://example.com/bg.jpg",
+                "/dA/../html/bg.png",
+                "/html/images/backgrounds/bg-12.jpg"}) {
+            final Response response = save(DOT_ASSET_LOGO, "", "#1b3359", "#4e65f1", "#233f9b",
+                    invalid);
+
+            assertEquals(invalid, 400, response.getStatus());
+            assertEquals(STORED_BACKGROUND, companyAPI.getDefaultCompany().getHomeURL());
+        }
+    }
+
+    /**
+     * A bundled background, a dotAsset background, an empty value and the background already
+     * stored are saved.
+     */
+    @Test
+    public void saveCompanyBasicInfo_acceptedOrStoredBackground_isSaved() throws Exception {
+        for (final String accepted : new String[]{
+                "/html/images/backgrounds/bg-3.jpg",
+                "/dA/e9f32fc04a4d7a0e7e6a025ee65fcf30/asset/bg.png",
+                ""}) {
+            assertEquals(accepted, 200,
+                    save(DOT_ASSET_LOGO, "", "#1b3359", "#4e65f1", "#233f9b", accepted).getStatus());
+        }
+
+        final Company company = companyAPI.getDefaultCompany();
+        company.setHomeURL("/application/themes/old/bg.jpg");
+        CompanyManagerUtil.updateCompany(company);
+        assertEquals(200, save(DOT_ASSET_LOGO, "", "#1b3359", "#4e65f1", "#233f9b",
+                "/application/themes/old/bg.jpg").getStatus());
+    }
+
+    /**
      * Calls the endpoint as the Configuration portlet user, resending the stored values of every
      * other field.
      */
@@ -170,14 +237,24 @@ public class CMSConfigResourceIntegrationTest extends IntegrationTestBase {
     private static Response save(final String loginLogo, final String navLogo,
             final String backgroundColor, final String primaryColor, final String secondaryColor)
             throws Exception {
-        final Company company = companyAPI.getDefaultCompany();
+        return save(loginLogo, navLogo, backgroundColor, primaryColor, secondaryColor,
+                companyAPI.getDefaultCompany().getHomeURL());
+    }
+
+    /**
+     * Same as {@link #save(String, String, String, String, String)}, with the background image
+     * given.
+     */
+    private static Response save(final String loginLogo, final String navLogo,
+            final String backgroundColor, final String primaryColor, final String secondaryColor,
+            final String backgroundImage) throws Exception {
         final HttpServletRequest request = new MockAttributeRequest(
                 new MockHttpRequestIntegrationTest("localhost", "/").request()).request();
         request.setAttribute(WebKeys.USER, configurationUser);
         final HttpServletResponse response = new MockHttpResponse().response();
         return resource.saveCompanyBasicInfo(request, response, "", "",
                 "http://localhost:8080", "dotcms.com", "dotCMS Website <website@dotcms.com>",
-                backgroundColor, primaryColor, secondaryColor, company.getHomeURL(),
+                backgroundColor, primaryColor, secondaryColor, backgroundImage,
                 loginLogo, navLogo);
     }
 }

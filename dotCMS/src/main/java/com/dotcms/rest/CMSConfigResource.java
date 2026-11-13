@@ -67,10 +67,10 @@ public class CMSConfigResource {
      * @param portalURL the portal URL
      * @param mx the mail domain
      * @param emailAddress the system sender address
-     * @param backgroundColor the background color, a hex color
-     * @param primaryColor the primary color, a hex color
-     * @param secondaryColor the secondary color, a hex color
-     * @param homeURL the login background image
+     * @param backgroundColor the background color: a hex color, or the stored value unchanged
+     * @param primaryColor the primary color: a hex color, or the stored value unchanged
+     * @param secondaryColor the secondary color: a hex color, or the stored value unchanged
+     * @param homeURL the login background image: a dotAsset path, a bundled background, or the stored value unchanged
      * @param loginLogo the login screen logo; when set it must be a dotAsset path (see
      *                  {@link CompanyLogoPath#isValid(String)})
      * @param navLogo the navigation bar logo; same rule as {@code loginLogo}, empty clears it
@@ -122,11 +122,19 @@ public class CMSConfigResource {
         if ( !responseResource.validate( responseMessage, "portalURL", "emailAddress", "size","type","street" ) ) {
             return responseResource.responseError( responseMessage.toString(), HttpStatus.SC_BAD_REQUEST );
         }
-        if ( !CompanyBasicInfoForm.isHexColor( backgroundColor )
-                || !CompanyBasicInfoForm.isHexColor( primaryColor )
-                || !CompanyBasicInfoForm.isHexColor( secondaryColor ) ) {
+        final Company storedCompany = APILocator.getCompanyAPI().getDefaultCompany();
+        if ( !isAcceptedColor( backgroundColor, storedCompany.getSize() )
+                || !isAcceptedColor( primaryColor, storedCompany.getType() )
+                || !isAcceptedColor( secondaryColor, storedCompany.getStreet() ) ) {
             return responseResource.responseError(
                     "Colors must be hex colors (e.g. #FF0000)", HttpStatus.SC_BAD_REQUEST );
+        }
+        if ( !CompanyBasicInfoForm.isAcceptedBackgroundImage( homeURL )
+                && !homeURL.equals( storedCompany.getHomeURL() ) ) {
+            return responseResource.responseError(
+                    "The background image must be a dotAsset path starting with /dA/, one of the bundled backgrounds "
+                            + CompanyBasicInfoForm.BACKGROUND_PRESETS_TEXT + ", or the background currently saved",
+                    HttpStatus.SC_BAD_REQUEST );
         }
         if ( UtilMethods.isSet( loginLogo ) && !CompanyLogoPath.isValid( loginLogo ) ) {
             return responseResource.responseError(
@@ -183,6 +191,18 @@ public class CMSConfigResource {
         }
 
         return responseResource.response( responseMessage.toString() );
+    }
+
+    /**
+     * Whether a color may be saved: a hex color, or the value already stored. The Basic Config
+     * tab sends back colors it does not show, such as the background color, as they are.
+     *
+     * @param color the submitted color
+     * @param storedColor the color currently stored on the company
+     * @return {@code true} if the color may be saved
+     */
+    private static boolean isAcceptedColor(final String color, final String storedColor) {
+        return CompanyBasicInfoForm.isHexColor(color) || (color != null && color.equals(storedColor));
     }
 
     /**

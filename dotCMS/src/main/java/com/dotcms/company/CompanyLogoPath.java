@@ -62,19 +62,34 @@ public final class CompanyLogoPath {
         if (!IDENTIFIER.matcher(segments[0]).matches()) {
             return false;
         }
-        for (final String segment : segments) {
+        return !hasDotSegment(path);
+    }
+
+    /**
+     * Tells whether a path has a {@code .} or {@code ..} segment, read either decoded or as it
+     * is, where {@code %2e} counts as a dot and {@code %2f} as a separator; a {@code ;} part
+     * after the dots does not change the answer.
+     *
+     * @param path the path to check, may be {@code null}
+     * @return {@code true} if any segment is {@code .} or {@code ..}
+     */
+    public static boolean hasDotSegment(final String path) {
+        if (path == null) {
+            return false;
+        }
+        for (final String segment : decodeOnce(path).split("/", -1)) {
             if (isDotSegment(segment)) {
-                return false;
+                return true;
             }
         }
         // The value as stored is also what a browser reads, and a browser resolves percent-encoded
         // dots; check the undecoded segments too, whatever the rest of the value holds.
-        for (final String segment : ENCODED_SLASH.split(path.substring(PREFIX.length()), -1)) {
+        for (final String segment : ENCODED_SLASH.split(path, -1)) {
             if (isDotSegment(ENCODED_DOT.matcher(segment).replaceAll("."))) {
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     /**

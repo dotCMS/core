@@ -7,6 +7,8 @@
 <%@page import="com.dotcms.rest.api.v1.system.ConfigurationHelper"%>
 <%@page import="com.dotcms.company.CompanyLogoPath"%>
 <%@page import="org.owasp.encoder.Encode"%>
+<%@page import="com.dotcms.rest.api.v1.company.CompanyBasicInfoForm"%>
+<%@page import="java.util.Objects"%>
 
 <%
    final boolean hasAdminRole = user.isAdmin();
@@ -61,7 +63,7 @@
 		bgColorStyler("<%= Encode.forJavaScript(company.getSize()) %>");
 		PrimaryColorStyler("<%= Encode.forJavaScript(company.getType()) %>");
 		SecondaryColorStyler("<%= Encode.forJavaScript(company.getStreet()) %>");
-		imgSwap("<%= Encode.forJavaScript(company.getHomeURL()) %>");
+		imgSwap("<%= Encode.forJavaScript(Objects.toString(CompanyBasicInfoForm.backgroundImageToShow(company.getHomeURL()), "")) %>");
 	});
 
 	function regenerateKeyProxy() {
@@ -426,7 +428,7 @@
                   <dt><%= LanguageUtil.get(pageContext, "background.image") %></dt>
                   <dd>
                      <div class="inline-form">
-                        <input id="bgURL" dojoType="dijit.form.TextBox" name="companyHomeUrl" size="25" type="text" value="<%= Encode.forHtmlAttribute(company.getHomeURL()) %>" style="width: 250px">
+                        <input id="bgURL" dojoType="dijit.form.TextBox" name="companyHomeUrl" size="25" type="text" value="<%= Encode.forHtmlAttribute(Objects.toString(CompanyBasicInfoForm.backgroundImageToShow(company.getHomeURL()), "")) %>" style="width: 250px">
                         <button id="buttonTwo" dojoType="dijit.form.Button" type="button" iconClass="bgIcon">
                            <%= LanguageUtil.get(pageContext, "backgrounds") %>
                            <script type="dojo/method" data-dojo-event="onClick" data-dojo-args="evt">
@@ -516,17 +518,16 @@
             <div class="logo-upload__container">
                <div class="form__group">
                <h3 class="drop-zone__label"><%= LanguageUtil.get(pageContext, "loginlogo.label") %></h3>
-               <div class="logo">
+               <%-- Without a stored dotAsset logo, start as after removing it: upload area shown. --%>
+               <div class="logo" <%= ( screenLogoIsSet ? "" : "style='display: none;'" ) %>>
                   <button class="logo__delete">&times;</button>
                   <div class="logo__container">
                      <% if(screenLogoIsSet) { %>
                         <img class="logo__image" border="1" hspace="0" src="<%= Encode.forHtmlAttribute(screenLogo) %>" vspace="0" />
-                     <% } else { %>
-                        <img class="logo__image" border="1" hspace="0" src="<%= IMAGE_PATH %>/company_logo?img_id=<%= company.getCompanyId() %>&key=<%= ImageKey.get(company.getCompanyId()) %>" vspace="0" />
                      <% } %>
                   </div>
                </div>
-               <dot-asset-drop-zone id="dot-asset-drop-zone-main" style="display: none;" drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
+               <dot-asset-drop-zone id="dot-asset-drop-zone-main" <%= ( screenLogoIsSet ? "style='display: none;'" : "style='display: block;'" ) %> drop-files-text="Drop Image" upload-file-text="Uploading Image..." display-indicator="true"></dot-asset-drop-zone>
                <input type="hidden" name="loginScreenLogoInput" id="loginScreenLogoInput" data-hidden="logo-input" value="<%= ( screenLogoIsSet ? Encode.forHtmlAttribute(screenLogo) : "" ) %>">
                <p class="hint"><%= LanguageUtil.get(pageContext, "login-logo.hint") %></p>
                </div>

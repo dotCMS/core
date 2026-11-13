@@ -179,7 +179,7 @@
 					<div dojoType="dijit.layout.ContentPane" id="userDetailsTab" title="<%= LanguageUtil.get(pageContext, "User-Details") %>">
                         <div style="position:relative;border:0px solid green;height:60px;width:80%">
                                 <div style="position:absolute;width:400px;top:0px;left:0px;"><h3 id="fullUserName" class="fullUserName"></h3></div>
-                                <div class="gravitarThingy" id="gravatarTextHolder" style="background-color:<%=APILocator.getCompanyAPI().getDefaultCompany().getStreet() %>;">
+                                <div class="gravitarThingy" id="gravatarTextHolder" style="background-color:<%= com.dotcms.rest.api.v1.company.CompanyBasicInfoForm.isDisplayableColor(APILocator.getCompanyAPI().getDefaultCompany().getStreet()) ? APILocator.getCompanyAPI().getDefaultCompany().getStreet() : "transparent" %>;">
                                     <p id="gravatarText" style="margin:auto;"></p> 
                                 </div>
                                 <div id="gravatarImage" class="gravitarThingy" style="z-index:100"></div>

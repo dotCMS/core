@@ -1,11 +1,16 @@
 package com.dotcms.rest.api.v1.company;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dotcms.rest.exception.BadRequestException;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Unit tests for the logo fields of {@link CompanyBasicInfoForm#checkValid()}.
@@ -59,6 +64,56 @@ class CompanyBasicInfoFormTest {
     void emptyLogos_areAccepted() {
         assertDoesNotThrow(form(null, null)::checkValid);
         assertDoesNotThrow(form("", "")::checkValid);
+    }
+
+    /** A bundled background, a dotAsset background and an empty value are accepted. */
+    @ParameterizedTest
+    @ValueSource(strings = {"", "/html/images/backgrounds/bg-3.jpg",
+            "/dA/e9f32fc04a4d7a0e7e6a025ee65fcf30/asset/my bg.png"})
+    void acceptedBackgrounds(final String background) {
+        assertTrue(CompanyBasicInfoForm.isAcceptedBackgroundImage(background), background);
+    }
+
+    /** A dotAsset background with a dot segment, literal or percent-encoded, is not accepted. */
+    @ParameterizedTest
+    @ValueSource(strings = {"/dA/abc/../html/bg.png", "/dA/abc/%2e%2e/%2e%2e/html/bg.png",
+            "/dA/abc/.%2E/html/bg.png", "/dAx/bg.png", "/images/bg.jpg"})
+    void backgroundsNotAccepted(final String background) {
+        assertFalse(CompanyBasicInfoForm.isAcceptedBackgroundImage(background), background);
+    }
+
+    /**
+     * The background shown to clients: a dotAsset background in its canonical form, any other
+     * stored background as it is, nothing for an empty value, the fresh-install value or a
+     * dotAsset value that is not valid.
+     */
+    @ParameterizedTest
+    @CsvSource(delimiter = '|', quoteCharacter = '"', nullValues = "NULL", value = {
+            "/dA/e9f32fc04a4d7a0e7e6a025ee65fcf30/asset/my bg.png | /dA/e9f32fc04a4d7a0e7e6a025ee65fcf30/asset/my%20bg.png",
+            "/html/images/backgrounds/bg-3.jpg | /html/images/backgrounds/bg-3.jpg",
+            "/application/themes/old/bg.jpg | /application/themes/old/bg.jpg",
+            "/dA/abc/%2e%2e/%2e%2e/html/bg.png | NULL",
+            "/html/%2E%2E/x.jpg | NULL",
+            "/da/%2e%2e/%2e%2e/html/bg.png | NULL",
+            "/html/images/../x.jpg | NULL",
+            "localhost | NULL",
+            "NULL | NULL"})
+    void backgroundImageToShow(final String stored, final String expected) {
+        assertEquals(expected, CompanyBasicInfoForm.backgroundImageToShow(stored));
+    }
+
+    /** Colors made only of color characters are written as they are. */
+    @ParameterizedTest
+    @ValueSource(strings = {"#1b3359", "navy", "rgb(1, 2, 3)", "hsl(10, 50%, 40%)"})
+    void displayableColors(final String color) {
+        assertTrue(CompanyBasicInfoForm.isDisplayableColor(color), color);
+    }
+
+    /** A color with any other character, or no color, is not written. */
+    @ParameterizedTest
+    @ValueSource(strings = {"", "#1b3359;}", "navy\"", "#fff>", "url(//x)", "a:b"})
+    void colorsNotDisplayable(final String color) {
+        assertFalse(CompanyBasicInfoForm.isDisplayableColor(color), color);
     }
 
     private static CompanyBasicInfoForm form(final String loginScreenLogo, final String navBarLogo) {
