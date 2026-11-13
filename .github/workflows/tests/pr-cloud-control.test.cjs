@@ -19,11 +19,12 @@ function script(id) {
 }
 
 async function deploy({ metadata = {}, pr = {}, existing = null, status = 200, calls = [],
-    mutationStatus = 200, afterConflict = null, run = {}, registryStatus = 200,
+    mutationStatus = 200, afterConflict = null, run = {}, registryStatus = 200, teardown = false, latestPr = null,
     immutableDigest = 'sha256:' + 'a'.repeat(64), mutableDigest = immutableDigest } = {}) {
     const sha = 'a'.repeat(40);
     const pull = {
-        number: 1234, state: 'open', labels: [{ name: 'PR: docker image' }],
+        number: 1234, state: teardown ? 'closed' : 'open', merged: teardown, base: { ref: 'main' },
+        labels: [{ name: 'PR: docker image' }],
         head: { sha, ref: 'feat/My_branch.with-dots', repo: { full_name: 'dotcms/core' } },
         ...pr,
     };
@@ -31,10 +32,13 @@ async function deploy({ metadata = {}, pr = {}, existing = null, status = 200, c
     const registryCalls = [];
     const logs = [];
     let reads = 0;
-    const context = { repo: { owner: 'dotcms', repo: 'core' }, payload: {
+    const context = { eventName: teardown ? 'pull_request_target' : 'workflow_run',
+        repo: { owner: 'dotcms', repo: 'core' }, payload: {
+        ...(teardown ? { pull_request: pull } : {}),
         workflow_run: { event: 'pull_request', head_sha: sha, head_branch: pull.head.ref, ...run },
     } };
-    const github = { rest: { pulls: { get: async () => ({ data: pull }) } } };
+    let prReads = 0;
+    const github = { rest: { pulls: { get: async () => ({ data: prReads++ ? (latestPr ?? pull) : pull }) } } };
     const core = { info: message => logs.push(message), summary: {
         addRaw: () => core.summary, write: async () => {},
     } };
@@ -56,6 +60,7 @@ async function deploy({ metadata = {}, pr = {}, existing = null, status = 200, c
     };
     const env = { CLOUD_CONTROL_DOTCMS_MACHINE_TOKEN: 'test-token', RUNNER_TEMP: '/tmp' };
     const requireMock = name => {
+        assert.equal(teardown, false, 'Merge teardown must not depend on a PR artifact');
         assert.equal(name, 'node:fs');
         return { readFileSync: () => JSON.stringify(manifest) };
     };
@@ -72,7 +77,10 @@ test('trusted workflow covers both publishers and never checks out PR code', () 
     assert.match(workflow, /workflow_run:/);
     assert.match(workflow, /'-1 PR Check'/);
     assert.match(workflow, /'Publish PR Test Image'/);
-    assert.doesNotMatch(workflow, /actions\/checkout|pull_request_target:/);
+    assert.doesNotMatch(workflow, /actions\/checkout/);
+    assert.match(workflow, /pull_request_target:\n    types: \[closed\]\n    branches: \[main\]/);
+    assert.match(workflow, /github\.event\.pull_request\.merged == true/);
+    assert.match(workflow, /github\.event\.pull_request\.head\.repo\.full_name == github\.repository/);
     assert.match(workflow, /head_repository.full_name == github.repository/);
     assert.match(workflow, /secrets.CLOUD_CONTROL_DOTCMS_MACHINE_TOKEN/);
     assert.doesNotMatch(workflow, /pull-requests: write|contents: write/);
@@ -267,6 +275,7 @@ fi
                 assert.ok(body.includes(`https://cloud.dotcms.dev/admin/envs/dotpr%2F${envKey}`));
                 assert.match(body, /[Ss]ign in.*Cloud Control/);
                 assert.match(body, /permissions/);
+                assert.match(body, /Merging this PR into main automatically decommissions the environment and deletes its data/);
                 assert.doesNotMatch(body, /fake-github-token|test-token/);
                 const request = fs.readFileSync(path.join(dir, 'request'), 'utf8');
                 assert.ok(request.includes(commentId ? '-X PATCH repos/dotcms/core/issues/comments/99'
@@ -303,6 +312,73 @@ test('API errors are not mistaken for missing environments or leaked in logs', a
         await assert.rejects(deploy({ status }), new RegExp(`HTTP ${status}`));
     }
     await assert.rejects(deploy({ existing: stopped, mutationStatus: 403 }), /HTTP 403/);
+});
+
+test('merged PR environments are decommissioned without artifacts or registry access, even if the label was removed', async () => {
+    for (const deploy_status of ['deployed', 'stopped', 'failed', 'provisioning']) {
+        const { calls, registryCalls } = await deploy({ teardown: true, pr: { labels: [] },
+            existing: { ...stopped, deploy_status } });
+        assert.equal(calls.length, 2);
+        assert.equal(calls[1].method, 'PATCH');
+        assert.equal(calls[1].url, 'https://cloud.dotcms.dev/api/envs/dotpr/decommission?env_key=1234-feat-my-branch-with-dots');
+        assert.equal(calls[1].headers.Authorization, 'Bearer test-token');
+        assert.equal(registryCalls.length, 0);
+    }
+});
+
+test('missing, decommissioning and decommissioned environments make merge teardown a no-op', async () => {
+    for (const existing of [null, { ...stopped, pending_delete: true }, { ...stopped, deploy_status: 'decommissioning' },
+        { ...stopped, deploy_status: 'decommissioned' }]) {
+        const { calls } = await deploy({ teardown: true, existing });
+        assert.deepEqual(calls.map(call => call.method), ['GET']);
+    }
+});
+
+test('unmerged closes, forks and actual non-main bases cannot trigger Cloud Control teardown', async () => {
+    const head = { sha: 'a'.repeat(40), ref: 'feature/x', repo: { full_name: 'other/fork' } };
+    for (const pr of [{ merged: false }, { state: 'open' }, { head },
+        { base: { ref: 'master' } }, { base: { ref: 'stack-parent' } }, { base: null }]) {
+        const { calls, registryCalls } = await deploy({ teardown: true, pr, existing: stopped });
+        assert.equal(calls.length, 0);
+        assert.equal(registryCalls.length, 0);
+    }
+});
+
+test('teardown rejects a repurposed environment with a different image', async () => {
+    const calls = [];
+    await assert.rejects(deploy({ teardown: true, calls,
+        existing: { ...stopped, image: 'dotcms/dotcms:latest' } }), /image.*match/i);
+    assert.deepEqual(calls.map(call => call.method), ['GET']);
+});
+
+test('teardown tolerates concurrent deletion or confirmed decommissioning, but reports real API failures', async () => {
+    await deploy({ teardown: true, existing: stopped, mutationStatus: 404 });
+    const { calls } = await deploy({ teardown: true, existing: stopped, mutationStatus: 409,
+        afterConflict: { ...stopped, deploy_status: 'decommissioning' } });
+    assert.deepEqual(calls.map(call => call.method), ['GET', 'PATCH', 'GET']);
+    for (const mutationStatus of [401, 403, 409, 500]) {
+        await assert.rejects(deploy({ teardown: true, existing: stopped, mutationStatus,
+            afterConflict: stopped }), new RegExp(`HTTP ${mutationStatus}`));
+    }
+});
+
+test('a PR merging during provision or start still gets its environment decommissioned', async () => {
+    for (const creating of [false, true]) {
+        const { calls } = await deploy({ existing: creating ? null : stopped,
+            mutationStatus: creating ? 201 : 200, latestPr: { state: 'closed', merged: true, base: { ref: 'main' } },
+            afterConflict: { ...stopped, deploy_status: 'pending', replicas: 1 } });
+        assert.deepEqual(calls.map(call => call.method), ['GET', creating ? 'POST' : 'PATCH', 'GET', 'PATCH']);
+        assert.ok(calls[3].url.includes('/decommission?'));
+    }
+});
+
+test('post-write merge rechecks never decommission for master or a stack parent', async () => {
+    for (const ref of ['master', 'stack-parent']) {
+        const { calls } = await deploy({ existing: stopped,
+            latestPr: { state: 'closed', merged: true, base: { ref } }, afterConflict: stopped });
+        assert.deepEqual(calls.map(call => call.method), ['GET', 'PATCH']);
+        assert.ok(calls[1].url.includes('/detail?'));
+    }
 });
 
 test('a concurrent create rechecks the environment instead of overwriting it', async () => {

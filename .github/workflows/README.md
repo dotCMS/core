@@ -62,11 +62,14 @@ view or start it if their Cloud Control permissions allow it. The link is publis
 with the image; the environment is created after the publishing workflow completes.
 
 Configure the GitHub Actions secret `CLOUD_CONTROL_DOTCMS_MACHINE_TOKEN` with a Cloud
-Control bearer token that can provision into `dotpr` and start its environments
-(`PATCH /api/envs/dotpr/detail` requires admin access for personal tokens).
-The secret is only used by the default-branch `workflow_run`, which never checks out
-PR code and validates that the publication belongs to a current, open, labeled internal PR.
-Before using the token, it independently checks Docker Hub: the commit-specific and mutable
+Control bearer token that can provision into `dotpr`, start its environments and decommission
+them. Starting and decommissioning both require admin access for personal tokens; deployer
+access alone is insufficient. Grant admin before merging the teardown change; otherwise cleanup
+will fail with HTTP 403 and leave the environment intact. Protected-tag and permission failures
+are reported, never bypassed.
+The secret is only used by trusted `workflow_run` and merge-only `pull_request_target` code;
+neither checks out PR code. Provisioning validates that the publication belongs to a current,
+open, labeled internal PR, then independently checks Docker Hub: the commit-specific and mutable
 tags must exist with the same manifest digest. The PR artifact alone cannot authorize provisioning.
 This workflow must be on the default branch before deployment triggers will run.
 
@@ -74,7 +77,18 @@ Missing environments are provisioned with Cloud Control defaults and one replica
 Stopped environments with the matching image are started; running or already-starting
 environments are left alone because the reconciler handles mutable-tag updates.
 Image mismatches, failed/deleting environments and API errors fail without overwriting
-configuration. No automatic teardown is added; existing Cloud Control tag/schedule rules apply.
+configuration.
+
+When an internal PR merges into `main`, the trusted merge handler queues decommissioning
+of its matching `dotpr` environment, even if its Docker label was removed. This permanently
+removes the instance and its data; the Cloud Control environment record remains available.
+The PR's actual base must be `main`; merges into `master` or a stack parent are not teardown
+events, even if GitHub's trigger filter reports the stack's trunk. Closing without merging
+does not tear down the environment. Missing, deleting or already
+decommissioned environments are no-ops; image mismatches fail without deleting a repurposed
+instance. In-flight creates/starts recheck merge state on completion and queue cleanup if the
+PR merged into `main` before the write finished. Existing Cloud Control
+tag/schedule rules still apply, and legacy short-named manual test environments are not migrated.
 
 Offline tests: `bash .github/workflows/tests/pr-cloud-control.test.sh` (also run by workflow lint CI).
 
