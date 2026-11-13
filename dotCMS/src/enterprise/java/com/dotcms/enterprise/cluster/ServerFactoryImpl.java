@@ -30,6 +30,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
@@ -53,14 +54,14 @@ public class ServerFactoryImpl extends ServerFactory {
         return Date.from(Instant.now().minus(Config.getIntProperty("HEARTBEAT_TIMEOUT", 600), ChronoUnit.SECONDS));
 
     }
-    
-    
+
+
 
     public void saveServer(Server server) throws DotDataException {
 
     	// delete then insert, then update (ghetto upsert!)
     	removeServerFromClusterTable(server.serverId);
-    	
+
         DotConnect dc = new DotConnect();
 
 
@@ -73,10 +74,10 @@ public class ServerFactoryImpl extends ServerFactory {
         dc.loadResult();
         updateServer(server);
     }
-    
+
     protected Server readServerResult(Map<String, Object> row) {
-    	
-    	
+
+
 		Server.Builder serverBuilder =  Server.builder();
 
 
@@ -104,7 +105,7 @@ public class ServerFactoryImpl extends ServerFactory {
 
 
         final Date lastPing = row.get("lastping") !=null  ? ((Date)row.get("lastping")) : new Date(0) ;
-        
+
         serverBuilder.withLastHeartBeat(lastPing.getTime());
 
         final long startupTime  = ConversionUtils.toLong(row.get("startup_time"), 0L);
@@ -157,39 +158,44 @@ public class ServerFactoryImpl extends ServerFactory {
         return servers;
     }
 
-    
+
 
   private Tuple2<Instant, List<String>> reindexingServers = null;
 
   @Override
   public List<String> getReindexingServers() throws DotDataException {
-    
+
     if (reindexingServers != null && !reindexingServers._2.isEmpty() && Instant.now().isBefore(reindexingServers._1)) {
       return reindexingServers._2;
     }
 
+    int maxReindexingServers = Math.max(1, Config.getIntProperty("MAX_REINDEXING_SERVERS", 2));
 
     final List<String> servers = new ArrayList<>();
     DotConnect dc = new DotConnect();
 
-    dc.setSQL(SELECT_SERVER_SQL + "  where sitelic.id is not null and lastping > ? order by startup_time, server_id");
+    dc.setSQL(SELECT_SERVER_SQL + "  where sitelic.id is not null and lastping > ? order by startup_time, server_id limit ?");
 
     dc.addParam(Date.from(Instant.now().minus(5, ChronoUnit.MINUTES)));
+    dc.addParam(maxReindexingServers);
     List<Map<String, Object>> results = dc.loadObjectResults();
 
-    for (Map<String, Object> row : results) {
-      servers.add((String) row.get("server_id"));
+    if (UtilMethods.isSet(results)) {
+      for (Map<String, Object> row : results) {
+        servers.add((String) row.get("server_id"));
+      }
     }
-    if(!servers.contains(APILocator.getServerAPI().readServerId())) {
+
+    if(servers.isEmpty()){
       servers.add(APILocator.getServerAPI().readServerId());
     }
     reindexingServers = Tuple.of(Instant.now().plus(1, ChronoUnit.MINUTES), servers);
     return servers;
   }
-    
-    
-    
-    
+
+
+
+
     @CloseDBIfOpened
     public List<Server> getAliveServers() throws DotDataException {
 
@@ -239,8 +245,8 @@ public class ServerFactoryImpl extends ServerFactory {
     }
     @WrapInTransaction
     public void updateServer(Server server) throws DotDataException {
-    
-            DotConnect dc = new DotConnect();       
+
+            DotConnect dc = new DotConnect();
             dc.setSQL("update cluster_server set cluster_id = ?, name=?, ip_address = ?, host = ?, cache_port = ?, es_transport_tcp_port = ?, es_http_port = ?, key_ = ?,es_network_port=? where server_id = ?");
             dc.addParam(server.getClusterId());
             dc.addParam(server.getName());
@@ -254,7 +260,7 @@ public class ServerFactoryImpl extends ServerFactory {
             dc.addParam(server.getServerId());
             dc.loadResult();
     }
-    
+
     @WrapInTransaction
     public void updateServerName(String serverId, String name) throws DotDataException {
         DotConnect dc = new DotConnect();
@@ -263,15 +269,15 @@ public class ServerFactoryImpl extends ServerFactory {
         dc.addParam(serverId);
         dc.loadResult();
     }
-    
+
     @WrapInTransaction
     @Override
     public void removeServerFromClusterTable(String serverId) throws DotDataException{
-        
+
         try {
             // Use simple operations with minimal locking to prevent hanging during shutdown
             Logger.debug(ServerFactoryImpl.class, "Removing server " + serverId + " from cluster tables during shutdown");
-            
+
             DotConnect dc = new DotConnect();
             dc.setSQL("delete from cluster_server_uptime");
             dc.loadResult();
@@ -280,17 +286,17 @@ public class ServerFactoryImpl extends ServerFactory {
             dc.setSQL("delete from cluster_server where server_id = ?");
             dc.addParam(serverId);
             dc.loadResult();
-            
+
             Logger.debug(ServerFactoryImpl.class, "Successfully removed server " + serverId + " from cluster tables");
-            
+
         } catch (Exception e) {
             // Log but don't fail shutdown for cluster cleanup issues
-            Logger.warn(ServerFactoryImpl.class, 
+            Logger.warn(ServerFactoryImpl.class,
                 "Failed to remove server " + serverId + " from cluster table during shutdown: " + e.getMessage());
             throw new DotDataException("Server cluster cleanup failed", e);
         }
     }
-    
+
 
     @CloseDBIfOpened
 	@Override
@@ -311,11 +317,11 @@ public class ServerFactoryImpl extends ServerFactory {
         }
 
         return servers;
-		
-		
-		
-		
-		
+
+
+
+
+
 	}
 
 
