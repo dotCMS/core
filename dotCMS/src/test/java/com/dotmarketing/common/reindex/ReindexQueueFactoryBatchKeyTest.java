@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexQueueFactory.Priority;
 import com.dotmarketing.exception.DotDataException;
+import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 import org.junit.After;
@@ -80,7 +81,10 @@ public class ReindexQueueFactoryBatchKeyTest {
 
     @Test
     public void test_nonSelectedServer_doesNotLoadJournalOrRecoverShares()
-            throws DotDataException {
+            throws Exception {
+        final Field cursor = ReindexQueueFactory.class.getDeclaredField("lastIdIndexed");
+        cursor.setAccessible(true);
+        cursor.setLong(null, 500L);
         final ServerAPI serverAPI = mock(ServerAPI.class);
         when(serverAPI.getReindexingServers()).thenReturn(List.of("server-1", "server-2"));
         when(serverAPI.readServerId()).thenReturn("server-3");
@@ -90,6 +94,8 @@ public class ReindexQueueFactoryBatchKeyTest {
             apiLocator.when(APILocator::getServerAPI).thenReturn(serverAPI);
 
             assertTrue(factory.findContentToReindex(50).isEmpty());
+            assertEquals("Reselection must start from the beginning of the journal",
+                    0L, cursor.getLong(null));
             assertTrue("An excluded node must not query journal rows or recovery shares",
                     queries.constructed().isEmpty());
         }

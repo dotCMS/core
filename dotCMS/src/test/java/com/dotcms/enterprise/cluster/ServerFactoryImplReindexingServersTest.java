@@ -39,7 +39,8 @@ public class ServerFactoryImplReindexingServersTest {
 
             config.verify(() -> Config.getIntProperty("MAX_REINDEXING_SERVERS", 2));
             verify(queries.constructed().get(0)).setSQL(
-                    endsWith("order by startup_time, server_id limit 2"));
+                    endsWith("order by startup_time, server_id limit ?"));
+            verify(queries.constructed().get(0)).addParam(2);
             api.verifyNoInteractions();
         }
     }
@@ -60,8 +61,34 @@ public class ServerFactoryImplReindexingServersTest {
 
             config.verify(() -> Config.getIntProperty("MAX_REINDEXING_SERVERS", 2));
             verify(queries.constructed().get(0)).setSQL(
-                    endsWith("order by startup_time, server_id limit 1"));
+                    endsWith("order by startup_time, server_id limit ?"));
+            verify(queries.constructed().get(0)).addParam(1);
             api.verifyNoInteractions();
+        }
+    }
+
+    @Test
+    public void nonpositiveConfiguredLimitsUseOneAndDoNotAppendExcludedLocalNode() throws Exception {
+        for (final int configuredLimit : new int[] {0, -1}) {
+            final ServerAPI serverAPI = mock(ServerAPI.class);
+            when(serverAPI.readServerId()).thenReturn("local");
+            try (MockedStatic<Config> config = mockStatic(Config.class);
+                    MockedStatic<APILocator> api = mockStatic(APILocator.class);
+                    MockedConstruction<DotConnect> queries = mockConstruction(DotConnect.class,
+                            (query, context) -> when(query.loadObjectResults()).thenReturn(
+                                    List.of(Map.of("server_id", "peer-a"))))) {
+                config.when(() -> Config.getIntProperty("MAX_REINDEXING_SERVERS", 2))
+                        .thenReturn(configuredLimit);
+                api.when(APILocator::getServerAPI).thenReturn(serverAPI);
+
+                assertEquals(List.of("peer-a"), new ServerFactoryImpl().getReindexingServers());
+
+                config.verify(() -> Config.getIntProperty("MAX_REINDEXING_SERVERS", 2));
+                verify(queries.constructed().get(0)).setSQL(
+                        endsWith("order by startup_time, server_id limit ?"));
+                verify(queries.constructed().get(0)).addParam(1);
+                api.verifyNoInteractions();
+            }
         }
     }
 

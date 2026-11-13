@@ -169,14 +169,15 @@ public class ServerFactoryImpl extends ServerFactory {
       return reindexingServers._2;
     }
 
-    int maxReindexingServers = Config.getIntProperty("MAX_REINDEXING_SERVERS",2);
+    int maxReindexingServers = Math.max(1, Config.getIntProperty("MAX_REINDEXING_SERVERS", 2));
 
     final List<String> servers = new ArrayList<>();
     DotConnect dc = new DotConnect();
 
-    dc.setSQL(SELECT_SERVER_SQL + "  where sitelic.id is not null and lastping > ? order by startup_time, server_id limit " + maxReindexingServers);
+    dc.setSQL(SELECT_SERVER_SQL + "  where sitelic.id is not null and lastping > ? order by startup_time, server_id limit ?");
 
     dc.addParam(Date.from(Instant.now().minus(5, ChronoUnit.MINUTES)));
+    dc.addParam(maxReindexingServers);
     List<Map<String, Object>> results = dc.loadObjectResults();
 
     if (UtilMethods.isSet(results)) {
