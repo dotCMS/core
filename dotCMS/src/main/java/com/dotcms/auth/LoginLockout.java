@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 import java.util.function.LongSupplier;
@@ -150,6 +151,13 @@ public final class LoginLockout {
             "DELETE FROM login_lockout WHERE locked_until <= ? AND window_start < ?";
 
     /**
+     * Sums the failures recorded for one source across every account, counting only rows still within the
+     * window. Parameters: source, window cutoff.
+     */
+    private static final String SOURCE_FAILURES_SQL =
+            "SELECT COALESCE(SUM(failures), 0) AS total FROM login_lockout WHERE source = ? AND window_start >= ?";
+
+    /**
      * Lock state of one account as seen from one source.
      */
     public enum Status {
@@ -200,6 +208,23 @@ public final class LoginLockout {
          */
         public boolean isLockedOut() {
             return refused && !counted;
+        }
+
+        /**
+         * @return the count this attempt brought its source to, or 0 when it was refused before being counted
+         */
+        public int number() {
+            return number;
+        }
+
+        /**
+         * @return {@code true} when this attempt was never recorded against a real account and source: lockout
+         * is switched off, or {@link #begin} could not count it, for example after a database error. A caller
+         * that paces something by the attempt's count should fall back to a different count instead, rather
+         * than treat this as a real, freshly-counted attempt of 0.
+         */
+        public boolean isUntracked() {
+            return this == UNTRACKED;
         }
     }
 
@@ -596,6 +621,57 @@ public final class LoginLockout {
                 ? "Login refused, locked out: user "
                 : "Login refused, too many concurrent attempts: user ")
                 + attempt.userId + " from " + attempt.source);
+    }
+
+    /**
+     * Recent failures for one source across every account, within the counting window right now. Unlike the
+     * per-account count in {@link #begin}, this adds up every account the source has failed against, so failures
+     * spread across many different accounts from one address build a rising total here even though each
+     * account's own count starts over at 1. Used only to pace the login delay ({@link #pacingSeed}), never to
+     * decide a lockout.
+     *
+     * @return the sum of {@code failures} recorded for the source across every account in the window, or 0 on a
+     * database error
+     */
+    @CloseDBIfOpened
+    public int sourceFailures(final String source) {
+        try {
+            final long windowCutoff = clock.getAsLong() - TimeUnit.SECONDS.toMillis(windowSeconds());
+            final List<Map<String, Object>> rows = new DotConnect()
+                    .setSQL(SOURCE_FAILURES_SQL)
+                    .addParam(source).addParam(windowCutoff)
+                    .loadObjectResults();
+            return ((Number) rows.get(0).get("total")).intValue();
+        } catch (final DotDataException | RuntimeException e) {
+            Logger.error(this, "Unable to read source failures for " + source + ": " + e.getMessage(), e);
+            return 0;
+        }
+    }
+
+    /**
+     * The seed that should pace a failed login's delay: the larger of this attempt's own atomically-counted
+     * position for its account and source, and the total recent failures its source has caused across every
+     * account. Taking the larger of the two means the delay escalates whichever way the failures are
+     * concentrated: on one account, or spread across many from the same source.
+     *
+     * <p>{@value #UNKNOWN_SOURCE} is excluded from the cross-account total: it is a shared fallback for every
+     * login that has no resolvable client address, not a real source, so unrelated accounts that happen to
+     * share it must not inflate each other's delay.
+     *
+     * <p>An attempt refused by a lock ({@link Attempt#isLockedOut()}) is paced at {@link #maxFailures()}
+     * instead: it is never counted, so its own position is always 0, and the lock that refused it also
+     * reset its source's recorded failures to 0 -- left alone, both would pace it at 0 instead of at the
+     * cap a caller applies to every other attempt.
+     *
+     * @return the pacing seed for {@code attempt}
+     */
+    public int pacingSeed(final Attempt attempt) {
+        if (attempt.isLockedOut()) {
+            return maxFailures();
+        }
+        return UNKNOWN_SOURCE.equals(attempt.source)
+                ? attempt.number
+                : Math.max(attempt.number, sourceFailures(attempt.source));
     }
 
     /**

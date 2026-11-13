@@ -703,9 +703,9 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         }
         try {
             if (refused) {
-                this.delayFailedLogin(user, login);
+                this.delayFailedLogin(user, login, attempt);
             } else {
-                this.handleFailedLoginAttempt(user, login, companyId, byEmailAddress);
+                this.handleFailedLoginAttempt(user, login, companyId, byEmailAddress, attempt);
             }
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when handling failed login for User '%s': " +
@@ -729,15 +729,17 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
      * @param companyId      The current Company ID.
      * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
      *                       done via User ID, set to {@code false}.
+     * @param attempt        The login lockout attempt for this login; see {@link LoginLockout#begin(String, String)}.
      *
      * @throws SystemException User failed attempts data could not be saved.
      */
     private void handleFailedLoginAttempt(final User user, final String login, final String companyId,
-                                          final boolean byEmailAddress) throws SystemException {
+                                          final boolean byEmailAddress, final LoginLockout.Attempt attempt)
+            throws SystemException {
         int failedLoginAttempts = user.getFailedLoginAttempts();
         Logger.debug(this, String.format("Current failed login attempts for user '%s' is %s", login,
                 failedLoginAttempts));
-        this.delayFailedLogin(user, login);
+        this.delayFailedLogin(user, login, attempt);
         user.setFailedLoginAttempts(++failedLoginAttempts);
         Logger.debug(this, String.format("Setting failed login attempts for user '%s' to %s", login,
                 user.getFailedLoginAttempts()));
@@ -758,33 +760,42 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
     }
 
     /**
-     * Applies the login-delaying strategy for a failed login, based on the User's current failed login count.
+     * Applies the login-delaying strategy for a failed login, based on the login lockout attempt's pacing seed.
      *
-     * @param user  The {@link User} that failed to log in.
-     * @param login The User's email or ID.
+     * @param user    The {@link User} that failed to log in.
+     * @param login   The User's email or ID.
+     * @param attempt The login lockout attempt for this login; see {@link LoginLockout#begin(String, String)}.
      */
-    private void delayFailedLogin(final User user, final String login) {
+    private void delayFailedLogin(final User user, final String login, final LoginLockout.Attempt attempt) {
         if (Config.getBooleanProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true)) {
             Logger.debug(this, String.format("Delaying login attempts for user '%s'", login));
-            this.delayRequest(this.delaySeed(user));
+            this.delayRequest(this.delaySeed(user, attempt));
         }
     }
 
     /**
-     * Returns the failed login count that paces the delay. With login lockout on, the count starts over at the
-     * limit, so a larger stored value can only be left from before lockout (it used to reset only on a successful
-     * login). Such a value is capped below the limit here rather than reset in the database, so the first failed
-     * login of a dormant account does not sleep for the square of an old count.
+     * Returns the count that paces the delay. With login lockout on and the attempt actually tracked, this is
+     * {@link LoginLockout#pacingSeed}: each attempt's own atomically-counted position, or the source's total
+     * recent failures across every account, whichever is larger, so the delay is paced whichever way the
+     * failures are concentrated. With lockout off, or when the attempt is untracked (for example after a
+     * database error in {@link LoginLockout#begin}), the legacy per-user failed-attempts count is used
+     * instead, since no lockout attempt is being tracked.
      *
-     * @param user The {@link User} that failed to log in.
+     * <p>Either way the result is capped below the configured limit rather than reset in the database, so
+     * neither the first failed login of a dormant account, nor the legacy count left to grow unbounded while
+     * lockout is off (nothing resets it then), sleeps for a strategy's full scale of an old count.
+     *
+     * @param user    The {@link User} that failed to log in.
+     * @param attempt The login lockout attempt for this login; see {@link LoginLockout#begin(String, String)}.
      *
      * @return The seed for {@link #delayRequest(int)}.
      */
-    private int delaySeed(final User user) {
+    private int delaySeed(final User user, final LoginLockout.Attempt attempt) {
         final int maxFailures = LoginLockout.maxFailures();
-        return LoginLockout.getInstance().isEnabled(maxFailures)
-                ? Math.min(user.getFailedLoginAttempts(), maxFailures - 1)
+        final int seed = LoginLockout.getInstance().isEnabled(maxFailures) && !attempt.isUntracked()
+                ? LoginLockout.getInstance().pacingSeed(attempt)
                 : user.getFailedLoginAttempts();
+        return maxFailures > 0 ? Math.min(seed, maxFailures - 1) : seed;
     }
 
     /**
@@ -792,7 +803,13 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
      * order to prevent potential hacking attacks. The time that the user will have to wait is based on
      * a specific delay strategy. It defaults to raising the {@code defaultSeed} value to the power of
      * 2.
-     * 
+     *
+     * <p>A strategy with a literal parameter ({@code TIME_MILLS:2000}, {@code TIME_SEC:30}, {@code
+     * TIME_MIN:5}) treats it as a per-unit rate rather than a flat total: the literal is multiplied by
+     * {@code defaultSeed}, the same way the default strategy raises {@code defaultSeed} to a power,
+     * so every strategy scales with how paced the attempt actually is instead of sleeping the same
+     * fixed amount regardless of it.
+     *
      * @param defaultSeed - The default time seed in case the delay strategy does not specify one.
      */
     private void delayRequest(int defaultSeed) {
@@ -803,7 +820,8 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         try {
             strategy = (UtilMethods.isSet(stratParams[0])) ? DelayStrategy.valueOf(stratParams[0].toUpperCase()) : DelayStrategy.POW;
             if (stratParams.length > 1) {
-                seed = ConversionUtils.toInt(stratParams[1], defaultSeed);
+                final int unitsPerSeed = ConversionUtils.toInt(stratParams[1], 1);
+                seed = unitsPerSeed * defaultSeed;
             }
 
             Logger.debug(this, "Doing a delay request, with seed: " + seed + ", defaultSeed: " + defaultSeed + ", strategy: " + strategy);
