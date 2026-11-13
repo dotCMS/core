@@ -170,11 +170,7 @@ public class ReindexQueueFactory {
      */
     protected boolean hasReindexRecords() throws DotDataException {
         DotConnect dc = new DotConnect();
-        String sql = DbConnectionFactory.isMsSql()
-                ? "SELECT TOP 1 id from dist_reindex_journal where priority >= ? and  priority < ?"
-                : DbConnectionFactory.isOracle() ?
-                        "select 1 from dist_reindex_journal where priority >= ? and  priority < ? and rownum=1"
-                        : "select 1 from dist_reindex_journal where priority >= ? and  priority < ? limit 1";
+        String sql = "select 1 from dist_reindex_journal where priority >= ? and  priority < ? limit 1";
         dc.setSQL(sql);
 
         dc.addParam(Priority.REINDEX.dbValue());
@@ -212,15 +208,10 @@ public class ReindexQueueFactory {
                     map.get("index_val"))
                     : StringUtils.EMPTY;
 
-            if (DbConnectionFactory.isOracle()) {
-                BigDecimal rowVal = (BigDecimal) map.get("id");
-                identifier = Long.valueOf(rowVal.toPlainString());
-                rowVal = (BigDecimal) map.get("priority");
-                priority = Integer.valueOf(rowVal.toPlainString());
-            } else {
-                identifier = (Long) map.get("id");
-                priority = Integer.parseInt(map.get("priority").toString());
-            }
+
+            identifier = (Long) map.get("id");
+            priority = Integer.parseInt(map.get("priority").toString());
+
 
             final ReindexEntry ridx = ReindexEntry.builder()
                     .id(identifier)
@@ -364,19 +355,16 @@ public class ReindexQueueFactory {
             return;
         }
         int myIndex = reindexingServers.indexOf(APILocator.getServerAPI().readServerId());
+        if(myIndex<0){
+            return;
+        }
         final int priorityLevel = Priority.ERROR.dbValue();
         DotConnect db = new DotConnect();
 
-        if (DbConnectionFactory.isOracle()) {
-            db.setSQL("select * from (select * from dist_reindex_journal where MOD(id, ?) = ?"
-                    + " and priority <= ? and id > ? ORDER BY priority ASC) where ROWNUM <= 2000");
-        } else if (DbConnectionFactory.isMsSql()) {
-            db.setSQL("select TOP 2000 * from dist_reindex_journal where id % ? = ?"
-                    + " and priority <= ? and id > ? ORDER BY priority ASC");
-        } else {
-            db.setSQL("select * from dist_reindex_journal where MOD(id, ?) = ?"
-                    + " and priority <= ? and id > ? ORDER BY priority ASC LIMIT 2000");
-        }
+
+        db.setSQL("select * from dist_reindex_journal where MOD(id, ?) = ?"
+                + " and priority <= ? and id > ? ORDER BY priority ASC LIMIT 2000");
+
 
         db.addParam(reindexingServers.size());
         db.addParam(myIndex);
