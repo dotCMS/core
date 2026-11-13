@@ -3,6 +3,7 @@ package com.dotmarketing.startup.runonce;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -124,17 +125,27 @@ public class Task261112WidenSiteSearchAuditTextColumnsTest {
     }
 
     /**
-     * Puts the three list columns back to the pre-fix {@code varchar(500)} definition. Values
-     * already longer than that are cut so the type change itself cannot fail.
+     * Puts the three list columns back to the pre-fix {@code varchar(500)} definition.
+     *
+     * <p>The table is shared with every other test in the run, so existing rows are never cut to
+     * fit: when any row already holds a value longer than 500 characters the test is skipped
+     * instead, and the type change itself carries no {@code USING} cast, so Postgres would refuse
+     * it rather than silently truncate.</p>
      */
     private static void narrowColumnsToOldSchema() throws SQLException {
-        final StringBuilder sql = new StringBuilder("ALTER TABLE sitesearch_audit ");
+        final StringBuilder longRows = new StringBuilder(
+                "SELECT count(*) AS n FROM sitesearch_audit WHERE ");
+        final StringBuilder alter = new StringBuilder("ALTER TABLE sitesearch_audit ");
         for (int i = 0; i < COLUMNS.length; i++) {
-            sql.append(i == 0 ? "" : ", ")
-                    .append("ALTER COLUMN ").append(COLUMNS[i])
-                    .append(" TYPE varchar(500) USING left(").append(COLUMNS[i]).append(", 500)");
+            longRows.append(i == 0 ? "" : " OR ")
+                    .append("length(").append(COLUMNS[i]).append(") > 500");
+            alter.append(i == 0 ? "" : ", ")
+                    .append("ALTER COLUMN ").append(COLUMNS[i]).append(" TYPE varchar(500)");
         }
-        new DotConnect().executeStatement(sql.toString());
+        assumeTrue("sitesearch_audit already holds values longer than 500 characters; narrowing "
+                        + "the columns would fail, and truncating them would destroy that data",
+                new DotConnect().setSQL(longRows.toString()).getInt("n") == 0);
+        new DotConnect().executeStatement(alter.toString());
     }
 
     /**

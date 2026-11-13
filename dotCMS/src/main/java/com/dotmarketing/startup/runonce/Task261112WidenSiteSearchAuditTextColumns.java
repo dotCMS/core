@@ -26,7 +26,8 @@ public class Task261112WidenSiteSearchAuditTextColumns implements StartupTask {
 
     private static final String COUNT_NARROW_COLUMNS_SQL =
             "SELECT count(*) AS narrow FROM information_schema.columns "
-                    + "WHERE table_name = 'sitesearch_audit' "
+                    + "WHERE table_schema = current_schema() "
+                    + "AND table_name = 'sitesearch_audit' "
                     + "AND column_name IN ('path', 'host_list', 'lang_list') "
                     + "AND data_type <> 'text'";
 
