@@ -175,8 +175,6 @@ public class CaffineCache extends CacheProvider {
         NumberFormat nf = DecimalFormat.getInstance();
         DecimalFormat pf = new DecimalFormat("##.##%");
         for (String group : currentGroups) {
-            CacheStats stats = new CacheStats();
-
             DynamicTTLCache<String, Object> foundCache = getCache(group);
 
             long size = getMaxSize(group);
@@ -186,6 +184,7 @@ public class CaffineCache extends CacheProvider {
             String duration = millis == Long.MAX_VALUE ? "" : " | ttl:" + nf.format(millis / 1000) + "s";
 
             com.github.benmanes.caffeine.cache.stats.CacheStats cstats = foundCache.stats();
+            CacheStats stats = new CacheStats(cstats.hitCount(), cstats.requestCount());
             stats.addStat(CacheStats.REGION, group)
                 .addStat(CacheStats.REGION_DEFAULT, "false")
                 .addStat(CacheStats.REGION_CONFIGURED_SIZE, "size:" + nf.format(size)  + duration )

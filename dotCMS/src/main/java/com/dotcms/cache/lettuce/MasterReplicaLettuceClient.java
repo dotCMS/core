@@ -441,8 +441,20 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
         return null;
     }
 
+    /** Returns set members, retaining the empty-set fallback expected by storage/cache callers. */
     @Override
-    public Set<V> getMembers (final K key) {
+    public Set<V> getMembers(final K key) {
+        return getMembers(key, false);
+    }
+
+    /** Reads set members for statistics without disguising a connection failure as an empty set. */
+    @Override
+    public Set<V> getMembersOrThrow(final K key) {
+        return getMembers(key, true);
+    }
+
+    /** Shares membership lookup while keeping strict collection semantics separate from legacy reads. */
+    private Set<V> getMembers(final K key, final boolean requireConnection) {
 
         try (StatefulRedisConnection<String,V> conn = this.getConn()) {
 
@@ -452,6 +464,9 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
             }
         }
 
+        if (requireConnection) {
+            throw new DotStateException("Redis connection unavailable for set membership lookup");
+        }
         return Collections.emptySet();
     }
 
@@ -478,26 +493,40 @@ public class MasterReplicaLettuceClient<K, V> implements RedisClient<K, V> {
         }
     }
 
-    public void scanKeys(final String matchesPattern, int keyBatchingSize,
-                         final Consumer<Collection<K>> keyConsumer) {
+    /** Streams key batches, retaining the no-op fallback expected by existing cache callers. */
+    @Override
+    public void scanKeys(final String matchesPattern, final int keyBatchingSize,
+            final Consumer<Collection<K>> keyConsumer) {
+        scanKeys(matchesPattern, keyBatchingSize, keyConsumer, false);
+    }
 
+    /** Scans for statistics without disguising a connection failure as an empty keyspace. */
+    @Override
+    public void scanKeysOrThrow(final String matchesPattern, final int keyBatchingSize,
+            final Consumer<Collection<K>> keyConsumer) {
+        scanKeys(matchesPattern, keyBatchingSize, keyConsumer, true);
+    }
+
+    /** Shares cursor paging while keeping strict collection semantics separate from legacy reads. */
+    private void scanKeys(final String matchesPattern, final int keyBatchingSize,
+            final Consumer<Collection<K>> keyConsumer, final boolean requireConnection) {
         KeyScanCursor<String> scanCursor = null;
-
         try (StatefulRedisConnection<String,V> conn = this.getConn()) {
-
-            if (isOpen(conn)) {
-
-                final RedisCommands<String, V> syncCommand = conn.sync();
-                final ScanArgs scanArgs = ScanArgs.Builder.matches(this.keyPrefix() + matchesPattern).limit(keyBatchingSize);
-                do {
-
-                    scanCursor = scanCursor == null?
-                            syncCommand.scan(scanArgs):syncCommand.scan(scanCursor, scanArgs);
-
-                    keyConsumer.accept(ConversionUtils.INSTANCE.convert(
-                            scanCursor.getKeys(), this::unwrapKey));
-                } while (!scanCursor.isFinished());
+            if (!isOpen(conn)) {
+                if (requireConnection) {
+                    throw new DotStateException("Redis connection unavailable for key scan");
+                }
+                return;
             }
+            final RedisCommands<String, V> syncCommand = conn.sync();
+            final ScanArgs scanArgs = ScanArgs.Builder.matches(this.keyPrefix() + matchesPattern).limit(keyBatchingSize);
+            do {
+                scanCursor = scanCursor == null?
+                        syncCommand.scan(scanArgs):syncCommand.scan(scanCursor, scanArgs);
+
+                keyConsumer.accept(ConversionUtils.INSTANCE.convert(
+                        scanCursor.getKeys(), this::unwrapKey));
+            } while (!scanCursor.isFinished());
         }
     }
 

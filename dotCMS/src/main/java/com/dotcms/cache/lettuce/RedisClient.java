@@ -140,6 +140,14 @@ public interface RedisClient<K, V> {
      * @return Set
      */
     Set<V> getMembers (final K key);
+
+    /**
+     * Reads membership for collection paths that must distinguish unavailability from an empty set.
+     * Clients with an empty-on-failure fallback must override this method to report that failure.
+     */
+    default Set<V> getMembersOrThrow(final K key) {
+        return getMembers(key);
+    }
     /**
      * Return ttl in millis for a key
      * @param key K
@@ -185,6 +193,15 @@ public interface RedisClient<K, V> {
      * @param keyConsumer {@link Consumer} consumer a collection each key
      */
     void scanKeys(final String matchesPattern, int keyBatchingSize, final Consumer<Collection<K>> keyConsumer);
+
+    /**
+     * Scans for collection paths that must distinguish unavailability from an empty keyspace.
+     * Clients with a no-op-on-failure fallback must override this method to report that failure.
+     */
+    default void scanKeysOrThrow(final String matchesPattern, final int keyBatchingSize,
+            final Consumer<Collection<K>> keyConsumer) {
+        scanKeys(matchesPattern, keyBatchingSize, keyConsumer);
+    }
 
     /// TYPES
     ///// HASHES

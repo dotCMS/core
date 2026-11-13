@@ -462,6 +462,11 @@
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 
+	<servlet>
+		<servlet-name>ManagementMetricsServlet</servlet-name>
+		<servlet-class>com.dotcms.metrics.servlet.ManagementMetricsServlet</servlet-class>
+	</servlet>
+
     
 	<!--END DOTMARKETING SERVLETS-->
 	
@@ -608,6 +613,11 @@
 	<servlet-mapping>
 		<servlet-name>HealthProbeServlet</servlet-name>
 		<url-pattern>/dotmgt/health</url-pattern>
+	</servlet-mapping>
+
+	<servlet-mapping>
+		<servlet-name>ManagementMetricsServlet</servlet-name>
+		<url-pattern>/dotmgt/metrics</url-pattern>
 	</servlet-mapping>
 
 

@@ -280,30 +280,31 @@ public class RedisCache extends CacheProvider {
     }
 
 
-    /**
-     * returns the number of cache keys in any given group
-     *
-     * @param group
-     * @return
-     */
-    private long keyCount(final String group) {
-
-        // Never throw: getStats() aggregates per-provider and a thrown exception here makes
-        // CacheProviderAPIImpl.getStats() drop the entire Redis provider from the cache stats screen.
-        // Use the cluster-scoped, non-blocking SCAN (via scanKeys) rather than a blocking Lua KEYS eval;
-        // this also avoids the MasterReplicaLettuceClient downcast and any Lua string injection.
-        final long[] count = {0};
-        try {
-            final String matchesPattern = this.cacheKey(group) + StringPool.STAR;
-            this.getClient().scanKeys(matchesPattern, this.keyBatchingSize,
-                    keys -> count[0] += keys.size());
-        } catch (final Exception e) {
-
-            Logger.warnAndDebug(RedisCache.class,
-                    "Unable to count Redis keys for group '" + group + "': " + e.getMessage(), e);
+    /** Counts every known group prefix in one cluster-scoped scan without retaining the keyspace. */
+    private Map<String, Long> keyCounts(final Set<String> groups, final CacheProviderStats collection) {
+        final Map<String, Long> counts = groups.stream()
+                .collect(Collectors.toMap(this::cacheKey, group -> 0L));
+        if (counts.isEmpty()) {
+            return counts;
         }
-
-        return count[0];
+        try {
+            this.getClient().scanKeysOrThrow(this.REDIS_PREFIX_KEY + "." + StringPool.STAR,
+                    this.keyBatchingSize, keys -> {
+                        for (final String key : keys) {
+                            // Preserve prefix matching for dotted/overlapping group names.
+                            for (int dot = key.indexOf('.', this.REDIS_PREFIX_KEY.length() + 1);
+                                    dot >= 0; dot = key.indexOf('.', dot + 1)) {
+                                counts.computeIfPresent(key.substring(0, dot + 1),
+                                        (prefix, count) -> count + 1);
+                            }
+                        }
+                    });
+        } catch (final Exception e) {
+            // Preserve UI rows, but do not publish partial counts as complete metrics.
+            collection.markUnavailable();
+            Logger.warnAndDebug(RedisCache.class, "Unable to count Redis cache keys: " + e.getMessage(), e);
+        }
+        return counts;
     }
 
 
@@ -315,6 +316,7 @@ public class RedisCache extends CacheProvider {
                 .map(Object::toString).collect(Collectors.toSet());
     }
 
+    /** Reports region sizes from a single streamed keyspace scan, retaining failure/empty-provider rows. */
     @Override
     public CacheProviderStats getStats() {
 
@@ -322,21 +324,23 @@ public class RedisCache extends CacheProvider {
         final CacheProviderStats cacheProviderStats = new CacheProviderStats(providerStats, getName());
 
         final NumberFormat nf = DecimalFormat.getInstance();
-        // Getting the list of groups. Guard against a throw: CacheProviderAPIImpl.getStats() drops the whole
-        // provider from the cache stats screen if getStats() throws, so the Redis region would vanish entirely.
+        // Keep the legacy stats-screen rows on discovery failure; metrics use availability metadata.
         Set<String> currentGroups;
         try {
-            currentGroups = getGroups();
+            currentGroups = getClient().getMembersOrThrow(REDIS_GROUP_KEY).stream()
+                    .filter(Objects::nonNull).map(Object::toString).collect(Collectors.toSet());
         } catch (final Exception e) {
             Logger.warnAndDebug(RedisCache.class, "Unable to list Redis groups: " + e.getMessage(), e);
+            cacheProviderStats.markUnavailable();
             currentGroups = Collections.emptySet();
         }
 
+        final Map<String, Long> counts = keyCounts(currentGroups, cacheProviderStats);
         for (final String group : currentGroups) {
 
             final CacheStats stats = new CacheStats();
             stats.addStat(CacheStats.REGION, "dotCMS: " + group);
-            stats.addStat(CacheStats.REGION_SIZE, nf.format(keyCount(group)));
+            stats.addStat(CacheStats.REGION_SIZE, nf.format(counts.get(this.cacheKey(group))));
 
             cacheProviderStats.addStatRecord(stats);
         }

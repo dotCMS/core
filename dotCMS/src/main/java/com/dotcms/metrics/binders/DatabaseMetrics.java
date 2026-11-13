@@ -1,6 +1,6 @@
 package com.dotcms.metrics.binders;
 
-import com.dotcms.health.checks.cdi.DatabaseHealthCheck;
+import com.dotcms.health.service.HealthStateManager;
 import com.dotcms.health.model.HealthStatus;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Logger;
@@ -34,11 +34,10 @@ public class DatabaseMetrics implements MeterBinder {
     private static final String METRIC_PREFIX = "dotcms.database";
     private final MBeanServer mBeanServer;
     private HikariPoolMXBean poolProxy;
-    private DatabaseHealthCheck healthCheck;
     
+    /** Initializes pool metadata monitoring without creating a standalone database health check. */
     public DatabaseMetrics() {
         this.mBeanServer = ManagementFactory.getPlatformMBeanServer();
-        this.healthCheck = new DatabaseHealthCheck();
         this.poolProxy = initializeHikariPoolProxy();
     }
     
@@ -85,9 +84,9 @@ public class DatabaseMetrics implements MeterBinder {
      * IMPORTANT: No new database connections are created - uses existing health infrastructure.
      */
     private void registerConnectionPoolMetrics(MeterRegistry registry) {
-        // Database health status from existing health check (no new connections)
+        // Read managed health state without validating a connection on the scrape thread.
         Gauge.builder(METRIC_PREFIX + ".health.available", this, metrics -> getDatabaseHealthStatus())
-            .description("Database health status from health check system (1=healthy, 0=unhealthy)")
+            .description("Cached database health status (1=healthy, 0=unhealthy, NaN=unknown)")
             .register(registry);
         
         // HikariCP connection pool metrics (JMX-based, no new connections)
@@ -376,16 +375,16 @@ public class DatabaseMetrics implements MeterBinder {
         }
     }
     
-    /**
-     * Get database health status from existing health check system (no new connections).
-     */
+    /** Reads the managed result without polling; missing or unknown health remains unmeasured. */
     private double getDatabaseHealthStatus() {
         try {
-            var result = healthCheck.check();
-            return result.status() == HealthStatus.UP ? 1.0 : 0.0;
+            return HealthStateManager.getInstance().getHealthCheckResult("database")
+                    .map(result -> result.status() == HealthStatus.UNKNOWN ? Double.NaN
+                            : result.status() == HealthStatus.UP ? 1.0 : 0.0)
+                    .orElse(Double.NaN);
         } catch (Exception e) {
             Logger.debug(this, "Failed to get database health status: " + e.getMessage());
-            return 0.0;
+            return Double.NaN;
         }
     }
     

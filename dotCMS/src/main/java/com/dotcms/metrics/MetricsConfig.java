@@ -1,5 +1,7 @@
 package com.dotcms.metrics;
 
+import com.dotcms.management.config.InfrastructureConstants;
+
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.util.ReleaseInfo;
@@ -56,13 +58,16 @@ public final class MetricsConfig {
     // GLOBAL METRICS SYSTEM SETTINGS
     // ====================================================================
     
+    /** Configuration key for global metrics collection; enabled by default. */
+    public static final String ENABLED_PROPERTY = "metrics.enabled";
+
     /**
      * Whether metrics collection is enabled globally.
      * When disabled, no metrics will be collected or exported.
      * Default: true
      */
     public static final boolean ENABLED = 
-        Config.getBooleanProperty("metrics.enabled", true);
+        Config.getBooleanProperty(ENABLED_PROPERTY, true);
     
     /**
      * Prefix for all metric names to namespace dotCMS metrics.
@@ -116,26 +121,33 @@ public final class MetricsConfig {
     // PROMETHEUS REGISTRY CONFIGURATION
     // ====================================================================
     
+    /** Configuration key for Prometheus export; enabled by default. */
+    public static final String PROMETHEUS_ENABLED_PROPERTY = "metrics.prometheus.enabled";
+
     /**
      * Whether to enable Prometheus metrics registry.
      * Default: true
      */
     public static final boolean PROMETHEUS_ENABLED = 
-        Config.getBooleanProperty("metrics.prometheus.enabled", true);
+        Config.getBooleanProperty(PROMETHEUS_ENABLED_PROPERTY, true);
     
     /**
      * Endpoint path for Prometheus metrics scraping.
      * Default: "/dotmgt/metrics" (management port endpoint)
      */
     public static final String PROMETHEUS_ENDPOINT = 
-        Config.getStringProperty("metrics.prometheus.endpoint", "/dotmgt/metrics");
+        Config.getStringProperty("metrics.prometheus.endpoint", InfrastructureConstants.METRICS_PATH);
     
+    /** Configuration key for scrape authentication; disabled by default. */
+    public static final String PROMETHEUS_REQUIRE_AUTH_PROPERTY =
+            "metrics.prometheus.require-authentication";
+
     /**
      * Whether Prometheus endpoint requires authentication.
      * Default: false (to allow scraping by monitoring systems)
      */
     public static final boolean PROMETHEUS_REQUIRE_AUTH = 
-        Config.getBooleanProperty("metrics.prometheus.require-authentication", false);
+        Config.getBooleanProperty(PROMETHEUS_REQUIRE_AUTH_PROPERTY, false);
     
     // ====================================================================
     // JMX REGISTRY CONFIGURATION
