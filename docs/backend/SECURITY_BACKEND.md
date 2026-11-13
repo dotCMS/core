@@ -513,6 +513,51 @@ public class BadConfigService {
 }
 ```
 
+## Response security headers
+
+Response security headers are written by one servlet filter, `DotHttpHeaderSecurityFilter`
+(`com.dotcms.filters`), which extends Tomcat's `HttpHeaderSecurityFilter`. It is declared in
+`WEB-INF/web.xml` as `HttpHeaderSecurityFilter` and mapped to `/*`. Add a new response header there,
+not in individual servlets or REST resources, so every path gets the same behavior.
+
+| Header | Where it comes from |
+|---|---|
+| `Strict-Transport-Security` | Tomcat's filter, sent on HTTPS requests. `max-age` comes from the `HSTS_MAX_AGE_SECONDS` property (default `31536000`, one year; env `DOT_HSTS_MAX_AGE_SECONDS`), read once at startup. `includeSubDomains` is the `hstsIncludeSubDomains` init-param in `web.xml`. |
+| `X-Frame-Options` | The `antiClickJackingOption` init-param in `web.xml` (`SAMEORIGIN`). |
+| `Content-Security-Policy` on `/dotAdmin`, `/api`, `/html` and the portal pages under `/c` | `ContentSecurityPolicyUtil.addBackendHeader`, called by the filter, by `MainServlet` for `/c`, and by `DefaultBackEndLoginRequiredWebInterceptor` for the 401 page it returns to an unauthenticated `/c` request. Configured by the three properties below. |
+
+The back-end policy is read on every request, so changing these properties needs no restart. The two switches accept `true` or `false` in any case; a missing or blank value, or anything else (a typo such as `flase`), uses the default and logs a warning at most once a minute, whether it comes from a properties file, an environment variable or the system table.
+
+- `CONTENT_SECURITY_POLICY_BACKEND_ENABLED` (default `true`) turns the header on or off.
+- `CONTENT_SECURITY_POLICY_BACKEND_HEADER` (default `frame-ancestors 'self'; object-src 'none'`)
+  is the policy to send. A blank value sends no header.
+- `CONTENT_SECURITY_POLICY_BACKEND_REPORT_ONLY` (default `false`) sends the policy as
+  `Content-Security-Policy-Report-Only`. Browsers differ on whether they report `frame-ancestors` in
+  that mode, so test framing changes with the policy enforced.
+
+Site pages use a separate path. Their policy comes from the `ContentSecurityPolicy.header` property
+and is applied by `ContentSecurityPolicyUtil.init` and `addHeader` while a page renders, with the
+`{script-src nonce}` and `{style-src nonce}` placeholders. The back-end properties do not affect site
+pages, and `ContentSecurityPolicy.header` does not affect the back end.
+
+The filter mapping in `web.xml` has no `<dispatcher>` element, so the filter runs on `REQUEST`
+dispatch only. Internal forwards, includes and error-page dispatches do not run it again. The back-end
+check uses the servlet path of the request the filter sees.
+
+`/c` is the one back-end prefix the filter does not match. A site may have a root folder named `c`,
+and `CMSFilter` serves its pages and files on that path before the request reaches `MainServlet`, the
+portal servlet mapped to `/c/*`. So `MainServlet.service` writes the back-end policy itself, which
+means only responses the portal actually produces carry it, and site content under `/c` keeps the
+site policy.
+
+If another origin needs to frame the back end (for example a portal embedding the admin), the default
+`frame-ancestors 'self'` blocks it. Override `CONTENT_SECURITY_POLICY_BACKEND_HEADER` with the origin
+added, such as `frame-ancestors 'self' https://portal.example.com; object-src 'none'`. Keep
+`object-src 'none'` in the override unless you need plugin content, because the override replaces the
+whole default. The filter also sends `X-Frame-Options: SAMEORIGIN`; current browsers give
+`frame-ancestors` precedence when both are present, but older ones follow `X-Frame-Options`, so change
+`antiClickJackingOption` in `web.xml` too if they must be supported.
+
 ## Error Handling Security
 
 ### Secure Error Response Pattern

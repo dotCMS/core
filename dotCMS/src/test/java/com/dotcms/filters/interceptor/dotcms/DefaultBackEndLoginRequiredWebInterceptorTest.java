@@ -7,8 +7,10 @@ import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
@@ -90,6 +92,31 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
         assertEquals(result, Result.SKIP_NO_CHAIN);
 
         loginRequiredWebInterceptor.destroy();
+    }
+
+    /**
+     * Method to test: {@link DefaultBackEndLoginRequiredWebInterceptor#intercept}
+     * Given scenario: an unauthenticated request for {@code /c/portal/layout}
+     * Expected result: the 401 page carries the back-end Content-Security-Policy header
+     */
+    @Test
+    public void intercept_notLoggedIn_shouldSendBackendPolicyWith401() throws Exception {
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final UserWebAPI userWebAPI = mock(UserWebAPI.class);
+        when(request.getRequestURI()).thenReturn("/c/portal/layout");
+        when(response.getWriter()).thenReturn(mock(PrintWriter.class));
+        when(userWebAPI.isLoggedToBackend(request)).thenReturn(false);
+
+        final DefaultBackEndLoginRequiredWebInterceptor interceptor =
+                new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
+        interceptor.init();
+
+        assertEquals(Result.SKIP_NO_CHAIN, interceptor.intercept(request, response));
+
+        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+        verify(response).setHeader(eq("Content-Security-Policy"), anyString());
     }
 
     /**
