@@ -3,13 +3,23 @@ package com.dotmarketing.common.reindex;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockConstruction;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
+import com.dotcms.cluster.business.ServerAPI;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexQueueFactory.Priority;
 import com.dotmarketing.exception.DotDataException;
+import java.util.List;
 import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.MockedConstruction;
+import org.mockito.MockedStatic;
 
 /**
  * Unit tests for the batch assembly in {@link ReindexQueueFactory#findContentToReindex(int)}.
@@ -45,8 +55,8 @@ import org.junit.Test;
  * the equal-priority case (asserted by id rather than by arrival order, which is the whole
  * point — after the fix, arrival order stops mattering).</p>
  *
- * <p>These are pure unit tests: seeding the local queue means {@code findContentToReindex} never
- * reaches {@code loadUpLocalQueue}, so no database is touched.</p>
+ * <p>These are pure unit tests: batch cases seed the local queue, while the excluded-node case
+ * mocks membership and verifies that no journal queries are constructed.</p>
  */
 public class ReindexQueueFactoryBatchKeyTest {
 
@@ -66,6 +76,23 @@ public class ReindexQueueFactoryBatchKeyTest {
     public void tearDown() {
         factory.getLocalQueue().clear();
         ReindexQueueFactory.resetLastIdReindexed();
+    }
+
+    @Test
+    public void test_nonSelectedServer_doesNotLoadJournalOrRecoverShares()
+            throws DotDataException {
+        final ServerAPI serverAPI = mock(ServerAPI.class);
+        when(serverAPI.getReindexingServers()).thenReturn(List.of("server-1", "server-2"));
+        when(serverAPI.readServerId()).thenReturn("server-3");
+
+        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class);
+                MockedConstruction<DotConnect> queries = mockConstruction(DotConnect.class)) {
+            apiLocator.when(APILocator::getServerAPI).thenReturn(serverAPI);
+
+            assertTrue(factory.findContentToReindex(50).isEmpty());
+            assertTrue("An excluded node must not query journal rows or recovery shares",
+                    queries.constructed().isEmpty());
+        }
     }
 
     private static ReindexEntry entry(final long id, final String identifier,
