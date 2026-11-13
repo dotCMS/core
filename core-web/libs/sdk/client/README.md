@@ -909,6 +909,10 @@ getCollection<T = DotCMSBasicContentlet>(
 | `language()`          | `number \| string`            | Set content language                                               |
 | `depth()`             | `number`                      | Set depth of related content                                       |
 | `includeSystemHost()` | -                             | Include content from the System Host alongside the configured site |
+| `variant()`           | `string`                      | Filter content by variant ID (see the note below)                  |
+
+> [!NOTE]
+> Requests made without a back-end user's token (e.g.: anonymous or front-end-only users) return the default variant, even if another variant is specified.
 
 #### Example
 ```typescript

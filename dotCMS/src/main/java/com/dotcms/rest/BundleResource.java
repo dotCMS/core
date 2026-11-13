@@ -477,6 +477,18 @@ public class BundleResource {
         Logger.info(this, "Deleting the bundles: " + deleteBundlesByIdentifierForm.getIdentifiers()
                 + " by the user: " + initData.getUser().getUserId());
 
+        // Must run before the delete is submitted: once the background delete starts, bundles
+        // that existed when the request arrived may already be gone.
+        final List<String> existingBundles    = new ArrayList<>();
+        final List<String> notExistingBundles = new ArrayList<>();
+        for (final String identifier : deleteBundlesByIdentifierForm.getIdentifiers()) {
+            if (UtilMethods.isSet(this.bundleAPI.getBundleById(identifier))) {
+                existingBundles.add(identifier);
+            } else {
+                notExistingBundles.add(identifier);
+            }
+        }
+
         final DotSubmitter dotSubmitter = DotConcurrentFactory
                 .getInstance().getSubmitter(BUNDLE_THREAD_POOL_SUBMITTER_NAME);
         final Locale locale    = LocaleUtil.getLocale(request);
@@ -504,24 +516,19 @@ public class BundleResource {
             }
         });
 
-        return buildResponseToDeleteEndpoint(deleteBundlesByIdentifierForm);
+        return buildResponseToDeleteEndpoint(existingBundles, notExistingBundles);
     } // deleteBundlesByIdentifiers.
 
-    private static Response buildResponseToDeleteEndpoint(final DeleteBundlesByIdentifierForm deleteBundlesByIdentifierForm)
-            throws DotDataException {
-
-        final List<String> existingBundles = new ArrayList<>();
-        final List<String> notExistingBundles = new ArrayList<>();
-
-        for (String identifier : deleteBundlesByIdentifierForm.getIdentifiers()) {
-            final Bundle bundleById = APILocator.getBundleAPI().getBundleById(identifier);
-
-            if (UtilMethods.isSet(bundleById)) {
-                existingBundles.add(identifier);
-            } else {
-                notExistingBundles.add(identifier);
-            }
-        }
+    /**
+     * Builds the synchronous response of the delete-by-identifiers endpoint from the state of the
+     * bundles before the background delete was submitted.
+     *
+     * @param existingBundles    identifiers of the bundles that existed when the request arrived
+     * @param notExistingBundles identifiers of the bundles that did not exist when the request arrived
+     * @return a 200 response whose entity message names the bundles being removed and the ones not found
+     */
+    private static Response buildResponseToDeleteEndpoint(final List<String> existingBundles,
+                                                          final List<String> notExistingBundles) {
 
         final StringBuffer message = new StringBuffer();
 

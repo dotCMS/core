@@ -3,6 +3,7 @@ package com.dotmarketing.business.portal;
 import static org.junit.Assert.*;
 
 import com.dotmarketing.util.Logger;
+import java.util.List;
 import java.util.Optional;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,14 +48,8 @@ public class SerializationHelperTest {
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("categories")));
             assertTrue("PortletList should contain 'experiments' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("experiments")));
-            assertTrue("PortletList should contain 'categories-legacy' portlet",
-                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("categories-legacy")));
             assertTrue("PortletList should contain 'es-search' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("es-search")));
-            assertTrue("PortletList should contain 'es-search-legacy' portlet",
-                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("es-search-legacy")));
-            assertTrue("PortletList should contain 'query-tool-legacy' portlet",
-                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("query-tool-legacy")));
             assertTrue("PortletList should contain 'dotai' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("dotai")));
             assertTrue("PortletList should contain 'analytics-search' portlet",
@@ -71,12 +66,18 @@ public class SerializationHelperTest {
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("publishing-queue-beta")));
             assertTrue("PortletList should contain 'users' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("users")));
-            assertTrue("PortletList should contain 'users-beta' portlet",
-                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("users-beta")));
-            assertTrue("PortletList should contain 'roles-beta' portlet",
-                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("roles-beta")));
-            assertTrue("PortletList should contain 'tools-beta' portlet",
-                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("tools-beta")));
+            assertTrue("PortletList should contain 'roles' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("roles")));
+            assertTrue("PortletList should contain 'tools' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("tools")));
+            assertTrue("PortletList should contain 'users-legacy' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("users-legacy")));
+            assertTrue("PortletList should contain 'roles-legacy' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("roles-legacy")));
+            for (final String betaId : List.of("users-beta", "roles-beta", "tools-beta")) {
+                assertFalse("PortletList should no longer contain the '" + betaId + "' portlet",
+                        portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals(betaId)));
+            }
             assertTrue("PortletList should contain 'configuration' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("configuration")));
             assertTrue("PortletList should contain 'configuration-beta' portlet",
@@ -93,19 +94,49 @@ public class SerializationHelperTest {
                 assertEquals("Categories portlet should have correct portlet-url",
                         "/categories", portlet.getPortletUrl());
             });
-
-            // Check the legacy categories portlet
-            Optional<DotPortlet> categoriesLegacyPortlet = portletList.getPortlets().stream()
-                    .filter(p -> p.getPortletId().equals("categories-legacy"))
-                    .findFirst();
-            assertTrue("Categories legacy portlet should exist", categoriesLegacyPortlet.isPresent());
-            categoriesLegacyPortlet.ifPresent(portlet -> {
-                assertEquals("Categories legacy portlet class should match",
-                        "com.liferay.portlet.StrutsPortlet", portlet.getPortletClass());
-                assertEquals("Categories legacy portlet should have correct view-action",
-                        "/ext/categories/view_categories", portlet.initParams().get("view-action"));
-            });
         }
+    }
+
+    /**
+     * Given Scenario: the shipped {@code portlet.xml} after the Users, Roles and Tools portlets
+     * were promoted.
+     * Expected Result: {@code users}, {@code roles} and {@code tools} are Angular portlets, and the
+     * old screens live on as {@code users-legacy} (the Struts User Admin action) and
+     * {@code roles-legacy} (the liferay JSP portlet pointing at the Roles &amp; Tools JSP).
+     */
+    @Test
+    public void testUsersRolesToolsArePromotedAndLegacyScreensKept() throws IOException {
+        try (FileInputStream fis = new FileInputStream("src/main/webapp/WEB-INF/portlet.xml")) {
+            final PortletList portletList = SerializationHelper.fromXml(PortletList.class, fis);
+
+            for (final String angularId : List.of("users", "roles", "tools")) {
+                assertEquals("'" + angularId + "' should be the Angular portlet",
+                        "com.dotcms.spring.portlet.PortletController",
+                        portlet(portletList, angularId).getPortletClass());
+            }
+
+            final DotPortlet usersLegacy = portlet(portletList, "users-legacy");
+            assertEquals("com.liferay.portlet.StrutsPortlet", usersLegacy.getPortletClass());
+            assertEquals("/ext/useradmin/view_users", usersLegacy.initParams().get("view-action"));
+
+            final DotPortlet rolesLegacy = portlet(portletList, "roles-legacy");
+            assertEquals("com.liferay.portlet.JSPPortlet", rolesLegacy.getPortletClass());
+            assertEquals("/portlet/ext/roleadmin/view_roles.jsp", rolesLegacy.initParams().get("view-jsp"));
+        }
+    }
+
+    /**
+     * Finds a portlet by id, failing the test when it is not declared.
+     *
+     * @param portletList the parsed {@code portlet.xml}
+     * @param portletId   the id to look for
+     * @return the matching {@link DotPortlet}
+     */
+    private static DotPortlet portlet(final PortletList portletList, final String portletId) {
+        return portletList.getPortlets().stream()
+                .filter(p -> p.getPortletId().equals(portletId))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("portlet.xml should declare '" + portletId + "'"));
     }
 
     @Test

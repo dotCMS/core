@@ -5,6 +5,7 @@ import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.publisher.pusher.PushPublisher;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
@@ -14,6 +15,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -29,6 +31,8 @@ import io.jsonwebtoken.MalformedJwtException;
 import io.jsonwebtoken.SignatureException;
 import io.vavr.control.Try;
 
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -39,7 +43,8 @@ public class ApiTokenAPI {
 
    public final static String TOKEN_404_STR = "TOKEN_404";
    public final static String TOKEN_PREFIX  = "api";
-   
+
+
     private final ApiTokenCache cache;
     private final ApiTokenSQL   sql;
 
@@ -333,7 +338,10 @@ public class ApiTokenAPI {
 
         logApiTokenOperation("Persisting", apiToken, user);
 
-        final ApiToken tokenRequested = ApiToken.from(apiToken).withRequestingUserId(user.getUserId()).build();
+        final ApiToken tokenRequested = ApiToken.from(apiToken)
+                .withRequestingUserId(user.getUserId())
+                .withExpires(capExpirationDate(apiToken.getExpiresDate()))
+                .build();
 
         if(checkPerms(tokenRequested, user)) {
 
@@ -341,6 +349,47 @@ public class ApiTokenAPI {
         }
         
         throw new DotStateException("User :" + user.getUserId() + " does not have permission to token " + tokenRequested);
+    }
+
+    /**
+     * Returns the maximum lifetime, in days, allowed for a newly issued API token, as set by the
+     * {@link LoginServiceAPI#JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS} property, or
+     * {@link LoginServiceAPI#JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS_DEFAULT} when it is not
+     * set. A value of zero or less means no limit.
+     *
+     * @return the maximum number of days a new token can be valid for
+     */
+    public static int getMaxAllowedExpirationDays() {
+        return Config.getIntProperty(LoginServiceAPI.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS,
+                LoginServiceAPI.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS_DEFAULT);
+    }
+
+    /**
+     * Limits the requested expiration date of a new API token to the configured maximum lifetime,
+     * counted from now. Tokens that are already persisted are not affected.
+     *
+     * @param requestedExpireDate the expiration date requested for the token
+     * @return the requested date, or the latest allowed date if the requested one is beyond it
+     */
+    @VisibleForTesting
+    static Date capExpirationDate(final Date requestedExpireDate) {
+        final int maxDays = getMaxAllowedExpirationDays();
+        if (maxDays <= 0) {
+            return requestedExpireDate;
+        }
+        final Date maxExpireDate = Date.from(Instant.now().plus(maxDays, ChronoUnit.DAYS));
+        if (requestedExpireDate == null) {
+            Logger.info(ApiTokenAPI.class, "No expiration date requested for the API token; using the "
+                    + "maximum allowed lifetime of " + maxDays + " days (" + maxExpireDate + ")");
+            return maxExpireDate;
+        }
+        if (requestedExpireDate.after(maxExpireDate)) {
+            Logger.info(ApiTokenAPI.class, "Requested API token expiration date " + requestedExpireDate
+                    + " exceeds the maximum allowed lifetime of " + maxDays + " days; using "
+                    + maxExpireDate + " instead");
+            return maxExpireDate;
+        }
+        return requestedExpireDate;
     }
 
     private void logApiTokenOperation(final String operationType, final ApiToken apiToken, final User user) {

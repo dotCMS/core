@@ -1,6 +1,7 @@
 package com.dotcms.security.multipart;
 
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.util.PathContainmentUtil;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -30,8 +31,6 @@ import java.nio.file.Path;
  */
 public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
 
-    private static final File tmpdir = Path.of(System.getProperty("java.io.tmpdir")).toFile();
-
     private final byte[] body;
     private final File tmpFile;
 
@@ -58,13 +57,11 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
             this.body = null;
             final Path tempFilePath = Files.createTempFile(Path.of(ConfigUtils.getAssetTempPath(),File.separator),"multipartSec", ".tmp");
             this.tmpFile = tempFilePath.toFile();
-            // security demands we add this check here
-            if (tmpFile.getCanonicalPath().startsWith(new File(ConfigUtils.getAssetTempPath()).getCanonicalPath())) {
-                try (final OutputStream outputStream = Files.newOutputStream(tempFilePath)) {
-                    IOUtils.copy(request.getInputStream(), outputStream);
-                    this.checkFile(tmpFile);
-                }
+            requireInsideAssetTempDir(this.tmpFile);
+            try (final OutputStream outputStream = Files.newOutputStream(tempFilePath)) {
+                IOUtils.copy(request.getInputStream(), outputStream);
             }
+            this.checkFile(this.tmpFile);
             return;
         }
 
@@ -164,16 +161,35 @@ public class MultiPartSecurityRequestWrapper extends HttpServletRequestWrapper {
         }
     }
 
+    /**
+     * Checks the part file names of a body kept on disk. The file is checked to be inside the
+     * assets temp directory once more before it is read, and the check fails closed: a file that
+     * cannot be verified is an error, never a body that goes through unchecked.
+     *
+     * @param tmpFile the file holding the request body
+     * @throws IOException if the file is outside the assets temp directory or cannot be read
+     */
     private void checkFile(final File tmpFile) throws IOException {
-        //Even though this is might seem redundant. Security demands we check paths everytime we manipulate file paths
-        if (tmpFile.getCanonicalPath().startsWith(tmpdir.getCanonicalPath())) {
-            try (final InputStream in = new BufferedInputStream(Files.newInputStream(tmpFile.toPath()))) {
-                checkSecurityInputStream(in);
-            } catch (final Exception e) {
-                Logger.warn(this.getClass(), String.format("Could not check the path for file " +
-                        "'%s': %s", tmpFile.getCanonicalPath(), ExceptionUtil.getErrorMessage(e)), e);
-                throw e;
-            }
+        requireInsideAssetTempDir(tmpFile);
+        try (final InputStream in = new BufferedInputStream(Files.newInputStream(tmpFile.toPath()))) {
+            checkSecurityInputStream(in);
+        } catch (final Exception e) {
+            Logger.warn(this.getClass(), String.format("Could not check the path for file " +
+                    "'%s': %s", tmpFile.getCanonicalPath(), ExceptionUtil.getErrorMessage(e)), e);
+            throw e;
+        }
+    }
+
+    /**
+     * Refuses a cache file that does not resolve inside the assets temp directory, where the
+     * wrapper creates it. Compared on canonical paths.
+     *
+     * @param tmpFile the cache file
+     * @throws IOException if the file is not inside the assets temp directory
+     */
+    private static void requireInsideAssetTempDir(final File tmpFile) throws IOException {
+        if (!PathContainmentUtil.isContainedIn(new File(ConfigUtils.getAssetTempPath()), tmpFile)) {
+            throw new IOException("Multipart cache file is outside the assets temp directory: " + tmpFile.getCanonicalPath());
         }
     }
 

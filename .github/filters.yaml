@@ -19,6 +19,7 @@ backend: &backend
   - '.github/actions/core-cicd/build-cache-remote/**'
   - '.github/actions/core-cicd/prepare-runner/**'
   - '.github/actions/core-cicd/setup-java/**'
+  - '.github/actions/core-cicd/setup-pnpm/**'
   - '.github/actions/core-cicd/cleanup-runner/**'
   - '.github/test-matrix.yml'
   - '.github/filters.yaml'
@@ -27,7 +28,6 @@ backend: &backend
   - 'core-web/pom.xml'
   - 'dotCMS/src/main/webapp/html/**/!(*.{css,js})'
   - 'dotcms-postman/**'
-  - 'test-karate/**'
   - 'e2e/**'
   - 'dotCMS/src/main/webapp/WEB-INF/messages/**/!(Language*.properties)'
   # Exclude html/ and WEB-INF/messages/ from backend triggering via per-segment
@@ -100,7 +100,6 @@ area_backend:
   - 'dotCMS/src/main/webapp/WEB-INF/!(messages)/**'
   - 'dotcms-integration/**'
   - 'dotcms-postman/**'
-  - 'test-karate/**'
   - 'bom/**'
   - 'build-parent/**'
   - 'parent/**'

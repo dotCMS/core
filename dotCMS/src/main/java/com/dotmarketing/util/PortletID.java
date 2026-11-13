@@ -10,7 +10,6 @@ public enum PortletID {
 
     CALENDAR,
     CATEGORIES,
-    CATEGORIES_LEGACY("categories-legacy"),
     CONFIGURATION, 
     CONFIGURATION_BETA("configuration-beta"),
     CONTAINERS,
@@ -22,9 +21,10 @@ public enum PortletID {
     PLUGINS,
     PLUGINS_LEGACY("plugins-legacy"),
     ES_SEARCH,
-    ES_SEARCH_LEGACY("es-search-legacy"),
     EVENTS,
     EVENTS_APPROVAL,
+    /** The Experiments tool; also gates the Variants REST resource that serves it. */
+    EXPERIMENTS,
     FOLDERS,
     FORMS, 
     HTML_PAGES,
@@ -39,18 +39,32 @@ public enum PortletID {
     PUBLISHING_QUEUE,
     PUBLISHING_QUEUE_LEGACY("publishing-queue-legacy"),
     QUERY_TOOL,
-    QUERY_TOOL_LEGACY("query-tool-legacy"),
     TAGS,
     TAGS_LEGACY("tags-legacy"),
     TEMPLATES,
     TIME_MACHINE,
     REPORTS,
     RULES,
-    ROLES, 
+    /** The Angular Roles portlet, which took over this id from the old screen (now {@link #ROLES_LEGACY}). */
+    ROLES,
     SITES,
     SITE_BROWSER,
     SITE_SEARCH,
+    /** The Angular Users portlet, which took over this id from the old screen (now {@link #USERS_LEGACY}). */
     USERS,
+    /**
+     * The old JSP/Dojo Users screen, kept as an opt-in portlet after the Angular Users portlet
+     * took over the {@link #USERS} id. It ships in no menu layout; an administrator adds it to a
+     * section from the Tools portlet. Gates that mean "can administer users" accept it alongside
+     * {@link #USERS}, so a role holding only this portlet can still use the screen.
+     */
+    USERS_LEGACY("users-legacy"),
+    /**
+     * The old JSP/Dojo Roles &amp; Tools screen, kept as an opt-in portlet after the Angular Roles
+     * portlet took over the {@link #ROLES} id. It ships in no menu layout. The gates its Roles
+     * and Tools tabs call accept it alongside {@link #ROLES}.
+     */
+    ROLES_LEGACY("roles-legacy"),
     VANITY_URLS,
     WEB_EVENT_REGISTRATIONS,
     WEB_FORMS,
@@ -65,11 +79,11 @@ public enum PortletID {
     /** The Tools portlet, which owns the navigation sections and the tools inside them. */
     TOOLS,
     /**
-     * Beta-period alias of {@link #TOOLS}. Every Tools gate accepts both ids while the Angular
-     * portlet ships opt-in as {@code tools-beta}. Remove when the Tools portlet is promoted
-     * (#37356).
+     * Beta-period alias for the Network portlet. The cluster nodes endpoint accepts it alongside
+     * {@link #CONFIGURATION} while the Angular Network portlet ships opt-in as {@code network-beta}.
+     * Remove when the Network portlet is promoted (#37875).
      */
-    TOOLS_BETA("tools-beta"),
+    NETWORK_BETA("network-beta"),
     /**
      * Language Variables ships with the product but is created as a database row by
      * {@code Task241016AddCustomLanguageVariablesPortletToLayout}, in the same shape as an

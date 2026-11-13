@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_ALLOWED_NETWORK;
+import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_SESSION_LOGIN;
 import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_UPDATED_AT;
 
 /**
@@ -225,6 +226,7 @@ public class JsonWebTokenFactory implements Serializable {
                     .setId(jwtBean.getId())
                     .claim(CLAIM_UPDATED_AT, jwtBean.getActiveUser().get().getModificationDate().getTime())
                     .claim(CLAIM_ALLOWED_NETWORK, jwtBean.getClaims().get(CLAIM_ALLOWED_NETWORK))
+                    .claim(CLAIM_SESSION_LOGIN, jwtBean.getClaims().get(CLAIM_SESSION_LOGIN))
                     .setSubject(jwtBean.getSubject())
                     .setIssuedAt(new Date())
                     .setIssuer(this.getIssuer())
@@ -306,7 +308,8 @@ public class JsonWebTokenFactory implements Serializable {
 
             if(apiToken.isRevoked()) {
                 IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token Revoked:" + apiToken.revoked);
-                claimException.setClaimName(Claims.EXPIRATION);
+                // a revoked token is no longer valid, which is not the same as having expired
+                claimException.setClaimName(Claims.SUBJECT);
                 claimException.setClaimValue(apiToken.revoked);
                 throw claimException;
                 

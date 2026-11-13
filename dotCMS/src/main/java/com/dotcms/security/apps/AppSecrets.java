@@ -10,6 +10,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+/**
+ * The secrets stored for one App on one site, keyed by param name.
+ * <p>Instances are written into Apps export files. A field of a type not yet listed in
+ * {@code AppsUtil.EXPORT_FILE_TYPES} must be added there too, or exports holding it will be
+ * refused on import.</p>
+ */
 public class AppSecrets implements Serializable {
 
     private static final long serialVersionUID = 1L;

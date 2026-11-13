@@ -68,7 +68,9 @@ import org.junit.runners.Suite;
 @RunWith(MainBaseSuite.class)
 @Suite.SuiteClasses({
     RuleAPITest.class,
+    com.dotcms.variant.business.web.CurrentVariantWebInterceptorTest.class,
         DeterministicIdentifierAPITest.class,
+    com.dotcms.graphql.datafetcher.ContentletDataFetcherTest.class,
         CountPagesWithAllEndedExperimentsMetricTypeTest.class,
         CountPagesWithArchivedExperimentsMetricTypeTest.class,
         CountPagesWithDraftExperimentsMetricTypeTest.class,
@@ -84,12 +86,15 @@ import org.junit.runners.Suite;
         TotalSizeOfFilesPerThemeMetricTypeTest.class,
         TimeMachineUtilTest.class,
         Task250604UpdateFolderInodesTest.class,
+        com.dotcms.rendering.js.FileJavascriptReaderTest.class,
         FixTask00090RecreateMissingFoldersInParentPathTest.class,
         AnalyticsValidatorUtilTest.class,
         Task250826AddIndexesToUniqueFieldsTableTest.class,
         SecondaryCategoryPermissionTest.class,
         RequestCostReportTest.class,
         OpenAIVisionAPIImplTest.class,
+        com.dotcms.rest.api.v1.container.ContainerResourceCallerPermissionTest.class,
+        com.dotcms.rest.api.v1.container.ContainerResourceContentReadAccessTest.class,
         ContentDriveBrowseScopeTest.class,
         ContentDriveFieldFilterTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,
@@ -106,6 +111,7 @@ import org.junit.runners.Suite;
         com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.class,
         com.dotcms.browser.BrowserAPITest.class,
         com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategyMatchingTest.class,
+    com.dotmarketing.portlets.contentlet.action.ContentImportAccessTest.class,
         com.dotcms.contenttype.test.ContentResourceTest.class,
         com.dotmarketing.portlets.htmlpages.business.render.HTMLPageAssetRenderedAPIImplIntegrationTest.class,
         com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest.class,
@@ -121,13 +127,22 @@ import org.junit.runners.Suite;
         Task260615AlterClusterIdLengthTest.class,
         ImportContentletsActionSmokeTest.class,
         TreeFactoryTest.class,
+    com.dotmarketing.portlets.user.ajax.UserAjaxHasUserRolesIntegrationTest.class,
+    com.dotcms.rest.api.v1.user.UserResourcePasswordIntegrationTest.class,
+    com.dotmarketing.portlets.workflows.action.WorkflowTaskAccessTest.class,
+    com.dotcms.rendering.velocity.viewtools.XsltToolTest.class,
+    com.dotmarketing.portlets.htmlpageasset.business.render.page.PageViewSerializerRelatedContentTest.class,
         PublisherQueueJobTest.class,
         ContentToStringUtilTest.class,
+    com.dotcms.enterprise.publishing.remote.BundleTrustedListRoundTripTest.class,
         CacheResourceIntegrationTest.class,
+    com.dotmarketing.portlets.contentlet.action.ImportContentletsActionTest.class,
         InodeExistenceCheckIntegrationTest.class,
         SecretsStoreWipeRegressionTest.class,
         SecretsStoreConcurrentWriteRaceTest.class,
+    com.dotcms.rest.api.v1.system.role.RoleResourceCheckRolesIntegrationTest.class,
         RoleResourceIntegrationTest.class,
+    com.dotmarketing.portlets.workflows.action.EditWorkflowTaskActionTest.class,
         FileAssetContainerPermissionInheritanceTest.class,
 
         // System event delivery in a cluster (issue #36827). The migration runs first so the
@@ -140,7 +155,7 @@ import org.junit.runners.Suite;
         SystemEventsRetentionIntegrationTest.class,
         com.dotcms.rest.api.v1.portlet.PortletResourceIntegrationTest.class,
         LayoutResourceIntegrationTest.class,
-        com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class
+        com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class,
 })
 
 public class MainSuite3a {

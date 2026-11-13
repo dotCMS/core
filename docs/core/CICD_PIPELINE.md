@@ -100,6 +100,7 @@ permissions:
 **Purpose**: Orchestrates various test suites
 
 **Key Features**:
+- Takes the matrix from [`cicd_comp_test-matrix.yml`](.github/workflows/cicd_comp_test-matrix.yml), which callers run beside the build so it is off the critical path
 - JVM unit tests with Java 21
 - Integration tests with `-Pcoreit` profile
 - Frontend tests using Nx and pnpm
@@ -165,7 +166,7 @@ patterns move as the module layout does. The ones that gate work:
 | Filter | Gates |
 |---|---|
 | `build` | whether a build runs at all |
-| `backend` | integration, Postman and Karate suites |
+| `backend` | integration and Postman suites |
 | `jvm_unit_test` | the JVM unit-test job |
 | `frontend` | frontend build and tests |
 | `cli` | CLI build and tests |
@@ -178,7 +179,7 @@ Two things about these are easy to get wrong:
 
 - **`backend` is not "Java source changed".** It matches CI's own definition of what needs backend
   verification — `bom/**`, `build-parent/**`, `core-web/pom.xml`, `dotcms-postman/**`,
-  `test-karate/**`, `e2e/**`, the component workflows themselves, and non-CSS/JS webapp resources.
+  `e2e/**`, the component workflows themselves, and non-CSS/JS webapp resources.
 - **`full_build_test` is small and anchored, not a trigger list.** It is `.sdkmanrc` and the two
   `.nvmrc` files, pulled into **both** `backend` (`filters.yaml:40`) and `frontend`
   (`filters.yaml:45`) via a YAML anchor. So changing a toolchain pin matches `backend` directly —
@@ -202,12 +203,11 @@ Downstream jobs gate on the JSON object. Real examples from `cicd_1-pr.yml`:
   if: fromJSON(needs.initialize.outputs.filters).build == 'true'
       && needs.initialize.outputs.found_artifacts == 'false'
 
-  # Test phase inputs — note several suites gate on the same backend filter
+  # Test matrix inputs (the `test-matrix` job, cicd_comp_test-matrix.yml) — note several suites gate on the same backend filter
   with:
     jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
     integration:   ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
     postman:       ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
-    karate:        ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
 ```
 
 Change detection can be switched off per-run: `initialize-phase` takes a `change-detection` input,
@@ -216,6 +216,16 @@ and `enabled` is what makes the checkout and paths-filter steps run at all.
 Which suites run inside the test phase is a separate question, answered by
 `.github/test-matrix.yml` — see [Integration Tests](../testing/INTEGRATION_TESTS.md) and
 [Backend Unit Tests](../testing/BACKEND_UNIT_TESTS.md).
+
+A test type runs only when the caller passes its selector (`jvm_unit_test`, `cli`, `frontend`,
+`postman`, `integration`, `e2e`, the `condition_input` of each type in
+`test-matrix.yml`) as `true` to `cicd_comp_test-matrix.yml`. `run-all-tests` does **not** switch
+on a selector the caller leaves out: a `workflow_call` boolean that is not passed arrives as
+`false`, which cannot be told apart from an explicit `false`, and a `false` selector turns its
+type off. So a caller that wants everything (the nightly, a trunk dispatch) passes every selector
+it wants as `true`. What `run-all-tests: true` adds is a guarantee: if the matrix comes out empty,
+the matrix job fails instead of the run silently testing nothing, which is how the nightly ran
+zero tests for weeks (#38336).
 
 ## Artifact Management
 
@@ -422,7 +432,7 @@ build:
 ## Development Patterns
 
 ### Adding New Tests
-1. **Update Test Phase**: Modify `cicd_comp_test-phase.yml`
+1. **Update Test Phase**: Modify `cicd_comp_test-phase.yml` (or `.github/test-matrix.yml` for which suites run)
 2. **Add Change Detection**: Update `.github/filters.yaml`
 3. **Test Locally**: Validate changes work as expected
 

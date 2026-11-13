@@ -11,6 +11,7 @@ import com.dotcms.repackage.org.dts.spell.utils.FileUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
@@ -46,6 +47,7 @@ import java.util.zip.ZipException;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.lang.StringUtils;
+import org.apache.http.client.config.RequestConfig;
 import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.ElasticsearchStatusException;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
@@ -82,6 +84,7 @@ import org.elasticsearch.client.Response;
 import org.elasticsearch.client.RestClient;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.CreateIndexStatus;
+import com.dotcms.content.index.domain.SearchClusterHealth;
 import org.elasticsearch.client.indices.CreateIndexRequest;
 import org.elasticsearch.client.indices.CreateIndexResponse;
 import org.elasticsearch.client.indices.GetIndexRequest;
@@ -520,6 +523,59 @@ public class ESIndexAPI implements IndexAPI {
                 .collect(Collectors
                         .toMap(x -> removeClusterIdFromName(x.getKey()),
                                x -> ClusterIndexHealth.from(x.getValue())));
+    }
+
+    /**
+     * Returns the health of this install's indices in Elasticsearch (the cluster prefix), with the
+     * same server-side timeout the cluster status report has always used. The status and shard
+     * counts cover only those indices; node counts and pending work stay cluster-wide. Each attempt
+     * gives up on the client side after {@link SearchClusterHealth#TIMEOUT_PROPERTY} milliseconds;
+     * after a failed attempt the client tries the next configured host, so with several hung hosts
+     * the call takes a multiple of the limit. A failure
+     * to reach Elasticsearch propagates instead of being answered with an empty result.
+     *
+     * @return the Elasticsearch health, stamped as {@link SearchClusterHealth.Engine#ELASTICSEARCH}
+     * @throws DotRuntimeException if Elasticsearch can't be asked or doesn't answer in time
+     */
+    @Override
+    public SearchClusterHealth getClusterHealthSummary() {
+        final ClusterHealthRequest request = new ClusterHealthRequest(getClusterPrefix() + "*");
+        request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+        final int timeLimit = SearchClusterHealth.timeoutMillis();
+        final RequestOptions options = RequestOptions.DEFAULT.toBuilder()
+                .setRequestConfig(RequestConfig.custom()
+                        .setConnectTimeout(timeLimit)
+                        .setSocketTimeout(timeLimit)
+                        .setConnectionRequestTimeout(timeLimit)
+                        .build())
+                .build();
+
+        final ClusterHealthResponse response;
+        try {
+            response = RestHighLevelClientProvider.getInstance().getClient()
+                    .cluster().health(request, options);
+        } catch (final IOException e) {
+            throw new DotRuntimeException("Could not read Elasticsearch cluster health: " + e.getMessage(), e);
+        }
+
+        return SearchClusterHealth.builder()
+                .engine(SearchClusterHealth.Engine.ELASTICSEARCH)
+                .clusterName(response.getClusterName())
+                .status(response.getStatus().toString().toLowerCase())
+                .timedOut(response.isTimedOut())
+                .numberOfNodes(response.getNumberOfNodes())
+                .numberOfDataNodes(response.getNumberOfDataNodes())
+                .activePrimaryShards(response.getActivePrimaryShards())
+                .activeShards(response.getActiveShards())
+                .relocatingShards(response.getRelocatingShards())
+                .initializingShards(response.getInitializingShards())
+                .unassignedShards(response.getUnassignedShards())
+                .delayedUnassignedShards(response.getDelayedUnassignedShards())
+                .numberOfPendingTasks(response.getNumberOfPendingTasks())
+                .numberOfInFlightFetch(response.getNumberOfInFlightFetch())
+                .taskMaxWaitingInQueueMillis(response.getTaskMaxWaitingTime().millis())
+                .activeShardsPercent(response.getActiveShardsPercent())
+                .build();
     }
 
 	/**

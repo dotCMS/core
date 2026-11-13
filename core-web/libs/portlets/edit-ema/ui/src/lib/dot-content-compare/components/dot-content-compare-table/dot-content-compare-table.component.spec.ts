@@ -309,6 +309,7 @@ describe('DotContentCompareTableComponent', () => {
                 {
                     provide: DotcmsConfigService,
                     useValue: {
+                        getConfig: () => of({ languageBundleVersion: 'test-version' }),
                         getSystemTimeZone: () =>
                             of({
                                 id: 'America/Costa_Rica',
@@ -319,7 +320,10 @@ describe('DotContentCompareTableComponent', () => {
                 },
                 {
                     provide: LoginService,
-                    useValue: { currentUserLanguageId: 'en-US' }
+                    useValue: {
+                        currentUserLanguageId: 'en-US',
+                        loadAuth: () => of({ sessionLanguageId: 'en-US' })
+                    }
                 }
             ]
         });

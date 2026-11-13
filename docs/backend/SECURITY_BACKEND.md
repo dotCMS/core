@@ -92,6 +92,103 @@ public class MySecureForm {
 
 ## Authentication and Authorization
 
+### Programmatic Basic authentication
+
+`ALLOW_BASIC_AUTH` defaults to `JWT_TOKEN` and is read through `Config` for each authentication
+attempt, not cached at startup. The default validates the same persisted API token a
+`Bearer` header would — no password verification and no session — so a Basic wrapper is
+credential-equivalent to Bearer, and a Basic-only client such as WebDAV works out of the box
+with username + API JWT as its password. Administrators can change it at runtime through
+`POST /api/v1/system-table`, for example with `{"key":"ALLOW_BASIC_AUTH","value":"NONE"}`.
+System-table changes require no restart and apply to subsequent authentication attempts;
+existing sessions are not revoked. GraphQL authenticates before cache lookup, so cached responses
+cannot bypass a changed authentication or anonymous-access policy.
+
+Normal configuration precedence still applies: an explicit `DOT_ALLOW_BASIC_AUTH` environment
+override wins over the system table. Changing the process environment requires restarting the
+instance; do not pin that override if administrators need to change this setting at runtime.
+Mode names ignore surrounding whitespace and case. Explicit `FALSE`, `NONE`, empty and
+unrecognized values disable the credential transports entirely rather than enabling a legacy
+mode; an absent property is the `JWT_TOKEN` default.
+
+| Mode | Username/account password | Username/API JWT |
+| --- | --- | --- |
+| `NONE` | Disabled | Disabled |
+| `JWT_TOKEN` (default) | Disabled; no password verification | Accepted only for a valid API token belonging to the named user |
+| `ALL` | Legacy compatibility | Accepted after normal token validation; legacy password fallback remains enabled |
+
+API-token authentication validates signature, configured issuer rules, dates, persistence,
+revocation, the active owner and client-IP restrictions. It does not create a browser login
+session or cookie. `JWT_TOKEN` rejects login/remember-me tokens and never falls back to password
+verification. `ALL` preserves existing WebDAV login-token compatibility; it does not add that
+credential type to REST or weaken endpoints that already require Bearer authentication.
+
+The restriction covers HTTP Basic and equivalent programmatic credential paths (`DOTAUTH`,
+accepted REST user/password parameters and legacy Ajax password fallbacks). Existing supported
+session/Bearer access and designated JSON/form login remain available, including the deprecated
+JSON token-login endpoint used by deployed CLI clients. An independently valid session retains
+precedence; disabling Basic does not revoke sessions already established. Foreign Basic headers
+on public assets retain the existing anonymous fallback without granting private access.
+
+**Migration:** use an API JWT with `Authorization: Bearer <token>` for ordinary API clients.
+Obtain it through normal JSON session login (`POST /api/v1/authentication`) followed by
+session-authenticated `POST /api/v1/apitoken` (`entity.jwt`), or provision a token separately.
+Do not forward the bootstrap session into token-authenticated test clients, log credentials,
+or substitute a login token (`entity.token`) where an API token is required.
+
+WebDAV remains a Basic-transport client: opt into `JWT_TOKEN` and supply the matching username
+and API JWT as its password. `NONE` disables WebDAV credential access, including protected
+operations routed through library shortcuts. `ALL` re-enables account-password exposure and
+should be used only as an explicit legacy compatibility choice, never to keep ordinary test
+suites green. Separate Postman compatibility runs are documented in
+[`dotcms-postman/README.md`](../../dotcms-postman/README.md).
+
+Remote token creation uses the designated JSON-login/session-token flow without a Basic
+exemption. Upgrade older senders that still send password Basic before switching a receiver
+to `NONE`, or provision tokens through a supported path. Docker environment imports should
+use `DOT_IMPORT_API_TOKEN`; the legacy `DOT_IMPORT_USERNAME_PASSWORD` option requires the
+**remote** server to opt into `ALL`. Unrelated outbound Basic used for OAuth/search providers
+is not controlled by this setting.
+
+### Login token lifetime
+
+A login sets a login token (JWT) cookie whose only use is to log the browser back in when its
+HTTP session is gone (session timeout, node restart). Its lifetime depends on "remember me":
+
+| Login | Cookie | Token lifetime | Property |
+|---|---|---|---|
+| Without "remember me" | Browser session | 60 minutes, renewed while the user works | `json.web.token.session.max.age.minutes` (default `60`) |
+| With "remember me" (opt-in) | Persistent | 14 days, not renewed | `json.web.token.days.max.age` (default `14`) |
+
+A session login token is renewed once half its lifetime has passed, on the next back-end
+request that carries the cookie (`DefaultAutoLoginWebInterceptor`): `/api/`, `/c/`,
+`/dotAdmin/c/` and `/dwr/call/`. Static files (`/html/`, the admin application, DWR scripts)
+never receive a renewed cookie, since a cache may keep them by file type, and neither do
+`/api/vtl/` and `/api/js/`, whose responses are written by site scripts that may mark them as
+publicly cacheable. The admin application calls `/api/` as soon as it loads, so its next request
+renews the cookie. A GraphQL request that is due to renew skips the GraphQL cache for that one
+request. An active user
+therefore keeps a valid cookie, and a browser left idle for longer than the lifetime must log in
+again. The effective idle limit is therefore set by this lifetime: the Tomcat `session-timeout`
+(30 minutes in `web.xml`) only decides when the cookie has to step in and log the browser back
+in. Because renewal waits until half the lifetime has passed, the idle time a browser can recover
+from is between half the lifetime and the full lifetime (30 to 60 minutes by default), depending
+on when its last renewal happened. Site pages and assets never receive a renewed cookie. The
+cookie is renewed only for its own owner, when that owner is the session's user and still
+active, and never while an administrator is logged in as another user. Setting the minutes to
+`1440` sets a one-day lifetime, still renewed while the user works; a value below 1 is ignored
+and the default used. `SET_JWT_SESSION_COOKIE=false` still turns the session cookie off
+for interactive logins. A renewal that cannot happen (the cookie expired, or was replaced by a
+logout or password change) is dropped for that session rather than retried; an unexpected error
+while checking the cookie keeps it for the next request. A session login token carries a signed
+`xses` claim, which is how a login restored from the cookie tells it apart from a "remember me"
+token whatever the two lifetimes are set to; it stays a browser-session cookie even when its
+lifetime is longer than the "remember me" limit.
+
+The "remember me" token is a separate, opt-in lifetime. Deployments that want a shorter limit
+for it can lower `json.web.token.days.max.age`. API tokens (`/api/v1/apitoken`) have their own
+expiry and are not affected by either property.
+
 ### Authentication Check Pattern
 ```java
 public Response secureEndpoint(HttpServletRequest request, HttpServletResponse response) {
@@ -120,6 +217,29 @@ public Response secureEndpoint(HttpServletRequest request, HttpServletResponse r
     return processAuthenticatedRequest(user);
 }
 ```
+
+### Anonymous Access to REST APIs
+
+Two config keys decide whether a request with no credentials (the anonymous user) may reach a REST endpoint.
+
+- `CONTENT_APIS_ALLOW_ANONYMOUS` (`NONE | READ | WRITE`, default `NONE`) is the global setting. Endpoints that opt in to anonymous callers through `WebResource.InitBuilder.requiredAnonAccess(...)` or the deprecated `init(..., rejectWhenNoUser=false, ...)` overloads follow it: the content API (legacy and v1), GraphQL, the Elasticsearch search API, tags, languages, content types and fields, widgets (`/api/widget`), and content relationships (`/api/v1/contentrelationships`). Anonymous writes (workflow fire, temp-file upload, legacy content save) also call `requiredAnonAccess(AnonymousAccess.WRITE)`, so they need `WRITE`; `READ` is not enough.
+- `SCRIPTING_APIS_ALLOW_ANONYMOUS` (`true | false`, default `false`) covers only the file-based scripting endpoints, `/api/vtl/{folder}` (`VTLResource`) and `/api/js/{folder}` (`JsResource`). When `true`, anonymous callers can reach them even if the global key is `NONE`; when the global key already allows anonymous reads, they are reachable as before. Anonymous requests get `401` only when the global key is `NONE` and this key is `false`. The script runs as the anonymous user, so permission-checked tools such as `$dotcontent` see only what that user can read; tools that do not check permissions behave as they would for any caller, so review what an endpoint outputs before opening it. This lets a site keep the built-in APIs closed while serving its own published endpoints. The key applies to every HTTP method (GET, POST, PUT, PATCH and DELETE), not only reads. To keep an endpoint read-only, publish only its `get.vtl` / `get.js`, or remove anonymous read permission from the other method files.
+
+The `/api/vtl/dynamic` and `/api/js/dynamic` endpoints run code the caller sends, so the scripting key does not cover them; they follow the global key like every other endpoint. Authenticated users are unaffected by either key.
+
+**Backend UI language bundles:** Public login, logout and password-recovery labels come from `/api/v1/loginform`; the UI does not fetch the full language bundle before authentication. The authenticated route guard waits for `DotMessageService.init()` before rendering backend components. It uses the effective login selection (or the impersonated user's locale during Login As), and checks child-route navigation too so a failed load can recover without a full refresh. `/api/v1/appconfiguration` advertises `config.languageBundleVersion`, a SHA-256 hash of the application version, build/revision number and build timestamp (epoch milliseconds). `/api/v2/languages/{language}/keys` returns the same `languageBundleVersion` as response-envelope metadata, separate from the `entity` translation map; its anonymous-access policy is unchanged.
+
+The client accepts fetched or cached bundles only when they contain more than 100 translation keys, all values are strings, and version metadata is present. Metadata keys do not count toward that minimum; full bundles normally contain thousands of translations. The client reuses a valid cached map only when its locale and stored response version match the server configuration. Missing/invalid caches and changed locales or versions trigger a fetch; matching caches do not refetch on every login. The `dotMessagesKeys-version` local-storage entry stores the response hash as a JSON string to preserve hashes beginning with digits. Legacy build-date entries do not establish freshness. This build-based version does **not** detect CMS-authored translation edits within the same build; those edits require existing cache invalidation/manual cache clearing or a future content-revision mechanism. Backend and frontend should be deployed together because the updated client requires version metadata on fetched bundles. If configuration cannot load, the authenticated guard attempts an uncached bundle fetch. If translations fail to load or validate, it logs the failure and permits authenticated entry using available messages (or raw keys), rather than stranding the user on a blank screen; authentication failures are never downgraded by this fallback.
+
+Consumers can observe the read-only `DotMessageService.bundleVersionMismatch` signal (`language`, `cachedVersion`, `serverVersion`) when two known versions differ. Initial loading is not a mismatch. `loadedBundleVersion` changes only after valid messages are installed from a cache or successful response; effects that rebuild translated UI should observe that signal rather than act before a pending fetch completes. A failed fetch does not overwrite an installed bundle. If no valid bundle is installed, a complete same-language warm cache can be used as a last resort while retaining its old version and propagating the failure to the caller. It is never marked fresh, so subsequent checks still retry the requested version. A successful installation or matching cache check clears the mismatch signal.
+
+There is no `REST_API_REJECT_WITH_NO_USER` setting. An endpoint that must never accept anonymous callers says so in code with `.rejectWhenNoUser(true)` on the `InitBuilder` (as in the pattern above); `InitBuilder` already defaults to rejecting anonymous callers unless `requiredAnonAccess(...)` is set.
+
+**Velocity Secrets in scripting endpoints:** Velocity Secrets (`$dotsecrets`) can be read from the file-based `/api/vtl` and `/api/js` endpoints, including by anonymous callers, when the user who last edited the endpoint's script file (for example `get.vtl` or `get.js`) has the Scripting Developer role. This matches how secrets work in page content. If the file's last editor doesn't have that role, the requesting user must have it instead, so anonymous calls can't read secrets. Code posted to the `/dynamic` endpoints comes from the caller, so there only the requesting user's role counts, and setting `secrets.scripting.enabled=false` still turns secrets off everywhere.
+
+For `/api/js`, the captured editor of the entry file (`get.js`, `post.js`, and so on) is what counts, including for any modules it imports. Each imported file module must also have been last saved by a Scripting Developer or CMS Administrator before its source can run. A module last saved by another user is refused, even when a developer-authored entry file imports it. The editor ID and file's site ID are captured when the endpoint file is loaded; changing an in-memory Contentlet cannot change that authority or secret scope. Site-scoped secret reads (`get` and `getCharArray`) in file-based VTL and JavaScript use that captured site, not caller-supplied `host` or `host_id` parameters. Missing file-site provenance is refused; ordinary page and workflow secret resolution is unchanged.
+
+**Warning:** never evaluate request input (Velocity `#evaluate`, JavaScript `eval`) in an endpoint whose file was last edited by a Scripting Developer. Code evaluated on the fly has no file of its own, so it runs with the editor's access to secrets, and an anonymous caller could send `$dotsecrets.get('anyKey')` and get the value back.
 
 ### Permission Validation Pattern
 ```java

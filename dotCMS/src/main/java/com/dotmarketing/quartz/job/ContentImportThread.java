@@ -3,12 +3,15 @@ package com.dotmarketing.quartz.job;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.NoSuchUserException;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -19,6 +22,8 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.quartz.ScheduledTask;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -123,6 +128,20 @@ public class ContentImportThread implements Job{
 			}
 			Logger.debug(this, "Structure:"+structureName+" - PATH:"+path+" - LOGPATH:"+logPath);
 
+			final User user;
+			try {
+				user = getImportUser(context);
+			} catch (final DotDataException | DotSecurityException e) {
+				Logger.error(this, "Could not load the user of the import job '" + context.getJobDetail().getName()
+						+ "', the import is skipped for this run: " + e.getMessage(), e);
+				return;
+			}
+			if (user == null) {
+				Logger.warn(this, "The import job '" + context.getJobDetail().getName()
+						+ "' has no active user to run as. Save the job again in the Scheduler to run it with your user.");
+				return;
+			}
+
 			File file = new File(path);
 
 			if(file.exists()){
@@ -166,7 +185,7 @@ public class ContentImportThread implements Job{
 
 									Logger.debug(this, "Beginning File Import");
 									byte[] bytes = getBytesFromFile(tempFile);
-									importFile(bytes, structureName, keyfields, false, APILocator.getUserAPI().getSystemUser());
+									importFile(bytes, structureName, keyfields, false, user);
 									Logger.debug(this, "File imported");
 									/**
 									 * move the file to the complete location folder
@@ -206,7 +225,7 @@ public class ContentImportThread implements Job{
 
 						Logger.debug(this, "Beginning File Import");
 						byte[] bytes = getBytesFromFile(file);
-						importFile(bytes, structureName, keyfields, false, APILocator.getUserAPI().getSystemUser());
+						importFile(bytes, structureName, keyfields, false, user);
 						Logger.debug(this, "File imported");
 						/**
 						 * move the file to the complete location folder
@@ -233,6 +252,31 @@ public class ContentImportThread implements Job{
 			Logger.info(this,"The ContentImportThread Job End successfully"+(String)context.getJobDetail().getName());
 		} catch (Exception e) {
 			Logger.error(this, e.toString());
+		}
+	}
+
+	/**
+	 * Returns the user the import runs as: the user who saved the job in the Scheduler, recorded under
+	 * {@link ScheduledTask#SCHEDULED_BY_USER_ID}. Content is created and updated with that user's
+	 * permissions.
+	 *
+	 * @param context the job execution context
+	 * @return the user, or {@code null} when the job has no user recorded, or the recorded user no
+	 *         longer exists or is not active
+	 * @throws DotDataException     if the user cannot be loaded
+	 * @throws DotSecurityException if the user cannot be loaded
+	 */
+	private User getImportUser(final JobExecutionContext context) throws DotDataException, DotSecurityException {
+		final String userId = (String) context.getMergedJobDataMap().get(ScheduledTask.SCHEDULED_BY_USER_ID);
+		if (!UtilMethods.isSet(userId)) {
+			return null;
+		}
+		try {
+			final User user = APILocator.getUserAPI().loadUserById(userId);
+			return user != null && user.isActive() ? user : null;
+		} catch (final NoSuchUserException e) {
+			Logger.debug(this, () -> "The user " + userId + " of the import job no longer exists");
+			return null;
 		}
 	}
 
@@ -522,6 +566,8 @@ public class ContentImportThread implements Job{
 	@SuppressWarnings("unchecked")
 	private void importLine(String[] line, Structure structure, boolean preview, User user, int lineNumber) throws DotRuntimeException {
 
+		// Content the key field lookup locked for this line, released once the line is done
+		final List<Contentlet> lockedByImport = new ArrayList<>();
 		try {
 			//Building a values HashMap based on the headers/columns position
 			HashMap<Integer, Object> values = new HashMap<>();
@@ -668,7 +714,7 @@ public class ContentImportThread implements Job{
 						choosenKeyField.append(", "+field.getFieldName());
 					}
 				}
-				contentlets = conAPI.checkoutWithQuery(buffy.toString(), user, true);
+				contentlets = checkoutMatches(buffy.toString(), user, lockedByImport);
 			}
 
 
@@ -704,17 +750,8 @@ public class ContentImportThread implements Job{
 				for (Integer column : headers.keySet()) {
 					Field field = headers.get(column);
 					Object value = values.get(column);
+					// Tag values are related to the content by checkin, once the content is saved
 					conAPI.setContentletProperty(cont, field, value);
-					if (field.getFieldType().equals(Field.FieldType.TAG.toString()) && value instanceof String) {
-
-						String[] tags = ((String)value).split(",");
-						for (String tag : tags) {
-							APILocator.getTagAPI().addContentletTagInode(tag.trim(), cont.getInode(), "", field.getVelocityVarName());
-						}
-
-						//We should not store the tags inside the field, the relation must only exist on the tag_inode table
-						conAPI.setContentletProperty(cont, field, "");
-					}
 				}
 
 				//Check the new contentlet with the validator
@@ -745,7 +782,12 @@ public class ContentImportThread implements Job{
 				{
 					conAPI.checkin(cont, new ArrayList<>(categories), new ArrayList<>(), user, false);
 					APILocator.getVersionableAPI().setWorking(cont);
-					APILocator.getVersionableAPI().setLive(cont);
+					// The content is published only for a user who can publish it; otherwise it stays as a working version
+					if (APILocator.getPermissionAPI().doesUserHavePermission(cont, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+						APILocator.getVersionableAPI().setLive(cont);
+					} else {
+						myOutput.println("Line #" + lineNumber + ": saved as a working version, the user cannot publish it.");
+					}
 				}
 
 				if (isNew)
@@ -763,8 +805,61 @@ public class ContentImportThread implements Job{
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(),e);
 			throw new DotRuntimeException(e.getMessage(),e);
+		} finally {
+			lockedByImport.forEach(contentlet -> releaseLock(contentlet, user));
 		}
 
+	}
+
+	/**
+	 * Checks out the content matching the key fields of a line, as the user the import runs as.
+	 * Content that was not locked before is added to {@code lockedByImport}, so only the locks
+	 * taken here are released afterwards and a lock the user already held is kept. When a match
+	 * cannot be checked out, the locks already taken are released before the error is thrown.
+	 *
+	 * @param query          the query for the content matching the key fields
+	 * @param user           the user the import runs as
+	 * @param lockedByImport receives the content locked by this lookup
+	 * @return the checked out content
+	 * @throws DotDataException     if the content cannot be read or locked
+	 * @throws DotSecurityException if the user cannot read or lock a match
+	 */
+	private List<Contentlet> checkoutMatches(final String query, final User user,
+			final List<Contentlet> lockedByImport) throws DotDataException, DotSecurityException {
+		final List<Contentlet> checkedOut = new ArrayList<>();
+		try {
+			for (final Contentlet match : conAPI.search(query, 0, -1, "", user, Constants.DONT_RESPECT_FRONT_END_ROLES)) {
+				final boolean alreadyLocked = APILocator.getVersionableAPI().getLockedBy(match).isPresent();
+				final Contentlet contentlet = conAPI.checkout(match.getInode(), user, Constants.DONT_RESPECT_FRONT_END_ROLES);
+				checkedOut.add(contentlet);
+				if (!alreadyLocked) {
+					lockedByImport.add(contentlet);
+				}
+			}
+		} catch (final DotDataException | DotSecurityException | RuntimeException e) {
+			lockedByImport.forEach(contentlet -> releaseLock(contentlet, user));
+			lockedByImport.clear();
+			throw e;
+		}
+		return checkedOut;
+	}
+
+	/**
+	 * Releases a lock the key field lookup took on an existing content, so the next run, or a
+	 * different user saving the job later, can update it again. A saved content is already
+	 * unlocked by checkin, so this only matters when the line fails. A failure is only logged, so
+	 * it does not hide the result of the line.
+	 *
+	 * @param contentlet the content the import checked out
+	 * @param user       the user the import runs as
+	 */
+	private void releaseLock(final Contentlet contentlet, final User user) {
+		try {
+			conAPI.unlock(contentlet, user, Constants.DONT_RESPECT_FRONT_END_ROLES);
+		} catch (final Exception e) {
+			Logger.warn(this, "Could not release the lock on content '" + contentlet.getIdentifier()
+					+ "': " + e.getMessage());
+		}
 	}
 
 	public static final String[] IMP_DATE_FORMATS = new String[] { "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy", "MM/dd/yyyy hh:mm aa", "MM/dd/yyyy HH:mm",

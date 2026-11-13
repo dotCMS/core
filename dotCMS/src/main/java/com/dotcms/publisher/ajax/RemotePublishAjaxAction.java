@@ -36,7 +36,6 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -128,19 +127,6 @@ public class RemotePublishAjaxAction extends AjaxAction {
 		try{
 			// Check permissions if the user has access to the CMS Maintenance Portlet
 			if (user == null) {
-				String userName = map.get("u") !=null
-					? map.get("u")
-						: map.get("user") !=null
-							? map.get("user")
-								: null;
-
-				String password = map.get("p") !=null
-					? map.get("p")
-							: map.get("passwd") !=null
-								? map.get("passwd")
-									: null;
-
-				LoginFactory.doLogin(userName, password, false, request, response);
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
                 //Set the logged user in order to make it available from this action using the getUser() method
                 if ( user != null ) {
@@ -784,10 +770,13 @@ public class RemotePublishAjaxAction extends AjaxAction {
 
     /**
      * Adds to an specific given bundle a given asset.
-     * <br/>If the given bundle does not exist a new onw will be created with that name
+     * <br/>If the given bundle does not exist a new onw will be created with that name.
+     * <br/>A bundle found by id must belong to the caller, unless the caller is a CMS
+     * Administrator; otherwise the request is answered with 403 and nothing is added.
      *
      * @param request  HttpRequest
      * @param response HttpResponse
+     * @throws IOException when the response cannot be written
      */
     public void addToBundle ( HttpServletRequest request, HttpServletResponse response ) throws IOException {
 
@@ -802,6 +791,14 @@ public class RemotePublishAjaxAction extends AjaxAction {
           
           // try by ID
           Bundle bundle=APILocator.getBundleAPI().getBundleById( bundleId );
+          if (bundle != null) {
+              try {
+                  APILocator.getBundleAPI().checkCanModifyBundle(bundle, getUser());
+              } catch (final DotSecurityException e) {
+                  response.sendError(HttpStatus.SC_FORBIDDEN);
+                  return;
+              }
+          }
           
           // if nothing, try by name
           if(bundle==null) {

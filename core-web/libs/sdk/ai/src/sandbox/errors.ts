@@ -136,12 +136,16 @@ export class NetworkError extends DotCMSError {
     /** The platform's own reason, e.g. `ECONNREFUSED`, when it gave one. */
     readonly reason?: string;
 
-    constructor(method: string, path: string, cause: unknown) {
+    /**
+     * @param target what the request was trying to reach, for the message: the dotCMS instance
+     *   unless the caller was fetching something else (a remote file host, for instance).
+     */
+    constructor(method: string, path: string, cause: unknown, target = 'the dotCMS instance') {
         const reason = networkReason(cause);
         super(
-            `Request ${method} ${path} could not reach the dotCMS instance` +
+            `Request ${method} ${path} could not reach ${target}` +
                 (reason ? ` (${reason})` : '') +
-                '. The instance may be down, unreachable or restarting; this is worth retrying.',
+                '. It may be down, unreachable or restarting; this is worth retrying.',
             { cause }
         );
         this.method = method;

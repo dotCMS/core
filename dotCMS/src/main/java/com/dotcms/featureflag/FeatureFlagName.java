@@ -29,6 +29,18 @@ public interface FeatureFlagName {
      */
     String FEATURE_FLAG_EXPERIMENTS_PORTLET = "FEATURE_FLAG_EXPERIMENTS_PORTLET";
 
+    /**
+     * Lets a template hand {@code $xslttool} a URL as the XML to transform, instead of a document
+     * stored in dotCMS. Off by default: the tool is meant to transform content that already lives
+     * in the instance, and the remote fetch is deprecated.
+     *
+     * <p>When it is turned on the download is performed by the platform's outbound HTTP client
+     * ({@link com.dotcms.http.CircuitBreakerUrl}) and follows its network policy, timeouts and size
+     * limits. Turning this off does not affect stylesheets or XML files that are stored in dotCMS,
+     * which is how the tool is normally used.
+     */
+    String FEATURE_FLAG_XSLT_REMOTE_XML = "FEATURE_FLAG_XSLT_REMOTE_XML";
+
     String FEATURE_FLAG_TELEMETRY_CORE_ENABLED = "FEATURE_FLAG_TELEMETRY_CORE_ENABLED";
 
     String FEATURE_FLAG_CONTENT_ANALYTICS = "FEATURE_FLAG_CONTENT_ANALYTICS";
@@ -37,6 +49,30 @@ public interface FeatureFlagName {
 
     // Unique Fields
     String FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = "FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION";
+
+    /**
+     * Kill switch for widget field scripting over REST ({@code /api/widget},
+     * {@code /api/content?render=true} and {@code _search} with {@code render}). On by default:
+     * Velocity found in a widget's field values is evaluated when the widget was last modified by
+     * a user holding the Scripting Developer role, and rendered as text otherwise. Off: field
+     * values render as text for every widget. Pages are not affected either way.
+     */
+    String FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER = "FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER";
+
+    /**
+     * Kill switch for the destination check on checkin. On by default: creating a contentlet
+     * somewhere other than where its content type places content by default (the type's own
+     * folder or site, or the default site for a type on the System Host) requires, besides WRITE
+     * on the content type, "Can Add Children" or WRITE on that folder or site; the former is what
+     * the content editor and the move operation already enforce. Saving an existing contentlet
+     * with a different site or folder, which moves it there, requires the same grant on the new
+     * place besides WRITE on the contentlet. Off: only the content-type or contentlet WRITE check
+     * runs, as before. Default placements, content on the System Host, Host contentlets
+     * themselves, existing contentlets that stay where they are, and the system user are not
+     * affected either way. Environment form:
+     * {@code DOT_FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK}.
+     */
+    String FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK = "FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK";
 
     // others
     String FULLSCREEN_FIELD_FEATURE_FLAG = "content.edit.ui.fullscreen";
@@ -66,8 +102,6 @@ public interface FeatureFlagName {
     String FEATURE_FLAG_UVE_STYLE_EDITOR = "FEATURE_FLAG_UVE_STYLE_EDITOR";
 
     String FEATURE_FLAG_PAGE_SCANNER = "FEATURE_FLAG_PAGE_SCANNER";
-
-    String FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION = "FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION";
 
     /**
      * Controls the active ES → OpenSearch migration phase (integer ordinal 0–3).
@@ -158,4 +192,51 @@ public interface FeatureFlagName {
      */
     String FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION =
             "FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION";
+
+    /**
+     * Makes the {@code $cmsuser} Velocity tool's lookups ({@code getUserByEmail},
+     * {@code getUserByUserId}, {@code getAllUsersInGroup}) return read-only
+     * {@code UserProfile} objects. On by default: when the flag is not set, it is treated as
+     * {@code true}. Turn it off only for installations whose templates pass looked-up accounts to
+     * methods that require a {@code User}; lookups then return detached {@code User} copies with
+     * the credential fields cleared.
+     */
+    String FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES = "FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES";
+
+    /**
+     * Also sends the dotCMS version headers ({@code X-DotCMS-Version}, {@code X-DotCMS-Min-SDK})
+     * and the {@code x-dot-server} node header on requests that carry no valid credentials. Off by
+     * default: those headers go only to requests with a logged-in session or a valid bearer token,
+     * which is what the {@code @dotcms/client} SDK sends. Turn it on to restore the earlier
+     * behavior of sending them on every response.
+     *
+     * <p>Does not override {@code RESPONSE_HEADER_ADD_NODE_ID=false}, which still removes
+     * {@code x-dot-server} from every response, nor the {@code ?nodeid=true} request parameter,
+     * which still requests it on a single response.
+     *
+     * @see com.dotcms.filters.interceptor.meta.SdkVersionWebInterceptor
+     * @see com.dotcms.filters.interceptor.meta.ResponseMetaDataWebInterceptor
+     */
+    String FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS =
+            "FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS";
+
+    /**
+     * Opt-in protection against the scheduled publish job re-publishing content that someone
+     * deliberately unpublished. Off by default.
+     *
+     * <p>The publish job normally skips not-live content whose publish date it already covered in
+     * an earlier run. When it cannot tell when it last ran (typically its first run after a
+     * restart), it publishes every not-live item whose publish date has passed. With this flag on,
+     * it instead skips any such item that was modified after its publish date, which is what a
+     * manual unpublish leaves behind, and logs each skip. Content last saved before its publish
+     * date is still published.
+     *
+     * <p>Has no effect on runs where the previous run time is known, and is overridden by
+     * {@code PUBLISH_JOB_QUEUE_FORCE_INCLUDE_PAST_CONTENT=true}.
+     *
+     * @see com.dotcms.enterprise.publishing.PublishDateUpdater#shouldPublishContent(
+     *      com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Date, boolean)
+     */
+    String FEATURE_FLAG_PUBLISH_JOB_QUEUE_PROTECT_UNPUBLISHED_CONTENT =
+            "FEATURE_FLAG_PUBLISH_JOB_QUEUE_PROTECT_UNPUBLISHED_CONTENT";
 }

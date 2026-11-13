@@ -238,7 +238,7 @@ public class BrowserAPITest extends IntegrationTestBase {
     private static FileAsset persistFileAsset(final Folder folder, final File file)
             throws DotDataException, DotSecurityException {
         return APILocator.getFileAssetAPI().fromContentlet(new FileAssetDataGen(file).folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted());
+                .nextPersisted());
     }
 
     /**
@@ -283,7 +283,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .languageId(1)
                 .host(host)
                 .folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                .nextPersisted();
 
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
@@ -297,7 +297,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                     .languageId(lang)
                     .host(host)
                     .folder(folder)
-                    .setPolicy(IndexPolicy.WAIT_FOR).next();
+                    .next();
 
             next.setIdentifier(persisted.getIdentifier());
             next.setInode(null);
@@ -344,7 +344,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         for (int i = 0; i < 10; ++i) {
 
             new FileAssetDataGen(FileUtil.createTemporaryFile("test", ".txt", "this is a test")).host(host)
-                    .folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                    .folder(folder).nextPersisted();
         }
 
         Map<String, Object> resultMap = browserAPI.getFolderContent(BrowserQuery.builder()
@@ -447,7 +447,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         for (int i = 0; i < 10; ++i) {
 
             new FileAssetDataGen(FileUtil.createTemporaryFile("test", ".txt", "this is a test")).host(host)
-                    .folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                    .folder(folder).nextPersisted();
         }
 
         Map<String, Object> resultMap = browserAPI.getFolderContent(BrowserQuery.builder()
@@ -1049,21 +1049,18 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .languageId(lang1.getId())
                 .host(host)
                 .folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         new FileAssetDataGen(tempFile2)
                 .languageId(lang2.getId())
                 .host(host)
                 .folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         new FileAssetDataGen(tempFile3)
                 .languageId(lang3.getId())
                 .host(host)
                 .folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         // Query with multiple language IDs using List
@@ -1108,13 +1105,11 @@ public class BrowserAPITest extends IntegrationTestBase {
         final Contentlet fileAsset = new FileAssetDataGen(tempFile)
                 .host(host)
                 .folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         // Create a DotAsset
         final File tempFile2 = FileUtil.createTemporaryFile("dotasset", ".txt", "dotasset content");
         final Contentlet dotAsset = new DotAssetDataGen(host, folder, tempFile2)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         // Create a custom content type and content
@@ -1126,7 +1121,6 @@ public class BrowserAPITest extends IntegrationTestBase {
         final Contentlet customContent = new ContentletDataGen(customContentType)
                 .host(host)
                 .folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
@@ -1187,7 +1181,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .languageId(defaultLangId)
                 .host(host)
                 .folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         final File tempFile2 = FileUtil.createTemporaryFile("file2", ".txt", "file content 2");
@@ -1195,7 +1188,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .languageId(lang1.getId())
                 .host(host)
                 .folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         final File tempFile3 = FileUtil.createTemporaryFile("file3", ".txt", "file content 3");
@@ -1203,7 +1195,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .languageId(lang2.getId())
                 .host(host)
                 .folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         // Create custom content type and content in different languages
@@ -1216,14 +1207,12 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .languageId(defaultLangId)
                 .host(host)
                 .folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         new ContentletDataGen(customContentType)
                 .languageId(lang1.getId())
                 .host(host)
                 .folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
@@ -1282,21 +1271,18 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .languageId(lang1.getId())
                 .host(host)
                 .folder(parentFolder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         new FileAssetDataGen(tempFile2)
                 .languageId(lang2.getId())
                 .host(host)
                 .folder(parentFolder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         new FileAssetDataGen(tempFile3)
                 .languageId(lang3.getId())
                 .host(host)
                 .folder(parentFolder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         // Query with multiple language IDs using List
@@ -1584,7 +1570,6 @@ public class BrowserAPITest extends IntegrationTestBase {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
                     .folder(parentFolder)
-                    .setPolicy(IndexPolicy.WAIT_FOR)
                     .nextPersisted();
         }
 
@@ -1651,7 +1636,6 @@ public class BrowserAPITest extends IntegrationTestBase {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
                     .folder(parentFolder)
-                    .setPolicy(IndexPolicy.WAIT_FOR)
                     .nextPersisted();
         }
 
@@ -1705,7 +1689,6 @@ public class BrowserAPITest extends IntegrationTestBase {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
                     .folder(parentFolder)
-                    .setPolicy(IndexPolicy.WAIT_FOR)
                     .nextPersisted();
         }
 
@@ -1815,21 +1798,18 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .setProperty("title", "SearchableItem Alpha")
                 .host(host)
                 .folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         final Contentlet contentlet2 = new ContentletDataGen(customContentType)
                 .setProperty("title", "SearchableItem Beta")
                 .host(host)
                 .folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         final Contentlet contentlet3 = new ContentletDataGen(customContentType)
                 .setProperty("title", "DifferentContent Gamma")
                 .host(host)
                 .folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         // Test Case 1: Filter matching one item - expect contentTotalCount = 1
@@ -1928,7 +1908,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                     .setProperty("title", String.format("SearchableItem %s",i))
                     .host(host)
                     .folder(folder)
-                    .setPolicy(IndexPolicy.WAIT_FOR)
                     .nextPersisted();
         }
 
@@ -1979,7 +1958,6 @@ public class BrowserAPITest extends IntegrationTestBase {
         final Contentlet contentlet = new FileAssetDataGen(file)
                 .host(host)
                 .folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
         assertNotNull(contentlet.getIdentifier());
         assertFalse(contentlet.isLive());
@@ -2053,7 +2031,6 @@ public class BrowserAPITest extends IntegrationTestBase {
             final Contentlet contentlet = new FileAssetDataGen(file)
                     .host(host)
                     .folder(folder)
-                    .setPolicy(IndexPolicy.WAIT_FOR)
                     .nextPersisted();
 
             // Give read permission to every other contentlet (even indices: 0, 2, 4, 6, ...)
@@ -2174,7 +2151,6 @@ public class BrowserAPITest extends IntegrationTestBase {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
                     .folder(parentFolder)
-                    .setPolicy(IndexPolicy.WAIT_FOR)
                     .nextPersisted();
         }
 
@@ -2297,7 +2273,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                         .setProperty("title", "Filler " + i)
                         .host(host)
                         .folder(folder)
-                        .setPolicy(IndexPolicy.WAIT_FOR)
                         .nextPersisted();
             }
 
@@ -2307,7 +2282,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                     .setProperty("title", "Capybara Image")
                     .host(host)
                     .folder(folder)
-                    .setPolicy(IndexPolicy.WAIT_FOR)
                     .nextPersisted();
 
             final BrowserQuery query = BrowserQuery.builder()
@@ -2375,13 +2349,11 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .setProperty("title", "Capybara from Type A")
                 .host(host)
                 .folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
         final Contentlet matchB = new ContentletDataGen(typeB)
                 .setProperty("title", "Capybara from Type B")
                 .host(host)
                 .folder(folder)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         final BrowserQuery unfilteredQuery = BrowserQuery.builder()
@@ -2472,7 +2444,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                         .setProperty("title", "Filler " + i)
                         .host(host)
                         .folder(folder)
-                        .setPolicy(IndexPolicy.WAIT_FOR)
                         .nextPersisted();
             }
 
@@ -2546,14 +2517,12 @@ public class BrowserAPITest extends IntegrationTestBase {
                         .setProperty("title", "Filler " + i)
                         .host(host)
                         .folder(folder)
-                        .setPolicy(IndexPolicy.WAIT_FOR)
                         .nextPersisted();
             }
             final Contentlet match = new ContentletDataGen(contentType)
                     .setProperty("title", "Wombat Image")
                     .host(host)
                     .folder(folder)
-                    .setPolicy(IndexPolicy.WAIT_FOR)
                     .nextPersisted();
 
             final BrowserQuery firstQuery = BrowserQuery.builder()
@@ -2656,7 +2625,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                         .setProperty("title", "AllMatchTerm " + i)
                         .host(host)
                         .folder(folder)
-                        .setPolicy(IndexPolicy.WAIT_FOR)
                         .nextPersisted();
             }
 
@@ -3135,7 +3103,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .setProperty("title", punctuatedTitle)
                 .folder(folder)
                 .host(site)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         final BrowserQuery query = BrowserQuery.builder()
@@ -3218,7 +3185,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                     .setProperty("title", "warmup-" + i)
                     .host(host)
                     .folder(folder)
-                    .setPolicy(IndexPolicy.WAIT_FOR)
                     .nextPersisted();
             new DotConnect().executeUpdate("update contentlet set mod_user = ? where inode = ?",
                     author.getUserId(), contentlet.getInode());
@@ -3388,7 +3354,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .setProperty(LTP_TEXTAREA_VAR, rawHtmlBody)
                 .setProperty(LTP_STORY_VAR, rawStoryBlockJson)
                 .languageId(1)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         final PaginatedContents result = browserAPI.getPaginatedContents(BrowserQuery.builder()
@@ -3433,7 +3398,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .setProperty(LTP_TEXTAREA_VAR, rawHtmlBody)
                 .setProperty(LTP_STORY_VAR, rawStoryBlockJson)
                 .languageId(1)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         @SuppressWarnings("unchecked")
@@ -3482,7 +3446,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .setProperty("title", "ltpListedDoc_" + uniqueId)
                 .setProperty(LTP_WYSIWYG_VAR, rawHtmlBody)
                 .languageId(1)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         final PaginatedContents result = browserAPI.getPaginatedContents(BrowserQuery.builder()
@@ -3542,7 +3505,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .folder(folder)
                 .setProperty("title", longTitleHtml)
                 .languageId(1)
-                .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
         final PaginatedContents result = browserAPI.getPaginatedContents(BrowserQuery.builder()
@@ -3687,7 +3649,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                         .setProperty("title", "ffDoc_" + uniqueId + "_" + i)
                         .setProperty(FF_TEXT_VAR, i == total / 2 ? matchValue : "noise_" + uniqueId + "_" + i)
                         .languageId(1)
-                        .setPolicy(IndexPolicy.WAIT_FOR)
                         .nextPersisted();
             }
 
@@ -3745,7 +3706,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                         .setProperty("title", "ffPaged_" + uniqueId + "_" + i)
                         .setProperty(FF_TEXT_VAR, matchValue)
                         .languageId(1)
-                        .setPolicy(IndexPolicy.WAIT_FOR)
                         .nextPersisted();
             }
 
@@ -3834,7 +3794,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                     .setProperty("title", "ffDense_" + uniqueId + "_" + i)
                     .setProperty(FF_TEXT_VAR, matchValue)
                     .languageId(1)
-                    .setPolicy(IndexPolicy.WAIT_FOR)
                     .nextPersisted()
                     .getIdentifier());
         }
@@ -3885,11 +3844,11 @@ public class BrowserAPITest extends IntegrationTestBase {
         final Contentlet matchByDate = new ContentletDataGen(fixture.contentType.id())
                 .folder(folder).setProperty("title", "ffDateMatch_" + uniqueId)
                 .setProperty(FF_DATE_VAR, matchDate).languageId(1)
-                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                .nextPersisted();
         final Contentlet matchByMulti = new ContentletDataGen(fixture.contentType.id())
                 .folder(folder).setProperty("title", "ffMultiMatch_" + uniqueId)
                 .setProperty(FF_MULTI_VAR, "news").languageId(1)
-                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                .nextPersisted();
         assertSinglePassMatch(folder, dateRangeCriterion(fixture, "2024-06-01", "2024-06-30"),
                 matchByDate.getIdentifier());
         assertSinglePassMatch(folder, multiSelectCriterion(fixture, "news"), matchByMulti.getIdentifier());
@@ -3942,7 +3901,7 @@ public class BrowserAPITest extends IntegrationTestBase {
             final Contentlet contentlet = new ContentletDataGen(fixture.contentType.id())
                     .folder(folder).setProperty("title", "ffSmall_" + uniqueId + "_" + i)
                     .setProperty(FF_TEXT_VAR, i == 15 ? matchValue : "other_" + uniqueId + "_" + i)
-                    .languageId(1).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                    .languageId(1).nextPersisted();
             if (i == 15) {
                 expectedMatch = contentlet;
             }
@@ -3982,7 +3941,7 @@ public class BrowserAPITest extends IntegrationTestBase {
             new ContentletDataGen(fixture.contentType.id())
                     .folder(folderWithNoise).setProperty("title", "ffNoise_" + uniqueId + "_" + i)
                     .setProperty(FF_TEXT_VAR, "noise_" + uniqueId + "_" + i).languageId(1)
-                    .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                    .nextPersisted();
         }
 
         final String noMatchValue = "doesNotExist_" + uniqueId;
@@ -4032,11 +3991,11 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .folder(folder).setProperty("title", "ffTagCombo_" + uniqueId)
                 .setProperty(FF_TEXT_VAR, matchValue)
                 .setProperty(FF_TAG_VAR, "combo-tag-" + uniqueId)
-                .languageId(1).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                .languageId(1).nextPersisted();
         new ContentletDataGen(fixture.contentType.id())
                 .folder(folder).setProperty("title", "ffTagComboOther_" + uniqueId)
                 .setProperty(FF_TEXT_VAR, matchValue)
-                .languageId(1).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                .languageId(1).nextPersisted();
 
         assertFalse("A mixed DB/INDEX criteria list must not be single-pass eligible",
                 BrowserAPIImpl.isSinglePassEligible(
@@ -4093,11 +4052,11 @@ public class BrowserAPITest extends IntegrationTestBase {
         final Contentlet expectedMatch = new ContentletDataGen(fixture.contentType.id())
                 .folder(folder).setProperty("title", freeTextTitle)
                 .setProperty(FF_TEXT_VAR, matchValue)
-                .languageId(1).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                .languageId(1).nextPersisted();
         new ContentletDataGen(fixture.contentType.id())
                 .folder(folder).setProperty("title", "ffFreeTextOther_" + uniqueId)
                 .setProperty(FF_TEXT_VAR, matchValue)
-                .languageId(1).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                .languageId(1).nextPersisted();
 
         assertFalse("A free-text term must keep the request off the single-pass path",
                 BrowserAPIImpl.isSinglePassEligible(List.of(textCriterion(fixture, matchValue)),
@@ -4140,9 +4099,9 @@ public class BrowserAPITest extends IntegrationTestBase {
         final Folder folder = new FolderDataGen().site(site).nextPersisted();
 
         final Contentlet first = new FileAssetDataGen(FileUtil.createTemporaryFile("tie-a", ".txt", "a"))
-                .folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                .folder(folder).nextPersisted();
         final Contentlet second = new FileAssetDataGen(FileUtil.createTemporaryFile("tie-b", ".txt", "b"))
-                .folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                .folder(folder).nextPersisted();
 
         // Force an identical mod_date on both working inodes so the pre-tiebreaker ORDER BY
         // (mod_date alone) has nothing to disambiguate them by.
@@ -4193,12 +4152,12 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         final Contentlet defaultLangVersion = new FileAssetDataGen(
                 FileUtil.createTemporaryFile("tie-lang", ".txt", "a"))
-                .folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                .folder(folder).nextPersisted();
 
         final Contentlet secondLangVersion = ContentletDataGen.checkout(defaultLangVersion);
         secondLangVersion.setLanguageId(secondLanguage.getId());
         final Contentlet secondLangVersionSaved =
-                ContentletDataGen.checkin(secondLangVersion, IndexPolicy.WAIT_FOR);
+                ContentletDataGen.checkin(secondLangVersion);
 
         // Same identifier, same id.id -- force an identical mod_date on both working inodes so
         // neither mod_date nor id.id is left to disambiguate them; only cvi.lang can.
@@ -4258,7 +4217,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         for (int i = 0; i < totalContentlets; i++) {
             createdIdentifiers.add(new FileAssetDataGen(
                     FileUtil.createTemporaryFile("deep-page-" + i, ".txt", "content " + i))
-                    .folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted()
+                    .folder(folder).nextPersisted()
                     .getIdentifier());
         }
 
@@ -4369,7 +4328,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         for (int i = 0; i < 5; i++) {
             expectedIdentifiers.add(new FileAssetDataGen(
                     FileUtil.createTemporaryFile("small-" + i, ".txt", "content " + i))
-                    .folder(smallFolder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted()
+                    .folder(smallFolder).nextPersisted()
                     .getIdentifier());
         }
 
@@ -4416,7 +4375,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         final Folder folder = new FolderDataGen().site(site).nextPersisted();
         final String expectedIdentifier = new FileAssetDataGen(
                 FileUtil.createTemporaryFile("scoping", ".txt", "content"))
-                .folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted()
+                .folder(folder).nextPersisted()
                 .getIdentifier();
 
         // Path 1: explicit site, ignoreSiteForFolders=false -- host filter applies inside the CTE.
@@ -4476,7 +4435,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         // folder-only grant left doesUserHavePermission false on a freshly created contentlet).
         final Contentlet readableContentlet = new FileAssetDataGen(
                 FileUtil.createTemporaryFile("readable", ".txt", "content"))
-                .host(host).folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                .host(host).folder(folder).nextPersisted();
         permissionAPI.save(new Permission(readableContentlet.getPermissionId(),
                         APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ),
                 readableContentlet, APILocator.systemUser(), false);
@@ -4489,7 +4448,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         final Role noAccessRole = new RoleDataGen().nextPersisted();
         final Contentlet restrictedContentlet = new FileAssetDataGen(
                 FileUtil.createTemporaryFile("restricted", ".txt", "content"))
-                .host(host).folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                .host(host).folder(folder).nextPersisted();
         permissionAPI.save(new Permission(restrictedContentlet.getPermissionId(),
                         noAccessRole.getId(), PermissionAPI.PERMISSION_READ),
                 restrictedContentlet, APILocator.systemUser(), false);
@@ -5033,12 +4992,12 @@ public class BrowserAPITest extends IntegrationTestBase {
         for (int i = 0; i < 20; i++) {
             new ContentletDataGen(fixture.contentType.id()).folder(folder)
                     .setProperty("title", "adaptiveFiller_" + uniqueId + "_" + i)
-                    .languageId(1).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                    .languageId(1).nextPersisted();
         }
         final String matchTitle = "adaptiveMatch_" + uniqueId;
         final Contentlet match = new ContentletDataGen(fixture.contentType.id()).folder(folder)
                 .setProperty("title", matchTitle)
-                .languageId(1).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+                .languageId(1).nextPersisted();
 
         final BrowserQuery query = BrowserQuery.from(listingQuery(folder, APILocator.systemUser()))
                 .useElasticsearchFiltering(true)

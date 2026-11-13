@@ -4,15 +4,21 @@ package com.dotmarketing.db;
 import static com.dotmarketing.util.Constants.DATABASE_DEFAULT_DATASOURCE;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
+import java.sql.Statement;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.WeakHashMap;
 import javax.naming.Binding;
 import javax.naming.Context;
 import javax.naming.InitialContext;
@@ -27,6 +33,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.JNDIUtil;
+import com.zaxxer.hikari.HikariDataSource;
 import io.vavr.control.Try;
 
 public class DbConnectionFactory {
@@ -34,6 +41,14 @@ public class DbConnectionFactory {
 
 
     public static final String POSTGRESQL = "PostgreSQL";
+
+    private static final String LOCAL_NAMING_SCHEME = "java:";
+    private static final String LOCAL_ENV_PREFIX = "java:comp/env/";
+    private static final String DOTCMS_DATA_SQL = "select exists (select 1 from pg_catalog.pg_class"
+            + " where relname = 'dot_cluster' and relkind in ('r', 'p'))";
+    /** Answers of {@link #holdsDotcmsData(DataSource)}, per data source instance; entries go with their data source. */
+    private static final Map<DataSource, Boolean> DOTCMS_DATA_ANSWERS =
+            Collections.synchronizedMap(new WeakHashMap<>());
 
 
     private static DataSource defaultDataSource = null;
@@ -156,18 +171,212 @@ public class DbConnectionFactory {
 
 
     /**
-     * This is used to get data source to other database != than the default dotCMS one
+     * Looks up a data source other than the default dotCMS one by its name in the local naming context.
+     *
+     * @param dataSource the name of the data source, e.g. {@code jdbc/reporting} or
+     *                   {@code java:comp/env/jdbc/reporting}
+     * @return the data source bound under that name
+     * @throws IllegalArgumentException if the name is missing or is not a local naming name
+     *                                  (see {@link #isLocalJndiName(String)})
+     * @throws DotRuntimeException      if the lookup fails
      */
-    public static DataSource getDataSource(String dataSource) {
+    public static DataSource getDataSource(final String dataSource) {
+        if (!isLocalJndiName(dataSource)) {
+            throw new IllegalArgumentException("The data source name must refer to the local naming context");
+        }
         try {
-            InitialContext ctx = new InitialContext();
-            DataSource ds = (DataSource) JNDIUtil.lookup(ctx, dataSource);
-            return ds;
-
-        } catch (Exception e) {
+            final InitialContext ctx = new InitialContext();
+            return (DataSource) JNDIUtil.lookup(ctx, dataSource);
+        } catch (final Exception e) {
             Logger.error(DbConnectionFactory.class,
-                "---------- DBConnectionFactory: error getting dbconnection ---------------" + dataSource, e);
+                "---------- DBConnectionFactory: error getting a named data source: "
+                        + e.getClass().getSimpleName());
+            Logger.debug(DbConnectionFactory.class, "Named data source lookup failed", e);
             throw new DotRuntimeException(e.toString());
+        }
+    }
+
+    /**
+     * Tells whether a data source name refers to the local naming context only. A valid name has no
+     * scheme ({@code jdbc/reporting}) or only the local {@code java:} one
+     * ({@code java:comp/env/jdbc/reporting}). Any other scheme, such as a directory or remote-object
+     * URL, is refused, as are missing names.
+     *
+     * @param name the data source name
+     * @return {@code true} if the name may be looked up
+     */
+    public static boolean isLocalJndiName(final String name) {
+        if (name == null || name.isBlank()) {
+            return false;
+        }
+        final String rest = name.startsWith(LOCAL_NAMING_SCHEME)
+                ? name.substring(LOCAL_NAMING_SCHEME.length())
+                : name;
+        return !rest.isBlank() && rest.indexOf(':') < 0;
+    }
+
+    /**
+     * Tells whether a data source name leads to the dotCMS database: either it is the name the dotCMS
+     * pool is published under, or the data source bound under it connects to the dotCMS database
+     * (see {@link #isDefaultDataSource(DataSource)}).
+     *
+     * @param name a local naming name, see {@link #isLocalJndiName(String)}
+     * @return {@code true} if a connection obtained through this name reaches the dotCMS database
+     * @throws IllegalArgumentException if the name is not a local naming name
+     * @throws DotRuntimeException      if the name cannot be looked up, or the data source bound under
+     *                                  it cannot be checked
+     */
+    public static boolean isDefaultDatabase(final String name) {
+        return isDefaultDataSourceName(name) || isDefaultDataSource(getDataSource(name));
+    }
+
+    /**
+     * Tells whether a data source connects to the dotCMS database. That is the case when it is the
+     * dotCMS connection pool, the container data source the pool wraps, or a separate data source
+     * connected to a database that holds dotCMS data (see {@link #holdsDotcmsData(DataSource)}).
+     *
+     * @param candidate the data source to check
+     * @return {@code true} if {@code candidate} reaches the dotCMS database
+     * @throws DotRuntimeException if {@code candidate} cannot be checked
+     */
+    public static boolean isDefaultDataSource(final DataSource candidate) {
+        final DataSource pool = getDataSource();
+        return isSameDataSource(candidate, pool) || holdsDotcmsData(candidate);
+    }
+
+    /**
+     * Tells whether a data source is the given pool or the data source that pool wraps.
+     *
+     * @param candidate the data source to check
+     * @param pool      the pool to compare with
+     * @return {@code true} if {@code candidate} is {@code pool} or the data source behind it
+     */
+    static boolean isSameDataSource(final DataSource candidate, final DataSource pool) {
+        if (candidate == null || pool == null) {
+            return false;
+        }
+        if (candidate == pool) {
+            return true;
+        }
+        return pool instanceof HikariDataSource hikari && candidate == hikari.getDataSource();
+    }
+
+    /**
+     * Tells whether a name is the name the dotCMS pool is published under
+     * ({@value com.dotmarketing.util.Constants#DATABASE_DEFAULT_DATASOURCE}), with or without the
+     * {@code java:} or {@code java:comp/env/} prefix.
+     *
+     * @param name the data source name
+     * @return {@code true} if the name designates the dotCMS pool
+     */
+    public static boolean isDefaultDataSourceName(final String name) {
+        if (name == null) {
+            return false;
+        }
+        String bare = name;
+        if (bare.startsWith(LOCAL_ENV_PREFIX)) {
+            bare = bare.substring(LOCAL_ENV_PREFIX.length());
+        } else if (bare.startsWith(LOCAL_NAMING_SCHEME)) {
+            bare = bare.substring(LOCAL_NAMING_SCHEME.length());
+        }
+        return DATABASE_DEFAULT_DATASOURCE.equals(bare);
+    }
+
+    /**
+     * Tells whether a data source connects to a database that holds dotCMS data, i.e. one with the
+     * dotCMS cluster table in any schema. The check reads the system catalog only, so it needs no
+     * privilege on dotCMS tables and gives the same answer whatever host, port, proxy or user the
+     * data source connects through.
+     * <ul>
+     *     <li>A PostgreSQL database that cannot run the check is recognised, so the answer errs on the
+     *     side of the dotCMS database. Other engines, which cannot hold dotCMS data, are not.</li>
+     *     <li>When the data source cannot open a connection, or cannot run the check nor report its
+     *     database engine, there is no answer and an exception is thrown, so callers refuse it rather
+     *     than treat it as another database.</li>
+     * </ul>
+     * Answers read from the catalog, and the answer for an engine other than PostgreSQL, are kept per
+     * data source instance. A failed connection, or a PostgreSQL database that could not run the check,
+     * is not kept, so the data source is checked again next time.
+     *
+     * @param candidate the data source to check
+     * @return {@code true} if the database behind {@code candidate} holds, or may hold, dotCMS data
+     * @throws DotRuntimeException if the data source cannot be checked
+     */
+    static boolean holdsDotcmsData(final DataSource candidate) {
+        if (candidate == null) {
+            return false;
+        }
+        final Boolean known = DOTCMS_DATA_ANSWERS.get(candidate);
+        if (known != null) {
+            return known;
+        }
+        final Connection connection;
+        try {
+            connection = candidate.getConnection();
+        } catch (final Exception e) {
+            throw new DotRuntimeException("Could not connect to the data source to check it: "
+                    + e.getClass().getSimpleName(), e);
+        }
+        Optional<Boolean> catalogAnswer = Optional.empty();
+        boolean answer;
+        try {
+            catalogAnswer = runDotcmsDataCheck(connection);
+            answer = catalogAnswer.orElseGet(() -> isPostgres(connection));
+        } finally {
+            closeQuietly(connection);
+        }
+        if (catalogAnswer.isPresent() || !answer) {
+            // A catalog answer, or a database engine other than PostgreSQL: neither changes for this data source.
+            DOTCMS_DATA_ANSWERS.put(candidate, answer);
+        }
+        return answer;
+    }
+
+    /**
+     * Runs the dotCMS data check on an open connection.
+     *
+     * @param connection an open connection to the data source being checked
+     * @return the catalog's answer, or empty if the check could not run
+     */
+    private static Optional<Boolean> runDotcmsDataCheck(final Connection connection) {
+        try (final Statement statement = connection.createStatement();
+                final ResultSet result = statement.executeQuery(DOTCMS_DATA_SQL)) {
+            return Optional.of(result.next() && result.getBoolean(1));
+        } catch (final Exception e) {
+            Logger.debug(DbConnectionFactory.class,
+                    () -> "Could not check the database of a data source: " + e.getClass().getSimpleName());
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * Closes a connection used for a check, ignoring any failure.
+     *
+     * @param connection the connection to close
+     */
+    private static void closeQuietly(final Connection connection) {
+        try {
+            connection.close();
+        } catch (final Exception e) {
+            Logger.debug(DbConnectionFactory.class,
+                    () -> "Could not close the connection used to check a data source: " + e.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * Tells whether a connection reports PostgreSQL as its database product.
+     *
+     * @param connection an open connection
+     * @return {@code true} for PostgreSQL, {@code false} for other products
+     * @throws DotRuntimeException if the connection cannot report its database product
+     */
+    private static boolean isPostgres(final Connection connection) {
+        try {
+            final String product = connection.getMetaData().getDatabaseProductName();
+            return product != null && product.toLowerCase(Locale.ROOT).contains("postgres");
+        } catch (final Exception e) {
+            throw new DotRuntimeException("Could not read the database engine of the data source: "
+                    + e.getClass().getSimpleName(), e);
         }
     }
 

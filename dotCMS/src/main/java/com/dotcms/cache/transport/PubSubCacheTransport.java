@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 import com.dotcms.cache.transport.CacheTransportTopic.CacheEventType;
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.dotpubsub.DotPubSubEvent;
@@ -17,6 +18,7 @@ import com.dotmarketing.business.cache.transport.CacheTransport;
 import com.dotmarketing.business.cache.transport.CacheTransportException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.annotations.VisibleForTesting;
 import io.vavr.control.Try;
 
@@ -31,6 +33,11 @@ public class PubSubCacheTransport implements CacheTransport {
     final DotPubSubProvider pubsub;
 
     final CacheTransportTopic topic;
+
+    /**
+     * How many servers a cluster status request waits for: the alive servers, this one included.
+     */
+    private final Supplier<Integer> expectedResponders;
 
     final AtomicBoolean initialized = new AtomicBoolean(false);
 
@@ -81,10 +88,31 @@ public class PubSubCacheTransport implements CacheTransport {
         this(DotPubSubProviderLocator.provider.get(), new CacheTransportTopic());
     }
 
+    /**
+     * Creates the transport over the given provider and topic. A cluster status request waits for
+     * as many replies as there are alive servers.
+     *
+     * @param pubsub the pub/sub provider
+     * @param topic  the cache topic
+     */
     @VisibleForTesting
     PubSubCacheTransport(final DotPubSubProvider pubsub, final CacheTransportTopic topic) {
+        this(pubsub, topic, () -> Try.of(() -> APILocator.getServerAPI().getAliveServers().size()).getOrElse(0));
+    }
+
+    /**
+     * Creates the transport with an explicit count of the replies a cluster status request waits for.
+     *
+     * @param pubsub             the pub/sub provider
+     * @param topic              the cache topic
+     * @param expectedResponders how many replies a cluster status request waits for
+     */
+    @VisibleForTesting
+    PubSubCacheTransport(final DotPubSubProvider pubsub, final CacheTransportTopic topic,
+            final Supplier<Integer> expectedResponders) {
         this.pubsub = pubsub;
         this.topic = topic;
+        this.expectedResponders = expectedResponders;
         Logger.debug(this.getClass(), "PubSubCacheTransport");
     }
 
@@ -210,29 +238,43 @@ public class PubSubCacheTransport implements CacheTransport {
 
     }
 
+    /**
+     * Asks every server for its status report and waits up to {@code maxWaitInMillis} for the
+     * replies, returning as soon as there are as many replies as alive servers.
+     *
+     * <p>Each request carries its own id, and only replies carrying that id are collected. That
+     * keeps two status checks apart even when they overlap, and makes every request distinct, so
+     * the queueing provider no longer drops a second check sent within its de-duplication window.
+     * Servers on older versions echo the id, because a reply is built from the request.</p>
+     *
+     * @param maxWaitInMillis how long to wait for replies
+     * @return the replies, keyed by responding server id
+     */
     @Override
     public Map<String, Serializable> validateCacheInCluster(final int maxWaitInMillis) throws CacheTransportException {
 
+        final String requestId = UUIDGenerator.generateUuid();
         final DotPubSubEvent clusterStatusRequest = new DotPubSubEvent.Builder()
-                        .withType(CacheTransportTopic.CacheEventType.CLUSTER_REQ.name()).withTopic(this.topic).build();
+                        .withType(CacheTransportTopic.CacheEventType.CLUSTER_REQ.name()).withTopic(this.topic)
+                        .addPayload(CacheTransportTopic.CLUSTER_REQUEST_ID, requestId).build();
 
-        final int numberOfOtherServers = Try.of(() -> APILocator.getServerAPI().getAliveServers().size()).getOrElse(0);
-        this.topic.resetResponses();
-        this.pubsub.publish(clusterStatusRequest);
+        final int numberOfServers = expectedResponders.get();
+        this.topic.openRequest(requestId);
+        final Map<String, Serializable> replies;
+        try {
+            this.pubsub.publish(clusterStatusRequest);
 
-        final long waitUntil = System.currentTimeMillis() + maxWaitInMillis;
-
-        while (System.currentTimeMillis() < waitUntil) {
-
-            if (this.topic.readResponses().size() >= numberOfOtherServers) {
-                break;
+            final long waitUntil = System.currentTimeMillis() + maxWaitInMillis;
+            while (System.currentTimeMillis() < waitUntil) {
+                if (this.topic.readResponses(requestId).size() >= numberOfServers) {
+                    break;
+                }
+                Try.run(() -> Thread.sleep(50));
             }
-
-            Try.run(() -> Thread.sleep(50));
-
+        } finally {
+            replies = this.topic.closeRequest(requestId);
         }
-
-        return this.topic.readResponses();
+        return replies;
     }
 
     /**

@@ -346,7 +346,11 @@ public class ReindexQueueFactory {
 
     private static long lastIdIndexed = 0;
 
-    @VisibleForTesting
+    /**
+     * Moves the journal cursor back to the start, so the next load reads every row this node owns
+     * again, including rows handed out earlier whose batch never finished. {@link ReindexThread}
+     * calls it after a batch throws; tests call it to start from a known state.
+     */
     static void resetLastIdReindexed() {
         lastIdIndexed = 0;
     }
@@ -552,10 +556,17 @@ public class ReindexQueueFactory {
         return Long.parseLong(c);
     }
 
+    /**
+     * Queues every contentlet under the folder's path for reindexing at NORMAL priority, stamped
+     * with the current time.
+     *
+     * @param folder the folder whose content is reindexed
+     * @throws DotDataException if the journal rows cannot be written
+     */
     protected void refreshContentUnderFolder(Folder folder) throws DotDataException {
         final String sql =
-                " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "
-                        + " SELECT distinct identifier.id, identifier.id, ?, ? "
+                " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action,time_entered) "
+                        + " SELECT distinct identifier.id, identifier.id, ?, ?, " + timestampSQL()
                         + " FROM contentlet join identifier ON contentlet.identifier=identifier.id "
                         + " WHERE identifier.host_inode=? AND identifier.parent_path LIKE ? ";
         DotConnect dc = new DotConnect();
@@ -571,11 +582,19 @@ public class ReindexQueueFactory {
         }
     }
 
+    /**
+     * Queues every contentlet on the site whose parent path starts with the given path for
+     * reindexing at NORMAL priority, stamped with the current time.
+     *
+     * @param hostId the site identifier
+     * @param folderPath the folder path prefix
+     * @throws DotDataException if the journal rows cannot be written
+     */
     protected void refreshContentUnderFolderPath(String hostId, String folderPath)
             throws DotDataException {
         final String sql =
-                " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "
-                        + " SELECT distinct identifier.id, identifier.id, ?, ? "
+                " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action,time_entered) "
+                        + " SELECT distinct identifier.id, identifier.id, ?, ?, " + timestampSQL()
                         + " FROM contentlet join identifier ON contentlet.identifier=identifier.id "
                         + " WHERE identifier.host_inode=? AND identifier.parent_path LIKE ? ";
         DotConnect dc = new DotConnect();
@@ -661,10 +680,17 @@ public class ReindexQueueFactory {
         return identifiers.size();
     }
 
+    /**
+     * Queues every contentlet on the site, and every asset whose permissions come from the site,
+     * for reindexing at STRUCTURE priority, stamped with the current time.
+     *
+     * @param host the site whose content is reindexed
+     * @throws DotDataException if the journal rows cannot be written
+     */
     protected void refreshContentUnderHost(final Host host) throws DotDataException {
         String sql =
-                " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "
-                        + " SELECT id, id, ?, ? "
+                " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action,time_entered) "
+                        + " SELECT id, id, ?, ?, " + timestampSQL()
                         + " FROM identifier "
                         + " WHERE asset_type='contentlet' and identifier.host_inode=?";
         final DotConnect dc = new DotConnect();
@@ -675,8 +701,8 @@ public class ReindexQueueFactory {
         dc.loadResult();
 
         // https://github.com/dotCMS/dotCMS/issues/2229
-        sql = " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "
-                + " SELECT asset_id, asset_id, ?, ? "
+        sql = " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action,time_entered) "
+                + " SELECT asset_id, asset_id, ?, ?, " + timestampSQL()
                 + " FROM permission_reference " + " WHERE reference_id=?";
         dc.setSQL(sql);
         dc.addParam(Priority.STRUCTURE.dbValue());

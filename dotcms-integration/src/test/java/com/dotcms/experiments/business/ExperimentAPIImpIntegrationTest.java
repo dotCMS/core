@@ -60,6 +60,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -576,7 +577,11 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                                     .toArray(String[]::new));
 
             experimentContentlets.forEach((contentlet -> {
-                assertTrue(Try.of(contentlet::isLive).getOrElse(false));
+                if (!Try.of(contentlet::isLive).getOrElse(false)) {
+                    Assert.fail("Contentlet " + contentlet.getIdentifier()
+                            + " was not live after the experiment started.\n"
+                            + describeVersionState(experimentContentlets));
+                }
             }));
 
         } catch(Exception e) {
@@ -592,6 +597,37 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     .collect(Collectors.toList()));
         }
 
+    }
+
+    /**
+     * Builds a failure message for {@link #testStartExperiment_shouldPublishContent()}: for each
+     * contentlet, what {@code isWorking()} and {@code isLive()} report (or the exception they
+     * throw, which {@code ExperimentsAPIImpl} swallows when it decides what to publish) next to its
+     * {@code contentlet_version_info} row read straight from the database. Comparing the two tells
+     * a contentlet that was never published apart from one whose cached version info is stale.
+     *
+     * @param contentlets the contentlets returned for the experiment's variants
+     * @return one line per contentlet
+     */
+    private static String describeVersionState(final List<Contentlet> contentlets) {
+        return contentlets.stream().map(contentlet -> {
+            final String versionInfoRow = Try.of(() -> new DotConnect().setSQL(
+                            "SELECT working_inode, live_inode, deleted, version_ts "
+                                    + "FROM contentlet_version_info WHERE identifier = ? "
+                                    + "AND lang = ? AND variant_id = ?")
+                    .addParam(contentlet.getIdentifier())
+                    .addParam(contentlet.getLanguageId())
+                    .addParam(contentlet.getVariantId())
+                    .loadObjectResults().toString()).getOrElseGet(Throwable::toString);
+            return "identifier=" + contentlet.getIdentifier()
+                    + ", inode=" + contentlet.getInode()
+                    + ", variant=" + contentlet.getVariantId()
+                    + ", isWorking()=" + Try.of(contentlet::isWorking)
+                            .map(String::valueOf).getOrElseGet(Throwable::toString)
+                    + ", isLive()=" + Try.of(contentlet::isLive)
+                            .map(String::valueOf).getOrElseGet(Throwable::toString)
+                    + ", version info row in DB=" + versionInfoRow;
+        }).collect(Collectors.joining("\n"));
     }
 
     /*

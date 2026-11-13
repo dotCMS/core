@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.asset;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -38,6 +41,8 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -48,6 +53,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -55,7 +61,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.RandomStringUtils;
-import java.util.Base64;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Assert;
@@ -63,6 +68,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class WebAssetHelperIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     public static final String ASSET_PATH_TEMPLATE = "//%s/%s/%s/%s";
     static Host host;
@@ -286,6 +294,33 @@ public class WebAssetHelperIntegrationTest {
 
     /**
      * Method to test : {@link WebAssetHelper#saveUpdateAsset(HttpServletRequest, FileUploadData, User)}
+     * Given Scenario: The requested asset path ends in a name that the temp file layer would
+     * rewrite, here one that starts with a period.
+     * Expected Result: The asset is stored under the requested name, so a later request for the
+     * same path finds it; the temp file's on-disk name is an internal detail.
+     */
+    @Test
+    public void Test_Upload_Keeps_Requested_Asset_Name() throws DotDataException, DotSecurityException, IOException {
+        final MockHeaderRequest request = getMockHeaderRequest();
+        final File newTestFile = FileUtil.createTemporaryFile("lol", ".txt", RandomStringUtils.random(1000));
+        final String requestedName = ".marker-" + RandomStringUtils.randomAlphanumeric(8) + ".txt";
+        final String path = parentFolderPath() + requestedName;
+        final FileUploadDetail detail = new FileUploadDetail(path, language.toString(), true);
+        try (final InputStream inputStream = Files.newInputStream(newTestFile.toPath())) {
+            final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+            final FileUploadData form = new FileUploadData();
+            form.setFileInputStream(inputStream);
+            form.setContentDisposition(getFormDataContentDisposition(newTestFile));
+            form.setAssetPath(path);
+            form.setDetail(detail);
+            final WebAssetView assetInfo = webAssetHelper.saveUpdateAsset(request, form, APILocator.systemUser());
+            Assert.assertTrue(assetInfo instanceof AssetView);
+            Assert.assertEquals(requestedName, ((AssetView) assetInfo).name());
+        }
+    }
+
+    /**
+     * Method to test : {@link WebAssetHelper#saveUpdateAsset(HttpServletRequest, FileUploadData, User)}
      * Given Scenario: We submit a valid path and a file
      * Expected Result: We get the asset info back as proof of success
      * @throws DotDataException
@@ -481,6 +516,11 @@ public class WebAssetHelperIntegrationTest {
      * @return
      */
     @NotNull
+    /**
+     * Builds an admin request authenticated with a Bearer API token.
+     *
+     * @return the request
+     */
     private static MockHeaderRequest getMockHeaderRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(
                 (
@@ -488,7 +528,7 @@ public class WebAssetHelperIntegrationTest {
                 ).request()
         );
 
-        request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+        request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
         request.setHeader("User-Agent", "Fake-Agent");
         request.setHeader("Host", "localhost");
         request.setHeader("Origin", "localhost");
@@ -626,8 +666,8 @@ public class WebAssetHelperIntegrationTest {
         AssetView assetView = assetVersionsView.versions().get(0);
         Assert.assertEquals(contentlet.getIdentifier(), assetView.identifier());
 
-        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), false);
-        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), true);
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), false, contentlet.getIdentifier());
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), true, contentlet.getIdentifier());
 
         contentletAPI.archive(contentlet, APILocator.systemUser(), false);
 
@@ -639,7 +679,7 @@ public class WebAssetHelperIntegrationTest {
         //Test at least one version is neither live nor working. This is an obvious scenario since we have several version of the same asset
         Assert.assertTrue(allVersions.stream().anyMatch(c-> Try.of(()->!c.isWorking() && !c.isLive()).getOrElse(false)));
         //Now this should generate a new version (obviously unarchived) and should succeed
-        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), true);
+        pushFileForLanguageThenValidate(newTestFile, path, language.toString(), true, contentlet.getIdentifier());
         //Test nothing remains archived
         //We can still use the same collection of versions since the archive method is calculated on the fly
         Assert.assertTrue(allVersions.stream().noneMatch(c-> Try.of(c::isArchived).getOrElse(false)));
@@ -657,6 +697,18 @@ public class WebAssetHelperIntegrationTest {
      * @throws DotSecurityException
      */
     private static void pushFileForLanguageThenValidate(final File newTestFile, final String path, final String langString, final boolean live) throws IOException, DotDataException, DotSecurityException {
+        pushFileForLanguageThenValidate(newTestFile, path, langString, live, null);
+    }
+
+    /**
+     * Same as {@link #pushFileForLanguageThenValidate(File, String, String, boolean)}, but when the
+     * save fails the failure message looks the asset up by the given identifier. A path lookup does
+     * not find an asset that is archived, which is the state the save leaves behind in the archive
+     * then update test.
+     *
+     * @param identifier the identifier of the asset, or null to look it up by path
+     */
+    private static void pushFileForLanguageThenValidate(final File newTestFile, final String path, final String langString, final boolean live, final String identifier) throws IOException, DotDataException, DotSecurityException {
         final FormDataContentDisposition formDataContentDisposition = getFormDataContentDisposition(newTestFile);
         try(final InputStream inputStream = Files.newInputStream(newTestFile.toPath())){
             final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
@@ -667,11 +719,117 @@ public class WebAssetHelperIntegrationTest {
             form.setAssetPath(path);
             form.setDetail(new FileUploadDetail(path, langString, live));
 
-            final WebAssetView assetInfo = webAssetHelper.saveUpdateAsset(request, form, APILocator.systemUser());
+            final WebAssetView assetInfo;
+            try {
+                assetInfo = webAssetHelper.saveUpdateAsset(request, form, APILocator.systemUser());
+            } catch (RuntimeException e) {
+                throw new AssertionError(describeWorkflowState(path, identifier, e), e);
+            }
             Assert.assertNotNull(assetInfo);
             Assert.assertTrue(assetInfo instanceof AssetView);
             AssetView assetView = (AssetView) assetInfo;
             Assert.assertEquals(live, assetView.live());
+        }
+    }
+
+    /**
+     * Builds the failure message used when saving an asset fails, so a rare workflow failure such as
+     * "The Workflow Action [...] is not available in the Workflow Step the content is currently in"
+     * explains itself. For every language of the asset it reports the versions' flags, the workflow
+     * task row read straight from the database, the task and steps the workflow API returns for the
+     * content (which come from caches), and the actions each of those steps offers. A disagreement
+     * between the database row and the cached values means a stale workflow cache; the schemes of
+     * the FileAsset content type show whether another test left a scheme or step assigned to it.
+     * It is only called once the save has already failed.
+     *
+     * @param path       the path of the asset that was being saved
+     * @param identifier the identifier of the asset, or null to look it up by path (which cannot
+     *                   find an archived asset)
+     * @param failure    the exception thrown by the save
+     * @return the failure message
+     */
+    private static String describeWorkflowState(final String path, final String identifier,
+            final RuntimeException failure) {
+
+        final StringBuilder message = new StringBuilder("Saving the asset at [").append(path)
+                .append("] failed with: ").append(failure);
+        try {
+            final User systemUser = APILocator.systemUser();
+            final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+            message.append("; FileAsset schemes: ").append(workflowAPI.findSchemesForContentType(
+                    APILocator.getContentTypeAPI(systemUser).find("FileAsset")).stream()
+                    .map(scheme -> scheme.getName() + "/" + scheme.getId())
+                    .collect(Collectors.toList()));
+
+            final String assetIdentifier = null != identifier ? identifier
+                    : ((AssetVersionsView) WebAssetHelper.newInstance().getAssetInfo(path, systemUser))
+                            .versions().get(0).identifier();
+            final Set<Long> languagesSeen = new HashSet<>();
+            for (final Contentlet version : APILocator.getContentletAPI()
+                    .findAllVersions(new Identifier(assetIdentifier), systemUser, false)) {
+
+                message.append("; version inode=").append(version.getInode())
+                        .append(" languageId=").append(version.getLanguageId())
+                        .append(" working=").append(Try.of(version::isWorking).getOrNull())
+                        .append(" live=").append(Try.of(version::isLive).getOrNull())
+                        .append(" archived=").append(Try.of(version::isArchived).getOrNull());
+                if (languagesSeen.add(version.getLanguageId())) {
+                    describeWorkflowStateOfLanguage(message, workflowAPI, systemUser, version);
+                }
+            }
+        } catch (Exception e) {
+            message.append("; could not collect the workflow state: ").append(e);
+        }
+        return message.toString();
+    }
+
+    /**
+     * Appends the workflow state of one language of an asset to the failure message built by
+     * {@link #describeWorkflowState(String, String, RuntimeException)}: the task row in the database, the
+     * task and steps returned by the workflow API, and the actions of the steps involved.
+     *
+     * @param message     the message being built
+     * @param workflowAPI the workflow API
+     * @param systemUser  the user used to look up actions
+     * @param version     any version of the asset in the language to describe
+     * @throws Exception if the state cannot be read
+     */
+    private static void describeWorkflowStateOfLanguage(final StringBuilder message,
+            final WorkflowAPI workflowAPI, final User systemUser, final Contentlet version)
+            throws Exception {
+
+        final List<Map<String, Object>> taskRows = new DotConnect().setSQL(
+                        "select wt.status, ws.name as step_name, ws.scheme_id, wt.mod_date "
+                                + "from workflow_task wt left join workflow_step ws on ws.id = wt.status "
+                                + "where wt.webasset = ? and wt.language_id = ?")
+                .addParam(version.getIdentifier()).addParam(version.getLanguageId())
+                .loadObjectResults();
+        message.append("; languageId=").append(version.getLanguageId())
+                .append(" task row in the database=").append(taskRows);
+
+        final WorkflowTask cachedTask = workflowAPI.findTaskByContentlet(version);
+        message.append(" task from the workflow API=")
+                .append(null == cachedTask ? "none" : cachedTask.getStatus());
+
+        final Set<String> stepIds = new HashSet<>();
+        taskRows.forEach(row -> stepIds.add(String.valueOf(row.get("status"))));
+        if (null != cachedTask) {
+            stepIds.add(cachedTask.getStatus());
+        }
+        final List<WorkflowStep> steps = workflowAPI.findStepsByContentlet(version, false);
+        steps.forEach(step -> stepIds.add(step.getId()));
+        message.append(" steps from the workflow API=")
+                .append(steps.stream().map(WorkflowStep::getName).collect(Collectors.toList()));
+
+        for (final String stepId : stepIds) {
+            final WorkflowStep step = Try.of(() -> workflowAPI.findStep(stepId)).getOrNull();
+            if (null != step) {
+                message.append(" actions of step ").append(step.getName()).append("/")
+                        .append(stepId).append("=")
+                        .append(workflowAPI.findActions(step, systemUser).stream()
+                                .map(action -> action.getName() + "/" + action.getId())
+                                .collect(Collectors.toList()));
+            }
         }
     }
 

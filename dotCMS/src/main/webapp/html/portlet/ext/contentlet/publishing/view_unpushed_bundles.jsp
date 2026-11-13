@@ -1,3 +1,4 @@
+<%@ page import="com.liferay.util.Xss" %>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="java.util.List"%>
@@ -31,7 +32,10 @@
 	if(null!=request.getParameter("delAsset")){
 		String assetId = request.getParameter("delAsset");
 		String bundleId = request.getParameter("bundleId");
-		APILocator.getBundleAPI().deleteAssetFromBundleAndAuditStatus(assetId, bundleId);
+		// A bundle that no longer exists has nothing left to remove
+		if (null != APILocator.getBundleAPI().getBundleById(bundleId)) {
+			APILocator.getBundleAPI().deleteAssetFromBundleAndAuditStatus(assetId, bundleId, user);
+		}
 	}
 
 	PublishingEndPointAPI pepAPI = APILocator.getPublisherEndPointAPI();
@@ -158,7 +162,7 @@
 						for(Map<String, Object> asset : assetsTransformed){
 
 							final String title = UtilMethods.isSet(asset.get(PublishQueueElementTransformer.TITLE_KEY)) ?
-								StringEscapeUtils.escapeJavaScript(asset.get(PublishQueueElementTransformer.TITLE_KEY).toString()) : StringPool.BLANK;
+								StringEscapeUtils.escapeJavaScript(Xss.encodeForHTML(asset.get(PublishQueueElementTransformer.TITLE_KEY).toString())) : StringPool.BLANK;
 
 							if (!title.equals( "" ) ) {%>
 
@@ -166,7 +170,7 @@
 									title:'<%= title %>',
 									inode:'<%=asset.get(PublishQueueElementTransformer.INODE_KEY)%>',
 									type:'<%=asset.get(PublishQueueElementTransformer.TYPE_KEY)%>',
-									content_type_name:'<%= asset.get(PublishQueueElementTransformer.CONTENT_TYPE_NAME_KEY) %>',
+									content_type_name:'<%= StringEscapeUtils.escapeJavaScript(Xss.encodeForHTML(String.valueOf(asset.get(PublishQueueElementTransformer.CONTENT_TYPE_NAME_KEY)))) %>',
 									language_code:'<%= asset.get(PublishQueueElementTransformer.LANGUAGE_CODE_KEY)  %>',
 									country_code:'<%= asset.get(PublishQueueElementTransformer.COUNTRY_CODE_KEY) %>',
 									asset:'<%= asset.get(PublishQueueElementTransformer.ASSET_KEY) %>'
@@ -191,6 +195,20 @@
 			<br>
 		<%}%>
 
+<%
+	// The language editor lives in the Languages portlet's struts directory, which is restricted to
+	// the portlets that own it (see StrutsPathAccess). Only offer the link to a user who can
+	// actually open it; everybody else gets the plain title, as for any other asset type.
+	boolean canEditLanguages = false;
+	try {
+		canEditLanguages =
+				APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.LANGUAGES.toString(), user)
+						|| APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.LOCALES.toString(), user);
+	} catch (final Exception e) {
+		com.dotmarketing.util.Logger.warn(this.getClass(),
+				"Unable to resolve Languages portlet access for the bundle list", e);
+	}
+%>
 
 <script>
 	function addRow(data, bundleId){
@@ -206,10 +224,14 @@
 					"<strong style=\"text-decoration: underline;\">" + data.title + "</strong>  : " + data.content_type_name +
 					"</a>";
 		} else if (data.type === "language" ) {
-			content += "<a href=\"/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=<%=PortletID.LANGUAGES%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_<%=PortletID.LANGUAGES%>_struts_action=/ext/languages_manager/edit_language&_<%=PortletID.LANGUAGES%>_id=1&_<%=PortletID.LANGUAGES%> _cmd=edit&referer=<%=referer %>\">" +
-					"<img src=\"/html/images/languages/" + data.language_code + "_" + data.country_code + ".gif\" border=\"0\" />&nbsp;" +
-					"<strong style=\"text-decoration: underline;\">" + data.title + "</strong>  : " + (data.content_type_name === 'Page Asset' ? 'Page' : data.content_type_name) +
-					"</a>";
+			var languageFlag = "<img src=\"/html/images/languages/" + data.language_code + "_" + data.country_code + ".gif\" border=\"0\" />&nbsp;";
+			var languageLabel = "<strong style=\"text-decoration: underline;\">" + data.title + "</strong>  : " + (data.content_type_name === 'Page Asset' ? 'Page' : data.content_type_name);
+			<%if (canEditLanguages) {%>
+				content += "<a href=\"/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=<%=PortletID.LANGUAGES%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_<%=PortletID.LANGUAGES%>_struts_action=/ext/languages_manager/edit_language&_<%=PortletID.LANGUAGES%>_id=1&_<%=PortletID.LANGUAGES%> _cmd=edit&referer=<%=referer %>\">" +
+						languageFlag + languageLabel + "</a>";
+			<%} else {%>
+				content += languageFlag + languageLabel;
+			<%}%>
 		} else {
 			content += "<strong>" + data.title + "</strong> : " + data.type;
 		}

@@ -127,6 +127,21 @@ public class NormalizationFilterTest extends UnitTestBase {
         
     }
     /**
+     * Percent-encoded sequences are case-insensitive (RFC 3986 section 2.1) and the container
+     * decodes either case, so the default list must reject lower-case hex exactly as it rejects
+     * upper-case hex.
+     */
+    @Test
+    public void test_lower_case_percent_encodings_are_blocked() throws IOException, ServletException {
+        shouldFail("/x/%2e%2e/html/portlet/ext/contentlet/image_tools/index.jsp");
+        shouldFail("/%2e/html/portlet/ext/contentlet/image_tools/index.jsp");
+        shouldFail("/x/%2E%2e/html/portlet/ext/contentlet/image_tools/index.jsp");
+        shouldFail("/html/portlet/ext/contentlet/image_tools/index.jsp%3bjsessionid=1");
+        shouldFail("/html%5cportlet/ext/contentlet/image_tools/index.jsp");
+        shouldFail("/html/portlet/ext/contentlet/image_tools/index.jsp%3f");
+    }
+
+    /**
      * Test to verify the {@link NormalizationFilter} is applying properly the normalization on
      * valid URIs
      */
