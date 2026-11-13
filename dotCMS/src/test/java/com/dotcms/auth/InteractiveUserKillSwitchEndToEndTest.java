@@ -57,7 +57,15 @@ public class InteractiveUserKillSwitchEndToEndTest {
         session.setAttribute(WebKeys.USER, account);
         assertEquals(account, store.get(WebKeys.USER));
         assertNotNull(session.getAttribute(WebKeys.USER));
-        assertNotNull(RequestUserResolver.resolveRequestUser(request));
+        final com.dotcms.cms.login.SessionUserResolver sessionResolver =
+                org.mockito.Mockito.mock(com.dotcms.cms.login.SessionUserResolver.class);
+        org.mockito.Mockito.when(sessionResolver.resolve(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(java.util.Optional.of(account));
+        try (org.mockito.MockedStatic<com.dotcms.cms.login.SessionUserResolver> resolver =
+                     org.mockito.Mockito.mockStatic(com.dotcms.cms.login.SessionUserResolver.class)) {
+            resolver.when(com.dotcms.cms.login.SessionUserResolver::getInstance).thenReturn(sessionResolver);
+            assertNotNull(RequestUserResolver.resolveRequestUser(request));
+        }
         assertEquals(1, InteractiveUserPolicy.disabledWarningCount());
     }
 

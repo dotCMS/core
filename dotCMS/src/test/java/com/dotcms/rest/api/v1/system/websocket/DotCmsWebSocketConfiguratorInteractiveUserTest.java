@@ -7,13 +7,14 @@ import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
+import com.dotcms.cms.login.SessionUserResolver;
 import com.dotmarketing.business.UserAPI;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import javax.servlet.http.HttpSession;
 import javax.websocket.HandshakeResponse;
 import javax.websocket.server.HandshakeRequest;
@@ -33,22 +34,23 @@ public class DotCmsWebSocketConfiguratorInteractiveUserTest {
         return user;
     }
 
-    private static Map<String, Object> handshake(final String storedId, final User loaded) throws Exception {
+    private static Map<String, Object> handshake(final String storedId, final User resolvedForSession)
+            throws Exception {
         final HttpSession session = mock(HttpSession.class);
         when(session.getId()).thenReturn("s1");
         when(session.getAttribute(WebKeys.USER_ID)).thenReturn(storedId);
         final HandshakeRequest request = mock(HandshakeRequest.class);
         when(request.getHttpSession()).thenReturn(session);
         when(request.getHeaders()).thenReturn(Collections.emptyMap());
-        final UserAPI userAPI = mock(UserAPI.class);
-        when(userAPI.loadUserById(storedId)).thenReturn(loaded);
         final ServerEndpointConfig config = mock(ServerEndpointConfig.class);
         final Map<String, Object> properties = new HashMap<>();
         when(config.getUserProperties()).thenReturn(properties);
-        try (MockedStatic<PortalUtil> portal = mockStatic(PortalUtil.class)) {
-            portal.when(() -> PortalUtil.getUser(session)).thenReturn(null);
+        final SessionUserResolver sessionResolver = mock(SessionUserResolver.class);
+        when(sessionResolver.resolve(session)).thenReturn(Optional.ofNullable(resolvedForSession));
+        try (MockedStatic<SessionUserResolver> resolver = mockStatic(SessionUserResolver.class)) {
+            resolver.when(SessionUserResolver::getInstance).thenReturn(sessionResolver);
             new DotCmsWebSocketConfigurator(mock(WebSocketContainerAPI.class),
-                    mock(JsonWebTokenAuthCredentialProcessor.class), userAPI)
+                    mock(JsonWebTokenAuthCredentialProcessor.class))
                     .modifyHandshake(config, request, mock(HandshakeResponse.class));
         }
         return properties;

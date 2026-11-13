@@ -212,15 +212,6 @@
 
 
 
-      <!-- Director -->
-      <action path="/ext/director/direct" type="com.dotmarketing.portlets.director.action.DirectorAction" >
-         <forward name="portlet.ext.director.unlock_contentlet" path="portlet.ext.director.unlock_contentlet"></forward>
-         <forward name="portlet.ext.director.unlock_htmlpage" path="portlet.ext.director.unlock_htmlpage"></forward>
-         <forward name="portlet.ext.director.unlock_link" path="portlet.ext.director.unlock_link"></forward>
-         <forward name="portlet.ext.director.unlock_popup_link" path="portlet.ext.director.unlock_popup_link"></forward>
-         <forward name="portlet.ext.director.unlock_file" path="portlet.ext.director.unlock_file"></forward>
-      </action>
-      <!-- /Director -->
 
 
 

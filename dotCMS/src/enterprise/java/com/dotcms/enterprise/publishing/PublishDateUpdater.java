@@ -52,6 +52,7 @@ import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
@@ -62,6 +63,7 @@ import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
@@ -127,8 +129,9 @@ public class PublishDateUpdater {
      * 
      * NOTE: For a valid cron expression (e.g., "0 0/1 * * * ?"), this should rarely return null.
      * If it does return null in normal scenarios (not first run), it indicates a calculation bug
-     * that should be investigated. However, when null is returned, shouldPublishContent() will
-     * default to publishing content, which is a safe fallback behavior.
+     * that should be investigated. When null is returned, shouldPublishContent() publishes the
+     * content unless FEATURE_FLAG_PUBLISH_JOB_QUEUE_PROTECT_UNPUBLISHED_CONTENT is on, in which
+     * case content modified after its publish date (e.g. manually unpublished) is skipped.
      */
     @VisibleForTesting
     public static Date getPreviousJobRunTime(final Date currentFireTime) {
@@ -208,12 +211,33 @@ public class PublishDateUpdater {
      * - If it's currently unpublished (live:false) but should have been published,
      *   it was likely manually unpublished → DON'T republish
      *
-     * @param contentlet The contentlet to check
+     * When the previous job run time is unknown (typically the first run after a restart), the
+     * content is published unless FEATURE_FLAG_PUBLISH_JOB_QUEUE_PROTECT_UNPUBLISHED_CONTENT is
+     * on; see {@link #shouldPublishWithoutPreviousRunTime(Contentlet, Date)}.
+     *
+     * @param contentlet The {@link Contentlet} to check
      * @param previousJobRunTime The previous job run time
      * @return true if the content should be published, false if it should be skipped
      */
     @VisibleForTesting
     public static boolean shouldPublishContent(final Contentlet contentlet, final Date previousJobRunTime) {
+        return shouldPublishContent(contentlet, previousJobRunTime, Config.getBooleanProperty(
+                FeatureFlagName.FEATURE_FLAG_PUBLISH_JOB_QUEUE_PROTECT_UNPUBLISHED_CONTENT, false));
+    }
+
+    /**
+     * Same as {@link #shouldPublishContent(Contentlet, Date)}, but takes the protect-unpublished
+     * setting as an argument so the job can read it once per run instead of once per contentlet.
+     *
+     * @param contentlet                the {@link Contentlet} the publish query matched
+     * @param previousJobRunTime        when the job last ran, or {@code null} when unknown
+     * @param protectUnpublishedContent when {@code true} and the previous run time is unknown,
+     *                                  skip content modified after its publish date
+     * @return true if the content should be published, false if it should be skipped
+     */
+    @VisibleForTesting
+    static boolean shouldPublishContent(final Contentlet contentlet, final Date previousJobRunTime,
+            final boolean protectUnpublishedContent) {
         try {
             final ContentType contentType = contentlet.getContentType();
             final String publishDateVar = contentType.publishDateVar();
@@ -221,6 +245,9 @@ public class PublishDateUpdater {
             final Date contentPublishDate = (Date) contentlet.get(publishDateVar);
 
             if (!UtilMethods.isSet(previousJobRunTime)) {
+                if (protectUnpublishedContent) {
+                    return shouldPublishWithoutPreviousRunTime(contentlet, contentPublishDate);
+                }
                 Logger.debug(PublishDateUpdater.class,
                         "Cannot determine previous job run time - will publish contentlet " +
                         contentlet.getIdentifier());
@@ -248,6 +275,82 @@ public class PublishDateUpdater {
                     " - defaulting to publish: " + e.getMessage(), e);
             return true;
         }
+    }
+
+    /**
+     * Decides whether due content may be published when the job cannot tell when it last ran,
+     * so the usual "was the publish date already covered by the previous run" check is impossible.
+     * <p>
+     * dotCMS keeps no record of a past live version once content is unpublished: unpublishing
+     * clears both the live inode and the publish date in {@code contentlet_version_info}. It does
+     * leave two timestamps behind: the unpublished inode's mod date, and the identifier's
+     * {@code version_ts}, which is refreshed whenever its version info changes. The second one
+     * matters when the live and working versions are different inodes, because an unpublish that
+     * targets the live inode leaves the working draft's mod date untouched. Content whose latest
+     * of the two is later than its scheduled publish date was therefore touched after it became
+     * due (most likely published and then manually unpublished, or saved as a draft with a date
+     * already in the past) and is skipped. Content last touched before its publish date is a
+     * genuine pending scheduled publish and is published as before.
+     *
+     * @param contentlet         the {@link Contentlet} the publish query matched
+     * @param contentPublishDate the value of the content type's publish date field
+     * @return {@code true} to publish, {@code false} to leave the content unpublished
+     */
+    @VisibleForTesting
+    static boolean shouldPublishWithoutPreviousRunTime(final Contentlet contentlet,
+            final Date contentPublishDate) {
+        final Date lastTouched = latest(contentlet.getModDate(), findVersionTs(contentlet));
+        if (UtilMethods.isSet(lastTouched) && lastTouched.after(contentPublishDate)) {
+            Logger.info(PublishDateUpdater.class, String.format(
+                    "Skipping auto-publish of contentlet %s: previous job run time is unknown and the "
+                            + "contentlet was modified (%s) after its publish date (%s), so it was most "
+                            + "likely published before and then unpublished",
+                    contentlet.getIdentifier(), lastTouched, contentPublishDate));
+            return false;
+        }
+        Logger.debug(PublishDateUpdater.class, String.format(
+                "Previous job run time is unknown - publishing contentlet %s: last modified (%s) "
+                        + "before its publish date (%s)",
+                contentlet.getIdentifier(), lastTouched, contentPublishDate));
+        return true;
+    }
+
+    /**
+     * Returns when the contentlet's version info last changed (its {@code version_ts}), which an
+     * unpublish refreshes even when it targets a different inode than the one being checked.
+     * A failed lookup returns {@code null} so the caller falls back to the mod date alone instead
+     * of failing the whole decision, which would default to publishing.
+     *
+     * @param contentlet the {@link Contentlet} whose version info to read
+     * @return the version timestamp, or {@code null} when it is unavailable
+     */
+    private static Date findVersionTs(final Contentlet contentlet) {
+        try {
+            return APILocator.getVersionableAPI()
+                    .getContentletVersionInfo(contentlet.getIdentifier(),
+                            contentlet.getLanguageId(), contentlet.getVariantId())
+                    .map(ContentletVersionInfo::getVersionTs)
+                    .orElse(null);
+        } catch (final Exception e) {
+            Logger.warn(PublishDateUpdater.class, String.format(
+                    "Could not read version info for contentlet %s, using its mod date only: %s",
+                    contentlet.getIdentifier(), e.getMessage()));
+            return null;
+        }
+    }
+
+    /**
+     * Returns the later of two dates, ignoring {@code null}s.
+     *
+     * @param first  a date, or {@code null}
+     * @param second a date, or {@code null}
+     * @return the later date, or {@code null} when both are {@code null}
+     */
+    private static Date latest(final Date first, final Date second) {
+        if (first == null) {
+            return second;
+        }
+        return second != null && second.after(first) ? second : first;
     }
 
     public static PublishDateUpdaterResult updatePublishExpireDates(final Date fireTime) throws DotDataException, DotSecurityException {
@@ -289,12 +392,16 @@ public class PublishDateUpdater {
             // 4. Invalid previousFireTime: When validation fails (shouldn't happen, but handled gracefully)
             //
             // NOTE: The calculation fallback should be reliable. If getPreviousJobRunTime() returns null
-            // in normal scenarios (not first run), that indicates a bug. However, when null is returned,
-            // shouldPublishContent() defaults to publishing content, which is a safe fallback behavior.
+            // in normal scenarios (not first run), that indicates a bug. When null is returned,
+            // shouldPublishContent() defaults to publishing content unless
+            // FEATURE_FLAG_PUBLISH_JOB_QUEUE_PROTECT_UNPUBLISHED_CONTENT is on.
 
             //The Following flag allows to byPass The shouldPublishContent check and force publication of everything
             final boolean forcePublishAllContent = Config.getBooleanProperty("PUBLISH_JOB_QUEUE_FORCE_INCLUDE_PAST_CONTENT",
                     false);
+            // Read once per run; see FeatureFlagName for what it changes
+            final boolean protectUnpublishedContent = Config.getBooleanProperty(
+                    FeatureFlagName.FEATURE_FLAG_PUBLISH_JOB_QUEUE_PROTECT_UNPUBLISHED_CONTENT, false);
 
             Date previousJobRunTime = previousFireTime;
 
@@ -313,8 +420,9 @@ public class PublishDateUpdater {
             }
 
             //This method fires both operations publish + unpublish using batches
-            totalPublishedCount = processPublishContentInBatch(luceneQueryToPublish, forcePublishAllContent, previousJobRunTime,
-                    searchBatchSize, transactionBatchSize, workflowResolutionConfig);
+            totalPublishedCount = processPublishContentInBatch(luceneQueryToPublish, forcePublishAllContent,
+                    protectUnpublishedContent, previousJobRunTime, searchBatchSize, transactionBatchSize,
+                    workflowResolutionConfig);
         }
 
         final String luceneQueryToUnPublish = getExpireLuceneQuery(fireTime);
@@ -733,14 +841,25 @@ public class PublishDateUpdater {
      */
     static class Publisher implements ContentProcessor {
         private final boolean forcePublishing;
+        private final boolean protectUnpublishedContent;
         private final Date previousJobRunTime;
         private final ContentletAPI contentletAPI;
         private final WorkflowAPI workflowAPI;
         private final WorkflowResolutionConfig workflowResolutionConfig;
 
-        public Publisher(final boolean forcePublishing, final Date previousJobRunTime,
-                final WorkflowResolutionConfig workflowResolutionConfig) {
+        /**
+         * Creates the publisher used by a job run.
+         *
+         * @param forcePublishing           publish every matching contentlet, skipping the date check
+         * @param protectUnpublishedContent when the previous run time is unknown, skip content
+         *                                  modified after its publish date
+         * @param previousJobRunTime        when the job last ran, or {@code null} when unknown
+         * @param workflowResolutionConfig  per-run snapshot of the workflow resolution configuration
+         */
+        public Publisher(final boolean forcePublishing, final boolean protectUnpublishedContent,
+                final Date previousJobRunTime, final WorkflowResolutionConfig workflowResolutionConfig) {
             this.forcePublishing = forcePublishing;
+            this.protectUnpublishedContent = protectUnpublishedContent;
             this.previousJobRunTime = previousJobRunTime;
             this.contentletAPI = APILocator.getContentletAPI();
             this.workflowAPI = APILocator.getWorkflowAPI();
@@ -759,6 +878,7 @@ public class PublishDateUpdater {
         Publisher(final ContentletAPI contentletAPI, final WorkflowAPI workflowAPI,
                 final WorkflowResolutionConfig workflowResolutionConfig) {
             this.forcePublishing = true;
+            this.protectUnpublishedContent = false;
             this.previousJobRunTime = null;
             this.contentletAPI = contentletAPI;
             this.workflowAPI = workflowAPI;
@@ -773,7 +893,8 @@ public class PublishDateUpdater {
 
             //This Point is where we decide if the content should get published or skipped
             //But We can always force the publish operation though
-            if (forcePublishing || shouldPublishContent(contentlet, previousJobRunTime)) {
+            if (forcePublishing
+                    || shouldPublishContent(contentlet, previousJobRunTime, protectUnpublishedContent)) {
                 contentletAPI.publish(contentlet, systemUser, false);
                 return true;
             } else {
@@ -932,6 +1053,8 @@ public class PublishDateUpdater {
      *
      * @param luceneQuery The lucene query to search for content to publish
      * @param forcePublishAllContent Whether to include all past content
+     * @param protectUnpublishedContent Whether to skip content modified after its publish date when
+     *                                  the previous job run time is unknown
      * @param previousJobRunTime Previous job run time for content validation
      * @param searchBatchSize The batch size for search operations
      * @param transactionBatchSize The batch size for transaction commits
@@ -940,13 +1063,14 @@ public class PublishDateUpdater {
      */
     private static int processPublishContentInBatch(final String luceneQuery,
                                                            final boolean forcePublishAllContent,
+                                                           final boolean protectUnpublishedContent,
                                                            final Date previousJobRunTime,
                                                            final int searchBatchSize,
                                                            final int transactionBatchSize,
                                                            final WorkflowResolutionConfig workflowResolutionConfig) throws DotDataException {
         //Build and pass a delegate to deal with the Publish Operation
-        final ContentProcessor publishProcessor = new Publisher(forcePublishAllContent, previousJobRunTime,
-                workflowResolutionConfig);
+        final ContentProcessor publishProcessor = new Publisher(forcePublishAllContent,
+                protectUnpublishedContent, previousJobRunTime, workflowResolutionConfig);
         return processContentInBatch(luceneQuery, searchBatchSize, transactionBatchSize, publishProcessor);
     }
 

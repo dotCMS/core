@@ -194,7 +194,8 @@ public class UserResourceHelper implements Serializable {
 	 *            - The server name obtained via the request URL to try to
 	 *            figure out the Site that will be displayed.
 	 * @return A {@link Map} containing all the parameters that must be changed
-	 *         in order to perform the temporary 'Login As'.
+	 *         in order to perform the temporary 'Login As'. The user id in it is the one
+	 *         stored in the record of the user to log in as, whatever spelling was given.
 	 * @throws DotDataException
 	 *             An error occurred with the input parameters, or when
 	 *             retrieving roles and Site information.
@@ -250,7 +251,7 @@ public class UserResourceHelper implements Serializable {
 			host = this.hostWebAPI.findDefaultHost(systemUser, false);
 		}
 		final Map<String, Object> sessionData = Map.of(WebKeys.PRINCIPAL_USER_ID, currentUser.getUserId(), WebKeys.USER_ID,
-				loginAsUserId, com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
+				loginAsUser.getUserId(), com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
 		return sessionData;
 	}
 

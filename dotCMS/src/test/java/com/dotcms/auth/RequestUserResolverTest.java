@@ -86,7 +86,15 @@ public class RequestUserResolverTest {
         sessionStore.put(WebKeys.USER, real);
         sessionStore.put(WebKeys.USER_ID, UserAPI.SYSTEM_USER_ID);
         final HttpServletRequest request = IdentityMocks.request(new HashMap<>(), IdentityMocks.session(sessionStore));
-        assertSame(real, RequestUserResolver.resolveRequestUser(request));
+        final com.dotcms.cms.login.SessionUserResolver sessionResolver =
+                org.mockito.Mockito.mock(com.dotcms.cms.login.SessionUserResolver.class);
+        org.mockito.Mockito.when(sessionResolver.resolve(org.mockito.ArgumentMatchers.any()))
+                .thenReturn(java.util.Optional.of(real));
+        try (org.mockito.MockedStatic<com.dotcms.cms.login.SessionUserResolver> resolver =
+                     org.mockito.Mockito.mockStatic(com.dotcms.cms.login.SessionUserResolver.class)) {
+            resolver.when(com.dotcms.cms.login.SessionUserResolver::getInstance).thenReturn(sessionResolver);
+            assertSame(real, RequestUserResolver.resolveRequestUser(request));
+        }
     }
 
     /**

@@ -6,11 +6,13 @@ import com.dotcms.api.system.event.SystemEvent;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.UserSessionPayloadBuilder;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.cache.DynamicTTLCache;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -66,26 +68,61 @@ public class SessionMonitor implements ServletRequestListener,
     }
 
 
+    /**
+     * Registers the session as soon as its {@code USER_ID} attribute is stored, whatever login
+     * path stored it (form login, SAML, OAuth, the session copy made after login, Login As), so
+     * the session is listed and can be ended before it makes another request. The client address
+     * is recorded when the current request is known.
+     *
+     * @param event the attribute binding event
+     */
     @Override
-    public void attributeAdded(HttpSessionBindingEvent event) {
-        // Not implemented
+    public void attributeAdded(final HttpSessionBindingEvent event) {
+        trackOnUserIdChange(event);
     }
 
     /**
-     * Checks if the attribute removed is "USER_ID". If so, remove the logout user
+     * Forgets the session when its {@code USER_ID} attribute is removed: it no longer belongs to
+     * a user (it was signed out), so the session tools neither list nor end it. Any other
+     * attribute leaves the tracking as it is.
+     *
+     * @param event the attribute binding event
      */
     @Override
     public void attributeRemoved(final HttpSessionBindingEvent event) {
-
+        if (event == null || !com.liferay.portal.util.WebKeys.USER_ID.equals(event.getName())) {
+            return;
+        }
+        final HttpSession session = event.getSession();
+        if (session != null) {
+            forget(session.getId());
+        }
     }
 
     /**
-     * Do nothing here.
+     * Same as {@link #attributeAdded(HttpSessionBindingEvent)}, for a session whose user id is
+     * replaced, as Login As does.
+     *
+     * @param event the attribute binding event
      */
     @Override
+    public void attributeReplaced(final HttpSessionBindingEvent event) {
+        trackOnUserIdChange(event);
+    }
 
-    public void attributeReplaced(HttpSessionBindingEvent event) {
-        // Not implemented
+    /**
+     * Tracks the event's session when the attribute that changed is {@code USER_ID}.
+     */
+    private static void trackOnUserIdChange(final HttpSessionBindingEvent event) {
+        if (event == null || !com.liferay.portal.util.WebKeys.USER_ID.equals(event.getName())) {
+            return;
+        }
+        final HttpSession session = event.getSession();
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        if (request != null && session != null) {
+            session.setAttribute(USER_REMOTE_ADDR, request.getRemoteAddr());
+        }
+        track(session);
     }
 
     @Override
@@ -96,22 +133,28 @@ public class SessionMonitor implements ServletRequestListener,
 
     private static final Lazy<Boolean> sendSessionDestroyedToWebSocket = Lazy.of(() ->  Config.getBooleanProperty("SEND_SESSION_DESTROYED_TO_WEBSOCKET", false));
 
+    /**
+     * Forgets the session that just ended, whatever it holds, and reports its end as a logout
+     * or a session-destroyed event when it still named a user.
+     *
+     * @param event the session event
+     */
     @Override
     public void sessionDestroyed(final HttpSessionEvent event) {
 
         Logger.debug(this, "Session destroyed");
 
-        HttpSession session = event.getSession();
+        final HttpSession session = event.getSession();
         if (session == null) {
             return;
         }
+        final String sessionId = session.getId();
+        forget(sessionId);
+
         final String userId = (String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID);
         if (userId == null) {
             return;
         }
-
-        final String sessionId = session.getId();
-        userSessions.invalidate(sessionId);
 
         boolean ignoreRememberMe = session.getAttribute(IGNORE_REMEMBER_ME_ON_INVALIDATION) != null;
 
@@ -160,16 +203,119 @@ public class SessionMonitor implements ServletRequestListener,
         final HttpSession session = ((HttpServletRequest) event.getServletRequest())
                 .getSession(false);
         if (session != null && session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID) != null) {
-            final String userId = (String) session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID);
             session.setAttribute(USER_REMOTE_ADDR, event.getServletRequest().getRemoteAddr());
-            final String id = session.getId();
-            userSessions.put(id, session);
-
-            if (UtilMethods.isSet(userId) && !UserAPI.CMS_ANON_USER_ID.equalsIgnoreCase(userId)) {
-                session.setAttribute(DOT_CLUSTER_SESSION, true);
-            }
+            track(session);
         }
 
+    }
+
+    /**
+     * Registers an authenticated session in the tracked map, so it is listed and can be ended by
+     * the session tools. The session must hold the {@code USER_ID} attribute; a session without
+     * it, or a {@code null} session, is ignored. Sessions of users other than the anonymous user
+     * are also flagged with {@link #DOT_CLUSTER_SESSION}. Called when the user id is stored in a
+     * session and again on each of its requests, which is harmless.
+     *
+     * @param session the session to track, usually the one just created at login
+     */
+    public static void track(final HttpSession session) {
+        if (session == null) {
+            return;
+        }
+        final Object userId = session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID);
+        if (userId == null) {
+            return;
+        }
+        userSessions.put(session.getId(), session);
+        if (userId instanceof String && UtilMethods.isSet((String) userId)
+                && !UserAPI.CMS_ANON_USER_ID.equalsIgnoreCase((String) userId)) {
+            session.setAttribute(DOT_CLUSTER_SESSION, true);
+        }
+    }
+
+    /**
+     * Tells whether a session belongs to the user: it is the session's user, or the administrator
+     * behind a Login As session ({@code PRINCIPAL_USER_ID}). Letter case and surrounding spaces
+     * are ignored, as both spellings name the same user record.
+     */
+    private static boolean belongsTo(final HttpSession session, final String userId) {
+        for (final String key : new String[]{com.liferay.portal.util.WebKeys.USER_ID,
+                com.liferay.portal.util.WebKeys.PRINCIPAL_USER_ID}) {
+            final Object value = session.getAttribute(key);
+            if (value instanceof String && userId.trim().equalsIgnoreCase(((String) value).trim())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Forgets a tracked session, so it is neither listed nor ended by the session tools.
+     *
+     * @param sessionId the id of the session to forget; unknown ids are ignored
+     */
+    public static void forget(final String sessionId) {
+        if (UtilMethods.isSet(sessionId)) {
+            userSessions.invalidate(sessionId);
+        }
+    }
+
+    /**
+     * Ends a tracked session: it is forgotten first, so an ended session never stays in the
+     * tracked map (the container does not report a destroyed session that no longer names a
+     * user), flagged so the remember-me cookie is not reissued, and invalidated.
+     *
+     * @param session the session to end
+     * @throws IllegalStateException when the session had already ended
+     */
+    public static void end(final HttpSession session) {
+        forget(session.getId());
+        session.setAttribute(IGNORE_REMEMBER_ME_ON_INVALIDATION, true);
+        session.invalidate();
+    }
+
+    /**
+     * Ends every session of the given user that is tracked on this node (the sessions it is the
+     * user of, and the Login As sessions it is the administrator behind): each one is removed from
+     * the tracked map, flagged with {@link #IGNORE_REMEMBER_ME_ON_INVALIDATION} and invalidated,
+     * so the browser is told to log out. Sessions of other users are left alone. A session that
+     * was already invalidated is dropped from the map and skipped, without stopping the others.
+     * Sessions held by other nodes are not reached, and neither is a session this node no longer
+     * tracks because the tracked map is bounded in size and time; those sessions are only
+     * stopped by the status check made when they next resolve their user.
+     *
+     * @param userId the id of the user whose sessions end; a {@code null} or blank id ends nothing
+     * @return how many sessions were ended
+     */
+    public static int endSessionsOf(final String userId) {
+        if (!UtilMethods.isSet(userId)) {
+            return 0;
+        }
+        int ended = 0;
+        for (final Map.Entry<String, HttpSession> entry : userSessions.copyAsMap().entrySet()) {
+            final HttpSession session = entry.getValue();
+            try {
+                if (!belongsTo(session, userId)) {
+                    continue;
+                }
+                end(session);
+                ended++;
+            } catch (final IllegalStateException e) {
+                // the session was already invalidated elsewhere: forget it and go on
+                userSessions.invalidate(entry.getKey());
+            } catch (final RuntimeException e) {
+                // one session failing to end must not keep the user's other sessions alive
+                userSessions.invalidate(entry.getKey());
+                Logger.warn(SessionMonitor.class,
+                        "Could not end a tracked session of user '" + userId + "': " + e.getMessage(), e);
+            }
+        }
+        if (ended > 0) {
+            final int count = ended;
+            SecurityLogger.logInfo(SessionMonitor.class,
+                    () -> "Ended " + count + " session(s) of user '" + userId + "' on this node");
+        }
+        return ended;
     }
 
 }

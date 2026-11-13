@@ -1,10 +1,10 @@
 package com.dotcms.auth;
 
+import com.dotcms.cms.login.SessionUserResolver;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
-import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import io.vavr.control.Try;
@@ -26,7 +26,10 @@ public final class RequestUserResolver {
     }
 
     /**
-     * Resolves the user of a request.
+     * Resolves the user of a request, in the order {@code PortalUtil} always used: the user already
+     * resolved for the request, the user of its session, the user id set on the request, the
+     * {@code Authorization} header. Users taken from the session or from an id must currently exist and be
+     * active (see {@link SessionUserResolver}). The result is stored on the request.
      *
      * @param request the request
      * @return the user, or null when there is none or the only one found is not eligible
@@ -38,14 +41,27 @@ public final class RequestUserResolver {
         if (request == null) {
             return null;
         }
-        User user = eligible((User) request.getAttribute(WebKeys.USER), request, null);
-        if (user == null) {
-            user = resolveSessionUser(request.getSession(false));
+        final Object resolved = request.getAttribute(WebKeys.USER);
+        if (resolved instanceof User) {
+            final User allowed = eligible((User) resolved, request, null);
+            if (allowed != null) {
+                request.setAttribute(WebKeys.USER_ID, allowed.getUserId());
+                return allowed;
+            }
         }
+        final HttpSession session = request.getSession(false);
+        // read before the session user is resolved: a refused session loses its user id
+        final String sessionUserId = resolveSessionUserId(session);
+        User user = resolveSessionUser(session);
         if (user == null) {
-            final String userId = resolveRequestUserId(request);
-            if (userId != null) {
-                user = eligible(Try.of(() -> UserLocalManagerUtil.getUserById(userId)).getOrNull(), request, null);
+            // a user id set on the request itself, e.g. by a login filter; the session's own id was
+            // already checked above and is not tried again, even as a copy on the request
+            final Object userId = request.getAttribute(WebKeys.USER_ID);
+            if (userId instanceof String && ((String) userId).equalsIgnoreCase(sessionUserId)) {
+                request.removeAttribute(WebKeys.USER_ID);
+            } else if (userId instanceof String && eligibleId((String) userId, request, session) != null) {
+                user = eligible(SessionUserResolver.getInstance().resolveActive((String) userId).orElse(null),
+                        request, session);
             }
         }
         if (user == null) {
@@ -59,7 +75,8 @@ public final class RequestUserResolver {
     }
 
     /**
-     * Resolves the user held by a session.
+     * Resolves the user held by a session. An account that cannot be used interactively is refused before
+     * the session resolver sees it, because resolving it would write it back to the session.
      *
      * @param session the session, may be null
      * @return the user, or null when there is none or the one found is not eligible
@@ -71,18 +88,16 @@ public final class RequestUserResolver {
         if (session == null) {
             return null;
         }
-        User user = eligible((User) session.getAttribute(WebKeys.USER), null, session);
-        if (user == null) {
-            final String userId = resolveSessionUserId(session);
-            if (userId == null) {
+        final Object cached = session.getAttribute(WebKeys.USER);
+        final Object storedId = session.getAttribute(WebKeys.USER_ID);
+        if (cached instanceof User) {
+            if (eligible((User) cached, null, session) == null) {
                 return null;
             }
-            user = eligible(Try.of(() -> UserLocalManagerUtil.getUserById(userId)).getOrNull(), null, session);
-            if (user != null) {
-                session.setAttribute(WebKeys.USER, user);
-            }
+        } else if (storedId instanceof String && eligibleId((String) storedId, null, session) == null) {
+            return null;
         }
-        return user;
+        return eligible(SessionUserResolver.getInstance().resolve(session).orElse(null), null, session);
     }
 
     /**

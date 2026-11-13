@@ -19,9 +19,10 @@
 
 package com.liferay.portal.util;
 
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.RequestUserResolver;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
+import com.dotcms.cms.login.SessionUserResolver;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -402,10 +403,23 @@ public class PortalUtil {
   }
 
   /**
-   * Resolves the user of a request through {@link com.dotcms.auth.RequestUserResolver}.
+   * Returns the user making the request: the one already resolved for this request, returned
+   * without reading the session again, else the user of the request's session, else the user
+   * whose id was set on the request, else the user of a {@code Bearer} login token. The result is
+   * stored on the request for the rest of its processing.
+   * <p>
+   * A user taken from the session or from a user id must currently exist and be active (see
+   * {@link SessionUserResolver}); otherwise the next source is tried. The one exception is a user
+   * id on the request that is the session's own id: the front controller copies it there before
+   * the user is resolved, so once the session user has been refused that copy is not tried again,
+   * and it is removed from the request.
    *
-   * @param req the request
-   * @return the user, or null when there is none or the account cannot be used interactively
+   * <p>
+   * An account that cannot be used interactively (the built-in system account) is never returned,
+   * whatever the source; see {@link RequestUserResolver}.
+   *
+   * @param req the current request
+   * @return the current {@link User}, or {@code null} when the request has none
    */
   public static User getUser(HttpServletRequest req) {
     return RequestUserResolver.resolveRequestUser(req);
@@ -426,10 +440,13 @@ public class PortalUtil {
 
 
   /**
-   * Resolves the user held by a session through {@link com.dotcms.auth.RequestUserResolver}.
+   * Returns the user the session belongs to, provided that user still exists and is active. The
+   * user's current record is checked on every call, so a session whose user was removed or made
+   * inactive after login yields {@code null} from then on; see {@link SessionUserResolver}.
    *
-   * @param session the session, may be null
-   * @return the user, or null when there is none or the account cannot be used interactively
+   * @param session the HTTP session, may be {@code null}
+   * @return the session's current {@link User}, or {@code null} when the session has no usable
+   *         user
    */
   public static User getUser(HttpSession session) {
     return RequestUserResolver.resolveSessionUser(session);
@@ -449,22 +466,10 @@ public class PortalUtil {
     return getUser(reqImpl.getHttpServletRequest());
   }
 
-  /**
-   * Resolves the user id held by a session through {@link com.dotcms.auth.RequestUserResolver}.
-   *
-   * @param ses the session, may be null
-   * @return the user id, or null when there is none or the account cannot be used interactively
-   */
   public static String getUserId(HttpSession ses) {
     return RequestUserResolver.resolveSessionUserId(ses);
   }
 
-  /**
-   * Resolves the user id of a request through {@link com.dotcms.auth.RequestUserResolver}.
-   *
-   * @param req the request
-   * @return the user id, or null when there is none or the account cannot be used interactively
-   */
   public static String getUserId(HttpServletRequest req) {
     return RequestUserResolver.resolveRequestUserId(req);
   }
