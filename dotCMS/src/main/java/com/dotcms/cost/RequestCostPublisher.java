@@ -81,7 +81,7 @@ public class RequestCostPublisher {
     /** Captures a non-secret destination identity alongside the immutable window. */
     public String destinationFingerprint() {
         final String url = getUrl();
-        return UtilMethods.isSet(url) ? DigestUtils.sha256Hex(url) : null;
+        return validDestination(url) ? DigestUtils.sha256Hex(url) : null;
     }
 
     /**

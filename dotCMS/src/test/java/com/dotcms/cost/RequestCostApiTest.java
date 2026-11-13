@@ -316,7 +316,7 @@ public class RequestCostApiTest extends UnitTestBase {
         final RequestCostApiImpl impl = (RequestCostApiImpl) requestCostApi;
         final RequestCostPublisher publisher = mock(RequestCostPublisher.class);
         when(publisher.isEnabled()).thenReturn(true);
-        when(publisher.destinationFingerprint()).thenReturn("original-destination", "changed-destination");
+        when(publisher.destinationFingerprint()).thenReturn(null, "original-destination", "changed-destination");
         when(publisher.publish(anyString(), anyString()))
                 .thenReturn(false, true);
         final Field field = RequestCostApiImpl.class.getDeclaredField("publisher");
@@ -334,6 +334,8 @@ public class RequestCostApiTest extends UnitTestBase {
             cluster.when(ClusterFactory::getClusterId).thenReturn("cluster");
             server.when(ConfigUtils::getServerId).thenReturn("server");
             tick.invoke(impl);
+            assertEquals("invalid configuration must not retire accounting", 10, impl.requestCountForWindow.sum());
+            tick.invoke(impl);
             assertEquals(10, impl.requestCountForWindow.sum());
             assertEquals(100, impl.requestCostForWindow.sum());
             impl.requestCountForWindow.add(4);
@@ -344,7 +346,7 @@ public class RequestCostApiTest extends UnitTestBase {
         final ArgumentCaptor<String> bodies =
                 ArgumentCaptor.forClass(String.class);
         verify(publisher, times(2)).publish(eq("original-destination"), bodies.capture());
-        verify(publisher, times(1)).destinationFingerprint();
+        verify(publisher, times(2)).destinationFingerprint();
         assertEquals(bodies.getAllValues().get(0), bodies.getAllValues().get(1));
         assertEquals(4, impl.requestCountForWindow.sum());
         assertEquals(40, impl.requestCostForWindow.sum());

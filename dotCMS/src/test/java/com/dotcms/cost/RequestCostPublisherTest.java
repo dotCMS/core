@@ -3,6 +3,7 @@ package com.dotcms.cost;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.UnitTestBase;
@@ -178,8 +179,11 @@ public class RequestCostPublisherTest extends UnitTestBase {
                 "https://example.com/cost?token=secret",
                 "https://example.com/cost#secret")) {
             Config.setProperty("REQUEST_COST_PUSH_URL", url);
+            assertNull("invalid destinations must not be frozen", publisher.destinationFingerprint());
             assertFalse(publisher.publish(publisher.destinationFingerprint(), "{}"));
         }
+        Config.setProperty("REQUEST_COST_PUSH_URL", "https://example.com/cost");
+        assertNotNull("correcting configuration permits a fresh capture", publisher.destinationFingerprint());
     }
 
     @Test
