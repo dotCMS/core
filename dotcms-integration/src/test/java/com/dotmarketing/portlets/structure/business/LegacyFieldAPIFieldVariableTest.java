@@ -59,12 +59,14 @@ public class LegacyFieldAPIFieldVariableTest {
         ownerRole = new RoleDataGen().nextPersisted();
     }
 
-    /** Deletes the content types, users and role the tests created. */
+    /** Deletes the content types, users, role and site the tests created. */
     @AfterAll
-    static void cleanUp() {
+    static void cleanUp() throws Exception {
         typesToClean.forEach(type -> ContentTypeDataGen.remove(type, true));
         usersToClean.forEach(user -> UserDataGen.remove(user, true));
         RoleDataGen.remove(ownerRole, true);
+        APILocator.getHostAPI().archive(site, systemUser, false);
+        APILocator.getHostAPI().delete(site, systemUser, false);
     }
 
     /**
@@ -118,6 +120,55 @@ public class LegacyFieldAPIFieldVariableTest {
                 () -> legacyFieldAPI().deleteFieldVariable(stored, user, false));
 
         assertFalse(storedVariable(field, stored.getKey()).isEmpty());
+    }
+
+    /**
+     * Method to test: {@link FieldAPI#saveFieldVariable(FieldVariable, User, boolean)}
+     * Given Scenario: A user with edit rights on one content type saves a variable of that type's
+     * field, carrying the id of a variable that belongs to another content type
+     * ExpectedResult: The call throws {@link DotSecurityException} and the other type's variable
+     * is unchanged
+     */
+    @Test
+    void saveFieldVariable_idOfAnotherTypesVariable_throwsAndKeepsIt() throws Exception {
+        final Field ownField = newField();
+        final Field otherField = newField();
+        final User user = backendUser();
+        grantOnType(ownField, user, editRights());
+        final FieldVariable otherVariable = storeAsSystem(otherField, uniqueKey(), "one");
+
+        final FieldVariable variable = variable(ownField, otherVariable.getKey(), "two");
+        variable.setId(otherVariable.getId());
+
+        assertThrows(DotSecurityException.class,
+                () -> legacyFieldAPI().saveFieldVariable(variable, user, false));
+
+        final Map<String, Object> row = storedVariable(otherField, otherVariable.getKey())
+                .orElseThrow();
+        assertEquals("one", row.get("variable_value"));
+    }
+
+    /**
+     * Method to test: {@link FieldAPI#deleteFieldVariable(FieldVariable, User, boolean)}
+     * Given Scenario: A user with edit rights on one content type deletes by the id of a variable
+     * of another content type, passing a field of the type they can edit
+     * ExpectedResult: The call throws {@link DotSecurityException} and the variable stays
+     */
+    @Test
+    void deleteFieldVariable_idOfAnotherTypesVariable_throwsAndKeepsIt() throws Exception {
+        final Field ownField = newField();
+        final Field otherField = newField();
+        final User user = backendUser();
+        grantOnType(ownField, user, editRights());
+        final FieldVariable otherVariable = storeAsSystem(otherField, uniqueKey(), "one");
+
+        final FieldVariable variable = variable(ownField, otherVariable.getKey(), "one");
+        variable.setId(otherVariable.getId());
+
+        assertThrows(DotSecurityException.class,
+                () -> legacyFieldAPI().deleteFieldVariable(variable, user, false));
+
+        assertFalse(storedVariable(otherField, otherVariable.getKey()).isEmpty());
     }
 
     /**

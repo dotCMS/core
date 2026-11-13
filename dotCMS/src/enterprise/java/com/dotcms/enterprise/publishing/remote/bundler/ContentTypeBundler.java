@@ -24,7 +24,6 @@ import java.util.Set;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.field.FieldVariableTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -108,13 +107,20 @@ public class ContentTypeBundler implements IBundler {
 
 
 
+	/**
+	 * Writes the content type of the structure to the bundle, with its fields, their variables
+	 * and its workflow information.
+	 *
+	 * @param bundleOutput the bundle being written
+	 * @param structure    the structure to bundle
+	 * @param operation    the push publishing operation
+	 */
 	private void writeContentType(final BundleOutput bundleOutput,
 								  final Structure structure,
 								  final Operation operation)
 			throws IOException, DotBundleException, DotDataException,
 			DotSecurityException, DotPublisherException {
 
-		final com.dotmarketing.portlets.structure.business.FieldAPI fieldAPI = APILocator.getFieldAPI();
 		final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
 		final ContentType contentType = APILocator.getContentTypeAPI(systemUser).find(structure.getInode());
 		final List<Field> fields      = new LegacyFieldTransformer(
@@ -123,8 +129,7 @@ public class ContentTypeBundler implements IBundler {
 
         for(final Field field : fields) {
 
-            fieldVariables.addAll(new FieldVariableTransformer(fieldAPI.getFieldVariablesForField(field.inode(),
-					APILocator.systemUser(), false)).newFieldList());
+            fieldVariables.addAll(field.fieldVariables());
         }
 
 		final ContentTypeWrapper wrapper =

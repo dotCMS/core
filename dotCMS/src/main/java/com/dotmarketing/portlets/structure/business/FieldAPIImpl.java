@@ -119,7 +119,6 @@ public class FieldAPIImpl implements FieldAPI, Serializable {
 		} catch (final UniqueFieldValueDuplicatedException e) {
 			throw new DotDataException(e.getMessage(), e);
 		}
-		FieldsCache.removeFieldVariables(find(stored.fieldId(), user, respectFrontendRoles));
 	}
 
 	/**
