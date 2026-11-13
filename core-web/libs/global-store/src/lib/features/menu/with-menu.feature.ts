@@ -355,7 +355,8 @@ export function withMenu() {
 
             /**
              * Gets the page title based on the current URL.
-             * Searches through menu items to find a matching menuLink.
+             * Picks the menu item with the longest menuLink contained in the URL, so a legacy
+             * link such as /c/users-legacy is not mistaken for the /users it contains.
              *
              * @param url - The current URL to match against menu items
              * @returns The label of the matching menu item, or empty string if not found
@@ -363,8 +364,16 @@ export function withMenu() {
             const getPageTitleByUrl = (url: string): string => {
                 const menuItems = store.menuItemsEntities();
 
-                // Find the menu item whose menuLink is contained in the URL
-                const matchingItem = menuItems.find((item) => url.indexOf(item.menuLink) >= 0);
+                // The URL can contain more than one menuLink: /c/users-legacy contains /users too.
+                // The longest one is the most specific, so it names the page.
+                const matchingItem = menuItems.reduce<(typeof menuItems)[number] | undefined>(
+                    (best, item) =>
+                        url.indexOf(item.menuLink) >= 0 &&
+                        (!best || item.menuLink.length > best.menuLink.length)
+                            ? item
+                            : best,
+                    undefined
+                );
 
                 return matchingItem?.label || '';
             };

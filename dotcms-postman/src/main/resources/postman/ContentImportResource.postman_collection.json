@@ -4651,6 +4651,191 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "Test CSV Template",
+			"item": [
+				{
+					"name": "Download CSV Template Expect Success",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response is a CSV attachment\", function () {",
+									"    pm.expect(pm.response.headers.get(\"Content-Type\")).to.include(\"text/csv\");",
+									"    pm.expect(pm.response.headers.get(\"Content-Disposition\")).to.include(\"attachment\");",
+									"});",
+									"",
+									"pm.test(\"Template has a header line of field names and one sample row\", function () {",
+									"    const lines = pm.response.text().split(\"\\n\");",
+									"    pm.expect(lines.length).to.eql(2);",
+									"    pm.expect(lines[0]).to.include(\"title\");",
+									"    pm.expect(lines[0]).to.include(\"contentHost\");",
+									"    pm.expect(lines[0].split(\",\").length).to.eql(lines[1].split(\",\").length);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_template?contentType={{contentType}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_template"
+							],
+							"query": [
+								{
+									"key": "contentType",
+									"value": "{{contentType}}"
+								}
+							]
+						},
+						"description": "Returns the CSV template of a Content Type the caller is allowed to read."
+					},
+					"response": []
+				},
+				{
+					"name": "Download CSV Template With Invalid ContentType Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_template?contentType=nonExistingContentType",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_template"
+							],
+							"query": [
+								{
+									"key": "contentType",
+									"value": "nonExistingContentType"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Download CSV Template Without ContentType Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_template",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_template"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Download CSV Template Without Authentication Expect Failure",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Response status is 401\", function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/content/_import/_template?contentType={{contentType}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"content",
+								"_import",
+								"_template"
+							],
+							"query": [
+								{
+									"key": "contentType",
+									"value": "{{contentType}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "The CSV template of a Content Type: a header line naming every field an import row can set, and one sample row showing the format of each column. The caller must be allowed to read the Content Type."
 		}
 	],
 	"auth": {

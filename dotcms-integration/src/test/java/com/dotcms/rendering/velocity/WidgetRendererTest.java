@@ -315,6 +315,53 @@ public class WidgetRendererTest {
         assertFalse(rendering.fieldScriptingSkipped());
     }
 
+    /**
+     * Method to test: {@link WidgetRenderer#render(HttpServletRequest, HttpServletResponse, Contentlet)}
+     * Given scenario: the widget type's own code encrypts a text and decrypts it again through
+     * {@code $crypt}, widget last modified by a user without the Scripting Developer role
+     * Expected result: decrypting gives nothing, so only the brackets around it are printed
+     */
+    @Test
+    public void cryptDecryptInWidgetCodeRendersNothingForAuthorWithoutScriptingRole() {
+        assertEquals("[]", renderCryptRoundTripLastModifiedBy(plainUser));
+    }
+
+    /**
+     * Method to test: {@link WidgetRenderer#render(HttpServletRequest, HttpServletResponse, Contentlet)}
+     * Given scenario: the widget type's own code encrypts a text and decrypts it again through
+     * {@code $crypt}, widget last modified by a Scripting Developer
+     * Expected result: the original text is printed
+     */
+    @Test
+    public void cryptDecryptInWidgetCodeReturnsTheTextForScriptingDeveloper() {
+        assertEquals("[x]", renderCryptRoundTripLastModifiedBy(scriptingDeveloper));
+    }
+
+    /**
+     * Renders a widget whose type's own code runs {@code $crypt}. The call sits in the type's
+     * code, which every author's widget evaluates, and not in a field value, which only a
+     * Scripting Developer's widget evaluates: that way the result depends on {@code $crypt} alone.
+     *
+     * @param user the user the widget records as its last modifier
+     *
+     * @return the rendered widget
+     */
+    private static String renderCryptRoundTripLastModifiedBy(final User user) {
+        final ContentType cryptType = TestDataUtils.getWidgetLikeContentType(
+                "WidgetRendererCryptType" + System.currentTimeMillis(), null,
+                () -> "[$!crypt.decrypt($crypt.crypt(\"x\"))]");
+        try {
+            final Contentlet widget = new ContentletDataGen(cryptType.id())
+                    .setProperty("widgetTitle", "WidgetRendererTest")
+                    .setProperty("code", "plain text")
+                    .nextPersisted();
+            widget.setModUser(user.getUserId());
+            return render(widget);
+        } finally {
+            ContentTypeDataGen.remove(cryptType);
+        }
+    }
+
     private static WidgetRenderer.Rendering renderWithDetailsAndFlag(final Contentlet widget, final boolean flag) {
         final boolean previous = Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER, true);
         try {

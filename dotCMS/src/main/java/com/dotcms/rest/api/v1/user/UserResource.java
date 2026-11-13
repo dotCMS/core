@@ -27,7 +27,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.LoginAsSession;
 import com.dotmarketing.business.NoSuchUserException;
@@ -58,7 +57,6 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
-import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
@@ -554,8 +552,10 @@ public class UserResource implements Serializable {
 
 	/**
 	 * Tells whether the given User may administer Roles and Users: a CMS Administrator, or a User with access to
-	 * both the Roles and the Users portlets. This is the same gate applied by the other user-administration
-	 * endpoints in this resource and by {@code GET /v1/roles/users/{userIdOrEmail}}.
+	 * both a Roles screen ({@code roles} or {@code roles-legacy}) and a Users screen ({@code users} or
+	 * {@code users-legacy}). The rule itself lives in {@link com.dotmarketing.business.RoleAPI#canReadRoleMembership(User)},
+	 * which {@code GET /v1/roles/users/{userIdOrEmail}} and the legacy DWR role listings apply too, so the
+	 * screens can never disagree about who may read role membership.
 	 *
 	 * @param user The calling {@link User}.
 	 *
@@ -564,10 +564,7 @@ public class UserResource implements Serializable {
 	 * @throws DotDataException An error occurred when resolving the User's portlet access.
 	 */
 	private boolean isRoleAdministrator(final User user) throws DotDataException {
-		final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
-		return user.isAdmin() ||
-				(layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
-						layoutAPI.doesUserHaveAccessToUsersPortlet(user));
+		return user.isAdmin() || APILocator.getRoleAPI().canReadRoleMembership(user);
 	}
 
 	/**
