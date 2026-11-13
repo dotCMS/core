@@ -217,6 +217,10 @@ export enum UVEEventType {
 
     /**
      * Triggered when scroll action is needed inside the iframe
+     *
+     * @deprecated Use `IFRAME_SCROLL_VELOCITY`, which carries the speed to scroll at every frame
+     * during a drag. The editor still sends the one-step request, and the SDK still handles it,
+     * for pages on an older `@dotcms/uve`.
      */
     IFRAME_SCROLL = 'iframe-scroll',
 
@@ -274,6 +278,11 @@ export enum UVEEventType {
 export type UVEEventPayloadMap = {
     [UVEEventType.CONTENT_CHANGES]: DotCMSPageResponse;
     [UVEEventType.PAGE_RELOAD]: undefined;
+    /**
+     * @deprecated Use the `IFRAME_SCROLL_VELOCITY` payload, a signed speed in px per frame. The
+     * editor still sends the one-step request, and the SDK still handles it, for pages on an
+     * older `@dotcms/uve`.
+     */
     [UVEEventType.IFRAME_SCROLL]: 'up' | 'down';
     [UVEEventType.IFRAME_SCROLL_VELOCITY]: number;
     // TODO: Add type here

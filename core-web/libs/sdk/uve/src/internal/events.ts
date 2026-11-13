@@ -214,6 +214,10 @@ export function onAutoBounds(callback: UVEEventHandler) {
  * @returns {Function} .unsubscribe - Function to remove the event listener
  * @returns {UVEEventType} .event - The event type being subscribed to
  * @internal
+ * @deprecated Use `onIframeScrollVelocity`, which receives the speed the page scrolls at every
+ * frame during a drag. Still subscribed, so the one-step request the editor keeps sending for
+ * pages on an older `@dotcms/uve` is still handled; `registerUVEEvents` ignores it once a
+ * velocity arrives.
  */
 export function onIframeScroll(callback: UVEEventHandler) {
     const messageCallback = (event: MessageEvent) => {

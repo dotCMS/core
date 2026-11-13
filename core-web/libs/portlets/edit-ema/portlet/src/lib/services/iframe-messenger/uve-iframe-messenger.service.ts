@@ -97,6 +97,8 @@ export class UveIframeMessengerService {
      * Convenience method to send scroll direction to the iframe.
      *
      * @param direction - The scroll direction ('up' or 'down')
+     * @deprecated Use {@link scrollAtVelocity}. Still sent, throttled, during a drag for pages on
+     * an older `@dotcms/uve`, which do not know the velocity message.
      */
     scrollInsideIframe(direction: 'up' | 'down'): void {
         this.sendPostMessage({
