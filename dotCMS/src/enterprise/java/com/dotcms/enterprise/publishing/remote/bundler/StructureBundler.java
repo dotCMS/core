@@ -36,6 +36,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
+import com.dotcms.contenttype.transform.field.FieldVariableTransformer;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
@@ -107,8 +109,8 @@ public class StructureBundler implements IBundler {
         
 		List<FieldVariable> fieldVariables=new ArrayList<>();
         for(Field ff : fields) {
-            fieldVariables.addAll(
-                    APILocator.getFieldAPI().getFieldVariablesForField(ff.getInode(), APILocator.getUserAPI().getSystemUser(), false));
+            fieldVariables.addAll(new FieldVariableTransformer(
+                    LegacyFieldTransformer.from(ff).fieldVariables()).oldFieldList());
         }
 		
 		StructureWrapper wrapper = new StructureWrapper(structure,fields,fieldVariables);

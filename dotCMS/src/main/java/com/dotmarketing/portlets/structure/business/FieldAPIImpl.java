@@ -5,17 +5,24 @@ package com.dotmarketing.portlets.structure.business;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Optional;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.business.UniqueFieldValueDuplicatedException;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.transform.field.FieldVariableTransformer;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
 /**
@@ -89,35 +96,130 @@ public class FieldAPIImpl implements FieldAPI, Serializable {
 		return FieldsCache.getField(id);
 	}
 
-	public void deleteFieldVariable(FieldVariable fieldVar, User user,
-			boolean respectFrontendRoles) throws DotDataException,
+	/**
+	 * Deletes a field variable as the given user. The variable is looked up by its id, and the
+	 * user needs the same rights on its content type as
+	 * {@link com.dotcms.contenttype.business.FieldAPI#save(com.dotcms.contenttype.model.field.FieldVariable, User)}
+	 * asks for to save one.
+	 *
+	 * @param fieldVar             the variable to delete; only its id is used
+	 * @param user                 the user deleting it
+	 * @param respectFrontendRoles whether the user's front-end roles count
+	 * @throws DotSecurityException if the user cannot change the variables of that content type
+	 */
+	@WrapInTransaction
+	public void deleteFieldVariable(final FieldVariable fieldVar, final User user,
+			final boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {
-		Field field = APILocator.getFieldAPI().find(fieldVar.getFieldId(), APILocator.getUserAPI().getSystemUser(), true);
-		FieldFactory.deleteFieldVariable(fieldVar);
-		FieldsCache.removeFieldVariables(field);
+		final com.dotcms.contenttype.model.field.FieldVariable stored =
+				FactoryLocator.getFieldFactory().loadVariable(fieldVar.getId());
+		checkCanChangeVariablesOf(stored.fieldId(), user, respectFrontendRoles);
+		try {
+			APILocator.getContentTypeFieldAPI().delete(stored);
+		} catch (final UniqueFieldValueDuplicatedException e) {
+			throw new DotDataException(e.getMessage(), e);
+		}
 	}
 
+	/**
+	 * Finds a field variable by its id, as the given user, who needs READ on the content type of
+	 * its field.
+	 *
+	 * @param id                   the variable id
+	 * @param user                 the user reading it
+	 * @param respectFrontendRoles whether the user's front-end roles count
+	 * @return the variable
+	 * @throws DotSecurityException if the user cannot read that content type
+	 */
 	@CloseDBIfOpened
 	public FieldVariable findFieldVariable(final String id, final User user,
 			final boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {
 
 		Logger.debug(this, ()-> "Finding the field variable: " + id);
-		return FieldFactory.getFieldVariable(id);		
+		final com.dotcms.contenttype.model.field.FieldVariable stored =
+				FactoryLocator.getFieldFactory().loadVariable(id);
+		checkCanRead(stored.fieldId(), user, respectFrontendRoles);
+		return new FieldVariableTransformer(stored).oldField();
 	}
 
+	/**
+	 * Returns the variables of a field, as the given user, who needs READ on the field's content
+	 * type.
+	 *
+	 * @param fieldId              the field id
+	 * @param user                 the user reading them
+	 * @param respectFrontendRoles whether the user's front-end roles count
+	 * @return the field's variables
+	 * @throws DotSecurityException if the user cannot read that content type
+	 */
 	@CloseDBIfOpened
-	public List<FieldVariable> getFieldVariablesForField(String fieldId, User user,
-			boolean respectFrontendRoles) throws DotDataException,
-			DotSecurityException {		
-		return FieldFactory.getFieldVariablesForField(fieldId);
+	public List<FieldVariable> getFieldVariablesForField(final String fieldId, final User user,
+			final boolean respectFrontendRoles) throws DotDataException,
+			DotSecurityException {
+		final com.dotcms.contenttype.model.field.Field field = checkCanRead(fieldId, user,
+				respectFrontendRoles);
+		return new FieldVariableTransformer(field.fieldVariables()).oldFieldList();
 	}
 
+	/**
+	 * Saves a field variable as the given user, through
+	 * {@link com.dotcms.contenttype.business.FieldAPI#save(com.dotcms.contenttype.model.field.FieldVariable, User)},
+	 * which checks the user's rights on the field's content type. When the variable already
+	 * exists, the user also needs those rights on the content type it belongs to now.
+	 *
+	 * @param object               the variable to save
+	 * @param user                 the user saving it
+	 * @param respectFrontendRoles whether the user's front-end roles count
+	 * @throws DotSecurityException if the user cannot change the variables of that content type
+	 */
 	@WrapInTransaction
-	public void saveFieldVariable(FieldVariable object, User user,
-			boolean respectFrontendRoles) throws DotDataException,
+	public void saveFieldVariable(final FieldVariable object, final User user,
+			final boolean respectFrontendRoles) throws DotDataException,
 			DotSecurityException {
-		FieldFactory.saveFieldVariable(object);
+		if (UtilMethods.isSet(object.getId())) {
+			final Optional<com.dotcms.contenttype.model.field.FieldVariable> stored =
+					loadVariableIfExists(object.getId());
+			if (stored.isPresent()) {
+				checkCanChangeVariablesOf(stored.get().fieldId(), user, respectFrontendRoles);
+			}
+		}
+		APILocator.getContentTypeFieldAPI()
+				.save(new FieldVariableTransformer(object).newfield(), user);
+	}
+
+	/**
+	 * Checks that the user can read the content type of the field, and returns the field.
+	 */
+	private com.dotcms.contenttype.model.field.Field checkCanRead(final String fieldId,
+			final User user, final boolean respectFrontendRoles)
+			throws DotDataException, DotSecurityException {
+		final com.dotcms.contenttype.model.field.Field field =
+				APILocator.getContentTypeFieldAPI().find(fieldId);
+		APILocator.getContentTypeAPI(user, respectFrontendRoles).find(field.contentTypeId());
+		return field;
+	}
+
+	/**
+	 * Checks that the user can change the variables of the field's content type: READ on the
+	 * type and EDIT_PERMISSIONS on it, as the content type field API asks for.
+	 */
+	private void checkCanChangeVariablesOf(final String fieldId, final User user,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+		final com.dotcms.contenttype.model.field.Field field =
+				APILocator.getContentTypeFieldAPI().find(fieldId);
+		final ContentType type = APILocator.getContentTypeAPI(user, respectFrontendRoles)
+				.find(field.contentTypeId());
+		APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
+	}
+
+	private Optional<com.dotcms.contenttype.model.field.FieldVariable> loadVariableIfExists(
+			final String id) throws DotDataException {
+		try {
+			return Optional.of(FactoryLocator.getFieldFactory().loadVariable(id));
+		} catch (final NotFoundInDbException e) {
+			return Optional.empty();
+		}
 	}
 
     @Override

@@ -53,7 +53,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.FieldVariable;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -808,12 +808,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			Set<String> allowedFields = new HashSet<>();
 			// http://jira.dotmarketing.net/browse/DOTCMS-7243
-			final List<FieldVariable> fieldVariables = fieldAPI.getFieldVariablesForField(
-					field.inode(), APILocator.systemUser(), false);
-			for(final FieldVariable fieldVariable : fieldVariables) {
-				if(fieldVariable.getKey().equals(ESMappingConstants.DOT_INDEX_PATTERN)) {
+			for(final FieldVariable fieldVariable : field.fieldVariables()) {
+				if(fieldVariable.key().equals(ESMappingConstants.DOT_INDEX_PATTERN)) {
 
-					final String[] names = fieldVariable.getValue().split(COMMA);
+					final String[] names = fieldVariable.value().split(COMMA);
 					allowedFields        = new HashSet<>();
 					for(final String name : names) {
 						allowedFields.add(name.trim().toLowerCase());

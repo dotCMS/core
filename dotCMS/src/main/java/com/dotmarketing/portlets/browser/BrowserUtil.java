@@ -6,6 +6,7 @@ import static com.dotmarketing.util.StringUtils.builder;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.rest.exception.NotFoundException;
@@ -13,7 +14,6 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.structure.model.Field.FieldType;
-import com.dotmarketing.portlets.structure.model.FieldVariable;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -108,16 +108,13 @@ public class BrowserUtil {
     private static Optional<Folder> resolveWithFieldVariable(final Field field, final User user) {
 
         try {
-            List<FieldVariable> fieldVariables = APILocator.getFieldAPI()
-                    .getFieldVariablesForField(field.id(), user, true);
-
-            final Optional<FieldVariable> defaulPathVariable = fieldVariables.stream()
-                    .filter(fieldVariable -> "defaultPath".equals(fieldVariable.getKey()))
+            final Optional<FieldVariable> defaulPathVariable = field.fieldVariables().stream()
+                    .filter(fieldVariable -> "defaultPath".equals(fieldVariable.key()))
                     .findFirst();
 
             if (defaulPathVariable.isPresent()) {
                 final FieldVariable defaultPathVariable = defaulPathVariable.get();
-                final String fieldVariableValue = defaultPathVariable.getValue();
+                final String fieldVariableValue = defaultPathVariable.value();
 
                 if (fieldVariableValue.startsWith(HOST_INDICATOR)) {
                     final String hostName = fieldVariableValue.substring(HOST_INDICATOR.length())

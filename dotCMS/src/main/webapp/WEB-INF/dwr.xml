@@ -66,9 +66,6 @@
     <create creator="new" javascript="AutoUpdaterAjax" scope="application">
       <param name="class" value="com.dotmarketing.business.ajax.AutoUpdaterAjax"/>
     </create>
-    <create creator="new" javascript="FieldVariableAjax" scope="application">
-      <param name="class" value="com.dotmarketing.portlets.structure.ajax.FieldVariableAjax"/>
-    </create>
     <create creator="new" javascript="FileAssetAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.fileassets.ajax.FileAssetAjax"/>
     </create>
