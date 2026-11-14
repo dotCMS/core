@@ -1,20 +1,29 @@
-import { NgStyle, NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     ElementRef,
+    computed,
+    effect,
     inject,
     input,
-    signal
+    output,
+    signal,
+    untracked
 } from '@angular/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotErrorPipe } from './pipes/error/dot-error.pipe';
 import { DotPositionPipe } from './pipes/position/dot-position.pipe';
-import { EmaDragItem, Container } from './types';
+import { Container, ContentletArea, EmaDragItem, EmaDropTarget } from './types';
 
-const POINTER_INITIAL_POSITION = {
+import { ClientData } from '../../../shared/models';
+import { doesMoveChangeOrder } from '../../../utils';
+
+/** Whether a container refuses the drag; the template draws its error zone from the same pipe. */
+const DOT_ERROR = new DotErrorPipe();
+
+const POINTER_INITIAL_POSITION: Record<string, string> = {
     left: '0',
     width: '0',
     opacity: '0',
@@ -24,101 +33,382 @@ const POINTER_INITIAL_POSITION = {
 // Height in pixels for the drop indicator when container is not empty
 const DROP_INDICATOR_HEIGHT_PX = 3;
 
+const NO_TARGET: EmaDropTarget = { kind: 'none' };
+
+/** A contentlet of a container, with its payload read once. */
+interface DropzoneContentlet {
+    area: ContentletArea;
+    payload: ClientData;
+    /** The JSON written to `data-payload`. */
+    payloadAttribute: string;
+    /** Whether it is the contentlet being moved, in the container it is moved from. */
+    isSource: boolean;
+}
+
+/** A container of the page, with its payload read once. */
+interface DropzoneContainer {
+    container: Container;
+    payload: ClientData;
+    /** The JSON written to `data-payload`. */
+    payloadAttribute: string;
+    contentlets: DropzoneContentlet[];
+}
+
+/**
+ * The drop targets drawn over the page while something is dragged. It is the one place that
+ * decides where a drop goes: it resolves the target under the pointer, draws the insertion line
+ * there, and reports the target to the canvas, which drops on it. A contentlet being moved shows
+ * as a gray placeholder at its original place, which is not a target.
+ */
 @Component({
     selector: 'dot-ema-page-dropzone',
-    imports: [DotPositionPipe, DotErrorPipe, DotMessagePipe, NgStyle, NgTemplateOutlet],
+    imports: [DotPositionPipe, DotErrorPipe, DotMessagePipe],
     templateUrl: './ema-page-dropzone.component.html',
     styleUrls: ['./ema-page-dropzone.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        '(dragover)': 'onHostDragover($event)',
+        '(dragleave)': 'onHostDragleave($event)'
+    }
 })
 export class EmaPageDropzoneComponent {
     containers = input<Container[]>([]);
     dragItem = input<EmaDragItem | null>(null);
     zoomLevel = input<number>(1);
 
-    pointerPosition: Record<string, string> = POINTER_INITIAL_POSITION;
+    /**
+     * Where a drop would go, each time it changes. Named like the inputs above, without the `$`
+     * prefix: outputs cannot be aliased, and the canvas binds `dropTargetChange`.
+     */
+    readonly dropTargetChange = output<EmaDropTarget>();
 
-    private readonly el = inject(ElementRef);
+    readonly #el = inject(ElementRef<HTMLElement>);
 
-    protected readonly $positionData = signal({
-        position: '',
-        parentRect: null,
-        targetRect: null
+    /** The last target reported, so a target is reported once, not on every `dragover`. */
+    #lastTarget: EmaDropTarget | null = null;
+
+    /**
+     * Where the pointer last was over the dropzone, in admin-window coordinates; null before
+     * the first dragover and after the pointer left.
+     */
+    #pointer: { clientX: number; clientY: number } | null = null;
+
+    /** Where the insertion line is drawn. */
+    protected readonly $pointerPosition = signal<Record<string, string>>(POINTER_INITIAL_POSITION);
+
+    /**
+     * The payloads read on the last recompute, by the JSON the page sent. The bounds are rebuilt
+     * on every scroll report while the page auto-scrolls, with the same payloads: each is read
+     * once. Rebuilt from the current containers each time, so it holds only what is on the page.
+     */
+    #readPayloads = new Map<string, ClientData>();
+
+    /**
+     * The containers and contentlets to draw, with their payloads read. The contentlet being
+     * moved is marked as the source, only in the container it is moved from: the same contentlet
+     * can sit in another container too.
+     */
+    protected readonly $containers = computed<DropzoneContainer[]>(() => {
+        const draggedPayload = this.dragItem()?.draggedPayload;
+        const source =
+            draggedPayload?.type === 'contentlet' && draggedPayload.move
+                ? draggedPayload.item
+                : null;
+        const previous = this.#readPayloads;
+        const current = new Map<string, ClientData>();
+
+        /** The page sends payloads as JSON; tests and older paths may hand the object itself. */
+        const readPayload = (payload: unknown): ClientData => {
+            if (typeof payload !== 'string') {
+                return payload as ClientData;
+            }
+
+            const read = current.get(payload) ?? previous.get(payload) ?? JSON.parse(payload);
+            current.set(payload, read);
+
+            return read;
+        };
+
+        const containers = this.containers().map((container) => {
+            const payload = readPayload(container.payload);
+            const isSourceContainer =
+                !!source?.container &&
+                source.container.identifier === payload?.container?.identifier &&
+                source.container.uuid === payload?.container?.uuid;
+
+            return {
+                container,
+                payload,
+                payloadAttribute: writePayload(container.payload),
+                contentlets: container.contentlets.map((area) => {
+                    const contentletPayload = readPayload(area.payload);
+
+                    return {
+                        area,
+                        payload: contentletPayload,
+                        payloadAttribute: writePayload(area.payload),
+                        isSource:
+                            isSourceContainer &&
+                            contentletPayload?.contentlet?.identifier ===
+                                source.contentlet?.identifier
+                    };
+                })
+            };
+        });
+
+        this.#readPayloads = current;
+
+        return containers;
     });
 
-    /**
-     * Set the pointer position
-     *
-     * @param {DragEvent} event
-     * @memberof EmaPageDropzoneComponent
-     */
-    onDragover(event: DragEvent): void {
-        const target = event.target as HTMLDivElement;
+    constructor() {
+        // New bounds arrive with no dragover while the page scrolls under a still pointer: the
+        // line and the target follow the blocks instead of staying where they were.
+        effect(() => {
+            const containers = this.$containers();
 
-        const { empty, dropzone } = target.dataset;
-
-        // We can dragover the error zone
-        if (dropzone !== 'true') {
-            return;
-        }
-
-        this.setPositionData(event);
-
-        const { parentRect, targetRect } = this.$positionData();
-
-        const isEmpty = empty === 'true';
-
-        const opacity = isEmpty ? '0.1' : '1';
-        // Adjust coordinates for zoom level
-        const adjustedHeight = isEmpty
-            ? ((targetRect.height / this.zoomLevel()) as number)
-            : DROP_INDICATOR_HEIGHT_PX;
-        const top = this.getTop(isEmpty);
-
-        this.pointerPosition = {
-            left: `${(targetRect.left - parentRect.left) / this.zoomLevel()}px`,
-            width: `${targetRect.width / this.zoomLevel()}px`,
-            opacity,
-            top,
-            height: `${adjustedHeight}px`
-        };
-    }
-
-    /**
-     * Check pointer position
-     *
-     * @private
-     * @param {DragEvent} event
-     * @return {*}  {boolean}
-     * @memberof EmaPageDropzoneComponent
-     */
-    private setPositionData(event: DragEvent): void {
-        const target = event.target as HTMLDivElement;
-        const parentRect = this.el.nativeElement.getBoundingClientRect();
-        const targetRect = target.getBoundingClientRect();
-        const mouseY = event.clientY;
-        const isTop = mouseY < targetRect.top + targetRect.height / 2;
-
-        this.$positionData.set({
-            position: isTop ? 'before' : 'after',
-            parentRect,
-            targetRect
+            untracked(() => this.#resolveAgain(containers));
         });
     }
 
-    private getTop(isEmpty: boolean): string {
-        const { parentRect, targetRect, position } = this.$positionData();
+    /**
+     * Resolve the drop target under the pointer in a container, draw the insertion line there and
+     * report the target. Over a contentlet, the target is before or after it, by which half the
+     * pointer is in. Between contentlets, it is the contentlet whose block is nearest the pointer,
+     * before or after it by the same vertical half.
+     * The moved contentlet's own place, and the places right next to it, are no target.
+     *
+     * @param {DragEvent} event
+     * @param {DropzoneContainer} container the container the pointer is in
+     * @memberof EmaPageDropzoneComponent
+     */
+    onDragover(event: DragEvent, container: DropzoneContainer): void {
+        const target = event.target as HTMLElement;
 
-        // Adjust coordinates for zoom level
-        // getBoundingClientRect() returns viewport coordinates, but we need
-        // coordinates relative to the transformed parent, so we adjust by zoom
-        const adjustedTop = (targetRect.top - parentRect.top) / this.zoomLevel();
-        const adjustedHeight = targetRect.height / this.zoomLevel();
+        // The error zone over a container that refuses the drag is not a target.
+        if (target.dataset?.['dropzone'] !== 'true') {
+            this.#clearTarget();
 
-        if (isEmpty) {
-            return `${adjustedTop}px`;
+            return;
         }
 
-        return position === 'before' ? `${adjustedTop}px` : `${adjustedTop + adjustedHeight}px`;
+        const pointer = this.#toBounds(event.clientX, event.clientY);
+
+        this.#resolveIn(container, pointer.x, pointer.y);
     }
+
+    /**
+     * Resolve the target in `container` for a pointer at (`pointerX`, `pointerY`) in the page's
+     * unzoomed coordinates, draw the insertion line there and report the target.
+     */
+    #resolveIn(container: DropzoneContainer, pointerX: number, pointerY: number): void {
+        const { x, y, width, height } = container.container;
+
+        if (!container.contentlets.length) {
+            this.$pointerPosition.set({
+                left: `${x}px`,
+                width: `${width}px`,
+                opacity: '0.1',
+                top: `${y}px`,
+                height: `${height}px`
+            });
+            this.#report({ kind: 'empty-container', payload: container.payload });
+
+            return;
+        }
+
+        // Contentlet bounds are relative to their container.
+        const localX = pointerX - x;
+        const localY = pointerY - y;
+
+        const pivot =
+            container.contentlets.find(({ area }) => isInside(area, localX, localY)) ??
+            nearestToPoint(container.contentlets, localX, localY);
+        const position = localY < pivot.area.y + pivot.area.height / 2 ? 'before' : 'after';
+
+        if (leavesOrderUnchanged(container.contentlets, pivot, position)) {
+            this.#clearTarget();
+
+            return;
+        }
+
+        const { area } = pivot;
+
+        this.$pointerPosition.set({
+            left: `${x + area.x}px`,
+            width: `${area.width}px`,
+            opacity: '1',
+            top: `${y + area.y + (position === 'after' ? area.height : 0)}px`,
+            height: `${DROP_INDICATOR_HEIGHT_PX}px`
+        });
+        this.#report({ kind: 'contentlet', payload: pivot.payload, position });
+    }
+
+    /**
+     * The pointer is over the dropzone itself, outside every container: no target.
+     *
+     * @param {DragEvent} event
+     * @memberof EmaPageDropzoneComponent
+     */
+    onHostDragover(event: DragEvent): void {
+        // Every dragover over the dropzone reaches the host, so this is where the pointer is.
+        this.#pointer = { clientX: event.clientX, clientY: event.clientY };
+
+        if (event.target === this.#el.nativeElement) {
+            this.#clearTarget();
+        }
+    }
+
+    /**
+     * The pointer left the dropzone: no target, and nothing to resolve again until it is back.
+     *
+     * @param {DragEvent} event
+     * @memberof EmaPageDropzoneComponent
+     */
+    onHostDragleave(event: DragEvent): void {
+        const next = event.relatedTarget as Node | null;
+
+        if (!next || !this.#el.nativeElement.contains(next)) {
+            this.#pointer = null;
+            this.#clearTarget();
+        }
+    }
+
+    /**
+     * The bounds changed with no new dragover, as when the page scrolls under a still pointer:
+     * resolve the target again where the pointer was, so the line and the target follow the
+     * blocks. Nothing to do before the first dragover or after the pointer left.
+     */
+    #resolveAgain(containers: DropzoneContainer[]): void {
+        if (!this.#pointer) {
+            return;
+        }
+
+        const { x, y } = this.#toBounds(this.#pointer.clientX, this.#pointer.clientY);
+        const container = containers.find(({ container: bounds }) => isInside(bounds, x, y));
+
+        // Over no container, or over one that refuses the drag (its error zone covers it).
+        if (
+            !container ||
+            DOT_ERROR.transform(container.container, this.dragItem() ?? undefined).message
+        ) {
+            this.#clearTarget();
+
+            return;
+        }
+
+        this.#resolveIn(container, x, y);
+    }
+
+    /** A point in the admin window, in the page's unzoomed coordinates the bounds use. */
+    #toBounds(clientX: number, clientY: number): { x: number; y: number } {
+        const zoom = this.zoomLevel();
+        const hostRect = this.#el.nativeElement.getBoundingClientRect();
+
+        return {
+            x: (clientX - hostRect.left) / zoom,
+            y: (clientY - hostRect.top) / zoom
+        };
+    }
+
+    /** Hide the insertion line and report that a drop would go nowhere. */
+    #clearTarget(): void {
+        this.$pointerPosition.set(POINTER_INITIAL_POSITION);
+        this.#report(NO_TARGET);
+    }
+
+    /** Report the target when it is not the one reported last. */
+    #report(target: EmaDropTarget): void {
+        if (this.#lastTarget && isSameTarget(this.#lastTarget, target)) {
+            return;
+        }
+
+        this.#lastTarget = target;
+        this.dropTargetChange.emit(target);
+    }
+}
+
+function writePayload(payload: unknown): string {
+    return typeof payload === 'string' ? payload : JSON.stringify(payload ?? null);
+}
+
+function isInside(
+    area: Pick<ContentletArea, 'x' | 'y' | 'width' | 'height'>,
+    x: number,
+    y: number
+): boolean {
+    return x >= area.x && x <= area.x + area.width && y >= area.y && y <= area.y + area.height;
+}
+
+/**
+ * The contentlet whose block is nearest the point (`x`, `y`): 0 inside a block, otherwise the
+ * distance to its nearest edge, so blocks laid out in a row or in a column both work. On a tie
+ * the earlier contentlet wins.
+ */
+function nearestToPoint(
+    contentlets: DropzoneContentlet[],
+    x: number,
+    y: number
+): DropzoneContentlet {
+    const distance = ({ area }: DropzoneContentlet) =>
+        Math.hypot(
+            Math.max(area.x - x, 0, x - (area.x + area.width)),
+            Math.max(area.y - y, 0, y - (area.y + area.height))
+        );
+
+    return contentlets.reduce((nearest, contentlet) =>
+        distance(contentlet) < distance(nearest) ? contentlet : nearest
+    );
+}
+
+/**
+ * Whether dropping next to `pivot` puts the moved contentlet back where it is: on itself, right
+ * after the contentlet above it, or right before the one below it. The rule is the canvas's,
+ * `doesMoveChangeOrder`, applied to the container's contentlets in the order the page draws them.
+ */
+function leavesOrderUnchanged(
+    contentlets: DropzoneContentlet[],
+    pivot: DropzoneContentlet,
+    position: 'before' | 'after'
+): boolean {
+    const identifierOf = ({ payload }: DropzoneContentlet) => payload?.contentlet?.identifier;
+    const source = contentlets.find(({ isSource }) => isSource);
+    const sourceId = source && identifierOf(source);
+
+    if (!sourceId) {
+        return false;
+    }
+
+    return !doesMoveChangeOrder({
+        // The container's order holds identifiers only, so an area without one is not in it.
+        contentletsId: contentlets.map(identifierOf).filter((id): id is string => !!id),
+        contentletId: sourceId,
+        pivotId: identifierOf(pivot),
+        position
+    });
+}
+
+/**
+ * Whether two targets are the same place: the same kind, in the same container, and for a
+ * contentlet the same contentlet and side. Payloads are compared by what they name, not by
+ * reference, so a payload read again is still the same target.
+ */
+function isSameTarget(a: EmaDropTarget, b: EmaDropTarget): boolean {
+    if (a.kind === 'none' || b.kind === 'none') {
+        return a.kind === b.kind;
+    }
+
+    const sameContainer =
+        a.payload?.container?.identifier === b.payload?.container?.identifier &&
+        a.payload?.container?.uuid === b.payload?.container?.uuid;
+
+    if (a.kind === 'contentlet' && b.kind === 'contentlet') {
+        return (
+            sameContainer &&
+            a.payload?.contentlet?.identifier === b.payload?.contentlet?.identifier &&
+            a.position === b.position
+        );
+    }
+
+    return a.kind === b.kind && sameContainer;
 }

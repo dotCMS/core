@@ -119,6 +119,33 @@ but **not** on `pointerleave` of the iframe document — leaving the
 iframe usually means heading for the floating toolbar in parent
 chrome, and killing the overlay there would yank it away mid-reach.
 
+## Drag and drop
+
+### The dropzone decides where a drop goes
+
+The dropzone (`edit-ema-editor/components/ema-page-dropzone/`) is the one place that resolves a drop target. On every `dragover` inside a container it works out the target from the bounds and the pointer, draws the insertion line there, and reports the target through its `dropTargetChange` output (an `EmaDropTarget`), only when it changes. The canvas keeps the last target and drops on it; it never reads `data-*` from the element under the pointer. The insertion line and the drop therefore cannot disagree.
+
+- Over a contentlet: before or after it, by which half the pointer is in.
+- Between contentlets: next to the contentlet whose block is nearest the pointer (distance to its rectangle, so blocks in a row work as well as blocks in a column), before it when the pointer is above that block's vertical centre. A container appends only when it holds no contentlets (`kind: 'empty-container'`; its overlay's `data-empty` says so).
+- No target (`kind: 'none'`, insertion line hidden): over the moved contentlet's own place, right after the contentlet above it, right before the one below it, over a container's error zone, over the dropzone outside every container, and once the pointer leaves the dropzone.
+
+While a contentlet on the page is moved, the dropzone draws a gray placeholder over its original place, only in the container it came from (matched on container identifier and uuid, since one contentlet can sit in several containers). The placeholder takes the pointer, so it does not fall through to the container, and resolves to no target.
+
+The canvas resets the editor without saving when the target is `none`, when the drop lands outside the dropzone (`data-dropzone` on the drop's target is not `"true"`), or when a move would leave its container's order as it is (`doesMoveChangeOrder` in `utils/index.ts`). At the utils level a positioned insert whose pivot is gone from a non-empty container inserts nothing rather than appending.
+
+### Auto-scroll during a drag
+
+The page scrolls itself; the editor only sets the speed.
+
+- **Editor → page, `uve-scroll-velocity`**: `DotUveDragDropService` turns the pointer's depth in the 100px edge zone into a signed velocity in px per 60fps frame, eased quadratically from `IFRAME_SCROLL_VELOCITY.MIN` to `MAX` (`shared/consts.ts`), negative near the top. At and past the top or bottom edge it is the maximum. It is sent only when it changes. A scroll starts only with the pointer over the iframe's width; once running, it keeps following the pointer's height when the pointer moves beside the iframe, and it keeps its last velocity while the pointer is outside the app window. `0` is sent when the pointer is back in the middle (between both zones), on drop, on drag end, and when a file dragged in from the desktop leaves the window. A drag from the editor that leaves the window does not reset the editor, so its drag item and drop targets are there when the pointer comes back.
+- **Page**: `registerUVEEvents` (`libs/sdk/uve/src/script/utils.ts`) runs a `requestAnimationFrame` loop of instant `scrollBy` steps scaled by frame time, clamped to 40px per frame, until the velocity is `0`, the page reaches its top or bottom, or the subscriptions end. Anything that is not a finite number counts as `0`.
+- **Page → editor, `scroll`**: the report carries `payload.scrollY`. The store records every reported value in `editorScrollY` (reset to 0 when a new document loads in the iframe). During a drag, `updateEditorScrollState(scrollY)` keeps `editorState` at `DRAGGING` and moves every container in `editorBounds` by how far the page scrolled since the bounds were taken; contentlets are relative to their container, so they move with it. The dropzone stays mounted and aligned while the page scrolls.
+- **Edge zone**: the editor no longer clears the bounds on `dragover`. At the top or bottom of the page nothing scrolls and no `scroll` report arrives, so the first and last contentlets keep their targets.
+
+### Older `@dotcms/uve`
+
+The editor keeps sending the one-step `uve-scroll-inside-iframe` direction request, at most once every `IFRAME_LEGACY_SCROLL_THROTTLE_MS` (250ms), for pages that do not know the velocity message; they answer with a smooth 120px step as before. A page that has received a velocity ignores the direction request for as long as its events are registered. A `scroll` report without `scrollY` takes the old path: bounds cleared, `SCROLL_DRAG`, then `SET_BOUNDS` brings them back. That is the only path that still uses `SCROLL_DRAG` during a drag. Each side discovers the other from what arrives, with no version handshake.
+
 ## Slice composition (excerpt)
 
 `withSelectionAnchor` is composed *after* `withEditor` because it
@@ -135,6 +162,8 @@ is documented in store CLAUDE.md.
 - `services/dot-uve-actions-handler/` — message router (thin dispatcher)
 - `services/iframe-messenger/` — postMessage envelope (`flushBounds`, etc.)
 - `edit-ema-editor/components/dot-uve-contentlet-tools/` — the overlays
+- `edit-ema-editor/components/ema-page-dropzone/` — drop targets, drop-target resolution, source placeholder
+- `services/dot-uve-drag-drop/` — drag events, edge-zone velocity, legacy scroll throttle
 - `libs/sdk/uve/src/internal/events.ts` — SDK observers
 - `libs/sdk/uve/src/script/utils.ts` — SDK ↔ editor dispatcher
 

@@ -214,6 +214,10 @@ export function onAutoBounds(callback: UVEEventHandler) {
  * @returns {Function} .unsubscribe - Function to remove the event listener
  * @returns {UVEEventType} .event - The event type being subscribed to
  * @internal
+ * @deprecated Use `onIframeScrollVelocity`, which receives the speed the page scrolls at every
+ * frame during a drag. Still subscribed, so the one-step request the editor keeps sending for
+ * pages on an older `@dotcms/uve` is still handled; `registerUVEEvents` ignores it once a
+ * velocity arrives.
  */
 export function onIframeScroll(callback: UVEEventHandler) {
     const messageCallback = (event: MessageEvent) => {
@@ -233,6 +237,33 @@ export function onIframeScroll(callback: UVEEventHandler) {
             nativeWindow.removeEventListener('message', messageCallback);
         },
         event: UVEEventType.IFRAME_SCROLL
+    };
+}
+
+/**
+ * Subscribes to the scroll velocity the UVE editor sets during a drag. The callback gets the
+ * message's `velocity` as sent; the caller validates it.
+ *
+ * @param {UVEEventHandler} callback - Function called with each velocity the editor sends
+ * @returns {Object} Object containing unsubscribe function and event type
+ * @internal
+ */
+export function onIframeScrollVelocity(callback: UVEEventHandler) {
+    const messageCallback = (event: MessageEvent) => {
+        if (event.data?.name === __DOTCMS_UVE_EVENT__.UVE_SCROLL_VELOCITY) {
+            callback(event.data.velocity);
+        }
+    };
+
+    // Native binder: survives the iframe rewrite under Zone.js. See getNativeEventBinder.
+    const nativeWindow = getNativeEventBinder(window);
+    nativeWindow.addEventListener('message', messageCallback);
+
+    return {
+        unsubscribe: () => {
+            nativeWindow.removeEventListener('message', messageCallback);
+        },
+        event: UVEEventType.IFRAME_SCROLL_VELOCITY
     };
 }
 

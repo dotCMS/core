@@ -3,11 +3,15 @@ import { fromEvent } from 'rxjs';
 import { Injectable, inject, DestroyRef, ElementRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { filter } from 'rxjs/operators';
+import { filter, take } from 'rxjs/operators';
 
-import { WINDOW } from '@dotcms/utils';
+import { WINDOW, isEqual } from '@dotcms/utils';
 
-import { IFRAME_SCROLL_ZONE } from '../../shared/consts';
+import {
+    IFRAME_LEGACY_SCROLL_THROTTLE_MS,
+    IFRAME_SCROLL_VELOCITY,
+    IFRAME_SCROLL_ZONE
+} from '../../shared/consts';
 import { EDITOR_STATE } from '../../shared/enums';
 import { UVEStore } from '../../store/dot-uve.store';
 import { TEMPORAL_DRAG_ITEM, getDragItemData } from '../../utils';
@@ -22,6 +26,33 @@ export interface DragDropHandlers {
     onDragStart: (event: DragEvent) => void;
 }
 
+/**
+ * The speed the page scrolls at for the pointer's height, in signed px per 60fps frame: negative
+ * toward the top, positive toward the bottom, 0 in the middle. It eases quadratically from the
+ * minimum just inside an edge zone to the maximum at the edge, and stays at the maximum at and
+ * past the edge. Both edges are treated alike, and the nearer edge wins where the zones overlap
+ * on a short iframe.
+ *
+ * @param clientY the pointer's vertical position in the admin window
+ * @param iframeRect where the iframe is in the admin window
+ * @returns the velocity, 0 outside both edge zones
+ */
+function getEdgeScrollVelocity(clientY: number, iframeRect: DOMRect): number {
+    const distanceToTop = clientY - iframeRect.top;
+    const distanceToBottom = iframeRect.bottom - clientY;
+    const nearTop = distanceToTop <= distanceToBottom;
+    const depth = IFRAME_SCROLL_ZONE - (nearTop ? distanceToTop : distanceToBottom);
+
+    if (depth <= 0) {
+        return 0;
+    }
+
+    const { MIN, MAX } = IFRAME_SCROLL_VELOCITY;
+    const eased = (Math.min(depth, IFRAME_SCROLL_ZONE) / IFRAME_SCROLL_ZONE) ** 2;
+
+    return (nearTop ? -1 : 1) * (MIN + (MAX - MIN) * eased);
+}
+
 @Injectable()
 export class DotUveDragDropService {
     private readonly window = inject(WINDOW);
@@ -34,6 +65,57 @@ export class DotUveDragDropService {
         customDragImage: ElementRef<HTMLDivElement>,
         handlers: DragDropHandlers
     ): void {
+        // The velocity the page was last asked to scroll at; 0 when it is not scrolling.
+        let lastVelocity = 0;
+        // When the last one-step scroll request went out, read from `Date.now()`.
+        let lastLegacyScrollAt = Number.NEGATIVE_INFINITY;
+
+        /** Ask the page to scroll at `velocity`, only when it differs from the last ask. */
+        const scrollAtVelocity = (velocity: number) => {
+            if (velocity === lastVelocity) {
+                return;
+            }
+
+            lastVelocity = velocity;
+            this.iframeMessenger.scrollAtVelocity(velocity);
+        };
+
+        const stopScrolling = () => scrollAtVelocity(0);
+
+        // The page scrolls on its own until told to stop: leaving the editor mid-scroll must stop
+        // it, or it runs to the page's limit.
+        this.destroyRef.onDestroy(stopScrolling);
+
+        /**
+         * Pages on an older `@dotcms/uve` ignore the velocity and scroll a smooth 120px step per
+         * request. Sending one per `dragover` made the steps interrupt each other, so they go
+         * out at most once per throttle window. Newer pages ignore them.
+         */
+        const sendLegacyScroll = (direction: 'up' | 'down') => {
+            const now = Date.now();
+
+            if (now - lastLegacyScrollAt < IFRAME_LEGACY_SCROLL_THROTTLE_MS) {
+                return;
+            }
+
+            lastLegacyScrollAt = now;
+            this.iframeMessenger.scrollInsideIframe(direction);
+        };
+
+        // The `dragend` already handled. A drag source still in the document sends the same
+        // event to its own listener and then to `window`; the drag ends once.
+        let handledDragEnd: Event | null = null;
+
+        const endDrag = (event: Event) => {
+            if (event === handledDragEnd) {
+                return;
+            }
+
+            handledDragEnd = event;
+            stopScrolling();
+            handlers.onDragEnd();
+        };
+
         // Drag start
         fromEvent(this.window, 'dragstart')
             .pipe(takeUntilDestroyed(this.destroyRef))
@@ -50,6 +132,15 @@ export class DotUveDragDropService {
 
                 if (!data) {
                     return;
+                }
+
+                // A move drag starts on the handle in `dot-uve-contentlet-tools`, which is
+                // removed once the editor is DRAGGING. Its `dragend` then fires on a node outside
+                // the document and never reaches `window`, so the end is heard on the source too.
+                if (event.target) {
+                    fromEvent(event.target, 'dragend')
+                        .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+                        .subscribe(endDrag);
                 }
 
                 // Flush bounds at drag start. `setEditorDragItem` is deferred to
@@ -93,9 +184,7 @@ export class DotUveDragDropService {
         // Drag end
         fromEvent(this.window, 'dragend')
             .pipe(takeUntilDestroyed(this.destroyRef))
-            .subscribe(() => {
-                handlers.onDragEnd();
-            });
+            .subscribe(endDrag);
 
         // Drag over
         fromEvent(this.window, 'dragover')
@@ -113,36 +202,24 @@ export class DotUveDragDropService {
                 const iframeRect = iframe.nativeElement.getBoundingClientRect();
                 const isInsideIframe =
                     event.clientX > iframeRect.left && event.clientX < iframeRect.right;
+                // Beside the iframe a scroll never starts (a palette tile picked up near the
+                // bottom must not scroll the page), but one already running follows the pointer.
+                const velocity =
+                    isInsideIframe || lastVelocity !== 0
+                        ? getEdgeScrollVelocity(event.clientY, iframeRect)
+                        : 0;
 
-                if (!isInsideIframe) {
+                if (!velocity) {
+                    stopScrolling();
                     uveStore.setEditorState(EDITOR_STATE.DRAGGING);
+
                     return;
                 }
 
-                let direction: 'up' | 'down' | undefined;
-
-                if (
-                    event.clientY > iframeRect.top &&
-                    event.clientY < iframeRect.top + IFRAME_SCROLL_ZONE
-                ) {
-                    direction = 'up';
-                }
-
-                if (
-                    event.clientY > iframeRect.bottom - IFRAME_SCROLL_ZONE &&
-                    event.clientY <= iframeRect.bottom
-                ) {
-                    direction = 'down';
-                }
-
-                if (!direction) {
-                    uveStore.setEditorState(EDITOR_STATE.DRAGGING);
-                    return;
-                }
-
-                uveStore.updateEditorScrollDragState();
-
-                this.iframeMessenger.scrollInsideIframe(direction);
+                // The page scrolls itself at this speed until told otherwise. The drop targets
+                // stay: a page that scrolls reports it, and at the top or bottom nothing scrolls.
+                scrollAtVelocity(velocity);
+                sendLegacyScroll(velocity < 0 ? 'up' : 'down');
 
                 handlers.onDragOver(event);
             });
@@ -154,6 +231,17 @@ export class DotUveDragDropService {
                 filter((event: DragEvent) => !event.relatedTarget)
             )
             .subscribe(() => {
+                const dragItem = uveStore.editorDragItem();
+
+                // A drag from the editor comes back, or ends with a `dragend` heard on its drag
+                // source (even after the source left the document) or on `window`, so it keeps
+                // its scroll, its drag item and its drop targets while the pointer is outside the
+                // app window. A file from the desktop gets no `dragend`, so it stops here.
+                if (dragItem && !isEqual(dragItem, TEMPORAL_DRAG_ITEM)) {
+                    return;
+                }
+
+                stopScrolling();
                 handlers.onDragLeave();
             });
 
@@ -161,6 +249,7 @@ export class DotUveDragDropService {
         fromEvent(this.window, 'drop')
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe((event: DragEvent) => {
+                stopScrolling();
                 handlers.onDrop(event);
             });
     }

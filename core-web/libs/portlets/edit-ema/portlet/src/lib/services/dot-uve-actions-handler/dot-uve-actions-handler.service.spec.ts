@@ -189,6 +189,59 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
     });
 });
 
+// #38575: a page on a newer SDK reports its scrollY with every scroll; the store needs it to move
+// the drop targets with the page during a drag.
+describe('DotUveActionsHandlerService – IFRAME_SCROLL', () => {
+    let spectator: SpectatorService<DotUveActionsHandlerService>;
+    let service: DotUveActionsHandlerService;
+    let uveStore: ReturnType<typeof buildMockStore> & { updateEditorScrollState: Mock };
+
+    const createService = createServiceFactory({
+        service: DotUveActionsHandlerService,
+        providers: [
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotMessageService),
+            mockProvider(MessageService),
+            mockProvider(DotCopyContentModalService),
+            // Not used by a scroll report; the handler's dependencies require one.
+            mockProvider(InlineEditService),
+            { provide: UVEStore, useValue: buildMockStore() }
+        ]
+    });
+
+    /** The page tells the editor it scrolled, with what its SDK sends along. */
+    const pageScrolled = (payload?: { scrollY: number }) =>
+        service.handleAction(
+            { action: DotCMSUVEAction.IFRAME_SCROLL, payload },
+            {
+                uveStore: uveStore as unknown as InstanceType<typeof UVEStore>,
+                inlineEditingService: spectator.inject(InlineEditService),
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: vi.fn()
+            }
+        );
+
+    beforeEach(() => {
+        spectator = createService();
+        service = spectator.service;
+        uveStore = { ...buildMockStore(), updateEditorScrollState: vi.fn() };
+    });
+
+    it('should hand the page scrollY to the store', () => {
+        pageScrolled({ scrollY: 840 });
+
+        expect(uveStore.updateEditorScrollState).toHaveBeenCalledWith(840);
+    });
+
+    it('should tell the store about the scroll without a scrollY when an older SDK sends none', () => {
+        pageScrolled();
+
+        expect(uveStore.updateEditorScrollState).toHaveBeenCalledTimes(1);
+        expect(uveStore.updateEditorScrollState.mock.calls[0][0]).toBeUndefined();
+    });
+});
+
 describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
     let spectator: SpectatorService<DotUveActionsHandlerService>;
     let service: DotUveActionsHandlerService;

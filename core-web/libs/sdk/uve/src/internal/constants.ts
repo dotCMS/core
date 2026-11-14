@@ -6,6 +6,7 @@ import {
     onContentletClicked,
     onContentletHovered,
     onIframeScroll,
+    onIframeScrollVelocity,
     onPageReload,
     onScrollToSection
 } from './events';
@@ -26,6 +27,10 @@ export const __UVE_EVENTS__: Record<UVEEventType, UVEEventSubscriber> = {
 
     [UVEEventType.IFRAME_SCROLL]: (callback: UVEEventHandler) => {
         return onIframeScroll(callback);
+    },
+
+    [UVEEventType.IFRAME_SCROLL_VELOCITY]: (callback: UVEEventHandler) => {
+        return onIframeScrollVelocity(callback);
     },
 
     [UVEEventType.CONTENTLET_HOVERED]: (callback: UVEEventHandler) => {

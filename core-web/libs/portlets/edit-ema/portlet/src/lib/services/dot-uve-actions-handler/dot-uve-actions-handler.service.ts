@@ -11,6 +11,7 @@ import { switchMap, take, tap } from 'rxjs/operators';
 import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotTreeNode } from '@dotcms/dotcms-models';
 import {
+    DotCMSIframeScrollPayload,
     DotCMSInlineEditingPayload,
     DotCMSInlineEditingType,
     DotCMSUVEAction
@@ -47,6 +48,21 @@ export interface ActionsHandlerDependencies {
     contentWindow: Window | null;
     host: string;
     onCopyContent: (currentTreeNode: DotTreeNode) => Observable<DotCMSContentlet>;
+}
+
+/**
+ * The page's `scrollY` from a `scroll` report, which comes from the page and is read as untrusted.
+ * Older SDKs send no payload.
+ *
+ * @param payload what the page sent with the report
+ * @returns the scroll offset, or undefined when the page sent none
+ */
+function scrollYOf(payload: unknown): DotCMSIframeScrollPayload['scrollY'] {
+    if (typeof payload !== 'object' || payload === null || !('scrollY' in payload)) {
+        return undefined;
+    }
+
+    return typeof payload.scrollY === 'number' ? payload.scrollY : undefined;
 }
 
 @Injectable()
@@ -125,8 +141,9 @@ export class DotUveActionsHandlerService {
                     payload: actionPayload
                 });
             },
-            [DotCMSUVEAction.IFRAME_SCROLL]: () => {
-                uveStore.updateEditorScrollState();
+            [DotCMSUVEAction.IFRAME_SCROLL]: (payload: unknown) => {
+                // A newer SDK says where the page is, so a drag can keep its drop targets.
+                uveStore.updateEditorScrollState(scrollYOf(payload));
             },
             [DotCMSUVEAction.IFRAME_SCROLL_END]: () => {
                 // No-op on purpose. We used to flip IDLE here, but that

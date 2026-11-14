@@ -372,8 +372,45 @@ export function withEditor() {
         }),
         withMethods((store) => {
             return {
-                updateEditorScrollState() {
+                /**
+                 * The page scrolled. During a drag on a page that reports its `scrollY`, the
+                 * drop targets stay and move with the page: every container is shifted by how
+                 * far the page scrolled since the bounds were taken, and the drag stays in
+                 * `DRAGGING`. Otherwise the bounds are cleared until the page sends fresh ones,
+                 * in `SCROLL_DRAG` during a drag and `SCROLLING` outside one. Every reported
+                 * `scrollY` is recorded, so a later drag measures from it.
+                 *
+                 * @param scrollY the page's scroll offset; absent on older `@dotcms/uve`
+                 */
+                updateEditorScrollState(scrollY?: number) {
                     const dragItem = store.editorDragItem();
+                    const reportsScrollY = typeof scrollY === 'number' && Number.isFinite(scrollY);
+
+                    if (dragItem && reportsScrollY) {
+                        // Contentlets are placed relative to their container, so moving the
+                        // containers moves everything. Each report shifts by the change since
+                        // the last one, which adds up to the change since the bounds were taken.
+                        const delta = scrollY - store.editorScrollY();
+                        // The page reports each frame twice with the same scrollY. New bounds
+                        // make the dropzone resolve its target again, so a zero shift keeps them.
+                        const editorBounds =
+                            delta === 0
+                                ? store.editorBounds()
+                                : store.editorBounds().map((container) => ({
+                                      ...container,
+                                      y: container.y - delta
+                                  }));
+
+                        patchState(store, {
+                            editorScrollY: scrollY,
+                            editorBounds,
+                            editorContentArea: null,
+                            editorState: EDITOR_STATE.DRAGGING
+                        });
+
+                        return;
+                    }
+
                     // Keep editorSelected: the SDK's auto-bounds
                     // channel pushes fresh SET_BOUNDS once scrolling settles
                     // and the SET_BOUNDS handler re-anchors the selected
@@ -381,21 +418,23 @@ export function withEditor() {
                     // Hover area is dropped because pointer state is
                     // undefined mid-scroll.
                     patchState(store, {
+                        editorScrollY: reportsScrollY ? scrollY : store.editorScrollY(),
                         editorBounds: [],
                         editorContentArea: null,
                         editorState: dragItem ? EDITOR_STATE.SCROLL_DRAG : EDITOR_STATE.SCROLLING
                     });
                 },
+                /**
+                 * A new document loaded in the iframe, at the top: later scroll reports are
+                 * measured from 0, not from where the previous document was.
+                 */
+                resetEditorScrollY() {
+                    patchState(store, { editorScrollY: 0 });
+                },
                 updateEditorOnScrollEnd() {
                     const dragItem = store.editorDragItem();
                     patchState(store, {
                         editorState: dragItem ? EDITOR_STATE.DRAGGING : EDITOR_STATE.IDLE
-                    });
-                },
-                updateEditorScrollDragState() {
-                    patchState(store, {
-                        editorState: EDITOR_STATE.SCROLL_DRAG,
-                        editorBounds: []
                     });
                 },
                 /**

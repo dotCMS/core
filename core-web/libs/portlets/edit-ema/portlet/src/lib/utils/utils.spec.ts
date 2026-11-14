@@ -49,11 +49,15 @@ import {
 } from '.';
 
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
+import { CONTAINER_INSERT_ERROR } from '../shared/enums';
 import { dotPageContainerStructureMock } from '../shared/mocks';
 import {
+    ContainerPayload,
     ContentletDragPayload,
+    ContentletPayload,
     ContentTypeDragPayload,
-    DotPageAssetParams
+    DotPageAssetParams,
+    PageContainer
 } from '../shared/models';
 import { Orientation } from '../store/models';
 
@@ -823,6 +827,240 @@ describe('utils functions', () => {
             expect(result.didInsert).toBe(false);
             expect(result.errorCode).toBe('CONTAINER_LIMIT_REACHED');
             expect(result.pageContainers[0].contentletsId).toEqual(['contentlet1', 'contentlet2']);
+        });
+    });
+
+    // #38575. A move is a delete from the origin container followed by an insert next to the
+    // contentlet the user dropped on (the pivot), the way the canvas places a moved contentlet.
+    describe('move a contentlet next to a pivot', () => {
+        /** Container A holds c1, c2 and c3; container B holds b1. */
+        const containerA = (): ContainerPayload => ({
+            identifier: 'container-a',
+            uuid: '1',
+            acceptTypes: '*',
+            maxContentlets: 25,
+            contentletsId: ['c1', 'c2', 'c3']
+        });
+
+        const containerB = (overrides: Partial<ContainerPayload> = {}): ContainerPayload => ({
+            identifier: 'container-b',
+            uuid: '1',
+            acceptTypes: '*',
+            maxContentlets: 25,
+            contentletsId: ['b1'],
+            ...overrides
+        });
+
+        const contentlet = (identifier: string): ContentletPayload => ({
+            identifier,
+            inode: `${identifier}-inode`,
+            title: identifier,
+            contentType: 'Banner'
+        });
+
+        /** The page's containers, as the store hands them out. */
+        const pageContainersOf = (...containers: ContainerPayload[]): PageContainer[] =>
+            containers.map(({ identifier, uuid, contentletsId }) => ({
+                identifier,
+                uuid,
+                contentletsId: [...(contentletsId ?? [])]
+            }));
+
+        /** Moves `id` out of `from` and drops it `position` the `pivot` in `to`. */
+        const move = ({
+            id,
+            from,
+            to,
+            pivot,
+            position,
+            pageContainers
+        }: {
+            id: string;
+            from: ContainerPayload;
+            to: ContainerPayload;
+            pivot: string;
+            position: 'before' | 'after';
+            pageContainers: PageContainer[];
+        }) => {
+            const removed = deleteContentletFromContainer({
+                pageContainers,
+                container: from,
+                contentlet: contentlet(id),
+                pageId: 'page-id',
+                language_id: '1'
+            });
+
+            return insertContentletInContainer({
+                pageContainers: removed.pageContainers,
+                container: to,
+                contentlet: contentlet(pivot),
+                position,
+                pageId: 'page-id',
+                language_id: '1',
+                newContentletId: id
+            });
+        };
+
+        /** The order of the contentlets of a container after a move. */
+        const orderOf = (
+            pageContainers: PageContainer[],
+            identifier: string
+        ): string[] | undefined =>
+            pageContainers.find((container) => container.identifier === identifier)?.contentletsId;
+
+        it('should not move it to the end of its container when it is dropped next to itself', () => {
+            const result = move({
+                id: 'c1',
+                from: containerA(),
+                to: containerA(),
+                pivot: 'c1',
+                position: 'after',
+                pageContainers: pageContainersOf(containerA())
+            });
+
+            // The pivot left with the delete. Nothing to place it next to, so nothing is placed.
+            expect(result.didInsert).toBe(false);
+            expect(orderOf(result.pageContainers, 'container-a')).toEqual(['c2', 'c3']);
+        });
+
+        // Review of #38575: say why nothing went in, so the user is not told it was a duplicate.
+        it('should report that there is nothing to place it next to when it is dropped next to itself', () => {
+            const result = move({
+                id: 'c1',
+                from: containerA(),
+                to: containerA(),
+                pivot: 'c1',
+                position: 'after',
+                pageContainers: pageContainersOf(containerA())
+            });
+
+            expect(result.errorCode).toBe(CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND);
+        });
+
+        it('should report a pivot that is missing from a container that holds other contentlets', () => {
+            const result = move({
+                id: 'c1',
+                from: containerA(),
+                to: containerB(),
+                pivot: 'missing',
+                position: 'after',
+                pageContainers: pageContainersOf(containerA(), containerB())
+            });
+
+            expect(result.didInsert).toBe(false);
+            expect(result.errorCode).toBe(CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND);
+            expect(orderOf(result.pageContainers, 'container-b')).toEqual(['b1']);
+        });
+
+        it('should leave the order as it was when it is dropped right after the contentlet above it', () => {
+            const result = move({
+                id: 'c2',
+                from: containerA(),
+                to: containerA(),
+                pivot: 'c1',
+                position: 'after',
+                pageContainers: pageContainersOf(containerA())
+            });
+
+            expect(orderOf(result.pageContainers, 'container-a')).toEqual(['c1', 'c2', 'c3']);
+        });
+
+        it('should leave the order as it was when it is dropped right before the contentlet below it', () => {
+            const result = move({
+                id: 'c2',
+                from: containerA(),
+                to: containerA(),
+                pivot: 'c3',
+                position: 'before',
+                pageContainers: pageContainersOf(containerA())
+            });
+
+            expect(orderOf(result.pageContainers, 'container-a')).toEqual(['c1', 'c2', 'c3']);
+        });
+
+        it.each([
+            { id: 'c1', pivot: 'c3', position: 'after' as const, order: ['c2', 'c3', 'c1'] },
+            { id: 'c3', pivot: 'c1', position: 'before' as const, order: ['c3', 'c1', 'c2'] }
+        ])(
+            'should put $id $position $pivot when it is dropped two contentlets away',
+            ({ id, pivot, position, order }) => {
+                const result = move({
+                    id,
+                    from: containerA(),
+                    to: containerA(),
+                    pivot,
+                    position,
+                    pageContainers: pageContainersOf(containerA())
+                });
+
+                expect(result.didInsert).toBe(true);
+                expect(orderOf(result.pageContainers, 'container-a')).toEqual(order);
+            }
+        );
+
+        it('should take it out of its container and put it next to the pivot in another container', () => {
+            const result = move({
+                id: 'c1',
+                from: containerA(),
+                to: containerB(),
+                pivot: 'b1',
+                position: 'after',
+                pageContainers: pageContainersOf(containerA(), containerB())
+            });
+
+            expect(result.didInsert).toBe(true);
+            expect(orderOf(result.pageContainers, 'container-a')).toEqual(['c2', 'c3']);
+            expect(orderOf(result.pageContainers, 'container-b')).toEqual(['b1', 'c1']);
+        });
+
+        it('should refuse to move it into a container that already holds it', () => {
+            const target = containerB({ contentletsId: ['b1', 'c1'] });
+
+            const result = move({
+                id: 'c1',
+                from: containerA(),
+                to: target,
+                pivot: 'b1',
+                position: 'after',
+                pageContainers: pageContainersOf(containerA(), target)
+            });
+
+            expect(result.didInsert).toBe(false);
+            expect(result.errorCode).toBe(CONTAINER_INSERT_ERROR.DUPLICATE_CONTENT);
+            expect(orderOf(result.pageContainers, 'container-b')).toEqual(['b1', 'c1']);
+        });
+
+        it('should refuse to move it into a container that is full', () => {
+            const target = containerB({ maxContentlets: 1 });
+
+            const result = move({
+                id: 'c1',
+                from: containerA(),
+                to: target,
+                pivot: 'b1',
+                position: 'after',
+                pageContainers: pageContainersOf(containerA(), target)
+            });
+
+            expect(result.didInsert).toBe(false);
+            expect(result.errorCode).toBe(CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED);
+            expect(orderOf(result.pageContainers, 'container-b')).toEqual(['b1']);
+        });
+
+        it('should add it to a container that holds nothing else', () => {
+            const target = containerB({ contentletsId: [] });
+
+            const result = move({
+                id: 'c1',
+                from: containerA(),
+                to: target,
+                pivot: 'missing',
+                position: 'after',
+                pageContainers: pageContainersOf(containerA(), target)
+            });
+
+            expect(result.didInsert).toBe(true);
+            expect(orderOf(result.pageContainers, 'container-b')).toEqual(['c1']);
         });
     });
 

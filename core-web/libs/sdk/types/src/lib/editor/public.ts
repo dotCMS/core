@@ -90,6 +90,15 @@ export type UVEEventSubscription = {
 export type UVEEventSubscriber = (callback: UVEEventHandler) => UVEEventSubscription;
 
 /**
+ * Payload of the {@link DotCMSUVEAction.IFRAME_SCROLL} message.
+ *
+ * @property {number} [scrollY] - The page's vertical scroll offset. Absent on older SDKs.
+ */
+export interface DotCMSIframeScrollPayload {
+    scrollY?: number;
+}
+
+/**
  * Actions send to the dotcms editor
  *
  * @export
@@ -121,7 +130,8 @@ export enum DotCMSUVEAction {
      */
     SET_SELECTED_CONTENTLET = 'set-selected-contentlet',
     /**
-     * Tell the editor that the page is being scrolled
+     * Tell the editor that the page is being scrolled. The payload, a
+     * {@link DotCMSIframeScrollPayload}, carries the page's `scrollY`; older SDKs send none.
      */
     IFRAME_SCROLL = 'scroll',
     /**
@@ -207,8 +217,19 @@ export enum UVEEventType {
 
     /**
      * Triggered when scroll action is needed inside the iframe
+     *
+     * @deprecated Use `IFRAME_SCROLL_VELOCITY`, which carries the speed to scroll at every frame
+     * during a drag. The editor still sends the one-step request, and the SDK still handles it,
+     * for pages on an older `@dotcms/uve`.
      */
     IFRAME_SCROLL = 'iframe-scroll',
+
+    /**
+     * Triggered when the editor sets the speed the page scrolls at during a drag, in signed
+     * pixels per 60fps frame; `0` stops it.
+     * @internal
+     */
+    IFRAME_SCROLL_VELOCITY = 'iframe-scroll-velocity',
 
     /**
      * Triggered when a contentlet is hovered
@@ -257,7 +278,13 @@ export enum UVEEventType {
 export type UVEEventPayloadMap = {
     [UVEEventType.CONTENT_CHANGES]: DotCMSPageResponse;
     [UVEEventType.PAGE_RELOAD]: undefined;
+    /**
+     * @deprecated Use the `IFRAME_SCROLL_VELOCITY` payload, a signed speed in px per frame. The
+     * editor still sends the one-step request, and the SDK still handles it, for pages on an
+     * older `@dotcms/uve`.
+     */
     [UVEEventType.IFRAME_SCROLL]: 'up' | 'down';
+    [UVEEventType.IFRAME_SCROLL_VELOCITY]: number;
     // TODO: Add type here
     [UVEEventType.CONTENTLET_HOVERED]: unknown;
     [UVEEventType.CONTENTLET_CLICKED]: unknown;
