@@ -153,10 +153,9 @@ public class UserFactoryImpl implements UserFactory {
 
     /**
      * Returns the user with the given id, from the user cache when it holds the record and from
-     * the data source otherwise. The id is trimmed before the cache is read or filled, as the data
-     * source lookup ignores surrounding spaces too, so one record never has more than one cache
-     * entry whatever spelling a caller used, and every eviction made under the stored id reaches
-     * it.
+     * the data source otherwise. {@link UserCache} trims and lowercases the id, matching the
+     * {@code userid} predicate, so a different case or surrounding spaces is the same entry and
+     * is dropped by {@code remove} of the stored id.
      *
      * @param userId the id of the user to load
      * @return the {@link User} record

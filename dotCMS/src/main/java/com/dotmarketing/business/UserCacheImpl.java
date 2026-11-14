@@ -29,6 +29,7 @@ public class UserCacheImpl extends UserCache {
 	 */
 	@Override
 	public User add(String key, User user) {
+		key = normalizeKey(key);
 		key = primaryGroup + key;
         // Add the key to the cache
         cache.put(key, user,primaryGroup);
@@ -55,6 +56,7 @@ public class UserCacheImpl extends UserCache {
 	 */
 	@Override
 	public User get(String key) {
+		key = normalizeKey(key);
 		key = primaryGroup + key;
     	User user = null;
     	try{
@@ -77,18 +79,30 @@ public class UserCacheImpl extends UserCache {
 	 */
 	@Override
 	public void remove(String key) {
+		key = normalizeKey(key);
 		User u = get(key);
 		key = primaryGroup + key;
     	try{
     		cache.remove(key,primaryGroup);
     		cache.remove(key,emailGroup);
     		if(u != null){
-    			cache.remove(primaryGroup + u.getUserId(),primaryGroup);
+    			cache.remove(primaryGroup + normalizeKey(u.getUserId()),primaryGroup);
     			cache.remove(primaryGroup + u.getEmailAddress(),emailGroup);
     		}
     	}catch (Exception e) {
 			Logger.debug(this, "Cache not able to be removed", e);
 		} 
+	}
+
+	/**
+	 * Trims and lowercases a user id so every caller hits the same cache entry.
+	 * A null id stays null.
+	 *
+	 * @param key the incoming user id, or null
+	 * @return the normalized id, or null when {@code key} is null
+	 */
+	private static String normalizeKey(final String key) {
+		return key == null ? null : key.trim().toLowerCase();
 	}
 
 	/* (non-Javadoc)
