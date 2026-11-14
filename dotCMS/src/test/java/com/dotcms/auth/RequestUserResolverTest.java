@@ -98,6 +98,22 @@ public class RequestUserResolverTest {
     }
 
     /**
+     * A Login As session opened by the built-in account is refused even though the user it acts as is a regular
+     * one, so a session created before the rule existed does not outlive it.
+     */
+    @Test
+    public void test_login_as_session_started_by_the_built_in_account_is_refused() {
+        final Map<String, Object> sessionStore = new HashMap<>();
+        sessionStore.put(WebKeys.USER, user("dotcms.org.1"));
+        sessionStore.put(WebKeys.USER_ID, "dotcms.org.1");
+        sessionStore.put(WebKeys.PRINCIPAL_USER_ID, UserAPI.SYSTEM_USER_ID);
+        final HttpServletRequest request = IdentityMocks.request(new HashMap<>(), IdentityMocks.session(sessionStore));
+
+        assertNull(RequestUserResolver.resolveRequestUser(request));
+        assertNull(RequestUserResolver.resolveSessionUserId(request.getSession(false)));
+    }
+
+    /**
      * Without a scope, a real user on the request is returned unchanged, and an attribute never acts as a scope.
      */
     @Test

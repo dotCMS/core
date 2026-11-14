@@ -1,5 +1,6 @@
 package com.dotcms.ai.workflow;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.SystemUserScope;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
@@ -32,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * The OpenAIAutoTagRunner class is responsible for running workflows that automatically tag content using OpenAI.
@@ -135,8 +137,12 @@ public class OpenAIAutoTagRunner implements Runnable {
      * user scope when the runner's user is the built-in account.
      */
     private String openAIRequest(final Contentlet workingContentlet, final String contentToTag) throws Exception {
+        final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
             final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
+            // Building the context may render an HTML page, which leaves its own server-built request bound to
+            // the thread; put back what was there so that request is not taken for the caller's.
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
             final String systemPrompt = this.limitTags ? SYSTEM_PROMPT_TAGGING_CONSTRAIN : SYSTEM_PROMPT_TAGGING_FREEFORM;
             final Set<String> constrainTags = this.limitTags ? APILocator.getTagAPI().findTopTags(workingContentlet.getHost()) : Set.of();
             ctx.put("constrainTags", String.join("\n", constrainTags));
@@ -150,6 +156,8 @@ public class OpenAIAutoTagRunner implements Runnable {
                     .prompt(parsedSystemPrompt, parsedContentPrompt, null, 0f, 2000, user.getUserId());
 
             return openAIResponse.getJSONArray("choices").getJSONObject(0).getJSONObject("message").getString("content");
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
         }
     }
 

@@ -1,5 +1,6 @@
 package com.dotcms.ai.workflow;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.SystemUserScope;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
@@ -38,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import javax.servlet.http.HttpServletRequest;
 
 /**
  * This class is responsible for running workflows that generate content prompts using OpenAI. It
@@ -137,14 +139,20 @@ public class OpenAIContentPromptRunner implements Runnable {
     private String openAIRequest(final Contentlet workingContentlet) throws Exception {
 
         final JSONObject openAIResponse;
+        final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
             final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
+            // Building the context may render an HTML page, which leaves its own server-built request bound to
+            // the thread; put back what was there so that request is not taken for the caller's.
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
             final String parsedPrompt = VelocityUtil.eval(prompt, ctx);
             final Host host = Try.of(() -> APILocator.getHostAPI().find(workingContentlet.getHost(), user, false)).getOrNull();
             final AppConfig appConfig = ConfigService.INSTANCE.config(host);
             openAIResponse = APILocator.getDotAIAPI()
                     .getCompletionsAPI(appConfig)
                     .raw(buildRequest(parsedPrompt), user.getUserId());
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
         }
 
         try {
