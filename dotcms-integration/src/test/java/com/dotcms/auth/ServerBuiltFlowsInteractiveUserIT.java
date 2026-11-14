@@ -3,8 +3,10 @@ package com.dotcms.auth;
 import static com.dotcms.rendering.velocity.directive.ParseContainer.getDotParserContainerUUID;
 import static com.dotmarketing.util.Constants.USER_AGENT_DOTCMS_SITESEARCH;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -13,6 +15,7 @@ import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -24,6 +27,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.UUIDGenerator;
+import javax.servlet.http.HttpServletRequest;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -59,6 +63,20 @@ public class ServerBuiltFlowsInteractiveUserIT {
                 container.getIdentifier(), content.getIdentifier(), getDotParserContainerUUID(uuid), 0));
         return APILocator.getHTMLPageAssetAPI().getHTML(page.getURI(), site, true, content.getIdentifier(),
                 APILocator.systemUser(), content.getLanguageId(), USER_AGENT_DOTCMS_SITESEARCH);
+    }
+
+    /** A page render must hand back the request that was bound to the thread, not keep its own. */
+    @Test
+    public void page_render_restores_the_request_bound_to_the_thread() throws Exception {
+        final HttpServletRequest caller = new MockHttpRequestIntegrationTest("localhost", "/caller").request();
+        final HttpServletRequest previous = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(caller);
+        try {
+            render("${body}[[plain]]");
+            assertSame(caller, HttpServletRequestThreadLocal.INSTANCE.getRequest());
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previous);
+        }
     }
 
     /** Harness check: a plain container renders, so an empty result below points at the viewtool. */

@@ -6,6 +6,7 @@ import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -861,8 +862,13 @@ public class HTMLPageAssetAPIImpl implements HTMLPageAssetAPI {
             requestProxy.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER, user);
             requestProxy.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
             requestProxy.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
+            // The render binds its own server-built request to the thread and does not put the caller's back;
+            // restore it so the caller does not carry on with this request's identity.
+            final HttpServletRequest callerRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
             try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
                 return VelocityModeHandler.modeHandler(mode, requestProxy, responseProxy).eval();
+            } finally {
+                HttpServletRequestThreadLocal.INSTANCE.setRequest(callerRequest);
             }
 
         } catch (Exception e1) {

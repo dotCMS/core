@@ -85,7 +85,7 @@ public final class RequestUserResolver {
         if (scopeApplies()) {
             return systemUser();
         }
-        if (session == null || principalRefused(session)) {
+        if (session == null) {
             return null;
         }
         final Object cached = session.getAttribute(WebKeys.USER);
@@ -133,23 +133,7 @@ public final class RequestUserResolver {
         if (scopeApplies()) {
             return UserAPI.SYSTEM_USER_ID;
         }
-        if (session == null || principalRefused(session)) {
-            return null;
-        }
-        return eligibleId((String) session.getAttribute(WebKeys.USER_ID), null, session);
-    }
-
-    /**
-     * Whether a Login As session was started by an account that cannot be used interactively. Such a session
-     * is refused even though the user it acts as is a regular one, so a session opened by the built-in account
-     * before this rule existed does not outlive it.
-     *
-     * @param session the session
-     * @return true when the session's principal is not eligible
-     */
-    private static boolean principalRefused(final HttpSession session) {
-        final Object principalId = session.getAttribute(WebKeys.PRINCIPAL_USER_ID);
-        return principalId instanceof String && eligibleId((String) principalId, null, session) == null;
+        return session == null ? null : eligibleId((String) session.getAttribute(WebKeys.USER_ID), null, session);
     }
 
     /** A scope only counts while the rule is on; with the rollback switch off it is inert. */
