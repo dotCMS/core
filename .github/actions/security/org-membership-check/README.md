@@ -78,6 +78,7 @@ If you're not a member:
 
 - Only checks membership in the dotCMS organization (hardcoded)
 - Authorizes organization members (requires public membership visibility)
+- Also authorizes allow-listed bot users, matched by numeric user ID (`allowed_bot_ids` in `action.yml`), because a GitHub App's `<name>[bot]` login is never an org member. Currently only `dot-factory[bot]` (`356409590`).
 - Logs authorization results without sensitive details
 - Uses default GITHUB_TOKEN (no additional secrets required)
 - Provides clear troubleshooting guidance for blocked users

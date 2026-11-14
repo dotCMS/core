@@ -20,6 +20,13 @@ const BOT_LOGIN_PREFIXES = [
   'snyk-bot',
 ];
 
+/**
+ * Bot accounts whose PRs are product changes a person reviews and merges, so
+ * they stay in QA scope. Lowercase logins; checked before the bot rules above.
+ * dot-factory[bot] is the dotCMS org's GitHub App (#38600).
+ */
+const INCLUDED_BOT_LOGINS = ['dot-factory[bot]'];
+
 const DEPENDENCY_LABELS = ['dependencies', 'java dependencies', 'javascript dependencies'];
 
 /** Title patterns that indicate a version/dependency bump (case-insensitive). */
@@ -82,16 +89,18 @@ export interface ExclusionResult {
 }
 
 export function classifyExclusion(pr: PRDetails): ExclusionResult {
-  // 1) Author-based exclusions (any GitHub App / bot account)
-  if (pr.authorType === 'Bot') {
-    return { excluded: true, reason: 'bot-author' };
-  }
+  // 1) Author-based exclusions (any GitHub App / bot account), except bots in INCLUDED_BOT_LOGINS
   const loginLower = pr.author.toLowerCase();
-  if (loginLower.endsWith('[bot]')) {
-    return { excluded: true, reason: 'bot-author' };
-  }
-  if (BOT_LOGIN_PREFIXES.some((s) => loginLower.startsWith(s))) {
-    return { excluded: true, reason: 'bot-author' };
+  if (!INCLUDED_BOT_LOGINS.includes(loginLower)) {
+    if (pr.authorType === 'Bot') {
+      return { excluded: true, reason: 'bot-author' };
+    }
+    if (loginLower.endsWith('[bot]')) {
+      return { excluded: true, reason: 'bot-author' };
+    }
+    if (BOT_LOGIN_PREFIXES.some((s) => loginLower.startsWith(s))) {
+      return { excluded: true, reason: 'bot-author' };
+    }
   }
 
   // 2) Dependency-bump label

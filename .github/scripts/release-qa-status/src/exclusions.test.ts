@@ -34,6 +34,12 @@ describe('classifyExclusion', () => {
     });
   });
 
+  it('keeps a PR from dot-factory[bot], even with a Bot authorType', () => {
+    expect(classifyExclusion(pr({ author: 'dot-factory[bot]', authorType: 'Bot' }))).toEqual({
+      excluded: false,
+    });
+  });
+
   it('excludes a known bot prefix even without [bot] suffix', () => {
     expect(classifyExclusion(pr({ author: 'renovate-preview' }))).toEqual({
       excluded: true,
