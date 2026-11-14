@@ -1,0 +1,267 @@
+{
+	"info": {
+		"name": "Interactive User Resolution",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "control: no credentials on an endpoint that needs an administrator",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('control is refused', function () { pm.expect(pm.response.code).to.be.oneOf([401, 403]); });",
+							"pm.collectionVariables.set('controlStatus', pm.response.code);"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/apitoken/dotcms.org.1/tokens",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"apitoken",
+						"dotcms.org.1",
+						"tokens"
+					]
+				},
+				"auth": {
+					"type": "noauth"
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "administrator mints a token whose user is the built-in account",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('token was minted for the built-in account (precondition)', function () {",
+							"  pm.response.to.have.status(200);",
+							"  var e = pm.response.json().entity;",
+							"  pm.expect(e.token.issuer || e.token.userId).to.exist;",
+							"  pm.expect(e.token.userId).to.eql('system');",
+							"  pm.collectionVariables.set('builtInJwt', e.jwt);",
+							"  pm.collectionVariables.set('builtInTokenId', e.token.id);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/apitoken",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"apitoken"
+					]
+				},
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\"userId\":\"system\",\"expirationSeconds\":3600}"
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "token for the built-in account is treated like no credentials",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('same status as the no-credentials control', function () {",
+							"  pm.expect(String(pm.response.code)).to.eql(String(pm.collectionVariables.get('controlStatus')));",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/apitoken/dotcms.org.1/tokens",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"apitoken",
+						"dotcms.org.1",
+						"tokens"
+					]
+				},
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{builtInJwt}}",
+							"type": "string"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "control: a real administrator token still works",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('administrator is accepted', function () { pm.response.to.have.status(200); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/apitoken/dotcms.org.1/tokens",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"apitoken",
+						"dotcms.org.1",
+						"tokens"
+					]
+				},
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "cleanup: revoke the minted token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('cleanup does not fail the run', function () { pm.expect(pm.response.code).to.be.below(500); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/apitoken/{{builtInTokenId}}/revoke",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"apitoken",
+						"{{builtInTokenId}}",
+						"revoke"
+					]
+				},
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "controlStatus",
+			"value": ""
+		},
+		{
+			"key": "builtInJwt",
+			"value": ""
+		},
+		{
+			"key": "builtInTokenId",
+			"value": ""
+		}
+	]
+}

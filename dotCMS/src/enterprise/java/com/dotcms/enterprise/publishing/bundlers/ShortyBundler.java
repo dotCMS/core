@@ -9,6 +9,7 @@
 
 package com.dotcms.enterprise.publishing.bundlers;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.mock.request.FakeHttpRequest;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockServletPathRequest;
@@ -348,13 +349,17 @@ public class ShortyBundler implements IBundler {
             request = new FakeHttpRequest(binFile.host.getHostname(), path).request();
             request = new MockServletPathRequest(request, "/contentAsset").request();
 
-            //Every Static Push call to the BinaryServlet must be executed using system user instead of anonymous
+            //Every Static Push call to the BinaryServlet must be executed using system user instead of anonymous:
+            //the scope around doGet below is what makes the user resolve to the system user; the attribute is kept
+            //only for code that reads it from the request directly.
             request.setAttribute(com.liferay.portal.util.WebKeys.USER, APILocator.getUserAPI().getSystemUser());
             try (final OutputStream outputStream = bundleOutput.addFile(binFile.binFile)) {
 
                 response = new MockHttpCaptureResponse(response, outputStream).response();
 
-                this.binaryServlet.doGet(request, response);
+                try (SystemUserScope ignored = SystemUserScope.open()) {
+                    this.binaryServlet.doGet(request, response);
+                }
             }
         } else {
             Logger.warn(ShortyBundler.class,

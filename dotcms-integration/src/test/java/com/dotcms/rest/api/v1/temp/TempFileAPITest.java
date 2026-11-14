@@ -34,6 +34,9 @@ import org.mockito.Mockito;
 
 public class TempFileAPITest {
 
+    @org.junit.Rule
+    public final com.dotcms.junit.SystemUserScopeRule systemUserScope = new com.dotcms.junit.SystemUserScopeRule();
+
     @BeforeClass
     public static void prepare() throws Exception {
         // Setting web app environment

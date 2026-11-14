@@ -1160,7 +1160,9 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
             throws IOException, DotSecurityException {
 
         final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
-        try (final var fileInputStream = new FileInputStream(csvFile)) {
+        // The mock request carries the built-in account, which only a server-side scope can act as.
+        try (final var fileInputStream = new FileInputStream(csvFile);
+             final var scope = com.dotcms.auth.SystemUserScope.open()) {
             final DotTempFile tempFile = tempFileAPI.createTempFile(csvFile.getName(), request, fileInputStream);
             jobParameters.put("tempFileId", tempFile.id);
             jobParameters.put("requestFingerPrint", tempFileAPI.getRequestFingerprint(request));

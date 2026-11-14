@@ -60,7 +60,7 @@ public class BulkUploadReclaimIT extends Junit5WeldBaseTest {
     }
 
     private User admin() throws Exception {
-        return APILocator.systemUser();
+        return com.dotcms.datagen.TestUserUtils.getAdminUser();
     }
 
     private HttpServletRequest request() throws Exception {

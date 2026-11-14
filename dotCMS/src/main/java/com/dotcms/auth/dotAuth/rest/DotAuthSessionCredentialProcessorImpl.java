@@ -1,5 +1,6 @@
 package com.dotcms.auth.dotAuth.rest;
 
+import com.dotcms.auth.InteractiveUserPolicy;
 import com.dotcms.auth.dotAuth.session.DotAuthSession;
 import com.dotcms.auth.dotAuth.session.DotAuthSessionCache;
 import com.dotmarketing.business.CacheLocator;
@@ -36,6 +37,10 @@ public final class DotAuthSessionCredentialProcessorImpl implements DotAuthSessi
         this.sessionCache = sessionCache;
     }
 
+    /**
+     * Resolves the user behind a dotAuth session-ref bearer credential. A reference whose user is inactive,
+     * or cannot be used interactively, is invalidated and refused with 401.
+     */
     @Override
     public User processAuthHeaderFromSessionRef(final HttpServletRequest request) {
         final String header = request.getHeader(ContainerRequest.AUTHORIZATION);
@@ -60,6 +65,11 @@ public final class DotAuthSessionCredentialProcessorImpl implements DotAuthSessi
             if (user == null || !user.isActive()) {
                 sessionCache.invalidate(candidate);
                 throw new SecurityException("User for session is no longer active",
+                        Response.Status.UNAUTHORIZED);
+            }
+            if (InteractiveUserPolicy.refuseIfNotEligible(user, request, null) == null) {
+                sessionCache.invalidate(candidate);
+                throw new SecurityException("User not eligible for interactive use",
                         Response.Status.UNAUTHORIZED);
             }
             request.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());

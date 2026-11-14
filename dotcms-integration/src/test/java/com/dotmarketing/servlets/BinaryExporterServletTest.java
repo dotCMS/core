@@ -427,7 +427,7 @@ public class BinaryExporterServletTest {
 
         final String fileURI = "/contentAsset/image/"+fileContentlet.getInode()+"/fileAsset/byInode/true/quality_q/30/resize_w/200";
         final HttpServletRequest request = mockServletRequest(fileURI);
-        request.setAttribute(WebKeys.USER, APILocator.systemUser());
+        request.setAttribute(WebKeys.USER, com.dotcms.datagen.TestUserUtils.getAdminUser());
 
         TmpBinaryFile tmpTargetFile = new TmpBinaryFile(false);
         final HttpServletResponse response = mockServletResponse(tmpTargetFile);
@@ -497,7 +497,7 @@ public class BinaryExporterServletTest {
                 + "/fileAsset/byInode/true/quality_q/75/resize_w/600/quality_q/75/quality_q/75";
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getHeader("user-agent")).thenReturn(userAgent);
-        when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+        when(request.getAttribute(WebKeys.USER)).thenReturn(com.dotcms.datagen.TestUserUtils.getAdminUser());
         when(request.getRequestURI()).thenReturn(fileURI);
         when(request.getServletPath()).thenReturn("/contentAsset");
         when(Config.CONTEXT.getMimeType(matches(".*\\.webp")))

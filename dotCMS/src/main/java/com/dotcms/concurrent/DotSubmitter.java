@@ -12,6 +12,10 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Encapsulate a Submitter for {@link Runnable} and {@link Callable}, in addition to the usual {@link Executor} functionality.
+ * <p>
+ * <b>Identity:</b> a task handed to a submitter from inside a {@link com.dotcms.auth.SystemUserScope} runs inside
+ * that scope on the pool thread, that is, as the system user. A task handed over outside a scope does not.
+ * The scope is carried here, once, because no JVM mechanism inherits it into an existing pool thread.
  * @author jsanca
  */
 public interface DotSubmitter extends Executor, Serializable {

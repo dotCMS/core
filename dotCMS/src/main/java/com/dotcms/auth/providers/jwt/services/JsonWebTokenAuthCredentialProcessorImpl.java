@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.jwt.services;
 
+import com.dotcms.auth.InteractiveUserPolicy;
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
@@ -84,12 +85,17 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
         return Optional.empty();
     }
 
+    /**
+     * Resolves the user of a JWT header and stores it on the session, unless the account cannot be used
+     * interactively, in which case there is no credential and nothing is stored.
+     */
     @Override
     public User processAuthHeaderFromJWT(final String authorizationHeader,
             final HttpSession session, final String ipAddress) {
 
         final Optional<JWToken> jwToken = internalProcessAuthHeaderFromJWT(authorizationHeader, ipAddress, false);
-        final User user = jwToken.isPresent() ? jwToken.get().getActiveUser().get() : null;
+        final User user = InteractiveUserPolicy.refuseIfNotEligible(
+                jwToken.isPresent() ? jwToken.get().getActiveUser().get() : null, null, session);
 
         if (user != null && null != session) {
             session.setAttribute(WebKeys.CMS_USER, user);
@@ -99,6 +105,10 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
         return user;
     } // processAuthCredentialsFromJWT.
 
+    /**
+     * Resolves the user of the request's JWT and stores it on the request, unless the account cannot be
+     * used interactively, in which case there is no credential and nothing is stored.
+     */
     @Override
     public User processAuthHeaderFromJWT(final HttpServletRequest request) {
 
@@ -106,7 +116,8 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
 
         final Optional<JWToken> jwToken = internalProcessAuthHeaderFromJWT(authentication, request.getRemoteAddr(), false);
-        final User user = jwToken.isPresent() ? jwToken.get().getActiveUser().get() : null;
+        final User user = InteractiveUserPolicy.refuseIfNotEligible(
+                jwToken.isPresent() ? jwToken.get().getActiveUser().get() : null, request, null);
 
         if(user != null) {
 
@@ -124,8 +135,13 @@ public class JsonWebTokenAuthCredentialProcessorImpl implements JsonWebTokenAuth
         // Extract authentication credentials
         final String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
         final Optional<JWToken> jwToken = internalProcessAuthHeaderFromJWT(authentication, request.getRemoteAddr(), false);
-        final User user = jwToken.isPresent()  && jwToken.get().getActiveUser().isPresent() ?
-                jwToken.get().getActiveUser().get() : null;
+        final User user = InteractiveUserPolicy.refuseIfNotEligible(
+                jwToken.isPresent() && jwToken.get().getActiveUser().isPresent()
+                        ? jwToken.get().getActiveUser().get() : null, request, null);
+
+        if (jwToken.isPresent() && jwToken.get().getActiveUser().isPresent() && user == null) {
+            return Optional.empty();
+        }
 
         if(user != null) {
 

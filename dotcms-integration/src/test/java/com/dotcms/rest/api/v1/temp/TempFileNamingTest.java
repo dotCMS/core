@@ -23,6 +23,9 @@ import org.junit.Test;
  */
 public class TempFileNamingTest {
 
+    @org.junit.Rule
+    public final com.dotcms.junit.SystemUserScopeRule systemUserScope = new com.dotcms.junit.SystemUserScopeRule();
+
     private static final String MARKER_DIR = "outside-marker";
 
     @BeforeClass

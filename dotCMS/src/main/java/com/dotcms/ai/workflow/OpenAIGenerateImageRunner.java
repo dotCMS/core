@@ -1,5 +1,6 @@
 package com.dotcms.ai.workflow;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.ai.api.ImageAPI;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.VelocityContextFactory;
@@ -101,11 +102,13 @@ public class OpenAIGenerateImageRunner implements Runnable {
             return;
         }
 
-        boolean setRequest = false;
-        try {
+        final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
             final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
-            if (HttpServletRequestThreadLocal.INSTANCE.getRequest() == null) {
-                setRequest = true;
+            // Building the context may render an HTML page, which leaves its own server-built request bound to
+            // the thread; put back what was there so that request is not taken for the caller's.
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
+            if (previousRequest == null) {
                 HttpServletRequestThreadLocal.INSTANCE.setRequest((HttpServletRequest) ctx.get("request"));
             }
 
@@ -131,10 +134,8 @@ public class OpenAIGenerateImageRunner implements Runnable {
             contentlet.setProperty(fieldToTry.get().variable(), new File(tempFile));
         } catch (Exception e) {
             handleError(e, user);
-        } finally{
-            if (setRequest) {
-                HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
-            }
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
         }
     }
 

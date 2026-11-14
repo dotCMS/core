@@ -1,5 +1,6 @@
 package com.dotcms.concurrent;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.concurrent.lock.ClusterLockManager;
 import com.dotcms.concurrent.lock.ClusterLockManagerFactory;
 import com.dotcms.concurrent.lock.DotKeyLockManagerBuilder;
@@ -822,36 +823,36 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
         @Override
         public Future<?> submit(final Runnable command) {
-            return this.executorService.submit(command);
+            return this.executorService.submit(SystemUserScope.wrap(command));
         }
 
         @Override
         public void delay(final Runnable task, final long delay, final TimeUnit unit) {
 
-            executorService.schedule(task, delay, unit);
+            executorService.schedule(SystemUserScope.wrap(task), delay, unit);
         }
 
         @Override
         public void schedule(final Runnable task, final long delay, final TimeUnit unit) {
 
-            executorService.schedule(task, delay, unit);
+            executorService.schedule(SystemUserScope.wrap(task), delay, unit);
         }
 
         @Override
         public Future<?> submit(final Runnable command, final long delay, final TimeUnit unit) {
-            return executorService.schedule(command, delay, unit);
+            return executorService.schedule(SystemUserScope.wrap(command), delay, unit);
         }
 
         @Override
         public <T> Future<T> submit(final Callable<T> callable) {
 
-            return this.executorService.submit(callable);
+            return this.executorService.submit(SystemUserScope.wrap(callable));
         }
 
         @Override
         public <T> Future<T> submit(Callable<T> callable, long delay, TimeUnit unit) {
 
-            return executorService.schedule(callable, delay, unit);
+            return executorService.schedule(SystemUserScope.wrap(callable), delay, unit);
         }
 
         @Override
@@ -909,7 +910,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         @Override
         public void execute(final Runnable command) {
 
-            this.executorService.execute(command);
+            this.executorService.execute(SystemUserScope.wrap(command));
         }
     }
 
@@ -1021,7 +1022,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
 
                 if (null != command) {
 
-                    executor.execute(command);
+                    executor.execute(SystemUserScope.wrap(command));
                 }
             } catch (RejectedExecutionException ex) {
 
@@ -1039,7 +1040,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
             try {
 
                 future =
-                    executor.submit(task);
+                    executor.submit(SystemUserScope.wrap(task));
             } catch (RejectedExecutionException ex) {
                 throw new DotConcurrentException(ex.getMessage(), ex);
             }
@@ -1051,10 +1052,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         public final void delay(final Runnable task, final long delay, final TimeUnit unit) {
 
             try {
-                this.delayedQueue.put(new DelayedDelegate(()-> {
-
-                    task.run();
-                }, delay, unit));
+                this.delayedQueue.put(new DelayedDelegate(SystemUserScope.wrap(task)::run, delay, unit));
             } catch (InterruptedException e) {
                 throw new DotConcurrentException(e.getMessage(), e);
             }
@@ -1063,10 +1061,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
         @Override
         public void schedule(Runnable task, long delay, TimeUnit unit) {
             try {
-                this.delayedQueue.put(new DelayedDelegate(()-> {
-
-                    task.run();
-                }, delay, unit));
+                this.delayedQueue.put(new DelayedDelegate(SystemUserScope.wrap(task)::run, delay, unit));
             } catch (InterruptedException e) {
                 throw new DotConcurrentException(e.getMessage(), e);
             }
@@ -1102,7 +1097,7 @@ public class DotConcurrentFactory implements DotConcurrentFactoryMBean, Serializ
             try {
 
                 future =
-                    executor.submit(task);
+                    executor.submit(SystemUserScope.wrap(task));
             } catch (RejectedExecutionException ex) {
 
                 throw new DotConcurrentException(ex.getMessage(), ex);
