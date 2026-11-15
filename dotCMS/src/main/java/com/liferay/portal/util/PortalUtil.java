@@ -19,6 +19,7 @@
 
 package com.liferay.portal.util;
 
+import com.dotcms.auth.RequestUserResolver;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.cms.login.SessionUserResolver;
@@ -413,37 +414,15 @@ public class PortalUtil {
    * the user is resolved, so once the session user has been refused that copy is not tried again,
    * and it is removed from the request.
    *
+   * <p>
+   * An account that cannot be used interactively (the built-in system account) is never returned,
+   * whatever the source; see {@link RequestUserResolver}.
+   *
    * @param req the current request
    * @return the current {@link User}, or {@code null} when the request has none
    */
   public static User getUser(HttpServletRequest req) {
-    final Object resolved = req.getAttribute(WebKeys.USER);
-    if (resolved instanceof User) {
-      req.setAttribute(WebKeys.USER_ID, ((User) resolved).getUserId());
-      return (User) resolved;
-    }
-    // read before the session user is resolved: a refused session loses its user id
-    final String sessionUserId = getUserId(req.getSession(false));
-    User user = getUser(req.getSession(false));
-    if (user == null) {
-      // a user id set on the request itself, e.g. by a login filter; the session's own id was
-      // already checked above and is not tried again, even as a copy on the request
-      final Object userId = req.getAttribute(WebKeys.USER_ID);
-      if (userId instanceof String && ((String) userId).equalsIgnoreCase(sessionUserId)) {
-        req.removeAttribute(WebKeys.USER_ID);
-      } else if (userId instanceof String) {
-        user = SessionUserResolver.getInstance().resolveActive((String) userId).orElse(null);
-      }
-    }
-    if (user == null) {
-      user = getUserFromAuthHeader(req);
-    }
-    if (user == null) {
-      return null;
-    }
-    req.setAttribute(WebKeys.USER, user);
-    req.setAttribute(WebKeys.USER_ID, user.getUserId());
-    return user;
+    return RequestUserResolver.resolveRequestUser(req);
   }
 
   public static User getUserFromAuthHeader(HttpServletRequest req) {
@@ -470,7 +449,7 @@ public class PortalUtil {
    *         user
    */
   public static User getUser(HttpSession session) {
-    return SessionUserResolver.getInstance().resolve(session).orElse(null);
+    return RequestUserResolver.resolveSessionUser(session);
   }
 
   public static User getUser(ActionRequest req) {
@@ -488,19 +467,11 @@ public class PortalUtil {
   }
 
   public static String getUserId(HttpSession ses) {
-    if (ses != null && ses.getAttribute(WebKeys.USER_ID) != null) {
-      return (String) ses.getAttribute(WebKeys.USER_ID);
-    } else {
-      return null;
-    }
+    return RequestUserResolver.resolveSessionUserId(ses);
   }
 
   public static String getUserId(HttpServletRequest req) {
-
-    String userId = (String) req.getAttribute(WebKeys.USER_ID);
-    userId = (userId != null) ? userId : getUserId(req.getSession(false));
-    req.setAttribute(WebKeys.USER_ID, userId);
-    return userId;
+    return RequestUserResolver.resolveRequestUserId(req);
   }
 
   public static String getUserId(ActionRequest req) {

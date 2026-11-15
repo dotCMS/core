@@ -481,7 +481,7 @@ public class ContentletAjaxTest {
 	}
 
 	private static void setUpContext() {
-		setUpContext(APILocator.systemUser());
+		setUpContext(io.vavr.control.Try.of(com.dotcms.datagen.TestUserUtils::getAdminUser).get());
 	}
 
 	/**

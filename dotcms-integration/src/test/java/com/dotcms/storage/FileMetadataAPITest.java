@@ -66,6 +66,9 @@ import static org.junit.Assert.fail;
 @RunWith(DataProviderRunner.class)
 public class FileMetadataAPITest {
 
+    @org.junit.Rule
+    public final com.dotcms.junit.SystemUserScopeRule systemUserScope = new com.dotcms.junit.SystemUserScopeRule();
+
     private static final String WRITE_METADATA_ON_REINDEX = ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
     private static final String FILE_ASSET = FileAssetAPI.BINARY_FIELD;
     private static FileMetadataAPI fileMetadataAPI;
