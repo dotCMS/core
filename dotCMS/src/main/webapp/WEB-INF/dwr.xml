@@ -85,7 +85,9 @@
 	<!-- END PLUGINS -->
 	<convert converter="bean" match="com.dotmarketing.beans.Inode"/>
 	<convert converter="bean" match="com.dotmarketing.portlets.categories.model.Category"/>
-	<convert converter="bean" match="com.dotmarketing.tag.model.Tag"/>
+	<convert converter="bean" match="com.dotmarketing.tag.model.Tag">
+		<param name="exclude" value="userId"/>
+	</convert>
 	<convert converter="bean" match="com.dotmarketing.tag.model.TagInode"/>
 	<convert converter="bean" match="com.dotmarketing.portlets.languagesmanager.model.LanguageKey"/>
 	<convert converter="bean" match="com.dotmarketing.portlets.htmlpageviews.factories.HTMLPageViewFactory$StatisticBetweenDates"/>
