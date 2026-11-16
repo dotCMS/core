@@ -404,6 +404,7 @@ import com.dotcms.ai.rest.EmbeddingsResourceAuthTest;
         com.dotmarketing.business.CommitListenerCacheWrapperTest.class,
         com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccessTest.class,
         com.dotmarketing.business.RoleAPITest.class,
+        com.dotmarketing.business.ajax.RoleAjaxSecurityTest.class,
         com.dotmarketing.business.IdentifierConsistencyIntegrationTest.class,
         com.dotmarketing.business.LayoutAPITest.class,
         com.dotmarketing.business.PermissionAPIIntegrationTest.class,
