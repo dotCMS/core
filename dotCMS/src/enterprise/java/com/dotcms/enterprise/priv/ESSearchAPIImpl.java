@@ -28,6 +28,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -235,7 +236,7 @@ public class ESSearchAPIImpl implements ESSeachAPI {
         and if the user is not already passing permissions on the query.
          */
 		StringBuffer perms = new StringBuffer();
-		if (!isAdmin && !jsonObject.has("permissions:")) {
+		if (!isAdmin) {
 			APILocator.getContentletAPIImpl().addPermissionsToQuery(perms, user, roles, respectFrontendRoles);
 		}
 

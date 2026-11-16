@@ -138,7 +138,8 @@ import com.dotmarketing.portlets.structure.action.EditStructureActionSaveTest;
     com.dotcms.rest.IntegrityResourceTest.class,
     com.dotmarketing.webdav.DotWebdavHelperAuthorizePrincipalTest.class,
     com.dotcms.rest.api.v1.authentication.AuthenticationResourceStoredPasswordTest.class,
-    com.dotmarketing.cms.login.factories.LoginFactoryTest.class
+    com.dotmarketing.cms.login.factories.LoginFactoryTest.class,
+    com.dotcms.publisher.pusher.AuthCredentialPushPublishUtilTest.class
 })
 public class MainSuite2a {
 
