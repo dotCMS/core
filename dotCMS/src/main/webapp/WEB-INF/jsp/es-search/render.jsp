@@ -14,6 +14,7 @@
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%@page import="com.liferay.portal.model.User"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.liferay.util.Xss"%>
 <%@page import="java.util.Calendar"%>
 <%@page import="java.util.Iterator"%>
 <%@page import="com.dotmarketing.util.DateUtil"%>
@@ -259,7 +260,7 @@ if(query == null){
 
 			<!-- <tr>
 				<th nowrap="nowrap"><strong><%= LanguageUtil.get(pageContext, "Query-is") %> :</strong></th>
-				<td><%=cons.getQuery()%></td>
+				<td><%=Xss.encodeForHTML(cons.getQuery())%></td>
 			</tr> -->
 			
 		</table>
@@ -282,7 +283,7 @@ if(query == null){
 					<%int ii=1; %>
 						<%for (Bucket entry : multiBuckets.getBuckets()) {%>
 
-							<%=ii++%>. <%=entry.getKey()%> =
+							<%=ii++%>. <%=Xss.encodeForHTML(String.valueOf(entry.getKey()))%> =
 							<%= entry.getDocCount()%><br>
 
 						<% } %>
@@ -307,9 +308,9 @@ if(query == null){
 					<%while(iterator.hasNext() ){ %>
                         <%Suggest.Suggestion s = (Suggest.Suggestion)iterator.next();%>
 						<%for (Object entry : s.getEntries()) {%>
-							<%=ii++%>. <%=((TermSuggestion.Entry) entry).getText() %> |
+							<%=ii++%>. <%=Xss.encodeForHTML(String.valueOf(((TermSuggestion.Entry) entry).getText()))%> |
 							<%for(TermSuggestion.Entry.Option opt : ((TermSuggestion.Entry) entry).getOptions() ){ %>
-								<%=opt.getText()%>
+								<%=Xss.encodeForHTML(String.valueOf(opt.getText()))%>
 							<%} %>
 							<br>
 						<%} %>
@@ -346,19 +347,19 @@ if(query == null){
 
 
 							<td>
-									<%=c.getTitle() %>
+									<%=Xss.encodeForHTML(c.getTitle()) %>
 
 							</td>
 						</tr>
 						<tr>
 							<td>&nbsp;</td>
 							<td><strong><%= LanguageUtil.get(pageContext, "Inode") %>:</strong></td>
-							<td width="90%"><%=c.getInode() %></td>
+							<td width="90%"><%=Xss.encodeForHTML(c.getInode()) %></td>
 						</tr>
 						<tr>
 							<td>&nbsp;</td>
 							<td><strong><%= LanguageUtil.get(pageContext, "Identifier") %>:</strong></td>
-							<td><%= c.getIdentifier() %></td>
+							<td><%= Xss.encodeForHTML(c.getIdentifier()) %></td>
 						</tr>
 						<tr >
 							<td>&nbsp;</td>
@@ -386,7 +387,7 @@ if(query == null){
 				</tr>
 				<tr>
 					<td colspan="3">
-						<pre><%if(cons.getResponse() !=null){ %><%=cons.getResponse()%><%} %>
+						<pre><%if(cons.getResponse() !=null){ %><%=Xss.encodeForHTML(cons.getResponse().toString())%><%} %>
 						</pre>
 					</td>
 				</tr>
@@ -398,7 +399,7 @@ if(query == null){
 	<%if(UtilMethods.isSet(nastyError)){%>
 
 		<div style='color:red;width:90%;margin:auto;padding:20px;'>
-			<%=nastyError %>
+			<%=Xss.encodeForHTML(nastyError) %>
 		</div>
 
 	<%}%>

@@ -142,3 +142,4 @@ Release-25.07.10 LTS
 136. https://github.com/dotCMS/private-issues/issues/643 : sec: harden portlet-only gated methods in RoleAjax (follow-on to #640) #36345 #643
 137. https://github.com/dotCMS/private-issues/issues/712 : Back-end login filter bypass via lower-case %2e exposes internal JSPs to anonymous users #38431 #712
 138. https://github.com/dotCMS/private-issues/issues/872 : Job endpoints don’t check who owns a job #38383 #872
+139. https://github.com/dotCMS/private-issues/issues/878 : Content Search (es-search) portlet: contentlet title and raw search response printed unescaped, stored XSS against admins (8.7 High) #38273 #878
