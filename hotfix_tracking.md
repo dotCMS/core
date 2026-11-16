@@ -129,3 +129,4 @@ Release-25.07.10 LTS
 123. https://github.com/dotCMS/private-issues/issues/842 : Ubaid Raza F4: Story Block reference hydration uses the system user, bypassing contentlet read permissions (6.5 Medium) #38222 #842
 124. https://github.com/dotCMS/core/issues/5818 : allow to disable basic auth on WebResource #38090 #5818
 125. https://github.com/dotCMS/private-issues/issues/1056 : Struts workflow-task writes and contentlet import run with no permission check (#850 Findings 3 and 4, not covered by the #841 gate) #38443 #1056
+126. https://github.com/dotCMS/private-issues/issues/1026 : Starter export includes the company key, which decrypts push-publishing endpoint secrets #38435 #1026
