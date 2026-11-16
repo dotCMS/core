@@ -112,7 +112,7 @@ public class ChainedContext extends VelocityContext implements ViewContext
         this.velocity = velocity;
         this.request = VelocityRequestWrapper.wrapVelocityRequest(request);
         this.response = response;
-        this.session = request.getSession(false);
+        this.session = this.request.getSession(false);
 
     }
 
@@ -137,7 +137,7 @@ public class ChainedContext extends VelocityContext implements ViewContext
         /* just in case the servlet toolbox manager
          * had to create a new session to hold session tools
          * let's make sure this context's session ref is current */
-        this.session = request.getSession(false);
+        this.session = this.request.getSession(false);
     }
 
 

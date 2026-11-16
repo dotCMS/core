@@ -134,3 +134,6 @@ Release-25.07.10 LTS
 128. https://github.com/dotCMS/private-issues/issues/790 : [GLM AI Scanner] Notification cross-user read (allusers=true) + password-reset single-use race + bundle same-name cross-user clobber (+minor CSV formula storage) #38494 #790
 129. https://github.com/dotCMS/private-issues/issues/1012 : Ubaid Raza: Quartz ContentImportThread imports as system user (content-permission bypass) #38411 #1012
 130. https://github.com/dotCMS/core/issues/37980 : chore(deps): upgrade graphql-java from 17.5 (CVE-2024-40094) #38430 #37980
+131. https://github.com/dotCMS/private-issues/issues/770 : Velocity sandbox escape via Tomcat InstanceManager → bundled BeanShell interpreter (arbitrary Java and OS commands) — verify on current releases #38060 #38087 #770
+132. https://github.com/dotCMS/private-issues/issues/952 : Velocity $request.getRequest() returns the container's RequestFacade, so the session attribute deny list in VelocityRequestWrapper can be bypassed (8.8 High) #38405 #952
+133. https://github.com/dotCMS/private-issues/issues/723 : Velocity sandbox: proactively extend SecureIntrospector deny-list (javax.naming, MethodHandle, ProcessHandle, Desktop) + resolve whitelist/allow-by-default posture #38438 #723
