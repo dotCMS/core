@@ -161,6 +161,9 @@ public class XsltTool implements ViewTool {
 
 		// create an instance of TransformerFactory
 		TransformerFactory factory = TransformerFactory.newInstance();
+		// Secure processing turns off the XSLT extension functions (java: / xalan: calls), which would
+		// otherwise let a stylesheet instantiate arbitrary Java classes and run code on the server.
+		factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
 		//Disable access to external entities in XML parsing.
 		factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
 		factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_STYLESHEET, "");
