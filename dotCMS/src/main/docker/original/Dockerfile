@@ -65,7 +65,7 @@ RUN apt update && \
         apt update && \
         apt install -y --no-install-recommends postgresql-client-16 && \
         /usr/bin/pg_dump --version || exit 1 && \
-        apt purge -y postgresql-common && \
+        apt purge -y postgresql-common ssl-cert && \
     rm -rf /var/lib/apt/lists/*
 
 ARG USER_UID="65001"

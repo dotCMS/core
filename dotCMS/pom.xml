@@ -152,11 +152,6 @@
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.commons-fileupload</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.commons-httpclient</artifactId>
         </dependency>
         <dependency>
@@ -203,10 +198,6 @@
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.fileupload-ext</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.gif89</artifactId>
             <scope>compile</scope>
         </dependency>
@@ -226,11 +217,6 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.httpbridge</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.httpclient</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>

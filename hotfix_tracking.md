@@ -152,3 +152,4 @@ Release-25.07.10 LTS
 146. https://github.com/dotCMS/private-issues/issues/728 : Port Content API field masking (CONTENT_API_FIELDS_TO_MASK / _TO_HIDE) from 5.1.6.k to core #38148 #728
 147. https://github.com/dotCMS/private-issues/issues/857 : Stop returning user email and userId in front-end / anonymous API responses #38148 #38193 #857
 148. https://github.com/dotCMS/private-issues/issues/753 : [GLM AI Scanner] Login As admin impersonation (password check validates attacker, not target) + ES search permission-filter bypass via 'permissions:' JSON key + unbounded API-token lifetime #38084 #38279 #753
+149. https://github.com/dotCMS/core/issues/37974 : chore(security): remove unused legacy artifacts flagged by image scans (stale package.json, dot.commons-fileupload, dot.httpclient, snakeoil key) #38364 #37974
