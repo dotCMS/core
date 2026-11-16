@@ -249,6 +249,43 @@ public class RoleHelper {
     }
 
     /**
+     * Locks or unlocks a role. A locked role cannot be edited or deleted until it is unlocked.
+     * Setting the state the role already has changes nothing and succeeds.
+     *
+     * @param roleId  id of the role to lock or unlock
+     * @param locked  {@code true} to lock the role, {@code false} to unlock it
+     * @param modUser authenticated user performing the change (audit logging)
+     * @return the role as stored after the change
+     * @throws DoesNotExistException if no role has that id (404)
+     */
+    public Role setRoleLocked(final String roleId, final boolean locked, final User modUser)
+            throws DotDataException {
+
+        final Role role = this.roleAPI.loadRoleById(roleId);
+        if (null == role || !UtilMethods.isSet(role.getId())) {
+            throw new DoesNotExistException("Role not found: " + roleId);
+        }
+
+        final String action = locked ? "Locking Role" : "Unlocking Role";
+        final String auditDetail = "Date: " + DateUtil.getCurrentDate()
+                + "; User:" + modUser.getUserId() + "; RoleID: " + role.getId();
+        ActivityLogger.logInfo(getClass(), action, auditDetail);
+        AdminLogger.log(getClass(), action, auditDetail);
+
+        if (locked) {
+            this.roleAPI.lock(role);
+        } else {
+            this.roleAPI.unLock(role);
+        }
+
+        final String done = locked ? "Role Locked" : "Role Unlocked";
+        ActivityLogger.logInfo(getClass(), done, auditDetail);
+        AdminLogger.log(getClass(), done, auditDetail);
+
+        return this.roleAPI.loadRoleById(roleId);
+    }
+
+    /**
      * Pre-flight version of {@code RoleAPIImpl#findDependentWorkflowActions}: any workflow
      * action whose Assign To references the role blocks the deletion with a structured 409
      * naming the offending schemes and actions.

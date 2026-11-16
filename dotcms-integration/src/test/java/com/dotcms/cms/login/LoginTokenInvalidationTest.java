@@ -2,16 +2,29 @@ package com.dotcms.cms.login;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.listeners.SessionMonitor;
+import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.mock.request.MockSession;
+import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.filters.interceptor.Result;
+import com.dotcms.filters.interceptor.dotcms.DefaultAutoLoginWebInterceptor;
+import com.dotcms.rest.annotation.HeaderFilter;
 import com.dotcms.rest.api.v1.user.UserForm;
 import com.dotcms.rest.api.v1.user.UserResource;
 import com.dotcms.test.util.ApiTokenTestUtils;
@@ -20,29 +33,42 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.UserCache;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.UUIDGenerator;
+import com.liferay.portal.ejb.CompanyManagerUtil;
+import com.dotmarketing.util.Config;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionBindingEvent;
 import javax.ws.rs.core.Response;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 
 /**
  * A login token (the JWT set as the login cookie, also accepted as a Bearer header) must stop
  * working once its user logs out or has the password changed, while a token issued afterwards keeps
  * working. Each test drives the real logout and password APIs and then asks the token API whether
- * the earlier token still resolves to a user.
+ * the earlier token still resolves to a user. A login without "remember me" issues a token that
+ * expires after the configured session token lifetime.
  */
 public class LoginTokenInvalidationTest {
 
@@ -70,6 +96,19 @@ public class LoginTokenInvalidationTest {
     @AfterClass
     public static void cleanup() {
         createdUsers.forEach(UserDataGen::remove);
+    }
+
+    /** Ids of the users whose sessions a test registered with the session monitor. */
+    private final List<String> trackedUserIds = new ArrayList<>();
+
+    /**
+     * Ends the sessions a test registered with the session monitor, so the other tests and
+     * classes only see their own.
+     */
+    @After
+    public void untrackSessions() {
+        trackedUserIds.forEach(SessionMonitor::endSessionsOf);
+        trackedUserIds.clear();
     }
 
     /**
@@ -187,6 +226,115 @@ public class LoginTokenInvalidationTest {
         assertNull("the cache must hold no entry for the user after the commit",
                 userCache.get(user.getUserId()));
         assertFalse("token issued before the change must be rejected after the commit", resolves(token));
+    }
+
+    /**
+     * When a user is deleted inside a transaction, a copy of the user cached before the commit, as
+     * another request reading the still-committed row would leave behind, is evicted once the
+     * transaction commits (the cache administrator repeats, after the commit, every removal made
+     * inside the transaction), so a session of that user not reached by the delete resolves to no
+     * user afterwards.
+     */
+    @Test
+    public void test_deleteInTransaction_evictsUserCachedBeforeCommit() throws Exception {
+        final User user = new UserDataGen().nextPersisted();
+        final String userId = user.getUserId();
+        final User loadedBefore = userAPI.loadUserById(userId);
+        final UserCache userCache = CacheLocator.getUserCache();
+        final HttpSession untrackedSession = new MockSession(UUIDGenerator.generateUuid());
+        untrackedSession.setAttribute(WebKeys.USER_ID, userId);
+
+        LocalTransaction.wrap(() -> {
+            userAPI.delete(userAPI.loadUserById(userId), APILocator.systemUser(),
+                    APILocator.systemUser(), false);
+            userCache.add(userId, loadedBefore);
+        });
+
+        assertNull("the cache must hold no entry for the user after the commit", userCache.get(userId));
+        assertNull("a session of the deleted user must resolve to no user",
+                PortalUtil.getUser(untrackedSession));
+    }
+
+    /**
+     * A session that names its user in a different letter case than the stored record fills the
+     * user cache through that id. The cache administrator keys its entries without regard to
+     * case, so making the user inactive, which evicts the stored id, also removes the entry that
+     * session filled: a session not reached by the change resolves to no user on its next
+     * request instead of to the copy cached before it.
+     */
+    @Test
+    public void test_sessionWithUpperCaseUserId_resolvesToNoUserAfterDeactivation() throws Exception {
+        final User user = newUser();
+        final String upperCaseId = user.getUserId().toUpperCase();
+        assertNotEquals("the check needs an id that changes with its case", user.getUserId(), upperCaseId);
+        final UserCache userCache = CacheLocator.getUserCache();
+        final HttpSession untrackedSession = new MockSession(UUIDGenerator.generateUuid());
+        untrackedSession.setAttribute(WebKeys.USER_ID, upperCaseId);
+        assertNotNull("the session resolves while the user is active", PortalUtil.getUser(untrackedSession));
+        assertNotNull("resolving caches the user under the session's id", userCache.get(upperCaseId));
+
+        final User toSave = (User) userAPI.loadUserById(user.getUserId()).clone();
+        toSave.setActive(false);
+        userAPI.save(toSave, APILocator.systemUser(), false);
+
+        assertNull("the entry filled through the upper-case id must be evicted", userCache.get(upperCaseId));
+        assertNull("a session of the inactive user must resolve to no user",
+                PortalUtil.getUser(untrackedSession));
+    }
+
+    /**
+     * A session that stores its user id with surrounding spaces fills the user cache through that
+     * spelling. Making the user inactive evicts the record under its stored id, which must also
+     * drop the entry the padded spelling filled, so a session not reached by the change resolves
+     * to no user on its next request instead of to the copy cached before it.
+     */
+    @Test
+    public void test_sessionWithPaddedUserId_resolvesToNoUserAfterDeactivation() throws Exception {
+        final User user = newUser();
+        final String paddedId = "  " + user.getUserId() + " ";
+        final UserCache userCache = CacheLocator.getUserCache();
+        final HttpSession untrackedSession = new MockSession(UUIDGenerator.generateUuid());
+        untrackedSession.setAttribute(WebKeys.USER_ID, paddedId);
+        assertNotNull("the session resolves while the user is active", PortalUtil.getUser(untrackedSession));
+
+        final User toSave = (User) userAPI.loadUserById(user.getUserId()).clone();
+        toSave.setActive(false);
+        userAPI.save(toSave, APILocator.systemUser(), false);
+
+        assertNull("no entry may be left under the padded spelling", userCache.get(paddedId));
+        assertNull("a session of the inactive user must resolve to no user",
+                PortalUtil.getUser(untrackedSession));
+    }
+
+    /**
+     * In the authentication mode that takes the user id as the login name, the id may arrive with
+     * surrounding spaces. The session must then hold the id as stored in the user record, so the
+     * session tools and the per-request check match the session to its user.
+     */
+    @Test
+    public void test_doActionLogin_withPaddedUserIdInIdMode_storesTheStoredUserId() throws Exception {
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        createdUsers.add(user);
+        userAPI.updatePassword(user, NEW_PASSWORD, APILocator.systemUser(), false);
+        final HttpServletRequest request = new MockAttributeRequest(new MockSessionRequest(
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/authentication").request()))
+                .request();
+
+        final Company company = PublicCompanyFactory.getDefaultCompany();
+        final String authTypeBefore = company.getAuthType();
+        company.setAuthType(Company.AUTH_TYPE_ID);
+        CompanyManagerUtil.updateCompany(company);
+        try {
+            assertTrue(APILocator.getLoginServiceAPI().doActionLogin("  " + user.getUserId() + " ",
+                    NEW_PASSWORD, false, request, mock(HttpServletResponse.class)));
+        } finally {
+            company.setAuthType(authTypeBefore);
+            CompanyManagerUtil.updateCompany(company);
+        }
+
+        assertEquals("the session must name the user as stored", user.getUserId(),
+                request.getSession(false).getAttribute(WebKeys.USER_ID));
     }
 
     /**
@@ -343,6 +491,429 @@ public class LoginTokenInvalidationTest {
     }
 
     /**
+     * Making a user inactive through {@link UserAPI#save} rejects a login token issued before the
+     * change, ends the user's session tracked on this node, and leaves the saved object with the
+     * stored token id. The old token stays rejected once the user is active again, which shows the
+     * token id was replaced and not only the status checked.
+     */
+    @Test
+    public void test_saveAsInactive_rejectsLoginTokenAndEndsTrackedSession() throws Exception {
+        final User user = newUser();
+        final String token = loginToken(user);
+        final String tokenIdBefore = user.getRememberMeToken();
+        final HttpSession session = trackedSessionOf(user);
+        final String sessionId = session.getId();
+        assertTrue(resolves(token));
+        assertTrue(isTracked(sessionId));
+
+        final User toSave = (User) userAPI.loadUserById(user.getUserId()).clone();
+        toSave.setActive(false);
+        userAPI.save(toSave, APILocator.systemUser(), false);
+
+        assertFalse("token issued before the change must be rejected", resolves(token));
+        final String tokenIdAfter = userAPI.loadUserById(user.getUserId()).getRememberMeToken();
+        assertNotEquals(tokenIdBefore, tokenIdAfter);
+        assertEquals("the saved object carries the stored token id", tokenIdAfter, toSave.getRememberMeToken());
+        assertFalse("the tracked session must be ended", isTracked(sessionId));
+        assertNull("the ended session no longer names the user", session.getAttribute(WebKeys.USER_ID));
+
+        final User reactivated = (User) userAPI.loadUserById(user.getUserId()).clone();
+        reactivated.setActive(true);
+        userAPI.save(reactivated, APILocator.systemUser(), false);
+        assertFalse("the old token stays rejected once the user is active again", resolves(token));
+        assertTrue(resolves(loginToken(userAPI.loadUserById(user.getUserId()))));
+    }
+
+    /**
+     * Saving a user that stays active keeps its login token and its tracked session, so profile
+     * edits and the save made on every login do not end the user's sessions.
+     */
+    @Test
+    public void test_saveWithoutStatusChange_keepsLoginTokenAndTrackedSession() throws Exception {
+        final User user = newUser();
+        final String token = loginToken(user);
+        final HttpSession session = trackedSessionOf(user);
+        final String sessionId = session.getId();
+
+        final User toSave = (User) userAPI.loadUserById(user.getUserId()).clone();
+        toSave.setLastName("Renamed");
+        userAPI.save(toSave, APILocator.systemUser(), false);
+
+        assertTrue("a save that keeps the user active must not reject the token", resolves(token));
+        assertTrue("the tracked session must go on", isTracked(sessionId));
+        assertEquals(user.getUserId(), session.getAttribute(WebKeys.USER_ID));
+    }
+
+    /**
+     * Making an inactive user active again keeps its login token id: no new id is stored, and a
+     * token issued once the user is active works. (A token cannot be issued while the user is
+     * inactive, so the check is on the stored id.)
+     */
+    @Test
+    public void test_saveAsActiveAgain_keepsLoginTokenId() throws Exception {
+        final User user = newUser();
+        final User inactive = (User) userAPI.loadUserById(user.getUserId()).clone();
+        inactive.setActive(false);
+        userAPI.save(inactive, APILocator.systemUser(), false);
+        final String tokenIdWhileInactive = userAPI.loadUserById(user.getUserId()).getRememberMeToken();
+
+        final User active = (User) userAPI.loadUserById(user.getUserId()).clone();
+        active.setActive(true);
+        userAPI.save(active, APILocator.systemUser(), false);
+
+        final User reactivated = userAPI.loadUserById(user.getUserId());
+        assertEquals("activating again keeps the token id", tokenIdWhileInactive, reactivated.getRememberMeToken());
+        assertTrue("a token issued once the user is active works", resolves(loginToken(reactivated)));
+    }
+
+    /**
+     * Deleting a user through {@link UserAPI#delete} rejects a login token issued before and ends
+     * the user's session tracked on this node.
+     */
+    @Test
+    public void test_delete_rejectsLoginTokenAndEndsTrackedSession() throws Exception {
+        final User user = new UserDataGen().nextPersisted();
+        final String token = loginToken(user);
+        final HttpSession session = trackedSessionOf(user);
+        final String sessionId = session.getId();
+        assertTrue(resolves(token));
+
+        userAPI.delete(userAPI.loadUserById(user.getUserId()), APILocator.systemUser(),
+                APILocator.systemUser(), false);
+
+        assertFalse("token of a deleted user must be rejected", resolves(token));
+        assertFalse("the tracked session must be ended", isTracked(sessionId));
+        assertNull("the ended session no longer names the user", session.getAttribute(WebKeys.USER_ID));
+    }
+
+    /**
+     * A session is registered with the session monitor as soon as the login stores the user id in
+     * it, before the browser makes another request, so the session tools list it and can end it
+     * right away. The servlet container hands the session's attribute events to the listener
+     * registered in web.xml; the session used here hands them over itself.
+     */
+    @Test
+    public void test_doActionLogin_registersTheSessionWithTheSessionMonitor() throws Exception {
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        createdUsers.add(user);
+        userAPI.updatePassword(user, NEW_PASSWORD, APILocator.systemUser(), false);
+        trackedUserIds.add(user.getUserId());
+        final MockSessionRequest sessionRequest = new MockSessionRequest(
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/authentication").request());
+        sessionRequest.setSession(new ListenedSession());
+        final HttpServletRequest request = new MockAttributeRequest(sessionRequest).request();
+
+        assertTrue(APILocator.getLoginServiceAPI().doActionLogin(loginName(user), NEW_PASSWORD, false,
+                request, mock(HttpServletResponse.class)));
+
+        final HttpSession session = request.getSession(false);
+        assertNotNull(session);
+        assertEquals(user.getUserId(), session.getAttribute(WebKeys.USER_ID));
+        assertTrue("the session must be listed right after the login", isTracked(session.getId()));
+    }
+
+    /**
+     * The front controller copies the session's user id onto the request before the user is
+     * resolved. When the session is refused because the administrator behind a Login As session is
+     * no longer active, that copy names the refused session user and is not used as a second
+     * source: the request ends up with no user and the copy is removed from the request.
+     */
+    @Test
+    public void test_getUser_requestIdCopiedFromARejectedLoginAsSession_isNotUsed() throws Exception {
+        final User admin = newUser();
+        final User target = newUser();
+        final User inactiveAdmin = (User) userAPI.loadUserById(admin.getUserId()).clone();
+        inactiveAdmin.setActive(false);
+        userAPI.save(inactiveAdmin, APILocator.systemUser(), false);
+
+        final HttpServletRequest request =
+                new MockHttpRequestIntegrationTest("localhost", "/c/portal/layout").request();
+        request.getSession().setAttribute(WebKeys.USER_ID, target.getUserId());
+        request.getSession().setAttribute(WebKeys.PRINCIPAL_USER_ID, admin.getUserId());
+        request.setAttribute(WebKeys.USER_ID, target.getUserId());
+
+        assertNull("the refused session user must not come back through the request's copy",
+                PortalUtil.getUser(request));
+        assertNull("the copied id must be removed from the request",
+                request.getAttribute(WebKeys.USER_ID));
+        assertNull("the refused session no longer names the user",
+                request.getSession().getAttribute(WebKeys.USER_ID));
+    }
+
+    /**
+     * A login without "remember me" sets a session cookie whose token expires after the default
+     * session token lifetime (60 minutes) and schedules its renewal on the session.
+     */
+    @Test
+    public void test_sessionLogin_tokenExpiresAfterSessionLifetime() throws Exception {
+        final HttpServletRequest request =
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/authentication").request();
+        request.getSession(); // a login always has its HTTP session by the time the cookie is set
+        final long before = System.currentTimeMillis();
+
+        final Cookie cookie = loginCookie(request, newUser(), false);
+
+        assertEquals("the session cookie has no max age", -1, cookie.getMaxAge());
+        assertExpiresIn(cookie, before, TimeUnit.MINUTES.toMillis(
+                LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT));
+        final Object renewAt =
+                request.getSession().getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT);
+        assertTrue("renewal must be scheduled within the token lifetime", renewAt instanceof Long
+                && (Long) renewAt > before && (Long) renewAt < expiryMillis(cookie));
+    }
+
+    /**
+     * The session token lifetime follows its configuration property.
+     */
+    @Test
+    public void test_sessionLogin_tokenLifetimeIsConfigurable() throws Exception {
+        Config.setProperty(LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES, 15);
+        try {
+            final long before = System.currentTimeMillis();
+            final Cookie cookie = loginCookie(new MockHttpRequestIntegrationTest("localhost",
+                    "/api/v1/authentication").request(), newUser(), false);
+            assertExpiresIn(cookie, before, TimeUnit.MINUTES.toMillis(15));
+        } finally {
+            Config.setProperty(LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES,
+                    LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT);
+        }
+    }
+
+    /**
+     * A "remember me" login keeps its persistent cookie and a token that lasts the configured
+     * number of days, and clears any renewal scheduled on the session.
+     */
+    @Test
+    public void test_rememberMeLogin_keepsDaysLifetime() throws Exception {
+        final HttpServletRequest request =
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/authentication").request();
+        request.getSession().setAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT, 0L);
+        final long before = System.currentTimeMillis();
+
+        final Cookie cookie = loginCookie(request, newUser(), true);
+
+        assertTrue("the remember-me cookie is persistent", cookie.getMaxAge() > 0);
+        assertExpiresIn(cookie, before,
+                TimeUnit.DAYS.toMillis(LoginServiceAPI.JWT_TOKEN_MAX_AGE_DAYS.get()));
+        assertNull(request.getSession().getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
+    }
+
+    /**
+     * A plugin login that sets a persistent cookie through the days overload clears a renewal
+     * scheduled earlier on the same session, so the persistent cookie is never replaced.
+     */
+    @Test
+    public void test_persistentCookieFromDaysOverload_clearsScheduledRenewal() throws Exception {
+        final HttpServletRequest request =
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/authentication").request();
+        request.getSession().setAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT, 0L);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        APILocator.getLoginServiceAPI().doRememberMe(request, response, newUser(), 7);
+
+        final ArgumentCaptor<Cookie> cookie = ArgumentCaptor.forClass(Cookie.class);
+        verify(response).addCookie(cookie.capture());
+        assertTrue("the cookie is persistent", cookie.getValue().getMaxAge() > 0);
+        assertNull(request.getSession().getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
+    }
+
+    /**
+     * A session token lifetime below one minute is ignored and the default is used.
+     */
+    @Test
+    public void test_sessionLogin_invalidLifetimeFallsBackToDefault() throws Exception {
+        Config.setProperty(LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES, 0);
+        try {
+            final long before = System.currentTimeMillis();
+            final Cookie cookie = loginCookie(new MockHttpRequestIntegrationTest("localhost",
+                    "/api/v1/authentication").request(), newUser(), false);
+            assertExpiresIn(cookie, before, TimeUnit.MINUTES.toMillis(
+                    LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT));
+        } finally {
+            Config.setProperty(LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES,
+                    LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT);
+        }
+    }
+
+    /**
+     * A login restored from a session login token cookie schedules the renewal of that cookie on
+     * the new session, while one restored from a "remember me" cookie does not.
+     */
+    @Test
+    public void test_cookieLogin_schedulesRenewalOnlyForSessionLoginToken() throws Exception {
+        final User user = newUser();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadBackEndUserRole(), user);
+        final String sessionToken = JsonWebTokenUtils.getInstance().createSessionLoginToken(user,
+                Duration.ofMinutes(LoginServiceAPI.JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES_DEFAULT));
+        final String rememberMeToken = JsonWebTokenUtils.getInstance().createUserToken(user,
+                LoginServiceAPI.JWT_TOKEN_MAX_AGE_DAYS.get());
+
+        assertEquals(0L, sessionAfterCookieLogin(sessionToken)
+                .getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
+        assertNull(sessionAfterCookieLogin(rememberMeToken)
+                .getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
+    }
+
+    /**
+     * A back-end request on a logged-in session whose renewal time has passed, carrying a valid
+     * session login token cookie, gets a new browser-session cookie whose token expires later, and
+     * the renewal time moves into the future. A second request right after it renews nothing.
+     */
+    @Test
+    public void test_dueBackEndRequest_renewsSessionLoginToken() throws Exception {
+        final User user = newUser();
+        final String original = JsonWebTokenUtils.getInstance().createSessionLoginToken(user, Duration.ofMinutes(30));
+        final HttpServletRequest base =
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/users/current").request();
+        final HttpSession session = base.getSession();
+        session.setAttribute(WebKeys.USER_ID, user.getUserId());
+        session.setAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT, System.currentTimeMillis() - 1_000L);
+        final DefaultAutoLoginWebInterceptor interceptor = new DefaultAutoLoginWebInterceptor();
+
+        final HttpServletResponse firstResponse = mock(HttpServletResponse.class);
+        assertRenewedWithNoStoreResponse(interceptor.intercept(withLoginCookie(base, original), firstResponse),
+                firstResponse);
+
+        final ArgumentCaptor<Cookie> renewed = ArgumentCaptor.forClass(Cookie.class);
+        verify(firstResponse).addCookie(renewed.capture());
+        assertEquals(CookieKeys.REMEMBER_ME_COOKIE.get(), renewed.getValue().getName());
+        assertEquals("the renewed cookie is a browser-session cookie", -1, renewed.getValue().getMaxAge());
+        assertTrue("the renewed token must expire later than the one it replaces",
+                expiryMillis(renewed.getValue()) > JsonWebTokenFactory.getInstance()
+                        .getJsonWebTokenService().parseToken(original).getExpiresDate().getTime());
+        final Object renewAt = session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT);
+        assertTrue("the renewal time must move into the future",
+                renewAt instanceof Long && (Long) renewAt > System.currentTimeMillis());
+
+        final HttpServletResponse secondResponse = mock(HttpServletResponse.class);
+        assertEquals(Result.SKIP, interceptor.intercept(
+                withLoginCookie(base, renewed.getValue().getValue()), secondResponse));
+        verify(secondResponse, never()).addCookie(any(Cookie.class));
+        assertEquals(renewAt, session.getAttribute(LoginServiceAPI.SESSION_LOGIN_TOKEN_RENEW_AT));
+    }
+
+    /**
+     * A front-end user whose session is restored from a session login token cookie has that cookie
+     * renewed on a back-end request, and the next request, which logs in from the cookie again,
+     * does not renew it a second time.
+     */
+    @Test
+    public void test_frontEndCookieLogin_renewsSessionLoginTokenOnce() throws Exception {
+        final User user = newUser();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadFrontEndUserRole(), user);
+        final String original = JsonWebTokenUtils.getInstance().createSessionLoginToken(user, Duration.ofMinutes(30));
+        final HttpServletRequest base =
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/content").request();
+        final DefaultAutoLoginWebInterceptor interceptor = new DefaultAutoLoginWebInterceptor();
+
+        final HttpServletResponse firstResponse = mock(HttpServletResponse.class);
+        assertRenewedWithNoStoreResponse(interceptor.intercept(withLoginCookie(base, original), firstResponse),
+                firstResponse);
+
+        final ArgumentCaptor<Cookie> renewed = ArgumentCaptor.forClass(Cookie.class);
+        verify(firstResponse).addCookie(renewed.capture());
+        assertEquals(-1, renewed.getValue().getMaxAge());
+        assertTrue("the renewed token must expire later than the one it replaces",
+                expiryMillis(renewed.getValue()) > JsonWebTokenFactory.getInstance()
+                        .getJsonWebTokenService().parseToken(original).getExpiresDate().getTime());
+
+        final HttpServletResponse secondResponse = mock(HttpServletResponse.class);
+        assertEquals(Result.SKIP, interceptor.intercept(
+                withLoginCookie(base, renewed.getValue().getValue()), secondResponse));
+        verify(secondResponse, never()).addCookie(any(Cookie.class));
+    }
+
+    /**
+     * A session login token whose lifetime is longer than the "remember me" limit stays a
+     * browser-session cookie when it restores a login: it is not reissued as a persistent cookie.
+     */
+    @Test
+    public void test_cookieLogin_keepsLongSessionLoginTokenAsSessionCookie() throws Exception {
+        final User user = newUser();
+        APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadBackEndUserRole(), user);
+        final String sessionToken = JsonWebTokenUtils.getInstance().createSessionLoginToken(user,
+                Duration.ofDays(LoginServiceAPI.JWT_TOKEN_MAX_AGE_DAYS.get() + 6L));
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        assertEquals(Result.SKIP, new DefaultAutoLoginWebInterceptor().intercept(withLoginCookie(
+                new MockHttpRequestIntegrationTest("localhost", "/").request(), sessionToken), response));
+
+        verify(response, never()).addCookie(any(Cookie.class));
+    }
+
+    /**
+     * A renewal lets the chain go on (a skip of the remaining interceptors) with a wrapped response,
+     * and marks the original response as not to be stored.
+     */
+    private static void assertRenewedWithNoStoreResponse(final Result result,
+            final HttpServletResponse response) {
+        assertEquals(Result.SKIP.getType(), result.getType());
+        assertNotNull("a renewal continues with a wrapped response", result.getResponse());
+        assertNotSame(response, result.getResponse());
+        verify(response).setHeader(HeaderFilter.CACHE_CONTROL, HeaderFilter.NO_CACHE_CONTROL);
+    }
+
+    /**
+     * Wraps the request so it carries the given token as its login cookie, keeping its session.
+     */
+    private static HttpServletRequest withLoginCookie(final HttpServletRequest request, final String token) {
+        return new HttpServletRequestWrapper(request) {
+            @Override
+            public Cookie[] getCookies() {
+                return new Cookie[]{new Cookie(CookieKeys.REMEMBER_ME_COOKIE.get(), token)};
+            }
+        };
+    }
+
+    /**
+     * Sends a site page request with no session and the given token as its login cookie through
+     * the auto-login interceptor, and returns the session it logged in.
+     */
+    private static HttpSession sessionAfterCookieLogin(final String token) {
+        final HttpServletRequest request = new HttpServletRequestWrapper(
+                new MockHttpRequestIntegrationTest("localhost", "/").request()) {
+            @Override
+            public Cookie[] getCookies() {
+                return new Cookie[]{new Cookie(CookieKeys.REMEMBER_ME_COOKIE.get(), token)};
+            }
+        };
+        assertEquals(Result.SKIP, new DefaultAutoLoginWebInterceptor()
+                .intercept(request, mock(HttpServletResponse.class)));
+        final HttpSession session = request.getSession(false);
+        assertNotNull("the cookie must log the request in", session);
+        return session;
+    }
+
+    /**
+     * Issues the login cookie for the user through the login service and returns it.
+     */
+    private static Cookie loginCookie(final HttpServletRequest request, final User user,
+            final boolean rememberMe) {
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        APILocator.getLoginServiceAPI().doRememberMe(request, response, user, rememberMe);
+        final ArgumentCaptor<Cookie> cookie = ArgumentCaptor.forClass(Cookie.class);
+        verify(response).addCookie(cookie.capture());
+        assertEquals(CookieKeys.REMEMBER_ME_COOKIE.get(), cookie.getValue().getName());
+        return cookie.getValue();
+    }
+
+    private static long expiryMillis(final Cookie cookie) {
+        return JsonWebTokenFactory.getInstance().getJsonWebTokenService()
+                .parseToken(cookie.getValue()).getExpiresDate().getTime();
+    }
+
+    /**
+     * Asserts the cookie's token expires the given lifetime after {@code before}, within a minute.
+     */
+    private static void assertExpiresIn(final Cookie cookie, final long before, final long lifetime) {
+        final long expiresIn = expiryMillis(cookie) - before;
+        assertTrue("token lifetime was " + expiresIn + " ms, expected about " + lifetime + " ms",
+                expiresIn >= lifetime - TimeUnit.MINUTES.toMillis(1)
+                        && expiresIn <= lifetime + TimeUnit.MINUTES.toMillis(1));
+    }
+
+    /**
      * A logout request with no session that carries the given token as its login cookie.
      */
     private static HttpServletRequest requestWithLoginCookie(final String token) {
@@ -377,5 +948,52 @@ public class LoginTokenInvalidationTest {
 
     private static boolean resolves(final String token) {
         return APILocator.getApiTokenAPI().fromJwt(token, IP_ADDRESS).isPresent();
+    }
+
+    /**
+     * A session of the user, registered with the session monitor as a login registers it.
+     */
+    private HttpSession trackedSessionOf(final User user) {
+        final HttpSession session = new MockSession(UUIDGenerator.generateUuid());
+        session.setAttribute(WebKeys.USER_ID, user.getUserId());
+        SessionMonitor.track(session);
+        trackedUserIds.add(user.getUserId());
+        return session;
+    }
+
+    private static boolean isTracked(final String sessionId) {
+        return new SessionMonitor().getUserSessions().containsKey(sessionId);
+    }
+
+    /**
+     * The name the login takes for the user: its id or its email, as the company's authentication
+     * type says.
+     */
+    private static String loginName(final User user) {
+        return Company.AUTH_TYPE_ID.equals(PublicCompanyFactory.getDefaultCompany().getAuthType())
+                ? user.getUserId() : user.getEmailAddress();
+    }
+
+    /**
+     * A session that hands its attribute events to the session monitor, as the servlet container
+     * does for the listener registered in web.xml.
+     */
+    private static final class ListenedSession extends MockSession {
+
+        ListenedSession() {
+            super(UUIDGenerator.generateUuid());
+        }
+
+        @Override
+        public void setAttribute(final String name, final Object value) {
+            final boolean replaced = getAttribute(name) != null;
+            super.setAttribute(name, value);
+            final HttpSessionBindingEvent event = new HttpSessionBindingEvent(this, name, value);
+            if (replaced) {
+                new SessionMonitor().attributeReplaced(event);
+            } else {
+                new SessionMonitor().attributeAdded(event);
+            }
+        }
     }
 }

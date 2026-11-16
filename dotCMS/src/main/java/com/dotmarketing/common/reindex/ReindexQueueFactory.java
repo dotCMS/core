@@ -1,7 +1,6 @@
 package com.dotmarketing.common.reindex;
 
 import com.dotcms.contenttype.model.type.ContentType;
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.time.Duration;
 import java.time.Instant;
@@ -14,15 +13,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.Params;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
@@ -104,9 +106,7 @@ public class ReindexQueueFactory {
         } catch (Exception e) {
             throw new DotDataException(e.getMessage(), e);
         }
-        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
-            ReindexThread.unpause();
-        }
+        unpauseReindexingServers();
     }
 
     protected void addStructureReindexEntries(final ContentType contentType)
@@ -126,9 +126,7 @@ public class ReindexQueueFactory {
         } catch (Exception ex) {
             Logger.fatal(this, "Error  unlocking the reindex journal table" + ex);
         }
-        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
-            ReindexThread.unpause();
-        }
+        unpauseReindexingServers();
     }
 
     protected boolean areRecordsLeftToIndex() throws DotDataException {
@@ -170,11 +168,7 @@ public class ReindexQueueFactory {
      */
     protected boolean hasReindexRecords() throws DotDataException {
         DotConnect dc = new DotConnect();
-        String sql = DbConnectionFactory.isMsSql()
-                ? "SELECT TOP 1 id from dist_reindex_journal where priority >= ? and  priority < ?"
-                : DbConnectionFactory.isOracle() ?
-                        "select 1 from dist_reindex_journal where priority >= ? and  priority < ? and rownum=1"
-                        : "select 1 from dist_reindex_journal where priority >= ? and  priority < ? limit 1";
+        String sql = "select 1 from dist_reindex_journal where priority >= ? and  priority < ? limit 1";
         dc.setSQL(sql);
 
         dc.addParam(Priority.REINDEX.dbValue());
@@ -212,15 +206,10 @@ public class ReindexQueueFactory {
                     map.get("index_val"))
                     : StringUtils.EMPTY;
 
-            if (DbConnectionFactory.isOracle()) {
-                BigDecimal rowVal = (BigDecimal) map.get("id");
-                identifier = Long.valueOf(rowVal.toPlainString());
-                rowVal = (BigDecimal) map.get("priority");
-                priority = Integer.valueOf(rowVal.toPlainString());
-            } else {
-                identifier = (Long) map.get("id");
-                priority = Integer.parseInt(map.get("priority").toString());
-            }
+
+            identifier = (Long) map.get("id");
+            priority = Integer.parseInt(map.get("priority").toString());
+
 
             final ReindexEntry ridx = ReindexEntry.builder()
                     .id(identifier)
@@ -303,9 +292,7 @@ public class ReindexQueueFactory {
         dc.addParam(cause);
         dc.addParam(idx.getId());
         dc.loadResult();
-        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
-            ReindexThread.unpause();
-        }
+        unpauseReindexingServers();
     }
 
 
@@ -364,19 +351,19 @@ public class ReindexQueueFactory {
             return;
         }
         int myIndex = reindexingServers.indexOf(APILocator.getServerAPI().readServerId());
+        if (myIndex < 0) {
+            resetLastIdReindexed();
+            // Full reindexes keep the outer loop running even when this node owns no work.
+            LockSupport.parkNanos(Duration.ofSeconds(1).toNanos());
+            return;
+        }
         final int priorityLevel = Priority.ERROR.dbValue();
         DotConnect db = new DotConnect();
 
-        if (DbConnectionFactory.isOracle()) {
-            db.setSQL("select * from (select * from dist_reindex_journal where MOD(id, ?) = ?"
-                    + " and priority <= ? and id > ? ORDER BY priority ASC) where ROWNUM <= 2000");
-        } else if (DbConnectionFactory.isMsSql()) {
-            db.setSQL("select TOP 2000 * from dist_reindex_journal where id % ? = ?"
-                    + " and priority <= ? and id > ? ORDER BY priority ASC");
-        } else {
-            db.setSQL("select * from dist_reindex_journal where MOD(id, ?) = ?"
-                    + " and priority <= ? and id > ? ORDER BY priority ASC LIMIT 2000");
-        }
+
+        db.setSQL("select * from dist_reindex_journal where MOD(id, ?) = ?"
+                + " and priority <= ? and id > ? ORDER BY priority ASC LIMIT 2000");
+
 
         db.addParam(reindexingServers.size());
         db.addParam(myIndex);
@@ -556,10 +543,17 @@ public class ReindexQueueFactory {
         return Long.parseLong(c);
     }
 
+    /**
+     * Queues every contentlet under the folder's path for reindexing at NORMAL priority, stamped
+     * with the current time.
+     *
+     * @param folder the folder whose content is reindexed
+     * @throws DotDataException if the journal rows cannot be written
+     */
     protected void refreshContentUnderFolder(Folder folder) throws DotDataException {
         final String sql =
-                " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "
-                        + " SELECT distinct identifier.id, identifier.id, ?, ? "
+                " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action,time_entered) "
+                        + " SELECT distinct identifier.id, identifier.id, ?, ?, " + timestampSQL()
                         + " FROM contentlet join identifier ON contentlet.identifier=identifier.id "
                         + " WHERE identifier.host_inode=? AND identifier.parent_path LIKE ? ";
         DotConnect dc = new DotConnect();
@@ -570,16 +564,22 @@ public class ReindexQueueFactory {
         String folderPath = APILocator.getIdentifierAPI().find(folder.getIdentifier()).getPath();
         dc.addParam(folderPath + "%");
         dc.loadResult();
-        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
-            ReindexThread.unpause();
-        }
+        unpauseReindexingServers();
     }
 
+    /**
+     * Queues every contentlet on the site whose parent path starts with the given path for
+     * reindexing at NORMAL priority, stamped with the current time.
+     *
+     * @param hostId the site identifier
+     * @param folderPath the folder path prefix
+     * @throws DotDataException if the journal rows cannot be written
+     */
     protected void refreshContentUnderFolderPath(String hostId, String folderPath)
             throws DotDataException {
         final String sql =
-                " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "
-                        + " SELECT distinct identifier.id, identifier.id, ?, ? "
+                " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action,time_entered) "
+                        + " SELECT distinct identifier.id, identifier.id, ?, ?, " + timestampSQL()
                         + " FROM contentlet join identifier ON contentlet.identifier=identifier.id "
                         + " WHERE identifier.host_inode=? AND identifier.parent_path LIKE ? ";
         DotConnect dc = new DotConnect();
@@ -589,9 +589,7 @@ public class ReindexQueueFactory {
         dc.addParam(hostId);
         dc.addParam(folderPath + "%");
         dc.loadResult();
-        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
-            ReindexThread.unpause();
-        }
+        unpauseReindexingServers();
     }
 
     protected void addIdentifierReindex(final String identifier, final int priority)
@@ -636,9 +634,7 @@ public class ReindexQueueFactory {
                     .addParam(ReindexAction.REINDEX.ordinal()).addParam(date).loadResult();
 
         }
-        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
-            ReindexThread.unpause();
-        }
+        unpauseReindexingServers();
 
         return identifiers.size();
     }
@@ -659,16 +655,21 @@ public class ReindexQueueFactory {
 
         }
 
-        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
-            ReindexThread.unpause();
-        }
+        unpauseReindexingServers();
         return identifiers.size();
     }
 
+    /**
+     * Queues every contentlet on the site, and every asset whose permissions come from the site,
+     * for reindexing at STRUCTURE priority, stamped with the current time.
+     *
+     * @param host the site whose content is reindexed
+     * @throws DotDataException if the journal rows cannot be written
+     */
     protected void refreshContentUnderHost(final Host host) throws DotDataException {
         String sql =
-                " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "
-                        + " SELECT id, id, ?, ? "
+                " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action,time_entered) "
+                        + " SELECT id, id, ?, ?, " + timestampSQL()
                         + " FROM identifier "
                         + " WHERE asset_type='contentlet' and identifier.host_inode=?";
         final DotConnect dc = new DotConnect();
@@ -679,17 +680,15 @@ public class ReindexQueueFactory {
         dc.loadResult();
 
         // https://github.com/dotCMS/dotCMS/issues/2229
-        sql = " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action) "
-                + " SELECT asset_id, asset_id, ?, ? "
+        sql = " INSERT INTO dist_reindex_journal(inode_to_index,ident_to_index,priority,dist_action,time_entered) "
+                + " SELECT asset_id, asset_id, ?, ?, " + timestampSQL()
                 + " FROM permission_reference " + " WHERE reference_id=?";
         dc.setSQL(sql);
         dc.addParam(Priority.STRUCTURE.dbValue());
         dc.addParam(ReindexAction.REINDEX.ordinal());
         dc.addParam(host.getIdentifier());
         dc.loadResult();
-        if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
-            ReindexThread.unpause();
-        }
+        unpauseReindexingServers();
     }
 
     static long lastTimeIRequedRecords = 0;
@@ -716,7 +715,14 @@ public class ReindexQueueFactory {
                 .addParam(olderThan).addParam(Priority.ERROR.dbValue());
 
         dc.loadResult();
+        unpauseReindexingServers();
+    }
+
+    private void unpauseReindexingServers() {
         if (!Config.getBooleanProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", false)) {
+            // Local unpause is a no-op while RUNNING, but selected peers may still be paused.
+            HibernateUtil.addCommitListener("wakeReindexingServers",
+                    () -> CacheLocator.getSystemCache().remove("REINDEX_THREAD_PAUSED"));
             ReindexThread.unpause();
         }
     }

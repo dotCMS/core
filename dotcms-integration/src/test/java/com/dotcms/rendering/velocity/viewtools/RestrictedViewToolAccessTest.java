@@ -343,6 +343,40 @@ public class RestrictedViewToolAccessTest {
     }
 
     /**
+     * Renders a field value the way content is rendered over REST.
+     *
+     * @param request the request of whoever views the content
+     * @param code    the field's Velocity
+     * @param author  the user recorded as the content's last editor
+     *
+     * @return the rendered field, trimmed
+     */
+    private static String renderField(final HttpServletRequest request, final String code,
+            final User author) {
+        return String.valueOf(RenderFieldStrategy.renderFieldValue(request,
+                new MockHttpResponse().response(), code, notPersistedContent(author), "code")).trim();
+    }
+
+    /**
+     * Method to test: {@code $crypt.decrypt} through {@link RenderFieldStrategy#renderFieldValue}
+     * When: a field encrypts a text and decrypts it again; it was saved once by a Scripting
+     * Developer and once by a user without the role, and the latter is viewed by an anonymous
+     * visitor and by a Scripting Developer
+     * Should: give the text back only for the Scripting Developer's field, whoever views it.
+     */
+    @Test
+    public void cryptDecryptInAFieldFollowsTheAuthorNotTheViewer() throws Exception {
+        final User developer = user(new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER))
+                .nextPersisted());
+        final String code = "[$!crypt.decrypt($crypt.crypt(\"x\"))]";
+
+        assertEquals("[x]", renderField(request(null), code, developer));
+        assertEquals("[]", renderField(request(null), code, limitedUser));
+        assertEquals("[]", renderField(request(developer), code, limitedUser));
+    }
+
+    /**
      * The parts of the output that do not depend on who wrote or who reads the content.
      */
     private static void assertCommonRules(final String result) {

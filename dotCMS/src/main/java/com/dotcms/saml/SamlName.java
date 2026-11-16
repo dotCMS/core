@@ -88,16 +88,15 @@ public enum SamlName {
 	DOTCMS_SAML_BINDING_TYPE("bindingtype"),
 	
 	/**
-	 * Optional key to configure the strategy to sync the roles from IDP to
-	 * DOTCMS Remove user from all roles, add to roles from IdP & saml_user_role
-	 * (if set) DOTCMS_SAML_BUILD_ROLES_ALL_VALUE = " all"; Remove user from all
-	 * roles, add to roles from IdP DOTCMS_SAML_BUILD_ROLES_IDP_VALUE = "idp";
-	 * Remove user from all roles, add to roles from saml_user_role (if set).
-	 * Ignore roles from IdP. DOTCMS_SAML_BUILD_ROLES_STATIC_ONLY_VALUE =
-	 * "staticonly; Do not alter existing user roles, add to roles from
-	 * saml_user_role (if set). Ignore roles from IdP.
-	 * DOTCMS_SAML_BUILD_ROLES_STATIC_ADD_VALUE = "staticadd;
-	 * DOTCMS_SAML_BUILD_ROLES_NONE_VALUE Do not alter user roles in any way
+	 * Optional key to configure how a SAML sign-in syncs the user's roles. "role.extra" below is
+	 * the comma-separated list of existing roles in {@code role.extra}.
+	 * <ul>
+	 * <li>{@code all}: remove all the user's roles, then add the IdP roles and the role.extra roles.</li>
+	 * <li>{@code idp}: remove all the user's roles, then add the IdP roles. role.extra is not applied.</li>
+	 * <li>{@code staticonly}: remove all the user's roles, then add the role.extra roles. IdP roles are ignored.</li>
+	 * <li>{@code staticadd}: keep the user's roles and add the role.extra roles. IdP roles are ignored.</li>
+	 * <li>{@code none}: do not change the user's roles.</li>
+	 * </ul>
 	 */
 	DOTCMS_SAML_BUILD_ROLES("build.roles"),
 	
@@ -257,8 +256,10 @@ public enum SamlName {
 	DOTCMS_SAML_NAME_ID_POLICY_FORMAT("nameidpolicy.format"),
 	
 	/**
-	 * Optional key. Role to be assigned to a logged user besides the default
-	 * SAML User
+	 * Optional key. Comma-separated list of existing role keys (spaces around each key are
+	 * ignored) assigned to the user at every SAML sign-in. Roles that do not
+	 * exist are skipped, not created. Not applied under the
+	 * {@code idp} build roles strategy.
 	 */
 	DOTCMS_SAML_OPTIONAL_USER_ROLE("role.extra"),
 

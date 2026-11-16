@@ -153,6 +153,12 @@ import org.mockito.invocation.InvocationOnMock;
 @ApplicationScoped
 @RunWith(JUnit4WeldRunner.class)
 public class PageResourceTest {
+
+    /** A method, not a field: this class is a CDI bean, and Weld rejects public fields on normal-scoped beans. */
+    @org.junit.Rule
+    public com.dotcms.junit.SystemUserScopeRule systemUserScope() {
+        return new com.dotcms.junit.SystemUserScopeRule();
+    }
     private ContentletAPI esapi;
     private PageResource pageResource;
     private PageResource pageResourceWithHelper;
