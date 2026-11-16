@@ -2,7 +2,8 @@
 name: dot-release-backport-lts
 owner: "@dotcms/maintenance"
 status: active
-description: Backport closed GitHub issues labeled LTS Next Patch to the current LTS release branch. Finds linked PRs, applies diffs, commits, and pushes. Use when applying pending LTS patches to the release branch.
+description: Backport closed GitHub issues labeled LTS Next Patch to the current LTS release branch. Finds linked PRs, applies diffs, commits, and pushes. Then triggers a Docker build of the branch and, once given the resulting image, spins up a dotCMS instance from it to QA the backport and smoke-test basic functionality. Use when applying pending LTS patches to the release branch.
+argument-hint: "[lts-version] (e.g. 25.07.10) — required unless you're already on a release-X.Y.Z_lts branch, which the skill reads it from automatically"
 ---
 
 # LTS Backport
@@ -10,6 +11,8 @@ description: Backport closed GitHub issues labeled LTS Next Patch to the current
 **TRIGGER GUARD:** Only invoke this skill when the user explicitly requests an **"LTS backport"**. A generic mention of "backport" alone does NOT trigger this skill. If the user says "backport" without "LTS", respond normally without invoking this skill.
 
 You are now backporting fixes to the current LTS branch. Execute the following steps directly in this conversation using your own tools — do not spawn agents or subprocesses.
+
+**Placeholders are not literal text:** Every `UPPER_SNAKE_CASE` token used below (`LTS_NUMBER`, `CURRENT_BRANCH`, `TARGET_BRANCH`, `ISSUE_NUMBER`, `PR_NUMBER`, `HOTFIX_FILE`, `DOCKER_IMAGE`, etc.) stands for a value resolved earlier in the process. Anywhere you print a message, error, prompt, or report to the user, substitute the actual resolved value — never print the placeholder name itself. For example, once `TARGET_BRANCH` resolves to `release-25.07.10_lts`, a report header must read "LTS Backport Report — release-25.07.10_lts", not "LTS Backport Report — release-LTS_NUMBER_lts". This applies to every step from here through the final report.
 
 ## Step 1: Environment check
 
@@ -366,10 +369,10 @@ rm -f /tmp/backport_patch_ISSUE_NUMBER_*.patch /tmp/patch_*.patch
 
 ## Step 6: Final report
 
-After all issues have been processed, print the final report in this format:
+After all issues have been processed, print the final report in this format (with `TARGET_BRANCH` replaced by its actual resolved value, e.g. `release-25.07.10_lts`):
 
 ```
-## LTS Backport Report — release-LTS_NUMBER_lts
+## LTS Backport Report — TARGET_BRANCH
 
 | Issue | Title | State | Notes |
 |-------|-------|-------|-------|
@@ -387,6 +390,103 @@ If any issues were skipped, add a section:
 The following issues were skipped and need manual attention:
 - #N: REASON — check if prerequisite commits need to be backported first
 ```
+
+If the `completed` list is empty (nothing new was actually backported this run — e.g. everything was already backported or skipped), stop here: there is no new commit to build or QA, so do not proceed to Step 7.
+
+Otherwise, proceed directly to Step 7 — triggering the Docker build is part of this skill's standard flow, not a separate opt-in.
+
+## Step 7: Trigger the Docker build
+
+**Identify the GitHub account to use.** This skill may run under different users' `gh` setups, so never hardcode an account name. Run `gh auth status` and look at the authenticated accounts:
+
+- If exactly **one** account is logged in and active, use it.
+- If **multiple** accounts are logged in, ask the user which one to use for triggering this workflow (e.g. "I see accounts X and Y authenticated — which one should trigger the build?"), then run `gh auth switch --user ACCOUNT_NAME` to activate the chosen one before continuing.
+
+**Trigger the workflow** against the LTS branch you just pushed to (`TARGET_BRANCH`). Use the workflow file name, not its display name — `gh workflow run` can be unreliable matching names containing `[`/`]`:
+
+```bash
+gh workflow run legacy-release_publish-dotcms-docker-image.yml \
+  --repo dotCMS/core \
+  --ref "TARGET_BRANCH" \
+  -f multi_arch=true \
+  -f docker_registry=DOCKER.IO
+```
+
+(Display name: "Build/Push dotCMS docker image [DEPRECATED]".) If the user wants a custom tag on the resulting image, pass `-f custom_tag=THEIR_TAG` as well.
+
+Immediately after dispatching, fetch the run URL so the user can follow progress:
+```bash
+gh run list --repo dotCMS/core --workflow "legacy-release_publish-dotcms-docker-image.yml" --limit 1 --json databaseId,url,status
+```
+
+Report the run URL to the user and tell them:
+
+> "Docker build triggered on `TARGET_BRANCH` (run: RUN_URL). Let me know once it finishes, then share the resulting Docker image (e.g. `dotcms/dotcms:TAG`) so I can QA the backported fix(es) in it."
+
+Then stop and wait — do not poll the workflow yourself; the user will tell you when it's done and give you the image.
+
+## Step 8: Receive and validate the Docker image
+
+When the user provides a Docker image reference, sanity-check its shape (e.g. `dotcms/dotcms:TAG` or a `ghcr.io/...` reference) before using it. If it looks malformed or unrelated to this build, ask the user to confirm or re-check before proceeding.
+
+## Step 9: Spin up a dotCMS instance from the image and QA the backport
+
+Use `docker/docker-compose-examples/single-node-demo-site/docker-compose.yml` as the base — the example built exactly for this: one dotCMS node + Postgres + OpenSearch, auto-loading a starter with demo content. Confirm the file still exists at that path (example paths can shift between versions); if not, search for its replacement with `find . -iname docker-compose.yml -path "*demo-site*"`.
+
+This file has no variable-substitution for the fields below — they are hardcoded values in the YAML — so do not edit the tracked repo file in place. Copy it to a scratch location first and edit the copy:
+
+```bash
+mkdir -p /tmp/lts-backport-qa && cp docker/docker-compose-examples/single-node-demo-site/docker-compose.yml /tmp/lts-backport-qa/
+```
+
+- **Image**: in the copy, change the `dotcms:` service's `image:` line from `dotcms/dotcms:latest` to `DOCKER_IMAGE` (the exact reference the user supplied, e.g. `dotcms/dotcms:TAG`).
+- **Starter**: the `CUSTOM_STARTER_URL` env var on the `dotcms` service controls which starter zip loads on first boot. Resolve the correct starter for the branch under test by checking `dotCMS/build.gradle` (grep `starter group`) **on `TARGET_BRANCH`** for the `starter_date`, then set the value to `https://dotcms-repo.b-cdn.net/libs-release/com/dotcms/starter/STARTER_DATE/starter-STARTER_DATE.zip`. If `build.gradle` doesn't exist on that branch (fully-Maven branches), run `docker/docker-compose-examples/scripts/dotcms-get-demo-site-starter-urls.sh` and pick the entry matching the closest released version instead.
+- **Credentials**: default admin login is `admin@dotcms.com` / `admin` (from `DOT_INITIAL_ADMIN_PASSWORD` in the compose file) unless the user overrides it.
+- **Ports — check for conflicts before starting, never free a port by stopping something already running:** the compose file's default host ports are `8082` (dotCMS HTTP), `8443` (dotCMS HTTPS), `9200` and `9600` (OpenSearch). Any of these may already be bound by something else on the user's machine (another dotCMS instance, a different project, etc.) — **do not stop, kill, or touch whatever is using them.** Instead, for each of the four, probe whether the default is free and pick the next free one if not, then rewrite only the **host side** of that port's mapping in the copied compose file (the container-side port stays the same, e.g. `8085:8082`):
+
+  ```bash
+  port_in_use() {
+    (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null && { exec 3<&- 3>&-; return 0; } || return 1
+  }
+  pick_free_port() {
+    local port=$1
+    while port_in_use "$port"; do port=$((port + 1)); done
+    echo "$port"
+  }
+  DOTCMS_HTTP_PORT=$(pick_free_port 8082)
+  DOTCMS_HTTPS_PORT=$(pick_free_port 8443)
+  OPENSEARCH_PORT=$(pick_free_port 9200)
+  OPENSEARCH_PERF_PORT=$(pick_free_port 9600)
+  ```
+
+  Then edit the copied compose file's `ports:` entries so each reads `"$DOTCMS_HTTP_PORT:8082"`, `"$DOTCMS_HTTPS_PORT:8443"`, `"$OPENSEARCH_PORT:9200"`, `"$OPENSEARCH_PERF_PORT:9600"` respectively — substituting the resolved values, not the literal variable names. If any port had to move off its default, tell the user which one and why (e.g. "8082 was already in use, dotCMS will be reachable on 8085 instead") so they know where to point the browser later.
+- Start it with `docker compose -f /tmp/lts-backport-qa/docker-compose.yml up -d`, and tear it down afterward with `docker compose -f /tmp/lts-backport-qa/docker-compose.yml down -v` once QA is done (confirm with the user before destroying volumes if they want to keep the instance running).
+- Wait for the instance to report healthy — tail `docker compose -f /tmp/lts-backport-qa/docker-compose.yml logs -f dotcms` until you see it finish initializing (or poll `http://localhost:$DOTCMS_HTTP_PORT/api/v1/appconfiguration`) before testing.
+
+**Verify the specific backport(s):** For each issue backported in this run, re-derive what the fix actually changed (from the PR diff already fetched in Step 5f) and exercise that code path against the running instance — via REST API calls (`curl`), CLI, or whatever reproduces the original bug fastest. Confirm the bug is actually fixed in this image, not just that the server boots.
+
+**Smoke test basic functionality** (to confirm nothing else broke):
+1. Create a new Content Type.
+2. Add a relationship field relating it to an existing/second Content Type.
+3. Create a Content instance of that new Content Type.
+4. Create a Template.
+5. Create a new Page using that Template.
+6. Add the content created in step 3 onto that page.
+
+Do as much of this as practical via REST API/CLI first. For the parts that benefit from visual confirmation (page rendering, editor UX), ask the user:
+
+> "I've verified the backport and basic smoke tests via API. Can you grant me browser access via the Claude Chrome extension so we can visually confirm the page renders correctly with the new content? The instance is at http://localhost:$DOTCMS_HTTP_PORT."
+
+Use that browser access, once granted, to visually confirm the content type, content, template, and page all work end-to-end in the UI.
+
+## Step 10: Final combined report
+
+Report to the user:
+- Which issue(s)/PR(s) were backported (carried over from the Step 6 table).
+- The Docker image tested (`DOCKER_IMAGE`) and the workflow run it came from.
+- Pass/fail for each specific backport verification, with how it was verified (API call, UI check) and what was observed.
+- Pass/fail for each smoke-test step (content type, relationship, content, template, page, page content), noting any that failed or looked off.
+- Any findings, anomalies, or regressions discovered — even if unrelated to the backported issues.
 
 ---
 

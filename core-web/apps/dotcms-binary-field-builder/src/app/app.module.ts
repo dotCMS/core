@@ -1,5 +1,4 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { firstValueFrom } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import {
@@ -15,10 +14,13 @@ import { BrowserModule } from '@angular/platform-browser';
 import { provideAnimations } from '@angular/platform-browser/animations';
 
 import {
+    DotLocalstorageService,
+    initializeLegacyTranslations,
     DotMessageService,
     DotUploadService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
+import { DotcmsConfigService, LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DotBinaryFieldCeBridgeComponent } from '@dotcms/edit-content';
 import { provideDotCMSTheme } from '@dotcms/ui';
 
@@ -43,14 +45,19 @@ const CONTENTTYPE_FIELDS: ContenttypeFieldElement[] = [
         provideHttpClient(),
         provideAnimations(),
         DotMessageService,
+        LoggerService,
+        StringUtils,
         DotUploadService,
         DotWorkflowActionsFireService,
         provideDotCMSTheme(),
-        provideAppInitializer(() => {
-            const dotMessageService = inject(DotMessageService);
-
-            return firstValueFrom(dotMessageService.init());
-        })
+        provideAppInitializer(() =>
+            initializeLegacyTranslations(
+                inject(DotMessageService),
+                inject(DotcmsConfigService),
+                inject(DotLocalstorageService),
+                inject(LoggerService)
+            )
+        )
     ]
 })
 export class AppModule implements DoBootstrap {

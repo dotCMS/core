@@ -9,6 +9,7 @@
 
 package com.dotcms.enterprise.publishing.bundlers;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.mock.request.DotCMSMockRequest;
 import com.dotcms.mock.response.DotCMSMockResponse;
 import com.dotcms.publishing.*;
@@ -339,7 +340,7 @@ public abstract class AbstractServletBundler implements IBundler {
 			request.setParameterMap(getUrlParameters(uri));
 
 
-			try {
+			try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
 				Method doGetMethod = this.servlet.getClass().getDeclaredMethod("doGet", HttpServletRequest.class, HttpServletResponse.class);
 				doGetMethod.invoke(this.servlet, request, response);
 			} catch (Exception e) {

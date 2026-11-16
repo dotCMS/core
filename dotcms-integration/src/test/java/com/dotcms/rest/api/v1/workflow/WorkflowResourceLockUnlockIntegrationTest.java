@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.workflow;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
@@ -32,7 +35,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -54,6 +56,9 @@ import org.junit.Test;
  * @see SystemActionApiFireCommandFactory
  */
 public class WorkflowResourceLockUnlockIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static WorkflowResource workflowResource;
     private static ContentletAPI contentletAPI;
@@ -450,14 +455,21 @@ public class WorkflowResourceLockUnlockIntegrationTest {
         return requestForUser(ADMIN_EMAIL, ADMIN_PASSWORD);
     }
 
+    /**
+     * Builds a request that authenticates as the given user with a Bearer API token. The password
+     * argument is retained for call-site compatibility; credentials are no longer sent on the wire.
+     *
+     * @param email the fixture user to authenticate as
+     * @param password retained for call-site compatibility; not used
+     * @return the authenticated request
+     */
     private static HttpServletRequest requestForUser(final String email, final String password) {
         final MockHeaderRequest request = new MockHeaderRequest(new MockSessionRequest(
                 new MockAttributeRequest(
                         new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request());
 
-        request.setHeader("Authorization", "Basic " + Base64.getEncoder()
-                .encodeToString((email + ":" + password).getBytes()));
+        request.setHeader("Authorization", TOKEN_UTILS.bearerHeaderForEmail(email));
 
         return request;
     }

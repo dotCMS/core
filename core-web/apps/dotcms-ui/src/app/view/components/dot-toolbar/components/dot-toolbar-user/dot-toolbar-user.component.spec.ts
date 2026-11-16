@@ -6,7 +6,7 @@ import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { DebugElement } from '@angular/core';
+import { DebugElement, signal } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -58,7 +58,13 @@ describe('DotToolbarUserComponent', () => {
                     }
                 },
                 { provide: LoggerService, useValue: { error: vi.fn() } },
-                { provide: DotMessageService, useValue: { get: (key: string) => key } },
+                {
+                    provide: DotMessageService,
+                    useValue: {
+                        get: (key: string) => key,
+                        loadedBundleVersion: signal<string | null>(null).asReadonly()
+                    }
+                },
                 { provide: DotGlobalMessageService, useValue: { success: vi.fn() } },
                 {
                     provide: DotHttpErrorManagerService,

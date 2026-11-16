@@ -1,11 +1,16 @@
 package com.dotmarketing.business;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.LoginLockout;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.listeners.SessionMonitor;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
+import com.dotcms.util.PasswordRejectionReason;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -17,6 +22,7 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.DuplicateUserEmailAddressException;
@@ -42,6 +48,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
 
 import static com.dotmarketing.business.UserHelper.validateMaximumLength;
 import static com.dotmarketing.business.UserHelper.validateName;
@@ -437,6 +444,21 @@ public class UserAPIImpl implements UserAPI {
         return userFactory.getUsersByNameOrEmailOrUserID(filter, page, pageSize, includeAnonymous, includeDefault,roleId);
     }
 
+    /**
+     * Saves the user after checking that {@code user} may edit it and that the names and email
+     * fit. When the save turns an active user into an inactive one, the login tokens issued to
+     * that user so far are invalidated and the user's sessions tracked on this node are ended once
+     * the transaction commits, so the account stops being usable at once. A user loaded through
+     * this API can be the cached instance, so a caller changing it before a save that then fails
+     * would leave the cache ahead of the data source; the entry is evicted in that case.
+     *
+     * @param userToSave            the {@link User} to store
+     * @param user                  the {@link User} making the change
+     * @param respectFrontEndRoles  whether front-end roles count for the permission check
+     * @throws DotDataException      the user cannot be saved, or a field does not fit
+     * @throws DotSecurityException  {@code user} may not edit {@code userToSave}
+     * @throws DuplicateUserException another user already has the same id or email
+     */
     @WrapInTransaction
     @Override
     public void save(final User userToSave, final User user, final boolean respectFrontEndRoles) throws DotDataException, DotSecurityException,DuplicateUserException {
@@ -444,14 +466,25 @@ public class UserAPIImpl implements UserAPI {
         if (userId == null) {
             throw new DotDataException("Can't save a user without a userId");
         }
-        if (!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(userToSave,
-                APILocator.getUserAPI().getSystemUser(), false),
-                PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)) {
-            throw new DotSecurityException(
-                    "User doesn't have permission to save the user which is trying to be saved");
+        final User storedUser;
+        try {
+            if (!permissionAPI.doesUserHavePermission(userProxyAPI.getUserProxy(userToSave,
+                    APILocator.getUserAPI().getSystemUser(), false),
+                    PermissionAPI.PERMISSION_EDIT, user, respectFrontEndRoles)) {
+                throw new DotSecurityException(
+                        "User doesn't have permission to save the user which is trying to be saved");
+            }
+            validateName(userToSave.getFirstName(), userToSave.getLastName());
+            validateMaximumLength(userToSave.getFirstName(),userToSave.getLastName(),userToSave.getEmailAddress());
+            // Only a change from active to inactive matters after the save. The stored record is read
+            // straight from the data source because the object being saved can be the cached instance,
+            // which already carries the new status.
+            storedUser = userToSave.isActive() ? null : userFactory.loadStoredUser(userId).orElse(null);
+        } catch (final DotDataException | DotSecurityException | DotRuntimeException e) {
+            // the object may be the cached instance, already changed by the caller: do not keep it
+            CacheLocator.getUserCache().remove(userId);
+            throw e;
         }
-        validateName(userToSave.getFirstName(), userToSave.getLastName());
-        validateMaximumLength(userToSave.getFirstName(),userToSave.getLastName(),userToSave.getEmailAddress());
         userFactory.save(userToSave);
         PasswordTrackerLocalManager passwordTracker = PasswordTrackerLocalManagerFactory
                 .getManager();
@@ -465,8 +498,48 @@ public class UserAPIImpl implements UserAPI {
                     + userId + "] could not be added for tracking.");
         }
         APILocator.getRoleAPI().getUserRole(userToSave);
+        if (deactivates(storedUser, userToSave)) {
+            userToSave.setRememberMeToken(invalidateLoginTokens(userId));
+            endTrackedSessionsOnCommit(userId);
+        }
     }
 
+    /**
+     * Tells whether saving {@code userToSave} turns an active user into an inactive one. Only that
+     * change counts: saving a user that stays active or stays inactive, activating a user again,
+     * or creating a new user (no stored record) is not a deactivation.
+     *
+     * @param storedUser the {@link User} as currently stored, or {@code null} when there is none
+     * @param userToSave the {@link User} about to be saved
+     * @return {@code true} only when the stored user is active and the one being saved is not
+     */
+    static boolean deactivates(final User storedUser, final User userToSave) {
+        return null != storedUser && storedUser.isActive()
+                && null != userToSave && !userToSave.isActive();
+    }
+
+    /**
+     * Ends the sessions of the user tracked on this node (see
+     * {@link SessionMonitor#endSessionsOf(String)}) once the surrounding transaction commits, so
+     * the sessions only end when the change that made them unusable is stored. With no transaction
+     * open, the sessions end right away. The caller's own session is among them when it belongs
+     * to that user: a user making their own account inactive, or an administrator impersonating the
+     * user through Login As.
+     *
+     * @param userId the id of the user whose tracked sessions end
+     * @throws DotDataException if the commit listener cannot be registered
+     */
+    private void endTrackedSessionsOnCommit(final String userId) throws DotDataException {
+        HibernateUtil.addSyncCommitListener(() -> SessionMonitor.endSessionsOf(userId));
+    }
+
+    /**
+     * Saves the user. When {@code validatePassword} is true the password on {@code userToSave} is a
+     * new plain-text password: it is checked against the password policy and hashed, and after the
+     * save {@link #invalidateLoginTokens(String)} runs in the same transaction, so login tokens
+     * issued before the change stop working.
+     */
+    @WrapInTransaction
     @Override
     public void save(User userToSave, User user, boolean validatePassword,
             boolean respectFrontEndRoles) throws DotDataException,
@@ -478,6 +551,7 @@ public class UserAPIImpl implements UserAPI {
             try {
                 if (!passwordTracker.isValidPassword(userToSave.getUserId(),
                         pwd)) {
+                    logPasswordRejection(userToSave.getUserId(), user, pwd);
                     // Get the first validation error and display it
                     throw new DotDataException(passwordTracker
                             .getValidationErrors().get(0).toString(),"User-Info-Save-Password-Failed");
@@ -490,12 +564,20 @@ public class UserAPIImpl implements UserAPI {
             // Use new password hash method
             try {
                 userToSave.setPassword(PasswordFactoryProxy.generateHash(pwd));
+                // flag it as hashed so EncryptPlainPasswordsJob doesn't hash the hash
+                userToSave.setPasswordEncrypted(true);
             } catch (PasswordException e) {
                 Logger.error(UserAPIImpl.class, "An error occurred generating the hashed password for userId: " + userToSave.getUserId(), e);
                 throw new DotDataException("An error occurred generating the hashed password.");
             }
+            userToSave.setFailedLoginAttempts(0);
         }
         save(userToSave, user, respectFrontEndRoles);
+        if (validatePassword) {
+            // A new password set by an administrator (or the user) unlocks an account locked out by failed logins
+            LoginLockout.getInstance().clear(userToSave.getUserId());
+            userToSave.setRememberMeToken(invalidateLoginTokens(userToSave.getUserId()));
+        }
     }
 
     @Override
@@ -509,6 +591,18 @@ public class UserAPIImpl implements UserAPI {
         delete(userToDelete,user, user, respectFrontEndRoles);
     }
 
+    /**
+     * Deletes the user after moving every reference it owns (content, folders, templates,
+     * workflows, bundles and the rest) to {@code replacementUser} and removing its roles. The
+     * deleted user's sessions tracked on this node are ended once the transaction commits.
+     *
+     * @param userToDelete          the {@link User} to delete
+     * @param replacementUser       the {@link User} that takes over its references
+     * @param user                  the {@link User} making the change
+     * @param respectFrontEndRoles  whether front-end roles count for the permission check
+     * @throws DotDataException      a reference cannot be moved or the user cannot be deleted
+     * @throws DotSecurityException  {@code user} may not delete {@code userToDelete}
+     */
     @WrapInTransaction
     @Override
     public void delete(User userToDelete, User replacementUser, User user, boolean respectFrontEndRoles) throws DotDataException,	DotSecurityException {
@@ -616,6 +710,7 @@ public class UserAPIImpl implements UserAPI {
         /*Delete role*/
         userFactory.delete(userToDelete);
 
+        endTrackedSessionsOnCommit(userToDelete.getUserId());
     }
 
     /**
@@ -663,9 +758,45 @@ public class UserAPIImpl implements UserAPI {
         return roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole());
     }
 
+    /**
+     * Writes one security log entry for a rejected password: the target user, the acting user, the
+     * entry point of the request (or {@code internal} when there is none) and the rule that failed.
+     * The password, its length and anything derived from it are never written. The client address
+     * is added by {@link SecurityLogger} itself. A failure to log never changes the outcome of the
+     * rejection.
+     *
+     * @param targetUserId the user whose password was refused
+     * @param actingUser the user making the change, may be {@code null}
+     * @param password the rejected password, used only to tell which rule it breaks
+     */
+    private void logPasswordRejection(final String targetUserId, final User actingUser, final String password) {
+        try {
+            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+            final String entryPoint = null != request
+                    ? request.getMethod() + " " + request.getRequestURI() : "internal";
+            final PasswordRejectionReason reason = PasswordRejectionReason.classify(password,
+                    PropsUtil.get(PropsUtil.PASSWORDS_REGEXPTOOLKIT_PATTERN));
+            final String actingUserId = null != actingUser ? actingUser.getUserId() : "unknown";
+            SecurityLogger.logWarn(UserAPIImpl.class, () -> "Password rejected: target="
+                    + PasswordRejectionReason.sanitizeForLog(targetUserId)
+                    + ", actor=" + PasswordRejectionReason.sanitizeForLog(actingUserId)
+                    + ", entry=" + PasswordRejectionReason.sanitizeForLog(entryPoint)
+                    + ", rule=" + reason);
+        } catch (final RuntimeException e) {
+            Logger.debug(UserAPIImpl.class, "Could not log the rejected password: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Sets a new password on the user and saves it. After the save,
+     * {@link #invalidateLoginTokens(String)} runs in the same transaction, so login tokens issued
+     * before the change stop working.
+     */
+    @WrapInTransaction
     @Override
     public void updatePassword(User user, String newpass, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotInvalidPasswordException, DotSecurityException {
         if(!PwdToolkitUtil.validate(newpass)) {
+            logPasswordRejection(null != user ? user.getUserId() : null, currentUser, newpass);
             throw new DotInvalidPasswordException("Invalid password");
         }
 
@@ -680,8 +811,25 @@ public class UserAPIImpl implements UserAPI {
         user.setIcqId("");
         user.setPasswordReset(GetterUtil.getBoolean(
                 PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
+        user.setFailedLoginAttempts(0);
         save(user, currentUser, respectFrontEndRoles);
+        // A new password (reset token flow or set by an administrator) unlocks an account locked out by failed logins
+        LoginLockout.getInstance().clear(user.getUserId());
+        user.setRememberMeToken(invalidateLoginTokens(user.getUserId()));
+    }
 
+    /**
+     * Stores a new random UUID as the user's login token id, with a single-column update that
+     * leaves the other user fields untouched. A random UUID works because a login JWT is accepted
+     * only while its id matches the stored value, and no token issued so far carries the new one;
+     * {@link UserAPI#invalidateLoginTokens(String)} has the full contract.
+     */
+    @WrapInTransaction
+    @Override
+    public String invalidateLoginTokens(final String userId) throws DotDataException {
+        final String rememberMeToken = UUIDGenerator.uuid();
+        userFactory.updateRememberMeToken(userId, rememberMeToken);
+        return rememberMeToken;
     }
 
     @WrapInTransaction

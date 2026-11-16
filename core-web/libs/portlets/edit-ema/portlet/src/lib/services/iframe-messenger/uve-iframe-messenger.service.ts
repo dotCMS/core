@@ -6,6 +6,7 @@ export interface IframeMessage {
     name: string;
     payload?: unknown;
     direction?: 'up' | 'down';
+    sectionIndex?: number;
 }
 
 /**
@@ -100,6 +101,19 @@ export class UveIframeMessengerService {
         this.sendPostMessage({
             name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_INSIDE_IFRAME,
             direction
+        });
+    }
+
+    /**
+     * Ask the page in the iframe to scroll to a section. The SDK answers with the section's
+     * offset (`SECTION_OFFSET`), and the actions handler scrolls the iframe to it.
+     *
+     * @param sectionIndex - The section's 1-based index, as in `#section-{n}`
+     */
+    scrollToSection(sectionIndex: number): void {
+        this.sendPostMessage({
+            name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_TO_SECTION,
+            sectionIndex
         });
     }
 

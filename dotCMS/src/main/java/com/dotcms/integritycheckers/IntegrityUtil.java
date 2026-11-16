@@ -659,6 +659,13 @@ public class IntegrityUtil {
         return conflictsDataExist;
     }
 
+    /**
+     * Tells whether a table with the given name exists in the current database.
+     *
+     * @param tableName the table name to look for
+     * @return {@code true} when the table exists
+     * @throws DotDataException when the lookup fails
+     */
     private static boolean doesTableExist(String tableName) throws DotDataException {
         DotConnect dc = new DotConnect();
 
@@ -668,8 +675,8 @@ public class IntegrityUtil {
             BigDecimal existTable = (BigDecimal) dc.loadObjectResults().get(0).get("exist");
             return existTable.longValue() > 0;
         } else if (DbConnectionFactory.isPostgres() || DbConnectionFactory.isMySql()) {
-            dc.setSQL("SELECT COUNT(table_name) as exist FROM information_schema.tables WHERE Table_Name = '"
-                    + tableName + "' ");
+            dc.setSQL("SELECT COUNT(table_name) as exist FROM information_schema.tables WHERE Table_Name = ?")
+                    .addParam(tableName);
             long existTable = (Long) dc.loadObjectResults().get(0).get("exist");
             return existTable > 0;
         } else if (DbConnectionFactory.isMsSql()) {

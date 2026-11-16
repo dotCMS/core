@@ -71,6 +71,9 @@ import static org.mockito.Mockito.when;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class NavToolTest extends IntegrationTestBase{
 
+    @org.junit.Rule
+    public final com.dotcms.junit.SystemUserScopeRule systemUserScope = new com.dotcms.junit.SystemUserScopeRule();
+
     private static boolean ORIGINAL_DEFAULT_PAGE_TO_DEFAULT_LANGUAGE;
     private static Folder folder;
     private static User user;

@@ -5,6 +5,7 @@ import com.dotcms.rest.WebResource;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -79,8 +80,21 @@ public abstract class AjaxAction {
         this.user = user;
     }
 
-	public void setUser(HttpServletRequest request){
-		final InitDataObject initData = webResource.init(request.getRequestURI(), true, request, true, null);
+	/**
+	 * Resolves the caller through {@link WebResource} — the session, a bearer token or the Basic
+	 * header, under the {@code ALLOW_BASIC_AUTH} policy — and keeps them on this action.
+	 *
+	 * <p>The request URI is deliberately not handed over as the parameter string. That overload
+	 * reads a user name and a password out of the parameters before it looks at any header, so an
+	 * ajax request whose own path spelled out {@code user} and {@code password} would authenticate
+	 * from the URI, where credentials also reach the access log, the browser history, proxies and
+	 * the next request's {@code Referer}. No action reads its parameters from here; each one takes
+	 * them from {@link #getURIParams()}.</p>
+	 *
+	 * @param request the request this action is serving
+	 */
+	public void setUser(final HttpServletRequest request){
+		final InitDataObject initData = webResource.init(StringPool.BLANK, true, request, true, null);
 	    this.user = initData.getUser();
 	}
 	

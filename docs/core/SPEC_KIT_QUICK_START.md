@@ -357,7 +357,7 @@ Both are deliberate halts. Neither is a bug.
 
 No implementation code is written before three things happen:
 
-1. **Tests are written** — layer-appropriate: unit, integration, Postman, Karate, or e2e.
+1. **Tests are written** — layer-appropriate: unit, integration, Postman, or e2e.
 2. **You approve them.** Explicitly. If a test type genuinely can't be written, *you* say
    which and why, and the reason gets recorded. Silence is not consent, and "no tests" is
    never the default.

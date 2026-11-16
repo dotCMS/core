@@ -48,13 +48,6 @@ Object.defineProperty(window, 'getComputedStyle', {
     })
 });
 
-Object.defineProperty(document.body.style, 'transform', {
-    value: () => ({
-        enumerable: true,
-        configurable: true
-    })
-});
-
 // PrimeNG mocks
 (global as any).ResizeObserver = class ResizeObserver {
     observe() {}

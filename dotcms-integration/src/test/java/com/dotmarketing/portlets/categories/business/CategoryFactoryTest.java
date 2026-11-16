@@ -522,6 +522,43 @@ public class CategoryFactoryTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
+     * When: the children of a category are filtered by a text that contains a single quote
+     * Should: match the child whose name contains that text exactly as typed, and only that child
+     */
+    @Test
+    public void findAll_filterWithQuote_matchesNameAsTyped() throws DotDataException, DotSecurityException {
+        final String suffix = new RandomString().nextString();
+        final Category parent = new CategoryDataGen().setCategoryName("Parent " + suffix)
+                .setKey("parent_" + suffix)
+                .setCategoryVelocityVarName("parent" + suffix)
+                .nextPersisted();
+        final Category quoted = new CategoryDataGen().setCategoryName("O'Brien " + suffix)
+                .setKey("obrien_" + suffix)
+                .setCategoryVelocityVarName("obrien" + suffix)
+                .parent(parent)
+                .nextPersisted();
+        final Category other = new CategoryDataGen().setCategoryName("Other " + suffix)
+                .setKey("other_" + suffix)
+                .setCategoryVelocityVarName("other" + suffix)
+                .parent(parent)
+                .nextPersisted();
+
+        try {
+            final List<HierarchedCategory> resultCategories = FactoryLocator.getCategoryFactory().findAll(
+                    new CategorySearchCriteria.Builder().rootInode(parent.getInode())
+                            .filter("o'brien " + suffix.toLowerCase()).build());
+
+            assertEquals(1, resultCategories.size());
+            assertEquals(quoted.getInode(), resultCategories.get(0).getInode());
+        } finally {
+            CategoryDataGen.delete(other);
+            CategoryDataGen.delete(quoted);
+            CategoryDataGen.delete(parent);
+        }
+    }
+
+    /**
+     * Method to test: {@link CategoryFactoryImpl#findAll(CategorySearchCriteria)}
      * When: AllLevels is true and parentList is tru too
      * Should: must search in all the levels, Also calculate the parentList it means that all the path on the tree from
      * each Category to the Top level is calculated

@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { deleteBundle, pushPublishIntoSeparateBundles } from '@requests/bundles';
 import { Contentlet, createContentlet, deleteContentlets } from '@requests/contentlets';
 import { ContentType, createFakeContentType, deleteContentType } from '@requests/contentType';
+import { uniqueSuffix } from '@utils/utils';
 
 import { PublishingQueueHelper } from './helpers/publishing-queue';
 
@@ -22,7 +23,11 @@ test.describe('Publishing Queue → Pending — asset queued in multiple bundles
     let seededBundleIds: string[] = [];
 
     test.beforeEach(async ({ request }) => {
-        const suffix = Date.now();
+        // Not a bare Date.now(): the tests in this file run on two workers at once, and the server
+        // derives a content type's inode from its variable. Two types created in the same
+        // millisecond share a name, so both get the same inode and one create fails with a
+        // duplicate key on inode_pkey (HTTP 400).
+        const suffix = uniqueSuffix();
 
         contentType = await createFakeContentType(request, {
             name: `E2EPubQueueType${suffix}`

@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.portlet;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.LayoutDataGen;
@@ -26,7 +29,6 @@ import com.dotmarketing.util.PortletID;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -59,8 +61,14 @@ import static org.junit.Assert.fail;
  */
 public class PortletResourceIntegrationTest {
 
-    private static final String TOOLS_BETA = PortletID.TOOLS_BETA.toString();
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
+
+    private static final String TOOLS = PortletID.TOOLS.toString();
+    // the beta id leaves PortletID with the promotion, so it is spelled out here
+    private static final String TOOLS_BETA = "tools-beta";
     private static final String ROLES = PortletID.ROLES.toString();
+    private static final String ROLES_LEGACY = PortletID.ROLES_LEGACY.toString();
 
     private static PortletResource resource;
     private static PortletAPI portletAPI;
@@ -99,7 +107,7 @@ public class PortletResourceIntegrationTest {
     private static HttpServletRequest adminRequest() {
         final MockHeaderRequest request = (MockHeaderRequest) baseRequest();
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                TOKEN_UTILS.adminBearerHeader());
         return request;
     }
 
@@ -122,7 +130,7 @@ public class PortletResourceIntegrationTest {
     /**
      * Creates a non-admin back-end user whose only relevant grant is a fresh layout containing
      * exactly the given portlet ids. Ids need not belong to a registered portlet, which is how the
-     * {@code tools} / {@code tools-beta} grant is given before that portlet ships.
+     * retired {@code tools-beta} id is granted to prove it no longer opens anything.
      */
     private static User backendUserWithLayout(final String... portletIds) throws Exception {
         final Layout layout = new LayoutDataGen().portletIds(portletIds).nextPersisted();
@@ -253,13 +261,24 @@ public class PortletResourceIntegrationTest {
 
     /**
      * Given Scenario: a non-admin back-end user whose only grant is a section containing
-     * {@code tools-beta}.
+     * {@code tools}.
      * Expected Result: 200 with a non-empty catalog.
      */
     @Test
-    public void catalog_toolsBetaUser_200() throws Exception {
-        final User user = backendUserWithLayout(TOOLS_BETA);
+    public void catalog_toolsUser_200() throws Exception {
+        final User user = backendUserWithLayout(TOOLS);
         assertFalse(catalogFor(requestFor(user)).isEmpty());
+    }
+
+    /**
+     * Given Scenario: a non-admin back-end user whose only grant is a section containing the
+     * retired {@code tools-beta} id, which no longer names any portlet.
+     * Expected Result: 401; the beta id no longer opens the catalog.
+     */
+    @Test
+    public void catalog_retiredToolsBetaUser_401() throws Exception {
+        final User user = backendUserWithLayout(TOOLS_BETA);
+        assertUnauthorized(() -> resource.getToolsCatalog(requestFor(user), new MockHttpResponse().response()));
     }
 
     /**
@@ -380,13 +399,26 @@ public class PortletResourceIntegrationTest {
 
     /**
      * Given Scenario: a non-admin back-end user whose only grant is a section containing
-     * {@code tools-beta} creates, renames and deletes a custom content tool.
+     * {@code tools} creates, renames and deletes a custom content tool.
      * Expected Result: every step succeeds; the tool is gone at the end.
      */
     @Test
     @SuppressWarnings("unchecked")
-    public void customWrites_toolsBetaUser_createUpdateDelete_200() throws Exception {
-        assertCreateUpdateDelete(backendUserWithLayout(TOOLS_BETA));
+    public void customWrites_toolsUser_createUpdateDelete_200() throws Exception {
+        assertCreateUpdateDelete(backendUserWithLayout(TOOLS));
+    }
+
+    /**
+     * Given Scenario: a non-admin back-end user whose only grant is a section containing
+     * {@code roles-legacy}, the old Roles &amp; Tools screen whose Tools tab creates and deletes
+     * custom content tools, performs the same three operations.
+     * Expected Result: every step succeeds, exactly as for {@code roles}, so a role that kept the
+     * old screen can still use its Tools tab.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    public void customWrites_rolesLegacyUser_createUpdateDelete_200() throws Exception {
+        assertCreateUpdateDelete(backendUserWithLayout(ROLES_LEGACY));
     }
 
     /**
@@ -423,8 +455,8 @@ public class PortletResourceIntegrationTest {
      * Expected Result: 401, exactly as today; that operation keeps its Roles gate.
      */
     @Test
-    public void addToLayout_toolsBetaUser_401() throws Exception {
-        final Layout layout = new LayoutDataGen().portletIds(TOOLS_BETA).nextPersisted();
+    public void addToLayout_toolsUser_401() throws Exception {
+        final Layout layout = new LayoutDataGen().portletIds(TOOLS).nextPersisted();
         final Role role = new RoleDataGen().layout(layout).nextPersisted();
         final User user = UserTestUtil.getUser("prtools" + uniq(), false, true);
         roleAPI.addRoleToUser(roleAPI.loadBackEndUserRole(), user);
@@ -550,7 +582,7 @@ public class PortletResourceIntegrationTest {
      * Expected Result: the stored id, name, both lists and {@code card}, exactly as saved.
      */
     @Test
-    public void customRead_toolsBetaUser_returnsSavedValues() throws Exception {
+    public void customRead_toolsUser_returnsSavedValues() throws Exception {
         final ContentType ct1 = new ContentTypeDataGen().nextPersisted();
         final ContentType ct2 = new ContentTypeDataGen().nextPersisted();
         final String name = "QA Read " + uniq();
@@ -566,7 +598,7 @@ public class PortletResourceIntegrationTest {
             assertEquals(Response.Status.OK.getStatusCode(), created.getStatus());
             storedId = ((ResponseEntityView<Map<String, String>>) created.getEntity()).getEntity().get("portlet");
 
-            final CustomToolView view = readCustomTool(requestFor(backendUserWithLayout(TOOLS_BETA)), storedId);
+            final CustomToolView view = readCustomTool(requestFor(backendUserWithLayout(TOOLS)), storedId);
 
             assertEquals(storedId, view.portletId());
             assertEquals(name, view.portletName());

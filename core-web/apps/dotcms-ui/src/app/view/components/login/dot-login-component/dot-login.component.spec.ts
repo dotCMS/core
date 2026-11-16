@@ -135,11 +135,10 @@ describe('DotLoginComponent', () => {
             );
         });
 
-        it('should call services on language change', () => {
+        it('should update public form labels without requesting the authenticated bundle', () => {
             component.onLanguageChange('es_ES');
 
-            expect(dotMessageService.init).toHaveBeenCalledWith({ language: 'es_ES' });
-            expect(dotMessageService.init).toHaveBeenCalledTimes(1);
+            expect(dotMessageService.init).not.toHaveBeenCalled();
             expect(loginPageStateService.update).toHaveBeenCalledWith('es_ES');
             expect(loginPageStateService.update).toHaveBeenCalledTimes(1);
         });

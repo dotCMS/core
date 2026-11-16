@@ -36,6 +36,7 @@ import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TabDividerField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -84,6 +85,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
@@ -260,6 +262,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private static Lazy<Boolean> FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = Lazy.of(() ->
             Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION, true));
+    /**
+     * Whether a contentlet created in, or moved to, a chosen folder or site also needs "Can Add
+     * Children" or WRITE there, see
+     * {@link FeatureFlagName#FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK}. Read on every
+     * call rather than cached so integration tests can toggle it at runtime; the lookup is a map
+     * read, not I/O.
+     */
+    private static boolean isCheckinDestinationPermissionCheckEnabled() {
+        return Config.getBooleanProperty(
+                FeatureFlagName.FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK, true);
+    }
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT = "Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
     private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
@@ -1597,9 +1610,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return search;
     }
 
+    /**
+     * Appends to the given query the clauses that keep a caller from seeing content they cannot
+     * read: the owner clause, one clause per role the caller holds and, for callers who are not
+     * back-end users, the clauses that limit the results to live content on the default variant.
+     * The clauses are appended as text, so the query is first balanced to make sure it cannot
+     * escape the separator that precedes them.
+     *
+     * <p>The variant clause is imposed rather than defaulted: it is appended whatever the caller's
+     * query already says, so a query naming another variant resolves to nothing instead of to that
+     * variant's content. Which variant a caller resolves on is decided here, never by the query.
+     *
+     * @param buffy the query being built, modified in place
+     * @param user the {@link User} the query is run for, or {@code null} for an anonymous caller
+     * @param roles the {@link Role}s held by that user; empty for an anonymous caller
+     * @param respectFrontendRoles whether the anonymous and logged-in-site roles grant read as well
+     */
     @Override
-    public void addPermissionsToQuery(StringBuffer buffy, User user, List<Role> roles,
-            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+    public void addPermissionsToQuery(final StringBuffer buffy, final User user,
+            final List<Role> roles, final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+        // Every clause appended below is separated from the query by a single space, which a
+        // query ending in an unbalanced escape would consume, so balance the escape first.
+        balanceTrailingEscape(buffy);
+
         if (user != null) {
             buffy.append(" +((+owner:" + user.getUserId() + " +ownerCanRead:true) ");
         } else {
@@ -1623,11 +1657,44 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         buffy.append(")");
 
+        // A variant is a version axis of a content item, like its language and its live/working
+        // state: which version a caller reads is the server's to decide, not the query's. The
+        // clause is appended rather than used as a default, so a query naming another variant
+        // resolves to nothing instead of to that variant. It belongs here, beside the live clause
+        // and under the same predicate, because every search path reaches this method - the
+        // OpenSearch one included - and a per-endpoint clause would only cover the endpoints
+        // someone remembered.
         if (user == null || !user.isBackendUser()) {
             buffy.append(" +live:true ");
+            // Lowercased with the same call the indexer applies to every String value it writes
+            // (ESMappingAPIImpl), because variant is a keyword field with no normalizer and the
+            // raw-search paths inject this clause without passing it through query translation.
+            buffy.append(" +").append(ESMappingConstants.VARIANT).append(":")
+                    .append(VariantAPI.DEFAULT_VARIANT.name().toLowerCase()).append(" ");
         }
 
 
+    }
+
+    /**
+     * Keeps the query from escaping the separator that precedes the clauses appended by
+     * {@link #addPermissionsToQuery(StringBuffer, User, List, boolean)} and
+     * {@link #addCategoryPermissionsToQuery(StringBuffer, User, List, boolean)}. A run of
+     * backslashes at the end of the query is an escape sequence only when its length is odd, so in
+     * that case one more backslash is appended; the run then stands for a literal backslash and
+     * the separator survives. A query that does not end in an unbalanced escape is left alone.
+     *
+     * @param buffy the query being built, modified in place when it ends in an unbalanced escape
+     */
+    @VisibleForTesting
+    static void balanceTrailingEscape(final StringBuffer buffy) {
+        int trailing = 0;
+        for (int i = buffy.length() - 1; i >= 0 && buffy.charAt(i) == '\\'; i--) {
+            trailing++;
+        }
+        if (trailing % 2 != 0) {
+            buffy.append('\\');
+        }
     }
 
     /**
@@ -1637,11 +1704,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * <strong>SECURITY NOTE:</strong> This method MUST be called on any query before
      * passing it to Elasticsearch to ensure proper permission filtering.
      * </p>
+     * <p>
+     * The query is normalized for every caller before anything is appended, so that it means the
+     * same thing whatever the caller's roles are. An administrator therefore gets the query back
+     * normalized but with no clause added.
      *
      * @param luceneQuery The original lucene query string
      * @param user The user making the request (required if not respecting frontend roles)
      * @param respectFrontendRoles Whether to respect frontend roles
-     * @return The query with permissions clauses added
+     * @return the normalized query, with the permission clauses appended unless the caller is an
+     *         administrator
      * @throws DotSecurityException If user is null and not respecting frontend roles
      * @throws DotDataException If there's an error loading roles
      */
@@ -1666,13 +1738,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        // If admin, return query unchanged
+        // Normalize the query for every caller, administrators included, so that it keeps the
+        // same meaning whatever the caller's roles are: the clauses below are appended as text
+        // and an unbalanced escape at the end of the query would otherwise consume the separator
+        // that precedes them.
+        final StringBuffer buffy = new StringBuffer(luceneQuery);
+        balanceTrailingEscape(buffy);
+
+        // An administrator reads everything, so no clause is appended
         if (isAdmin) {
-            return luceneQuery;
+            return buffy.toString();
         }
 
         // Apply permissions
-        final StringBuffer buffy = new StringBuffer(luceneQuery);
         addPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
         addCategoryPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
 
@@ -1722,14 +1800,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    /**
+     * Appends the secondary category-permission clause to the given query, so results are narrowed
+     * by the category read permissions the caller's roles hold. The clause is appended as text, so
+     * the query is normalized first, the same way {@link #addPermissionsToQuery} does it: in the
+     * call order used today the query has already been normalized by then, but this method is part
+     * of {@link ContentletAPI} and can be called on its own.
+     *
+     * @param buffy the query being built, modified in place
+     * @param user the {@link User} the query is run for, or {@code null} for an anonymous caller
+     * @param roles the {@link Role}s held by that user; empty for an anonymous caller
+     * @param respectFrontendRoles whether the anonymous role is taken into account as well
+     */
     @Override
-    public void addCategoryPermissionsToQuery(StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles) {
+    public void addCategoryPermissionsToQuery(final StringBuffer buffy, final User user,
+            final List<Role> roles, final boolean respectFrontendRoles) {
         if (!Config.getBooleanProperty("PERMISSION_SECONDARY_CATEGORY_CHECK", true)) {
             return;
         }
         if (user != null && user.isAdmin()) {
             return;
         }
+
+        // Nothing is appended above this line, so the query is only normalized when it has to be
+        balanceTrailingEscape(buffy);
 
         buffy.append(" +(");
 
@@ -3166,10 +3260,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     .deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, user);
 
             // Remove Rules with this contentlet as Parent.
+            // the parent's rules are removed with it; the caller's permission on the parent was checked above
+            // (canLock + PUBLISH filter in internalDestroy and validateAndFilterContentletsToDelete).
             try {
 
                 APILocator.getRulesAPI()
-                        .deleteRulesByParent(contentlet, user, respectFrontendRoles);
+                        .deleteRulesByParent(contentlet, APILocator.systemUser(), false);
             } catch (InvalidLicenseException ilexp) {
 
                 Logger.warn(this, "An enterprise license is required to delete rules under pages.");
@@ -5430,7 +5526,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final Contentlet contentletReturned = checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, false);
 
-        this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+        this.handlePermissions(permissions, user, contentletReturned);
 
         return contentletReturned;
     }
@@ -5472,7 +5568,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true,
                 false);
 
-        this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+        this.handlePermissions(permissions, user, contentletReturned);
 
         return contentletReturned;
     }
@@ -5495,7 +5591,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final Contentlet contentletReturned = checkin(contentlet, relationshipsData, cats, user, respectFrontendRoles, false,
                 false);
 
-        this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+        this.handlePermissions(permissions, user, contentletReturned);
 
         return contentletReturned;
     }
@@ -6061,6 +6157,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             contentlet = applyNullProperties(contentlet);
             contentlet = SET_DEFAULT_VALUES.get() && isNewContent? setDefaultValues(contentlet):contentlet;
+            if (!isNewContent) {
+                restoreStoryBlockReferenceData(contentlet, contentType, workingContentletInode);
+            }
 
             //This is executed first hand to create the inode-contentlet relationship.
             if (InodeUtils.isSet(existingInode)) {
@@ -6944,6 +7043,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return binaryHandled;
     }
 
+    /**
+     * Verifies the user may save the given contentlet. An existing contentlet needs WRITE on
+     * itself; a new contentlet needs WRITE on its content type. On top of that, unless
+     * {@link FeatureFlagName#FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK} is off, a new
+     * contentlet placed somewhere other than its type's default placement, and an existing
+     * contentlet being moved to another site or folder, need "Can Add Children" or WRITE on that
+     * destination (see {@link #checkDestinationPermission(Contentlet, boolean, User)}).
+     *
+     * @param contentlet           the {@link Contentlet} about to be checked in
+     * @param respectFrontendRoles whether front-end roles (anonymous, logged-in site user) count
+     * @param user                 the {@link User} performing the checkin
+     * @throws DotSecurityException when the user lacks any of the required permissions
+     * @throws DotDataException     when a permission or asset lookup fails
+     */
     private void checkPermission(
             final Contentlet contentlet,
             final boolean respectFrontendRoles,
@@ -6951,14 +7064,277 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         DotPreconditions.checkNotNull(contentlet);
 
-        if (InodeUtils.isSet(contentlet.getIdentifier())) {
-            if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE,
-                    user, respectFrontendRoles)) {
-                this.throwSecurityException(contentlet, user);
-            }
-        } else if (!permissionAPI.doesUserHavePermission(contentlet.getContentType(),
-                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+        final boolean isNew = !InodeUtils.isSet(contentlet.getIdentifier());
+        // keep the two calls distinct: the ContentType overload of doesUserHavePermission has
+        // its own rules (CMS Owner on the type), which a Permissionable-typed call would skip
+        final boolean canWrite = isNew
+                ? permissionAPI.doesUserHavePermission(contentlet.getContentType(),
+                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)
+                : permissionAPI.doesUserHavePermission(contentlet,
+                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
+        if (!canWrite) {
             this.throwSecurityException(contentlet, user);
+        }
+
+        if (isCheckinDestinationPermissionCheckEnabled()
+                && (isNew || isBeingRelocated(contentlet))) {
+            checkDestinationPermission(contentlet, respectFrontendRoles, user);
+        }
+    }
+
+    /**
+     * Requires a grant on the place a contentlet is going to live in, "Can Add Children" or
+     * WRITE, when that place was chosen rather than being where the content type puts its
+     * content anyway. "Can Add Children" is the rule the content editor applies when a site or
+     * folder is picked and that {@link #move(Contentlet, User, Host, Folder, boolean)} applies to
+     * the destination folder; WRITE on the destination is accepted as well, since a user who may
+     * change a site's content may add to it.
+     * <p>
+     * The destination is resolved like {@link Contentlet#getParentPermissionable()}: the folder
+     * when one other than the System Folder is set, otherwise the site when one other than the
+     * System Host is set. The check is skipped when the destination is the type's own folder or
+     * site, or the default site for a type that lives on the System Host, because that is where
+     * the content would land without anyone choosing a place; WRITE on the type keeps covering
+     * that case as before. Content placed on the System Host, Host contentlets, and destinations
+     * that cannot be loaded are also left to the content-type check and to validation, so this
+     * never turns a validation error into a permission error.
+     *
+     * @param contentlet           the {@link Contentlet} being created or moved
+     * @param respectFrontendRoles whether front-end roles count towards the permission
+     * @param user                 the {@link User} performing the checkin
+     * @throws DotSecurityException when the user has neither "Can Add Children" nor WRITE on the
+     *                              destination
+     * @throws DotDataException     when the folder or site lookup fails
+     */
+    private void checkDestinationPermission(final Contentlet contentlet,
+            final boolean respectFrontendRoles,
+            final User user) throws DotDataException, DotSecurityException {
+
+        final ContentType type = contentlet.getContentType();
+        if (isHostContentType(type)) {
+            return;
+        }
+
+        final Optional<String> folderId = chosenFolderId(contentlet);
+        final Optional<String> hostId = chosenHostId(contentlet);
+        if ((folderId.isEmpty() && hostId.isEmpty())
+                || isDefaultPlacement(type, folderId, hostId)) {
+            return;
+        }
+
+        final Optional<Permissionable> destination = loadDestination(folderId, hostId);
+        if (destination.isEmpty()) {
+            return;
+        }
+
+        if (!canAddContentTo(destination.get(), user, respectFrontendRoles)) {
+            final String userId = user != null ? user.getUserId() : "Unknown";
+            final String message = "User: " + userId
+                    + " doesn't have Add Children or Write permissions on "
+                    + describeDestination(folderId, hostId) + " to place the Contentlet there";
+            Logger.warn(this, message);
+            throw new DotSecurityException(message);
+        }
+    }
+
+    /**
+     * Tells whether an existing contentlet is being saved with a site or folder other than the
+     * one its identifier currently points at, which is how a save moves content between sites or
+     * folders. Only a destination that is actually set counts: a folder other than the System
+     * Folder is compared with the current parent path and site, and a site other than the System
+     * Host with the current site. Saving a contentlet back where it is, or without naming a
+     * place, is not a relocation.
+     *
+     * @param contentlet the existing {@link Contentlet} being checked in
+     * @return {@code true} when the save would move the contentlet somewhere else
+     * @throws DotDataException when the identifier or the folder cannot be loaded
+     */
+    private boolean isBeingRelocated(final Contentlet contentlet) throws DotDataException {
+        final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+        if (identifier == null || !UtilMethods.isSet(identifier.getId())) {
+            return false;
+        }
+
+        final Optional<String> folderId = chosenFolderId(contentlet);
+        if (folderId.isPresent()) {
+            final Folder folder = loadFolder(folderId.get());
+            return folder != null
+                    && (!identifier.getHostId().equals(folder.getHostId())
+                    || !identifier.getParentPath().equals(folder.getPath()));
+        }
+
+        final Optional<String> hostId = chosenHostId(contentlet);
+        return hostId.isPresent() && !hostId.get().equals(identifier.getHostId());
+    }
+
+    /**
+     * Tells whether a destination is where the given content type places its content when no
+     * site or folder is chosen: the type's own folder when it has one, otherwise the type's own
+     * site, or the default site for a type that lives on the System Host. Such a placement adds
+     * nothing the user could not reach already, so it is governed by the type permission alone.
+     *
+     * @param type     the {@link ContentType} of the contentlet, possibly {@code null}
+     * @param folderId the destination folder, when the content is going into one
+     * @param hostId   the destination site, when one other than the System Host is set
+     * @return {@code true} when the destination is the type's default placement
+     * @throws DotDataException when the default site cannot be loaded
+     */
+    private boolean isDefaultPlacement(final ContentType type, final Optional<String> folderId,
+            final Optional<String> hostId) throws DotDataException {
+
+        if (type == null) {
+            return false;
+        }
+        if (folderId.isPresent()) {
+            return folderId.get().equals(type.folder());
+        }
+        if (hostId.isEmpty()) {
+            return false;
+        }
+        if (UtilMethods.isSet(type.host()) && !Host.SYSTEM_HOST.equals(type.host())) {
+            return hostId.get().equals(type.host());
+        }
+        return hostId.get().equals(defaultHostId());
+    }
+
+    /**
+     * Whether the content type is the Host type, whose contentlets are sites themselves and so
+     * have no destination to check.
+     *
+     * @param type the {@link ContentType}, possibly {@code null}
+     * @return {@code true} for the Host content type
+     */
+    private static boolean isHostContentType(final ContentType type) {
+        return type != null && Host.HOST_VELOCITY_VAR_NAME.equalsIgnoreCase(type.variable());
+    }
+
+    /**
+     * The folder a contentlet is addressed to, when one other than the System Folder is set.
+     *
+     * @param contentlet the {@link Contentlet}
+     * @return the folder inode, or empty when the contentlet is not going into a folder
+     */
+    private static Optional<String> chosenFolderId(final Contentlet contentlet) {
+        return Optional.ofNullable(contentlet.getFolder())
+                .filter(folder -> InodeUtils.isSet(folder))
+                .filter(folder -> !FolderAPI.SYSTEM_FOLDER.equals(folder));
+    }
+
+    /**
+     * The site a contentlet is addressed to, when one other than the System Host is set.
+     *
+     * @param contentlet the {@link Contentlet}
+     * @return the site identifier, or empty when no site other than the System Host is set
+     */
+    private static Optional<String> chosenHostId(final Contentlet contentlet) {
+        return Optional.ofNullable(contentlet.getHost())
+                .filter(host -> InodeUtils.isSet(host))
+                .filter(host -> !Host.SYSTEM_HOST.equals(host));
+    }
+
+    /**
+     * Loads the asset the destination check runs against: the folder when one is chosen,
+     * otherwise the site. Lookups run as the system user, since the point is to check the
+     * caller's permission on the result, not to read it on their behalf.
+     *
+     * @param folderId the chosen folder, if any
+     * @param hostId   the chosen site, if any
+     * @return the folder or site, or empty when none is chosen, none can be loaded, or the loaded
+     * asset has no permission id to check against
+     * @throws DotDataException when the lookup fails
+     */
+    private Optional<Permissionable> loadDestination(final Optional<String> folderId,
+            final Optional<String> hostId) throws DotDataException {
+
+        final Permissionable destination;
+        if (folderId.isPresent()) {
+            destination = loadFolder(folderId.get());
+        } else if (hostId.isPresent()) {
+            destination = loadHost(hostId.get());
+        } else {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(destination)
+                .filter(asset -> UtilMethods.isSet(asset.getPermissionId()));
+    }
+
+    /**
+     * Whether the user may put content into the given folder or site: "Can Add Children" or
+     * WRITE on it.
+     *
+     * @param destination          the folder or site
+     * @param user                 the {@link User} to check
+     * @param respectFrontendRoles whether front-end roles count towards the permission
+     * @return {@code true} when either permission is held
+     * @throws DotDataException when the permission lookup fails
+     */
+    private boolean canAddContentTo(final Permissionable destination, final User user,
+            final boolean respectFrontendRoles) throws DotDataException {
+        return permissionAPI.doesUserHavePermission(destination,
+                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)
+                || permissionAPI.doesUserHavePermission(destination,
+                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
+    }
+
+    /**
+     * Names the destination for log and error messages.
+     *
+     * @param folderId the chosen folder, if any
+     * @param hostId   the chosen site, if any
+     * @return {@code "folder <inode>"} or {@code "site <identifier>"}
+     */
+    private static String describeDestination(final Optional<String> folderId,
+            final Optional<String> hostId) {
+        return folderId.map(id -> "folder " + id)
+                .orElseGet(() -> "site " + hostId.orElse("unknown"));
+    }
+
+    /**
+     * Loads a folder as the system user.
+     *
+     * @param folderId the folder inode
+     * @return the {@link Folder}, or {@code null} when there is none with that inode
+     * @throws DotDataException when the lookup fails
+     */
+    private static Folder loadFolder(final String folderId) throws DotDataException {
+        try {
+            return APILocator.getFolderAPI().find(folderId, APILocator.systemUser(), false);
+        } catch (final DotSecurityException e) {
+            // the lookup runs as the system user, so this cannot happen in practice
+            throw new DotDataException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Loads a site as the system user.
+     *
+     * @param hostId the site identifier
+     * @return the {@link Host}, or {@code null} when there is none with that identifier
+     * @throws DotDataException when the lookup fails
+     */
+    private static Host loadHost(final String hostId) throws DotDataException {
+        try {
+            return APILocator.getHostAPI().find(hostId, APILocator.systemUser(), false);
+        } catch (final DotSecurityException e) {
+            // the lookup runs as the system user, so this cannot happen in practice
+            throw new DotDataException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * The identifier of the default site, loaded as the system user.
+     *
+     * @return the default site's identifier, or {@code null} when there is none
+     * @throws DotDataException when the lookup fails
+     */
+    private static String defaultHostId() throws DotDataException {
+        try {
+            final Host defaultHost = APILocator.getHostAPI()
+                    .findDefaultHost(APILocator.systemUser(), false);
+            return defaultHost != null ? defaultHost.getIdentifier() : null;
+        } catch (final DotSecurityException e) {
+            // the lookup runs as the system user, so this cannot happen in practice
+            throw new DotDataException(e.getMessage(), e);
         }
     }
 
@@ -9261,6 +9637,37 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
+     * Fills back the Story Block references that arrive with only the keys that identify them,
+     * taking their data from the version being replaced. An editor gets references like that when
+     * it cannot read them, and saving the document as it got it must not drop the data stored with
+     * them. See
+     * {@link com.dotcms.contenttype.business.StoryBlockAPI#restoreReferenceData(Object, Supplier)}.
+     *
+     * @param contentlet    The Contentlet being saved, modified in place.
+     * @param contentType   The Contentlet's content type.
+     * @param previousInode The inode of the version being replaced; it is only read from the
+     *                      database when a reference needs it.
+     */
+    private void restoreStoryBlockReferenceData(final Contentlet contentlet, final ContentType contentType,
+                                                final String previousInode) {
+        if (!contentType.hasStoryBlockFields() || !InodeUtils.isSet(previousInode)) {
+            return;
+        }
+        final Lazy<Optional<Contentlet>> previous = Lazy.of(() -> contentFactory.findInDb(previousInode, true));
+        for (final com.dotcms.contenttype.model.field.Field field : contentType.fields(StoryBlockField.class)) {
+            final Object submitted = contentlet.get(field.variable());
+            if (null == submitted) {
+                continue;
+            }
+            final Object restored = APILocator.getStoryBlockAPI().restoreReferenceData(submitted,
+                    () -> previous.get().map(stored -> stored.get(field.variable())).orElse(null));
+            if (restored != submitted) {
+                contentlet.setProperty(field.variable(), restored);
+            }
+        }
+    }
+
+    /**
      * @param content
      * @return
      * @throws DotSecurityException
@@ -10369,9 +10776,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentFactory.UpdateContentWithSystemHost(hostIdentifier);
     }
 
-    @CloseDBIfOpened
+    /**
+     * Hands every Contentlet reference to {@code userId} over to the system user. Runs in a
+     * transaction, like {@link #updateUserReferences(User, String, User)}, so the two rewrites
+     * commit together and the cache eviction registered on that commit fires once both are in.
+     *
+     * @param userId the user whose references are handed over
+     * @throws DotDataException     There is a data inconsistency
+     * @throws DotSecurityException The user cannot perform the operation
+     */
+    @WrapInTransaction
     @Override
-    public void removeUserReferences(String userId) throws DotDataException, DotSecurityException {
+    public void removeUserReferences(final String userId) throws DotDataException, DotSecurityException {
         contentFactory.removeUserReferences(userId);
     }
 
@@ -10515,7 +10931,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     final Contentlet contentletReturned = checkin(contentlet, contentletRelationships, cats,
                             user, respectFrontendRoles, false, false);
 
-                    this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+                    this.handlePermissions(permissions, user, contentletReturned);
                     return contentletReturned;
                 } else {
                     final String workingInode = working.getInode();
@@ -10525,7 +10941,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     final Contentlet contentletReturned =  checkin(contentlet, contentletRelationships, cats,
                             user, respectFrontendRoles, false, false);
 
-                    this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+                    this.handlePermissions(permissions, user, contentletReturned);
                     return contentletReturned;
                 }
             }
@@ -10664,31 +11080,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return findContentRelationships(contentlet);
     }
 
+    /**
+     * Counts the documents in the index that match the given query and that the caller is allowed
+     * to read.
+     * <p>
+     * The query is narrowed by {@link #applyPermissionsToQuery(String, User, boolean)}, the same
+     * method the search path uses, so the count and the search agree on what the caller may see.
+     *
+     * @param luceneQuery the query written by the caller
+     * @param user the {@link User} the count is run for, or {@code null} for an anonymous caller
+     * @param respectFrontendRoles whether the anonymous and logged-in-site roles grant read as well
+     * @return how many documents match the query and are readable by the caller
+     * @throws DotDataException if the count cannot be read from the index
+     * @throws DotSecurityException if no user is given and front-end roles are not respected
+     */
     @Override
-    public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles)
-            throws DotDataException, DotSecurityException {
-        boolean isAdmin = false;
-        List<Role> roles = new ArrayList<>();
-        if (user == null && !respectFrontendRoles) {
-            throw new DotSecurityException(
-                    "You must specify a user if you are not respecting frontend roles");
-        }
-        if (user != null) {
-            if (!APILocator.getRoleAPI()
-                    .doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())) {
-                roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
-            } else {
-                isAdmin = true;
-            }
-        }
-        StringBuffer buffy = new StringBuffer(luceneQuery);
-
-        // Permissions in the query
-        if (!isAdmin) {
-            addPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
-        }
-
-        return contentFactory.indexCount(buffy.toString());
+    public long indexCount(final String luceneQuery, final User user,
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        return contentFactory.indexCount(
+                applyPermissionsToQuery(luceneQuery, user, respectFrontendRoles));
     }
 
     @CloseDBIfOpened
@@ -10856,47 +11266,43 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final Contentlet contentletReturned = checkin(contentlet, contentRelationships, cats, user,
                 respectFrontendRoles, true, generateSystemEvent);
 
-        handlePermissions(selectedPermissions, user, respectFrontendRoles, contentletReturned);
+        handlePermissions(selectedPermissions, user, contentletReturned);
 
         return contentletReturned;
     }
 
+    /**
+     * Replaces the individual permissions of a saved contentlet with the permissions sent along
+     * with it. Whether the user may change them is decided right away, before anything is removed:
+     * a user who may not edit the contentlet's permissions can only send its current permissions,
+     * which leaves them as they are; any other list is refused. An allowed replacement runs after
+     * the transaction commits or, without a transaction, immediately.
+     *
+     * @param selectedPermissions the permissions sent with the contentlet, may be empty
+     * @param user                the user saving the contentlet
+     * @param contentlet          the saved contentlet
+     * @throws DotDataException     if the current permissions cannot be read
+     * @throws DotSecurityException if the user may not edit the contentlet's permissions and the
+     *                              list differs from the current one
+     */
     private void handlePermissions(final List<Permission> selectedPermissions,
                                    final User user,
-                                   final boolean respectFrontendRoles,
-                                   final Contentlet contentlet) {
+                                   final Contentlet contentlet)
+            throws DotDataException, DotSecurityException {
 
         if (InodeUtils.isSet(contentlet.getInode()) && UtilMethods.isSet(
                 selectedPermissions)) {
 
-            final Runnable savePermissions = () -> {
+            final Optional<Runnable> replacement = ESContentletAPIHelper.INSTANCE.permissionReplacement(
+                    this.permissionAPI, contentlet, selectedPermissions, user, APILocator.systemUser());
 
-                try {
+            if (replacement.isPresent()) {
 
-                    Logger.debug(this,
-                            () -> "Removing the permissions for: " + contentlet.getTitle() +
-                                    ", id: " + contentlet.getIdentifier());
-                    this.permissionAPI.removePermissions(contentlet);
-                    Logger.debug(this,
-                            () -> "Saving the permissions for: " + contentlet.getTitle() +
-                                    ", id: " + contentlet.getIdentifier());
-                    this.permissionAPI.save(selectedPermissions.stream()
-                                    .map(permission -> new Permission(contentlet.getPermissionId(),
-                                            permission.getRoleId(), permission.getPermission()))
-                                    .collect(Collectors.toList()), contentlet, user,
-                            respectFrontendRoles);
-                } catch (Exception e) {
-
-                    Logger.error(this,
-                            "Could not save the permissions for: " + contentlet.getTitle() +
-                                    ", id: " + contentlet.getIdentifier() + ", msg: "
-                                    + e.getMessage(), e);
-                }
-            };
-
-            FunctionUtils.ifOrElse(DbConnectionFactory.inTransaction(),
-                    () -> HibernateUtil.addCommitListener(contentlet.getInode(), savePermissions),
-                    () -> savePermissions.run());
+                final Runnable task = replacement.get();
+                FunctionUtils.ifOrElse(DbConnectionFactory.inTransaction(),
+                        () -> HibernateUtil.addCommitListener(contentlet.getInode(), task),
+                        task::run);
+            }
         }
     }
 

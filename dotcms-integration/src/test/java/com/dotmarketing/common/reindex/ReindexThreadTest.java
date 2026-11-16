@@ -4,6 +4,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -365,11 +366,8 @@ public class ReindexThreadTest {
                             + "which is the silent stall from issue #36922",
                     drained);
 
-            final List<Contentlet> found = contentletAPI.search(
-                    "+identifier:" + contentlet.getIdentifier(), 1, 0, null, user,
-                    respectFrontendRoles);
-            assertFalse("AC-009: the saved content must be searchable without a manual reindex",
-                    found.isEmpty());
+            waitUntil(() -> isSearchable(contentlet), 30_000,
+                    "AC-009: the saved content must be searchable without a manual reindex");
         } finally {
             ContentletDataGen.destroy(contentlet);
             ReindexThread.startThread();
@@ -433,11 +431,8 @@ public class ReindexThreadTest {
             assertTrue("AC-012: after unpausing, the queue must drain",
                     waitUntilQuiet(() -> queueAPI.recordsInQueue() == 0, 60_000));
 
-            final List<Contentlet> found = contentletAPI.search(
-                    "+identifier:" + contentlet.getIdentifier(), 1, 0, null, user,
-                    respectFrontendRoles);
-            assertFalse("AC-012: content saved while paused must be indexed after the unpause",
-                    found.isEmpty());
+            waitUntil(() -> isSearchable(contentlet), 30_000,
+                    "AC-012: content saved while paused must be indexed after the unpause");
         } finally {
             ContentletDataGen.destroy(contentlet);
             ReindexThread.startThread();
@@ -516,6 +511,32 @@ public class ReindexThreadTest {
             indexAPI.fullReindexAbort();
             ContentletDataGen.destroy(contentlet);
             ReindexThread.startThread();
+        }
+    }
+
+    /**
+     * Whether a search for the contentlet's identifier returns it. An empty reindex queue only
+     * means the bulk request was executed; the document becomes searchable once the index
+     * refreshes, which can be up to a second later, so callers poll with {@link #waitUntil}
+     * instead of searching once.
+     *
+     * <p>The check reads the index through a scroll query, which goes to the search client
+     * directly and does not use the search query cache, and it leaves that cache alone. These
+     * tests ask whether the worker indexed the content, so they must neither depend on nor repair
+     * the cache. {@code ContentletAPI.search} would not do: the worker clears the query cache when
+     * it acknowledges a batch, which is before the index refresh, so a search made in between
+     * caches an empty result that is served until the next batch clears it. That product gap is
+     * tracked in issue dotCMS/core#38549.</p>
+     *
+     * @param contentlet the contentlet to look for
+     * @return {@code true} if the index returned it
+     * @throws Exception if the query fails
+     */
+    private static boolean isSearchable(final Contentlet contentlet) throws Exception {
+        try (IndexContentletScroll scroll = contentletAPI.createScrollQuery(
+                "+identifier:" + contentlet.getIdentifier(), user, respectFrontendRoles, 1,
+                "moddate desc")) {
+            return scroll.getTotalHits() > 0;
         }
     }
 

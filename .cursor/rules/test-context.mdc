@@ -19,7 +19,8 @@ alwaysApply: false
 
 ## Backend (Java)
 - DotConnect for DB; APILocator for services. Structure: *Test.java (unit), *IT.java (integration).
-- **Suite registration (CRITICAL)**: a new integration test class must be registered in one of the `@SuiteClasses` aggregator suites, or it compiles, passes review and is **silently never run in CI** — green build, zero coverage. It still runs locally via `-Dit.test=`, which is why this is easy to miss. Which suite to pick is a live decision, not a fixed list: read `@docs/testing/INTEGRATION_TESTS.md` → "Registering Tests in a MainSuite (CI gate)" before registering. Don't hardcode suite names here — the set grows, and the choice depends on current CI timings.
+- **Suite placement (CRITICAL)**: compatibility decides first — JUnit 5 → `Junit5Suite1`, live-OpenSearch tests → `OpenSearchUpgradeSuite`, neither competing on runtime. Every other **new test class** goes in the `MainSuite*` that `just suite-timings` names as fastest right now; a **new method on an existing class stays with its class**. The suite name is a result of that measurement, never an input — never take it from an example, a nearby class or memory. Read `@docs/testing/INTEGRATION_TESTS.md` → "Registering Tests in a MainSuite (CI gate)" before adding coverage; paste the command's output into the PR.
+- **Suite registration (CRITICAL)**: register each new or moved class exactly once across the regular CI suites and remove any old registration. An unregistered class still runs locally via `-Dit.test=` but is **silently never run in CI** — green build, zero coverage.
 
 ## Commands
 ```bash

@@ -1,4 +1,5 @@
 import { EDITOR_STATE, UVE_STATUS } from '../../shared/enums';
+import { UVE_EDIT_PANEL_TABS } from '../features/editor/models';
 import { IframeAccessMode, Orientation, PageType, UVEState } from '../models';
 
 /**
@@ -25,6 +26,8 @@ export const BASE_UVE_STATE: UVEState = {
     editorSelected: null,
     editorPaletteOpen: true,
     editorEditPanelOpen: false,
+    editorEditPanelTab: UVE_EDIT_PANEL_TABS.QUICK_EDIT,
+    editorContentEditorPlaced: false,
     editorOgTags: null,
     editorStyleSchemas: [],
     viewDevice: null,

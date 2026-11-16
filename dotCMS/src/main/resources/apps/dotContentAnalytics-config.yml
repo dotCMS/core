@@ -28,6 +28,20 @@ params:
     required: true
     buttonLabel: "Auto Generate Site Auth"
     buttonEndpoint: "/api/v1/analytics/content/siteauth/generate/$siteId"
+  filterUrlParams:
+    value: true
+    hidden: false
+    type: "BOOL"
+    label: "Filter URL Parameters"
+    hint: "When checked, page and link URLs sent with analytics events keep only the query parameters listed in Allowed URL Parameters, the ones set for the whole instance, and the standard campaign parameters and ad click IDs. When unchecked, all query parameters are sent. Either way, user names, passwords and session ids are removed from these URLs."
+    required: false
+  allowedUrlParams:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Allowed URL Parameters"
+    hint: "Comma-separated list of extra query parameter names to keep in page and link URLs sent with analytics events (for example: lang, category). Always kept: utm_source, utm_medium, utm_campaign, utm_term, utm_content, utm_id, utm_source_platform, utm_creative_format, utm_marketing_tactic, gclid, fbclid and dclid. Names set for the whole instance by your administrator are also kept. Other query parameters are removed. Applies to server-rendered and headless sites."
+    required: false
 
   # Section Event Manager Credentials
   header_admin:

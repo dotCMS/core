@@ -174,6 +174,29 @@ describe('DotAuthConfigComponent', () => {
         expect(spectator.query(byText('Single sign-on'))).toExist();
     });
 
+    describe('email linking toggle', () => {
+        const EMAIL_TOGGLE = '[data-testid="trust-email-toggle"]';
+
+        it('renders beside auto-provisioning for OIDC', () => {
+            spectator.detectChanges();
+            expect(spectator.queryAll(EMAIL_TOGGLE).length).toBeGreaterThan(0);
+        });
+
+        it('is not offered for SAML, which has no email_verified claim', () => {
+            const store = spectator.inject(DotAuthConfigStore, true) as unknown as Mocked<
+                InstanceType<typeof DotAuthConfigStore>
+            >;
+            (store.draft as unknown as WritableSignal<DotAuthConfig>).set({
+                ...DRAFT,
+                protocol: 'saml',
+                headless: { ...DRAFT.headless, trustedIdps: [] }
+            });
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(EMAIL_TOGGLE)).toHaveLength(0);
+        });
+    });
+
     describe('SAML keypair regeneration', () => {
         let store: Mocked<InstanceType<typeof DotAuthConfigStore>>;
         let confirmSpy: MockInstance;

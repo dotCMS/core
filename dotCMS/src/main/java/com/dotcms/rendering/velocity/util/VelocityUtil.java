@@ -266,7 +266,7 @@ public class VelocityUtil {
     context.put("contentType", contentType);
     context.put("host_id", host.getIdentifier());
     context.put("user", processor.getUser());
-    context.put("company", APILocator.getCompanyAPI().getDefaultCompany());
+    context.put("company", workflowCompany());
     context.put("workflow", processor);
     context.put("actionName", processor.getAction().getName());
     context.put("stepName", processor.getStep().getName());
@@ -305,6 +305,20 @@ public class VelocityUtil {
     return context;
    }
  
+
+  /**
+   * Returns the company that workflow sub-action parameters see as {@code $company}: a new copy of the default
+   * company, without its key. Sub-action parameters are written by workflow editors and the key is only for server
+   * code. Each context gets its own copy, so a parameter that changes {@code $company} changes neither the cached
+   * default company nor the {@code $company} of any other context.
+   *
+   * @return a copy of the default {@link Company} with no key
+   */
+  private static Company workflowCompany() {
+    final Company company = (Company) APILocator.getCompanyAPI().getDefaultCompany().clone();
+    company.setKey(null);
+    return company;
+  }
 
   public ChainedContext getWorkflowContext(final HttpServletRequest request, final HttpServletResponse response,
       final WorkflowProcessor processor) {

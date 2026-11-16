@@ -15,6 +15,10 @@ import StarterKit from '@tiptap/starter-kit';
 
 import type { DotMessageService } from '@dotcms/data-access';
 
+import {
+    type MediaUploaders,
+    createAssetUploaderExtension
+} from './asset-uploader/asset-uploader.extension';
 import { createBlockGutterDragHandle } from './block-gutter.extension';
 import { createDotEmoji } from './dot-emoji.extension';
 import { IndentExtension } from './indent.extension';
@@ -26,10 +30,7 @@ import { createDotContentlet } from './nodes/contentlet/contentlet.extension';
 import { GridBlock, GridColumn } from './nodes/grid.extension';
 import { DotImage } from './nodes/image.extension';
 import { UnsupportedBlock } from './nodes/unsupported-block.extension';
-import {
-    createUploadPlaceholderExtension,
-    type UploadPlaceholderMediaType
-} from './nodes/upload-placeholder.extension';
+import { type UploadPlaceholderMediaType } from './nodes/upload-placeholder.extension';
 import { Video } from './nodes/video.extension';
 import { SelectionPreserveExtension } from './selection-preserve.extension';
 import { createSlashCommandExtension } from './slash-command.extension';
@@ -41,12 +42,20 @@ import { EditorPopoverService } from '../services/editor-popover.service';
 
 import type { SlashMenuService } from '../components/slash-menu/slash-menu.service';
 
+/**
+ * Builds the editor's extension set for a field.
+ *
+ * @param uploaders How dropped and pasted files reach dotCMS; empty where the host cannot
+ * upload, in which case drops and pastes of files are ignored and pasted `data:` images are
+ * dropped as before.
+ */
 export function createEditorExtensions(
     menuService: SlashMenuService,
     allowedBlocks: string[] | undefined,
     injector: Injector,
     dotMessageService: DotMessageService,
-    remoteExtensions: AnyExtension[] = []
+    remoteExtensions: AnyExtension[] = [],
+    uploaders: MediaUploaders = {}
 ): Extensions {
     const t = (key: string, ...args: string[]) => dotMessageService.get(key, ...args);
     const uploadCopy = {
@@ -167,7 +176,9 @@ export function createEditorExtensions(
         // carry `highlight` marks. Without it here TipTap aborts the whole document (#37145).
         // Styled via `.tiptap mark` in editor.component.css rather than inline HTMLAttributes.
         Highlight,
-        createUploadPlaceholderExtension(uploadCopy),
+        // Drop, paste and base64-paste uploads plus the placeholder node they share. Not behind
+        // `has(...)`: it only ever creates nodes that are in the schema.
+        createAssetUploaderExtension({ uploaders, placeholderCopy: uploadCopy }),
         // Legacy-compat only: the new editor never creates `aiContent` nodes (AI Content
         // dialog inserts the generated HTML via `commands.insertContent` so it becomes
         // normal paragraph/heading/list nodes). This registration exists so customer

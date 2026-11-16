@@ -30,6 +30,7 @@ import com.liferay.portal.model.User;
 import io.vavr.Lazy;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -195,6 +196,16 @@ public class ReindexThread {
     private final AtomicBoolean workerAlive = new AtomicBoolean(false);
 
     /**
+     * When {@link #unpauseImpl()} last ran and the state it found, and when the worker last paused
+     * itself on an empty journal. Diagnostics only, read by the integration suite when the journal
+     * fails to drain: an unpause that found {@code RUNNING} followed by a self-pause means the
+     * wake-up was lost; no unpause after the stuck rows were written means it never arrived.
+     */
+    private volatile long lastUnpauseAt;
+    private volatile ThreadState lastUnpauseFoundState;
+    private volatile long lastSelfPauseAt;
+
+    /**
      * Consecutive worker starts that died inside {@link #IMMEDIATE_DEATH_WINDOW_MILLIS}. Reset the
      * moment a worker survives that window, so a single bad batch never arms the back-off.
      */
@@ -342,6 +353,20 @@ public class ReindexThread {
         return workerAlive.get();
     }
 
+    /**
+     * Describes the last wake-up and the last self-pause, for the integration suite's
+     * stuck-journal log line.
+     *
+     * @return e.g. {@code "last unpause at 2026-11-04T16:10:01.780Z found RUNNING, last self-pause
+     *         at 2026-11-04T16:10:01.783Z"}
+     */
+    @VisibleForTesting
+    String wakeupHistory() {
+        return "last unpause at " + Instant.ofEpochMilli(lastUnpauseAt) + " found "
+                + lastUnpauseFoundState + ", last self-pause at "
+                + Instant.ofEpochMilli(lastSelfPauseAt);
+    }
+
     /** Forces the liveness flag, to stage a dead- or live-worker scenario. */
     @VisibleForTesting
     void forceWorkerAlive(final boolean alive) {
@@ -449,6 +474,7 @@ public class ReindexThread {
             switchOverIfNeeded();
             if (!indexAPI.isInFullReindex()) {
                 ReindexThread.pause();
+                lastSelfPauseAt = System.currentTimeMillis();
             }
         } else {
             Logger.debug(this, "Skipping reindex finalization due to shutdown in progress");
@@ -467,6 +493,11 @@ public class ReindexThread {
      * and {@link IndexBulkProcessor}. The processor is closed (blocking until {@code afterBulk}
      * completes) before the next batch starts, so there is no shared mutable state between
      * consecutive batches and no TOCTOU race on the processor reference.</p>
+     *
+     * <p>When a batch throws (including an {@code Error} that ends the worker), the journal cursor
+     * is reset to 0. The batch's rows are then read again once the local in-memory queue (up to
+     * 2000 rows) has drained and the next load starts from the beginning of the journal, instead
+     * of waiting for the pause to expire.</p>
      */
     private void runReindexLoop() {
         while (!isTerminal()) {
@@ -510,6 +541,11 @@ public class ReindexThread {
                     requestStop();
                     break;
                 }
+                // The batch that threw was neither acked nor marked failed, but the journal
+                // cursor is already past it. Without a reset the next load finds nothing, the
+                // worker pauses itself, and those rows wait out REINDEX_THREAD_PAUSE_IN_MINUTES.
+                // Done before the Error check so a restarted worker also starts from the top.
+                ReindexQueueFactory.resetLastIdReindexed();
                 if (ex instanceof Error) {
                     // Let JVM-level errors propagate to the runnable, which logs, terminates and
                     // clears liveness. Swallowing them here would spin this loop at
@@ -797,6 +833,12 @@ public class ReindexThread {
         }
     }
 
+    /**
+     * Wakes the worker: a live paused worker is flipped to {@code RUNNING}, a paused worker with
+     * nothing alive behind it is restarted, and a stopped one is started. A worker that is already
+     * {@code RUNNING} is left alone. Records when it ran and what it found for
+     * {@link #wakeupHistory()}.
+     */
     private static void unpauseImpl() {
 
         // Transition T9: never bring the worker back while the JVM is shutting down. Commit
@@ -810,6 +852,8 @@ public class ReindexThread {
 
         final ReindexThread inst = getInstance();
         final ThreadState state = inst.state.get();
+        inst.lastUnpauseFoundState = state;
+        inst.lastUnpauseAt = System.currentTimeMillis();
 
         if (state == ThreadState.PAUSED) {
             if (inst.workerAlive.get()) {

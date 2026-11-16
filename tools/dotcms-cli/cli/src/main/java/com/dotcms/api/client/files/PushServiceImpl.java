@@ -15,6 +15,7 @@ import com.dotcms.cli.common.ConsoleProgressBar;
 import com.dotcms.cli.common.OutputOptionMixin;
 import com.dotcms.cli.exception.ForceSilentExitException;
 import com.dotcms.common.AssetsUtils;
+import com.dotcms.model.asset.FolderView;
 import io.quarkus.arc.DefaultBean;
 import java.io.File;
 import java.util.ArrayList;
@@ -309,12 +310,18 @@ public class PushServiceImpl implements PushService {
 
         // ConsoleProgressBar instance to handle the push progress bar
         ConsoleProgressBar progressBar = new ConsoleProgressBar(output);
-        // Calculating the total number of steps
+        // Calculating the total number of steps. The push info counts only the child folders, but
+        // the push also processes the root folder (creating the site when it is new), which is
+        // one more step.
+        final FolderView rootFolder = traverseParams.rootNode().folder();
+        final int rootFolderSteps = AssetsUtils.isMarkedForPush(rootFolder)
+                || AssetsUtils.isMarkedForDelete(rootFolder) ? 1 : 0;
         progressBar.setTotalSteps(
                 pushInfo.assetsToPushCount() +
                         pushInfo.assetsToDeleteCount() +
                         pushInfo.foldersToPushCount() +
-                        pushInfo.foldersToDeleteCount()
+                        pushInfo.foldersToDeleteCount() +
+                        rootFolderSteps
         );
 
         var isRetry = retryAttempts > 0;

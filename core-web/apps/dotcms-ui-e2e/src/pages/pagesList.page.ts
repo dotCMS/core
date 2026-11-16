@@ -30,8 +30,15 @@ export class PagesListPage {
 
         await expect(actionLocator).toBeVisible();
 
+        // Wait for the workflow action itself. Any `/api/content/_search` response would also
+        // match, including ones that were already in flight before the click and that still
+        // carry the page's previous status.
         const responsePromise = this.page.waitForResponse((response) => {
-            return response.status() === 200 && response.url().includes('/api/content/_search');
+            return (
+                response.request().method() === 'PUT' &&
+                response.status() === 200 &&
+                /\/api\/v1\/workflow\/actions\/[^/]+\/fire/.test(response.url())
+            );
         });
         await actionLocator.click();
         await responsePromise;
@@ -43,5 +50,13 @@ export class PagesListPage {
 
     getStatusChipText(rowLocator: Locator) {
         return this.getStatusChip(rowLocator).locator('p-tag').textContent();
+    }
+
+    /**
+     * Wait until the row's status chip shows the given status. The list re-reads the row after
+     * the workflow action returns, so the chip changes a moment after the response, not with it.
+     */
+    async expectStatusChip(rowLocator: Locator, status: string) {
+        await expect(this.getStatusChip(rowLocator).locator('p-tag')).toContainText(status);
     }
 }

@@ -2084,17 +2084,19 @@ public class WorkflowHelper {
     } // delete.
 
     /**
-     * Figure out the contentlet by identifier (when not language) depending on the following rules:
-     * If there is a contentlet associated to the current session language tries the id+session lang combination
-     * If there is not a contentlet associated and the default language is diff to the session lang will tries this combination.
-     * Otherwise will try to get the content on some language
-     * @param identifier {@link String} shorty or long identifier
-     * @param mode {@link PageMode} page mode
-     * @param user {@link User} user
-     * @param sessionLanguageSupplier {@link Supplier} supplier to get the session language in case needed
-     * @return Optional contentlet
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * Finds a contentlet by identifier, on the default variant, when no language is given. See
+     * {@link #getContentletByIdentifier(String, PageMode, User, String, Supplier)} for the order in
+     * which languages are tried.
+     *
+     * @param identifier              shorty or long identifier
+     * @param mode                    {@link PageMode} that decides live or working version and
+     *                                whether front-end roles count
+     * @param user                    the {@link User} the contentlet is looked up for
+     * @param sessionLanguageSupplier supplies the session language, when needed
+     * @return the contentlet, or empty when it does not exist or the user cannot read it
+     * @throws DotSecurityException declared for compatibility; a contentlet the user cannot read
+     *                              gives an empty result instead
+     * @throws DotDataException     if the contentlet or its permissions cannot be loaded
      */
     public Optional<Contentlet> getContentletByIdentifier(final String identifier,
                                                           final PageMode mode,
@@ -2105,18 +2107,21 @@ public class WorkflowHelper {
     }
 
     /**
-     * Figure out the contentlet by identifier (when not language) depending on the following rules:
-     * If there is a contentlet associated to the current session language tries the id+session lang combination
-     * If there is not a contentlet associated and the default language is diff to the session lang will tries this combination.
-     * Otherwise will try to get the content on some language
-     * @param identifier {@link String} shorty or long identifier
-     * @param mode {@link PageMode} page mode
-     * @param user {@link User} user
-     * @param variantName String
-     * @param sessionLanguageSupplier {@link Supplier} supplier to get the session language in case needed
-     * @return Optional contentlet
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * Finds a contentlet by identifier when no language is given. Languages are tried in this
+     * order: the session language, then the default language, then any language the contentlet
+     * exists in. Only a version the user can read is ever returned, whichever language it comes
+     * from.
+     *
+     * @param identifier              shorty or long identifier
+     * @param mode                    {@link PageMode} that decides live or working version and
+     *                                whether front-end roles count
+     * @param user                    the {@link User} the contentlet is looked up for
+     * @param variantName             variant to look up in the session and default languages
+     * @param sessionLanguageSupplier supplies the session language, when needed
+     * @return the contentlet, or empty when it does not exist or the user cannot read it
+     * @throws DotSecurityException declared for compatibility; a contentlet the user cannot read
+     *                              gives an empty result instead
+     * @throws DotDataException     if the contentlet or its permissions cannot be loaded
      */
     @CloseDBIfOpened
     public Optional<Contentlet> getContentletByIdentifier(final String identifier,
@@ -2147,11 +2152,32 @@ public class WorkflowHelper {
             }
         }
 
-        return null == contentlet?
-                Optional.ofNullable(this.contentletAPI.findContentletByIdentifierAnyLanguage(longIdentifier)):
-                Optional.ofNullable(contentlet);
+        if (null != contentlet) {
+            return Optional.of(contentlet);
+        }
+
+        // The any-language lookup does not take the user into account, so READ is checked here.
+        final Contentlet anyLanguageContentlet =
+                this.contentletAPI.findContentletByIdentifierAnyLanguage(longIdentifier);
+        if (null != anyLanguageContentlet && this.permissionAPI.doesUserHavePermission(
+                anyLanguageContentlet, PermissionAPI.PERMISSION_READ, user, mode.respectAnonPerms)) {
+            return Optional.of(anyLanguageContentlet);
+        }
+        return Optional.empty();
     }
 
+    /**
+     * Finds the version of a contentlet in one language for the given user.
+     *
+     * @param longIdentifier   the contentlet's long identifier
+     * @param showLive         {@code true} for the live version, {@code false} for the working one
+     * @param languageId       the language to look in
+     * @param user             the {@link User} the contentlet is looked up for
+     * @param respectAnonPerms whether front-end and anonymous roles count when checking permissions
+     * @param variantName      the variant to look in
+     * @return the {@link Contentlet}, or {@code null} when it does not exist in that language or
+     *         the user cannot read it
+     */
     public Contentlet getContentletByIdentifier(final String longIdentifier, final boolean showLive,
                                                 final long languageId, final User user, final boolean respectAnonPerms,
                                                 final String variantName) {
@@ -2159,7 +2185,12 @@ public class WorkflowHelper {
         try {
             return this.contentletAPI.findContentletByIdentifier
                     (longIdentifier, showLive, languageId, variantName, user, respectAnonPerms);
-        } catch (DotContentletStateException | DotSecurityException | DotDataException e) {
+        } catch (final DotSecurityException e) {
+
+            Logger.debug(this, () -> "Contentlet not readable by user "
+                    + (null != user ? user.getUserId() : null) + " in language " + languageId);
+            return null;
+        } catch (DotContentletStateException | DotDataException e) {
 
             Logger.error(this, e.getMessage(), e);
             return null;
