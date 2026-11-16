@@ -143,3 +143,4 @@ Release-25.07.10 LTS
 137. https://github.com/dotCMS/private-issues/issues/712 : Back-end login filter bypass via lower-case %2e exposes internal JSPs to anonymous users #38431 #712
 138. https://github.com/dotCMS/private-issues/issues/872 : Job endpoints don’t check who owns a job #38383 #872
 139. https://github.com/dotCMS/private-issues/issues/878 : Content Search (es-search) portlet: contentlet title and raw search response printed unescaped, stored XSS against admins (8.7 High) #38273 #878
+140. https://github.com/dotCMS/private-issues/issues/881 : DWR ContainerAjax.checkDependencies: stored XSS from unescaped Container and Template titles in the delete dialog, runs in the administrator's session (8.1 High) #38173 #881

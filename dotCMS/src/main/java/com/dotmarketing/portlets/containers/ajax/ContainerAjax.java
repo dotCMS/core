@@ -28,6 +28,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.owasp.encoder.Encode;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -288,7 +289,7 @@ public class ContainerAjax {
 		msg.append(LanguageUtil.get(user, "container-used-templates"));
 		msg.append("<br/><br/>");
 		msg.append(LanguageUtil.get(user, "Container")).append(":<br/>");
-		msg.append("<ul><li>").append("<b>").append(container.getTitle()).append("</b>").append("</li></ul>").append
+		msg.append("<ul><li>").append("<b>").append(Encode.forHtml(container.getTitle())).append("</b>").append("</li></ul>").append
 				("<br/>");
 		msg.append(LanguageUtil.get(user, "templates")).append(":<br/>");
 		msg.append("<ul>");
@@ -352,8 +353,8 @@ public class ContainerAjax {
                     respectFrontendRoles)).getOrNull();
             siteName = null == site || !UtilMethods.isSet(site.getIdentifier()) ? siteIdError : site.getHostname();
         }
-        final String templateInfo = String.format("<li><b>%s ( %s ) under Site %s</b></li>", templateTitle, template
-                .getIdentifier(), siteName);
+        final String templateInfo = String.format("<li><b>%s ( %s ) under Site %s</b></li>", Encode.forHtml(templateTitle),
+                Encode.forHtml(template.getIdentifier()), Encode.forHtml(siteName));
         return templateInfo;
     }
 
