@@ -44,7 +44,11 @@ import org.junit.runners.Suite;
     com.dotcms.rest.api.v1.user.UserResourcePasswordIntegrationTest.class,
         com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class,
     com.dotcms.rendering.js.FileJavascriptReaderTest.class,
-    com.dotcms.rest.api.v1.container.ContainerResourceContentReadAccessTest.class
+    com.dotcms.rest.api.v1.container.ContainerResourceContentReadAccessTest.class,
+        com.dotmarketing.portlets.contentlet.action.ContentImportAccessTest.class,
+        com.dotmarketing.portlets.workflows.action.WorkflowTaskAccessTest.class,
+        com.dotmarketing.portlets.contentlet.action.ImportContentletsActionTest.class,
+        com.dotmarketing.portlets.workflows.action.EditWorkflowTaskActionTest.class
 })
 public class MainSuite3a {
 }
