@@ -375,7 +375,7 @@ public class TempFileResource {
             }
             // The permission, host and name rules run before any request leaves the server
             if (!tempApi.isUrlDownloadPermitted(initData.getUser())) {
-                throw new DotSecurityException("Downloads by URL are restricted to administrators");
+                throw new DotSecurityException("Downloads by URL need a user, and an administrator when TEMP_RESOURCE_BY_URL_ADMIN_ONLY is on");
             }
             final URL remoteUrl = Try.of(() -> new URL(form.remoteUrl))
                     .getOrElseThrow(e -> new BadRequestException("Invalid url attempted for tempFile"));

@@ -294,7 +294,7 @@ public class TempFileAPI {
           throws DotSecurityException, IOException {
       final User user = PortalUtil.getUser(request);
       if (!isUrlDownloadPermitted(user)) {
-        throw new DotSecurityException("Downloads by URL are restricted to administrators");
+        throw new DotSecurityException("Downloads by URL need a user, and an administrator when TEMP_RESOURCE_BY_URL_ADMIN_ONLY is on");
       }
       if (!isAllowedRemoteUrl(url)) {
         throw new IllegalArgumentException("Failed to download file by URL: the host is not an allowed target");
