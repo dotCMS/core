@@ -33,6 +33,9 @@ import org.junit.runner.RunWith;
 @RunWith(DataProviderRunner.class)
 public class WorkflowToolTest {
 
+    @org.junit.Rule
+    public final com.dotcms.junit.SystemUserScopeRule systemUserScope = new com.dotcms.junit.SystemUserScopeRule();
+
     private static final String SAVE_WORKFLOW_ID = "b9d89c803d";
     private static final String DELETE_WORKFLOW_ID = "777f1c6bc8";
 

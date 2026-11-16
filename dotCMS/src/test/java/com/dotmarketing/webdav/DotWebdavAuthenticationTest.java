@@ -195,6 +195,19 @@ public class DotWebdavAuthenticationTest {
         passwords.verifyNoInteractions();
     }
 
+    /** A valid API token whose owner is the built-in system account must not open WebDAV. */
+    @Test
+    public void jwtTokenOfTheSystemAccountIsRefused() throws Exception {
+        Config.setProperty("ALLOW_BASIC_AUTH", "JWT_TOKEN");
+        when(user.getUserId()).thenReturn(UserAPI.SYSTEM_USER_ID);
+        when(userAPI.loadUserById(UserAPI.SYSTEM_USER_ID)).thenReturn(user);
+        when(tokens.fromJwt(CREDENTIAL, IP))
+                .thenReturn(Optional.of(apiToken(UserAPI.SYSTEM_USER_ID)));
+
+        assertThrows(DotSecurityException.class,
+                () -> helper.authorizePrincipal(USERNAME, CREDENTIAL));
+    }
+
     /** A valid token is not authority to impersonate a different Basic username. */
     @Test
     public void jwtTokenRejectsAnotherUsersApiToken() throws Exception {

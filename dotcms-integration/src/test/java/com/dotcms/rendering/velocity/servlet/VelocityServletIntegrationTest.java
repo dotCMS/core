@@ -362,7 +362,8 @@ public class VelocityServletIntegrationTest {
                     .setAttribute("tm_date", Long.toString(tomorrow.getTime().getTime()));
             mockRequest.getSession().setAttribute("tm_lang", "1");
 
-            mockRequest.setAttribute(com.liferay.portal.util.WebKeys.USER, systemUser);
+            mockRequest.setAttribute(com.liferay.portal.util.WebKeys.USER,
+                    com.dotcms.datagen.TestUserUtils.getAdminUser());
             mockRequest.getSession().setAttribute(WebKeys.PAGE_MODE_SESSION, PageMode.EDIT_MODE);
 
             final FilterChain chain = mock(FilterChain.class);
