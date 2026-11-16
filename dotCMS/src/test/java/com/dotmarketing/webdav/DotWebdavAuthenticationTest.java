@@ -1,9 +1,11 @@
 package com.dotmarketing.webdav;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -30,11 +32,14 @@ import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import java.lang.reflect.Field;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.Timer;
 import java.util.function.BiPredicate;
@@ -307,6 +312,70 @@ public class DotWebdavAuthenticationTest {
         assertFalse(resource.authorise(request, Request.Method.PROPPATCH, null));
         assertFalse(resource.authorise(request, Request.Method.OPTIONS, null));
         verify(denied).authorizePrincipal(USERNAME, CREDENTIAL);
+    }
+
+    /**
+     * In token mode a valid API token of the built-in account is refused, and the audit line says it
+     * was rejected for the account's ineligibility, never that it was accepted.
+     */
+    @Test
+    public void jwtTokenOfTheSystemAccountIsAuditedAsRejected() throws Exception {
+        Config.setProperty("ALLOW_BASIC_AUTH", "JWT_TOKEN");
+        when(user.getUserId()).thenReturn(UserAPI.SYSTEM_USER_ID);
+        when(userAPI.loadUserById(UserAPI.SYSTEM_USER_ID)).thenReturn(user);
+        when(tokens.fromJwt(CREDENTIAL, IP))
+                .thenReturn(Optional.of(apiToken(UserAPI.SYSTEM_USER_ID)));
+
+        final List<String> audit = captureAudit(() -> assertThrows(DotSecurityException.class,
+                () -> helper.authorizePrincipal(USERNAME, CREDENTIAL)));
+
+        assertSingleRejection(audit, "INELIGIBLE_ACCOUNT");
+    }
+
+    /**
+     * In legacy mode a valid API token of the built-in account presented after a password mismatch is
+     * refused, and the audit line says it was rejected for the account's ineligibility.
+     */
+    @Test
+    public void allTokenOfTheSystemAccountIsAuditedAsRejected() throws Exception {
+        Config.setProperty("ALLOW_BASIC_AUTH", "ALL");
+        when(user.getUserId()).thenReturn(UserAPI.SYSTEM_USER_ID);
+        when(tokens.fromJwt(CREDENTIAL, IP))
+                .thenReturn(Optional.of(apiToken(UserAPI.SYSTEM_USER_ID)));
+
+        final List<String> audit = captureAudit(() -> assertThrows(DotSecurityException.class,
+                () -> helper.authorizePrincipal(USERNAME, CREDENTIAL)));
+
+        assertSingleRejection(audit, "INELIGIBLE_ACCOUNT");
+        passwords.verify(() -> LoginFactory.passwordMatch(CREDENTIAL, user));
+    }
+
+    /** Runs the action with the security logger stubbed and returns the lines it received. */
+    private static List<String> captureAudit(final Runnable action) {
+        final List<String> lines = new ArrayList<>();
+        try (MockedStatic<SecurityLogger> log = mockStatic(SecurityLogger.class)) {
+            log.when(() -> SecurityLogger.logWarn(any(Class.class), anyString()))
+                    .thenAnswer(i -> lines.add("WARN " + i.getArgument(1)));
+            log.when(() -> SecurityLogger.logInfo(any(Class.class), anyString()))
+                    .thenAnswer(i -> lines.add("INFO " + i.getArgument(1)));
+            action.run();
+        }
+        return lines;
+    }
+
+    /** Exactly one WebDAV token decision line, a WARN rejection with the given reason and no credential. */
+    private static void assertSingleRejection(final List<String> audit, final String reason) {
+        final List<String> decisions = new ArrayList<>();
+        for (final String line : audit) {
+            if (line.contains("WebDAV token authentication")) {
+                decisions.add(line);
+            }
+        }
+        assertEquals("one decision line: " + audit, 1, decisions.size());
+        final String line = decisions.get(0);
+        assertTrue(line, line.startsWith("WARN WebDAV token authentication rejected (" + reason + ")"));
+        assertFalse(line, line.contains("accepted"));
+        assertFalse(line, line.contains(CREDENTIAL));
     }
 
     /** Build a genuinely typed API token rather than a generic mocked JWToken. */
