@@ -78,6 +78,9 @@ public class UserResourceTest extends UnitTestBase {
     private static final String TARGET_ID = "dotcms.org.target";
     private static final String SITE_ID = "site-identifier";
     private static final String COMPLETED_LINE = "has successfully logged in as";
+    /** The message keys of the Login As refusals that answer 200 with {@code loginAs:false}. */
+    private static final List<String> REFUSAL_MESSAGE_KEYS = List.of("loginas.error.requireduserid",
+            "loginas.error.selfloginas", "loginas.error.missingloginaspwd", "loginas.error.invalidloginascredentials");
 
     /** {@link UserResource#loginAs} sets the request's principal name; don't leave it on the test thread. */
     @After
@@ -933,24 +936,28 @@ public class UserResourceTest extends UnitTestBase {
     /**
      * <ul>
      *     <li><b>Method to test:</b> {@link UserResource#loginAs(HttpServletRequest, HttpServletResponse, LoginAsForm)}</li>
-     *     <li><b>Given Scenario:</b> The helper refuses with a {@link DotDataException} that carries a message key.</li>
+     *     <li><b>Given Scenario:</b> The helper refuses with a {@link DotDataException} that carries a message key,
+     *     once for each key the Login As refusals use.</li>
      *     <li><b>Expected Result:</b> 200 with {@code loginAs:false} and that key, the refusal is logged, and no
      *     "logged in as" line is.</li>
      * </ul>
      */
     @Test
     public void loginAs_refusedWithMessageKey_logsNoCompletedLine() throws Exception {
-        final LoginAsCall call = new LoginAsCall(CALLER_ID);
-        call.refusesWith(new DotDataException("refused", "loginas.error.selfloginas"));
+        for (final String messageKey : REFUSAL_MESSAGE_KEYS) {
+            final LoginAsCall call = new LoginAsCall(CALLER_ID);
+            call.refusesWith(new DotDataException("refused", messageKey));
 
-        final Response response = call.run(TARGET_ID);
+            final Response response = call.run(TARGET_ID);
 
-        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
-        final ResponseEntityView<?> entity = (ResponseEntityView<?>) response.getEntity();
-        assertEquals(Map.of("loginAs", false), entity.getEntity());
-        assertEquals("loginas.error.selfloginas", entity.getErrors().get(0).getErrorCode());
-        assertTrue(call.securityLog.toString(), call.securityLog.stream().anyMatch(line -> line.startsWith("ERROR:")));
-        assertEquals(List.of(), call.completedLines());
+            assertEquals(messageKey, Response.Status.OK.getStatusCode(), response.getStatus());
+            final ResponseEntityView<?> entity = (ResponseEntityView<?>) response.getEntity();
+            assertEquals(messageKey, Map.of("loginAs", false), entity.getEntity());
+            assertEquals(messageKey, entity.getErrors().get(0).getErrorCode());
+            assertTrue(messageKey + ": " + call.securityLog,
+                    call.securityLog.stream().anyMatch(line -> line.startsWith("ERROR:")));
+            assertEquals(messageKey, List.of(), call.completedLines());
+        }
     }
 
     /**
@@ -976,17 +983,41 @@ public class UserResourceTest extends UnitTestBase {
      * <ul>
      *     <li><b>Method to test:</b> {@link UserResource#loginAs(HttpServletRequest, HttpServletResponse, LoginAsForm)}</li>
      *     <li><b>Given Scenario:</b> The session is user A logged in as user B; B asks for another Login As and the
-     *     helper refuses with a message key.</li>
+     *     helper refuses with a message key, once for each key the Login As refusals use.</li>
      *     <li><b>Expected Result:</b> The session still holds the A to B Login As.</li>
      * </ul>
      */
     @Test
     public void loginAs_refusedWithMessageKey_keepsTheActiveLoginAs() throws Exception {
+        for (final String messageKey : REFUSAL_MESSAGE_KEYS) {
+            final LoginAsCall call = new LoginAsCall(LOGGED_IN_AS_ID).withActiveLoginAs(PRINCIPAL_ID, LOGGED_IN_AS_ID);
+            call.refusesWith(new DotDataException("refused", messageKey));
+
+            call.run(LOGGED_IN_AS_ID);
+
+            call.assertActiveLoginAs(PRINCIPAL_ID, LOGGED_IN_AS_ID);
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserResource#loginAs(HttpServletRequest, HttpServletResponse, LoginAsForm)}</li>
+     *     <li><b>Given Scenario:</b> The session is user A logged in as user B, on a selected site; the helper
+     *     accepts user C and C's site is selected, but writing the "logged in as" line, the last step, fails.</li>
+     *     <li><b>Expected Result:</b> 500; the session is back to the A to B Login As on the site it had selected.</li>
+     * </ul>
+     */
+    @Test
+    public void loginAs_failingAfterSiteSelection_restoresTheSelectedSite() throws Exception {
         final LoginAsCall call = new LoginAsCall(LOGGED_IN_AS_ID).withActiveLoginAs(PRINCIPAL_ID, LOGGED_IN_AS_ID);
-        call.refusesWith(new DotDataException("refused", "loginas.error.selfloginas"));
+        call.session.put(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, "selected-before");
+        call.acceptsAs(TARGET_ID);
+        call.failsOnCompletedLine = true;
 
-        call.run(LOGGED_IN_AS_ID);
+        final Response response = call.run(TARGET_ID);
 
+        assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
+        assertEquals("selected-before", call.session.get(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID));
         call.assertActiveLoginAs(PRINCIPAL_ID, LOGGED_IN_AS_ID);
     }
 
@@ -1098,6 +1129,8 @@ public class UserResourceTest extends UnitTestBase {
 
         final Map<String, Object> session = new HashMap<>();
         final List<String> securityLog = new ArrayList<>();
+        /** When set, writing the "logged in as" line fails, as the last step of a Login As that got that far. */
+        boolean failsOnCompletedLine;
         final UserResourceHelper helper = mock(UserResourceHelper.class);
         final HostAPI siteAPI = mock(HostAPI.class);
         final User caller = new User();
@@ -1167,7 +1200,13 @@ public class UserResourceTest extends UnitTestBase {
             try (MockedStatic<SecurityLogger> logger = Mockito.mockStatic(SecurityLogger.class);
                  MockedStatic<LanguageUtil> ignored = Mockito.mockStatic(LanguageUtil.class)) {
                 logger.when(() -> SecurityLogger.logInfo(Mockito.any(Class.class), Mockito.anyString()))
-                        .thenAnswer(i -> securityLog.add(i.getArgument(1)));
+                        .thenAnswer(i -> {
+                            final String line = i.getArgument(1);
+                            if (failsOnCompletedLine && line.contains(COMPLETED_LINE)) {
+                                throw new IllegalStateException("log unavailable");
+                            }
+                            return securityLog.add(line);
+                        });
                 return resource.loginAs(request, mock(HttpServletResponse.class), form);
             }
         }
