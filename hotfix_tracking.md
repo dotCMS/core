@@ -153,3 +153,4 @@ Release-25.07.10 LTS
 147. https://github.com/dotCMS/private-issues/issues/857 : Stop returning user email and userId in front-end / anonymous API responses #38148 #38193 #857
 148. https://github.com/dotCMS/private-issues/issues/753 : [GLM AI Scanner] Login As admin impersonation (password check validates attacker, not target) + ES search permission-filter bypass via 'permissions:' JSON key + unbounded API-token lifetime #38084 #38279 #753
 149. https://github.com/dotCMS/core/issues/37974 : chore(security): remove unused legacy artifacts flagged by image scans (stale package.json, dot.commons-fileupload, dot.httpclient, snakeoil key) #38364 #37974
+150. https://github.com/dotCMS/core/issues/37975 : chore(deps): bump log4j to 2.25.4 and jsoup to 1.23.2 in core and the Tika bundle #38369 #37975
