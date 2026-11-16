@@ -17,6 +17,8 @@ import com.dotcms.filters.interceptor.SimpleWebInterceptorDelegateImpl;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.util.SecurityLogger;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -190,6 +192,85 @@ public class DefaultBackEndLoginRequiredWebInterceptorTest extends UnitTestBase 
         }
 
         webInterceptorDelegate.destroy();
+    }
+
+    private static final String IMAGE_TOOLS_JSP = "/html/portlet/ext/contentlet/image_tools/index.jsp";
+
+    /**
+     * Each row is {raw request URI, servlet path, path info, login required}. The servlet path and
+     * path info are what Tomcat dispatches the raw URI to: percent-decoded, dot segments resolved,
+     * repeated slashes merged and path parameters removed. The login decision must follow the
+     * dispatched path, whatever the raw URI looks like.
+     */
+    private static final Object[][] PATH_VARIANTS = {
+            // protected JSP reached through different spellings of the same path
+            {IMAGE_TOOLS_JSP, IMAGE_TOOLS_JSP, null, true},
+            {"/x/%2e%2e" + IMAGE_TOOLS_JSP, IMAGE_TOOLS_JSP, null, true},
+            {"/x/%2E%2E" + IMAGE_TOOLS_JSP, IMAGE_TOOLS_JSP, null, true},
+            {"/%2e" + IMAGE_TOOLS_JSP, IMAGE_TOOLS_JSP, null, true},
+            {"/x%2f%2e%2e" + IMAGE_TOOLS_JSP, IMAGE_TOOLS_JSP, null, true},
+            {"/;jsessionid=1" + IMAGE_TOOLS_JSP, IMAGE_TOOLS_JSP, null, true},
+            {IMAGE_TOOLS_JSP + ";jsessionid=1", IMAGE_TOOLS_JSP, null, true},
+            {"/" + IMAGE_TOOLS_JSP, IMAGE_TOOLS_JSP, null, true},
+            {"/." + IMAGE_TOOLS_JSP, IMAGE_TOOLS_JSP, null, true},
+            {"/x/.." + IMAGE_TOOLS_JSP, IMAGE_TOOLS_JSP, null, true},
+            // a raw URI that starts with a public prefix but resolves to a protected JSP
+            {"/html/js/dojo/%2e%2e/%2e%2e/portlet/ext/contentlet/image_tools/index.jsp",
+                    IMAGE_TOOLS_JSP, null, true},
+            {"/html/portal/login.jsp/../../portlet/ext/contentlet/image_tools/index.jsp",
+                    IMAGE_TOOLS_JSP, null, true},
+            // servlets mapped as /name/* also answer the bare /name
+            {"/JSONTags", "/JSONTags", null, true},
+            {"/JSONTags/", "/JSONTags", "/", true},
+            {"/dwr", "/dwr", null, true},
+            {"/c", "/c", null, true},
+            {"/c/portal/layout", "/c", "/portal/layout", true},
+            // public paths stay public
+            {"/html/js/dojo/custom-build/dojo/dojo.js", "/html/js/dojo/custom-build/dojo/dojo.js", null, false},
+            {"/html/portal/login.jsp", "/html/portal/login.jsp", null, false},
+            {"/html/images/backgrounds/bg-11.jpg", "/html/images/backgrounds/bg-11.jpg", null, false},
+            {"/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish",
+                    "/DotAjaxDirector", "/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/publish", false},
+            {"/dotAdmin/", "/dotAdmin/index.html", null, false},
+            {"/api/v1/authentication", "/api", "/v1/authentication", false},
+            {"/application/themes/default/css/style.css", "/application/themes/default/css/style.css", null, false},
+            {"/css/style.css", "/css/style.css", null, false},
+            {"/dwrfoo/page", "/dwrfoo/page", null, false},
+            {"/blog/my-blog-page", "/blog/my-blog-page", null, false},
+    };
+
+    /**
+     * An anonymous request is stopped with a 401 when the dispatched path is protected, and passes
+     * through untouched when it is public, for every spelling in {@link #PATH_VARIANTS}.
+     */
+    @Test
+    public void intercept_decides_on_dispatched_path() throws Exception {
+
+        final UserWebAPI userWebAPI = mock(UserWebAPI.class);
+        when(userWebAPI.isLoggedToBackend(any())).thenReturn(false);
+        final DefaultBackEndLoginRequiredWebInterceptor loginRequiredWebInterceptor =
+                new DefaultBackEndLoginRequiredWebInterceptor(userWebAPI);
+        final SimpleWebInterceptorDelegateImpl webInterceptorDelegate = new SimpleWebInterceptorDelegateImpl();
+        webInterceptorDelegate.add(loginRequiredWebInterceptor);
+        webInterceptorDelegate.init();
+
+        final List<String> wrongDecisions = new ArrayList<>();
+        for (final Object[] row : PATH_VARIANTS) {
+            final HttpServletRequest request = mock(HttpServletRequest.class, Mockito.withSettings().lenient());
+            final HttpServletResponse response = mock(HttpServletResponse.class, Mockito.withSettings().lenient());
+            when(request.getRequestURI()).thenReturn((String) row[0]);
+            when(request.getServletPath()).thenReturn((String) row[1]);
+            when(request.getPathInfo()).thenReturn((String) row[2]);
+            when(response.getWriter()).thenReturn(mock(PrintWriter.class));
+
+            final boolean loginRequired = (Boolean) row[3];
+            if (loginRequired == webInterceptorDelegate.intercept(request, response).isShouldContinue()) {
+                wrongDecisions.add(row[0] + (loginRequired ? " was let through" : " was stopped"));
+            }
+        }
+
+        webInterceptorDelegate.destroy();
+        assertTrue("Wrong login decisions: " + wrongDecisions, wrongDecisions.isEmpty());
     }
 
     /**

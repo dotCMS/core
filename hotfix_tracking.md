@@ -140,3 +140,4 @@ Release-25.07.10 LTS
 134. https://github.com/dotCMS/private-issues/issues/845 : Ubaid Raza F7: Missing authorization on five of the eight /api/integrity/* endpoints (5.4 Medium) #38346 #845
 135. https://github.com/dotCMS/private-issues/issues/898 : Struts EditCategoryAction delete: category permissions and tree links are removed before the EDIT check, and the deletes stick (6.5 Medium) #38315 #898
 136. https://github.com/dotCMS/private-issues/issues/643 : sec: harden portlet-only gated methods in RoleAjax (follow-on to #640) #36345 #643
+137. https://github.com/dotCMS/private-issues/issues/712 : Back-end login filter bypass via lower-case %2e exposes internal JSPs to anonymous users #38431 #712
