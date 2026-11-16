@@ -177,6 +177,8 @@ public class FilterDescriptor implements Comparable<FilterDescriptor> {
 
         if(!isSet(getFilters())){
             errors.add("The required field `Filters` isn't set on the incoming file.");
+            // The checks below read the filters, so stop here instead of failing on a null map
+            throw new DotDataValidationException(errors.size() + " error(s): " + String.join(" , ", errors));
         }
 
         final List <String> listOfPossibleFilters = new ArrayList<>();

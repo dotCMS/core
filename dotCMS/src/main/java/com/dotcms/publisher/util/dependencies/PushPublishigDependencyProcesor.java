@@ -70,6 +70,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
@@ -107,24 +108,19 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
 
     /**
      * For the lifetime of this bundle generation, holds how many relationship levels may still be
-     * followed from each Contentlet that was reached through a relationship, keyed by identifier.
-     * An explicitly selected Contentlet is not in the map and starts at the full depth from
-     * {@link #configuredRelationshipDepth}. When a Contentlet with {@code n} levels left is
-     * processed and {@code n > 1}, each related Contentlet is recorded with {@code n - 1} and queued
-     * for its own dependency processing; with {@code n == 1} its related content is added to the
-     * bundle without being followed. If a Contentlet is reached by several paths, the largest
-     * value is kept. Cyclic relationship graphs terminate because
-     * {@link ConcurrentDependencyProcessor#addAsset(Object, PusheableAsset)} never queues the same
-     * asset twice, even when the depth is unlimited.
+     * followed from each Contentlet, keyed by identifier. An explicitly selected Contentlet is
+     * recorded with the full depth from {@link #configuredRelationshipDepth} when it is added (see
+     * {@link #addAsset(Object, PusheableAsset)}); any other Contentlet not in the map also starts at
+     * the full depth. When a Contentlet with {@code n} levels left is processed and {@code n > 1},
+     * each related Contentlet is recorded with {@code n - 1} and queued for its own dependency
+     * processing; with {@code n == 1} its related content is added to the bundle without being
+     * followed.
      * <p>
-     * <b>Known limitation:</b> processing runs concurrently and each Contentlet is processed only
-     * once. If a Contentlet is first processed with few levels left and is later reached by a path
-     * with more levels left (or is both an explicitly selected item and a relation of another
-     * selected item), it is not processed again, so the deeper levels below it may be left out. The
-     * configured depth is never exceeded, so this is a bounded, order-dependent under-inclusion,
-     * not a crash or data-integrity issue. It cannot happen with unlimited depth and no ceiling.
-     * Fixing it properly would mean letting the shared {@link DependencyProcessor} queue re-process
-     * an asset, which every asset type uses.
+     * Processing runs concurrently, so a Contentlet can be processed through a long path before a
+     * shorter path reaches it. A recorded value therefore only ever grows, and whenever it grows the
+     * Contentlet is queued again (see {@link #addRelatedContentlet(Contentlet, int, String)}), so the
+     * levels below it are followed with the larger budget. Values can only grow a bounded number of
+     * times, so cyclic graphs still terminate, even when the depth is unlimited.
      */
     private final Map<String, Integer> remainingRelationshipDepth = new ConcurrentHashMap<>();
 
@@ -551,15 +547,11 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                     for (Entry<Relationship, List<Contentlet>> relationshipListEntry : contentRelationships
                             .entrySet()) {
                         if (recurseIntoRelated) {
-                            // Record the depth left for each related contentlet before queuing it; keep the
-                            // larger value if another path already reached it with more depth left
-                            relationshipListEntry.getValue().forEach(relatedContentlet ->
-                                    remainingRelationshipDepth.merge(relatedContentlet.getIdentifier(),
-                                            remainingDepth - 1, Math::max));
-
-                            tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
-                                    relationshipListEntry.getValue(),
-                                    ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(relationshipListEntry.getKey()));
+                            final String reason = ManifestReason.INCLUDE_DEPENDENCY_FROM
+                                    .getMessage(relationshipListEntry.getKey());
+                            for (final Contentlet relatedContentlet : relationshipListEntry.getValue()) {
+                                addRelatedContentlet(relatedContentlet, remainingDepth - 1, reason);
+                            }
                         } else {
                             contentsToProcess.addAll(relationshipListEntry.getValue());
 
@@ -986,9 +978,63 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
         return result;
     }
 
+    /**
+     * Queues an explicitly selected asset for dependency processing. A selected Contentlet is
+     * recorded with the full relationship depth first, so it is followed to the configured depth
+     * even if it is also related to another selected item and is reached through it.
+     *
+     * @param asset          The selected asset.
+     * @param pusheableAsset The type of the asset.
+     */
     @Override
-    public void addAsset(Object asset, PusheableAsset pusheableAsset) {
+    public void addAsset(final Object asset, final PusheableAsset pusheableAsset) {
+        if (asset instanceof Contentlet && UtilMethods.isSet(((Contentlet) asset).getIdentifier())) {
+            remainingRelationshipDepth.merge(((Contentlet) asset).getIdentifier(),
+                    configuredRelationshipDepth.get(), Math::max);
+        }
         dependencyProcessor.addAsset(asset, pusheableAsset);
+    }
+
+    /**
+     * Adds a Contentlet reached through a relationship and queues it so its own relationships are
+     * followed with {@code depthLeft} levels. If an earlier path already recorded it with fewer
+     * levels left, the larger value is recorded and the Contentlet is queued again, because it may
+     * already have been processed with the smaller value. If it was recorded with as many or more
+     * levels left, the earlier processing already covers this path.
+     *
+     * @param relatedContentlet The related Contentlet.
+     * @param depthLeft         Relationship levels that may still be followed from it.
+     * @param evaluateReason    The manifest reason for including it.
+     */
+    private void addRelatedContentlet(final Contentlet relatedContentlet, final int depthLeft,
+            final String evaluateReason) {
+        if (!UtilMethods.isSet(relatedContentlet)
+                || !UtilMethods.isSet(relatedContentlet.getIdentifier())) {
+            return;
+        }
+        final AtomicBoolean raisedExistingValue = new AtomicBoolean(false);
+        remainingRelationshipDepth.compute(relatedContentlet.getIdentifier(), (id, previous) -> {
+            if (previous == null) {
+                return depthLeft;
+            }
+            if (depthLeft > previous) {
+                raisedExistingValue.set(true);
+                return depthLeft;
+            }
+            return previous;
+        });
+
+        if (!raisedExistingValue.get()) {
+            tryToAddAndProcessDependencies(PusheableAsset.CONTENTLET, relatedContentlet, evaluateReason);
+            return;
+        }
+        try {
+            if (shouldIncludeDependency(tryToAdd(PusheableAsset.CONTENTLET, relatedContentlet, evaluateReason))) {
+                dependencyProcessor.reprocessAsset(relatedContentlet, PusheableAsset.CONTENTLET);
+            }
+        } catch (final AssetExcludeException e) {
+            dependencyProcessor.reprocessAsset(relatedContentlet, PusheableAsset.CONTENTLET);
+        }
     }
 
     @Override

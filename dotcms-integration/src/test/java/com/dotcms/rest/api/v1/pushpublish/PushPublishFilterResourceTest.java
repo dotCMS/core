@@ -25,6 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 
@@ -227,6 +228,35 @@ public class PushPublishFilterResourceTest {
         } finally {
             APILocator.getPublisherAPI().clearFilterDescriptorList();
         }
+    }
+
+    /**
+     * Method to test: {@link PushPublishFilterResource#saveFromForm(HttpServletRequest, HttpServletResponse, FilterDescriptorForm)}
+     * Given Scenario: A filter whose {@code relationshipsDepth} is negative is submitted through the form.
+     * ExpectedResult: The request is rejected with an {@link IllegalArgumentException} (HTTP 400) naming the
+     * field, and the filter is neither saved nor listed (issue #38394).
+     */
+    @Test
+    public void test_saveFromForm_invalidRelationshipsDepth_isRejected() throws DotDataException {
+        final String invalidKey = "invalidRelationshipsDepth" + System.currentTimeMillis() + ".yml";
+        final FilterDescriptorForm form = new FilterDescriptorForm.Builder()
+                .key(invalidKey)
+                .title("Invalid relationships depth")
+                .roles("DOTCMS_BACK_END_USER")
+                .filters(ImmutableMap.of("dependencies", true, "relationships", true,
+                        "relationshipsDepth", -1))
+                .build();
+        try {
+            resource.saveFromForm(getHttpRequest(true), response, form);
+            Assert.fail("A negative relationshipsDepth must be rejected");
+        } catch (final IllegalArgumentException e) {
+            Assert.assertTrue(e.getMessage(), e.getMessage().contains("relationshipsDepth"));
+        }
+        Assert.assertFalse("The invalid filter must not be listed",
+                APILocator.getPublisherAPI().existsFilterDescriptor(invalidKey));
+        Assert.assertFalse("The invalid filter must not be written to disk",
+                Path.of(APILocator.getFileAssetAPI().getRealAssetsRootPath(),
+                        "server", "publishing-filters", invalidKey).toFile().exists());
     }
 
     /**

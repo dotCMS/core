@@ -935,6 +935,47 @@ public class DependencyManagerTest {
     }
 
     /**
+     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+     * <b>Given Scenario:</b> An A-&gt;B-&gt;C-&gt;D-&gt;E chain where a1 is also related directly
+     * to c1. Both a1 and c1 are selected in the bundle, with {@code relationshipsDepth: 2}. a1 is
+     * processed first and reaches c1 as a relation with only 1 level left. <p>
+     * <b>ExpectedResult:</b> c1 is still followed with the full depth of 2 because it was selected,
+     * so e1 (two levels below c1) is included (issue #38394).
+     */
+    @Test
+    public void test_PP_relationshipsDepth_selected_item_also_related_keeps_full_depth()
+            throws DotDataException, DotBundleException, DotSecurityException {
+
+        final RelationshipChain chain = createABCRelationshipChain();
+        final Object[] levelD = appendRelationshipLevel(chain.host, chain.typeC, chain.c1, "d1");
+        final Contentlet d1 = (Contentlet) levelD[1];
+        final Object[] levelE = appendRelationshipLevel(chain.host, (ContentType) levelD[0], d1, "e1");
+        final Contentlet e1 = (Contentlet) levelE[1];
+
+        final Relationship relationshipAtoC = new FieldRelationshipDataGen()
+                .child(chain.typeC).parent(chain.typeA).nextPersisted();
+        final Contentlet checkoutA1 = ContentletDataGen.checkout(chain.a1);
+        checkoutA1.setProperty(relationshipAtoC.getChildRelationName(), Arrays.asList(chain.c1));
+        ContentletDataGen.checkin(checkoutA1);
+
+        final String filterKey = "RelationshipsDepth2.yml";
+        createRelationshipsDepthFilter(filterKey, Map.of("relationshipsDepth", 2));
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        createBundle(config, chain.a1, filterKey);
+        config.setLuceneQueries(Lists.newArrayList("+identifier:" + chain.a1.getIdentifier(),
+                "+identifier:" + chain.c1.getIdentifier()));
+        final DependencyManager dependencyManager = new DependencyManager(user, config);
+        dependencyManager.setDependencies();
+        @SuppressWarnings("unchecked")
+        final Set<String> contents = dependencyManager.getContents();
+
+        assertTrue("d1 should be included", contents.contains(d1.getIdentifier()));
+        assertTrue("e1 should be included: c1 was selected, so it is followed two levels",
+                contents.contains(e1.getIdentifier()));
+    }
+
+    /**
      * <b>Method to test:</b> PushPublishigDependencyProcesor.tryToAdd(PusheableAsset, Object, String) <p>
      * <b>Given Scenario:</b> Push publish a page with the filter 'Only Selected Items' selected.<p>
      * <b>ExpectedResult:</b> The template should not be included in the dependencies.

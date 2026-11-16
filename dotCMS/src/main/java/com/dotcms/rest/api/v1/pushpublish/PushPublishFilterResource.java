@@ -12,6 +12,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -436,6 +437,15 @@ public class PushPublishFilterResource {
         final FilterDescriptor filterDescriptor = new FilterDescriptor(filterDescriptorForm.getKey(),
                 filterDescriptorForm.getTitle(), filterDescriptorForm.getSort(), filterDescriptorForm.getFilters(),
                 filterDescriptorForm.isDefaultFilter(), filterDescriptorForm.getRoles());
+        try {
+            // Reject an invalid filter here: otherwise it is written to disk and only dropped,
+            // with a log warning, when the filter list is reloaded
+            filterDescriptor.validate();
+        } catch (final DotDataValidationException e) {
+            Logger.debug(this, () -> String.format("Filter '%s' is invalid: %s",
+                    filterDescriptor.getKey(), e.getMessage()));
+            throw new IllegalArgumentException(e.getMessage(), e);
+        }
         this.publisherAPI.get().upsertFilterDescriptor(filterDescriptor);
         return this.publisherAPI.get().getFiltersDescriptorsByRole(user).stream().map(FilterDescriptor::getKey).collect(Collectors.toList());
     }
