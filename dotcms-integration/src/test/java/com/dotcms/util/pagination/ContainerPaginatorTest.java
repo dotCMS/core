@@ -1,22 +1,58 @@
 package com.dotcms.util.pagination;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.exception.ExceptionUtil;
+import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerView;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
+import org.apache.commons.beanutils.BeanUtils;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -84,6 +120,458 @@ public class ContainerPaginatorTest extends ContentletBaseTest {
             if (null != containerThree) {
                 containerAPI.delete(containerThree, user, false);
             }
+        }
+    }
+
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: Two Containers use the same Content Type. A back-end user can read the Content Type and
+     * the first Container, but has no permission on the second one.
+     * Expected Result: Filtering by that Content Type returns only the first Container.
+     */
+    @Test
+    public void getItems_byContentType_returnsOnlyContainersTheUserCanRead() throws Exception {
+        final ContentTypeUsage usage = new ContentTypeUsage();
+        try {
+            usage.create();
+            usage.grantRead(usage.firstContainer);
+
+            assertEquals(Set.of(usage.firstContainer.getIdentifier()), usage.identifiersFound());
+        } finally {
+            usage.cleanUp();
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: Two Containers use the same Content Type, and a back-end user can read the Content Type
+     * and both Containers.
+     * Expected Result: Filtering by that Content Type returns both Containers.
+     */
+    @Test
+    public void getItems_byContentType_returnsEveryReadableContainer() throws Exception {
+        final ContentTypeUsage usage = new ContentTypeUsage();
+        try {
+            usage.create();
+            usage.grantRead(usage.firstContainer);
+            usage.grantRead(usage.secondContainer);
+
+            assertEquals(Set.of(usage.firstContainer.getIdentifier(), usage.secondContainer.getIdentifier()),
+                    usage.identifiersFound());
+        } finally {
+            usage.cleanUp();
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: Two Containers use the same Content Type, a back-end user can read both, and the second
+     * one is archived.
+     * Expected Result: Filtering by that Content Type returns the archived Container only when archived
+     * Containers are requested.
+     */
+    @Test
+    public void getItems_byContentTypeWithArchived_returnsArchivedContainer() throws Exception {
+        final ContentTypeUsage usage = new ContentTypeUsage();
+        try {
+            usage.create();
+            usage.grantRead(usage.firstContainer);
+            usage.grantRead(usage.secondContainer);
+            containerAPI.archive(usage.secondContainer, APILocator.systemUser(), false);
+
+            assertEquals(Set.of(usage.firstContainer.getIdentifier()), usage.identifiersFound());
+            assertEquals(Set.of(usage.firstContainer.getIdentifier(), usage.secondContainer.getIdentifier()),
+                    usage.identifiersFound(true));
+        } finally {
+            usage.cleanUp();
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: Two Containers use a Content Type, and a back-end user has no permission on that
+     * Content Type.
+     * Expected Result: Filtering by that Content Type fails with a permission error.
+     */
+    @Test
+    public void getItems_byContentTypeTheUserCannotRead_failsWithPermissionError() throws Exception {
+        final ContentTypeUsage usage = new ContentTypeUsage();
+        try {
+            usage.create();
+            final User outsider = usage.createOutsider();
+
+            final PaginationException error = assertThrows(PaginationException.class,
+                    () -> usage.search(outsider, usage.contentType.id()));
+            assertTrue(ExceptionUtil.causedBy(error, DotSecurityException.class));
+        } finally {
+            usage.cleanUp();
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: No Content Type exists with the requested variable.
+     * Expected Result: Filtering by it fails with a not-found error.
+     */
+    @Test
+    public void getItems_byUnknownContentType_failsWithNotFoundError() {
+        final PaginationException error = assertThrows(PaginationException.class,
+                () -> new ContainerPaginator().getItems(APILocator.systemUser(), "", 40, 0, "title",
+                        OrderDirection.ASC,
+                        Map.of(ContainerPaginator.CONTENT_TYPE, "unknownType" + System.currentTimeMillis())));
+        assertTrue(ExceptionUtil.causedBy(error, NotFoundInDbException.class));
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: A Container used a Content Type in an earlier version, and its current version uses a
+     * different Content Type only.
+     * Expected Result: Filtering by the first Content Type does not return that Container.
+     */
+    @Test
+    public void getItems_byContentType_skipsContainersThatOnlyUsedItInAnOlderVersion() throws Exception {
+        final ContentTypeUsage usage = new ContentTypeUsage();
+        try {
+            usage.create();
+            usage.grantRead(usage.firstContainer);
+            usage.grantRead(usage.secondContainer);
+            usage.saveNewVersionWithout(usage.secondContainer);
+
+            assertEquals(Set.of(usage.firstContainer.getIdentifier()), usage.identifiersFound());
+        } finally {
+            usage.cleanUp();
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: A file-based Container uses a Content Type, and later cannot be loaded because its
+     * {@code container.vtl} exists only in a language other than the default one.
+     * Expected Result: While it loads, filtering by that Content Type returns it. Once it cannot be loaded,
+     * filtering by that Content Type fails instead of returning a list without it, while filtering by a
+     * Content Type it does not use, or not filtering at all, still works.
+     */
+    @Test
+    public void getItems_byContentTypeWhenAFileContainerUsingItCannotBeLoaded_fails() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().host(defaultHost).nextPersisted();
+        final ContentType unusedType = new ContentTypeDataGen().host(defaultHost).nextPersisted();
+        final Language otherLanguage = new LanguageDataGen().nextPersisted();
+        final ContainerAsFileDataGen fileContainerGen = new ContainerAsFileDataGen().host(defaultHost)
+                .ignoreDefaultContentTypes().contentType(contentType, "$!{body}");
+        final FileAssetContainer fileContainer = fileContainerGen.nextPersisted();
+        final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        try {
+            assertTrue(identifiersFoundBySystem(contentType).contains(fileContainer.getIdentifier()));
+
+            moveToLanguage(fileContainer.getIdentifier(), otherLanguage.getId());
+
+            assertThrows(DotRuntimeException.class, () -> identifiersFoundBySystem(contentType));
+            assertTrue(identifiersFoundBySystem(unusedType).isEmpty());
+            new ContainerPaginator().getItems(APILocator.systemUser(), "", 40, 0, "title", OrderDirection.ASC,
+                    Map.of());
+        } finally {
+            moveToLanguage(fileContainer.getIdentifier(), defaultLanguageId);
+            APILocator.getFolderAPI().delete(APILocator.getFolderAPI().find(
+                            fileContainerGen.getMetaData().getFolder(), APILocator.systemUser(), false),
+                    APILocator.systemUser(), false);
+            ContentTypeDataGen.remove(unusedType);
+            ContentTypeDataGen.remove(contentType);
+            LanguageDataGen.remove(otherLanguage);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: A file-based Container has a {@code postloop.vtl} file, which holds the code shown after
+     * its contents, and a Content Type has {@code postloop} as its variable.
+     * Expected Result: Filtering by that Content Type does not return the Container, because the file is not
+     * a Content Type file.
+     */
+    @Test
+    public void getItems_byContentTypeNamedLikeAContainerFile_skipsContainersWithThatFile() throws Exception {
+        final ContentType postLoopType = new ContentTypeDataGen().host(defaultHost)
+                .velocityVarName("postloop").nextPersisted();
+        final ContentType usedType = new ContentTypeDataGen().host(defaultHost).nextPersisted();
+        final ContainerAsFileDataGen fileContainerGen = new ContainerAsFileDataGen().host(defaultHost)
+                .ignoreDefaultContentTypes().contentType(usedType, "$!{body}");
+        final FileAssetContainer fileContainer = fileContainerGen.nextPersisted();
+        final Folder containerFolder = APILocator.getFolderAPI().find(
+                fileContainerGen.getMetaData().getFolder(), APILocator.systemUser(), false);
+        try {
+            final java.io.File postLoop = java.io.File.createTempFile("postloop", ".vtl");
+            FileUtil.write(postLoop, "</div>");
+            new FileAssetDataGen(containerFolder, postLoop).host(defaultHost)
+                    .setProperty("title", "postloop.vtl")
+                    .setProperty("fileName", "postloop.vtl")
+                    .nextPersisted();
+
+            assertTrue(identifiersFoundBySystem(usedType).contains(fileContainer.getIdentifier()));
+            assertFalse(identifiersFoundBySystem(postLoopType).contains(fileContainer.getIdentifier()));
+        } finally {
+            APILocator.getFolderAPI().delete(containerFolder, APILocator.systemUser(), false);
+            ContentTypeDataGen.remove(usedType);
+            ContentTypeDataGen.remove(postLoopType);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: A file-based Container folder holds an HTML Page, not a file, named after another
+     * Content Type's variable with the {@code .vtl} extension.
+     * Expected Result: Filtering by that Content Type does not return the Container, which only reads files.
+     */
+    @Test
+    public void getItems_byContentTypeNamedLikeAPageInAContainerFolder_skipsThatContainer() throws Exception {
+        final ContentType pageNamedType = new ContentTypeDataGen().host(defaultHost).nextPersisted();
+        final ContentType usedType = new ContentTypeDataGen().host(defaultHost).nextPersisted();
+        final ContainerAsFileDataGen fileContainerGen = new ContainerAsFileDataGen().host(defaultHost)
+                .ignoreDefaultContentTypes().contentType(usedType, "$!{body}");
+        final FileAssetContainer fileContainer = fileContainerGen.nextPersisted();
+        final Folder containerFolder = APILocator.getFolderAPI().find(
+                fileContainerGen.getMetaData().getFolder(), APILocator.systemUser(), false);
+        final Template template = new TemplateDataGen().host(defaultHost).nextPersisted();
+        try {
+            new HTMLPageDataGen(containerFolder, template)
+                    .pageURL(pageNamedType.variable() + ".vtl").nextPersisted();
+
+            assertTrue(identifiersFoundBySystem(usedType).contains(fileContainer.getIdentifier()));
+            assertFalse(identifiersFoundBySystem(pageNamedType).contains(fileContainer.getIdentifier()));
+        } finally {
+            APILocator.getFolderAPI().delete(containerFolder, APILocator.systemUser(), false);
+            TemplateDataGen.remove(template);
+            ContentTypeDataGen.remove(usedType);
+            ContentTypeDataGen.remove(pageNamedType);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: A file-based Container uses a Content Type, and a back-end user can read the Content
+     * Type but not the Container's {@code container.vtl}.
+     * Expected Result: Filtering by that Content Type returns the Container to an admin, but not to that user.
+     */
+    @Test
+    public void getItems_byContentType_returnsOnlyFileContainersTheUserCanRead() throws Exception {
+        final ContentTypeUsage usage = new ContentTypeUsage();
+        Folder containerFolder = null;
+        try {
+            usage.create();
+            final ContainerAsFileDataGen fileContainerGen = new ContainerAsFileDataGen().host(defaultHost)
+                    .ignoreDefaultContentTypes().contentType(usage.contentType, "$!{body}");
+            final FileAssetContainer fileContainer = fileContainerGen.nextPersisted();
+            containerFolder = APILocator.getFolderAPI().find(
+                    fileContainerGen.getMetaData().getFolder(), APILocator.systemUser(), false);
+            ContentTypeUsage.savePermission(fileContainerGen.getMetaData(), usage.ownerRole);
+
+            assertTrue(identifiersFoundBySystem(usage.contentType).contains(fileContainer.getIdentifier()));
+            assertFalse(usage.identifiersFound().contains(fileContainer.getIdentifier()));
+        } finally {
+            if (null != containerFolder) {
+                APILocator.getFolderAPI().delete(containerFolder, APILocator.systemUser(), false);
+            }
+            usage.cleanUp();
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: A file-based Container on a Site the back-end user cannot read uses a Content Type, and
+     * the user can read the Container's folder and files.
+     * Expected Result: Filtering by that Content Type, with no Site given, returns the Container to that user.
+     */
+    @Test
+    public void getItems_byContentType_returnsReadableFileContainerOnSiteTheUserCannotRead() throws Exception {
+        final ContentTypeUsage usage = new ContentTypeUsage();
+        Host otherSite = null;
+        try {
+            usage.create();
+            otherSite = new SiteDataGen().nextPersisted();
+            final ContainerAsFileDataGen fileContainerGen = new ContainerAsFileDataGen().host(otherSite)
+                    .ignoreDefaultContentTypes().contentType(usage.contentType, "$!{body}");
+            final FileAssetContainer fileContainer = fileContainerGen.nextPersisted();
+            final Folder containerFolder = APILocator.getFolderAPI().find(
+                    fileContainerGen.getMetaData().getFolder(), APILocator.systemUser(), false);
+            ContentTypeUsage.savePermission(containerFolder, usage.readerRole);
+            for (final FileAsset file : APILocator.getFileAssetAPI().findFileAssetsByFolder(
+                    containerFolder, APILocator.systemUser(), false)) {
+                ContentTypeUsage.savePermission(file, usage.readerRole);
+            }
+            assertFalse(permissionAPI.doesUserHavePermission(otherSite, PermissionAPI.PERMISSION_READ,
+                    usage.reader, false));
+
+            assertTrue(usage.identifiersFound().contains(fileContainer.getIdentifier()));
+        } finally {
+            if (null != otherSite) {
+                APILocator.getHostAPI().archive(otherSite, APILocator.systemUser(), false);
+                APILocator.getHostAPI().delete(otherSite, APILocator.systemUser(), false);
+            }
+            usage.cleanUp();
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: The default locale is Turkish, where an upper-case {@code I} does not lower-case to
+     * {@code i}, and a file-based Container uses a Content Type whose variable starts with {@code I}.
+     * Expected Result: Filtering by that Content Type still returns the Container.
+     */
+    @Test
+    public void getItems_byContentTypeUnderTurkishLocale_returnsFileContainerUsingIt() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().host(defaultHost)
+                .velocityVarName("Item" + System.currentTimeMillis()).nextPersisted();
+        final ContainerAsFileDataGen fileContainerGen = new ContainerAsFileDataGen().host(defaultHost)
+                .ignoreDefaultContentTypes().contentType(contentType, "$!{body}");
+        final FileAssetContainer fileContainer = fileContainerGen.nextPersisted();
+        final Locale defaultLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+
+            assertTrue(identifiersFoundBySystem(contentType).contains(fileContainer.getIdentifier()));
+        } finally {
+            Locale.setDefault(defaultLocale);
+            APILocator.getFolderAPI().delete(APILocator.getFolderAPI().find(
+                            fileContainerGen.getMetaData().getFolder(), APILocator.systemUser(), false),
+                    APILocator.systemUser(), false);
+            ContentTypeDataGen.remove(contentType);
+        }
+    }
+
+    private static Set<String> identifiersFoundBySystem(final ContentType contentType) {
+        return new ContainerPaginator().getItems(APILocator.systemUser(), "", 40, 0, "title", OrderDirection.ASC,
+                        Map.of(ContainerPaginator.CONTENT_TYPE, contentType.id())).stream()
+                .map(containerView -> containerView.getContainer().getIdentifier())
+                .collect(Collectors.toSet());
+    }
+
+    /** Moves every version of a Contentlet to the given language, and flushes the caches that hold it. */
+    private static void moveToLanguage(final String identifier, final long languageId) throws DotDataException {
+        new DotConnect().executeUpdate("update contentlet set language_id = ? where identifier = ?",
+                languageId, identifier);
+        new DotConnect().executeUpdate("update contentlet_version_info set lang = ? where identifier = ?",
+                languageId, identifier);
+        CacheLocator.getCacheAdministrator().flushAll();
+    }
+
+    /**
+     * A Content Type used by two Containers, and a back-end user who can read the Content Type. Each
+     * Container starts with an individual permission for a separate role only, so it does not inherit any
+     * permission from its Site and the user can read it only when {@link #grantRead} is called.
+     * {@link #cleanUp()} removes whatever {@link #create()} got to create.
+     */
+    private static class ContentTypeUsage {
+
+        private Role ownerRole;
+        private User reader;
+        private Role readerRole;
+        private ContentType contentType;
+        private Container firstContainer;
+        private Container secondContainer;
+        private User outsider;
+
+        void create() throws DotDataException, DotSecurityException {
+            ownerRole = new RoleDataGen().nextPersisted();
+            reader = new UserDataGen()
+                    .roles(APILocator.getRoleAPI().loadBackEndUserRole())
+                    .nextPersisted();
+            readerRole = APILocator.getRoleAPI().getUserRole(reader);
+            contentType = new ContentTypeDataGen().host(defaultHost).nextPersisted();
+            savePermission(contentType, readerRole);
+            firstContainer = newContainer();
+            savePermission(firstContainer, ownerRole);
+            secondContainer = newContainer();
+            savePermission(secondContainer, ownerRole);
+        }
+
+        private Container newContainer() {
+            return new ContainerDataGen().site(defaultHost)
+                    .withContentType(contentType, "$!{body}").nextPersisted();
+        }
+
+        void grantRead(final Container container) throws DotDataException, DotSecurityException {
+            savePermission(container, readerRole);
+        }
+
+        /** Saves a new working version of the Container that uses only the Page Content Type. */
+        void saveNewVersionWithout(final Container container) throws Exception {
+            final Container nextVersion = new Container();
+            BeanUtils.copyProperties(nextVersion, container);
+            nextVersion.setInode(null);
+            final ContainerStructure pageUsage = new ContainerStructure();
+            pageUsage.setStructureId(APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .find("htmlpageasset").id());
+            pageUsage.setCode("$!{title}");
+            containerAPI.save(nextVersion, List.of(pageUsage), defaultHost, APILocator.systemUser(), false);
+        }
+
+        Set<String> identifiersFound() {
+            return identifiersFound(false);
+        }
+
+        Set<String> identifiersFound(final boolean includeArchived) {
+            return new ContainerPaginator().getItems(reader, "", 40, 0, "title", OrderDirection.ASC,
+                            Map.of(ContainerPaginator.CONTENT_TYPE, contentType.id(),
+                                    ContainerPaginator.ARCHIVE_PARAMETER_NAME, includeArchived)).stream()
+                    .map(containerView -> containerView.getContainer().getIdentifier())
+                    .collect(Collectors.toSet());
+        }
+
+        /** Creates a back-end user with no permission on the Content Type or its Containers. */
+        User createOutsider() throws DotDataException {
+            outsider = new UserDataGen()
+                    .roles(APILocator.getRoleAPI().loadBackEndUserRole())
+                    .nextPersisted();
+            return outsider;
+        }
+
+        void search(final User user, final String contentTypeIdOrVar) {
+            new ContainerPaginator().getItems(user, "", 40, 0, "title", OrderDirection.ASC,
+                    Map.of(ContainerPaginator.CONTENT_TYPE, contentTypeIdOrVar));
+        }
+
+        private static void savePermission(final Permissionable permissionable, final Role role)
+                throws DotDataException, DotSecurityException {
+            permissionAPI.save(new Permission(permissionable.getPermissionId(), role.getId(),
+                    PermissionAPI.PERMISSION_READ, true), permissionable, APILocator.systemUser(), false);
+        }
+
+        /**
+         * Removes the test data in reverse order of creation. Every step runs even when an earlier one
+         * fails; the first failure is thrown at the end, with the others attached as suppressed.
+         */
+        void cleanUp() throws Exception {
+            final List<Exception> failures = new ArrayList<>();
+            removeIfCreated(failures, secondContainer, ContainerDataGen::remove);
+            removeIfCreated(failures, firstContainer, ContainerDataGen::remove);
+            removeIfCreated(failures, contentType, ContentTypeDataGen::remove);
+            removeIfCreated(failures, outsider, user -> APILocator.getUserAPI()
+                    .delete(user, TestUserUtils.getAdminUser(), APILocator.systemUser(), false));
+            removeIfCreated(failures, reader, user -> APILocator.getUserAPI()
+                    .delete(user, TestUserUtils.getAdminUser(), APILocator.systemUser(), false));
+            removeIfCreated(failures, ownerRole, RoleDataGen::remove);
+            if (!failures.isEmpty()) {
+                final Exception first = failures.get(0);
+                failures.subList(1, failures.size()).forEach(first::addSuppressed);
+                throw first;
+            }
+        }
+
+        private static <T> void removeIfCreated(final List<Exception> failures, final T created,
+                final Removal<T> removal) {
+            if (null == created) {
+                return;
+            }
+            try {
+                removal.remove(created);
+            } catch (final Exception e) {
+                failures.add(e);
+            }
+        }
+
+        /** Removes one piece of test data. */
+        @FunctionalInterface
+        private interface Removal<T> {
+            void remove(T created) throws Exception;
         }
     }
 

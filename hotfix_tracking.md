@@ -145,3 +145,4 @@ Release-25.07.10 LTS
 139. https://github.com/dotCMS/private-issues/issues/878 : Content Search (es-search) portlet: contentlet title and raw search response printed unescaped, stored XSS against admins (8.7 High) #38273 #878
 140. https://github.com/dotCMS/private-issues/issues/881 : DWR ContainerAjax.checkDependencies: stored XSS from unescaped Container and Template titles in the delete dialog, runs in the administrator's session (8.1 High) #38173 #881
 141. https://github.com/dotCMS/private-issues/issues/986 : Workflow names still execute in the step edit dialog and legacy content search (follow-up to #475 / core#38114) #38454 #38479 #986
+142. https://github.com/dotCMS/private-issues/issues/991 : StructureAjax.checkDependencies: stored XSS via unescaped container title in the content-type delete dialog, plus unfiltered container-inventory disclosure (8.7 High) #38409 #991
