@@ -138,3 +138,4 @@ Release-25.07.10 LTS
 132. https://github.com/dotCMS/private-issues/issues/952 : Velocity $request.getRequest() returns the container's RequestFacade, so the session attribute deny list in VelocityRequestWrapper can be bypassed (8.8 High) #38405 #952
 133. https://github.com/dotCMS/private-issues/issues/723 : Velocity sandbox: proactively extend SecureIntrospector deny-list (javax.naming, MethodHandle, ProcessHandle, Desktop) + resolve whitelist/allow-by-default posture #38438 #723
 134. https://github.com/dotCMS/private-issues/issues/845 : Ubaid Raza F7: Missing authorization on five of the eight /api/integrity/* endpoints (5.4 Medium) #38346 #845
+135. https://github.com/dotCMS/private-issues/issues/898 : Struts EditCategoryAction delete: category permissions and tree links are removed before the EDIT check, and the deletes stick (6.5 Medium) #38315 #898

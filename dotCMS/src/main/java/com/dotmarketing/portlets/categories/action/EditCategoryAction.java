@@ -8,7 +8,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -152,7 +151,6 @@ public class EditCategoryAction extends DotPortletAction {
     	User user = _getUser(req);
         Category cat = (Category) req.getAttribute(WebKeys.CATEGORY_EDIT);
         
-        InodeFactory.deleteInode(cat);
 		try {
 			categoryAPI.delete(cat, user, false);
 		} catch (DotSecurityException e) {
