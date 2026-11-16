@@ -150,3 +150,4 @@ Release-25.07.10 LTS
 144. https://github.com/dotCMS/private-issues/issues/901 : [CRITICAL] LoginFactory.passwordMatch: legacy-format branch accepts the stored value itself as the password (pass-the-hash for SAML-provisioned users, published constant for LDAP/CAS users) #38373 #901
 145. https://github.com/dotCMS/private-issues/issues/1019 : REST /api/v1/content/{id}?depth: the caller's related content is written into the shared cached contentlet and served to later readers, anonymous included #38419 #1019
 146. https://github.com/dotCMS/private-issues/issues/728 : Port Content API field masking (CONTENT_API_FIELDS_TO_MASK / _TO_HIDE) from 5.1.6.k to core #38148 #728
+147. https://github.com/dotCMS/private-issues/issues/857 : Stop returning user email and userId in front-end / anonymous API responses #38148 #38193 #857

@@ -1,6 +1,7 @@
 package com.dotcms.rest.elasticsearch;
 
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.filter.ContentFieldFilter;
 import com.dotcms.rest.BaseRestPortlet;
 import com.dotcms.rest.ContentHelper;
 import com.dotcms.rest.InitDataObject;
@@ -97,11 +98,16 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 			return ExceptionMapperUtil.createResponse(e1, Response.Status.BAD_REQUEST);
 		}
 
+		final ContentFieldFilter fieldFilter = ContentFieldFilter.forUser(user);
+		if (!fieldFilter.allowsJsonSearch(esQuery.toString())) {
+			return ExceptionMapperUtil.createResponse(null, fieldFilter.searchRejectedMessage());
+		}
+
 		try {
 
 			final boolean isAnonymous = APILocator.getUserAPI().getAnonymousUser().equals(user);
 			final ESSearchResults esresult = esapi
-					.esSearch(esQuery.toString(), isAnonymous ? mode.showLive : liveParam, user,
+					.esSearch(fieldFilter.restrictTopHits(esQuery.toString()), isAnonymous ? mode.showLive : liveParam, user,
 							mode.respectAnonPerms);
 			
 			final JSONObject json = new JSONObject();
@@ -188,6 +194,11 @@ public class ESContentResourcePortlet extends BaseRestPortlet {
 		User user = initData.getUser();
 		try {
 			String esQuery = IOUtils.toString(request.getInputStream());
+			final ContentFieldFilter fieldFilter = ContentFieldFilter.forUser(user);
+			if (!fieldFilter.allowsJsonSearch(esQuery)) {
+				return ExceptionMapperUtil.createResponse(null, fieldFilter.searchRejectedMessage());
+			}
+			esQuery = fieldFilter.restrictTopHits(esQuery);
 
 			return responseResource.response(esapi.esSearchRaw(esQuery, mode.showLive, user, mode.showLive).toString());
 

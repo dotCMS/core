@@ -7,7 +7,9 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import com.dotcms.content.filter.ContentFieldFilter;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.RESTParams;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -96,6 +98,11 @@ public class ContentRelationshipsResource {
         final InitDataObject initData = this.webResource.init(params, request, response, false, null);
         final Map<String, String> paramsMap = initData.getParamsMap();
         final User user = initData.getUser();
+        final ContentFieldFilter fieldFilter = ContentFieldFilter.forUser(user);
+        if (!fieldFilter.allowsSearch(paramsMap.get(RESTParams.QUERY.getValue()),
+                paramsMap.get(RESTParams.ORDERBY.getValue()))) {
+            return ExceptionMapperUtil.createResponse(null, fieldFilter.searchRejectedMessage());
+        }
         Response res = null;
         try {
             final List<Contentlet> cons = this.contentRelationshipsHelper.getRelatedContent

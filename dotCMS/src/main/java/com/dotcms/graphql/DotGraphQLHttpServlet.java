@@ -4,6 +4,7 @@ import com.dotcms.rest.api.CorsFilter;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import graphql.kickstart.execution.GraphQLQueryInvoker;
 import graphql.kickstart.servlet.AbstractGraphQLHttpServlet;
 import graphql.kickstart.servlet.GraphQLConfiguration;
 import io.vavr.Lazy;
@@ -35,12 +36,22 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
     }
 
 
+    /**
+     * Builds the GraphQL servlet configuration: the dotCMS schema, listener and context, and the
+     * instrumentation applied to every query.
+     *
+     * @return the servlet configuration
+     */
     @Override
     protected GraphQLConfiguration getConfiguration() {
         return GraphQLConfiguration
                 .with(new DotGraphQLSchemaProvider())
                 .with(List.of(new DotGraphQLServletListener()))
                 .with(new DotGraphQLContextBuilder())
+                // Keeps user properties out of results for non-back-end callers.
+                .with(GraphQLQueryInvoker.newBuilder()
+                        .withInstrumentation(new UserPropertiesInstrumentation())
+                        .build())
                 .build();
     }
 
