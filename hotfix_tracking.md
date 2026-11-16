@@ -147,3 +147,4 @@ Release-25.07.10 LTS
 141. https://github.com/dotCMS/private-issues/issues/986 : Workflow names still execute in the step edit dialog and legacy content search (follow-up to #475 / core#38114) #38454 #38479 #986
 142. https://github.com/dotCMS/private-issues/issues/991 : StructureAjax.checkDependencies: stored XSS via unescaped container title in the content-type delete dialog, plus unfiltered container-inventory disclosure (8.7 High) #38409 #991
 143. https://github.com/dotCMS/private-issues/issues/1002 : Velocity $xslttool: XSLT extension functions run without secure processing → code execution for a Scripting Developer on Java 21 lines (25.07 LTS); blocked on main by the JDK 25 default (8.5) #38367 #1002
+144. https://github.com/dotCMS/private-issues/issues/901 : [CRITICAL] LoginFactory.passwordMatch: legacy-format branch accepts the stored value itself as the password (pass-the-hash for SAML-provisioned users, published constant for LDAP/CAS users) #38373 #901

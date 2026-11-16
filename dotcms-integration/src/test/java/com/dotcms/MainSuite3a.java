@@ -48,7 +48,8 @@ import org.junit.runners.Suite;
         com.dotmarketing.portlets.contentlet.action.ContentImportAccessTest.class,
         com.dotmarketing.portlets.workflows.action.WorkflowTaskAccessTest.class,
         com.dotmarketing.portlets.contentlet.action.ImportContentletsActionTest.class,
-        com.dotmarketing.portlets.workflows.action.EditWorkflowTaskActionTest.class
+        com.dotmarketing.portlets.workflows.action.EditWorkflowTaskActionTest.class,
+        com.dotmarketing.portal.struts.DotCustomLoginPostActionTest.class
 })
 public class MainSuite3a {
 }

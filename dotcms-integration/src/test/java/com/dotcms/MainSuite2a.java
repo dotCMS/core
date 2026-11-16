@@ -135,7 +135,10 @@ import com.dotmarketing.portlets.structure.action.EditStructureActionSaveTest;
     UserJsViewToolTest.class,
     CMSUserToolTest.class,
     com.dotmarketing.portlets.contentlet.transform.ContentMapWidgetFieldRenderTest.class,
-    com.dotcms.rest.IntegrityResourceTest.class
+    com.dotcms.rest.IntegrityResourceTest.class,
+    com.dotmarketing.webdav.DotWebdavHelperAuthorizePrincipalTest.class,
+    com.dotcms.rest.api.v1.authentication.AuthenticationResourceStoredPasswordTest.class,
+    com.dotmarketing.cms.login.factories.LoginFactoryTest.class
 })
 public class MainSuite2a {
 
