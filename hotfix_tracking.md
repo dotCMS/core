@@ -149,3 +149,4 @@ Release-25.07.10 LTS
 143. https://github.com/dotCMS/private-issues/issues/1002 : Velocity $xslttool: XSLT extension functions run without secure processing → code execution for a Scripting Developer on Java 21 lines (25.07 LTS); blocked on main by the JDK 25 default (8.5) #38367 #1002
 144. https://github.com/dotCMS/private-issues/issues/901 : [CRITICAL] LoginFactory.passwordMatch: legacy-format branch accepts the stored value itself as the password (pass-the-hash for SAML-provisioned users, published constant for LDAP/CAS users) #38373 #901
 145. https://github.com/dotCMS/private-issues/issues/1019 : REST /api/v1/content/{id}?depth: the caller's related content is written into the shared cached contentlet and served to later readers, anonymous included #38419 #1019
+146. https://github.com/dotCMS/private-issues/issues/728 : Port Content API field masking (CONTENT_API_FIELDS_TO_MASK / _TO_HIDE) from 5.1.6.k to core #38148 #728
