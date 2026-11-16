@@ -132,3 +132,4 @@ Release-25.07.10 LTS
 126. https://github.com/dotCMS/private-issues/issues/1026 : Starter export includes the company key, which decrypts push-publishing endpoint secrets #38435 #1026
 127. https://github.com/dotCMS/private-issues/issues/1027 : JavaScript module import through //<site>/application/ reads another site's admin-only modules as the system user #38483 #1027
 128. https://github.com/dotCMS/private-issues/issues/790 : [GLM AI Scanner] Notification cross-user read (allusers=true) + password-reset single-use race + bundle same-name cross-user clobber (+minor CSV formula storage) #38494 #790
+129. https://github.com/dotCMS/private-issues/issues/1012 : Ubaid Raza: Quartz ContentImportThread imports as system user (content-permission bypass) #38411 #1012
