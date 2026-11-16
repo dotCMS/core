@@ -179,6 +179,7 @@
             "{workspaceRoot}/tsconfig.base.json",
             "{workspaceRoot}/nx.json",
             "{workspaceRoot}/pnpm-lock.yaml",
+            { "runtime": "node --version" },
             "{workspaceRoot}/babel.config.json",
             "{workspaceRoot}/tools/rollup/types-first.cjs"
         ],

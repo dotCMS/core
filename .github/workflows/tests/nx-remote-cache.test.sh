@@ -72,6 +72,7 @@ class NxRemoteCacheTests(unittest.TestCase):
         self.assertIn('sharedGlobals', config['namedInputs']['default'])
         self.assertIn('default', config['namedInputs']['production'])
         self.assertIn('{workspaceRoot}/pnpm-lock.yaml', config['namedInputs']['sharedGlobals'])
+        self.assertIn({'runtime': 'node --version'}, config['namedInputs']['sharedGlobals'])
 
     def test_sdk_ai_hashes_backend_openapi_source(self):
         config = json.loads(Path('core-web/libs/sdk/ai/project.json').read_text())
