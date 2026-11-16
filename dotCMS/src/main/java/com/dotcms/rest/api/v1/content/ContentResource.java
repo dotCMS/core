@@ -360,7 +360,7 @@ public class ContentResource {
         Contentlet contentlet = this.resolveContentletOrFallBack(inodeOrIdentifier, mode, languageId, user, variantName);
 
         if (-1 != depth) {
-            ContentUtils.addRelationships(contentlet, user, mode,
+            contentlet = ContentUtils.copyWithRelationships(contentlet, Contentlet::new, user, mode,
                     languageId, depth, request, response);
         }
         final String variant = contentlet.getVariantId();
