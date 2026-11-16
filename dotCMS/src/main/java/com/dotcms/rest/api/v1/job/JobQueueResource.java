@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.job;
 
 import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobListView;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.rest.ResponseEntityJobStatusView;
 import com.dotcms.rest.ResponseEntityView;
@@ -10,6 +11,7 @@ import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.liferay.portal.model.User;
 import graphql.VisibleForTesting;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -180,7 +182,9 @@ public class JobQueueResource {
     @Operation(
             operationId = "getJobStatus",
             summary = "Retrieves job status information",
-            description = "Returns detailed status information for a specific job including progress, state, and results.",
+            description = "Returns detailed status information for a specific job including progress, state, and results."
+                    + " Only the user who created the job and CMS Administrators can read it."
+                    + " Parameters the server sets for uploaded files (tempFileId, requestFingerPrint) are not included.",
             tags = {"Job Queue"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Job status retrieved successfully",
@@ -189,7 +193,7 @@ public class JobQueueResource {
                     @ApiResponse(responseCode = "400", description = "Bad request - Invalid job ID"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
-                    @ApiResponse(responseCode = "404", description = "Job not found"),
+                    @ApiResponse(responseCode = "404", description = "Not Found: No job with the specified ID exists, or the job was not created by the caller (CMS Administrators can read any job)."),
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
@@ -197,14 +201,14 @@ public class JobQueueResource {
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @Parameter(description = "Unique identifier of the job") @PathParam("jobId") String jobId) throws DotDataException {
 
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
+                .init().getUser();
 
-        Job job = helper.getJob(jobId);
+        Job job = helper.getJob(jobId, user);
         return new ResponseEntityView<>(job);
     }
 
@@ -215,13 +219,13 @@ public class JobQueueResource {
     public ResponseEntityView<String> cancelJob(
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("jobId") String jobId) throws DotDataException {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        helper.cancelJob(jobId);
+                .init().getUser();
+        helper.cancelJob(jobId, user);
         return new ResponseEntityView<>("Cancellation request successfully sent to job " + jobId);
     }
 
@@ -233,13 +237,13 @@ public class JobQueueResource {
             @PathParam("queueName") String queueName,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        final JobPaginatedResult result = helper.getActiveJobs(queueName, page, pageSize);
+                .init().getUser();
+        final JobPaginatedResult result = helper.getJobs(JobListView.ACTIVE, queueName, user, page, pageSize);
         return new ResponseEntityView<>(result);
     }
 
@@ -249,13 +253,13 @@ public class JobQueueResource {
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        final JobPaginatedResult result = helper.getJobs(page, pageSize);
+                .init().getUser();
+        final JobPaginatedResult result = helper.getJobs(JobListView.ALL, null, user, page, pageSize);
         return new ResponseEntityView<>(result);
     }
 
@@ -266,13 +270,13 @@ public class JobQueueResource {
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        final JobPaginatedResult result = helper.getActiveJobs(page, pageSize);
+                .init().getUser();
+        final JobPaginatedResult result = helper.getJobs(JobListView.ACTIVE, null, user, page, pageSize);
         return new ResponseEntityView<>(result);
     }
 
@@ -283,13 +287,13 @@ public class JobQueueResource {
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        final JobPaginatedResult result = helper.getCompletedJobs(page, pageSize);
+                .init().getUser();
+        final JobPaginatedResult result = helper.getJobs(JobListView.COMPLETED, null, user, page, pageSize);
         return new ResponseEntityView<>(result);
     }
 
@@ -300,13 +304,13 @@ public class JobQueueResource {
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        final JobPaginatedResult result = helper.getSuccessfulJobs(page, pageSize);
+                .init().getUser();
+        final JobPaginatedResult result = helper.getJobs(JobListView.SUCCESSFUL, null, user, page, pageSize);
         return new ResponseEntityView<>(result);
     }
 
@@ -317,13 +321,13 @@ public class JobQueueResource {
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        final JobPaginatedResult result = helper.getCanceledJobs(page, pageSize);
+                .init().getUser();
+        final JobPaginatedResult result = helper.getJobs(JobListView.CANCELED, null, user, page, pageSize);
         return new ResponseEntityView<>(result);
     }
 
@@ -334,13 +338,13 @@ public class JobQueueResource {
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        final JobPaginatedResult result = helper.getFailedJobs(page, pageSize);
+                .init().getUser();
+        final JobPaginatedResult result = helper.getJobs(JobListView.FAILED, null, user, page, pageSize);
         return new ResponseEntityView<>(result);
     }
 
@@ -351,13 +355,13 @@ public class JobQueueResource {
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @QueryParam("page") @DefaultValue("1") int page,
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        final JobPaginatedResult result = helper.getAbandonedJobs(page, pageSize);
+                .init().getUser();
+        final JobPaginatedResult result = helper.getJobs(JobListView.ABANDONED, null, user, page, pageSize);
         return new ResponseEntityView<>(result);
     }
 
@@ -369,15 +373,15 @@ public class JobQueueResource {
             @Context final HttpServletRequest request, @Context final HttpServletResponse response,
             @PathParam("jobId") String jobId) {
 
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
+                .init().getUser();
 
         // Set up job monitoring
-        return sseMonitorUtil.monitorJob(jobId);
+        return sseMonitorUtil.monitorJob(jobId, user);
     }
 
 }
