@@ -4,6 +4,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -519,13 +520,24 @@ public class ReindexThreadTest {
      * refreshes, which can be up to a second later, so callers poll with {@link #waitUntil}
      * instead of searching once.
      *
+     * <p>The check reads the index through a scroll query, which goes to the search client
+     * directly and does not use the search query cache, and it leaves that cache alone. These
+     * tests ask whether the worker indexed the content, so they must neither depend on nor repair
+     * the cache. {@code ContentletAPI.search} would not do: the worker clears the query cache when
+     * it acknowledges a batch, which is before the index refresh, so a search made in between
+     * caches an empty result that is served until the next batch clears it. That product gap is
+     * tracked in issue dotCMS/core#38549.</p>
+     *
      * @param contentlet the contentlet to look for
-     * @return {@code true} if the search found it
-     * @throws Exception if the search fails
+     * @return {@code true} if the index returned it
+     * @throws Exception if the query fails
      */
     private static boolean isSearchable(final Contentlet contentlet) throws Exception {
-        return !contentletAPI.search("+identifier:" + contentlet.getIdentifier(), 1, 0, null,
-                user, respectFrontendRoles).isEmpty();
+        try (IndexContentletScroll scroll = contentletAPI.createScrollQuery(
+                "+identifier:" + contentlet.getIdentifier(), user, respectFrontendRoles, 1,
+                "moddate desc")) {
+            return scroll.getTotalHits() > 0;
+        }
     }
 
     /** Polls until the check passes, failing the test with {@code message} on timeout. */

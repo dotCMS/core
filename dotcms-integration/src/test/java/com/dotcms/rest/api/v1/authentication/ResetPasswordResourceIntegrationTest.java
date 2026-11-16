@@ -10,12 +10,20 @@ import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.ejb.UserUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import javax.ws.rs.core.Response.Status;
 import org.apache.commons.lang.RandomStringUtils;
 import org.junit.Assert;
@@ -141,5 +149,64 @@ public class ResetPasswordResourceIntegrationTest{
         Assert.assertEquals("reset-password-invalid-password", ErrorEntity.class.cast(responseEntityView.getErrors().get(0)).getErrorCode());
     }
 
+    /**
+     * Method to test: {@link ResetPasswordResource#resetPassword(HttpServletRequest, ResetPasswordForm)}
+     * Given Scenario: Several requests send the same token at the same time, each with a different password.
+     * ExpectedResult: exactly one request gets 200, the others get 400, and the token is cleared.
+     */
+    @Test
+    public void test_resetPassword_sameTokenAtOnce_onlyOneSucceeds() throws Exception {
+        final User newUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        final String token = ResetPasswordTokenUtil.createToken();
+        newUser.setIcqId(token);
+        UserUtil.update(newUser);
+
+        final int requests = 5;
+        final CountDownLatch start = new CountDownLatch(1);
+        final ExecutorService executor = Executors.newFixedThreadPool(requests);
+        try {
+            final List<Future<Integer>> statuses = new ArrayList<>();
+            for (int i = 0; i < requests; i++) {
+                final String password = newPassword + i;
+                statuses.add(executor.submit(() -> {
+                    try {
+                        start.await();
+                        return resource.resetPassword(getHttpRequest(), getResetPasswordForm(password, token)).getStatus();
+                    } finally {
+                        DbConnectionFactory.closeSilently();
+                    }
+                }));
+            }
+            start.countDown();
+
+            int succeeded = 0;
+            for (final Future<Integer> status : statuses) {
+                succeeded += status.get(60, TimeUnit.SECONDS) == Status.OK.getStatusCode() ? 1 : 0;
+            }
+            Assert.assertEquals(1, succeeded);
+            Assert.assertFalse(APILocator.getUserAPI().getUserIdByToken(token).isPresent());
+        } finally {
+            executor.shutdownNow();
+        }
+    }
+
+    /**
+     * Method to test: {@link ResetPasswordResource#resetPassword(HttpServletRequest, ResetPasswordForm)}
+     * Given Scenario: The first request sends a password that does not meet the requirements, the second
+     *                  sends a valid one with the same token.
+     * ExpectedResult: 400 for the first, 200 for the second.
+     */
+    @Test
+    public void test_resetPassword_rejectedPassword_tokenStillUsable() throws Exception {
+        final User newUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+        final String token = ResetPasswordTokenUtil.createToken();
+        newUser.setIcqId(token);
+        UserUtil.update(newUser);
+
+        Assert.assertEquals(Status.BAD_REQUEST.getStatusCode(),
+                resource.resetPassword(getHttpRequest(), getResetPasswordForm("admin", token)).getStatus());
+        Assert.assertEquals(Status.OK.getStatusCode(),
+                resource.resetPassword(getHttpRequest(), getResetPasswordForm(newPassword, token)).getStatus());
+    }
 
 }

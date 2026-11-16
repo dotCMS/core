@@ -26,14 +26,14 @@
   },
   "private": true,
   "dependencies": {
-    "@angular/common": "22.2.1",
-    "@angular/compiler": "22.2.1",
-    "@angular/core": "22.2.1",
-    "@angular/forms": "22.2.1",
-    "@angular/platform-browser": "22.2.1",
-    "@angular/platform-server": "22.2.1",
-    "@angular/router": "22.2.1",
-    "@angular/ssr": "22.2.1",
+    "@angular/common": "22.2.4",
+    "@angular/compiler": "22.2.4",
+    "@angular/core": "22.2.4",
+    "@angular/forms": "22.2.4",
+    "@angular/platform-browser": "22.2.4",
+    "@angular/platform-server": "22.2.4",
+    "@angular/router": "22.2.4",
+    "@angular/ssr": "22.2.5",
     "@dotcms/angular": "latest",
     "@dotcms/client": "latest",
     "@dotcms/types": "latest",
@@ -51,9 +51,9 @@
     "zone.js": "~0.15.0"
   },
   "devDependencies": {
-    "@angular/build": "22.2.1",
-    "@angular/cli": "22.2.1",
-    "@angular/compiler-cli": "22.2.1",
+    "@angular/build": "22.2.5",
+    "@angular/cli": "22.2.5",
+    "@angular/compiler-cli": "22.2.4",
     "@tailwindcss/typography": "^0.5.19",
     "@types/express": "^5.0.1",
     "@types/jasmine": "~5.1.0",
@@ -66,5 +66,11 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~6.0.3"
+  },
+  "//": "overrides: @tailwindcss/typography 0.5.20 (the latest) pins postcss-selector-parser 6.0.10 exactly, which is affected by GHSA alerts fixed in 6.1.5. Drop the override once @tailwindcss/typography allows >=6.1.5.",
+  "overrides": {
+    "@tailwindcss/typography": {
+      "postcss-selector-parser": "6.1.5"
+    }
   }
 }

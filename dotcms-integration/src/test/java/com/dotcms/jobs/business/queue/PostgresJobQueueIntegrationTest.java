@@ -32,7 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.awaitility.Awaitility;
 import org.junit.jupiter.api.AfterEach;
@@ -720,11 +722,47 @@ public class PostgresJobQueueIntegrationTest {
         Set<String> jobIdsToCheck = new HashSet<>(Arrays.asList(job1Id, job2Id, job3Id));
         List<Job> updatedJobs = jobQueue.getUpdatedJobsSince(jobIdsToCheck, checkpointTime);
 
-        assertEquals(2, updatedJobs.size());
         Set<String> updatedJobIds = updatedJobs.stream().map(Job::id).collect(Collectors.toSet());
-        assertTrue(updatedJobIds.contains(job1Id));
-        assertTrue(updatedJobIds.contains(job3Id));
-        assertFalse(updatedJobIds.contains(job2Id));
+        final Supplier<String> diagnostics = () -> describeJobsSince(
+                checkpointTime, updatedJobIds, Map.of("job1 (updated after checkpoint)", job1Id,
+                        "job2 (untouched)", job2Id, "job3 (created after checkpoint)", job3Id));
+        assertEquals(2, updatedJobs.size(), diagnostics);
+        assertTrue(updatedJobIds.contains(job1Id), diagnostics);
+        assertTrue(updatedJobIds.contains(job3Id), diagnostics);
+        assertFalse(updatedJobIds.contains(job2Id), diagnostics);
+    }
+
+    /**
+     * Builds a failure message for {@link #test_getUpdatedJobsSince()}: the checkpoint, the current
+     * JVM time, the ids the query returned, and for each job its row in {@code job} and its rows in
+     * {@code job_history}, read straight from the database. It is only evaluated when an assertion
+     * fails.
+     *
+     * @param checkpoint the time passed to {@code getUpdatedJobsSince}
+     * @param returnedIds the job ids the query returned
+     * @param jobsByLabel the job ids to describe, keyed by a label naming each job's role in the test
+     * @return a multi-line description of the jobs' persisted state
+     */
+    private String describeJobsSince(final LocalDateTime checkpoint, final Set<String> returnedIds,
+            final Map<String, String> jobsByLabel) {
+        final StringBuilder message = new StringBuilder("checkpoint=").append(checkpoint)
+                .append(", now=").append(LocalDateTime.now())
+                .append(", returned ids=").append(returnedIds);
+        new TreeMap<>(jobsByLabel).forEach((label, jobId) -> {
+            message.append("\n").append(label).append(' ').append(jobId).append(": ");
+            try {
+                message.append("job row=").append(new DotConnect().setSQL(
+                        "SELECT queue_name, state, created_at, updated_at, execution_node "
+                                + "FROM job WHERE id = ?").addParam(jobId).loadObjectResults());
+                message.append(", history=").append(new DotConnect().setSQL(
+                        "SELECT state, created_at, execution_node FROM job_history "
+                                + "WHERE job_id = ? ORDER BY created_at").addParam(jobId)
+                        .loadObjectResults());
+            } catch (DotDataException e) {
+                message.append("could not read the rows: ").append(e);
+            }
+        });
+        return message.toString();
     }
 
     /**

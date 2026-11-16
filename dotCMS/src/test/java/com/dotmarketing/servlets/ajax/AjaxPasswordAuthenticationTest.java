@@ -1,10 +1,12 @@
 package com.dotmarketing.servlets.ajax;
 
+import static org.junit.Assert.assertSame;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
-import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -13,6 +15,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.WebResource;
 import com.dotcms.publisher.ajax.RemotePublishAjaxAction;
 import com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxAction;
 import com.dotcms.publisher.environment.ajax.EnvironmentAjaxAction;
@@ -24,6 +28,7 @@ import com.dotmarketing.sitesearch.ajax.SiteSearchAjaxAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,11 +41,12 @@ import org.junit.Test;
 import org.mockito.MockedStatic;
 
 /**
- * Contract test for the legacy password fallback shared by the Ajax actions. With
- * {@code ALLOW_BASIC_AUTH} at {@code NONE} or {@code JWT_TOKEN}, a missing user or a missing
- * portlet permission must never reach {@link LoginFactory#doLogin} through the {@code u/p} or
- * {@code user/passwd} URI parameters, and the existing 401 denial must remain. Only {@code ALL}
- * keeps the legacy fallback.
+ * Contract test for the URI credentials the Ajax actions used to exchange for a session. Whatever
+ * {@code ALLOW_BASIC_AUTH} is set to, a missing user or a missing portlet permission must never
+ * reach {@link LoginFactory#doLogin} through the {@code u/p} or {@code user/passwd} URI
+ * parameters, and the existing 401 denial must remain. Callers authenticate through the session,
+ * a bearer token or the Basic header, all of which {@link AjaxAction#setUser(HttpServletRequest)}
+ * resolves before the action runs.
  *
  * <p>Limitation: {@link AjaxAction#setUser(HttpServletRequest)} is stubbed, so these tests prove
  * that the submitted credentials never reach the password login factory; they do not exercise the
@@ -80,14 +86,47 @@ public class AjaxPasswordAuthenticationTest extends UnitTestBase {
         }
     }
 
-    /** {@code ALL} must keep the legacy u/p fallback for every action. */
+    /** The compatibility mode does not exchange URI credentials for a session either. */
     @Test
-    public void allModeRetainsLegacyPasswordFallback() throws Exception {
+    public void compatibilityModeAlsoRejectsUriCredentials() throws Exception {
         Config.setProperty("ALLOW_BASIC_AUTH", "ALL");
 
         for (final Class<? extends AjaxAction> actionType : allActionTypes()) {
-            assertPasswordFallbackUsed(actionType, credentials("u", "p"), null);
+            assertNoPasswordFallback(actionType, credentials("u", "p"), null);
         }
+        for (final Class<? extends AjaxAction> actionType : portletGatedActionTypes()) {
+            assertNoPasswordFallback(actionType, credentials("u", "p"), mockUser());
+        }
+        for (final Class<? extends AjaxAction> actionType : aliasActionTypes()) {
+            assertNoPasswordFallback(actionType, credentials("user", "passwd"), null);
+        }
+    }
+
+    /**
+     * The URI must not reach {@link WebResource} as its parameter string: that overload reads a
+     * user name and a password out of the parameters before it looks at any header.
+     */
+    @Test
+    public void userResolutionIsNotGivenTheRequestUri() {
+        final WebResource webResource = mock(WebResource.class);
+        final InitDataObject initData = mock(InitDataObject.class);
+        final User user = mockUser();
+        when(initData.getUser()).thenReturn(user);
+        when(webResource.init(anyString(), anyBoolean(), any(HttpServletRequest.class), anyBoolean(),
+                any())).thenReturn(initData);
+        final HttpServletRequest request = mockRequest();
+        // Never read while the action behaves: it is here so a regression that hands the URI over
+        // fails on the argument below instead of passing quietly.
+        when(request.getRequestURI()).thenReturn("/DotAjaxDirector/"
+                + "com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction/cmd/indexList"
+                + "/user/someone@example.com/password/a-password");
+
+        final AjaxAction action = mock(IndexAjaxAction.class, CALLS_REAL_METHODS);
+        action.setWebResource(webResource);
+        action.setUser(request);
+
+        assertSame("The resolved user is kept on the action", user, action.getUser());
+        verify(webResource).init(eq(StringPool.BLANK), eq(true), eq(request), eq(true), isNull());
     }
 
     private void assertNoPasswordFallback(final Class<? extends AjaxAction> actionType,
@@ -106,22 +145,6 @@ public class AjaxPasswordAuthenticationTest extends UnitTestBase {
         }
 
         verify(response).sendError(HttpServletResponse.SC_UNAUTHORIZED);
-    }
-
-    private void assertPasswordFallbackUsed(final Class<? extends AjaxAction> actionType,
-            final Map<String, String> params, final User user) throws Exception {
-        final HttpServletRequest request = mockRequest();
-        final HttpServletResponse response = mock(HttpServletResponse.class);
-        final AjaxAction action = preparedAction(actionType, params, user);
-        final LayoutAPI layoutAPI = layoutApiWithoutPortletAccess();
-
-        try (MockedStatic<APILocator> apis = mockStatic(APILocator.class);
-                MockedStatic<LoginFactory> loginFactory = mockStatic(LoginFactory.class)) {
-            apis.when(APILocator::getLayoutAPI).thenReturn(layoutAPI);
-            action.service(request, response);
-            loginFactory.verify(
-                    () -> LoginFactory.doLogin(any(), any(), anyBoolean(), any(), any()), atLeastOnce());
-        }
     }
 
     private static HttpServletRequest mockRequest() {

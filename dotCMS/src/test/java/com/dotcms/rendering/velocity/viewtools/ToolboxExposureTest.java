@@ -48,6 +48,9 @@ public class ToolboxExposureTest {
     /** The template tool bound as {@code $cmsuser}. */
     private static final String CMS_USER_TOOL = "com.dotcms.rendering.velocity.viewtools.CMSUserTool";
 
+    /** The template tool bound as {@code $crypt}. */
+    private static final String CRYPT_TOOL = "com.dotcms.rendering.velocity.viewtools.CryptTool";
+
     /**
      * Methods allowed to return a {@link User} because they resolve the current requester, never
      * an arbitrary account.
@@ -58,6 +61,8 @@ public class ToolboxExposureTest {
 
     private static List<Class<?>> toolClasses;
     private static Map<String, String> classNameByKey;
+
+    private static Map<String, String> scopeByKey;
 
     @BeforeClass
     public static void loadToolbox() throws Exception {
@@ -70,11 +75,14 @@ public class ToolboxExposureTest {
         final NodeList toolNodes = toolbox.getElementsByTagName("tool");
         toolClasses = new ArrayList<>();
         classNameByKey = new HashMap<>();
+        scopeByKey = new HashMap<>();
         for (int i = 0; i < toolNodes.getLength(); i++) {
             final Element tool = (Element) toolNodes.item(i);
             final String key = tool.getElementsByTagName("key").item(0).getTextContent().trim();
             final String className = tool.getElementsByTagName("class").item(0).getTextContent().trim();
             classNameByKey.put(key, className);
+            final NodeList scopes = tool.getElementsByTagName("scope");
+            scopeByKey.put(key, scopes.getLength() > 0 ? scopes.item(0).getTextContent().trim() : null);
             // load without initializing: some tools wire services in static initializers
             toolClasses.add(Class.forName(className, false, ToolboxExposureTest.class.getClassLoader()));
         }
@@ -90,6 +98,26 @@ public class ToolboxExposureTest {
         assertEquals(CMS_USER_TOOL, classNameByKey.get("cmsuser"));
         assertFalse("CMSUsersWebAPI must not be bound to templates",
                 classNameByKey.containsValue(CMSUsersWebAPI.class.getName()));
+    }
+
+    /**
+     * {@code $crypt} is provided by the template tool {@code CryptTool}, bound per request so it
+     * can tell who wrote the code being rendered.
+     */
+    @Test
+    public void crypt_is_bound_per_request_to_the_template_tool() {
+        assertEquals(CRYPT_TOOL, classNameByKey.get("crypt"));
+        assertEquals("request", scopeByKey.get("crypt"));
+    }
+
+    /**
+     * {@code CryptWebAPI} keeps its static Java signatures for plugins and is no longer bound to
+     * templates.
+     */
+    @Test
+    public void crypt_web_api_is_not_bound_to_templates() {
+        assertFalse("CryptWebAPI must not be bound to templates",
+                classNameByKey.containsValue(CryptWebAPI.class.getName()));
     }
 
     /**

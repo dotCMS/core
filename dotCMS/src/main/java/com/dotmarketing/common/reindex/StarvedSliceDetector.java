@@ -20,8 +20,8 @@ import java.util.stream.Collectors;
  *
  * <p>A share is judged by <em>progress</em>, never by timestamps: its row count and lowest id are
  * sampled each time the server looks, and a share for which neither has changed for longer than the
- * threshold is reported as starved. {@code time_entered} cannot be used for this, because several
- * enqueue paths leave it at the column default (midnight of the day).</p>
+ * threshold is reported as starved. {@code time_entered} cannot be used for this, because it says
+ * when a row was queued, not whether anyone is working through the share.</p>
  *
  * <p>Not thread-safe: it is only used from the single reindex thread.</p>
  */

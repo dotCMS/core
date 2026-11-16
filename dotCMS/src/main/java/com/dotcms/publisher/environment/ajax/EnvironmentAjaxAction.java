@@ -1,13 +1,11 @@
 package com.dotcms.publisher.environment.ajax;
 
-import com.dotcms.auth.BasicAuthentication;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -49,24 +47,6 @@ public class EnvironmentAjaxAction extends AjaxAction {
 		try{
 			// Check permissions if the user has access to the CMS Maintenance Portlet
 			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
-				String userName = map.get("u") !=null
-					? map.get("u")
-						: map.get("user") !=null
-							? map.get("user")
-								: null;
-
-				String password = map.get("p") !=null
-					? map.get("p")
-							: map.get("passwd") !=null
-								? map.get("passwd")
-									: null;
-
-
-
-				// Only the compatibility mode may exchange URI credentials for a session.
-				if (BasicAuthentication.mode() == BasicAuthentication.Mode.ALL) {
-					LoginFactory.doLogin(userName, password, false, request, response);
-				}
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
 				if(user==null) {
 				    setUser(request);

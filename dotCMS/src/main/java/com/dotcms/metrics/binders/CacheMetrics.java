@@ -391,10 +391,13 @@ public class CacheMetrics implements MeterBinder {
     }
     
     /**
-     * Get memory bytes value, handling pretty-formatted values like "1.2 MB"
+     * Returns memory bytes, excluding legacy aliases of cumulative serialized write volume.
      */
     private double getMemoryBytesValue(CacheStats stats) {
         try {
+            if (stats.getStatValue(CacheStats.REGION_BYTES_WRITTEN) != null) {
+                return 0.0;
+            }
             // Try REGION_MEM_TOTAL first, then fall back to REGION_MEM_TOTAL_PRETTY
             String value = stats.getStatValue(CacheStats.REGION_MEM_TOTAL);
             if (!UtilMethods.isSet(value)) {
@@ -413,10 +416,13 @@ public class CacheMetrics implements MeterBinder {
     }
     
     /**
-     * Get memory per object bytes value, handling pretty-formatted values
+     * Returns memory per object, excluding legacy aliases of serialized write averages.
      */
     private double getMemoryPerObjectBytesValue(CacheStats stats) {
         try {
+            if (stats.getStatValue(CacheStats.REGION_AVG_SERIALIZED_SIZE) != null) {
+                return 0.0;
+            }
             String value = stats.getStatValue(CacheStats.REGION_MEM_PER_OBJECT);
             if (!UtilMethods.isSet(value)) {
                 value = stats.getStatValue(CacheStats.REGION_MEM_PER_OBJECT_PRETTY);

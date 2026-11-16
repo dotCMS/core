@@ -107,13 +107,17 @@ closed after the first publisher) is not what happens.
   `!output.bundleFileExists() || !publishAuditAPI.isPublishRetry(config.getId())`.
 - `DirectoryBundleOutput`'s constructor calls `BundlerUtil.getBundleRoot(config)`, which creates the
   bundle folder at once. So `bundleFileExists()` is already true when `createBundleOutput()` returns,
-  and the condition reduces to `!isPublishRetry(...)`.
+  and the condition reduces to `!isPublishRetry(...)`. This holds for the static and S3 publishers.
+  The push publisher is different: its output is a `.tar.gz` file (`TarGzipBundleOutput`) that does
+  not exist until the bundle is built, so `bundleFileExists()` is false on a first attempt and the
+  push publisher always builds.
 - `isPublishRetry` is true when the audit's `numTries` is above zero. The first publisher's
   `process()` raises `numTries` (the push publisher does so before sending, the static publisher in
   `startStatusHistory`).
-- The second publisher in the loop therefore sees `numTries > 0` on the first attempt, skips every
-  bundler, and works on an empty folder. The static publisher then reports "Bundle sent" and
-  records no endpoint. Because the order is arbitrary, which type is skipped varies, as reported.
+- A static or S3 publisher that runs after another publisher in the same first attempt therefore sees
+  `numTries > 0`, skips every bundler, and works on an empty folder. The static publisher then
+  reports "Bundle sent" and records no endpoint. Because the order is arbitrary, which type is
+  skipped varies, as reported.
 - This explains why "Force Push Everything" does not help: the skip is not about which assets are
   eligible, it is about the retry check.
 
@@ -130,14 +134,15 @@ delivered) as well as recording every endpoint.
 **Static first (observed after a container restart flipped the order).** With the publishers in the
 order static, push (two bundles: a plain content item, then a live page), the push publisher ran all
 its bundlers and sent the bundle, and no "Retrying bundle" line appeared. The static publisher ran its
-own bundlers first. The code-read prediction that the static publisher's `startStatusHistory()` would
-make the push publisher skip was wrong. So the delivery skip is **asymmetric**: it happens when the
-push publisher (or S3) runs first, because the push publisher raises and persists `numTries` before
-the next publisher's turn, and not when the static publisher runs first, because the static publisher
-does not leave `numTries` above zero at that point. The plan must still test both orders, since the
-loop's guard is order-dependent. The audit rows in those two runs were written by the receiver, which
-was the same instance as the sender, so they could not show the sender's endpoint list. That was
-closed with a second instance (below).
+own bundlers first. The static publisher does raise and persist `numTries` (it ended at 3), so the
+push publisher was not spared by the count: it always builds on a first attempt because its output
+is a `.tar.gz` file that does not exist yet. So the delivery skip depends on the output type of the
+publisher that runs later. It affects the static and S3 publishers (directory outputs) when anything
+ran before them in the same attempt, which includes the push publisher and each other; it does not
+affect the push publisher. Static after S3, or S3 after static, was not run live; it follows from the
+same code and the plan's test must prove it. The audit rows in those two runs were written by the
+receiver, which was the same instance as the sender, so they could not show the sender's endpoint
+list. That was closed with a second instance (below).
 
 **Two instances, static first (sender on port 8080, receiver on port 8081; bundle
 `01M6HHY3WYSA72FT3DXEZZSMGP`, live page, Default filter, environment "Push to All Endpoints" with one
@@ -150,8 +155,7 @@ closed with a second instance (below).
   "Re-publish attempts: 2 out of 3" and the row holds `numTries` 3 on a first and only attempt.
 - This is defect 2 observed on the sender, in the order where delivery is not skipped: the audit
   lists only some endpoints and the overall status reads as success. So the audit gap is independent
-  of the delivery skip. The S3 publisher (`AWSS3Publisher`) was run with push
-first and is skipped the same way (see the reproduction above).
+  of the delivery skip.
 
 **Defect 2 — the audit does not show every endpoint.**
 
@@ -161,17 +165,20 @@ first and is skipped the same way (see the reproduction above).
    publisher runs first records its endpoints. The publisher that runs second sees a non-empty history
    and records only failures, so its successful endpoints never appear. The order comes from a
    `HashSet` of publisher classes in `getPublishersForBundle`, so it is not deterministic.
-2. **The audit-collection step can overwrite one protocol's endpoints with the other's.** In
+2. **The audit-collection step mixes local and remote entries in one map and counts map entries, not endpoints.** In
    `PublisherQueueJob.collectEndpointInfoFromRemote`, static and S3 endpoints are not polled
    remotely; their local record is copied in. Dynamic endpoints are polled and their history is
-   copied in. Both copies use a top-level `putAll` into a map keyed by environment, so the later
-   write can replace the other protocol's endpoint map. The status checks compare against the number
-   of environments rather than the number of endpoints, which lets the status read SUCCESS.
+   copied in. Both copies use a top-level `putAll` into one map. The status checks compare against
+   the size of that map, which counts environments (and remote addresses) rather than endpoints, so
+   an endpoint with no entry cannot lower the status and the status can read SUCCESS.
    `PublisherQueueJob` also does not poll static and S3 endpoints, so an undelivered bundle is not
    noticed there. This matches the reported behavior that the queue shows success.
 
-Unknown: whether the remote history is keyed by the same environment id as the local record. That
-decides whether cause 2 occurs in practice. It is confirmed in planning, by reproduction.
+Answered by the two-instance run: the remote history is keyed by the receiver's own address, not by
+the sender's environment id. So the top-level `putAll` adds a second entry rather than replacing a
+local one, and the map the status is judged on mixes both kinds of key. The missing endpoint comes
+from cause 1 (it was never recorded), and the status counting in cause 2 is what lets that read as
+success.
 
 ## Fix Scope & Non-Goals *(mandatory)*
 

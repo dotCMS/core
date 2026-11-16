@@ -85,6 +85,18 @@ optional properties and database permissions:
 - **IdP-initiated login:** `allow.unsolicited.responses` defaults to `false`. If users
   start login from an IdP portal tile (a response without `InResponseTo`), explicitly
   set `allow.unsolicited.responses=true`. Other assertion checks still apply.
+- **Response Destination and Recipient:** both must equal this site's ACS URL,
+  `https://<Service Provider Endpoint Hostname>/dotsaml/login/<site id>` (or its
+  `/api/v1/dotsaml/login/<site id>` form). Plugins that receive SAML Responses on their own
+  endpoint, such as `/api/v1/dotsaml/benchmark/<site id>`, need that full URL in the SAML app's
+  **Additional Assertion Consumer URLs** field (`additionalAcsUrls`, comma-separated, editable in
+  Apps and dotAuth). URLs match exactly after lower-casing scheme and host and dropping a default
+  port or trailing slash; there is no prefix or wildcard matching. Like every SAML property, a site
+  without its own `additionalAcsUrls` inherits the System Host's list. A site that saves the field
+  with an empty value (both screens do this when it is left blank) accepts no additional URLs and
+  does not inherit; the dotAuth screen shows the effective list for the site. Saving a site's
+  configuration there stores that list on the site, even if it was not edited, so later changes to
+  the System Host's list no longer reach that site.
 - **Legacy signatures:** `allow.sha1.signatures` defaults to `false`. Configure the IdP
   to use RSA or ECDSA with SHA-256/384/512 and SHA-256/384/512 digests. Only as a
   temporary compatibility measure, set `allow.sha1.signatures=true` for an IdP still
@@ -105,6 +117,7 @@ IdP-initiated login before deploying to customers.
 | Log message contains | Action |
 |---|---|
 | `Unsolicited SAML Responses (IdP-initiated login) are not accepted` | Start login from dotCMS, or explicitly enable `allow.unsolicited.responses` for this IdP. |
+| `is not this service provider's assertion consumer URL` | The IdP is sending a Destination/Recipient other than this site's ACS URL. Correct the IdP's ACS URL, or, if a plugin receives the response on its own endpoint, add that exact URL to `additionalAcsUrls`. |
 | `signature algorithm ... is not allowed` / `digest algorithm ... is not allowed` | Switch the IdP to SHA-256 or stronger; use `allow.sha1.signatures=true` only as a temporary exception. |
 | `does not match an authentication request started from this browser` | Restart login from dotCMS; check HTTPS, request cookies and `authn.request.max.age` (default 900 seconds). |
 | `Could not check whether the SAML assertion has already been used` | Check database connectivity and permission to create the replay table/index and insert/delete records. |

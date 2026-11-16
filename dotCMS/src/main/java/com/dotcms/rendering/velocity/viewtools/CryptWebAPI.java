@@ -5,12 +5,17 @@ import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 /**
  * Encrypt and decrypt text using PublicEncryptionFactory methods.
  *
+ * <p>Templates no longer use this class: {@code $crypt} is provided by {@link CryptTool}, which
+ * decrypts only for code written by a user allowed to use the restricted view tools. The static
+ * methods stay for Java callers.
+ *
  * @author  Armando Siem
  * @since   1.5.0
  * @version 1.0.0
  * @see     PublicEncryptionFactory
+ * @deprecated use {@link CryptTool} for templates, or {@link PublicEncryptionFactory} from Java
  */
-
+@Deprecated
 public class CryptWebAPI {
 	/**
 	  * Encrypt a text

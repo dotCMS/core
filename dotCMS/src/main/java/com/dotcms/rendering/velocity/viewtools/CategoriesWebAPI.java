@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
 
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
@@ -15,7 +14,6 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 import com.dotmarketing.beans.Inode;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -27,8 +25,8 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 
 public class CategoriesWebAPI implements ViewTool {
 
@@ -44,23 +42,8 @@ public class CategoriesWebAPI implements ViewTool {
 		ViewContext context = (ViewContext) obj;
 		this.request = context.getRequest();
 		ctx = context.getVelocityContext();
-		HttpSession ses = request.getSession(false);
-		
-		if (ses != null) {
-			user = (User) ses.getAttribute(WebKeys.CMS_USER);
-			if (user == null && ses.getAttribute("USER_ID") != null) {
-				String userId = (String) ses.getAttribute("USER_ID");
-				try {
-					user = APILocator.getUserAPI().loadUserById(userId, APILocator.getUserAPI().getSystemUser(), false);
-				} catch (NoSuchUserException e) {
-					Logger.error(this, "A System error happend while trying to retrieve user  : " + userId, e);
-				} catch (DotDataException e) {
-					Logger.error(this, "A System error happend while trying to retrieve user  : " + userId, e);
-				} catch (DotSecurityException e) {
-					Logger.error(this, "A System error happend while trying to retrieve user  : " + userId, e);
-				}
-			}
-		}
+		// the session's user, checked against the current user record, or null when there is none
+		user = PortalUtil.getUser(request);
 	}
 
 	public List<Category> getChildrenCategoriesByKey(String key) {
