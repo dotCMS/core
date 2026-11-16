@@ -5,6 +5,7 @@
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Structure"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.liferay.util.Xss"%>
 <%@page import="com.dotmarketing.util.InodeUtils"%>
 <%@page import="com.dotmarketing.portlets.structure.model.Field"%>
 <%@page import="com.dotmarketing.business.IdentifierFactory"%>
@@ -147,6 +148,15 @@
                     .map(fieldName -> String.format("'%s'", fieldName.trim()))
                     .collect(Collectors.joining(","))
             : "";
+    // Shown fields that hold markup (WYSIWYG): only these are reduced to their text in the table.
+    final String jsHtmlFieldNames = showFieldNames
+            .stream()
+            .filter(fieldName -> {
+                final Field field = relatedFields.get(fieldName);
+                return field != null && Field.FieldType.WYSIWYG.toString().equals(field.getFieldType());
+            })
+            .map(fieldName -> String.format("'%s'", Xss.encodeForJavaScript(fieldName)))
+            .collect(Collectors.joining(","));
     final List<Contentlet> relatedContentlets = recordList
             .stream()
             .findFirst()
@@ -264,6 +274,7 @@
 		var <%= relationJsName %>_jsOverrideRelated = <%= overrideRelated %>;
 		var <%= relationJsName %>_specialFields = { <%= jsSpecialFields %> };
 		var <%= relationJsName %>_showFields = [ <%= jsFieldNames %> ];
+		var <%= relationJsName %>_htmlFields = [ <%= jsHtmlFieldNames %> ];
 
 		// Add the relation to the map, and set it to false.
 		relationsLoadedMap['<%=relationJsName%>'] = false;
@@ -370,6 +381,20 @@
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
                 .replace(/'/g, '&#39;');
+        }
+
+        /**
+         * Returns the text of a value that may carry markup, without its tags. A space surrounds each
+         * block or line break, so neighbouring and nested blocks stay as separate words.
+         */
+        function <%= relationJsName%>TextOf(value) {
+            var doc = new DOMParser().parseFromString(String(value), 'text/html');
+            doc.body.querySelectorAll('br, p, div, li, h1, h2, h3, h4, h5, h6, blockquote, pre, tr, td, th')
+                .forEach(function (node) {
+                    node.before(doc.createTextNode(' '));
+                    node.after(doc.createTextNode(' '));
+                });
+            return (doc.body.textContent || '').replace(/\s+/g, ' ').trim();
         }
 
         function <%= relationJsName%>WriteLinkTitle (o) {
@@ -587,7 +612,7 @@
 	    function <%= relationJsName %>_addContentlet(structureInode) {
 
 	    	var myNode = (currentContentletInode==null || currentContentletInode=='') ? workingContentletInode : currentContentletInode;
-	    	var relationshipReturnValue = { inode: myNode, title: "<%=UtilMethods.escapeDoubleQuotes(contentTitle)%>" };
+	    	var relationshipReturnValue = { inode: myNode, title: "<%=Xss.encodeForJavaScript(contentTitle)%>" };
 	    	localStorage.setItem("dotcms.relationships.relationshipReturnValue",  JSON.stringify(relationshipReturnValue));
 	    	
 			var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";
@@ -699,9 +724,13 @@
 									item,
 									<%= relationJsName%>EscapeHtml(item["siblings"]?.[0]?.[fieldName] || item["siblings"]?.[0]?.[fieldName.toUpperCase()] || item[fieldName] || ""));
 						} else {
+							var cellValue = item[fieldName] || "";
 							fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
 									item,
-									<%= relationJsName%>EscapeHtml(item[fieldName] || ""));
+									<%= relationJsName%>EscapeHtml(
+											<%= relationJsName%>_htmlFields.indexOf(fieldName) >= 0
+													? <%= relationJsName%>TextOf(cellValue)
+													: cellValue));
 						}
 
                     }
@@ -754,7 +783,7 @@
 			}
 			
             var myNode = (currentContentletInode==null || currentContentletInode=='') ? workingContentletInode : currentContentletInode;
-            var relationshipReturnValue = { inode: myNode, title: "<%=UtilMethods.escapeDoubleQuotes(contentTitle)%>" };
+            var relationshipReturnValue = { inode: myNode, title: "<%=Xss.encodeForJavaScript(contentTitle)%>" };
             localStorage.setItem("dotcms.relationships.relationshipReturnValue",  JSON.stringify(relationshipReturnValue));
             
 			var referer = "<portlet:actionURL windowState='<%= WindowState.MAXIMIZED.toString() %>'>";

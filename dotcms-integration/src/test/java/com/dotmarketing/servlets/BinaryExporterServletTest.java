@@ -53,7 +53,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -75,6 +77,9 @@ import static org.mockito.Mockito.when;
 
 @RunWith(DataProviderRunner.class)
 public class BinaryExporterServletTest {
+
+    /** Name of the session attribute the legacy edit screen used for its uploaded files. */
+    private static final String LEGACY_TEMP_BINARY_LIST_ATTRIBUTE = "tempBinaryImageInodesList";
 
     // Temporary binary png file
     private static class TmpBinaryFile implements Closeable {
@@ -372,6 +377,43 @@ public class BinaryExporterServletTest {
         }
     }
 
+    /**
+     * Method to test: {@link BinaryExporterServlet#doGet(HttpServletRequest, HttpServletResponse)}
+     * Given scenario: An authenticated user without READ permission on a file asset requests it
+     * by inode, and the user's session holds that inode under
+     * {@code tempBinaryImageInodesList}.
+     * Expected result: 403 Forbidden. The file is served according to the user's permissions
+     * only, whatever the session holds.
+     */
+    @Test
+    public void requestBinaryFileByInode_authenticatedUserWithoutPermission_returns403()
+            throws DotDataException, DotSecurityException, ServletException, IOException {
+
+        final User frontEndUser = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadRoleByKey(DOTCMS_FRONT_END_USER))
+                .nextPersisted();
+
+        try (TmpBinaryFile tmpTargetFile = new TmpBinaryFile(false)) {
+
+            final String fileURI = "/contentAsset/raw-data/"
+                    + sharedFileAssetWithPerms.getInode() + "/fileAsset/";
+            final MockHeaderRequest request = new MockHeaderRequest(mockServletRequest(fileURI));
+            request.setAttribute(WebKeys.USER, frontEndUser);
+            request.getSession(true).setAttribute(LEGACY_TEMP_BINARY_LIST_ATTRIBUTE,
+                    new ArrayList<>(List.of(sharedFileAssetWithPerms.getInode())));
+
+            final HttpServletResponse response = mockServletResponse(tmpTargetFile);
+
+            sendRequest(request, response);
+
+            assertEquals(HttpServletResponse.SC_FORBIDDEN, response.getStatus());
+            assertEquals("No file content should be written", 0,
+                    Files.size(tmpTargetFile.getPath()));
+        } finally {
+            UserDataGen.remove(frontEndUser);
+        }
+    }
+
     @Test
     @Ignore("This test is failing because a difference with m1 mac native library")
     public void requestGifFile()
@@ -385,7 +427,7 @@ public class BinaryExporterServletTest {
 
         final String fileURI = "/contentAsset/image/"+fileContentlet.getInode()+"/fileAsset/byInode/true/quality_q/30/resize_w/200";
         final HttpServletRequest request = mockServletRequest(fileURI);
-        request.setAttribute(WebKeys.USER, APILocator.systemUser());
+        request.setAttribute(WebKeys.USER, com.dotcms.datagen.TestUserUtils.getAdminUser());
 
         TmpBinaryFile tmpTargetFile = new TmpBinaryFile(false);
         final HttpServletResponse response = mockServletResponse(tmpTargetFile);
@@ -455,7 +497,7 @@ public class BinaryExporterServletTest {
                 + "/fileAsset/byInode/true/quality_q/75/resize_w/600/quality_q/75/quality_q/75";
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getHeader("user-agent")).thenReturn(userAgent);
-        when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+        when(request.getAttribute(WebKeys.USER)).thenReturn(com.dotcms.datagen.TestUserUtils.getAdminUser());
         when(request.getRequestURI()).thenReturn(fileURI);
         when(request.getServletPath()).thenReturn("/contentAsset");
         when(Config.CONTEXT.getMimeType(matches(".*\\.webp")))

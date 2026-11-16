@@ -387,30 +387,6 @@
 
 
 
-		<!-- ================= FieldForm ===================== -->
-		<form name="DotFieldForm">
-			<field property="fieldName" depends="required">
-				<arg0 key="message.field.fieldName" />
-			</field>
-			<field property="fieldType" depends="required">
-				<arg0 key="message.field.fieldType" />
-			</field>
-		</form>
-
-		<!-- ================= StructureForm ===================== -->
-		<form name="StructureForm">
-			<field property="name" depends="required">
-				<arg0 key="message.structure.name" />
-			</field>
-			<field property="detailPage" depends="validwhen">
-				<arg0 key="Detail-Page"/>
-		        <var>
-		          <var-name>test</var-name>
-		          <var-value>((urlMapPattern == null) or (*this* != null))</var-value>
-		        </var>
-			</field>
-		</form>
-
 
 
 

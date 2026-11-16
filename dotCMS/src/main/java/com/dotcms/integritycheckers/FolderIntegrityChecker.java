@@ -196,9 +196,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                         + fullFolder
                         + " as folder, "
                         + "f.inode as local_inode, ft.inode as remote_inode, f.identifier as local_identifier, ft.identifier as remote_identifier, "
-                        + "'"
-                        + endpointId
-                        + "' from identifier iden "
+                        + "? from identifier iden "
                         + "join folder f on iden.id = f.identifier join "
                         + tempTableName
                         + " ft on iden.full_path_lc = ft.full_path_lc "
@@ -206,11 +204,11 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                         + "join contentlet_version_info cvi on c.inode = cvi.working_inode "
                         + "where asset_type = 'folder' and f.inode <> ft.inode order by c."+hostNameColumnName+", iden.asset_name";
 
-                dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
+                dc.setSQL(INSERT_INTO_RESULTS_TABLE).addParam(endpointId).loadResult();
 
             }
 
-            return (Long) dc.getRecordCount(getIntegrityType().getResultsTableName(), "where endpoint_id = '"+ endpointId+ "'") > 0;
+            return hasResults(endpointId);
         } catch (final Exception e) {
             throw new Exception(String.format("Error running the Folders Integrity Check for Endpoint '%s': %s",
                     endpointId, e.getMessage()), e);
@@ -238,6 +236,7 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
                     + getIntegrityType().getResultsTableName() + " where endpoint_id = ?");
             dc.addParam(key);
             final List<Map<String, Object>> results = dc.loadObjectResults();
+            requireWellFormedIds(results, "remote_inode", "remote_identifier");
 
             for (final Map<String, Object> result : results) {
 
@@ -275,180 +274,202 @@ public class FolderIntegrityChecker extends AbstractIntegrityChecker {
         }
     }
 
-    private void applyFixTo ( DotConnect dc, final String oldFolderInode, final String newFolderInode, final String oldFolderIdentifier, final String newFolderIdentifier ) throws DotSecurityException, SQLException {
+    /**
+     * Moves a local folder to the inode and identifier the remote end point uses for it. References
+     * are first pointed at a placeholder folder, the old rows are replaced with rows under the new
+     * ids, and the references are then pointed at the new inode. Every id is bound as a parameter.
+     *
+     * @param dc the connection helper to run the statements with
+     * @param oldFolderInode the local folder inode
+     * @param newFolderInode the inode the folder takes
+     * @param oldFolderIdentifier the local folder identifier
+     * @param newFolderIdentifier the identifier the folder takes
+     * @throws DotSecurityException when the folder cannot be read
+     * @throws DotDataException when a statement fails
+     * @throws SQLException when a statement fails
+     */
+    private void applyFixTo ( DotConnect dc, final String oldFolderInode, final String newFolderInode, final String oldFolderIdentifier, final String newFolderIdentifier ) throws DotSecurityException, DotDataException, SQLException {
 
+        final Folder folder;
         try {
-
-            final Folder folder = APILocator.getFolderAPI().find(oldFolderInode, APILocator.getUserAPI().getSystemUser(), false);
-
-            // THIS IS THE NEW CODE
-
-            Structure fileAssetSt = CacheLocator.getContentTypeCache()
-                    .getStructureByVelocityVarName("FileAsset");
-
-            // lets see if we have structures referencing the folder, if
-            // so, let's use its host for the dummy identifier
-            List<Structure> referencedStructures = APILocator.getFolderAPI().getStructures(
-                    folder, APILocator.getUserAPI().getSystemUser(), false);
-            String hostForDummyFolder = "SYSTEM_HOST";
-
-            if ( referencedStructures != null && !referencedStructures.isEmpty() ) {
-                Structure st = referencedStructures.get(0);
-                hostForDummyFolder = st.getHost();
-            }
-
-            // 1.1) Insert dummy temp row on IDENTIFIER table
-
-            dc.executeStatement("insert into identifier (id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date, create_date, owner) values ('TEMP_IDENTIFIER', '/', 'DUMMY_ASSET_NAME', '"
-                    + hostForDummyFolder + "', " + "'folder', NULL, NULL, NULL, NULL) ");
-
-            // 1.2) Insert dummy temp row on FOLDER table
-
-            if ( DbConnectionFactory.isOracle() ) {
-                dc.executeStatement("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"
-                        + DbConnectionFactory.getDBFalse()
-                        + "', '0', '', 'TEMP_IDENTIFIER', '"
-                        + fileAssetSt.getInode()
-                        + "', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'DUMMY_OWNER', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))");
-            } else if ( DbConnectionFactory.isPostgres() ) {
-                dc.executeStatement("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', "
-                        + DbConnectionFactory.getDBFalse()
-                        + ", '0', '', 'TEMP_IDENTIFIER', '"
-                        + fileAssetSt.getInode()
-                        + "', '1900-01-01 00:00:00.00', 'DUMMY_OWNER', '1900-01-01 00:00:00.00')");
-            } else {
-                dc.executeStatement("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '"
-                        + DbConnectionFactory.getDBFalse()
-                        + "', '0', '', 'TEMP_IDENTIFIER', '"
-                        + fileAssetSt.getInode()
-                        + "', '1900-01-01 00:00:00.00', 'DUMMY_OWNER', '1900-01-01 00:00:00.00')");
-            }
-
-            // 2) Update references to the new dummies temps
-
-            // update foreign tables references to TEMP
-            dc.executeStatement("update structure set folder = 'TEMP_INODE' where folder = '"
-                    + oldFolderInode + "'");
-            dc.executeStatement("update permission set inode_id = 'TEMP_INODE' where inode_id = '"
-                    + oldFolderInode + "'");
-            dc.executeStatement("update permission_reference set asset_id = 'TEMP_INODE' where asset_id = '"
-                    + oldFolderInode + "'");
-
-            // 3.1) delete old FOLDER row
-            // lets save old folder columns values first
-            dc.setSQL("select * from folder where inode = ?");
-            dc.addParam(oldFolderInode);
-            Map<String, Object> oldFolderRow = dc.loadObjectResults().get(0);
-            String name = (String) oldFolderRow.get("name");
-            String title = (String) oldFolderRow.get("title");
-            Boolean showOnMenu = DbConnectionFactory.isDBTrue(oldFolderRow.get(
-                    "show_on_menu").toString());
-
-            Integer sortOrder = 0;
-            if ( oldFolderRow.get("sort_order") != null ) {
-                sortOrder = Integer.valueOf(oldFolderRow.get("sort_order").toString());
-            }
-
-            String filesMasks = (String) oldFolderRow.get("files_masks");
-            String defaultFileType = (String) oldFolderRow.get("default_file_type");
-            Date modDate = (Date) oldFolderRow.get("mod_date");
-            String owner = (String) oldFolderRow.get("owner");
-            Date idate = (Date) oldFolderRow.get("idate");
-
-            // lets save old identifier columns values first
-            dc.setSQL("select * from identifier where id = ?");
-            dc.addParam(oldFolderIdentifier);
-            Map<String, Object> oldIdentifierRow = dc.loadObjectResults().get(0);
-            final String parentPath = (String) oldIdentifierRow.get("parent_path");
-            final String assetName = (String) oldIdentifierRow.get("asset_name");
-            final String hostId = (String) oldIdentifierRow.get("host_inode");
-            String assetType = (String) oldIdentifierRow.get("asset_type");
-            Date syspublishDate = (Date) oldIdentifierRow.get("syspublish_date");
-            Date sysexpireDate = (Date) oldIdentifierRow.get("sysexpire_date");
-            final Date createDate = (Date) oldIdentifierRow.get("create_date");
-            final String oldOwner = (String) oldIdentifierRow.get("owner");
-
-            // now we can safely delete the old folder row. It will also
-            // delete the old Identifier
-            // lets alter the asset_name to avoid errors in validation
-            // when deleting the folder
-            dc.executeStatement("update identifier set asset_name = '_TO_BE_DELETED_' where id = '"
-                    + oldFolderIdentifier + "'");
-
-            dc.executeStatement("delete from folder where inode = '" + oldFolderInode + "'");
-
-            //Deletes the old inode in case it exists
-            dc.executeStatement("delete from inode where inode = '" + oldFolderInode + "'");
-
-            // 4.1) insert real new IDENTIFIER row
-            dc.setSQL("insert into identifier (id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date, create_date, owner) values (?, ?, ?, ?, ?, ?, ?, ?, ?) ");
-            dc.addParam(newFolderIdentifier);
-            dc.addParam(parentPath);
-            dc.addParam(assetName);
-            dc.addParam(hostId);
-            dc.addParam(assetType);
-            dc.addParam(syspublishDate);
-            dc.addParam(sysexpireDate);
-            dc.addParam(createDate);
-            dc.addParam(oldOwner);
-            dc.loadResult();
-
-            // 4.2) insert real new FOLDER row
-            dc.setSQL("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ");
-            dc.addParam(newFolderInode);
-            dc.addParam(name);
-            dc.addParam(title);
-            dc.addParam(showOnMenu);
-            dc.addParam(sortOrder);
-            dc.addParam(filesMasks);
-            dc.addParam(newFolderIdentifier);
-            dc.addParam(defaultFileType);
-            dc.addParam(modDate);
-            dc.addParam(owner);
-            dc.addParam(idate);
-            dc.loadResult();
-
-            // 5) update foreign tables references to the new real row
-            dc.executeStatement("update structure set folder = '" + newFolderInode
-                    + "' where folder = 'TEMP_INODE'");
-            dc.executeStatement("update permission set inode_id = '" + newFolderInode
-                    + "' where inode_id = 'TEMP_INODE'");
-            dc.executeStatement("update permission_reference set asset_id = '"
-                    + newFolderInode + "' where asset_id = 'TEMP_INODE'");
-
-            // 6) delete dummy temp
-            dc.executeStatement("delete from folder where inode = 'TEMP_INODE'");
-
-            /*
-             Lets reindex all the content under the fixed folder
-             */
-            HibernateUtil.addCommitListener(new FlushCacheRunnable() {
-                public void run () {
-
-                    String folderPath = null;
-                    try {
-
-                        //In oder to avoid duplicated code: Create a dummy Identifier object in order to use the getPath method logic
-                        Identifier dummyIdentifier = new Identifier();
-                        dummyIdentifier.setAssetName(assetName);
-                        dummyIdentifier.setParentPath(parentPath);
-
-                        folderPath = dummyIdentifier.getPath();
-                        APILocator.getContentletAPI().refreshContentUnderFolderPath(hostId, folderPath);
-                    } catch ( Exception e ) {
-                        if ( folderPath != null ) {
-                            Logger.error(this, "Error while reindexing content under folder with path [" + folderPath + "].", e);
-                        } else {
-                            Logger.error(this, "Error while reindexing content under folder.", e);
-                        }
-                    }
-                }
-            });
-
+            folder = APILocator.getFolderAPI().find(oldFolderInode, APILocator.getUserAPI().getSystemUser(), false);
         } catch ( DotDataException e ) {
             Logger.info(getClass(), "Folder not found. inode: " + oldFolderInode);
+            return;
         }
 
+        // THIS IS THE NEW CODE
+
+        Structure fileAssetSt = CacheLocator.getContentTypeCache()
+                .getStructureByVelocityVarName("FileAsset");
+
+        // lets see if we have structures referencing the folder, if
+        // so, let's use its host for the dummy identifier
+        List<Structure> referencedStructures = APILocator.getFolderAPI().getStructures(
+                folder, APILocator.getUserAPI().getSystemUser(), false);
+        String hostForDummyFolder = "SYSTEM_HOST";
+
+        if ( referencedStructures != null && !referencedStructures.isEmpty() ) {
+            Structure st = referencedStructures.get(0);
+            hostForDummyFolder = st.getHost();
+        }
+
+        // 1.1) Insert dummy temp row on IDENTIFIER table
+
+        dc.setSQL("insert into identifier (id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date, create_date, owner) values ('TEMP_IDENTIFIER', '/', 'DUMMY_ASSET_NAME', ?, 'folder', NULL, NULL, NULL, NULL) ")
+                .addParam(hostForDummyFolder)
+                .loadResult();
+
+        // 1.2) Insert dummy temp row on FOLDER table
+
+        if ( DbConnectionFactory.isOracle() ) {
+            // Only the database's boolean keywords are concatenated; values are bound.
+            dc.setSQL("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '" // nosemgrep
+                    + DbConnectionFactory.getDBFalse()
+                    + "', '0', '', 'TEMP_IDENTIFIER', ?, to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'), 'DUMMY_OWNER', to_date('1900-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS'))");
+        } else if ( DbConnectionFactory.isPostgres() ) {
+            // Only the database's boolean keywords are concatenated; values are bound.
+            dc.setSQL("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', " // nosemgrep
+                    + DbConnectionFactory.getDBFalse()
+                    + ", '0', '', 'TEMP_IDENTIFIER', ?, '1900-01-01 00:00:00.00', 'DUMMY_OWNER', '1900-01-01 00:00:00.00')");
+        } else {
+            // Only the database's boolean keywords are concatenated; values are bound.
+            dc.setSQL("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values ('TEMP_INODE', 'DUMMY_NAME', 'DUMMY_TITLE', '" // nosemgrep
+                    + DbConnectionFactory.getDBFalse()
+                    + "', '0', '', 'TEMP_IDENTIFIER', ?, '1900-01-01 00:00:00.00', 'DUMMY_OWNER', '1900-01-01 00:00:00.00')");
+        }
+        dc.addParam(fileAssetSt.getInode()).loadResult();
+
+        // 2) Update references to the new dummies temps
+
+        // update foreign tables references to TEMP
+        repointFolderReferences(dc, oldFolderInode, "TEMP_INODE");
+
+        // 3.1) delete old FOLDER row
+        // lets save old folder columns values first
+        dc.setSQL("select * from folder where inode = ?");
+        dc.addParam(oldFolderInode);
+        Map<String, Object> oldFolderRow = dc.loadObjectResults().get(0);
+        String name = (String) oldFolderRow.get("name");
+        String title = (String) oldFolderRow.get("title");
+        Boolean showOnMenu = DbConnectionFactory.isDBTrue(oldFolderRow.get(
+                "show_on_menu").toString());
+
+        Integer sortOrder = 0;
+        if ( oldFolderRow.get("sort_order") != null ) {
+            sortOrder = Integer.valueOf(oldFolderRow.get("sort_order").toString());
+        }
+
+        String filesMasks = (String) oldFolderRow.get("files_masks");
+        String defaultFileType = (String) oldFolderRow.get("default_file_type");
+        Date modDate = (Date) oldFolderRow.get("mod_date");
+        String owner = (String) oldFolderRow.get("owner");
+        Date idate = (Date) oldFolderRow.get("idate");
+
+        // lets save old identifier columns values first
+        dc.setSQL("select * from identifier where id = ?");
+        dc.addParam(oldFolderIdentifier);
+        Map<String, Object> oldIdentifierRow = dc.loadObjectResults().get(0);
+        final String parentPath = (String) oldIdentifierRow.get("parent_path");
+        final String assetName = (String) oldIdentifierRow.get("asset_name");
+        final String hostId = (String) oldIdentifierRow.get("host_inode");
+        String assetType = (String) oldIdentifierRow.get("asset_type");
+        Date syspublishDate = (Date) oldIdentifierRow.get("syspublish_date");
+        Date sysexpireDate = (Date) oldIdentifierRow.get("sysexpire_date");
+        final Date createDate = (Date) oldIdentifierRow.get("create_date");
+        final String oldOwner = (String) oldIdentifierRow.get("owner");
+
+        // now we can safely delete the old folder row. It will also
+        // delete the old Identifier
+        // lets alter the asset_name to avoid errors in validation
+        // when deleting the folder
+        dc.setSQL("update identifier set asset_name = '_TO_BE_DELETED_' where id = ?")
+                .addParam(oldFolderIdentifier).loadResult();
+
+        dc.setSQL("delete from folder where inode = ?").addParam(oldFolderInode).loadResult();
+
+        //Deletes the old inode in case it exists
+        dc.setSQL("delete from inode where inode = ?").addParam(oldFolderInode).loadResult();
+
+        // 4.1) insert real new IDENTIFIER row
+        dc.setSQL("insert into identifier (id, parent_path, asset_name, host_inode, asset_type, syspublish_date, sysexpire_date, create_date, owner) values (?, ?, ?, ?, ?, ?, ?, ?, ?) ");
+        dc.addParam(newFolderIdentifier);
+        dc.addParam(parentPath);
+        dc.addParam(assetName);
+        dc.addParam(hostId);
+        dc.addParam(assetType);
+        dc.addParam(syspublishDate);
+        dc.addParam(sysexpireDate);
+        dc.addParam(createDate);
+        dc.addParam(oldOwner);
+        dc.loadResult();
+
+        // 4.2) insert real new FOLDER row
+        dc.setSQL("insert into folder (inode, name, title, show_on_menu, sort_order, files_masks, identifier, default_file_type, mod_date, owner, idate) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ");
+        dc.addParam(newFolderInode);
+        dc.addParam(name);
+        dc.addParam(title);
+        dc.addParam(showOnMenu);
+        dc.addParam(sortOrder);
+        dc.addParam(filesMasks);
+        dc.addParam(newFolderIdentifier);
+        dc.addParam(defaultFileType);
+        dc.addParam(modDate);
+        dc.addParam(owner);
+        dc.addParam(idate);
+        dc.loadResult();
+
+        // 5) update foreign tables references to the new real row
+        repointFolderReferences(dc, "TEMP_INODE", newFolderInode);
+
+        // 6) delete dummy temp
+        dc.executeStatement("delete from folder where inode = 'TEMP_INODE'");
+
+        /*
+         Lets reindex all the content under the fixed folder
+         */
+        HibernateUtil.addCommitListener(new FlushCacheRunnable() {
+            public void run () {
+
+                String folderPath = null;
+                try {
+
+                    //In oder to avoid duplicated code: Create a dummy Identifier object in order to use the getPath method logic
+                    Identifier dummyIdentifier = new Identifier();
+                    dummyIdentifier.setAssetName(assetName);
+                    dummyIdentifier.setParentPath(parentPath);
+
+                    folderPath = dummyIdentifier.getPath();
+                    APILocator.getContentletAPI().refreshContentUnderFolderPath(hostId, folderPath);
+                } catch ( Exception e ) {
+                    if ( folderPath != null ) {
+                        Logger.error(this, "Error while reindexing content under folder with path [" + folderPath + "].", e);
+                    } else {
+                        Logger.error(this, "Error while reindexing content under folder.", e);
+                    }
+                }
+            }
+        });
+
+    }
+
+    /**
+     * Points the content types, permissions and permission references of one folder inode at
+     * another inode.
+     *
+     * @param dc the connection helper to run the statements with
+     * @param fromInode the inode the references hold now
+     * @param toInode the inode the references should hold
+     * @throws DotDataException when a statement fails
+     */
+    private static void repointFolderReferences(final DotConnect dc, final String fromInode, final String toInode)
+            throws DotDataException {
+        dc.setSQL("update structure set folder = ? where folder = ?")
+                .addParam(toInode).addParam(fromInode).loadResult();
+        dc.setSQL("update permission set inode_id = ? where inode_id = ?")
+                .addParam(toInode).addParam(fromInode).loadResult();
+        dc.setSQL("update permission_reference set asset_id = ? where asset_id = ?")
+                .addParam(toInode).addParam(fromInode).loadResult();
     }
 
 }
