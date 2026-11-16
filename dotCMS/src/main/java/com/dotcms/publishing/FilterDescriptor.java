@@ -40,7 +40,15 @@ import static com.dotmarketing.util.UtilMethods.isSet;
  *                                     also followed one extra level (e.g. pushing A also includes
  *                                     content related to A's direct relationships, not just the
  *                                     direct relationships themselves); it does not recurse any
- *                                     further than that one extra level.</li>
+ *                                     further than that one extra level. Ignored when
+ *                                     relationshipsDepth is set.</li>
+ *       <li>relationshipsDepth:       non-negative integer, optional. Number of relationship levels
+ *                                     to follow: 1 = direct relationships only, 2 = same as
+ *                                     relationshipsSecondLevel, N = N levels, 0 = unlimited (the
+ *                                     whole reachable relationship graph). Takes precedence over
+ *                                     relationshipsSecondLevel and has no effect when relationships
+ *                                     or dependencies is false. Any value, including 0, is limited
+ *                                     by the server property push.publishing.relationships.max.depth.</li>
  *     </ul>
  * </ul>
  *
@@ -63,6 +71,9 @@ public class FilterDescriptor implements Comparable<FilterDescriptor> {
     public static final String EXCLUDE_DEPENDENCY_QUERY_KEY = "excludeDependencyQuery";
     public static final String FORCE_PUSH_KEY = "forcePush";
     public static final String RELATIONSHIPS_SECOND_LEVEL_KEY = "relationshipsSecondLevel";
+    public static final String RELATIONSHIPS_DEPTH_KEY = "relationshipsDepth";
+    /** Value of {@link #RELATIONSHIPS_DEPTH_KEY} meaning "follow relationships without a depth limit". */
+    public static final int RELATIONSHIPS_DEPTH_UNLIMITED = 0;
     public static final String DEFAULT_SORT_VALUE = "1000";
 
     /**
@@ -177,6 +188,7 @@ public class FilterDescriptor implements Comparable<FilterDescriptor> {
         listOfPossibleFilters.add(EXCLUDE_DEPENDENCY_QUERY_KEY);
         listOfPossibleFilters.add(FORCE_PUSH_KEY);
         listOfPossibleFilters.add(RELATIONSHIPS_SECOND_LEVEL_KEY);
+        listOfPossibleFilters.add(RELATIONSHIPS_DEPTH_KEY);
 
         if(!getFilters().keySet().stream().allMatch(element -> listOfPossibleFilters.contains(element))){
             errors.add("The field `Filters` has a property that is not expected. Possible Properties: " + listOfPossibleFilters.toString());
@@ -218,9 +230,31 @@ public class FilterDescriptor implements Comparable<FilterDescriptor> {
             }
         }
 
+        if(getFilters().containsKey(RELATIONSHIPS_DEPTH_KEY)
+                && !isValidRelationshipsDepth(getFilters().get(RELATIONSHIPS_DEPTH_KEY))) {
+            errors.add("The value of the field `relationshipsDepth` must be a non-negative integer ("
+                    + RELATIONSHIPS_DEPTH_UNLIMITED + " means unlimited)");
+        }
+
         if(!errors.isEmpty()){
             throw new DotDataValidationException(errors.size() + " error(s): " + String.join(" , ", errors));
         }
+    }
+
+    /**
+     * Checks that a {@code relationshipsDepth} value is a whole number between 0 and
+     * {@link Integer#MAX_VALUE}. Booleans, strings and decimals such as {@code 2.5} are rejected.
+     *
+     * @param depth The raw value read from the filter YAML.
+     * @return {@code true} if the value can be used as a traversal depth.
+     */
+    private static boolean isValidRelationshipsDepth(final Object depth) {
+        if (!(depth instanceof Integer || depth instanceof Long
+                || depth instanceof Short || depth instanceof Byte)) {
+            return false;
+        }
+        final long value = ((Number) depth).longValue();
+        return value >= 0 && value <= Integer.MAX_VALUE;
     }
 
     @Override

@@ -11,6 +11,7 @@ import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.DotBundleException;
+import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.PublisherFilter;
 import com.dotcms.publishing.manifest.ManifestItem;
@@ -96,27 +97,39 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     private final Lazy<ContentletAPI> contentletAPI = Lazy.of(APILocator::getContentletAPI);
 
     /**
-     * Tracks, for the lifetime of this bundle generation, which Contentlet identifiers have
-     * already "consumed" the one extra relationship-traversal hop that
-     * {@link PublisherFilter#isRelationshipsSecondLevel()} allows. A Contentlet's identifier is
-     * added to this set right before its related content is recursively enqueued for its own
-     * dependency processing; once present, that Contentlet's own related content is added to the
-     * bundle without being recursed into again. This both caps traversal at exactly one extra
-     * level and makes circular relationship chains inherently non-recursive beyond that point.
-     * <p>
-     * <b>Known limitation:</b> this set is global to the whole bundle and processing runs
-     * concurrently ({@link ConcurrentDependencyProcessor} dispatches queued assets across a
-     * thread pool). If a Contentlet is <i>both</i> an explicitly-selected bundle root <i>and</i> a
-     * first-level relation of another explicitly-selected root, which one is processed first
-     * determines whether it still gets its own second-level expansion -- the outcome does not
-     * depend on which Contentlet the user actually selected. The cap is never exceeded in this
-     * scenario (no correctness risk beyond this), so it is a bounded, order-dependent
-     * under-inclusion rather than a crash or data-integrity issue. Fixing it properly would mean
-     * distinguishing "explicit bundle root" from "reached via a relationship" across the shared
-     * {@link DependencyProcessor} queue that every asset type uses, which is out of scope for this
-     * opt-in filter.
+     * Server property that caps how many relationship levels any filter may follow, including a
+     * filter asking for {@link FilterDescriptor#RELATIONSHIPS_DEPTH_UNLIMITED}. 0 or less removes
+     * the cap. Environment variable: {@code DOT_PUSH_PUBLISHING_RELATIONSHIPS_MAX_DEPTH}.
      */
-    private final Set<String> relationshipHopConsumed = ConcurrentHashMap.newKeySet();
+    static final String MAX_RELATIONSHIPS_DEPTH_PROPERTY = "push.publishing.relationships.max.depth";
+    /** Default for {@link #MAX_RELATIONSHIPS_DEPTH_PROPERTY}. */
+    static final int DEFAULT_MAX_RELATIONSHIPS_DEPTH = 10;
+
+    /**
+     * For the lifetime of this bundle generation, holds how many relationship levels may still be
+     * followed from each Contentlet that was reached through a relationship, keyed by identifier.
+     * An explicitly selected Contentlet is not in the map and starts at the full depth from
+     * {@link #configuredRelationshipDepth}. When a Contentlet with {@code n} levels left is
+     * processed and {@code n > 1}, each related Contentlet is recorded with {@code n - 1} and queued
+     * for its own dependency processing; with {@code n == 1} its related content is added to the
+     * bundle without being followed. If a Contentlet is reached by several paths, the largest
+     * value is kept. Cyclic relationship graphs terminate because
+     * {@link ConcurrentDependencyProcessor#addAsset(Object, PusheableAsset)} never queues the same
+     * asset twice, even when the depth is unlimited.
+     * <p>
+     * <b>Known limitation:</b> processing runs concurrently and each Contentlet is processed only
+     * once. If a Contentlet is first processed with few levels left and is later reached by a path
+     * with more levels left (or is both an explicitly selected item and a relation of another
+     * selected item), it is not processed again, so the deeper levels below it may be left out. The
+     * configured depth is never exceeded, so this is a bounded, order-dependent under-inclusion,
+     * not a crash or data-integrity issue. It cannot happen with unlimited depth and no ceiling.
+     * Fixing it properly would mean letting the shared {@link DependencyProcessor} queue re-process
+     * an asset, which every asset type uses.
+     */
+    private final Map<String, Integer> remainingRelationshipDepth = new ConcurrentHashMap<>();
+
+    /** Depth followed from an explicitly selected Contentlet, resolved once per bundle. */
+    private final Lazy<Integer> configuredRelationshipDepth = Lazy.of(this::resolveRelationshipDepth);
 
     /**
      * Creates an instance of the Push Publishing Dependency Processor mechanism, and initializes all the different data
@@ -467,7 +480,35 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
     }
 
     /**
+     * Works out how many relationship levels to follow from an explicitly selected Contentlet.
+     * Takes the filter's depth (where {@link FilterDescriptor#RELATIONSHIPS_DEPTH_UNLIMITED} means
+     * no limit) and reduces it to the server ceiling {@link #MAX_RELATIONSHIPS_DEPTH_PROPERTY}
+     * (default {@value #DEFAULT_MAX_RELATIONSHIPS_DEPTH}; 0 or less removes the ceiling). Logs a
+     * warning when the ceiling lowers the depth, so an operator can see why a deep bundle stopped
+     * where it did.
+     *
+     * @return The number of levels to follow, or {@link Integer#MAX_VALUE} for no limit.
+     */
+    private int resolveRelationshipDepth() {
+        final int requested = publisherFilter.getRelationshipsDepth();
+        final boolean unlimited = requested == FilterDescriptor.RELATIONSHIPS_DEPTH_UNLIMITED;
+        final int requestedDepth = unlimited ? Integer.MAX_VALUE : requested;
+        final int ceiling = Config.getIntProperty(MAX_RELATIONSHIPS_DEPTH_PROPERTY,
+                DEFAULT_MAX_RELATIONSHIPS_DEPTH);
+        if (ceiling <= 0 || requestedDepth <= ceiling) {
+            return requestedDepth;
+        }
+        Logger.warn(this, String.format(
+                "Push Publishing filter '%s' asks for relationship depth %s; limiting it to %d set by %s",
+                publisherFilter.key(), unlimited ? "unlimited" : String.valueOf(requested), ceiling,
+                MAX_RELATIONSHIPS_DEPTH_PROPERTY));
+        return ceiling;
+    }
+
+    /**
      * Takes the specified {@link Contentlet} object and analyzes the different object dependencies it may have.
+     * Related content is followed down to the depth configured on the bundle's filter (see
+     * {@link #remainingRelationshipDepth}).
      */
     private void processContentDependency(final Contentlet contentlet)
             throws  DotBundleException {
@@ -480,6 +521,10 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
 
             final Set<Contentlet> contentsToProcess = new HashSet<>();
             final Set<Contentlet> contentsWithDependenciesToProcess = new HashSet<>();
+            // Levels of related content still allowed below this contentlet; 1 = add its relations but stop there
+            final int remainingDepth = remainingRelationshipDepth.getOrDefault(contentId,
+                    configuredRelationshipDepth.get());
+            final boolean recurseIntoRelated = remainingDepth > 1;
 
             for (final Contentlet contentletVersion : contentList) {
 
@@ -503,17 +548,14 @@ public class PushPublishigDependencyProcesor implements DependencyProcessor {
                         contentRelationships.keySet(), ManifestReason.INCLUDE_DEPENDENCY_FROM.getMessage(contentlet));
 
                 if(publisherFilter.isRelationships() && publisherFilter.isDependencies()) {
-                    // Only recurse into a related Contentlet's OWN relationships when the current
-                    // Contentlet hasn't itself already consumed its one allowed extra hop — this
-                    // caps traversal at exactly one extra level instead of recursing unbounded.
-                    final boolean recurseOneMoreLevel = publisherFilter.isRelationshipsSecondLevel()
-                            && !relationshipHopConsumed.contains(contentId);
-
                     for (Entry<Relationship, List<Contentlet>> relationshipListEntry : contentRelationships
                             .entrySet()) {
-                        if (recurseOneMoreLevel) {
-                            relationshipListEntry.getValue().forEach(
-                                    relatedContentlet -> relationshipHopConsumed.add(relatedContentlet.getIdentifier()));
+                        if (recurseIntoRelated) {
+                            // Record the depth left for each related contentlet before queuing it; keep the
+                            // larger value if another path already reached it with more depth left
+                            relationshipListEntry.getValue().forEach(relatedContentlet ->
+                                    remainingRelationshipDepth.merge(relatedContentlet.getIdentifier(),
+                                            remainingDepth - 1, Math::max));
 
                             tryToAddAllAndProcessDependencies(PusheableAsset.CONTENTLET,
                                     relationshipListEntry.getValue(),

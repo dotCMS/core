@@ -43,6 +43,7 @@ import com.liferay.portal.model.User;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
+import java.util.Set;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import com.dotmarketing.beans.Host;
@@ -755,6 +756,182 @@ public class DependencyManagerTest {
 
         assertTrue("Second level related content (c1) should still be included despite the cycle",
                 dependencyManager.getContents().contains(chain.c1.getIdentifier()));
+    }
+
+    /**
+     * Registers a filter under {@code filterKey} with dependencies and relationships on and the
+     * given extra filter properties, unless one with that key already exists. Used by the
+     * relationshipsDepth tests below (issue #38394).
+     */
+    private static void createRelationshipsDepthFilter(final String filterKey,
+            final Map<String, Object> extraFilters) {
+        if (APILocator.getPublisherAPI().existsFilterDescriptor(filterKey)) {
+            return;
+        }
+        final Map<String, Object> filtersMap = ImmutableMap.<String, Object>builder()
+                .put("dependencies", true).put("relationships", true).put("forcePush", false)
+                .putAll(extraFilters).build();
+        APILocator.getPublisherAPI().addFilterDescriptor(new FilterDescriptor(filterKey,
+                "Relationships depth test " + filterKey, filtersMap, false, "DOTCMS_BACK_END_USER"));
+    }
+
+    /**
+     * Creates a new Content Type with a title field, relates it as a child of {@code parentType},
+     * persists a Contentlet of it and relates that Contentlet to {@code parent}. Used to extend the
+     * A-&gt;B-&gt;C chain one level at a time.
+     *
+     * @return The new child Content Type and Contentlet, in that order.
+     */
+    private Object[] appendRelationshipLevel(final Host host, final ContentType parentType,
+            final Contentlet parent, final String title) throws DotDataException, DotSecurityException {
+        final ContentType childType = new ContentTypeDataGen().host(host)
+                .field(new FieldDataGen().name("title").next()).nextPersisted();
+        final Relationship relationship = new FieldRelationshipDataGen()
+                .child(childType).parent(parentType).nextPersisted();
+        final Contentlet child = new ContentletDataGen(childType).setProperty("title", title).nextPersisted();
+
+        final Contentlet checkoutParent = ContentletDataGen.checkout(parent);
+        checkoutParent.setProperty(relationship.getChildRelationName(), Arrays.asList(child));
+        ContentletDataGen.checkin(checkoutParent);
+
+        return new Object[]{childType, child};
+    }
+
+    /**
+     * Runs {@link DependencyManager#setDependencies()} on a bundle holding only {@code root},
+     * generated with the given filter, and returns the identifiers of the collected contents.
+     */
+    @SuppressWarnings("unchecked")
+    private Set<String> collectContents(final Contentlet root, final String filterKey)
+            throws DotDataException, DotBundleException, DotSecurityException {
+        final PushPublisherConfig config = new PushPublisherConfig();
+        createBundle(config, root, filterKey);
+        final DependencyManager dependencyManager = new DependencyManager(user, config);
+        dependencyManager.setDependencies();
+        return dependencyManager.getContents();
+    }
+
+    /**
+     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+     * <b>Given Scenario:</b> An A-&gt;B-&gt;C-&gt;D-&gt;E chain is pushed (just a1) with a filter
+     * declaring {@code relationshipsDepth: 3}. <p>
+     * <b>ExpectedResult:</b> d1 (third level) is included and e1 (fourth level) is not (issue #38394).
+     */
+    @Test
+    public void test_PP_relationshipsDepth_includes_exactly_N_levels()
+            throws DotDataException, DotBundleException, DotSecurityException {
+
+        final RelationshipChain chain = createABCRelationshipChain();
+        final Object[] levelD = appendRelationshipLevel(chain.host, chain.typeC, chain.c1, "d1");
+        final Contentlet d1 = (Contentlet) levelD[1];
+        final Object[] levelE = appendRelationshipLevel(chain.host, (ContentType) levelD[0], d1, "e1");
+        final Contentlet e1 = (Contentlet) levelE[1];
+
+        final String filterKey = "RelationshipsDepth3.yml";
+        createRelationshipsDepthFilter(filterKey, Map.of("relationshipsDepth", 3));
+
+        final Set<String> contents = collectContents(chain.a1, filterKey);
+
+        assertTrue("b1 (level 1) should be included", contents.contains(chain.b1.getIdentifier()));
+        assertTrue("c1 (level 2) should be included", contents.contains(chain.c1.getIdentifier()));
+        assertTrue("d1 (level 3) should be included with relationshipsDepth 3",
+                contents.contains(d1.getIdentifier()));
+        assertFalse("e1 (level 4) must NOT be included with relationshipsDepth 3",
+                contents.contains(e1.getIdentifier()));
+    }
+
+    /**
+     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+     * <b>Given Scenario:</b> An A-&gt;B-&gt;C-&gt;D-&gt;E chain made circular with E-&gt;A is
+     * pushed (just a1) with a filter declaring {@code relationshipsDepth: 0} (unlimited), under the
+     * default server ceiling. <p>
+     * <b>ExpectedResult:</b> setDependencies() completes despite the cycle and the deepest item
+     * (e1) is included (issue #38394).
+     */
+    @Test
+    public void test_PP_relationshipsDepth_unlimited_follows_whole_graph_and_handles_cycle()
+            throws DotDataException, DotBundleException, DotSecurityException {
+
+        final RelationshipChain chain = createABCRelationshipChain();
+        final Object[] levelD = appendRelationshipLevel(chain.host, chain.typeC, chain.c1, "d1");
+        final Contentlet d1 = (Contentlet) levelD[1];
+        final Object[] levelE = appendRelationshipLevel(chain.host, (ContentType) levelD[0], d1, "e1");
+        final ContentType typeE = (ContentType) levelE[0];
+        final Contentlet e1 = (Contentlet) levelE[1];
+
+        final Relationship relationshipEtoA = new FieldRelationshipDataGen()
+                .child(chain.typeA).parent(typeE).nextPersisted();
+        final Contentlet checkoutE1 = ContentletDataGen.checkout(e1);
+        checkoutE1.setProperty(relationshipEtoA.getChildRelationName(), Arrays.asList(chain.a1));
+        ContentletDataGen.checkin(checkoutE1);
+
+        final String filterKey = "RelationshipsDepthUnlimited.yml";
+        createRelationshipsDepthFilter(filterKey,
+                Map.of("relationshipsDepth", FilterDescriptor.RELATIONSHIPS_DEPTH_UNLIMITED));
+
+        final Set<String> contents = collectContents(chain.a1, filterKey);
+
+        assertTrue("d1 should be included with unlimited depth", contents.contains(d1.getIdentifier()));
+        assertTrue("e1 should be included with unlimited depth", contents.contains(e1.getIdentifier()));
+    }
+
+    /**
+     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+     * <b>Given Scenario:</b> The A-&gt;B-&gt;C chain is pushed with a filter declaring both
+     * {@code relationshipsSecondLevel: true} and {@code relationshipsDepth: 1}. <p>
+     * <b>ExpectedResult:</b> relationshipsDepth takes precedence: b1 is included, c1 is not
+     * (issue #38394).
+     */
+    @Test
+    public void test_PP_relationshipsDepth_takes_precedence_over_second_level()
+            throws DotDataException, DotBundleException, DotSecurityException {
+
+        final RelationshipChain chain = createABCRelationshipChain();
+
+        final String filterKey = "RelationshipsDepth1WithSecondLevel.yml";
+        createRelationshipsDepthFilter(filterKey,
+                Map.of("relationshipsSecondLevel", true, "relationshipsDepth", 1));
+
+        final Set<String> contents = collectContents(chain.a1, filterKey);
+
+        assertTrue("b1 (level 1) should be included", contents.contains(chain.b1.getIdentifier()));
+        assertFalse("c1 (level 2) must NOT be included: relationshipsDepth 1 overrides relationshipsSecondLevel",
+                contents.contains(chain.c1.getIdentifier()));
+    }
+
+    /**
+     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+     * <b>Given Scenario:</b> An A-&gt;B-&gt;C-&gt;D-&gt;E chain is pushed with a filter declaring
+     * {@code relationshipsDepth: 0} (unlimited) while the server ceiling
+     * {@code push.publishing.relationships.max.depth} is set to 3. <p>
+     * <b>ExpectedResult:</b> traversal stops at the ceiling: d1 is included, e1 is not
+     * (issue #38394).
+     */
+    @Test
+    public void test_PP_relationshipsDepth_is_limited_by_server_ceiling()
+            throws DotDataException, DotBundleException, DotSecurityException {
+
+        final RelationshipChain chain = createABCRelationshipChain();
+        final Object[] levelD = appendRelationshipLevel(chain.host, chain.typeC, chain.c1, "d1");
+        final Contentlet d1 = (Contentlet) levelD[1];
+        final Object[] levelE = appendRelationshipLevel(chain.host, (ContentType) levelD[0], d1, "e1");
+        final Contentlet e1 = (Contentlet) levelE[1];
+
+        final String filterKey = "RelationshipsDepthUnlimitedCeiling.yml";
+        createRelationshipsDepthFilter(filterKey,
+                Map.of("relationshipsDepth", FilterDescriptor.RELATIONSHIPS_DEPTH_UNLIMITED));
+
+        Config.setProperty("push.publishing.relationships.max.depth", 3);
+        try {
+            final Set<String> contents = collectContents(chain.a1, filterKey);
+
+            assertTrue("d1 (level 3) should be included up to the ceiling",
+                    contents.contains(d1.getIdentifier()));
+            assertFalse("e1 (level 4) must NOT be included: the server ceiling is 3",
+                    contents.contains(e1.getIdentifier()));
+        } finally {
+            Config.setProperty("push.publishing.relationships.max.depth", null);
+        }
     }
 
     /**
