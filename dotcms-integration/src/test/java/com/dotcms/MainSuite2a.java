@@ -134,7 +134,8 @@ import com.dotmarketing.portlets.structure.action.EditStructureActionSaveTest;
     com.dotcms.rendering.velocity.WidgetRendererTest.class,
     UserJsViewToolTest.class,
     CMSUserToolTest.class,
-    com.dotmarketing.portlets.contentlet.transform.ContentMapWidgetFieldRenderTest.class
+    com.dotmarketing.portlets.contentlet.transform.ContentMapWidgetFieldRenderTest.class,
+    com.dotcms.rest.IntegrityResourceTest.class
 })
 public class MainSuite2a {
 

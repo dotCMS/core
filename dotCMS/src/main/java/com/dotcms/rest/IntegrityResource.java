@@ -20,6 +20,7 @@ import com.dotmarketing.util.*;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.IntegrityDataGenerationJob;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
@@ -32,7 +33,9 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -148,6 +151,81 @@ public class IntegrityResource {
         return builderFromEndpoint(endpoint, url, new MediaType("application", "zip"))
                 .map(builder -> cacheEndpointState(endpoint.getId(), builder.get()))
                 .orElse(response("No Auth Token set for endpoint", true));
+    }
+
+    /**
+     * Authenticates a call made from the integrity checker of the Publishing Environments screen.
+     * Only back-end users with access to the Configuration portlet, the portlet that holds that
+     * screen, may run it; CMS administrators have access to every portlet.
+     *
+     * @param params   the URL parameters, in the {@code /key/value} form
+     * @param request  the current request
+     * @param response the current response
+     * @return the authenticated user and the parsed URL parameters
+     * @throws com.dotcms.rest.exception.SecurityException if there is no user, or the user is
+     *         not a back-end user with access to the Configuration portlet
+     */
+    private InitDataObject initForIntegrityChecker(final String params,
+                                                   final HttpServletRequest request,
+                                                   final HttpServletResponse response) {
+        return new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .params(params)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.CONFIGURATION.toString())
+                .init();
+    }
+
+    /**
+     * Looks up the endpoint a request refers to. The integrity calls use the endpoint id for
+     * session keys, results tables and folder names, so it must belong to an existing endpoint
+     * before it is used.
+     *
+     * @param endpointId the endpoint id sent by the client
+     * @return the endpoint, or empty when no endpoint has that id
+     * @throws DotDataException if the endpoint cannot be loaded
+     */
+    private static Optional<PublishingEndPoint> findEndpoint(final String endpointId)
+            throws DotDataException {
+        return Optional.ofNullable(
+                APILocator.getPublisherEndPointAPI().findEndPointById(endpointId));
+    }
+
+    /**
+     * Builds the answer for an endpoint id that does not belong to any endpoint.
+     *
+     * @return a 404 response
+     */
+    private static Response endpointNotFound() {
+        return Response.status(HttpStatus.SC_NOT_FOUND)
+                .entity("Error: endpoint not found.").build();
+    }
+
+    /**
+     * Parses the {@code type} parameter of the discard and fix calls. The value is matched in
+     * any letter case, but only after converting it to upper case with {@link Locale#ROOT}, the
+     * same conversion the remote end-point applies to the type it receives.
+     *
+     * @param type the value sent by the client
+     * @return the matching {@link IntegrityType}, or empty when the value names none
+     */
+    private static Optional<IntegrityType> parseIntegrityType(final String type) {
+        final String upperCaseType = type.toUpperCase(Locale.ROOT);
+        return Arrays.stream(IntegrityType.values())
+                .filter(integrityType -> integrityType.name().equals(upperCaseType))
+                .findFirst();
+    }
+
+    /**
+     * Builds the answer for a {@code type} parameter that names no integrity type.
+     *
+     * @return a 400 response
+     */
+    private static Response invalidIntegrityType() {
+        return Response.status(HttpStatus.SC_BAD_REQUEST)
+                .entity("Error: 'type' has an invalid value.").build();
     }
 
     /**
@@ -375,13 +453,20 @@ public class IntegrityResource {
      * decide to solve the data conflicts by replacing the data in the local
      * server or in the remote end-point.</li>
      * </ol>
+     * <p>Only back-end users with access to the Configuration portlet may call it, and the
+     * end-point ID must belong to an existing end-point.</p>
      *
      * @param httpServletRequest
      *            - The {@link HttpServletRequest} that started the process.
+     * @param httpServletResponse
+     *            - The current {@link HttpServletResponse}.
      * @param params
      *            - The execution parameters for running the process: The
      *            end-point ID.
-     * @return The REST {@link Response} with the status of the operation.
+     * @return The REST {@link Response} with the status of the operation: 400 without an
+     *         end-point ID, 404 when no end-point has that ID.
+     * @throws com.dotcms.rest.exception.SecurityException with 401 when the user may not run
+     *         the integrity checker
      */
     @GET
     @Path("/checkintegrity/{params:.*}")
@@ -389,7 +474,7 @@ public class IntegrityResource {
     public Response checkIntegrity(@Context final HttpServletRequest httpServletRequest,
                                    @Context final HttpServletResponse httpServletResponse,
                                    @PathParam("params") final String params)  {
-        final InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
+        final InitDataObject initData = initForIntegrityChecker(params, httpServletRequest, httpServletResponse);
         final Map<String, String> paramsMap = initData.getParamsMap();
         final HttpSession session = httpServletRequest.getSession();
         final User loggedUser = initData.getUser();
@@ -397,14 +482,25 @@ public class IntegrityResource {
 
         //Validate the parameters
         final String endpointId = paramsMap.get("endpoint");
+        if (!UtilMethods.isSet(endpointId)) {
+            return Response.status(HttpStatus.SC_BAD_REQUEST).entity("Error: endpoint is a required Field.").build();
+        }
+
+        final PublishingEndPoint endpoint;
+        try {
+            final Optional<PublishingEndPoint> foundEndpoint = findEndpoint(endpointId);
+            if (foundEndpoint.isEmpty()) {
+                return endpointNotFound();
+            }
+            endpoint = foundEndpoint.get();
+        } catch (final DotDataException e) {
+            Logger.error(IntegrityResource.class, "Error loading the endpoint for the integrity check", e);
+            return response("Error loading the endpoint for the integrity check", true);
+        }
 
         Logger.info(
                 IntegrityResource.class,
                 String.format("Endpoint id: %s", endpointId));
-
-        if (!UtilMethods.isSet(endpointId)) {
-            return Response.status(HttpStatus.SC_BAD_REQUEST).entity("Error: endpoint is a required Field.").build();
-        }
 
         // return if we already have the data
         final IntegrityUtil integrityUtil = new IntegrityUtil();
@@ -435,8 +531,6 @@ public class IntegrityResource {
         setStatus(httpServletRequest, endpointId, ProcessStatus.PROCESSING);
 
         try {
-            final PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI().findEndPointById(endpointId);
-
             //Sending bundle to endpoint
             Response response = generateIntegrityCheckerRequest(endpoint);
 
@@ -511,12 +605,17 @@ public class IntegrityResource {
     }
 
     /**
-     * Method that will verify the status of a check integrity process for a given server
+     * Method that will verify the status of a check integrity process for a given server.
+     * Only back-end users with access to the Configuration portlet may call it.
      *
-     * @param request
-     * @param params
-     * @return
-     * @throws JSONException
+     * @param request  the current request
+     * @param response the current response
+     * @param params   the URL parameters, holding the end-point ID
+     * @return the process status as JSON; 400 without an end-point ID, 404 when no end-point has
+     *         that ID
+     * @throws JSONException if the JSON response cannot be built
+     * @throws com.dotcms.rest.exception.SecurityException with 401 when the user may not run
+     *         the integrity checker
      */
     @GET
     @Path ("/checkIntegrityProcessStatus/{params:.*}")
@@ -525,7 +624,7 @@ public class IntegrityResource {
 
         StringBuilder responseMessage = new StringBuilder();
 
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+        InitDataObject initData = initForIntegrityChecker(params, request, response);
         Map<String, String> paramsMap = initData.getParamsMap();
 
         //Validate the parameters
@@ -538,6 +637,10 @@ public class IntegrityResource {
         }
 
         try {
+            if (findEndpoint(endpointId).isEmpty()) {
+                return endpointNotFound();
+            }
+
             JSONObject jsonResponse = new JSONObject();
 
             HttpSession session = request.getSession();
@@ -586,12 +689,17 @@ public class IntegrityResource {
     }
 
     /**
-     * Generates and returns the integrity check results for a given server
+     * Generates and returns the integrity check results for a given server.
+     * Only back-end users with access to the Configuration portlet may call it.
      *
-     * @param request
-     * @param params
-     * @return
-     * @throws JSONException
+     * @param request  the current request
+     * @param response the current response
+     * @param params   the URL parameters, holding the end-point ID
+     * @return the conflicts per integrity type as JSON; 400 without an end-point ID, 404 when no
+     *         end-point has that ID
+     * @throws JSONException if the JSON response cannot be built
+     * @throws com.dotcms.rest.exception.SecurityException with 401 when the user may not run
+     *         the integrity checker
      */
     @GET
     @Path ("/getIntegrityResult/{params:.*}")
@@ -600,7 +708,7 @@ public class IntegrityResource {
 
         StringBuilder responseMessage = new StringBuilder();
 
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+        InitDataObject initData = initForIntegrityChecker(params, request, response);
         Map<String, String> paramsMap = initData.getParamsMap();
 
         //Validate the parameters
@@ -613,6 +721,9 @@ public class IntegrityResource {
         }
 
         try {
+            if (findEndpoint(endpointId).isEmpty()) {
+                return endpointNotFound();
+            }
 
             JSONObject jsonResponse = new JSONObject();
             IntegrityUtil integrityUtil = new IntegrityUtil();
@@ -714,12 +825,17 @@ public class IntegrityResource {
     }
 
     /**
-     * Method that will discard the conflicts between local node and given endpoint
+     * Method that will discard the conflicts between local node and given endpoint.
+     * Only back-end users with access to the Configuration portlet may call it.
      *
-     * @param request
-     * @param params
-     * @return
-     * @throws JSONException
+     * @param request  the current request
+     * @param response the current response
+     * @param params   the URL parameters, holding the end-point ID and the integrity type
+     * @return an empty JSON object; 400 for a missing parameter or an unknown type, 404 when no
+     *         end-point has that ID
+     * @throws JSONException if the JSON response cannot be built
+     * @throws com.dotcms.rest.exception.SecurityException with 401 when the user may not run
+     *         the integrity checker
      */
     @GET
     @Path ("/discardconflicts/{params:.*}")
@@ -728,7 +844,7 @@ public class IntegrityResource {
 
         StringBuilder responseMessage = new StringBuilder();
 
-        InitDataObject initData = webResource.init(params, request, response, true, null);
+        InitDataObject initData = initForIntegrityChecker(params, request, response);
         Map<String, String> paramsMap = initData.getParamsMap();
 
         //Validate the parameters
@@ -743,11 +859,20 @@ public class IntegrityResource {
             return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( responseMessage.append( "Error: " ).append( "'type'" ).append( " is a required param." )).build();
         }
 
+        final Optional<IntegrityType> integrityType = parseIntegrityType(type);
+        if (integrityType.isEmpty()) {
+            return invalidIntegrityType();
+        }
+
         try {
+            if (findEndpoint(endpointId).isEmpty()) {
+                return endpointNotFound();
+            }
+
             JSONObject jsonResponse = new JSONObject();
 
             IntegrityUtil integrityUtil = new IntegrityUtil();
-            integrityUtil.discardConflicts(endpointId, IntegrityType.valueOf(type.toUpperCase()));
+            integrityUtil.discardConflicts(endpointId, integrityType.get());
 
             clearStatus( request, endpointId );
 
@@ -758,7 +883,7 @@ public class IntegrityResource {
                 throw new ForbiddenException(e);
             }
             Logger.error(this.getClass(), "ERROR: Table "
-                    + IntegrityType.valueOf(type.toUpperCase()).getResultsTableName()
+                    + integrityType.get().getResultsTableName()
                     + " could not be cleared on end-point [" + endpointId
                     + "]. Please truncate the table data manually.", e);
             return response( "Error discarding "+type+" conflicts for End Point server: [" + endpointId + "]" , true );
@@ -837,22 +962,29 @@ public class IntegrityResource {
      * <code>"local"</code>, the data correction will take place in local
      * server. If the parameter equals <code>"remote"</code>, the fix will take
      * place in remote server.
+     * <p>Only back-end users with access to the Configuration portlet may call it. The
+     * parameters are checked before anything is fixed, written or flushed.</p>
      *
      * @param httpServletRequest
      *            - The {@link HttpServletRequest} that started the process.
+     * @param httpServletResponse
+     *            - The current {@link HttpServletResponse}.
      * @param params
-     *            - The execution parameters for running the process: The
-     *            end-point ID.
-     * @return The REST {@link Response} with the status of the operation.
+     *            - The execution parameters for running the process: the
+     *            end-point ID, the integrity type and where to fix.
+     * @return The REST {@link Response} with the status of the operation: 400 for a missing or
+     *         invalid parameter, 404 when no end-point has that ID.
      * @throws JSONException
      *             An error occurred when generating the JSON response.
+     * @throws com.dotcms.rest.exception.SecurityException with 401 when the user may not run
+     *         the integrity checker
      */
     @GET
     @Path ("/fixconflicts/{params:.*}")
     @Produces (MediaType.APPLICATION_JSON)
     public Response fixConflicts ( @Context final HttpServletRequest httpServletRequest, @Context final HttpServletResponse httpServletResponse, @PathParam ("params") final String params ) throws JSONException {
 
-        final InitDataObject initData = webResource.init(params, httpServletRequest, httpServletResponse, true, null);
+        final InitDataObject initData = initForIntegrityChecker(params, httpServletRequest, httpServletResponse);
         final Map<String, String> paramsMap = initData.getParamsMap();
         final JSONObject jsonResponse = new JSONObject();
 
@@ -873,8 +1005,30 @@ public class IntegrityResource {
             return Response.status( HttpStatus.SC_BAD_REQUEST ).entity( "Error: 'whereToFix' is a required param." ).build();
         }
 
+        if (!whereToFix.equals("local") && !whereToFix.equals("remote")) {
+            return Response.status(HttpStatus.SC_BAD_REQUEST)
+                    .entity("Error: 'whereToFix' has an invalid value.").build();
+        }
+
+        final Optional<IntegrityType> parsedType = parseIntegrityType(type);
+        if (parsedType.isEmpty()) {
+            return invalidIntegrityType();
+        }
+        final IntegrityType integrityTypeToFix = parsedType.get();
+
+        final PublishingEndPoint endpoint;
+        try {
+            final Optional<PublishingEndPoint> foundEndpoint = findEndpoint(endpointId);
+            if (foundEndpoint.isEmpty()) {
+                return endpointNotFound();
+            }
+            endpoint = foundEndpoint.get();
+        } catch (final DotDataException e) {
+            Logger.error(this.getClass(), "Error loading the endpoint to fix conflicts", e);
+            return response("Error loading the endpoint to fix conflicts", true);
+        }
+
         IntegrityUtil integrityUtil = new IntegrityUtil();
-        IntegrityType integrityTypeToFix = IntegrityType.valueOf(type.toUpperCase());
         try {
             if (whereToFix.equals("local")) {
                 integrityUtil.fixConflicts(endpointId, integrityTypeToFix);
@@ -903,14 +1057,12 @@ public class IntegrityResource {
             } else if (whereToFix.equals("remote")) {
                 integrityUtil.generateDataToFixZip(endpointId, integrityTypeToFix);
 
-                PublishingEndPoint endpoint = APILocator.getPublisherEndPointAPI()
-                        .findEndPointById(endpointId);
-
                 final File bundle = new File(IntegrityUtil.getIntegrityDataFilePath(
                         endpointId,
                         IntegrityUtil.INTEGRITY_DATA_TO_FIX_ZIP_FILENAME));
 
-                final Response response = sendFixConflictsRequest(type, endpoint, bundle);
+                final Response response = sendFixConflictsRequest(
+                        integrityTypeToFix.name(), endpoint, bundle);
 
                 if (response.getStatus() == HttpStatus.SC_OK) {
                     jsonResponse.put("success", true);
@@ -927,9 +1079,6 @@ public class IntegrityResource {
                             .entity("Endpoint with id: " + endpointId + " returned server error.")
                             .build();
                 }
-            } else {
-                return Response.status(HttpStatus.SC_BAD_REQUEST)
-                        .entity("Error: 'whereToFix' has an invalid value.").build();
             }
         } catch (DotSecurityException e) {
             throw new ForbiddenException(e);

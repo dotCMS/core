@@ -137,3 +137,4 @@ Release-25.07.10 LTS
 131. https://github.com/dotCMS/private-issues/issues/770 : Velocity sandbox escape via Tomcat InstanceManager → bundled BeanShell interpreter (arbitrary Java and OS commands) — verify on current releases #38060 #38087 #770
 132. https://github.com/dotCMS/private-issues/issues/952 : Velocity $request.getRequest() returns the container's RequestFacade, so the session attribute deny list in VelocityRequestWrapper can be bypassed (8.8 High) #38405 #952
 133. https://github.com/dotCMS/private-issues/issues/723 : Velocity sandbox: proactively extend SecureIntrospector deny-list (javax.naming, MethodHandle, ProcessHandle, Desktop) + resolve whitelist/allow-by-default posture #38438 #723
+134. https://github.com/dotCMS/private-issues/issues/845 : Ubaid Raza F7: Missing authorization on five of the eight /api/integrity/* endpoints (5.4 Medium) #38346 #845
