@@ -12,6 +12,8 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.util.WebKeys;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -30,6 +32,8 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.Part;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.generic.MathTool;
+import org.apache.velocity.tools.generic.SortTool;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -57,6 +61,30 @@ public class SecureIntrospectorRenderTest {
         final Context ctx = VelocityUtil.getBasicContext();
         ctx.put("greeting", "Hello World");
         assertEquals("HELLO WORLD", VelocityUtil.eval("$greeting.toUpperCase()", ctx).trim());
+    }
+
+    /**
+     * A template that gets hold of the company, here through {@code $UtilMethods}, which every context carries,
+     * must not read its key in any form, while the company's other values still render.
+     */
+    @Test
+    public void company_key_does_not_render() throws Exception {
+        final Company company = APILocator.getCompanyAPI().getDefaultCompany();
+        assertTrue("the default company holds a key", company.getKey() != null);
+
+        final Context ctx = VelocityUtil.getBasicContext();
+        ctx.put("math", new MathTool());
+        ctx.put("sorter", new SortTool());
+        final String rendered = VelocityUtil.eval("#set($c = $UtilMethods.getDefaultCompany())"
+                + "#set($m = $UtilMethods.toMap($c))"
+                + "#set($probe = {'key': 'rO0AB'})"
+                + "[$!c.key][$!c.getKey()][$!c.keyObj][$!m.key][$!m.get('key')]"
+                + "[$!math.getTotal([$c], 'key.bytes[0]')][$!sorter.sort([$c, $probe], 'key')]"
+                + "[$!c.emailAddress]", ctx).trim();
+
+        // Compared without printing the output, so a failure does not write a key to the build log
+        assertTrue("the template must not read the key",
+                ("[][][][][][][][" + company.getEmailAddress() + "]").equals(rendered));
     }
 
     /**
