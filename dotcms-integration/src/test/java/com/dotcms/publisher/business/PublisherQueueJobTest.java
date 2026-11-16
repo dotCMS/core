@@ -425,6 +425,47 @@ public class PublisherQueueJobTest {
     }
 
     /**
+     * Method to test: {@link PublisherQueueJob} audit pass, endpoints the receiver refused.
+     * <p>
+     * Given scenario: {@code PushPublisher} records a wrong token as {@link Status#INVALID_TOKEN} and a
+     * 403 answer as {@link Status#LICENSE_REQUIRED} on the endpoint. One endpoint holds a saved static
+     * bundle and the other holds one of those refusals.
+     * <p>
+     * Expected result: {@link Status#FAILED_TO_SEND_TO_SOME_GROUPS}, and with a single endpoint
+     * {@link Status#FAILED_TO_SEND_TO_ALL_GROUPS}. Today the job ignores both codes, sees only the saved
+     * bundle and reports it as {@link Status#BUNDLE_SAVED_SUCCESSFULLY}, hiding the endpoint that
+     * refused the bundle (#34434).
+     */
+    @Test
+    public void test_status_refusedEndpointIsAFailedEndpoint() throws Exception {
+        assertStatusForTwoStaticEndpoints(Status.BUNDLE_SAVED_SUCCESSFULLY, Status.INVALID_TOKEN,
+                Status.FAILED_TO_SEND_TO_SOME_GROUPS);
+        assertStatusForTwoStaticEndpoints(Status.BUNDLE_SAVED_SUCCESSFULLY, Status.LICENSE_REQUIRED,
+                Status.FAILED_TO_SEND_TO_SOME_GROUPS);
+        assertStatusForOneStaticEndpoint(Status.INVALID_TOKEN, Status.FAILED_TO_SEND_TO_ALL_GROUPS);
+        assertStatusForOneStaticEndpoint(Status.LICENSE_REQUIRED, Status.FAILED_TO_SEND_TO_ALL_GROUPS);
+    }
+
+    /**
+     * Method to test: {@link PublisherQueueJob} audit pass, an endpoint that has not finished.
+     * <p>
+     * Given scenario: one endpoint holds a saved static bundle and the other has not reached a final
+     * result: the receiver is still installing it ({@link Status#PUBLISHING_BUNDLE}) or the bundle was
+     * only sent and the receiver has not answered yet ({@link Status#BUNDLE_SENT_SUCCESSFULLY}).
+     * <p>
+     * Expected result: {@link Status#WAITING_FOR_PUBLISHING}, a status the job keeps polling. Today the
+     * saved endpoint makes the whole bundle {@link Status#BUNDLE_SAVED_SUCCESSFULLY}, which is never
+     * polled again, so a later failure of the unfinished endpoint is never seen (#34434).
+     */
+    @Test
+    public void test_status_unfinishedEndpointKeepsTheBundlePending() throws Exception {
+        assertStatusForTwoStaticEndpoints(Status.BUNDLE_SAVED_SUCCESSFULLY, Status.PUBLISHING_BUNDLE,
+                Status.WAITING_FOR_PUBLISHING);
+        assertStatusForTwoStaticEndpoints(Status.BUNDLE_SAVED_SUCCESSFULLY, Status.BUNDLE_SENT_SUCCESSFULLY,
+                Status.WAITING_FOR_PUBLISHING);
+    }
+
+    /**
      * Method to test: same as above, single-endpoint environments (regression guard, AC-002).
      * <p>
      * Expected result: the final status is the one the job always produced for one endpoint.

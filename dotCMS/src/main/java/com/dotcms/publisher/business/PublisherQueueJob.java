@@ -589,6 +589,13 @@ public class PublisherQueueJob implements StatefulJob {
 			// If bundle is still publishing in all groups
 			bundleStatus = Status.PUBLISHING_BUNDLE;
 			pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
+		} else if (groupPushStats.getCountGroupOk() + groupPushStats.getCountGroupSaved()
+				+ groupPushStats.getCountGroupFailed() < totalEndpoints) {
+			// Some endpoint has no final result yet (still installing, or sent and not answered). A saved
+			// static endpoint must not close the bundle, because a saved bundle is no longer polled and
+			// the failure of the unfinished endpoint would never be seen (#34434)
+			bundleStatus = Status.WAITING_FOR_PUBLISHING;
+			pubAuditAPI.updatePublishAuditStatus(auditedBundleId, bundleStatus, localHistory);
 		} else if (groupPushStats.getCountGroupSaved() > 0){
 			// If the static bundle was saved but has not been sent
 			bundleStatus = Status.BUNDLE_SAVED_SUCCESSFULLY;
@@ -708,10 +715,11 @@ public class PublisherQueueJob implements StatefulJob {
 	/**
 	 * Counts how many endpoints succeeded, failed, are still publishing or only saved their bundle.
 	 * Every endpoint counts once, so two endpoints of one environment are two results. An endpoint
-	 * counts as failed both when its publish failed ({@link Status#FAILED_TO_PUBLISH}) and when the
-	 * bundle could not be sent to it ({@link Status#FAILED_TO_SENT}, which is what
-	 * {@code PushPublisher} records for an unreachable receiver). Leaving the second one out made a
-	 * later audit pass rewrite the bundle as saved and hide the endpoint that never got it (#34434).
+	 * counts as failed when its publish failed ({@link Status#FAILED_TO_PUBLISH}), when the bundle could
+	 * not be sent to it ({@link Status#FAILED_TO_SENT}, what {@code PushPublisher} records for an
+	 * unreachable receiver) and when the receiver refused it ({@link Status#INVALID_TOKEN} for a wrong
+	 * token, {@link Status#LICENSE_REQUIRED} for a 403 answer). Leaving those out made a later audit pass
+	 * rewrite the bundle as saved and hide the endpoint that never got it (#34434).
 	 *
 	 * @param endpointTrackingMap environment id -> endpoint id -> that endpoint's result
 	 * @return the number of endpoints in each state
@@ -729,7 +737,8 @@ public class PublisherQueueJob implements StatefulJob {
 					}
 				} else if (status == Status.PUBLISHING_BUNDLE.getCode()) {
 					groupPushStats.increaseCountGroupPublishing();
-				} else if (status == Status.FAILED_TO_PUBLISH.getCode() || status == Status.FAILED_TO_SENT.getCode()) {
+				} else if (status == Status.FAILED_TO_PUBLISH.getCode() || status == Status.FAILED_TO_SENT.getCode()
+						|| status == Status.INVALID_TOKEN.getCode() || status == Status.LICENSE_REQUIRED.getCode()) {
 					groupPushStats.increaseCountGroupFailed();
 				} else if (status == Status.BUNDLE_SAVED_SUCCESSFULLY.getCode()) {
 					groupPushStats.increaseCountGroupSaved();
