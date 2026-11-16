@@ -39,6 +39,18 @@ public interface UserFactory {
      */
     void updateRememberMeToken(String userId, String rememberMeToken) throws DotDataException;
 
+    /**
+     * Clears the user's {@code icqid} column, with a single-column update that only applies while
+     * the stored value still equals {@code expectedValue}. Other user fields are left untouched.
+     *
+     * @param userId        the id of the user to update; trimmed and lower-cased like stored ids
+     * @param expectedValue the value the column must hold for the update to apply
+     * @return {@code true} if the column held {@code expectedValue} and was cleared, {@code false}
+     *         if it held anything else
+     * @throws DotDataException if {@code userId} is blank or the update fails
+     */
+    boolean clearIcqId(String userId, String expectedValue) throws DotDataException;
+
     List<User> findAllUsers(int begin, int end) throws DotDataException;
 
     long getCountUsersByName(String filter, List<Role> roles);
