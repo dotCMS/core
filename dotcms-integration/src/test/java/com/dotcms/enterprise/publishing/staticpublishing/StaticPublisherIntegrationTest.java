@@ -562,4 +562,43 @@ public class StaticPublisherIntegrationTest {
             }
         }
     }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)} with {@link StaticPublisher}
+     * Given Scenario: an environment with two {@code static} endpoints and a live page in the bundle
+     * Expected Result: each endpoint is recorded with its own detail, so the info of each one names
+     * that endpoint. Before the fix both endpoints shared one detail object, so the second one
+     * carried the first one's text and a later failure could rewrite an earlier result
+     * (issue #34434, review of PR 38578)
+     */
+    @Test
+    public void test_publish_twoStaticEndpoints_eachHasItsOwnDetail() throws Exception {
+        final PublisherTestUtil.MixedEndpointEnvironment fixture =
+                PublisherTestUtil.createMixedEndpointEnvironment(
+                        list(StaticPublisher.class), false);
+        PublishingEndPoint second = null;
+        try {
+            second = new StaticPublishingEndPointDataGen()
+                    .environment(fixture.environment)
+                    .protocol(StaticPublisher.PROTOCOL_STATIC)
+                    .nextPersisted();
+
+            new PublisherAPIImpl().publish(fixture.config);
+
+            final Map<String, EndpointDetail> endpoints = PublishAuditAPI.getInstance()
+                    .getPublishAuditStatus(fixture.bundle.getId()).getStatusPojo()
+                    .getEndpointsMap().get(fixture.environment.getId());
+
+            for (final PublishingEndPoint endpoint : list(fixture.staticEndpoint, second)) {
+                final EndpointDetail detail = endpoints.get(endpoint.getId());
+                Assert.assertNotNull("no entry for " + endpoint.getId(), detail);
+                assertTrue(detail.getInfo(), detail.getInfo().contains(endpoint.getId()));
+            }
+        } finally {
+            if (second != null) {
+                APILocator.getPublisherEndPointAPI().deleteEndPointById(second.getId());
+            }
+            fixture.cleanUp();
+        }
+    }
 }

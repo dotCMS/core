@@ -26,7 +26,6 @@ import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -403,7 +402,7 @@ public class PublisherQueueJob implements StatefulJob {
 
 						if (bundleToSend.limitReach()) {
 							sendBundle(bundleToSend.bundleIds,  bundleToSend.targetEndpoint,
-									client, localHistory, endpointTrackingMap);
+									client, localHistory);
 							bundleToSend.reset();
 						}
 					}
@@ -420,7 +419,7 @@ public class PublisherQueueJob implements StatefulJob {
 			List<List<String>> partitions = Lists.partition(toSent.bundleIds, MAX_SIZE_PP_AUDIT_PAYLOAD);
 
 			for (List<String> partition : partitions) {
-				sendBundle(partition, toSent.targetEndpoint, client, localHistory, endpointTrackingMap);
+				sendBundle(partition, toSent.targetEndpoint, client, localHistory);
 			}
 		}
 
@@ -445,11 +444,10 @@ public class PublisherQueueJob implements StatefulJob {
 	 * @param targetEndpoint the endpoint to ask
 	 * @param client         the REST client used for the call
 	 * @param localHistory   the local audit history that receives the remote details
-	 * @param endpointTrackingMap not changed here; the caller builds it from {@code localHistory}
 	 * @throws DotDataException the endpoint could not be reached or its answer was not readable
 	 */
 	private void sendBundle(List<String> bundleIds, PublishingEndPoint targetEndpoint, Client client,
-							PublishAuditHistory localHistory, Map<String, Map<String, EndpointDetail>> endpointTrackingMap)
+							PublishAuditHistory localHistory)
 			throws DotDataException {
 
 			// Try to get the status of the remote end-points to
@@ -458,8 +456,7 @@ public class PublisherQueueJob implements StatefulJob {
 					 .stream()
 					 .filter(Objects::nonNull)
 					 .forEach(remoteHistory -> {
-						 sendBundle(bundleIds, targetEndpoint, localHistory,
-								 endpointTrackingMap, remoteHistory);
+						 sendBundle(bundleIds, targetEndpoint, localHistory, remoteHistory);
 					 });
 
 	}
@@ -471,11 +468,10 @@ public class PublisherQueueJob implements StatefulJob {
 	 * @param bundleIds      the bundles that were asked about
 	 * @param targetEndpoint the endpoint the answer came from
 	 * @param localHistory   the local audit history to update
-	 * @param endpointTrackingMap not changed here; the caller builds it from {@code localHistory}
 	 * @param remoteHistory  the history the endpoint returned
 	 */
 	private void sendBundle(List<String> bundleIds, PublishingEndPoint targetEndpoint, PublishAuditHistory localHistory,
-							Map<String, Map<String, EndpointDetail>> endpointTrackingMap, PublishAuditHistory remoteHistory) {
+							PublishAuditHistory remoteHistory) {
 		try {
 			updateLocalPublishDatesFromRemote(localHistory, remoteHistory);
 			updateLocalEndpointDetailFromRemote(localHistory, targetEndpoint.getGroupId(), targetEndpoint.getId(), remoteHistory);
@@ -711,7 +707,11 @@ public class PublisherQueueJob implements StatefulJob {
 
 	/**
 	 * Counts how many endpoints succeeded, failed, are still publishing or only saved their bundle.
-	 * Every endpoint counts once, so two endpoints of one environment are two results.
+	 * Every endpoint counts once, so two endpoints of one environment are two results. An endpoint
+	 * counts as failed both when its publish failed ({@link Status#FAILED_TO_PUBLISH}) and when the
+	 * bundle could not be sent to it ({@link Status#FAILED_TO_SENT}, which is what
+	 * {@code PushPublisher} records for an unreachable receiver). Leaving the second one out made a
+	 * later audit pass rewrite the bundle as saved and hide the endpoint that never got it (#34434).
 	 *
 	 * @param endpointTrackingMap environment id -> endpoint id -> that endpoint's result
 	 * @return the number of endpoints in each state
@@ -729,7 +729,7 @@ public class PublisherQueueJob implements StatefulJob {
 					}
 				} else if (status == Status.PUBLISHING_BUNDLE.getCode()) {
 					groupPushStats.increaseCountGroupPublishing();
-				} else if (status == Status.FAILED_TO_PUBLISH.getCode()) {
+				} else if (status == Status.FAILED_TO_PUBLISH.getCode() || status == Status.FAILED_TO_SENT.getCode()) {
 					groupPushStats.increaseCountGroupFailed();
 				} else if (status == Status.BUNDLE_SAVED_SUCCESSFULLY.getCode()) {
 					groupPushStats.increaseCountGroupSaved();
@@ -794,8 +794,10 @@ public class PublisherQueueJob implements StatefulJob {
 
 	/**
 	 * Get the Publisher needed depending on the protocol of the end-points of
-	 * the bundle. The publishers come back in a fixed order (push, S3, static), so the logs of a
-	 * bundle read the same on every server (#34434).
+	 * the bundle. The publishers come back in a fixed order (S3, static, push), so the logs of a
+	 * bundle read the same on every server. Push goes last on purpose: the publisher that runs last
+	 * sets the overall bundle status, and the one push sets is re-checked by this job, so a failed
+	 * endpoint is retried (#34434).
 	 *
 	 * @param bundleId
 	 *            - The Id of the generated bundle.
@@ -809,9 +811,9 @@ public class PublisherQueueJob implements StatefulJob {
 			Map<String, Class<? extends IPublisher>> protocolPublisherMap = Maps.newConcurrentMap();
 			//TODO: for OSGI we need to get this list from implementations of IPublisher or something else.
 			final Set<Class<?>> publishers = new LinkedHashSet<>(List.of(
-					PushPublisher.class,
 					AWSS3Publisher.class,
-					StaticPublisher.class));
+					StaticPublisher.class,
+					PushPublisher.class));
 
 			//Fill protocolPublisherMap with protocol -> publisher.
 			for (final Class publisherClass : publishers) {

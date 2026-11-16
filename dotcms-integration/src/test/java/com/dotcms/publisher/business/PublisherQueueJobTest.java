@@ -405,6 +405,26 @@ public class PublisherQueueJobTest {
     }
 
     /**
+     * Method to test: {@link PublisherQueueJob} audit pass, an endpoint whose send failed.
+     * <p>
+     * Given scenario: {@code PushPublisher} records a send that could not reach its endpoint as
+     * {@link Status#FAILED_TO_SENT}, not as {@link Status#FAILED_TO_PUBLISH}. One endpoint of the
+     * environment holds a saved static bundle and the other holds that failed send; the audit pass
+     * then runs, as it does when the receiver is reachable again and has no record of the bundle.
+     * <p>
+     * Expected result: {@link Status#FAILED_TO_SEND_TO_SOME_GROUPS}. Today the job does not count a
+     * failed send as a failure, sees only the saved bundle, and rewrites the status to
+     * {@link Status#BUNDLE_SAVED_SUCCESSFULLY}, which hides the endpoint that never got the bundle
+     * (#34434). With a single endpoint the status must be {@link Status#FAILED_TO_SEND_TO_ALL_GROUPS}.
+     */
+    @Test
+    public void test_status_failedSendIsAFailedEndpoint() throws Exception {
+        assertStatusForTwoStaticEndpoints(Status.BUNDLE_SAVED_SUCCESSFULLY, Status.FAILED_TO_SENT,
+                Status.FAILED_TO_SEND_TO_SOME_GROUPS);
+        assertStatusForOneStaticEndpoint(Status.FAILED_TO_SENT, Status.FAILED_TO_SEND_TO_ALL_GROUPS);
+    }
+
+    /**
      * Method to test: same as above, single-endpoint environments (regression guard, AC-002).
      * <p>
      * Expected result: the final status is the one the job always produced for one endpoint.
@@ -503,8 +523,10 @@ public class PublisherQueueJobTest {
      * Method to test: {@code PublisherQueueJob#getPublishersForBundle}
      * Given scenario: an environment with an {@code awss3}, a {@code static} and an {@code http}
      * endpoint, created in that order (#34434, US4).
-     * Expected result: the publishers come back in a fixed order, push, S3, static, so the logs of
-     * one bundle read the same on every server.
+     * Expected result: the publishers come back in a fixed order, S3, static, push, so the logs of
+     * one bundle read the same on every server, and push runs last: the publisher that runs last
+     * sets the overall bundle status, and push sets one the queue job re-checks (a failed endpoint
+     * is retried), unlike the final status of the static and S3 publishers.
      */
     @Test
     public void test_getPublishersForBundle_returnsAFixedOrder() throws Exception {
@@ -527,7 +549,7 @@ public class PublisherQueueJobTest {
             final java.util.Collection<?> publishers =
                     (java.util.Collection<?>) method.invoke(new PublisherQueueJob(), mixed.bundle.getId());
 
-            assertEquals(list(PushPublisher.class, AWSS3Publisher.class, StaticPublisher.class),
+            assertEquals(list(AWSS3Publisher.class, StaticPublisher.class, PushPublisher.class),
                     new java.util.ArrayList<>(publishers));
         } finally {
             if (s3 != null) {

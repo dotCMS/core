@@ -229,10 +229,12 @@ public class StaticPublisher extends Publisher {
                                       List<EndpointFailureDetail> allFailureDetails)
         throws DotDataException{
 
-        EndpointDetail detail = new EndpointDetail();
         boolean hasEnvironmentFailed = false;
 
         for (PublishingEndPoint endpoint : getStaticEndpointsByEnviroment(environment)) {
+            // One detail per endpoint: a shared one would carry the result of an earlier endpoint
+            // into the next one, and a later failure would rewrite an earlier result (#34434)
+            final EndpointDetail detail = new EndpointDetail();
             EndpointFailureDetail endpointFailureDetail = null;
             boolean endpointHadContent = true;
             try {
