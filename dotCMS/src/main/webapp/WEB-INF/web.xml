@@ -53,18 +53,19 @@
         <async-supported>true</async-supported>
     </filter>
 	<filter>
+		<filter-name>InteractiveIdentityFilter</filter-name>
+		<filter-class>com.dotcms.auth.InteractiveIdentityFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter>
 		<filter-name>InterceptorFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.InterceptorFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
     <filter>
         <filter-name>HttpHeaderSecurityFilter</filter-name>
-        <filter-class>org.apache.catalina.filters.HttpHeaderSecurityFilter</filter-class>
+        <filter-class>com.dotcms.filters.DotHttpHeaderSecurityFilter</filter-class>
         <async-supported>true</async-supported>
-        <init-param>
-            <param-name>hstsMaxAgeSeconds</param-name>
-            <param-value>3600</param-value>
-        </init-param>
         <init-param>
             <param-name>hstsIncludeSubDomains</param-name>
             <param-value>true</param-value>
@@ -228,6 +229,11 @@
 	</filter-mapping>
 
 	<filter-mapping>
+		<filter-name>InteractiveIdentityFilter</filter-name>
+		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<filter-mapping>
 		<filter-name>InterceptorFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
@@ -356,10 +362,6 @@
 		<servlet-name>ShortyServlet</servlet-name>
 		<servlet-class>com.dotmarketing.servlets.ShortyServlet</servlet-class>
 	</servlet>    
-	<servlet>
-		<servlet-name>CategoriesServlet</servlet-name>
-		<servlet-class>com.dotmarketing.servlets.JSONCategoriesServlet</servlet-class>
-	</servlet>
     
     <servlet>
         <servlet-name>login_edit_mode</servlet-name>
@@ -593,11 +595,6 @@
     <servlet-mapping>
 	    <servlet-name>BinaryExporterServlet</servlet-name>
 	    <url-pattern>/contentAsset/*</url-pattern>
-	</servlet-mapping>
-	
-	<servlet-mapping>
-		<servlet-name>CategoriesServlet</servlet-name>
-		<url-pattern>/categoriesServlet</url-pattern>
 	</servlet-mapping>
 	
 	<servlet-mapping>

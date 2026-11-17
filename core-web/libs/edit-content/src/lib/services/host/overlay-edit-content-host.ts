@@ -70,13 +70,18 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         toRelatedContentCrumbs(this.#trailInodes(), this.#relatedNav.titleCache())
     );
 
+    /**
+     * The content to open, read from the dialog config: an inode to edit, or a content type to
+     * create, with the folder and the language a new content starts in when the opener gave them.
+     */
     resolveIdentity(): EditContentIdentity {
         const data = this.#config?.data as EditContentDialogData | undefined;
 
         return {
             inode: data?.contentletInode,
             contentTypeId: data?.contentTypeId,
-            folderPath: data?.folderPath
+            folderPath: data?.folderPath,
+            languageId: data?.languageId
         };
     }
 
@@ -89,9 +94,15 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         this.#saved$.next(contentlet);
     }
 
-    reloadContent(inode: string): void {
-        // Locale switch: reload the content, keep the current trail (no `trail`).
-        this.#navigation$.next({ inode });
+    reloadContent(inode: string, languageId?: number): void {
+        // Locale switch: reload the content, keep the current trail (no `trail`). The language
+        // is only reported once the layout runs the reload (`reportLanguage`).
+        this.#navigation$.next(languageId ? { inode, languageId } : { inode });
+    }
+
+    /** Reports the language on {@link languageChanged$}. */
+    reportLanguage(languageId: number): void {
+        this.#languageChanged$.next(languageId);
     }
 
     setTrail(inodes: string[]): void {
@@ -133,6 +144,14 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         // navigation stream (mirrors reloadContent). The trail is left untouched.
         this.#navigation$.next({ inode });
     }
+
+    readonly #languageChanged$ = new Subject<number>();
+
+    /**
+     * A locale switch loaded another language of the content. The opener can name it in its URL,
+     * so a refresh reopens that language (#37759, FR-020).
+     */
+    readonly languageChanged$ = this.#languageChanged$.asObservable();
 
     leaveDeletedContent(_contentType: string): void {
         // The overlay has no listing to return to; just close it. The DialogService dialog closes

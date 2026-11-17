@@ -13,6 +13,7 @@ import com.bradmcevoy.http.LockableResource;
 import com.bradmcevoy.http.Range;
 import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.Resource;
+import com.bradmcevoy.http.exceptions.BadRequestException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.util.Config;
@@ -147,12 +148,22 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
     }
 
 
-	public void copyTo(CollectionResource collRes, String name) {
+	/**
+	 * Copies this temp file into {@code collRes} under {@code name}. The name must be a single plain
+	 * path segment, and a copy into temp storage must stay inside the temp directory.
+	 *
+	 * @param collRes the destination collection
+	 * @param name    the destination name received from the WebDAV client
+	 * @throws BadRequestException (HTTP 400) when the name or the temp target is not valid
+	 */
+	public void copyTo(CollectionResource collRes, String name) throws BadRequestException {
+		DotWebdavHelper.requirePlainSegment(this, name);
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(collRes instanceof TempFolderResourceImpl){
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
+			final File target = dotDavHelper.resolveTempChild(this, tr.getFolder(), name);
 			try {
-				FileUtil.copyFile(file, new File(tr.getFolder().getPath() + File.separator + name));
+				FileUtil.copyFile(file, target);
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
 				return;
@@ -164,6 +175,9 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 				if(!p.endsWith("/"))
 					p = p + "/";
 				dotDavHelper.copyTempFileToStorage(file, p + name, user, isAutoPub);
+			} catch (final IllegalArgumentException e) {
+				// the destination name was refused (for example a blocked extension); the client gets a 400
+				throw new BadRequestException(this, e.getMessage());
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
 			}
@@ -191,12 +205,22 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 	}
 
 
-	public void moveTo(CollectionResource collRes, String name) {
+	/**
+	 * Moves this temp file into {@code collRes} under {@code name}. The name must be a single plain
+	 * path segment, and a move into temp storage must stay inside the temp directory.
+	 *
+	 * @param collRes the destination collection
+	 * @param name    the destination name received from the WebDAV client
+	 * @throws BadRequestException (HTTP 400) when the name or the temp target is not valid
+	 */
+	public void moveTo(CollectionResource collRes, String name) throws BadRequestException {
+		DotWebdavHelper.requirePlainSegment(this, name);
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(collRes instanceof TempFolderResourceImpl){
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
+			final File target = dotDavHelper.resolveTempChild(this, tr.getFolder(), name);
 			try {
-				FileUtil.copyFile(file, new File(tr.getFolder().getPath() + File.separator + name));
+				FileUtil.copyFile(file, target);
 				file.delete();
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
@@ -210,6 +234,9 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 					p = p + "/";
 				dotDavHelper.copyTempFileToStorage(file, p + name, user, isAutoPub);
 				file.delete();
+			} catch (final IllegalArgumentException e) {
+				// the destination name was refused (for example a blocked extension); the client gets a 400
+				throw new BadRequestException(this, e.getMessage());
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
 			}

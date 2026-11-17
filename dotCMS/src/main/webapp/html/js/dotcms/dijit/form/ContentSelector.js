@@ -1292,7 +1292,13 @@ dojo.declare(
                     }
 
                     var value = cellData[header['fieldVelocityVarName']];
-                    if (value != null) cell.innerHTML = value;
+                    // The content type column comes from the server as markup; any other column is plain text
+                    if (value != null) {
+                        cell.innerHTML =
+                            header['fieldVelocityVarName'] === '__type__'
+                                ? value
+                                : this._escapeHtml(value);
+                    }
                 }
 
                 for (var l = 0; l < this.availableLanguages.length; l++) {
@@ -1564,6 +1570,18 @@ dojo.declare(
 
         _nextPage: function () {
             this._doSearch(this.currentPage + 1);
+        },
+
+        /**
+         * Escapes a value so it is shown as plain text when added to the page with innerHTML.
+         */
+        _escapeHtml: function (value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
         },
 
         _getIconName: function (iconCode) {

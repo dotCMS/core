@@ -19,6 +19,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
@@ -48,10 +49,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayDeque;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Deque;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * This endpoint handles the interaction between the IDP callbacks and dotCMS.
@@ -194,6 +198,9 @@ public class DotSamlResource implements Serializable {
 		@ApiResponse(responseCode = "401", 
 					description = "Unauthorized - SAML assertion validation failed",
 					content = @Content(mediaType = "text/html")),
+		@ApiResponse(responseCode = "403", 
+					description = "Forbidden - the user signed in through SSO but lacks the back-end role required for the destination",
+					content = @Content(mediaType = "text/html")),
 		@ApiResponse(responseCode = "404", 
 					description = "IDP configuration not found or not enabled",
 					content = @Content(mediaType = "text/html")),
@@ -268,57 +275,10 @@ public class DotSamlResource implements Serializable {
 					// Add session based user ID to be used on the redirect.
 					session.setAttribute(identityProviderConfiguration.getId() + DotSamlConstants.SAML_USER_ID, user.getUserId());
 
-					String queryString = (String) session.getAttribute(RequestDispatcher.FORWARD_QUERY_STRING);
-
-					boolean loginIntentUnknown = false;
-					String loginPath = httpServletRequest.getParameter("RelayState");
-					Logger.debug(this, "RelayState, LoginPath: " + loginPath);
-					if (!UtilMethods.isSet(loginPath)) {
-
-						loginPath = (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
-						Logger.debug(this, "REDIRECT_AFTER_LOGIN, LoginPath: " + loginPath);
-						if (null == loginPath) {
-							if (identityProviderConfiguration.containsOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG)) {
-								loginPath = identityProviderConfiguration.getOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG).toString();
-							} else {
-								// At this stage we cannot determine whether this was a front
-								// end or back end request since we cannot determine
-								// original request.
-								//
-								// REDIRECT_AFTER_LOGIN should have already been set in relay
-								// request to IdP. 'autoLogin' will check the ORIGINAL_REQUEST
-								// session attribute.
-								loginPath = DotSamlConstants.DEFAULT_LOGIN_PATH;
-								loginIntentUnknown = true;
-							}
-						} else {
-
-							session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
-						}
-					}
-
-					if (!loginPath.equals(DotSamlConstants.DEFAULT_LOGIN_PATH) && queryString != null) {
-						if (loginPath.contains("?")) {
-							loginPath = loginPath + "&" + queryString;
-						} else {
-							loginPath = loginPath + "?" + queryString;
-						}
-					}
 					final User authorizedUser = reloadUser(user);
-					// IdP-initiated logins carry no RelayState, so the path defaulted to
-					// /dotAdmin/ above without expressing any real intent. Route those by what
-					// the user may actually do: users without back-end access get a front-end
-					// session at "/" when front-end SSO is enabled, instead of a 403 from a
-					// back-end destination they never asked for.
-					if (loginIntentUnknown
-							&& !AuthAccessDeniedUtil.hasRequiredRole(authorizedUser, false)
-							&& SAMLHelper.isFrontEndEnabled(identityProviderConfiguration)) {
-						loginPath = "/";
-					}
-					// Only the back-end is gated here: a front-end SAML login must never be denied,
-					// since its post-login redirect is a content URL rather than a back-end path.
-					if (isBackEndLogin(loginPath)
-							&& !AuthAccessDeniedUtil.hasRequiredRole(authorizedUser, false)) {
+					final LoginDestination destination = this.resolveLoginPath(
+							httpServletRequest, session, identityProviderConfiguration, authorizedUser);
+					if (destination.isDenied()) {
 						AuthAccessDeniedUtil.sendNoAccessPage(httpServletResponse, authorizedUser);
 						return;
 					}
@@ -327,8 +287,8 @@ public class DotSamlResource implements Serializable {
 					this.samlHelper.doLogin(httpServletRequest, httpServletResponse,
 							identityProviderConfiguration, authorizedUser, APILocator.getLoginServiceAPI());
 
-					Logger.debug(this, "Final, LoginPath: " + loginPath);
-					RedirectUtil.sendRedirectHTML(httpServletResponse, loginPath);
+					Logger.debug(this, ()-> "Final, LoginPath: " + destination.path());
+					RedirectUtil.sendRedirectHTML(httpServletResponse, destination.path());
 					return;
 				}
 			} finally {
@@ -353,14 +313,210 @@ public class DotSamlResource implements Serializable {
 	}
 
 	/**
+	 * Decides where the SAML callback sends the user after login, or whether the login is denied.
+	 *
+	 * The destination is the first usable value of: the {@code RelayState} the IdP posted back, the
+	 * destination saved in the session ({@link WebKeys#REDIRECT_AFTER_LOGIN}), the app's
+	 * {@code redirect.after.login} setting, and finally {@code /dotAdmin/}. The RelayState and the session
+	 * value can carry a value a visitor controls, so they are only used when
+	 * {@link RedirectUtil#toAllowedRedirect(String, Collection, Collection)} accepts them as a destination on this site
+	 * (the callback host, or the hostname or an alias of the site being logged in to), or on a host explicitly
+	 * listed in the app's {@code auth.relaystate.allowed.hosts} (followed as an absolute URL);
+	 * a rejected value is recorded in the security log (without the value) and the next source is tried.
+	 * The admin-configured {@code redirect.after.login} is trusted and used as is.
+	 *
+	 * When no source expresses an intent (IdP-initiated logins, or every candidate was rejected), a user without
+	 * back-end access lands on the site home ({@code /}), whatever {@code enableFrontend} says. A known
+	 * destination in the back-end (from the RelayState, the session or {@code redirect.after.login}) is denied to
+	 * users without back-end access; front-end destinations are never denied here.
+	 *
+	 * @param request                       the IdP callback request
+	 * @param session                       the session of the callback request
+	 * @param identityProviderConfiguration the site's SAML configuration
+	 * @param authorizedUser                the user resolved from the assertion
+	 * @return where to redirect the user, or a denial
+	 */
+	@VisibleForTesting
+	LoginDestination resolveLoginPath(final HttpServletRequest request,
+									  final HttpSession session,
+									  final IdentityProviderConfiguration identityProviderConfiguration,
+									  final User authorizedUser) {
+
+		final Collection<String> allowedHosts  = this.allowedRedirectHosts(request, identityProviderConfiguration);
+		final Collection<String> externalHosts = SamlWebUtils.configuredAllowedHosts(identityProviderConfiguration);
+		boolean loginIntentUnknown = false;
+
+		String loginPath = this.acceptedRedirect(request.getParameter("RelayState"), allowedHosts, externalHosts, "RelayState");
+		if (null == loginPath) {
+
+			final Object sessionRedirect = session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+			if (null != sessionRedirect) {
+				session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+				loginPath = this.acceptedRedirect(sessionRedirect.toString(), allowedHosts, externalHosts, "session REDIRECT_AFTER_LOGIN");
+			}
+		}
+
+		if (null == loginPath) {
+			if (identityProviderConfiguration.containsOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG)) {
+				loginPath = identityProviderConfiguration.getOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG).toString();
+			} else {
+				// No source tells us whether this was a front-end or back-end login
+				// (typically an IdP-initiated login, which carries no RelayState).
+				loginPath = DotSamlConstants.DEFAULT_LOGIN_PATH;
+				loginIntentUnknown = true;
+			}
+		}
+
+		// The session may keep the query string of the original request. Append it only when the
+		// destination does not already carry a query, so it can never appear twice.
+		final Object queryString = session.getAttribute(RequestDispatcher.FORWARD_QUERY_STRING);
+		if (null != queryString && !loginPath.equals(DotSamlConstants.DEFAULT_LOGIN_PATH)
+				&& !loginPath.contains("?")) {
+			loginPath = loginPath + "?" + queryString;
+		}
+
+		final boolean hasBackEndAccess = AuthAccessDeniedUtil.hasRequiredRole(authorizedUser, false);
+		// No usable destination (IdP-initiated login, or a rejected RelayState / session value): the path
+		// defaulted to /dotAdmin/ above without expressing any real intent. Route by what the user may actually
+		// do: users without back-end access land on the site home, a safe page they can use, instead of a 403
+		// for a back-end page they never asked for. This does not depend on enableFrontend, so sites that never
+		// set it (most existing ones) behave the same way. Page permissions still apply on "/".
+		if (loginIntentUnknown && !hasBackEndAccess) {
+			loginPath = "/";
+		}
+		// Only the back-end is gated here: a front-end SAML login must never be denied,
+		// since its post-login redirect is a content URL rather than a back-end path.
+		if (isBackEndLogin(loginPath) && !hasBackEndAccess) {
+			return LoginDestination.deny();
+		}
+
+		return LoginDestination.redirectTo(loginPath);
+	}
+
+	/**
+	 * Returns the hosts a post-login redirect may point to: the callback host plus the hostname and aliases of
+	 * the site whose SAML configuration is in use (its id is the site identifier).
+	 *
+	 * @param request                       the IdP callback request
+	 * @param identityProviderConfiguration the site's SAML configuration
+	 * @return the allowed hosts
+	 */
+	@VisibleForTesting
+	Collection<String> allowedRedirectHosts(final HttpServletRequest request,
+											final IdentityProviderConfiguration identityProviderConfiguration) {
+		return SamlWebUtils.siteHosts(request.getServerName(), identityProviderConfiguration.getId());
+	}
+
+	/**
+	 * Returns the candidate as a safe destination (on this site, or on a host listed in
+	 * {@code auth.relaystate.allowed.hosts}), or null when it is absent or rejected.
+	 * Rejections are security-logged with the source, the reason and the length only, never the value.
+	 */
+	private String acceptedRedirect(final String candidate, final Collection<String> allowedHosts,
+									final Collection<String> externalHosts, final String source) {
+
+		if (!UtilMethods.isSet(candidate)) {
+			return null;
+		}
+		final Optional<String> accepted = RedirectUtil.toAllowedRedirect(candidate, allowedHosts, externalHosts);
+		if (accepted.isEmpty()) {
+			final String reason = RedirectUtil.rejectionReason(candidate, allowedHosts, externalHosts)
+					.map(Enum::name).orElse("UNKNOWN");
+			SecurityLogger.logInfo(DotSamlResource.class, () -> "SAML login: ignored an unsafe post-login "
+					+ "destination from " + source + " (reason " + reason + ", length " + candidate.length()
+					+ "); it is neither on this site nor on an allowed host. Falling back to the next destination.");
+			return null;
+		}
+		Logger.debug(this, () -> "SAML login: destination from " + source + ": " + accepted.get());
+		return accepted.get();
+	}
+
+	/**
 	 * Determines whether the post-login redirect target points at the dotCMS back-end. Only
 	 * back-end logins are subject to the no-access role gate; front-end logins are never denied
-	 * here. Reuses {@link SamlWebUtils#isBackEndLoginPage(String)} so the back-end path set stays
-	 * in one place.
+	 * here. Only the path decides: the value is cut at the first {@code ?} or {@code #}, as
+	 * {@link RedirectUtil} does, so a query or fragment can never change the answer. The path is
+	 * percent-decoded once and its dot segments are then resolved, as a browser resolves them (a
+	 * {@code ..} at the root stays at the root). So {@code /members/../dotAdmin/},
+	 * {@code /members/%2e%2e/dotAdmin/}, {@code /members/..%2f..%2fdotAdmin/} and
+	 * {@code /dotAdmin?/../x} count as back-end, and {@code /dotAdmin/../members/} does not. Letter
+	 * case is ignored, so {@code /DotAdmin/} counts as back-end too. A path with a broken
+	 * percent-escape counts as back-end (fail closed), so the role check still runs. This matters for
+	 * the trusted {@code redirect.after.login}, which is not validated. Reuses
+	 * {@link SamlWebUtils#isBackEndLoginPageIgnoreCase(String)} so the back-end path set stays in one place.
+	 *
+	 * @param loginPath the post-login destination
+	 * @return true when the destination is a back-end path
 	 */
-	private boolean isBackEndLogin(final String loginPath) {
-		final String path = Try.of(() -> URI.create(loginPath).getPath()).getOrElse(loginPath);
-		return UtilMethods.isSet(path) && this.samlWebUtils.isBackEndLoginPage(path);
+	@VisibleForTesting
+	boolean isBackEndLogin(final String loginPath) {
+
+		if (!UtilMethods.isSet(loginPath)) {
+			return false;
+		}
+		final String rawPath = loginPath.split("[?#]", 2)[0];
+		final String decodedPath = RedirectUtil.percentDecode(rawPath);
+		if (null == decodedPath) {
+			return true;
+		}
+		final String path = resolveDotSegments(decodedPath);
+		return UtilMethods.isSet(path) && this.samlWebUtils.isBackEndLoginPageIgnoreCase(path);
+	}
+
+	/**
+	 * Resolves the {@code .} and {@code ..} segments of an already decoded path the way a browser does: a
+	 * {@code ..} at the root is dropped rather than rejected.
+	 *
+	 * @param path the decoded path, may be null
+	 * @return the resolved path, or null when the path is null
+	 */
+	private static String resolveDotSegments(final String path) {
+
+		if (null == path || !path.startsWith("/")) {
+			return path;
+		}
+		final String[] segments = path.substring(1).split("/", -1);
+		final Deque<String> kept = new ArrayDeque<>();
+		boolean trailingSlash = false;
+		for (int i = 0; i < segments.length; i++) {
+			final boolean last = i == segments.length - 1;
+			if (".".equals(segments[i])) {
+				trailingSlash = last;
+			} else if ("..".equals(segments[i])) {
+				kept.pollLast();
+				trailingSlash = last;
+			} else {
+				kept.addLast(segments[i]);
+				trailingSlash = false;
+			}
+		}
+		final String resolved = "/" + String.join("/", kept);
+		return trailingSlash && !kept.isEmpty() ? resolved + "/" : resolved;
+	}
+
+	/**
+	 * The outcome of {@link #resolveLoginPath}: a destination to redirect to, or a denial.
+	 *
+	 * @param path the destination to redirect to; null when the login is denied
+	 */
+	record LoginDestination(String path) {
+
+		private static final LoginDestination DENIED = new LoginDestination(null);
+
+		/** A redirect to the given destination. */
+		static LoginDestination redirectTo(final String path) {
+			return new LoginDestination(path);
+		}
+
+		/** A denied login: the caller shows the 403 "no access" page. */
+		static LoginDestination deny() {
+			return DENIED;
+		}
+
+		/** True when the login is denied. */
+		boolean isDenied() {
+			return null == this.path;
+		}
 	}
 
 

@@ -7,21 +7,15 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
-import { EMPTY } from 'rxjs';
 
 import { computed, DestroyRef, inject, Signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { catchError, take } from 'rxjs/operators';
-
-import {
-    DotEventsSocket,
-    DotFolderBulkDeleteService,
-    DotSystemEventType
-} from '@dotcms/data-access';
+import { DotEventsSocket, DotSystemEventType } from '@dotcms/data-access';
 import {
     DotContentDriveItem,
     DotFolderBulkDeleteCompletedEvent,
+    DotFolderDeleteActiveRun,
     DotFolderDeleteAnnouncementEvent
 } from '@dotcms/dotcms-models';
 import {
@@ -169,8 +163,9 @@ interface WithFolderDeleteRunsState {
  * second consumer). Nothing here is delete-shaped except what it is wired to, so generalising is a
  * matter of parameterising four things rather than restructuring:
  *
- * - the queue the active listing is read from (`folderBulkDelete`), and the mapper from a listed
- *   job to the refs it covers — today `DotFolderBulkDeleteService.readActiveRuns`;
+ * - the queue the active listing is read from (`folderBulkDelete`, read by the root store on
+ *   load), and the mapper from a listed job to the refs it covers — today
+ *   `DotFolderBulkDeleteService.readActiveRuns`;
  * - the three event types: entered, left, and the run's own completion;
  * - how a ref is built from a rendered row and from a tree node, since the two surfaces spell a
  *   folder differently (see {@link resolveRowKeys} and {@link resolveTreeKeys});
@@ -247,125 +242,108 @@ export function withFolderDeleteRuns() {
                 ])
             };
         }),
-        withMethods(
-            (
-                store,
-                folderBulkDeleteService = inject(DotFolderBulkDeleteService),
-                destroyRef = inject(DestroyRef)
-            ) => {
-                /**
-                 * Adds a folder under the run responsible for it, without duplicating it.
-                 *
-                 * Stored as a canonical ref rather than as the server spelled it, so everything
-                 * downstream — the row match, and the removal below — compares like with like. The
-                 * listing and the announcements are two separate server messages about the same
-                 * folder, and nothing guarantees they agree on case or a trailing slash.
-                 */
-                const markInFlight = (jobId: string, path: string): void => {
-                    const runs = store.folderDeleteRuns();
-                    const paths = runs[jobId] ?? [];
-                    const ref = normalizeFolderRef(path);
+        withMethods((store) => {
+            /**
+             * Adds a folder under the run responsible for it, without duplicating it.
+             *
+             * Stored as a canonical ref rather than as the server spelled it, so everything
+             * downstream — the row match, and the removal below — compares like with like. The
+             * listing and the announcements are two separate server messages about the same
+             * folder, and nothing guarantees they agree on case or a trailing slash.
+             */
+            const markInFlight = (jobId: string, path: string): void => {
+                const runs = store.folderDeleteRuns();
+                const paths = runs[jobId] ?? [];
+                const ref = normalizeFolderRef(path);
 
-                    if (paths.includes(ref)) {
+                if (paths.includes(ref)) {
+                    return;
+                }
+
+                patchState(store, {
+                    folderDeleteRuns: { ...runs, [jobId]: [...paths, ref] }
+                });
+            };
+
+            /**
+             * **Replaces** the set from a reading of the queue's in-flight runs, which the
+             * root store makes on load together with the other queues' (`readActiveRuns`).
+             *
+             * Replaces rather than merges: this is what recovers from a run that died without
+             * announcing its end. Inheriting what the client was previously told would keep
+             * such a folder marked forever (FR-020b).
+             */
+            const applyInFlightFolders = (runs: DotFolderDeleteActiveRun[]): void => {
+                patchState(store, {
+                    folderDeleteRuns: runs.reduce<Record<string, string[]>>((acc, run) => {
+                        acc[run.id] = run.paths.map(normalizeFolderRef);
+
+                        return acc;
+                    }, {}),
+                    folderDeleteRunsEstablished: true
+                });
+            };
+
+            return {
+                applyInFlightFolders,
+
+                /** Marks a folder a run has just started working on. */
+                markInFlightFolder: (event: DotFolderDeleteAnnouncementEvent): void => {
+                    markInFlight(event.jobId, event.path);
+                },
+
+                /**
+                 * Drops one folder from the set, on the announcement that its run finished with
+                 * it — **whether the delete succeeded or failed**.
+                 *
+                 * A failed delete leaves the folder intact and usable, so keeping it marked
+                 * until the framework moves the run on is indistinguishable, to the author,
+                 * from a folder nobody can touch (FR-021).
+                 */
+                clearInFlightFolder: (event: DotFolderDeleteAnnouncementEvent): void => {
+                    const runs = store.folderDeleteRuns();
+                    const paths = runs[event.jobId];
+
+                    if (!paths) {
                         return;
                     }
 
-                    patchState(store, {
-                        folderDeleteRuns: { ...runs, [jobId]: [...paths, ref] }
-                    });
-                };
+                    const ref = normalizeFolderRef(event.path);
+                    const remaining = paths.filter((path) => path !== ref);
+                    const next = { ...runs };
 
-                return {
-                    /**
-                     * Reads the queue's in-flight runs and **replaces** the set from them.
-                     *
-                     * Replaces rather than merges: this is what recovers from a run that died
-                     * without announcing its end. Inheriting what the client was previously told
-                     * would keep such a folder marked forever (FR-020b).
-                     */
-                    establishInFlightFolders: (): void => {
-                        folderBulkDeleteService
-                            .readActiveRuns()
-                            .pipe(
-                                take(1),
-                                // The service already answers `[]` on failure; this is the belt to
-                                // its braces, so a throw here can never leave the portlet unusable.
-                                catchError(() => EMPTY),
-                                takeUntilDestroyed(destroyRef)
-                            )
-                            .subscribe((runs) => {
-                                patchState(store, {
-                                    folderDeleteRuns: runs.reduce<Record<string, string[]>>(
-                                        (acc, run) => {
-                                            acc[run.id] = run.paths.map(normalizeFolderRef);
-
-                                            return acc;
-                                        },
-                                        {}
-                                    ),
-                                    folderDeleteRunsEstablished: true
-                                });
-                            });
-                    },
-
-                    /** Marks a folder a run has just started working on. */
-                    markInFlightFolder: (event: DotFolderDeleteAnnouncementEvent): void => {
-                        markInFlight(event.jobId, event.path);
-                    },
-
-                    /**
-                     * Drops one folder from the set, on the announcement that its run finished with
-                     * it — **whether the delete succeeded or failed**.
-                     *
-                     * A failed delete leaves the folder intact and usable, so keeping it marked
-                     * until the framework moves the run on is indistinguishable, to the author,
-                     * from a folder nobody can touch (FR-021).
-                     */
-                    clearInFlightFolder: (event: DotFolderDeleteAnnouncementEvent): void => {
-                        const runs = store.folderDeleteRuns();
-                        const paths = runs[event.jobId];
-
-                        if (!paths) {
-                            return;
-                        }
-
-                        const ref = normalizeFolderRef(event.path);
-                        const remaining = paths.filter((path) => path !== ref);
-                        const next = { ...runs };
-
-                        if (remaining.length) {
-                            next[event.jobId] = remaining;
-                        } else {
-                            delete next[event.jobId];
-                        }
-
-                        patchState(store, { folderDeleteRuns: next });
-                    },
-
-                    /**
-                     * Drops every folder a run was covering, when the run itself ends.
-                     *
-                     * The **submitter's** only way out of the server-derived marking. Both
-                     * per-folder announcements are pushed with `EXCLUDE_OWNER`, so whoever started
-                     * the run never hears their own folders leave it. The completion event they
-                     * *do* receive is handled by `reportFolderDeleteCompleted`, which publishes the
-                     * outcome and ends any local run — but it knows nothing about
-                     * `folderDeleteRuns`, which lives in this feature and composes after it.
-                     * Without this, a folder marked from the load-time listing stays marked until
-                     * the next reload, which is precisely the inert folder FR-021 forbids.
-                     *
-                     * Keyed by job rather than by path because a completion names the run, not the
-                     * folders: by the time it arrives a successful delete has left no folder to name.
-                     */
-                    clearRun: (jobId: string): void => {
-                        const next = { ...store.folderDeleteRuns() };
-                        delete next[jobId];
-
-                        patchState(store, { folderDeleteRuns: next });
+                    if (remaining.length) {
+                        next[event.jobId] = remaining;
+                    } else {
+                        delete next[event.jobId];
                     }
-                };
-            }
-        ),
+
+                    patchState(store, { folderDeleteRuns: next });
+                },
+
+                /**
+                 * Drops every folder a run was covering, when the run itself ends.
+                 *
+                 * The **submitter's** only way out of the server-derived marking. Both
+                 * per-folder announcements are pushed with `EXCLUDE_OWNER`, so whoever started
+                 * the run never hears their own folders leave it. The completion event they
+                 * *do* receive is handled by `reportFolderDeleteCompleted`, which publishes the
+                 * outcome and ends any local run — but it knows nothing about
+                 * `folderDeleteRuns`, which lives in this feature and composes after it.
+                 * Without this, a folder marked from the load-time listing stays marked until
+                 * the next reload, which is precisely the inert folder FR-021 forbids.
+                 *
+                 * Keyed by job rather than by path because a completion names the run, not the
+                 * folders: by the time it arrives a successful delete has left no folder to name.
+                 */
+                clearRun: (jobId: string): void => {
+                    const next = { ...store.folderDeleteRuns() };
+                    delete next[jobId];
+
+                    patchState(store, { folderDeleteRuns: next });
+                }
+            };
+        }),
         withHooks({
             onInit(store, socket = inject(DotEventsSocket), destroyRef = inject(DestroyRef)) {
                 // Two streams, two jobs. A folder entering a delete and a folder leaving one are

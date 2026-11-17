@@ -20,6 +20,7 @@ import {
     DotCurrentUserService,
     DotEventsService,
     DotEventsSocket,
+    DotNavLogoService,
     DotPropertiesService,
     DotRouterService,
     DotSystemConfigService
@@ -33,7 +34,6 @@ import { DotToolbarUserComponent } from './components/dot-toolbar-user/dot-toolb
 import { DotToolbarComponent } from './dot-toolbar.component';
 
 import { DotAppLifecycleEffect } from '../../../api/services/dot-app-lifecycle/dot-app-lifecycle.effect';
-import { DotNavLogoService } from '../../../api/services/dot-nav-logo/dot-nav-logo.service';
 import { DotShowHideFeatureDirective } from '../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotCrumbtrailComponent } from '../dot-crumbtrail/dot-crumbtrail.component';

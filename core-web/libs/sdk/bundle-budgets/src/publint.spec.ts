@@ -33,7 +33,7 @@ const ACCEPTED: Record<string, string> = {
     EXPORTS_TYPES_INVALID_FORMAT: 'needs .d.mts output; types resolve correctly today'
 };
 describe('publint', () => {
-    const PACKAGES = ['react', 'client', 'uve', 'types', 'analytics'];
+    const PACKAGES = ['react', 'client', 'uve', 'types', 'analytics', 'events'];
 
     describe.each(PACKAGES)('@dotcms/%s', (name) => {
         test('should publish a valid package', async () => {

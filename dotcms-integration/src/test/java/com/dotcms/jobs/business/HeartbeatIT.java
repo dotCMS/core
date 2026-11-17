@@ -2,7 +2,6 @@ package com.dotcms.jobs.business;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.job.Job;
@@ -15,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import javax.inject.Inject;
 import org.awaitility.Awaitility;
@@ -65,15 +65,17 @@ public class HeartbeatIT extends com.dotcms.Junit5WeldBaseTest {
      * since nothing inside one folder's delete is observable (FR-025)
      * <p>
      * Expected Result: {@code job.updated_at} (read back through {@code JobQueueManagerAPI.getJob},
-     * which is cache-safe the same way {@code updateJobProgress} already is) advances between the
-     * first heartbeat and the last; {@code job.progress()} never leaves {@code 0.0}; and no
-     * progress-driven job update reaches a watcher, proving no
-     * {@code JobProgressUpdatedEvent} fired for either heartbeat call
+     * which is cache-safe the same way {@code updateJobProgress} already is) moves past its value
+     * at the first heartbeat while the job is still running, so the advance can only have come from
+     * a heartbeat and not from the job completing; {@code job.progress()} never leaves {@code 0.0};
+     * and no progress-driven job update reaches a watcher, proving no
+     * {@code JobProgressUpdatedEvent} fired for any heartbeat call
      */
     @Test
     void test_heartbeat_advancesUpdatedAt_withoutChangingProgressOrFiringProgressEvent()
             throws Exception {
 
+        HeartbeatOnlyJobProcessor.reset();
         jobQueueManagerAPI.registerProcessor("heartbeatQueue", HeartbeatOnlyJobProcessor.class);
 
         if (!jobQueueManagerAPI.isStarted()) {
@@ -89,28 +91,34 @@ public class HeartbeatIT extends com.dotcms.Junit5WeldBaseTest {
         final List<Float> observedProgress = new CopyOnWriteArrayList<>();
         jobQueueManagerAPI.watchJob(jobId, job -> observedProgress.add(job.progress()));
 
-        // Let the first heartbeat land, then capture updated_at as the "before" baseline
-        Awaitility.await().atMost(10, TimeUnit.SECONDS)
-                .pollInterval(100, TimeUnit.MILLISECONDS)
-                .until(() -> HeartbeatOnlyJobProcessor.heartbeatsSent.get() >= 1);
+        try {
+            // Let the first heartbeat land, then capture updated_at as the "before" baseline
+            Awaitility.await().atMost(10, TimeUnit.SECONDS)
+                    .pollInterval(100, TimeUnit.MILLISECONDS)
+                    .until(() -> HeartbeatOnlyJobProcessor.heartbeatsSent.get() >= 1);
 
-        final LocalDateTime updatedAtAfterFirstHeartbeat =
-                jobQueueManagerAPI.getJob(jobId).updatedAt().orElseThrow(
-                        () -> new IllegalStateException("expected updated_at to be set"));
+            final LocalDateTime updatedAtAfterFirstHeartbeat =
+                    jobQueueManagerAPI.getJob(jobId).updatedAt().orElseThrow(
+                            () -> new IllegalStateException("expected updated_at to be set"));
 
-        // Wait for a second heartbeat, strictly after the first, then re-read
-        Awaitility.await().atMost(10, TimeUnit.SECONDS)
-                .pollInterval(100, TimeUnit.MILLISECONDS)
-                .until(() -> HeartbeatOnlyJobProcessor.heartbeatsSent.get() >= 2);
+            // heartbeat() only raises a flag: the framework's progress poller turns it into a write
+            // of updated_at on its next tick, which runs every few seconds. The processor keeps
+            // heartbeating and cannot finish until released below, so wait for that write to show
+            // up. The processor is still running when it does, which rules out the job completing
+            // as the source of the new value, and the two values are a poller tick apart, so they
+            // cannot come out equal.
+            Awaitility.await().atMost(10, TimeUnit.SECONDS)
+                    .pollInterval(100, TimeUnit.MILLISECONDS)
+                    .until(() -> jobQueueManagerAPI.getJob(jobId).updatedAt()
+                            .map(updatedAt -> updatedAt.isAfter(updatedAtAfterFirstHeartbeat))
+                            .orElse(false));
 
-        final LocalDateTime updatedAtAfterSecondHeartbeat =
-                jobQueueManagerAPI.getJob(jobId).updatedAt().orElseThrow(
-                        () -> new IllegalStateException("expected updated_at to be set"));
-
-        assertTrue(updatedAtAfterSecondHeartbeat.isAfter(updatedAtAfterFirstHeartbeat),
-                "a later heartbeat must advance updated_at past an earlier one — "
-                        + "first=" + updatedAtAfterFirstHeartbeat
-                        + " second=" + updatedAtAfterSecondHeartbeat);
+            assertEquals(JobState.RUNNING, jobQueueManagerAPI.getJob(jobId).state(),
+                    "updated_at must advance on a heartbeat while the job is still running, "
+                            + "not because the job finished");
+        } finally {
+            HeartbeatOnlyJobProcessor.release.countDown();
+        }
 
         Awaitility.await().atMost(15, TimeUnit.SECONDS)
                 .pollInterval(100, TimeUnit.MILLISECONDS)
@@ -133,6 +141,18 @@ public class HeartbeatIT extends com.dotcms.Junit5WeldBaseTest {
         static final java.util.concurrent.atomic.AtomicInteger heartbeatsSent =
                 new java.util.concurrent.atomic.AtomicInteger(0);
 
+        /** Held by the processor until the test has seen what it needs, then released. */
+        static volatile CountDownLatch release = new CountDownLatch(1);
+
+        /** Bounds the loop so a test that fails before releasing it cannot leave the job running. */
+        private static final int MAX_HEARTBEATS = 30;
+
+        /** Clears state shared through statics, so a rerun of the test starts from zero. */
+        static void reset() {
+            heartbeatsSent.set(0);
+            release = new CountDownLatch(1);
+        }
+
         public HeartbeatOnlyJobProcessor() {
             // Do nothing - JobProcessorFactory instantiates this reflectively, from a different
             // package (com.dotcms.jobs.business.api), so both the class and this constructor must
@@ -147,11 +167,16 @@ public class HeartbeatIT extends com.dotcms.Junit5WeldBaseTest {
                     () -> new IllegalStateException("Progress tracker not set"));
 
             // Simulates one long-running unit of work (one top-level folder's blocking delete)
-            // that can only signal liveness, never a finer-grained percentage
-            for (int i = 0; i < 2; i++) {
-                Awaitility.await().pollDelay(600, TimeUnit.MILLISECONDS).until(() -> true);
-                tracker.heartbeat();
-                heartbeatsSent.incrementAndGet();
+            // that can only signal liveness, never a finer-grained percentage. It keeps working,
+            // and heartbeating, until the test releases it
+            final CountDownLatch released = release;
+            try {
+                for (int i = 0; i < MAX_HEARTBEATS && !released.await(600, TimeUnit.MILLISECONDS); i++) {
+                    tracker.heartbeat();
+                    heartbeatsSent.incrementAndGet();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
 

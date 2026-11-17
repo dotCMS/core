@@ -2662,16 +2662,18 @@ public class TestDataUtils {
     }
 
 
-        /**
-         * This method waits for the reindex queue to be empty.
-         *
-         * @return the parent category
-         */
+    /**
+     * Waits for the reindex queue to be empty. The queue usually drains within one reindex thread
+     * cycle (a few hundred milliseconds), so it is polled every 50 ms rather than every second.
+     *
+     * @param waitTime the maximum time to wait, in seconds
+     * @return true if the queue emptied within {@code waitTime}, false otherwise
+     */
     public static boolean waitForEmptyQueue(int waitTime) {
         final ReindexQueueAPI reindexQueueAPI = APILocator.getReindexQueueAPI();
         try {
             Awaitility.await().atMost(waitTime, TimeUnit.SECONDS)
-                    .pollInterval(1, TimeUnit.SECONDS)
+                    .pollInterval(50, TimeUnit.MILLISECONDS)
                     .until(reindexQueueAPI::areRecordsLeftToIndex, equalTo(false));
             return true;
         } catch (ConditionTimeoutException e) {

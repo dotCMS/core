@@ -105,22 +105,23 @@ What happens beyond that depends on whether the two agree on the kind of value:
 
 | Your field | Example | Effect |
 |---|---|---|
-| Same kind of value | a text field `sha256` | `image { sha256 }` returns **your** value for assets of that type |
-| Different kind of value | a text field `width`, where the asset's is a number | `width` is no longer offered directly on the asset field anywhere on the instance; `image { width }` is rejected with an error naming `width` |
+| Same kind of value | a text field `sha256`, or a whole-number `width` | `image { sha256 }` / `image { width }` returns **your** value for assets of that type; every other asset type returns the file's |
+| Different kind of value | a text or decimal `width`, where the asset's is a whole number | only **that type** is set apart: through asset fields its assets come back as `DotAssetPropertyClash` (image-style) or `FileAssetPropertyClash` (file-style), answering the asset's properties, and `... on YourType { … }` is rejected there. Every other asset type is unaffected, and `YourTypeCollection { width }` still reads yours |
 
 The second case is how the schema stays valid: GraphQL requires every type behind an asset field to
-agree on what `width` is, and a disagreement would otherwise reject the whole schema. dotCMS logs a
-warning at schema build naming the content type and field. To get the direct property back, rename
-your field; until then `... on YourType { width }` reads yours and `asset { width }` reads the
-binary's.
+agree on what `width` is. dotCMS logs a warning at schema build naming the content type, the field,
+both kinds of value and the stand-in type. To get your type back behind asset fields, rename your
+field.
+
+Such a field can no longer be created: a new field whose variable is **generated** from its name
+gets a suffix (a text field called "Width" gets `width1`), and one whose variable you choose
+**explicitly** — through the API, the CLI or push publishing — is refused with a 400 that names both
+kinds of value. Only fields that existed before upgrading can be in the second case.
 
 One long-standing exception, unchanged by this work: on **image-style (DOTASSET)** types, a field
 of yours named `name`, `size`, `path`, `type` or `extension` is overwritten with the binary's value
 whenever the content is read — through its own collection as much as through an asset field. That
 was already true before; renaming the field is the only way to read what was stored in it.
-
-A new field whose variable is generated from its name steers clear of these names on asset types
-(a text field called "Width" gets `width1`). A variable you choose explicitly is not changed.
 
 ---
 

@@ -56,6 +56,16 @@ class CorpsitesClient:
         self.session = requests.Session()
         self.session.headers.update({"Authorization": f"Bearer {token}"})
 
+    def _query(self, query: str, limit: int) -> list[dict]:
+        """POST a Lucene query to `_search` and return the raw contentlets."""
+        resp = self.session.post(
+            f"{self.base_url}/api/content/_search",
+            json={"query": query, "limit": limit},
+            timeout=_TIMEOUT,
+        )
+        resp.raise_for_status()
+        return resp.json().get("entity", {}).get("jsonObjectView", {}).get("contentlets", [])
+
     def _search(self, version: str) -> list[SearchHit]:
         """Locate Dotcmsbuilds entries whose `minor` exactly equals `version`.
 
@@ -63,21 +73,27 @@ class CorpsitesClient:
         detectable rather than silently truncated to one.
         """
         query = f"+contentType:Dotcmsbuilds +Dotcmsbuilds.minor_dotraw:{version}"
-        resp = self.session.post(
-            f"{self.base_url}/api/content/_search",
-            json={"query": query, "limit": 2},
-            timeout=_TIMEOUT,
-        )
-        resp.raise_for_status()
-        contentlets = resp.json().get("entity", {}).get("jsonObjectView", {}).get("contentlets", [])
         return [
             SearchHit(
                 identifier=c.get("identifier"),
                 mod_user=c.get("modUser"),
                 mod_user_name=c.get("modUserName"),
             )
-            for c in contentlets
+            for c in self._query(query, 2)
         ]
+
+    def find_evergreen_state(self) -> list[dict]:
+        """The `evergreen-state` record(s); limit 2 so a duplicate is detectable."""
+        return self._query(
+            "+contentType:EvergreenState +EvergreenState.title_dotraw:evergreen-state", 2
+        )
+
+    def has_release_row(self, version: str) -> bool:
+        """True if a live, released, downloadable Dotcmsbuilds row exists for `version`."""
+        return bool(self._query(
+            f"+contentType:Dotcmsbuilds +Dotcmsbuilds.minor_dotraw:{version} "
+            "+Dotcmsbuilds.download:1 +Dotcmsbuilds.released:true +live:true", 1
+        ))
 
     def fire(self, contentlet: dict, *, apply: bool) -> None:
         """Fire the System Workflow Publish action with the given contentlet payload.
@@ -85,7 +101,7 @@ class CorpsitesClient:
         Dry-run (apply=False) logs the intended action and issues no request — the
         `evergreen-tracks` safety convention.
         """
-        minor = contentlet.get("minor")
+        minor = contentlet.get("minor") or contentlet.get("contentType")
         if not apply:
             log.info("DRY-RUN would fire Publish for %s", minor)
             return

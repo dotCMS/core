@@ -7,8 +7,8 @@ import {
 } from '../../../shared/models';
 
 interface WithDialogState {
-    dialog?: DotContentDriveDialog;
-    dialogDrillDown?: DotContentDriveDialogDrillDown;
+    dialog: DotContentDriveDialog | undefined;
+    dialogDrillDown: DotContentDriveDialogDrillDown | undefined;
 }
 
 export function withDialog() {

@@ -123,7 +123,7 @@ describe('FetchHttpClient', () => {
                 expect(error.message).toContain('dotcmsUrl');
             });
 
-            it('should name both URLs when a successful non-JSON response came from another origin', async () => {
+            it('should name both URLs but not suggest the login origin when a successful non-JSON response came from another origin', async () => {
                 // e.g. an SSO proxy redirecting the API call to its login page
                 mockFetch.mockResolvedValueOnce({
                     ok: true,
@@ -140,9 +140,12 @@ describe('FetchHttpClient', () => {
                 );
 
                 expect(error).toBeInstanceOf(DotHttpError);
-                expect(error.message).toContain("'https://api.example.com/api/v1/nav/'");
-                expect(error.message).toContain("'https://login.example.com/sso'");
-                expect(error.message).toContain('dotcmsUrl');
+                expect(error.status).toBe(502);
+                // The path changed too, so this is not a scheme/host move: the login page's
+                // origin is not a dotcmsUrl to recommend.
+                expect(error.message).toBe(
+                    "dotcmsUrl is 'https://api.example.com' but the server redirected 'https://api.example.com/api/v1/nav/' to 'https://login.example.com/sso'. Set dotcmsUrl to the URL your dotCMS instance answers on directly. A redirect to another origin drops the Authorization header and can turn a POST into a GET (HTTP 200 after the redirect)."
+                );
             });
 
             it('should name the final URL when a successful non-JSON response came from a same-origin redirect', async () => {
@@ -323,7 +326,7 @@ describe('FetchHttpClient', () => {
                 }
             });
 
-            it('should name the requested URL, the final URL and dotcmsUrl when a failed request was redirected to another origin', async () => {
+            it('should lead with the dotcmsUrl fix when a failed request was redirected to another origin', async () => {
                 // The demo.dotcms.com case: http:// is 301'd to https://, the POST does
                 // not survive the hop, and the server answers 500 with an empty HTML body.
                 mockFetch.mockResolvedValueOnce({
@@ -343,10 +346,10 @@ describe('FetchHttpClient', () => {
                 expect(error).toBeInstanceOf(DotHttpError);
                 expect(error.status).toBe(500);
                 expect(error.statusText).toBe('Internal Server Error');
-                expect(error.message).toMatch(/^HTTP 500: Internal Server Error/);
-                expect(error.message).toContain("'http://demo.dotcms.com/api/v1/graphql'");
-                expect(error.message).toContain("'https://demo.dotcms.com/api/v1/graphql'");
-                expect(error.message).toContain('dotcmsUrl');
+                // The redirect explains the HTML answer, so no competing content-type cause.
+                expect(error.message).toBe(
+                    "dotcmsUrl is 'http://demo.dotcms.com' but the server redirected to 'https://demo.dotcms.com'. Set dotcmsUrl to 'https://demo.dotcms.com'. A redirect to another origin drops the Authorization header and can turn a POST into a GET (HTTP 500 after the redirect)."
+                );
             });
 
             it('should not blame dotcmsUrl when a failed request was redirected within the same origin', async () => {
@@ -437,38 +440,56 @@ describe('FetchHttpClient', () => {
             });
         });
 
+        // This spec runs in jsdom, so these cover the browser wording. The Node wording (no CORS,
+        // no browser console) runs against a real closed port in fetch-http-client.redirect.spec.ts.
         describe('network errors', () => {
-            it('should throw HttpError for network errors', async () => {
+            it('should name the requested URL, the likely causes and the browser console', async () => {
                 const networkError = new TypeError('Failed to fetch');
                 mockFetch.mockRejectedValueOnce(networkError);
 
-                try {
-                    await httpClient.request('https://api.example.com/test');
-                } catch (error: unknown) {
-                    expect(error).toBeInstanceOf(DotHttpError);
-                    if (error instanceof DotHttpError) {
-                        expect(error.status).toBe(0);
-                        expect(error.statusText).toBe('Network Error');
-                        expect(error.message).toBe('Network error: Failed to fetch');
-                        expect(error.data).toBe(networkError);
-                    }
-                }
+                const error = await captureError(
+                    httpClient.request('http://demo.dotcms.com/api/v1/graphql')
+                );
+
+                expect(error).toBeInstanceOf(DotHttpError);
+                expect(error.status).toBe(0);
+                expect(error.statusText).toBe('Network Error');
+                expect(error.data).toBe(networkError);
+                expect(error.message).toBe(
+                    "Couldn't reach 'http://demo.dotcms.com/api/v1/graphql' (Failed to fetch). Check dotcmsUrl: the scheme may be wrong (the browser blocks a redirect from http to https), the host may not resolve, or dotCMS may not allow this origin (CORS). The browser console shows the exact reason."
+                );
             });
 
-            it('should throw HttpError for connection timeouts', async () => {
-                const timeoutError = new TypeError('Network request failed');
-                mockFetch.mockRejectedValueOnce(timeoutError);
+            it('should keep the original reason for other network failures', async () => {
+                mockFetch.mockRejectedValueOnce(new TypeError('Network request failed'));
 
-                try {
-                    await httpClient.request('https://api.example.com/test');
-                } catch (error: unknown) {
-                    expect(error).toBeInstanceOf(DotHttpError);
-                    if (error instanceof DotHttpError) {
-                        expect(error.status).toBe(0);
-                        expect(error.statusText).toBe('Network Error');
-                        expect(error.message).toBe('Network error: Network request failed');
-                    }
-                }
+                const error = await captureError(
+                    httpClient.request('https://api.example.com/test')
+                );
+
+                expect(error.status).toBe(0);
+                expect(error.statusText).toBe('Network Error');
+                expect(error.message).toMatch(
+                    /^Couldn't reach 'https:\/\/api\.example\.com\/test' \(Network request failed\)\. /
+                );
+            });
+
+            it('should name the cause code and host when the error carries one', async () => {
+                // Node's fetch rejects with "fetch failed" and puts the system error in `cause`.
+                const cause = Object.assign(new Error('getaddrinfo ENOTFOUND s.dotcms.com'), {
+                    code: 'ENOTFOUND'
+                });
+                mockFetch.mockRejectedValueOnce(
+                    Object.assign(new TypeError('fetch failed'), { cause })
+                );
+
+                const error = await captureError(
+                    httpClient.request('http://s.dotcms.com/api/v1/graphql')
+                );
+
+                expect(error.message).toMatch(
+                    /^Couldn't reach 'http:\/\/s\.dotcms\.com\/api\/v1\/graphql' \(ENOTFOUND s\.dotcms\.com\)\. /
+                );
             });
         });
 

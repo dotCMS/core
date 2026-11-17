@@ -42,6 +42,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -231,6 +233,24 @@ public class ContentUtils {
 			return pull(query, offset, limit, sort, user, tmDate, respectFrontendRoles);
 		}
 
+	/**
+	 * Runs the given query and returns the page of contentlets the user is allowed to read.
+	 * <p>
+	 * With the Time Machine running, the live and working clauses the caller wrote are dropped and
+	 * rewritten against the future date. The rewritten clauses are placed <em>before</em> what is
+	 * left of the caller's query: after it, a query ending in an unbalanced escape would consume
+	 * the space that separates the two and the first clause would be folded into the caller's last
+	 * term instead of standing on its own.
+	 *
+	 * @param query the caller's query
+	 * @param offset the first result to return
+	 * @param limit how many results to return
+	 * @param sort the sort the results are returned in
+	 * @param user the {@link User} the query is run for
+	 * @param tmDate the Time Machine date in milliseconds, or {@code null} when it is not running
+	 * @param respectFrontendRoles whether the anonymous and logged-in-site roles grant read as well
+	 * @return the page of contentlets matching the query, with the total result count set
+	 */
 	public static PaginatedArrayList<Contentlet> pull(String query, final int offset, final int limit, final String sort, final User user, final String tmDate, final boolean respectFrontendRoles){
 		    final PaginatedArrayList<Contentlet> ret = new PaginatedArrayList<>();
 
@@ -245,11 +265,13 @@ public class ContentUtils {
                     final String formatedDate = ESMappingAPIImpl.datetimeFormat.format(futureDate);
 
                     final String notExpired = " +expdate:[" + formatedDate + " TO 29990101000000] ";
-                    final String workingQuery = query + " +working:true " +
+                    // The clauses go before the caller's query: after it, a query ending in
+                    // an unbalanced escape would consume the space that separates the two.
+                    final String workingQuery = "+working:true " +
                             "+pubdate:[" + ESMappingAPIImpl.datetimeFormat.format(new Date())
                             +
-                            " TO " + formatedDate + "] " + notExpired;
-                    final String liveQuery = query + " +live:true " + notExpired;
+                            " TO " + formatedDate + "]" + notExpired + query;
+                    final String liveQuery = "+live:true" + notExpired + query;
 		            
 		            final PaginatedArrayList<Contentlet> workingContent = (PaginatedArrayList<Contentlet>)conAPI.search(workingQuery, limit, offset, sort, user, respectFrontendRoles);
                     final PaginatedArrayList<Contentlet> liveContent = (PaginatedArrayList<Contentlet>)conAPI.search(liveQuery, limit, offset, sort, user, respectFrontendRoles);
@@ -601,7 +623,26 @@ public class ContentUtils {
 	}
 
     /**
-     * Logic used for `pullRelated` and `pullRelatedField` methods
+     * Logic used for `pullRelated` and `pullRelatedField` methods.
+     * <p>
+     * When the caller passes a condition, it is placed <em>last</em> in the query this method
+     * builds, after the language, live and relationship clauses. Those clauses would otherwise
+     * depend on how the caller's condition ends: a condition ending in an unbalanced escape
+     * consumes the space that separates it from whatever follows, and the clause after it would
+     * be folded into the condition's last term instead of standing on its own.
+     *
+     * @param relationship the {@link Relationship} the related content is pulled through
+     * @param contentletIdentifier the identifier of the contentlet the pull starts from
+     * @param condition the caller's query, or empty to pull without one
+     * @param limit how many results to return, or -1 for all of them
+     * @param offset the first result to return
+     * @param sort the sort the results are returned in
+     * @param user the {@link User} the pull is run for
+     * @param tmDate the Time Machine date, or {@code null} when it is not running
+     * @param pullParents whether to pull the parents rather than the children
+     * @param language the language to restrict the results to, or -1 for any language
+     * @param live whether to restrict to live or working content; {@code null} leaves it open
+     * @return the related contentlets the user is allowed to read
      */
     public static List<Contentlet> getPullResults(final Relationship relationship,
             String contentletIdentifier, final String condition, final int limit, int offset,
@@ -630,8 +671,8 @@ public class ContentUtils {
                     pullQuery.append("+live:").append(live).append(" ");
                 }
 
-                pullQuery.append(condition);
-
+                // The caller's condition is appended last, below: anything placed after a
+                // query that ends in an unbalanced escape would lose its separating space.
                 if ((selfRelated && !pullParents) || (!selfRelated && relationship
                         .getParentStructureInode().equals(contentlet.getContentTypeId()))) {
                     //pulling children
@@ -645,7 +686,7 @@ public class ContentUtils {
 
                     pullQuery.append(" +identifier:(").append(String.join(" OR ", relatedContent
                             .stream().map(cont -> cont.getIdentifier()).collect(
-                                    Collectors.toList()))).append(")");
+                                    Collectors.toList()))).append(") ").append(condition);
 
                     final List<String> results = conAPI.searchIndex(pullQuery.toString(), -1,-1, sort, user, true)
                                     .stream()
@@ -659,7 +700,8 @@ public class ContentUtils {
                 } 
                 
                 //pulling parents
-                pullQuery.append(" +" + relationshipName + ":" + contentletIdentifier);
+                pullQuery.append(" +" + relationshipName + ":" + contentletIdentifier + " ")
+                        .append(condition);
                 
                 return pull(pullQuery.toString(), offset, limit, sort, user, tmDate, true);
 
@@ -748,42 +790,58 @@ public class ContentUtils {
                 user, tmDate, pullParents, -1, null);
     }
 
-	public static String addDefaultsToQuery(String query, final boolean editOrPreviewMode, final
-			HttpServletRequest request){
-		String q = "";
+	/**
+	 * Completes a caller's query with the clauses it did not state: the request's language, live
+	 * or working, and not deleted. A clause the query already names is left to the query.
+	 * <p>
+	 * The clauses are placed <em>before</em> the caller's query. Appended after it, a query ending
+	 * in an unbalanced escape would consume the space that separates the two and the first clause
+	 * would be folded into the caller's last term instead of standing on its own.
+	 *
+	 * @param query the caller's query, which may be {@code null}
+	 * @param editOrPreviewMode whether to default to working rather than live content
+	 * @param request the request the language is resolved from
+	 * @return the caller's query preceded by the clauses it did not state
+	 */
+	public static String addDefaultsToQuery(final String query, final boolean editOrPreviewMode,
+			final HttpServletRequest request){
+		final String callerQuery = query != null ? query : "";
+		final StringBuilder defaults = new StringBuilder();
 
-		if(query != null)
-			q = query;
-		else
-			query = q;
-
-		if(!query.contains("languageId")){
-			q += " +languageId:" + WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+		if(!callerQuery.contains("languageId")){
+			defaults.append(" +languageId:")
+					.append(WebAPILocator.getLanguageWebAPI().getLanguage(request).getId());
 		}
 
-		if(!(query.contains("live:") || query.contains("working:") )){
+		if(!(callerQuery.contains("live:") || callerQuery.contains("working:") )){
 			if(editOrPreviewMode && !TimeMachineUtil.isRunning()){
-				q +=" +working:true ";
+				defaults.append(" +working:true ");
 			}else{
-				q +=" +live:true ";
+				defaults.append(" +live:true ");
 			}
 
 		}
 
 
-		if(!UtilMethods.contains(query,"deleted:")){
-			q+=" +deleted:false ";
+		if(!UtilMethods.contains(callerQuery,"deleted:")){
+			defaults.append(" +deleted:false ");
 		}
-		return q;
+
+		return defaults.length() == 0 ? callerQuery
+				: defaults.append(" ").append(callerQuery).toString();
 	}
 
 
 	/**
-	 * Adds the relationships to the contentlet based on the request parameters depth
-	 * @param contentlet
-	 * @param user
-	 * @param mode
-	 * @param languageId
+	 * Adds the related content of the relationship fields to the given contentlet, for the depth
+	 * that the current request asks for (the {@code depth} parameter or request attribute). The
+	 * given contentlet is modified; see
+	 * {@link #copyWithRelationships(Contentlet, Supplier, User, PageMode, long)} to leave it as it is.
+	 *
+	 * @param contentlet The contentlet that receives its related content.
+	 * @param user       The user the related content is read for.
+	 * @param mode       The page mode, which decides between live and working versions.
+	 * @param languageId The language of the related content.
 	 */
 	public static void addRelationships(final Contentlet contentlet, final User user, final PageMode mode, final long languageId) {
 		final HttpServletRequest  request  = HttpServletRequestThreadLocal.INSTANCE.getRequest();
@@ -793,16 +851,30 @@ public class ContentUtils {
 				Objects.nonNull(request) &&
 				Objects.nonNull(user)) {
 
-			final String depthParam =
-					Objects.nonNull(request.getParameter(WebKeys.HTMLPAGE_DEPTH)) ?
-							request.getParameter(WebKeys.HTMLPAGE_DEPTH) :
-							(String) request.getAttribute(WebKeys.HTMLPAGE_DEPTH);
-			if (Objects.nonNull(depthParam)) {
-				final int depth = ConversionUtils.toInt(depthParam, -1);
-				addRelationships(contentlet, user, mode, languageId, depth, request, response);
-			}
+			requestedDepth(request).ifPresent(depth ->
+					addRelationships(contentlet, user, mode, languageId, depth, request, response));
 		}
 	}
+
+	/**
+	 * Returns the depth of related content the request asks for: its {@code depth} parameter or,
+	 * when that is not set, its {@code depth} attribute. A value that is not a number is returned
+	 * as {@code -1}.
+	 *
+	 * @param request The current request.
+	 *
+	 * @return The requested depth, or empty when the request does not ask for related content.
+	 */
+	private static Optional<Integer> requestedDepth(final HttpServletRequest request) {
+		final String depthParam =
+				Objects.nonNull(request.getParameter(WebKeys.HTMLPAGE_DEPTH)) ?
+						request.getParameter(WebKeys.HTMLPAGE_DEPTH) :
+						(String) request.getAttribute(WebKeys.HTMLPAGE_DEPTH);
+		return Objects.nonNull(depthParam)
+				? Optional.of(ConversionUtils.toInt(depthParam, -1))
+				: Optional.empty();
+	}
+
 	public static void addRelationships(final Contentlet contentlet, final User user, final PageMode mode,
 										final long languageId, final int depth) {
 
@@ -875,5 +947,110 @@ public class ContentUtils {
 		}
 
 	}
-		
+
+	/**
+	 * Returns the contentlet with the related content of its relationship fields, for the depth
+	 * that the current request asks for (the {@code depth} parameter or request attribute).
+	 * <p>
+	 * The given contentlet is not modified. When related content is added, it goes into a new
+	 * instance created by {@code newInstance}, which receives a copy of the contentlet's values.
+	 * When the request asks for no related content, the given contentlet is returned as it is.
+	 * Use this method rather than {@link #addRelationships(Contentlet, User, PageMode, long)} for
+	 * a contentlet obtained from the Content API, which can return the same instance to every
+	 * caller.
+	 *
+	 * @param contentlet  The contentlet to read the related content of.
+	 * @param newInstance Creates the instance that receives the copy, e.g. {@code Contentlet::new}.
+	 * @param user        The user the related content is read for.
+	 * @param mode        The page mode, which decides between live and working versions.
+	 * @param languageId  The language of the related content.
+	 * @param <T>         The type of the contentlet, kept by the copy.
+	 *
+	 * @return A copy of the contentlet with its related content, or the contentlet itself.
+	 */
+	public static <T extends Contentlet> T copyWithRelationships(final T contentlet,
+																 final Supplier<T> newInstance,
+																 final User user, final PageMode mode,
+																 final long languageId) {
+		final HttpServletRequest  request  = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		final HttpServletResponse response = HttpServletResponseThreadLocal.INSTANCE.getResponse();
+		if (addRelationshipsOnPage &&
+				Objects.nonNull(response) &&
+				Objects.nonNull(request) &&
+				Objects.nonNull(user)) {
+
+			final Optional<Integer> depth = requestedDepth(request);
+			if (depth.isPresent()) {
+				return copyWithRelationships(contentlet, newInstance, user, mode, languageId,
+						depth.get(), request, response, false);
+			}
+		}
+		return contentlet;
+	}
+
+	/**
+	 * Returns a copy of the contentlet with the related content of its relationship fields, for
+	 * the given depth. The given contentlet is not modified; see
+	 * {@link #copyWithRelationships(Contentlet, Supplier, User, PageMode, long)}.
+	 *
+	 * @param contentlet       The contentlet to read the related content of.
+	 * @param newInstance      Creates the instance that receives the copy, e.g. {@code Contentlet::new}.
+	 * @param user             The user the related content is read for.
+	 * @param mode             The page mode, which decides between live and working versions.
+	 * @param languageId       The language of the related content.
+	 * @param depth            The number of levels of related content, from 0 to 3.
+	 * @param request          The current request.
+	 * @param response         The current response.
+	 * @param languageFallback Whether to list related content regardless of language version
+	 *                         availability, see
+	 *                         {@link #addRelationships(Contentlet, User, PageMode, long, int, HttpServletRequest, HttpServletResponse, boolean)}.
+	 * @param <T>              The type of the contentlet, kept by the copy.
+	 *
+	 * @return A copy of the contentlet with its related content.
+	 */
+	public static <T extends Contentlet> T copyWithRelationships(final T contentlet,
+																 final Supplier<T> newInstance,
+																 final User user, final PageMode mode,
+																 final long languageId, final int depth,
+																 final HttpServletRequest request,
+																 final HttpServletResponse response,
+																 final boolean languageFallback) {
+		final T copy = copyOf(contentlet, newInstance);
+		addRelationships(copy, user, mode, languageId, depth, request, response, languageFallback);
+		return copy;
+	}
+
+	/**
+	 * Copies a contentlet into a new instance: its property map, its own set of null properties,
+	 * and the state kept outside the map (variant, index policies). The given contentlet,
+	 * including its map, is not modified.
+	 * <p>
+	 * The copy is shallow: values in the map (lists, maps, metadata) are shared with the given
+	 * contentlet, so callers may replace entries of the copy but must not modify those values in
+	 * place. The set of null properties is the exception, because {@link Contentlet} updates it in
+	 * place, so the copy gets its own.
+	 *
+	 * @param contentlet  The contentlet to copy.
+	 * @param newInstance Creates the instance that receives the copy.
+	 * @param <T>         The type of the copy.
+	 *
+	 * @return The copy.
+	 */
+	@SuppressWarnings("unchecked")
+	private static <T extends Contentlet> T copyOf(final Contentlet contentlet, final Supplier<T> newInstance) {
+		final T copy = newInstance.get();
+		copy.getMap().putAll(contentlet.getMap());
+		final Object nullProperties = contentlet.getMap().get(Contentlet.NULL_PROPERTIES);
+		if (nullProperties instanceof Set) {
+			final Set<String> ownNullProperties = ConcurrentHashMap.newKeySet();
+			ownNullProperties.addAll((Set<String>) nullProperties);
+			copy.getMap().put(Contentlet.NULL_PROPERTIES, ownNullProperties);
+		}
+		copy.setVariantId(contentlet.getVariantId());
+		copy.setIndexPolicy(contentlet.getIndexPolicy());
+		copy.setIndexPolicyDependencies(contentlet.getIndexPolicyDependencies());
+		copy.setLowIndexPriority(contentlet.isLowIndexPriority());
+		return copy;
+	}
+
 }

@@ -1,6 +1,7 @@
 import {
     DotBulkUploadFailureReason,
-    DotFolderDeleteFailureReason
+    DotFolderDeleteFailureReason,
+    DotFolderBulkDuplicateReason
 } from './dot-content-drive.model';
 
 /**
@@ -42,7 +43,10 @@ export interface DotBatchOutcome<TReason extends string = string> {
     processed: number;
     successCount: number;
     failedCount: number;
-    /** Never attempted, because the run was cancelled before reaching them. */
+    /**
+     * Never attempted: the run was cancelled before reaching them, or, for a folder operation,
+     * another selected folder already covers them.
+     */
     skippedCount: number;
     /**
      * `true` when this run was a resubmission of a batch that had already succeeded.
@@ -60,7 +64,11 @@ export interface DotBatchItemResult<TReason extends string = string> {
     /** Generic on purpose: a file name for an upload, a folder path elsewhere. */
     key: string;
     status: 'SUCCESS' | 'FAILED' | 'SKIPPED';
-    /** Present only on `FAILED`. This is what a client maps to product copy. */
+    /**
+     * Present on every `FAILED`, and on a `SKIPPED` item only when the skip has a named cause, such as
+     * a folder another selected folder already covers. A skip without one was never reached before a
+     * cancellation. This is what a client maps to product copy.
+     */
     reason?: TReason;
     /** Diagnostic, for logs. Never shown to a user. */
     message?: string;
@@ -132,6 +140,34 @@ export interface DotBulkUploadCompletedEvent extends Partial<
     jobId?: string;
 }
 
+/** The `202` answer to a bulk folder duplication: a handle, not an outcome. */
+export interface DotFolderBulkDuplicateSubmitResponse {
+    jobId: string;
+    /** Ready to follow as it is, so the queue name is not the client's to hardcode. */
+    statusUrl: string;
+    /**
+     * Distinct folders the **server** accepted into the run, after collapsing repeats. It equals the
+     * `total` the outcome later reports, so it is the number a client displays.
+     */
+    submitted: number;
+}
+
+/**
+ * The payload of a `BULK_FOLDER_DUPLICATE_COMPLETED` system event.
+ *
+ * Pushed when a run settles, scoped to whoever submitted it, so `jobId` is how a client tells its
+ * own run from another tab's. The counters and `results` are optional for the same reason the upload
+ * event's are: a job that ended without recording an outcome carries only `state`, and a caller must
+ * treat that as a failure, not as a clean run over nothing. Each result's `key` is a folder path as
+ * submitted.
+ */
+export interface DotFolderBulkDuplicateCompletedEvent extends Partial<
+    DotBatchOutcome<DotFolderBulkDuplicateReason>
+> {
+    state: DotJobState;
+    jobId?: string;
+}
+
 /**
  * What {@link DotBulkUploadSubmitResponse}'s request emits on the way to answering.
  *
@@ -176,6 +212,13 @@ export const DOT_JOB_IN_PROGRESS_STATES: readonly DotJobState[] = [
     'CANCEL_REQUESTED',
     'CANCELLING'
 ];
+
+/** One run as a queue's active listing returns it, with the queue's own parameters. */
+export interface DotActiveJobEntry<P> {
+    id: string;
+    state: DotJobState;
+    parameters?: P;
+}
 
 /**
  * Whether a run is actually working, as opposed to merely not finished.
@@ -261,4 +304,34 @@ export interface DotFolderDeleteActiveRun {
     state: DotJobState;
     /** The folders this run was submitted to delete. Empty if the run recorded none. */
     paths: string[];
+}
+
+/**
+ * A bulk folder duplicate still in progress, as the queue's active listing reports it (#37062).
+ *
+ * Read so a reload can put the run's status back. The submitter travels with it because the
+ * listing is not scoped to the reader, and only the submitter is sent the completion that ends it.
+ */
+export interface DotFolderDuplicateActiveRun {
+    id: string;
+    /** Who submitted the run. Absent if the run recorded none. */
+    userId?: string;
+    /** The folders the run was submitted to duplicate. Empty if it recorded none. */
+    assetPaths: string[];
+}
+
+/**
+ * A bulk upload batch still being processed, as the queue's active listing reports it (#37062).
+ *
+ * Read so a reload can put the batch's status back. Same reason as
+ * {@link DotFolderDuplicateActiveRun} for carrying the submitter.
+ */
+export interface DotBulkUploadActiveRun {
+    id: string;
+    /** Who submitted the batch. Absent if it recorded none. */
+    userId?: string;
+    /** How many files the batch holds. */
+    fileCount: number;
+    /** The base type the batch was submitted as, which its outcome's wording depends on. */
+    baseType?: string;
 }

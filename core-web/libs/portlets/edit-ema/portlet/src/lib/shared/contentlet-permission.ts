@@ -26,20 +26,22 @@ export function canEditOwningContentlet(element: Element | null | undefined): bo
 }
 
 /**
- * Same check, for callers that only have the contentlet's inode and a document
- * to search — the Block Editor inline flow arrives as a `postMessage` payload
- * rather than a DOM event, so there is no element to walk up from.
+ * Same check, for callers that only have the contentlet's inode and the iframe
+ * window to search — the Block Editor inline flow arrives as a `postMessage`
+ * payload rather than a DOM event, so there is no element to walk up from.
  *
  * Matches on the dataset rather than building a selector from the inode, so an
  * unexpected value cannot break the query.
  */
 export function canEditContentletByInode(
-    doc: Document | null | undefined,
+    win: Window | null | undefined,
     inode: string | undefined
 ): boolean {
     // Not being able to look the contentlet up isn't the same as being denied.
     // The iframe document is unreachable on cross-origin headless pages, and the
     // server still enforces the real permission on save — so allow it here.
+    const doc = readDocument(win);
+
     if (!doc || !inode) {
         return true;
     }
@@ -49,6 +51,20 @@ export function canEditContentletByInode(
     ) as HTMLElement | undefined;
 
     return wrapper?.dataset?.['dotCanEdit'] !== 'false';
+}
+
+/**
+ * The window's document, or `null` when the browser won't hand it over.
+ *
+ * On a cross-origin iframe (every headless app) reading `document` throws a
+ * `SecurityError` rather than returning `null`, so it has to be caught here.
+ */
+function readDocument(win: Window | null | undefined): Document | null {
+    try {
+        return win?.document ?? null;
+    } catch {
+        return null;
+    }
 }
 
 /**

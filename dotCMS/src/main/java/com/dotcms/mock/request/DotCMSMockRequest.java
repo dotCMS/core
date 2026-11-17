@@ -5,6 +5,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
@@ -39,8 +40,7 @@ public class DotCMSMockRequest implements HttpServletRequest {
     private String remoteHost;
     private String queryString;
     private Map<String, String[]> paramMap = new HashMap<>();
-    // header names are case-insensitive per the servlet spec, so a plain HashMap made lookups
-    // such as getHeader("host") miss a header that was stored as "Host"
+    // Header names are case-insensitive per the servlet spec.
     final private Map<String, String> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     private String servletPath;
     final private Map<String, Object> attributes = new HashMap<>();
@@ -129,8 +129,8 @@ public class DotCMSMockRequest implements HttpServletRequest {
     }
 
     @Override
-    public String[] getParameterValues(String s) {
-        return new String[0];
+    public String[] getParameterValues(final String name) {
+        return paramMap.get(name);
     }
 
     @Override
@@ -156,17 +156,18 @@ public class DotCMSMockRequest implements HttpServletRequest {
 
     @Override
     public String getHeader(final String name) {
-        return headers.get(name);
+        return name == null ? null : headers.get(name);
     }
 
     @Override
-    public Enumeration<String> getHeaders(String s) {
-        return null;
+    public Enumeration<String> getHeaders(final String name) {
+        final String value = getHeader(name);
+        return Collections.enumeration(value == null ? Collections.emptyList() : Collections.singletonList(value));
     }
 
     @Override
     public Enumeration<String> getHeaderNames() {
-        return null;
+        return Collections.enumeration(headers.keySet());
     }
 
     @Override
@@ -276,7 +277,7 @@ public class DotCMSMockRequest implements HttpServletRequest {
 
     @Override
     public Enumeration<String> getAttributeNames() {
-        return null;
+        return Collections.enumeration(attributes.keySet());
     }
 
     @Override
@@ -455,7 +456,9 @@ public class DotCMSMockRequest implements HttpServletRequest {
     }
 
     public void addHeader(final String name, final String value) {
-        this.headers.put(name, value);
+        if (name != null) {
+            this.headers.put(name, value);
+        }
     }
 
     public void setRequestURI(final String uri) {
@@ -495,6 +498,6 @@ public class DotCMSMockRequest implements HttpServletRequest {
     }
 
     public void setContent(String content) {
-        this.content = content.getBytes();
+        this.content = content.getBytes(StandardCharsets.UTF_8);
     }
 }

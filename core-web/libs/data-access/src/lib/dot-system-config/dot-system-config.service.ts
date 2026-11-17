@@ -75,14 +75,19 @@ export class DotSystemConfigService {
         const { config } = response.entity;
 
         return {
+            languageBundleVersion: config.languageBundleVersion,
+            emailRegex: config.emailRegex,
             logos: config.logos,
             colors: config.colors,
             releaseInfo: config.releaseInfo,
             systemTimezone: config.systemTimezone,
+            timezones: config.timezones,
             languages: config.languages,
             license: config.license,
             cluster: config.cluster,
-            bulkUpload: config.bulkUpload
+            bulkUpload: config.bulkUpload,
+            folderBulkDelete: config.folderBulkDelete,
+            folderBulkDuplicate: config.folderBulkDuplicate
         };
     }
 }

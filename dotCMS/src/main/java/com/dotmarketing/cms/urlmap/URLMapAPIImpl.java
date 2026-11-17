@@ -27,6 +27,7 @@ import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -204,12 +205,16 @@ public class URLMapAPIImpl implements URLMapAPI {
 
     /**
      * Builds the part of the Lucene query that specifies what fields from the given {@link ContentType} are being
-     * referenced by the URL Map.
+     * referenced by the URL Map. Each value is sanitized with
+     * {@link ESUtils#escapeExcludingSlashIncludingSpace(String)}, which escapes reserved characters and removes
+     * the {@code <} and {@code >} range operators.
      *
      * @param contentType The Content Type that the URL Map belongs to.
      * @param matches     The fields that are referenced byt the URL Map.
-     * @return The fields from the Content Type that match the fields referenced in the URL Map.
+     * @return The fields from the Content Type that match the fields referenced in the URL Map, or {@code null}
+     * when a value is empty after sanitizing (for example the slug {@code <>}), meaning nothing can match.
      */
+    @Nullable
     private String buildFields(final ContentType contentType,
                                final Matches matches) {
 
@@ -240,8 +245,11 @@ public class URLMapAPIImpl implements URLMapAPI {
                 query.append(variableName).append("_dotRaw");
             }
 
-            query.append(':')
-                    .append(ESUtils.escapeExcludingSlashIncludingSpace(value)).append(' ');
+            final String sanitizedValue = ESUtils.escapeExcludingSlashIncludingSpace(value);
+            if (sanitizedValue.isEmpty()) {
+                return null;
+            }
+            query.append(':').append(sanitizedValue).append(' ');
             counter++;
         }
 
@@ -268,6 +276,10 @@ public class URLMapAPIImpl implements URLMapAPI {
         Contentlet contentlet = null;
 
         final String query = this.buildContentQuery(matches, contentType, context);
+        if (query == null) {
+            // A URL map value was empty once sanitized, so no contentlet can match this URL
+            return null;
+        }
         final List<Contentlet> contentletSearches =
                 ContentUtils.pull(query, 0, 2, "score", this.wuserAPI.getSystemUser(), true);
 
@@ -336,8 +348,10 @@ public class URLMapAPIImpl implements URLMapAPI {
      * @param matches     The set of URL Maps that match a specific Content Type.
      * @param contentType The Content Type that matches the URL Map.
      * @param context     The instance of the URL Map Context.
-     * @return The Lucene query that will return a potential match for the URL Map.
+     * @return The Lucene query that will return a potential match for the URL Map, or {@code null} when a URL Map
+     * value is empty after sanitizing and therefore nothing can match.
      */
+    @Nullable
     private String buildContentQuery(
             final Matches matches,
             final ContentType contentType,
@@ -361,7 +375,11 @@ public class URLMapAPIImpl implements URLMapAPI {
             query.append(" +working:true ");
         }
         query.append(" ");
-        query.append(this.buildFields(contentType, matches));
+        final String fields = this.buildFields(contentType, matches);
+        if (fields == null) {
+            return null;
+        }
+        query.append(fields);
 
         // score the current language higher
         query.append(" languageId:").append(context.getLanguageId());

@@ -46,12 +46,17 @@ export class DotContentTypeService {
      * @returns Content Type
      */
     getContentType(idOrVar: string): Observable<DotCMSContentType> {
-        return this.#httpClient
-            .get<{ entity: DotCMSContentType }>(`/api/v1/contenttype/id/${idOrVar}`)
-            .pipe(
-                take(1),
-                map((data) => data.entity)
-            );
+        return (
+            this.#httpClient
+                // Encoded: the id or variable can come from a URL (Content Drive's `createContent`).
+                .get<{ entity: DotCMSContentType }>(
+                    `/api/v1/contenttype/id/${encodeURIComponent(idOrVar)}`
+                )
+                .pipe(
+                    take(1),
+                    map((data) => data.entity)
+                )
+        );
     }
 
     /**

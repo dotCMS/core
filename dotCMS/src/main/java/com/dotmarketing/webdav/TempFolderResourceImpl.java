@@ -17,7 +17,9 @@ import com.bradmcevoy.http.Range;
 import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.Request.Method;
 import com.bradmcevoy.http.Resource;
+import com.bradmcevoy.http.exceptions.BadRequestException;
 import com.bradmcevoy.http.exceptions.NotAuthorizedException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -50,14 +52,18 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 		this.folder = folder;
 	}
 	
-	/* (non-Javadoc)
-	 * @see com.bradmcevoy.http.MakeCollectionableResource#createCollection(java.lang.String)
+	/**
+	 * Creates a sub-folder named {@code newName} inside this temp folder. The name must be a single
+	 * plain path segment and the new folder must stay inside the temp directory.
+	 *
+	 * @param newName the folder name received from the WebDAV client
+	 * @return the created temp folder
+	 * @throws BadRequestException (HTTP 400) when the name or the target is not valid
 	 */
-	public CollectionResource createCollection(String newName) {
-		dotDavHelper.createTempFolder(folder.getPath() + File.separator + newName);
-		File f = new File(folder.getPath() + File.separator + newName);
-		TempFolderResourceImpl tr = new TempFolderResourceImpl(folder.getPath() + File.separator + newName,f, isAutoPub);
-		return tr;
+	public CollectionResource createCollection(String newName) throws BadRequestException {
+		final File f = dotDavHelper.resolveTempChild(this, folder, newName);
+		dotDavHelper.createTempFolder(f.getPath());
+		return new TempFolderResourceImpl(f.getPath(), f, isAutoPub);
 	}
 
 	/* (non-Javadoc)
@@ -164,11 +170,21 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 		return folder.hashCode() + "";
 	}
 
-	/* (non-Javadoc)
-	 * @see com.bradmcevoy.http.PutableResource#createNew(java.lang.String, java.io.InputStream, java.lang.Long, java.lang.String)
+	/**
+	 * Writes a new temp file named {@code newName} inside this temp folder. The name must be a single
+	 * plain path segment and the file must stay inside the temp directory.
+	 *
+	 * @param newName     the file name received from the WebDAV client
+	 * @param in          the file content
+	 * @param length      the content length, if known
+	 * @param contentType the content type, if known
+	 * @return the written temp file
+	 * @throws IOException         if the file cannot be written
+	 * @throws BadRequestException (HTTP 400) when the name or the target is not valid
 	 */
-	public Resource createNew(String newName, InputStream in, Long length, String contentType) throws IOException {
-		File f = new File(folder.getPath() + File.separator + newName);
+	public Resource createNew(String newName, InputStream in, Long length, String contentType)
+			throws IOException, BadRequestException {
+		File f = dotDavHelper.resolveTempChild(this, folder, newName);
 		if(!f.exists()){
 			String p = f.getPath().substring(0,f.getPath().lastIndexOf(File.separator));
 			File fe = new File(p);
@@ -186,16 +202,21 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 		return tr;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.bradmcevoy.http.CopyableResource#copyTo(com.bradmcevoy.http.CollectionResource, java.lang.String)
+	/**
+	 * Copies this temp folder into {@code collRes} under {@code name}. The name must be a single plain
+	 * path segment, and a copy into temp storage must stay inside the temp directory.
+	 *
+	 * @param collRes the destination collection
+	 * @param name    the destination name received from the WebDAV client
+	 * @throws BadRequestException (HTTP 400) when the name or the temp target is not valid
 	 */
-	public void copyTo(CollectionResource collRes, String name) {
+	public void copyTo(CollectionResource collRes, String name) throws BadRequestException {
+		DotWebdavHelper.requirePlainSegment(this, name);
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(collRes instanceof TempFolderResourceImpl){
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
+			final File dest = dotDavHelper.resolveTempChild(this, tr.getFolder(), name);
 			try {
-				String p = tr.getFolder().getPath();
-				File dest = new File(tr.getFolder().getPath() + File.separator + name);
 				FileUtil.copyDirectory(folder, dest);
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
@@ -237,15 +258,21 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 		return;
 	}
 
-	/* (non-Javadoc)
-	 * @see com.bradmcevoy.http.MoveableResource#moveTo(com.bradmcevoy.http.CollectionResource, java.lang.String)
+	/**
+	 * Moves this temp folder into {@code collRes} under {@code name}. The name must be a single plain
+	 * path segment, and a move into temp storage must stay inside the temp directory.
+	 *
+	 * @param collRes the destination collection
+	 * @param name    the destination name received from the WebDAV client
+	 * @throws BadRequestException (HTTP 400) when the name or the temp target is not valid
 	 */
-	public void moveTo(CollectionResource collRes, String name) {
+	public void moveTo(CollectionResource collRes, String name) throws BadRequestException {
+		DotWebdavHelper.requirePlainSegment(this, name);
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(collRes instanceof TempFolderResourceImpl){
 			TempFolderResourceImpl tr = (TempFolderResourceImpl)collRes;
+			final File dest = dotDavHelper.resolveTempChild(this, tr.getFolder(), name);
 			try {
-				File dest = new File(tr.getFolder().getPath() + File.separator + name);
 				FileUtil.copyDirectory(folder, dest);
 				FileUtil.deltree(folder, true);
 			} catch (Exception e) {
@@ -333,9 +360,23 @@ public class TempFolderResourceImpl implements FolderResource, LockableResource,
 		return (long)60;
 	}
 
+	/**
+	 * Creates a sub-folder named {@code name} and locks it. The lock interface only allows
+	 * {@link NotAuthorizedException}, so an invalid name is reported as a runtime error.
+	 *
+	 * @param name     the folder name received from the WebDAV client
+	 * @param timeout  the requested lock timeout
+	 * @param lockInfo the requested lock details
+	 * @return the lock token of the created folder
+	 * @throws NotAuthorizedException if the lock is not authorized
+	 */
 	public LockToken createAndLock(String name, LockTimeout timeout, LockInfo lockInfo)
 			throws NotAuthorizedException {
-		createCollection(name);
+		try {
+			createCollection(name);
+		} catch (BadRequestException e) {
+			throw new DotRuntimeException(e.getReason(), e);
+		}
 		return lock(timeout, lockInfo).getLockToken();
 	}
 

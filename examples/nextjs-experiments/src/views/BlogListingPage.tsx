@@ -2,12 +2,13 @@
 
 import { useEffect, useState } from 'react';
 
-import { useEditableDotCMSPage } from '@dotcms/react';
+import { DotCMSLayoutBody, useEditableDotCMSPage } from '@dotcms/react';
 
 import { dotCMSClient } from '@/lib/dotCMSClient';
 import { useDebounce } from '@/hooks/useDebounce';
 import Header from '@/components/header/Header';
 import BlogCard from '@/components/BlogCard';
+import { pageComponents } from '@/components/content-types';
 import type { Blog, PageExtraContent } from '@/types/content';
 
 interface SearchBarProps {
@@ -18,7 +19,7 @@ interface SearchBarProps {
 export function BlogListingPage(pageResponse: Parameters<typeof useEditableDotCMSPage>[0]) {
     // `useEditableDotCMSPage` returns undefined while the UVE is still resolving a
     // draft page, so default before destructuring — same guard as examples/nextjs.
-    const { content = {} } = useEditableDotCMSPage(pageResponse) ?? {};
+    const { pageAsset, content = {} } = useEditableDotCMSPage(pageResponse) ?? {};
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState<Blog[] | null>(null);
     const debouncedSearchQuery = useDebounce(searchQuery, 500);
@@ -71,14 +72,7 @@ export function BlogListingPage(pageResponse: Parameters<typeof useEditableDotCM
         <div className="flex flex-col gap-6 bg-slate-50">
             <Header navItems={navigation?.children} />
             <main className="container mx-auto px-4 py-8">
-                <div className="flex flex-col gap-4 mb-8">
-                    <h1 className="text-4xl font-bold text-center">Travel Blog</h1>
-                    <p className="text-gray-600 text-center">
-                        Get inspired to experience the world. Our writers will give you their
-                        first-hand stories and recommendations that will inspire, excite you, and
-                        help you make the best decisions for planning your next adventure.
-                    </p>
-                </div>
+                <DotCMSLayoutBody page={pageAsset} components={pageComponents} />
 
                 <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
 

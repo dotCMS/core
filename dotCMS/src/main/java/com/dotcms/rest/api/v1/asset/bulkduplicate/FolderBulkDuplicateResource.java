@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.asset.bulkduplicate;
 
+import com.dotcms.jobs.business.processor.JobQueueEntryPoint;
 import com.dotcms.rest.ResponseEntityFolderBulkDuplicateSubmitView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
@@ -64,6 +65,7 @@ public class FolderBulkDuplicateResource {
      */
     @POST
     @Path("/folders/_bulkduplicate")
+    @JobQueueEntryPoint(FolderBulkDuplicateHelper.QUEUE_NAME)
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)

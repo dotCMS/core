@@ -444,6 +444,102 @@ public class URLMapAPIImplTest {
     }
 
     /**
+     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: a published contentlet whose slug sorts between "aaa" and "zzz", requested with
+     * slugs that use {@code <} / {@code >}. Before #37033 "<zzz" became the range {* TO zzz} and
+     * resolved that contentlet.
+     * ExpectedResult: none of the bracketed slugs resolve, in LIVE and PREVIEW mode, while the exact
+     * slug still does
+     */
+    @Test
+    public void processURLMap_slugWithAngleBrackets_mustNotBecomeARangeQuery()
+            throws DotDataException, DotSecurityException {
+        final String newsPatternPrefix = TEST_PATTERN + System.currentTimeMillis() + "/";
+        final String urlTitle = "mmm-" + System.currentTimeMillis();
+        ContentletDataGen.publish(
+                createURLMapperContentType(newsPatternPrefix, new Date(), null, urlTitle));
+
+        for (final PageMode mode : List.of(PageMode.LIVE, PageMode.PREVIEW_MODE)) {
+            // Positive control: without it, the empty results below would prove nothing
+            assertTrue("Exact slug must resolve in " + mode, urlMapAPI.processURLMap(
+                    getUrlMapContext(systemUser, host, newsPatternPrefix + urlTitle, mode)).isPresent());
+
+            for (final String slug : List.of("<zzz", "<=zzz", ">aaa", ">=aaa", "<zzz>",
+                    "<" + urlTitle + "x>", "<", ">", "<>")) {
+                assertFalse(String.format("Slug [%s] must not resolve in %s", slug, mode),
+                        urlMapAPI.processURLMap(getUrlMapContext(systemUser, host,
+                                newsPatternPrefix + slug, mode)).isPresent());
+            }
+        }
+    }
+
+    /**
+     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: the published slug followed by each other query_string reserved character
+     * (unescaped, "*" or "~" would turn it into a wildcard or fuzzy match on that slug)
+     * ExpectedResult: nothing resolves and no exception is thrown, in LIVE and PREVIEW mode
+     */
+    @Test
+    public void processURLMap_slugWithReservedCharacters_mustNotResolve()
+            throws DotDataException, DotSecurityException {
+        final String newsPatternPrefix = TEST_PATTERN + System.currentTimeMillis() + "/";
+        final String urlTitle = "mmm-" + System.currentTimeMillis();
+        ContentletDataGen.publish(
+                createURLMapperContentType(newsPatternPrefix, new Date(), null, urlTitle));
+
+        for (final PageMode mode : List.of(PageMode.LIVE, PageMode.PREVIEW_MODE)) {
+            for (final String reserved : List.of("[", "]", "{", "}", "+", "-", ":", "!", "(", ")",
+                    "^", "\"", "~", "*", "?", "&", "|", "\\", "=")) {
+                assertFalse(String.format("Reserved [%s] must not resolve in %s", reserved, mode),
+                        urlMapAPI.processURLMap(getUrlMapContext(systemUser, host,
+                                newsPatternPrefix + urlTitle + reserved, mode)).isPresent());
+            }
+        }
+    }
+
+    /**
+     * methodToTest {@link URLMapAPIImpl#processURLMap(UrlMapContext)}
+     * Given Scenario: INTEGER and FLOAT URL map fields (the non-_dotRaw branch of buildFields) holding 2,
+     * requested with range-shaped slugs that 2 falls inside
+     * ExpectedResult: none resolve, while the exact value does
+     */
+    @Test
+    public void processURLMap_numericSlugWithAngleBrackets_mustNotBecomeARangeQuery()
+            throws DotDataException, DotSecurityException {
+        for (final DataTypes dataType : List.of(DataTypes.INTEGER, DataTypes.FLOAT)) {
+            final String patternPrefix = dataType.name().toLowerCase() + TEST_PATTERN
+                    + System.currentTimeMillis() + "/";
+            final Field field = new FieldDataGen().dataType(dataType).next();
+            final ContentType contentType = new ContentTypeDataGen()
+                    .field(field)
+                    .detailPage(detailPage1.getIdentifier())
+                    .urlMapPattern(patternPrefix + "{" + field.variable() + "}")
+                    .nextPersisted();
+            // Not a ternary: "cond ? 2 : 2f" promotes both branches to float
+            final Object value;
+            if (DataTypes.INTEGER == dataType) {
+                value = 2;
+            } else {
+                value = 2f;
+            }
+            new ContentletDataGen(contentType.id())
+                    .setProperty(field.variable(), value)
+                    .languageId(1)
+                    .host(host)
+                    .nextPersisted();
+
+            assertTrue("Exact value must resolve for " + dataType, urlMapAPI.processURLMap(
+                    getUrlMapContext(systemUser, host, patternPrefix + value)).isPresent());
+
+            for (final String slug : List.of("<5", ">1", "<5>")) {
+                assertFalse(String.format("Slug [%s] must not resolve for %s", slug, dataType),
+                        urlMapAPI.processURLMap(getUrlMapContext(systemUser, host,
+                                patternPrefix + slug)).isPresent());
+            }
+        }
+    }
+
+    /**
      * methodToTest {@link URLMapAPIImpl#isUrlPattern(UrlMapContext)}
      * Given Scenario: Request a URL with the api prefix
      * ExpectedResult: Should return false, even when the Content Type and the Content exists

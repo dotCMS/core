@@ -78,6 +78,9 @@ import org.junit.runner.RunWith;
 
 @RunWith(DataProviderRunner.class)
 public class ContentToolTest extends IntegrationTestBase {
+
+    @org.junit.Rule
+    public final com.dotcms.junit.SystemUserScopeRule systemUserScope = new com.dotcms.junit.SystemUserScopeRule();
     public static final String QUERY_BY_STRUCTURE_NAME = "+structureName:%s";
     public static final String SYS_PUBLISH_DATE = "sysPublishDate";
     public static final String SYS_EXPIRE_DATE = "sysExpireDate";

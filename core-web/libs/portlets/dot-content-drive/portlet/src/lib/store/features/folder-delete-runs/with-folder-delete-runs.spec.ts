@@ -1,13 +1,12 @@
 import { signalStore, signalStoreFeature, type, withComputed, withState } from '@ngrx/signals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
-import { of, Subject, throwError } from 'rxjs';
+import { Subject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { computed } from '@angular/core';
 
 import {
     DotEventsSocket,
-    DotFolderBulkDeleteService,
     DotHttpErrorManagerService,
     DotSystemEventType
 } from '@dotcms/data-access';
@@ -137,7 +136,6 @@ describe('withFolderDeleteRuns', () => {
     let spectator: SpectatorService<InstanceType<typeof store>>;
     let instance: InstanceType<typeof store>;
 
-    const readActiveRuns = vi.fn();
     const handle = vi.fn();
 
     /**
@@ -155,7 +153,6 @@ describe('withFolderDeleteRuns', () => {
     const createService = createServiceFactory({
         service: store,
         providers: [
-            mockProvider(DotFolderBulkDeleteService, { readActiveRuns }),
             mockProvider(DotHttpErrorManagerService, { handle }),
             mockProvider(DotEventsSocket, {
                 // Routed by type rather than "started or everything else": a catch-all put the
@@ -186,14 +183,13 @@ describe('withFolderDeleteRuns', () => {
         startedEvents = new Subject<DotFolderDeleteAnnouncementEvent>();
         finishedEvents = new Subject<DotFolderDeleteAnnouncementEvent>();
         completedEvents = new Subject<DotFolderBulkDeleteCompletedEvent>();
-        readActiveRuns.mockReturnValue(of(active));
         spectator = createService();
         instance = spectator.service;
-        instance.establishInFlightFolders();
+        // What the root store does on load with the queue's in-flight runs.
+        instance.applyInFlightFolders(active);
     };
 
     beforeEach(() => {
-        readActiveRuns.mockReset();
         handle.mockReset();
     });
 
@@ -224,21 +220,6 @@ describe('withFolderDeleteRuns', () => {
             expect(instance.folderDeleteRunsEstablished()).toBe(true);
         });
 
-        it('should degrade to nothing marked when the read fails', () => {
-            // The listing still renders and stays usable, and the author sees no error about an
-            // action they never took (FR-022, SC-010).
-            startedEvents = new Subject<DotFolderDeleteAnnouncementEvent>();
-            finishedEvents = new Subject<DotFolderDeleteAnnouncementEvent>();
-            readActiveRuns.mockReturnValue(throwError(() => new Error('boom')));
-            spectator = createService();
-            instance = spectator.service;
-
-            instance.establishInFlightFolders();
-
-            expect(instance.inFlightFolderPaths()).toEqual([]);
-            expect(handle).not.toHaveBeenCalled();
-        });
-
         it('should re-establish from the server rather than inherit what it was told', () => {
             // A run whose process dies never announces that it ended. A client listening only to
             // announcements would mark that folder indefinitely with nothing to correct it, so the
@@ -246,8 +227,7 @@ describe('withFolderDeleteRuns', () => {
             build([run('r1', [PATH_A])]);
             expect(instance.inFlightFolderPaths()).toEqual([REF_A]);
 
-            readActiveRuns.mockReturnValue(of([]));
-            instance.establishInFlightFolders();
+            instance.applyInFlightFolders([]);
 
             expect(instance.inFlightFolderPaths()).toEqual([]);
         });
@@ -451,7 +431,6 @@ describe('withFolderDeleteRuns', () => {
         const createSystemHostService = createServiceFactory({
             service: systemHostStore,
             providers: [
-                mockProvider(DotFolderBulkDeleteService, { readActiveRuns }),
                 mockProvider(DotHttpErrorManagerService, { handle }),
                 mockProvider(DotEventsSocket, {
                     on: () => new Subject<DotFolderDeleteAnnouncementEvent>().asObservable()
@@ -460,9 +439,8 @@ describe('withFolderDeleteRuns', () => {
         });
 
         it("should resolve rows against System Host, not the switcher's site", () => {
-            readActiveRuns.mockReturnValue(of([run('r1', [`//${SYSTEM_HOST_ID}${ROW_A}`])]));
             const systemHostInstance = createSystemHostService().service;
-            systemHostInstance.establishInFlightFolders();
+            systemHostInstance.applyInFlightFolders([run('r1', [`//${SYSTEM_HOST_ID}${ROW_A}`])]);
 
             expect(systemHostInstance.inFlightFolderKeys().sort()).toEqual(['id-a', 'inode-a']);
         });

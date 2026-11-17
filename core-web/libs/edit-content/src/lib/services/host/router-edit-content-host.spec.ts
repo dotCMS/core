@@ -126,6 +126,18 @@ describe('RouterEditContentHost', () => {
             });
         });
 
+        // The full-page editor keeps today's behavior: a new content starts in the default
+        // language, whatever the URL carries (#37759, FR-003 applies to Content Drive's panel only).
+        it('never carries a starting language', () => {
+            (
+                router as unknown as { routerState: { snapshot: { root: ActivatedRouteSnapshot } } }
+            ).routerState.snapshot.root = routeTree([
+                { params: { contentType: 'Blog' }, queryParams: { languageId: '2' } }
+            ]);
+
+            expect(host.resolveIdentity().languageId).toBeUndefined();
+        });
+
         it('walks firstChild down to the leaf route (nested routes)', () => {
             (
                 router as unknown as { routerState: { snapshot: { root: ActivatedRouteSnapshot } } }

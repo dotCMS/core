@@ -50,6 +50,35 @@ public class AuthenticationResourceTest extends UnitTestBase {
 	}
 
     @Test
+    public void testLoginUserExposesSessionLocaleWithoutChangingProfiles() throws Exception {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpSession session = mock(HttpSession.class);
+        final AuthenticationHelper helper = mock(AuthenticationHelper.class);
+        final Map<String, Map<String, Object>> users = Map.of(
+                "user", Map.of("languageId", "en_US"),
+                "loginAsUser", Map.of("languageId", "de_DE"));
+        when(helper.getUsers(request)).thenReturn(users);
+        when(request.getSession(false)).thenReturn(session);
+        when(session.getAttribute(com.dotcms.repackage.org.apache.struts.Globals.LOCALE_KEY))
+                .thenReturn(new java.util.Locale("es", "ES"));
+        final AuthenticationResource resource = new AuthenticationResource(
+                mock(LoginServiceAPI.class), mock(UserLocalManager.class), ResponseUtil.INSTANCE, helper);
+
+        final ResponseEntitySessionUsersView view =
+                (ResponseEntitySessionUsersView) resource.getLoginUser(request).getEntity();
+        assertEquals("es_ES", view.getSessionLanguageId());
+        assertEquals(users, view.getEntity());
+
+        when(session.getAttribute(com.dotcms.repackage.org.apache.struts.Globals.LOCALE_KEY)).thenReturn(null);
+        assertNull(((ResponseEntitySessionUsersView) resource.getLoginUser(request).getEntity())
+                .getSessionLanguageId());
+        when(request.getSession(false)).thenReturn(null);
+        assertNull(((ResponseEntitySessionUsersView) resource.getLoginUser(request).getEntity())
+                .getSessionLanguageId());
+        org.mockito.Mockito.verify(request, org.mockito.Mockito.never()).getSession();
+    }
+
+    @Test
     public void testEmptyParameter() throws JSONException{
 
         try {

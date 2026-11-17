@@ -5,6 +5,7 @@ import { vi } from 'vitest';
 import {
     DotCurrentUserService,
     DotEventsSocket,
+    DotMessageService,
     DotSiteService,
     DotSystemConfigService
 } from '@dotcms/data-access';
@@ -33,6 +34,7 @@ describe('GlobalStore', () => {
     const createService = createServiceFactory({
         service: GlobalStore,
         providers: [
+            mockProvider(DotMessageService, { init: vi.fn().mockReturnValue(of(void 0)) }),
             mockProvider(DotCurrentUserService, {
                 getCurrentUser: vi.fn().mockReturnValue(of(mockCurrentUser))
             }),
@@ -40,9 +42,7 @@ describe('GlobalStore', () => {
                 getCurrentSite: vi.fn().mockReturnValue(of(null)),
                 switchSite: vi.fn().mockReturnValue(of({} as DotSite))
             }),
-            // withSystem's onInit pipes getSystemConfig(); a bare mockProvider returns
-            // undefined and the feature dereferences it. null is the feature's own
-            // initial systemConfig, so the state is unchanged.
+            // System configuration loads with the authenticated session.
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: vi.fn().mockReturnValue(of(null))
             }),

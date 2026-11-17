@@ -9,7 +9,7 @@
 # ─────────────────────────────────────────────────────────────
 # All deployments use environment='manual' (fixed). Tags follow the standard pattern:
 #
-#   manual[_{suffix}]          ← mutable base tag  (e.g., manual, manual_java25)
+#   manual[_{suffix}]          ← mutable base tag  (e.g., manual, manual_java-25)
 #   manual[_{suffix}]_{sha}    ← immutable, always created
 #   manual[_{suffix}]_{ref}    ← mutable alias, ref-derived (when ref is not protected)
 #   {custom_tag}               ← optional exact alias chosen by the developer
@@ -22,7 +22,7 @@
 #
 # ref-derived alias format: manual[_{suffix}]_{sanitized-ref}
 #   ref=issue-33882-primeng, no java  → manual_issue-33882-primeng
-#   ref=issue-33882-primeng, java25   → manual_issue-33882-primeng_java25
+#   ref=issue-33882-primeng, java-25  → manual_issue-33882-primeng_java-25
 #   ref=main, release-*, v[0-9]*      → no alias (protected refs)
 #
 # version input is for Maven artifact isolation ONLY – does NOT affect Docker tags.
@@ -51,11 +51,11 @@
 # JAVA VARIANT PATTERN:
 #   ref:          issue-33865-java-25-part2
 #   java_version: 25.0.2-ms
-#   custom_tag:   java25-testing
-#   Result: dotcms/dotcms:manual_java25  +  dotcms/dotcms:manual_issue-33865-java-25-part2_java25
-#           + dotcms/dotcms:java25-testing
+#   custom_tag:   java-25-testing
+#   Result: dotcms/dotcms:manual_java-25  +  dotcms/dotcms:manual_issue-33865-java-25-part2_java-25
+#           + dotcms/dotcms:java-25-testing
 #   -OR- without custom_tag:
-#   Result: dotcms/dotcms:manual_java25  +  dotcms/dotcms:manual_issue-33865-java-25-part2_java25
+#   Result: dotcms/dotcms:manual_java-25  +  dotcms/dotcms:manual_issue-33865-java-25-part2_java-25
 #
 # LTS/HOTFIX PATTERN – release refs are protected (no auto-alias):
 #   ref: release-24.12.27_lts
@@ -78,7 +78,7 @@ on:
         type: string
         default: ''
       custom_tag:
-        description: 'Optional human-readable alias tag applied after the build (e.g., modernization, java25-testing). Creates dotcms/dotcms:{your-tag} pointing to the same image as the automatic tags. Leave empty to rely only on the automatic tags (e.g., manual, manual_issue-33882-primeng-update).'
+        description: 'Optional human-readable alias tag applied after the build (e.g., modernization, java-25-testing). Creates dotcms/dotcms:{your-tag} pointing to the same image as the automatic tags. Leave empty to rely only on the automatic tags (e.g., manual, manual_issue-33882-primeng-update).'
         required: false
         type: string
       java_version:
@@ -97,7 +97,7 @@ on:
         type: string
         default: ''
       artifact_suffix:
-        description: 'Advanced: renames the Docker base-tag namespace AND Maven artifact namespace (e.g., java25-ms makes the base tag manual_java25-ms instead of manual_java25). Auto-derived from java_version when empty. This is unrelated to custom_tag — it does not add an extra alias tag, it changes the base tag itself. Leave empty unless you need a suffix distinct from what java_version derives.'
+        description: 'Advanced: renames the Docker base-tag namespace AND Maven artifact namespace (e.g., java-25-ms makes the base tag manual_java-25-ms instead of manual_java-25). Auto-derived from java_version when empty. This is unrelated to custom_tag — it does not add an extra alias tag, it changes the base tag itself. Leave empty unless you need a suffix distinct from what java_version derives.'
         required: false
         type: string
         default: ''
@@ -190,7 +190,7 @@ jobs:
             echo "✅ Using explicit artifact suffix: '${EFFECTIVE_ARTIFACT_SUFFIX}'"
           elif [[ -n "${JAVA_VERSION}" ]]; then
             JAVA_MAJOR=$(echo "${JAVA_VERSION}" | grep -oE '^[0-9]+')
-            EFFECTIVE_ARTIFACT_SUFFIX="java${JAVA_MAJOR}"
+            EFFECTIVE_ARTIFACT_SUFFIX="java-${JAVA_MAJOR}"
             echo "ℹ️  Artifact suffix derived from java_version: '${EFFECTIVE_ARTIFACT_SUFFIX}'"
           else
             EFFECTIVE_ARTIFACT_SUFFIX=""
@@ -200,7 +200,7 @@ jobs:
 
           # Compute ref-derived tag identifier for build discoverability.
           # This is passed to the deployment phase as tag-identifier, which creates
-          # manual[_{suffix}]_{identifier} (e.g., manual_issue-33882 or manual_java25_issue-33882).
+          # manual[_{suffix}]_{identifier} (e.g., manual_issue-33882 or manual_java-25_issue-33882).
           # Protected refs (main, master, release-*, v[0-9]*) are skipped to avoid overwriting official images.
           # Sanitize: replace / with -, strip invalid Docker tag chars, cap at 100 chars
           if [[ "${REF}" == "main" || "${REF}" == "master" ]]; then
@@ -267,7 +267,7 @@ jobs:
 
   # Deployment - standard deployment phase
   # Primary Docker tags (from deploy-docker action):
-  #   manual[_{suffix}]        ← mutable base tag  (e.g., manual, manual_java25)
+  #   manual[_{suffix}]        ← mutable base tag  (e.g., manual, manual_java-25)
   #   manual[_{suffix}]_{sha}  ← immutable
   # Alias tags (pushed after build):
   #   manual[_{suffix}]_{ref}  ← mutable, ref-derived (when effective_ref_tag is set)

@@ -20,7 +20,7 @@ const ROLE_ID_UUID =
  * Permissions tab hosts an iframe wrapping the existing Dojo permissions UI.
  *
  * Interim per epic #36909 — the Angular re-implementation of the
- * permissions matrix is out of scope for this Beta. The wrapper JSP
+ * permissions matrix is out of scope for this portlet. The wrapper JSP
  * (`view_role_permissions_wrapper.jsp`) is intentionally thin: it embeds
  * only the `rolePermissionsWrapper` div and boots the existing Dojo /
  * DWR code path. Swapping this iframe for a native Angular component

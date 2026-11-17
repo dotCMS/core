@@ -9,6 +9,7 @@ import { vi } from 'vitest';
 
 import { By } from '@angular/platform-browser';
 
+import { Popover } from 'primeng/popover';
 import { Tooltip } from 'primeng/tooltip';
 import { ZIndexUtils } from 'primeng/utils';
 
@@ -120,11 +121,15 @@ describe('DotContentDriveSearchInputComponent', () => {
             );
         });
 
-        it('should start on All Fields when nothing is stored', () => {
+        it('should start on Title when nothing is stored', () => {
+            // Title is the default (search box cleanup on #37062): it is what an author typing a
+            // name expects, and the cheaper search.
             withScope(undefined);
             spectator.detectChanges();
 
-            expect(spectator.component['$searchScope']()).toBe('ALL_FIELDS');
+            expect(spectator.query(byTestId('search-scope-active'))?.textContent?.trim()).toBe(
+                'content-drive.search.scope.title'
+            );
         });
 
         it('should read the stored scope when one is set', () => {
@@ -154,10 +159,16 @@ describe('DotContentDriveSearchInputComponent', () => {
         it('should record a newly chosen scope', () => {
             withScope(undefined);
             spectator.detectChanges();
+            spectator.click(byTestId('search-scope-trigger'));
+            spectator.detectChanges();
 
-            spectator.component['onScopeChange']('TITLE');
+            spectator.triggerEventHandler(
+                '[data-testid="search-scope-panel"]',
+                'ngModelChange',
+                'ALL_FIELDS'
+            );
 
-            expect(store.setSearchScope).toHaveBeenCalledWith('TITLE');
+            expect(store.setSearchScope).toHaveBeenCalledWith('ALL_FIELDS');
         });
 
         it('should ignore re-selecting the scope that is already active', () => {
@@ -234,6 +245,88 @@ describe('DotContentDriveSearchInputComponent', () => {
             const contents = tooltips.map((tooltip) => tooltip.content);
 
             expect(new Set(contents).size).toBe(2);
+        });
+    });
+
+    /**
+     * An option's explanation must not outlive the panel it explains (search box cleanup on
+     * #37062). Hovering an option and then choosing it, or closing the panel, left its tooltip
+     * floating over the page.
+     */
+    describe('scope option tooltips', () => {
+        const openPanelAndHover = () => {
+            spectator.detectChanges();
+            spectator.click(byTestId('search-scope-trigger'));
+            spectator.detectChanges();
+
+            // A native event: Spectator's `dispatchMouseEvent` calls `initMouseEvent`, which this
+            // DOM does not implement. Looked up on the document because the panel renders in an
+            // overlay outside the component.
+            // Asserted on both sides: without an option to hover, or a tooltip it raised, the
+            // tests below would find no tooltip for a reason that proves nothing.
+            expect(option()).toBeTruthy();
+            option()?.dispatchEvent(new MouseEvent('mouseenter'));
+            vi.runAllTimers();
+            spectator.detectChanges();
+            expect(tooltipOnPage()).toBeTruthy();
+        };
+
+        const option = () =>
+            document.querySelector<HTMLElement>('[data-testid="search-scope-option-ALL_FIELDS"]');
+
+        // By PrimeNG's class: the tooltip is an overlay PrimeNG appends to the page itself, so it
+        // cannot carry a test id of ours.
+        const tooltipOnPage = () => document.querySelector('.p-tooltip');
+
+        beforeEach(() => vi.useFakeTimers());
+
+        afterEach(() => vi.useRealTimers());
+
+        it('should show the explanation while an option is hovered', () => {
+            openPanelAndHover();
+
+            expect(tooltipOnPage()).toBeTruthy();
+        });
+
+        it('should leave no tooltip behind once an option is chosen', () => {
+            openPanelAndHover();
+
+            option()?.click();
+            vi.runAllTimers();
+            spectator.detectChanges();
+
+            expect(tooltipOnPage()).toBeNull();
+        });
+
+        it('should leave no tooltip behind when the panel is closed with Escape', () => {
+            openPanelAndHover();
+
+            // Native for the same reason as the hover: no `initKeyboardEvent` in this DOM.
+            document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', code: 'Escape' }));
+            vi.runAllTimers();
+            spectator.detectChanges();
+
+            expect(tooltipOnPage()).toBeNull();
+        });
+
+        it('should leave no tooltip behind when the panel is closed by clicking outside it', async () => {
+            // The panel only hears a click outside it once its enter motion has started, which is
+            // where it binds that listener and then emits `onShow`. Clicking before then closes
+            // nothing, and the test would be about timing rather than the tooltips.
+            let listening = false;
+            spectator.query(Popover)?.onShow.subscribe(() => (listening = true));
+
+            openPanelAndHover();
+            await vi.waitFor(() => {
+                spectator.detectChanges();
+                expect(listening).toBe(true);
+            });
+
+            spectator.click(document.body);
+            vi.runAllTimers();
+            spectator.detectChanges();
+
+            expect(tooltipOnPage()).toBeNull();
         });
     });
 

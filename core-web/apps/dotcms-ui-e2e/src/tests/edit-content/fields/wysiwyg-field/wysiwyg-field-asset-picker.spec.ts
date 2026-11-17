@@ -40,38 +40,31 @@ test.beforeEach(async ({ request }) => {
     });
     contentTypeVariable = contentType.variable;
 
-    // Two assets on purpose: the image is what the picker must offer, the text file is what its
-    // mimetype restriction must hide. Seeded immediately before the test and named uniquely, so they
-    // are the newest rows in the picker's default `modDate:desc` listing.
+    // The image is what the picker must offer. Seeded immediately before the test and named
+    // uniquely, so it is the newest row in the picker's default `modDate:desc` listing. The one test
+    // that needs a non-image seeds its own: every asset costs a create here and a destroy in
+    // teardown, and both count against the test's timeout.
     const site = await getDefaultSite(request);
-    const suffix = uniqueSuffix();
 
     seededImage = await createDotAsset(
         request,
-        createTestPngFile(`e2e-wysiwyg-${suffix}.png`),
-        site.identifier
-    );
-    seededTextFile = await createDotAsset(
-        request,
-        createTestTextFile(`e2e-wysiwyg-${suffix}.txt`),
+        createTestPngFile(`e2e-wysiwyg-${uniqueSuffix()}.png`),
         site.identifier
     );
 });
 
 test.afterEach(async ({ request }) => {
-    if (contentType) {
-        await deleteContentType(request, contentType.id);
-        contentType = null;
-    }
-
     const identifiers = [seededImage, seededTextFile]
         .filter((asset): asset is Contentlet => !!asset)
         .map((asset) => asset.identifier);
 
-    if (identifiers.length) {
-        await deleteContentlets(request, identifiers);
-    }
+    // Independent of one another, so they run together rather than one after the other.
+    await Promise.all([
+        contentType ? deleteContentType(request, contentType.id) : undefined,
+        ...identifiers.map((identifier) => deleteContentlets(request, [identifier]))
+    ]);
 
+    contentType = null;
     seededImage = null;
     seededTextFile = null;
 });
@@ -127,9 +120,17 @@ test.describe('WYSIWYG — insert an image through the AssetPicker', () => {
         await picker.expectNoRowActions();
     });
 
-    test('picker for the WYSIWYG offers images but not other files', async ({ page }) => {
+    test('picker for the WYSIWYG offers images but not other files', async ({ page, request }) => {
         const image = seededImage as Contentlet;
-        const textFile = seededTextFile as Contentlet;
+        // What the picker's mimetype restriction must hide, seeded after the image so it is the
+        // newest row of all.
+        const site = await getDefaultSite(request);
+        seededTextFile = await createDotAsset(
+            request,
+            createTestTextFile(`e2e-wysiwyg-${uniqueSuffix()}.txt`),
+            site.identifier
+        );
+        const textFile = seededTextFile;
 
         const formPage = new NewEditContentFormPage(page);
         await formPage.goToNew(contentTypeVariable);

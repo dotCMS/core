@@ -340,6 +340,20 @@ describe('DotContentletService', () => {
             req.flush({ entity: contentTypeExpected });
         }));
 
+    // The id or variable can come from a URL (Content Drive's `createContent`), so it is encoded
+    // into the path rather than allowed to rewrite it (Constitution III, #37759 T111).
+    it('should encode the id or variable into the path', () => {
+        dotContentTypeService.getContentType('a/b c').subscribe();
+
+        // Collected and flushed whatever their URL, so a wrong one fails only this test.
+        const requests = httpMock.match(() => true);
+        requests.forEach((request) => request.flush({ entity: {} }));
+
+        expect(requests.map(({ request }) => request.url)).toEqual([
+            '/api/v1/contenttype/id/a%2Fb%20c'
+        ]);
+    });
+
     describe('getContentTypeWithRender', () => {
         it('should get content type with render by id', () =>
             new Promise<void>((done) => {

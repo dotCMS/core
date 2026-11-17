@@ -15,6 +15,7 @@ import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
+    DotActionUrlService,
     DotAnalyticsTrackerService,
     DotContentTypeService,
     DotContentletLockerService,
@@ -40,7 +41,6 @@ import {
 
 import { DEBOUNCE_TIME, EditEmaLayoutComponent } from './edit-ema-layout.component';
 
-import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { PERSONA_KEY } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';

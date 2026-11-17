@@ -80,6 +80,11 @@ export class ContentDriveTree {
         await responsePromise;
     }
 
+    /** The folder's row is on screen, not merely somewhere in the tree. */
+    async expectFolderInView(name: string) {
+        await expect(this.folderLabel(name)).toBeInViewport({ timeout: 10000 });
+    }
+
     async expectFolderSelected(name: string) {
         const node = this.root.locator('.p-tree-node-content.p-tree-node-selected', {
             hasText: name

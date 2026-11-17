@@ -1,0 +1,84 @@
+import { DotCMSClickTracker } from './tracker';
+
+import { setupPluginCleanup } from '../contentlets/utils';
+import { createPluginLogger, isBrowser } from '../pipeline/utils';
+
+import type { ClickSubscription } from './tracker';
+import type { PipelineConfig } from '../pipeline/models';
+import type { AnalyticsInstance } from 'analytics';
+
+/**
+ * Clicks plugin of the events pipeline.
+ * Handles automatic tracking of clicks on content elements.
+ *
+ * This plugin initializes the click tracker which:
+ * - Listens for clicks once, on the document, in the capture phase
+ * - Reports clicks on <a> or <button> elements inside a contentlet, the innermost one
+ * - Extracts contentlet data, its position when clicked, and element metadata
+ * - Throttles clicks per contentlet to prevent duplicates
+ * - Fires 'content_click' events via subscription callback
+ *
+ * Note: This plugin is only registered if config.clicks is enabled.
+ * See getEnhancedTrackingPlugins() for conditional loading logic.
+ *
+ * @param {PipelineConfig} config - Configuration with clicks settings
+ * @returns {Object} Plugin object with lifecycle methods
+ */
+export const clicksPlugin = (config: PipelineConfig) => {
+    let clickTracker: DotCMSClickTracker | null = null;
+    let subscription: ClickSubscription | null = null;
+    const logger = createPluginLogger('Click', config);
+
+    return {
+        name: 'dot-events-clicks',
+
+        /**
+         * Initialize click tracking
+         * Called when Analytics.js initializes the plugin with instance context
+         * @param instance - Analytics.js instance with track method
+         */
+        initialize: ({ instance }: { instance: AnalyticsInstance }) => {
+            // Create and initialize tracker
+            clickTracker = new DotCMSClickTracker(config);
+
+            // Subscribe to click events
+            subscription = clickTracker.onClick((eventName, payload) => {
+                instance.track(eventName, payload);
+            });
+
+            // Start tracking
+            clickTracker.initialize();
+
+            logger.info('Click tracking plugin initialized');
+
+            return Promise.resolve();
+        },
+
+        /**
+         * Setup cleanup handlers when plugin is loaded
+         * Called after Analytics.js completes plugin loading
+         */
+        loaded: () => {
+            if (isBrowser() && clickTracker) {
+                const cleanup = () => {
+                    if (subscription) {
+                        subscription.unsubscribe();
+                        subscription = null;
+                    }
+
+                    if (clickTracker) {
+                        clickTracker.cleanup();
+                        clickTracker = null;
+
+                        logger.info('Click tracking cleaned up on page unload');
+                    }
+                };
+
+                // Cleanup on page unload
+                setupPluginCleanup(cleanup);
+            }
+
+            return true;
+        }
+    };
+};

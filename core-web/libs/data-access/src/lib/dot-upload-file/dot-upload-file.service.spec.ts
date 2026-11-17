@@ -9,7 +9,11 @@ import { firstValueFrom, of } from 'rxjs';
 
 import { HttpEventType } from '@angular/common/http';
 
-import { DotBulkUploadForm, DotBulkUploadSubmitResponse } from '@dotcms/dotcms-models';
+import {
+    DotBulkUploadActiveRun,
+    DotBulkUploadForm,
+    DotBulkUploadSubmitResponse
+} from '@dotcms/dotcms-models';
 
 import { DotUploadFileService } from './dot-upload-file.service';
 
@@ -286,6 +290,71 @@ describe('DotUploadFileService', () => {
             spectator.service.uploadFilesByBaseType([], form).subscribe({ error: () => undefined });
 
             spectator.controller.expectNone(SUBMIT_URL);
+        });
+    });
+
+    /**
+     * The batches still being processed when Content Drive opens, so a reload can put their status
+     * back (#37062). Filtered to what is genuinely in progress, as delete's are.
+     */
+    describe('readActiveUploads', () => {
+        // One large page: the listing pages at 20 by default and is not scoped to the reader, so
+        // other authors' runs could otherwise push this author's own past the first page.
+        const ACTIVE_URL = '/api/v1/jobs/assetBulkUpload/active?pageSize=100';
+
+        const flushJobs = (jobs: unknown[]): void => {
+            spectator.expectOne(ACTIVE_URL, HttpMethod.GET).flush({ entity: { jobs } });
+        };
+
+        it("should read the queue's active runs", () => {
+            spectator.service.readActiveUploads().subscribe();
+
+            spectator.expectOne(ACTIVE_URL, HttpMethod.GET);
+        });
+
+        it('should keep only batches that are genuinely in progress', () => {
+            let runs: DotBulkUploadActiveRun[] | undefined;
+            spectator.service.readActiveUploads().subscribe((result) => (runs = result));
+
+            flushJobs([
+                { id: 'running', state: 'RUNNING', parameters: { stagedFiles: [{}] } },
+                { id: 'failed', state: 'FAILED', parameters: { stagedFiles: [{}] } },
+                { id: 'done', state: 'SUCCESS', parameters: { stagedFiles: [{}] } }
+            ]);
+
+            expect(runs?.map((run) => run.id)).toEqual(['running']);
+        });
+
+        it('should unpack who submitted each batch, how many files it holds and as what', () => {
+            let runs: DotBulkUploadActiveRun[] | undefined;
+            spectator.service.readActiveUploads().subscribe((result) => (runs = result));
+
+            flushJobs([
+                {
+                    id: 'job-1',
+                    state: 'RUNNING',
+                    parameters: {
+                        userId: 'dotcms.org.1',
+                        baseType: 'DOTASSET',
+                        stagedFiles: [{ name: 'a.png' }, { name: 'b.png' }, { name: 'c.png' }]
+                    }
+                }
+            ]);
+
+            expect(runs).toEqual([
+                { id: 'job-1', userId: 'dotcms.org.1', fileCount: 3, baseType: 'DOTASSET' }
+            ]);
+        });
+
+        it('should answer with no batches when the listing cannot be read', () => {
+            let runs: DotBulkUploadActiveRun[] | undefined;
+            spectator.service.readActiveUploads().subscribe((result) => (runs = result));
+
+            spectator
+                .expectOne(ACTIVE_URL, HttpMethod.GET)
+                .flush('boom', { status: 500, statusText: 'Server Error' });
+
+            expect(runs).toEqual([]);
         });
     });
 });

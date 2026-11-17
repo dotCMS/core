@@ -1,5 +1,6 @@
 package com.dotcms.rest.exception.mapper;
 
+import com.fasterxml.jackson.core.JsonLocation;
 import com.fasterxml.jackson.core.JsonParseException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
@@ -16,11 +17,22 @@ import com.dotmarketing.util.Logger;
 @Provider
 public class JsonParseExceptionMapper implements ExceptionMapper<JsonParseException> {
 
+    /**
+     * Answers a request whose body is not valid JSON. The log line gives the position of the
+     * problem only; the body text is left out.
+     *
+     * @param exception the parse failure raised by Jackson
+     * @return a 400 response describing the problem
+     */
     @Override
-    public Response toResponse(JsonParseException exception)
+    public Response toResponse(final JsonParseException exception)
     {
         //Log into our logs first.
-        Logger.warn(this.getClass(), exception.getMessage(), exception);
+        final JsonLocation location = exception.getLocation();
+        Logger.warn(this.getClass(), "Rejected request: the body is not valid JSON"
+                + (location != null
+                        ? " (line " + location.getLineNr() + ", column " + location.getColumnNr() + ")"
+                        : ""));
 
         //Create the message.
         String message = exception.getMessage();

@@ -1,8 +1,10 @@
 package com.dotcms.experiments.business;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
@@ -67,13 +69,13 @@ public class ConfigExperimentUtilTest {
     /**
      * Method to test: {@link ConfigExperimentUtil#isExperimentEnabled()}
      * Given scenario: The entry-point switch {@code FEATURE_FLAG_EXPERIMENTS_PORTLET} is off — its
-     *   shipped default — while the kill-switch {@code FEATURE_FLAG_EXPERIMENTS} is at its own
-     *   default of {@code true}.
-     * Expected result: {@code isExperimentEnabled()} is {@code true}. The state #37005 ships by
-     *   default must leave experiments serving to visitors (FR-014, SC-003).
+     *   shipped default — while the kill-switch {@code FEATURE_FLAG_EXPERIMENTS} is explicitly on.
+     * Expected result: {@code isExperimentEnabled()} is {@code true}. Turning the portlet entry
+     *   point off must not take running experiments off the air.
      */
     @Test
     void isExperimentEnabled_entryPointSwitchOff_experimentsStillEnabled() {
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(true);  // explicit: default is now false
         mockedConfig.when(() -> Config.getBooleanProperty(
                 FeatureFlagName.FEATURE_FLAG_EXPERIMENTS_PORTLET, false)).thenReturn(false);
 
@@ -84,50 +86,115 @@ public class ConfigExperimentUtilTest {
     /**
      * Method to test: {@link ConfigExperimentUtil#notify(SystemTableUpdatedKeyEvent)}
      * Given scenario: An operator writes {@code FEATURE_FLAG_EXPERIMENTS_PORTLET} to the system
-     *   table. Because {@code notify} matches with {@code contains}, and the entry-point switch's
-     *   name is a superstring of the kill-switch's, that event reaches the kill-switch branch and
-     *   re-resolves it.
-     * Expected result: {@code isExperimentEnabled()} is still {@code true} — the re-resolution
-     *   reads {@code FEATURE_FLAG_EXPERIMENTS}, not the key that arrived in the event
-     *   (FR-014, FR-015a).
+     *   table. The kill-switch is explicitly set to {@code true} beforehand.
+     * Expected result: {@code isExperimentEnabled()} is still {@code true} — a write to the
+     *   portlet entry-point switch must not affect the kill-switch.
      *
-     * <p>This is the assertion that makes the substring coupling safe to leave in place. If
-     * {@code resolveFeatureFlag()} is ever changed to read the event's key, or the branch to
-     * assign from it, this fails.
+     * <p>With the live-toggle removed, {@code notify()} no longer has a branch for
+     *   {@code FEATURE_FLAG_EXPERIMENTS}, so the flag value is unchanged regardless of what Config
+     *   returns. The test therefore no longer relies on the substring-match coupling that existed
+     *   before the live-toggle was removed.
      */
     @Test
     void notify_experimentsPortletFlagEvent_leavesKillSwitchEnabled() {
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(true);  // explicit: default is now false
+
         final SystemTableUpdatedKeyEvent event = mock(SystemTableUpdatedKeyEvent.class);
         when(event.getKey()).thenReturn(FeatureFlagName.FEATURE_FLAG_EXPERIMENTS_PORTLET);
-        mockedConfig.when(() -> Config.getBooleanProperty(
-                FeatureFlagName.FEATURE_FLAG_EXPERIMENTS, true)).thenReturn(true);
-
         ConfigExperimentUtil.INSTANCE.notify(event);
 
         assertTrue(ConfigExperimentUtil.INSTANCE.isExperimentEnabled(),
                 "A system-table write to FEATURE_FLAG_EXPERIMENTS_PORTLET must not disable "
-                        + "experiments, even though notify() matches keys by substring");
+                        + "experiments");
     }
 
     /**
      * Method to test: {@link FeatureFlagName}
      * Given scenario: The two switch names are compared.
-     * Expected result: They are distinct properties, and the entry-point switch's name contains the
-     *   kill-switch's — the fact that makes {@code notify}'s substring match couple them.
-     *
-     * <p>Documents the coupling rather than asserting it away. If a future rename breaks the
-     * containment the coupling disappears, which is fine; this test then fails and points a reader
-     * at {@link #notify_experimentsPortletFlagEvent_leavesKillSwitchEnabled()}, which can be
-     * retired with it.
+     * Expected result: They are distinct properties. The entry-point switch's name contains the
+     *   kill-switch's as a substring — a historical coupling that is now harmless because the
+     *   {@code FEATURE_FLAG_EXPERIMENTS} branch was removed from {@code notify()}, making
+     *   live-toggle impossible regardless of substring matching.
      */
     @Test
     void featureFlagNames_entryPointSwitchIsDistinctButNameContainsKillSwitch() {
         assertTrue(!FeatureFlagName.FEATURE_FLAG_EXPERIMENTS_PORTLET.equals(
                         FeatureFlagName.FEATURE_FLAG_EXPERIMENTS),
-                "The entry-point switch must be a separate property from the kill-switch (FR-011a)");
+                "The entry-point switch must be a separate property from the kill-switch");
         assertTrue(FeatureFlagName.FEATURE_FLAG_EXPERIMENTS_PORTLET.contains(
                         FeatureFlagName.FEATURE_FLAG_EXPERIMENTS),
-                "If this no longer holds, notify()'s substring match no longer couples the two and "
-                        + "notify_experimentsPortletFlagEvent_leavesKillSwitchEnabled can be retired");
+                "Documented: the portlet switch name contains the kill-switch name as a substring");
+    }
+
+    /**
+     * Method to test: {@link ConfigExperimentUtil#isExperimentEnabled()} default resolution.
+     * Given scenario: {@code FEATURE_FLAG_EXPERIMENTS} is absent from the system config — the
+     *   mock returns the default argument passed to {@link com.dotmarketing.util.Config#getBooleanProperty}.
+     * Expected result: The resolved value is {@code false}. This pin-points the default changing
+     *   from {@code true} to {@code false}: before the change the invocation passed {@code true}
+     *   as the default and the mock returned {@code true}; after the change it passes {@code false}
+     *   and the mock returns {@code false}.
+     */
+    @Test
+    void resolveFeatureFlag_keyAbsentFromConfig_defaultIsFalse() throws Exception {
+        // The setUp mock returns inv.getArgument(1) — the default — for any getBooleanProperty.
+        // Use reflection to call the private resolveFeatureFlag() so we can assert its return
+        // value directly without relying on the singleton constructor's initialization order.
+        final java.lang.reflect.Method method =
+                ConfigExperimentUtil.class.getDeclaredMethod("resolveFeatureFlag");
+        method.setAccessible(true);
+        final boolean resolved = (boolean) method.invoke(ConfigExperimentUtil.INSTANCE);
+
+        assertFalse(resolved,
+                "FEATURE_FLAG_EXPERIMENTS default must be false when the key is absent from config");
+    }
+
+    /**
+     * Method to test: {@link ConfigExperimentUtil#notify(SystemTableUpdatedKeyEvent)}
+     * Given scenario: A system-table write arrives for the {@code FEATURE_FLAG_EXPERIMENTS} key.
+     *   Config is stubbed so that if re-resolution were to occur it would return {@code true}.
+     *   The current value of the flag is set to {@code false} before the event fires.
+     * Expected result: {@code isExperimentEnabled()} still returns {@code false} — the live-toggle
+     *   for {@code FEATURE_FLAG_EXPERIMENTS} has been removed, so {@code notify()} must not
+     *   re-resolve this flag regardless of what Config says.
+     */
+    @Test
+    void notify_featureFlagExperimentsKey_doesNotResolveFlag() {
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(false);
+
+        // If the FEATURE_FLAG_EXPERIMENTS branch were still in notify(), it would call
+        // resolveFeatureFlag() which reads Config and would land on true — changing the flag.
+        mockedConfig.when(() -> Config.getBooleanProperty(
+                eq(FeatureFlagName.FEATURE_FLAG_EXPERIMENTS), anyBoolean())).thenReturn(true);
+
+        final SystemTableUpdatedKeyEvent event = mock(SystemTableUpdatedKeyEvent.class);
+        when(event.getKey()).thenReturn(FeatureFlagName.FEATURE_FLAG_EXPERIMENTS);
+        ConfigExperimentUtil.INSTANCE.notify(event);
+
+        assertFalse(ConfigExperimentUtil.INSTANCE.isExperimentEnabled(),
+                "notify() with FEATURE_FLAG_EXPERIMENTS must not re-resolve the flag — live-toggle removed");
+    }
+
+    /**
+     * Method to test: {@link ConfigExperimentUtil#notify(SystemTableUpdatedKeyEvent)}
+     * Given scenario: A system-table write arrives for the {@code FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS} key.
+     *   Config is stubbed to return {@code true} for that key.
+     *   The current value is set to {@code false} before the event fires.
+     * Expected result: {@code isCaemExperimentResultsEnabled()} returns {@code true} — the live-toggle
+     *   for this flag must remain intact.
+     */
+    @Test
+    void notify_caemExperimentResultsKey_doesResolveFlag() {
+        ConfigExperimentUtil.INSTANCE.setCaemExperimentResultsEnabled(false);
+
+        mockedConfig.when(() -> Config.getBooleanProperty(
+                eq(FeatureFlagName.FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS), anyBoolean())).thenReturn(true);
+
+        final SystemTableUpdatedKeyEvent event = mock(SystemTableUpdatedKeyEvent.class);
+        when(event.getKey()).thenReturn(FeatureFlagName.FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS);
+        ConfigExperimentUtil.INSTANCE.notify(event);
+
+        assertTrue(ConfigExperimentUtil.INSTANCE.isCaemExperimentResultsEnabled(),
+                "notify() with FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS must still re-resolve the flag");
     }
 }

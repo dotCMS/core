@@ -3,6 +3,7 @@ import { type Page } from '@playwright/test';
 
 import { ContentDriveKeyboard } from './helpers/content-drive-keyboard';
 import { ContentDriveTree } from './helpers/content-drive-tree';
+import { reloadWhileBatchIsRunning } from './helpers/content-drive-upload-restore';
 
 import { type ContentDriveApiHelpers, expect, test } from '../../fixtures/content-drive.fixture';
 
@@ -131,6 +132,47 @@ test.describe('Content Drive Keyboard', () => {
         await adminPage.keyboard.press('/');
 
         await expect(drive.searchField).toBeFocused();
+    });
+
+    /**
+     * A toast is a notification, not a modal, so it must not take the shortcut away.
+     *
+     * The status toast stays up for as long as a batch runs, and the page also restores every
+     * running batch the user has, including ones started from another tab. Toasts join the same
+     * z-index stack as dialogs, so the shortcut read this toast as a dialog and stood down for the
+     * whole run (#37884). In CI, where every test uploads as the same admin, that left the search
+     * key dead on any page loaded while a sibling test's upload was running.
+     *
+     * Driven through the restore rather than the upload itself: choosing the files closes the
+     * upload-type popover, which is a real overlay until its leave animation ends, and a keypress
+     * racing it would test the popover instead of the toast. After a reload the toast is the only
+     * thing stacked, which is also the shape the CI failure had.
+     *
+     * The toast is asserted on both sides of the keypress, so the test cannot pass because the
+     * batch finished before the key arrived. The batch is sent from a second tab while the reloaded
+     * page's read of the queue is held (see the helper), because a batch started in this page and
+     * followed by a reload was often over before the reloaded page read the queue. Six files,
+     * because the outcomes spec counts on being the only one that sends eight.
+     */
+    test('reaches the search shortcut while an upload status is showing @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        const { drive } = await openSeededListing(adminPage, apiHelpers, testSuffix);
+
+        await reloadWhileBatchIsRunning(
+            adminPage,
+            seededFolder(testSuffix),
+            6,
+            `keys-${testSuffix}`
+        );
+        await drive.expectStatusToastContaining('Uploading 6 files');
+
+        await adminPage.keyboard.press('/');
+
+        await expect(drive.searchField).toBeFocused();
+        await drive.expectStatusToastContaining('Uploading 6 files');
     });
 
     /**

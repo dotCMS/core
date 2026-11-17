@@ -2,52 +2,27 @@
 
 ### Quick Start
 
-1. **Copy the example tool**:
-```bash
-   cp -r src/tools/_example-tool src/tools/your-tool-name
-```
+Tools are written once, in [`@dotcms/ai/tools`](../../libs/sdk/ai/README.md#ready-made-tools--dotcmsaitools), so every host — this server, a consumer's own MCP server, an agent — gets the same tool. This app only hosts them.
 
-2. **Follow the TODOs** in each file
+1. **Build the tool in the SDK.** The operation, its endpoint list, the definition and the export are covered in [`libs/sdk/ai/src/tools/README.md`](../../libs/sdk/ai/src/tools/README.md#adding-a-tool), along with what goes in each of `definitions/`, `operations/` and `toolkit/`.
 
-3. **Register in `main.ts`**:
+2. **Host it here** — `src/tools/your_tool.ts`:
 ```typescript
-   import { registerYourTools } from './tools/your-tool-name';
-   registerYourTools(server);
+   const { schema, metadata, handler } = xmcpTool(yourTool);
+   export { schema, metadata };
+   export default handler;
 ```
+   Then add `'your_tool'` to the expected list in `src/smoke/server-boot.spec.ts`.
 
-4. **Test it**:
+3. **Test it**:
 ```bash
-   yarn nx test mcp-server
+   pnpm nx test sdk-ai      # the operation and the tool
+   pnpm nx test mcp-server  # builds, boots the bundle, lists the tools
 ```
 
-### Do I Need a New Service?
+### Where Does the Logic Go?
 
-**Use existing services if:**
-- You're working with content types → `ContentTypeService`
-- You're creating/publishing/archiving content → `WorkflowService`
-- You're searching content → `SearchService`
-- You need site information → `SiteService`
-
-**Create a new service if:**
-- You need a dotCMS API endpoint that doesn't have a service yet
-- You're integrating with an external system (not dotCMS)
-
-### Creating a New Service
-
-If you need a new service:
-
-1. **Create service file** in `src/services/your-service.ts`
-2. **Extend AgnosticClient**:
-```typescript
-   export class YourService extends AgnosticClient {
-       // Your service gets automatic auth, logging, error handling
-   }
-```
-3. **Add Zod schemas** in `src/types/your-types.ts`
-4. **Add tests** in `src/services/your-service.spec.ts`
-5. **Then create your tool** using the tool template
-
-See existing services for patterns to follow.
+In the SDK — see the "Where does my code go?" table in [`libs/sdk/ai/src/tools/README.md`](../../libs/sdk/ai/src/tools/README.md#where-does-my-code-go). **Nothing** goes in `apps/mcp-server/src/tools/`: xmcp loads every module there as a tool at boot, so it holds the three-line adapters and nothing else. Errors are thrown, never formatted by hand — a tool's `execute` turns anything thrown into a `ToolFailure` with a `code` and a `retryable` flag.
 
 ### CONTEXT Framework Principles
 

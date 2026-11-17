@@ -188,7 +188,7 @@ public class AppDescriptorHelper {
 
         if (null == descriptor.getType()) {
             errors.add(String.format(
-                    "Param `%s`: is missing required field `type` (STRING|BOOL|SELECT|BUTTON|GENERATED_STRING|HEADING|INFO) .",
+                    "Param `%s`: is missing required field `type` (STRING|BOOL|SELECT|BUTTON|GENERATED_STRING|HEADING|INFO|JSON) .",
                     name));
             return errors;
         }
@@ -257,6 +257,18 @@ public class AppDescriptorHelper {
             errors.add(String.format(
                     "Value Param `%s` has a default value `%s` that isn't a string .",
                     name, descriptor.getValue()));
+        }
+
+        if (Type.JSON.equals(descriptor.getType())) {
+            if (!(descriptor.getValue() instanceof String)) {
+                errors.add(String.format(
+                        "Value Param `%s` has a default value `%s` that isn't a string .",
+                        name, descriptor.getValue()));
+            } else if (isSet((String) descriptor.getValue())
+                    && !AppsUtil.isValidJson((String) descriptor.getValue())) {
+                errors.add(String.format(
+                        "JSON Param `%s` has a default value that isn't valid JSON.", name));
+            }
         }
 
         if (Type.SELECT.equals(descriptor.getType())) {

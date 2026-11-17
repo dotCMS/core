@@ -99,7 +99,10 @@ each.
    at a file-style asset, **When** a client requests type information for both in one query,
    **Then** each reports the name of the specific content type it is, and the two differ.
 2. **Given** an asset of a customer-defined type, **When** a client requests type information,
-   **Then** the reported name is the customer's own type, not a generic asset label.
+   **Then** the reported name is the customer's own type, not a generic asset label. The one
+   exception is a type whose own field clashes with a general asset property from before that was
+   refused (FR-021): through asset fields its assets report `DotAssetPropertyClash` or
+   `FileAssetPropertyClash`, a name that says why.
 
 ---
 
@@ -288,18 +291,42 @@ and confirm they match the asset's own record.
   implementing it must agree on each shared property's type, so a customer `size` stored as text
   against the general `size` as a number would otherwise reject the **whole** schema and take every
   GraphQL query on the instance down with it. Therefore:
-  - A general property whose name any asset type on the instance defines with an incompatible type
-    is left off the asset field's shared description for that instance. Selecting it directly on
-    the asset field then fails validation with an error naming it — loud, never different data —
-    while the customer's own property keeps working through its type and the general value stays
-    reachable through the binary.
+  - A property of the **same type** as the general one is always allowed, and a whole-number
+    property counts as the same type as a numeric general one (`width`, `height`, `size`): it is
+    exposed as `Long`, the general property's type, so its type answers with the customer's value
+    and every other asset type keeps the property. *Why:* a whole-number field is an `Int`, so
+    under the first version of this rule every numeric `width`, `height` or `size` — common on
+    customer image types — counted as incompatible and removed the property from every asset type
+    on upgrade (QA report on #34540). The FileAsset type's own fields (`fileName`, `fileAsset`,
+    `metaData`, `showOnMenu`, `sortOrder`) are of the same type too, so the starter, copying a
+    content type and push publishing need no special case.
   - A **new** asset-type property whose variable is generated from its name MUST be steered away
     from an incompatible collision (a text property called "Size" gets `size1`), the same way
-    dotCMS already steers generated variables away from the general content properties. A variable
-    chosen explicitly is not changed; the build-time rule above covers it, together with data that
-    predates this feature.
+    dotCMS already steers generated variables away from the general content properties. The
+    steering is logged as a warning, naming the variable, the content type and both types, so an
+    administrator can tell why the field got a suffix.
+  - A **new** asset-type property whose variable is **chosen explicitly** (API, CLI, push
+    publishing) with an incompatible type MUST be refused with a 400 that names the property's
+    type and the field's. *Why:* QA on this feature showed that accepting it removed the property
+    from every asset type on the instance and failed every query that selected it; renaming it
+    to `size1` instead would silently lose the data of whoever keeps sending `size`. A refusal is
+    loud and tells the caller exactly what to change. Saving a property that already exists by its
+    variable is an update and keeps working.
+  - Data that predates this rule can still hold an incompatible property. The content type that
+    holds it — **that type alone** — is left out of the asset field's shared description; the
+    general property stays on it for every other asset type. Through Image and File fields, that
+    type's assets resolve as a stand-in type (`DotAssetPropertyClash` / `FileAssetPropertyClash`)
+    that answers the general properties the way the asset field always has; the content type
+    itself stays in the schema, whole, for its own queries. *Why:* the first version left the
+    general property off the shared description for the whole instance, so one type's field failed
+    every query that selected it — including long-standing ones such as `image { sortOrder }`,
+    which worked before this feature. The stand-in keeps every such query working and confines the
+    cost to the clashing type: through asset fields its assets report the stand-in's
+    `__typename` and cannot be narrowed to their own type — both capabilities this feature
+    introduced.
   - Every incompatible collision MUST be logged as a warning at schema build, naming the content
-    type and the property, so an administrator can find and rename it.
+    type, the property, both types and the stand-in its assets resolve as, so an administrator can
+    find and rename it.
 - **FR-022**: Permission-restricted content MUST NOT leak through this feature:
   - Property values, and the concrete type reported by `__typename`, are only ever returned for an
     asset the caller can read (FR-008); an unreadable asset answers `null` (FR-019).
@@ -357,10 +384,25 @@ and confirm they match the asset's own record.
     data, which the client developer reading the warning cannot fix.
 - **SC-010**: Each edge case has a measured outcome: an archived, deleted or unreadable target
   answers `null` without failing the query (FR-019); a deleted property fails validation with an
-  error naming it (FR-020); an asset type carrying a property that collides with a general asset
-  property — with the same type or a different one — leaves the schema valid and every other query
-  working (FR-021); and no response to a user without read permission on an asset contains
-  that asset's property values or concrete type name (FR-022).
+  error naming it (FR-020); a customer property named like a general asset property (FR-021):
+  - with the **same type** (a whole-number `width`, `height` or `size` counts as the same type):
+    selecting it directly on the asset field succeeds, answering the customer's value on that
+    type and the file's value on every other asset type;
+  - **new, with a different type and an explicit variable**: the save answers 400 naming the
+    property's type and the field's, and nothing is stored — creating a content type with such a
+    field creates no content type;
+  - **new, with a different type and a generated variable**: the field is saved with a suffixed
+    variable (`width1`) and exactly one WARN line names the variable, the content type and both
+    types;
+  - **already stored with a different type** (data from before the rule): selecting the property
+    directly on an asset field succeeds for every asset type; assets of the clashing type answer
+    with `__typename` `DotAssetPropertyClash` (DOTASSET) or `FileAssetPropertyClash` (FILEASSET),
+    their own collection still answers the customer's value, narrowing to the clashing type through
+    an asset field fails validation, and a WARN at schema build names the content type, the field,
+    both types and the stand-in;
+
+  and no response to a user without read permission on an asset contains that asset's property
+  values or concrete type name (FR-022).
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 

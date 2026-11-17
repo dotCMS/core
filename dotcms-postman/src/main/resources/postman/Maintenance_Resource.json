@@ -36,6 +36,9 @@
 								"v1",
 								"logout"
 							]
+						},
+						"auth": {
+							"type": "noauth"
 						}
 					},
 					"response": []

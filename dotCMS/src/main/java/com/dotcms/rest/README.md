@@ -264,7 +264,7 @@ ResponseEntityEndpointView.class     // For endpoint data
 ```java
 // Authentication & Users
 ResponseEntityUserView.class, ResponseEntityApiTokenView.class
-ResponseEntityLoginFormView.class, ResponseEntityJwtView.class
+ResponseEntityLoginFormView.class
 
 // Content Management  
 ResponseEntityContentletView.class, ResponseEntityContentTypeListView.class

@@ -6,10 +6,11 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
-import { EMPTY, SubscriptionLike } from 'rxjs';
+import { EMPTY, forkJoin, of, SubscriptionLike } from 'rxjs';
 
 import { Location } from '@angular/common';
-import { computed, effect, EffectRef, inject, untracked } from '@angular/core';
+import { computed, DestroyRef, effect, EffectRef, inject, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import { catchError, take } from 'rxjs/operators';
@@ -17,16 +18,24 @@ import { catchError, take } from 'rxjs/operators';
 import {
     DotContentDriveService,
     DotCurrentUserService,
-    DotLanguagesService
+    DotFolderBulkDeleteService,
+    DotFolderBulkDuplicateService,
+    DotLanguagesService,
+    DotRouterService,
+    DotSessionStorageService,
+    DotUploadFileService
 } from '@dotcms/data-access';
 import {
+    DotBulkUploadActiveRun,
     DotCMSContentTypeField,
     DotContentDriveItem,
     DotContentDriveSearchRequest,
-    FeaturedFlags,
+    DotFolderDeleteActiveRun,
+    DotFolderDuplicateActiveRun,
+    LOAD_MORE_NODE_TYPE,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
-import { GlobalStore, withFlags } from '@dotcms/store';
+import { GlobalStore } from '@dotcms/store';
 
 import { withActionExecution } from './features/action-execution/withActionExecution';
 import { withContextMenu } from './features/context-menu/withContextMenu';
@@ -36,14 +45,17 @@ import { withFolderDeleteRuns } from './features/folder-delete-runs/with-folder-
 import { withPushPublishEnvironments } from './features/push-publish-environments/withPushPublishEnvironments';
 import { withSidebar } from './features/sidebar/withSidebar';
 import { withSitePermissions } from './features/site-permissions/withSitePermissions';
+import { withSourceEditor } from './features/source-editor/withSourceEditor';
 
 import {
+    CONTENT_DRIVE_VIEW_PARAM,
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
     DEFAULT_SEARCH_SCOPE,
     DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
+    DEFAULT_VIEW_TYPE,
     MAP_NUMBERS_TO_BASE_TYPES,
     SEARCH_SCOPE_FILTER_KEY,
     SHARED_ASSETS_DISABLED_VALUE,
@@ -59,7 +71,8 @@ import {
     DotContentDriveSearchScope,
     DotContentDriveSort,
     DotContentDriveState,
-    DotContentDriveStatus
+    DotContentDriveStatus,
+    DotContentDriveViewType
 } from '../shared/models';
 import {
     buildUserSearchablePayload,
@@ -67,10 +80,18 @@ import {
     getUserSearchableActive,
     listsFolders,
     parseWorkflowFilter,
+    resolveContentDriveUrlIntent,
     sortedEncodedFilters,
     toRequestLocation,
     withFilterDefaults
 } from '../utils/functions';
+import {
+    browserStorage,
+    readStoredViewType,
+    resolveViewType,
+    viewTypeStorageKey,
+    writeStoredViewType
+} from '../utils/view-type';
 
 const initialState: DotContentDriveState = {
     currentSite: undefined, // So we have the actual site selected on start
@@ -93,15 +114,13 @@ const initialState: DotContentDriveState = {
     defaultLanguageLoaded: false,
     // Pessimistic default: until `getCurrentUser` answers, the user is treated as a non-admin. See
     // `DotContentDriveState.currentUserIsAdmin` for why over-warning is the right way to fail here.
-    currentUserIsAdmin: false
+    currentUserIsAdmin: false,
+    viewType: DEFAULT_VIEW_TYPE,
+    viewTypeStorageKey: viewTypeStorageKey('')
 };
 
 export const DotContentDriveStore = signalStore(
     withState<DotContentDriveState>(initialState),
-    // Side-panel feature flag, fetched once on init and exposed as `flags()`. `as const` narrows the
-    // typing to exactly this flag. Consumed by DotContentDriveNavigationService to decide side panel
-    // vs full-screen editor.
-    withFlags([FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] as const),
     withComputed(
         ({
             path,
@@ -149,16 +168,20 @@ export const DotContentDriveStore = signalStore(
                             filters: {
                                 text: filters()?.title || '',
                                 filterFolders: true,
-                                // Sent only when a term is present and the scope is not the
-                                // default. The server rejects a scope without text as the contract
-                                // error it is, and an omitted scope is processed exactly as it was
-                                // before this field existed — which is what leaves the AssetPicker,
-                                // the one other caller of this endpoint, untouched.
-                                ...(filters()?.title && filters()?.[SEARCH_SCOPE_FILTER_KEY]
+                                // Sent whenever a term is present, as the effective scope: the
+                                // stored one, or the default when none is stored. The default is
+                                // Title and the server's is All Fields, so omitting it would search
+                                // every field while the box says Title. Never sent without a term:
+                                // the server rejects a scope without text as the contract error it
+                                // is. The filters and the address still store the scope only when
+                                // it differs from the default.
+                                ...(filters()?.title
                                     ? {
-                                          searchScope: filters()?.[
-                                              SEARCH_SCOPE_FILTER_KEY
-                                          ] as DotContentDriveSearchScope
+                                          searchScope:
+                                              (filters()?.[
+                                                  SEARCH_SCOPE_FILTER_KEY
+                                              ] as DotContentDriveSearchScope) ??
+                                              DEFAULT_SEARCH_SCOPE
                                       }
                                     : {})
                             },
@@ -364,6 +387,21 @@ export const DotContentDriveStore = signalStore(
             },
             setIsTreeExpanded(isTreeExpanded: boolean) {
                 patchState(store, { isTreeExpanded });
+            },
+            /**
+             * Shows the table or the grid.
+             *
+             * @param viewType The listing to show.
+             * @param options `remember: true` when the user picked it with the view switcher, so the
+             * choice is also kept for this screen's next visit. Every other source (the URL, a tool's
+             * default) only shows the view and leaves what is remembered alone.
+             */
+            setViewType(viewType: DotContentDriveViewType, options?: { remember?: boolean }) {
+                patchState(store, { viewType });
+
+                if (options?.remember) {
+                    writeStoredViewType(browserStorage(), store.viewTypeStorageKey(), viewType);
+                }
             },
             /**
              * Sets the side panel's transient tree-collapse override (see `isTreeVisuallyExpanded`).
@@ -633,6 +671,8 @@ export const DotContentDriveStore = signalStore(
         const route = inject(ActivatedRoute);
         const globalStore = inject(GlobalStore);
         const location = inject(Location);
+        const dotSessionStorageService = inject(DotSessionStorageService);
+        const dotRouterService = inject(DotRouterService);
         let initEffect: EffectRef;
         let searchEffect: EffectRef;
         let locationSub: SubscriptionLike;
@@ -649,20 +689,61 @@ export const DotContentDriveStore = signalStore(
                 // first search DOES wait on this — see the gate in `loadItems`.
                 store.loadDefaultLanguage();
 
+                // The content type last opened in the Content Types editor (#37903). Read once per
+                // Drive entry and forgotten right away, whether or not it ends up applied.
+                let rememberedContentType = dotSessionStorageService.consumeLastContentType();
+
+                // Which listing opens (#37930). Decided once per Drive open, outside the init
+                // effect: that one re-runs when the site changes, and switching site must not undo
+                // a view the user picked since.
+                const openingParams = route.snapshot.queryParams;
+                const storageKey = viewTypeStorageKey(dotRouterService.currentPortlet?.id ?? '');
+                patchState(store, {
+                    viewTypeStorageKey: storageKey,
+                    viewType: resolveViewType({
+                        urlViewType: openingParams[CONTENT_DRIVE_VIEW_PARAM.VIEW_TYPE],
+                        storedViewType: readStoredViewType(browserStorage(), storageKey),
+                        defaultViewType: openingParams[CONTENT_DRIVE_VIEW_PARAM.DEFAULT_VIEW_TYPE]
+                    })
+                });
+
                 initEffect = effect(() => {
                     const queryParams = route.snapshot.queryParams;
                     const currentSite = globalStore.siteDetails();
                     const path = queryParams['path'] || DEFAULT_PATH;
-                    const filters = decodeFilters(queryParams['filters'] || '');
+                    const urlFilters = decodeFilters(queryParams['filters'] || '');
+                    // A URL that already says what to show (valid filters, or an item or folder
+                    // dialog the shell will open) wins; the remembered type is only for opening the
+                    // Drive directly. Both are judged after parsing, so a URL whose filters decode
+                    // to nothing or whose dialog params open nothing doesn't count.
+                    const urlHasInstructions =
+                        Object.keys(urlFilters).length > 0 ||
+                        resolveContentDriveUrlIntent(queryParams).kind !== 'none';
+                    const filters =
+                        rememberedContentType && currentSite && !urlHasInstructions
+                            ? { contentType: [rememberedContentType] }
+                            : urlFilters;
+                    // Used on the first run that has a site only. A run before the site has loaded
+                    // would be followed by one that re-reads the opening URL and loses it; a later
+                    // site change must not bring it back (FR-005).
+                    if (currentSite) {
+                        rememberedContentType = null;
+                    }
                     const queryTreeExpanded =
                         queryParams['isTreeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
 
-                    store.initContentDrive({
-                        currentSite,
-                        path,
-                        filters,
-                        isTreeExpanded: queryTreeExpanded == 'true'
-                    });
+                    // Untracked: `initContentDrive` reads `defaultLanguageId`, and tracking it would
+                    // re-run the init when the default language lands, re-reading the page's
+                    // original URL over any filter changed in between. `loadDefaultLanguage` seeds
+                    // the language into the current filters itself, so only the site re-runs this.
+                    untracked(() =>
+                        store.initContentDrive({
+                            currentSite: currentSite ?? SYSTEM_HOST,
+                            path,
+                            filters,
+                            isTreeExpanded: queryTreeExpanded == 'true'
+                        })
+                    );
                 });
 
                 /**
@@ -676,6 +757,8 @@ export const DotContentDriveStore = signalStore(
                  * turns into a fresh load.
                  */
                 locationSub = location.subscribe((event) => {
+                    // `viewType` is not read here: the view is a preference, so Back and Forward
+                    // keep the one showing rather than the one the entry was saved with (#37930).
                     const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
                     const path = params.get('path') || DEFAULT_PATH;
                     const filtersRaw = params.get('filters') || '';
@@ -734,6 +817,7 @@ export const DotContentDriveStore = signalStore(
     }),
     withContextMenu(),
     withDialog(),
+    withSourceEditor(),
     withSidebar(),
     withDragging(),
     withActionExecution(),
@@ -752,6 +836,52 @@ export const DotContentDriveStore = signalStore(
             const $allSiteContentSelected = computed(() => !path());
             const $systemHostSelected = computed(() => path() === SYSTEM_HOST_PATH);
 
+            /**
+             * Whether the browsed folder accepts new children.
+             *
+             * A new folder needs CAN_ADD_CHILDREN on the parent (`FolderAPIImpl:673`) and moving a
+             * contentlet needs it on the destination (`ESContentletAPIImpl:607`). An **upload does not**:
+             * the contentlet checkin path never checks it, so that one is gated here for consistency
+             * rather than as a preview of a refusal — otherwise uploading would quietly allow what
+             * creating a folder in the same place forbids.
+             *
+             * Computed here rather than in each consumer because three surfaces gate on it — the New
+             * menu, the Upload button and the drop zone — and three copies of the folder-then-site
+             * fallback would be three chances to disagree.
+             *
+             * A node with no permissions is the site root, whose parent is the host rather than a
+             * folder; `siteCanAddChildren` answers that case. Both unknowns read as allowed: a lookup
+             * in flight, and an instance too old to report the field. Starting disabled would flicker
+             * the affordances off and on for the common case, and the server refuses the write anyway.
+             */
+            const $canAddChildren = computed(() => {
+                // System Host is a real destination, so this is a permission answer — but about
+                // System Host, not about whichever site the switcher happens to show.
+                if ($systemHostSelected()) {
+                    return systemHostCanAddChildren() !== false;
+                }
+
+                // All site content spans every folder, so it names no single place — but content
+                // added here lands on the site root, and that is whose permission decides. Asked
+                // before the node below on purpose: selecting all site content clears the tree
+                // selection, and a node left over from before it was cleared would be answering
+                // about a folder that is not the destination.
+                if ($allSiteContentSelected()) {
+                    return siteCanAddChildren() !== false;
+                }
+
+                // A load-more row carries no rights; only a folder or site node does.
+                const data = selectedNode()?.data;
+                const permissions =
+                    data && data.type !== LOAD_MORE_NODE_TYPE ? data.permissions : undefined;
+
+                if (!permissions?.length) {
+                    return siteCanAddChildren() !== false;
+                }
+
+                return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
+            });
+
             return {
                 /**
                  * The bulk-upload ceilings the server advertises, or `null` when it advertises none.
@@ -763,6 +893,20 @@ export const DotContentDriveStore = signalStore(
                  * ceiling, so the refusing is left to the server.
                  */
                 uploadCeilings: computed(() => globalStore.systemBulkUpload()),
+
+                /**
+                 * How many folders one duplicate may carry, or `null` when the server advertises no
+                 * ceiling (#37062). Read like {@link uploadCeilings}: null means the server does
+                 * the refusing.
+                 */
+                folderDuplicateMaxPaths: computed(
+                    () => globalStore.systemFolderBulkDuplicate()?.maxPaths ?? null
+                ),
+
+                /** How many folders one delete may carry, or `null`. Same reading as above. */
+                folderDeleteMaxPaths: computed(
+                    () => globalStore.systemFolderBulkDelete()?.maxPaths ?? null
+                ),
 
                 /**
                  * Whether the sidebar's first entry, all site content, is the selected one.
@@ -792,55 +936,27 @@ export const DotContentDriveStore = signalStore(
                     $systemHostSelected() ? SYSTEM_HOST.identifier : currentSite()?.identifier
                 ),
 
+                $canAddChildren,
+
                 /**
-                 * Whether the browsed folder accepts new children.
+                 * Whether Duplicate may be offered where the author is browsing (#37062).
                  *
-                 * A new folder needs CAN_ADD_CHILDREN on the parent (`FolderAPIImpl:673`) and moving a
-                 * contentlet needs it on the destination (`ESContentletAPIImpl:607`). An **upload does not**:
-                 * the contentlet checkin path never checks it, so that one is gated here for consistency
-                 * rather than as a preview of a refusal — otherwise uploading would quietly allow what
-                 * creating a folder in the same place forbids.
-                 *
-                 * Computed here rather than in each consumer because three surfaces gate on it — the New
-                 * menu, the Upload button and the drop zone — and three copies of the folder-then-site
-                 * fallback would be three chances to disagree.
-                 *
-                 * A node with no permissions is the site root, whose parent is the host rather than a
-                 * folder; `siteCanAddChildren` answers that case. Both unknowns read as allowed: a lookup
-                 * in flight, and an instance too old to report the field. Starting disabled would flicker
-                 * the affordances off and on for the common case, and the server refuses the write anyway.
+                 * The browsed folder's own answer, except in all site content. The listing spans
+                 * every folder there, a search included, so each duplicate lands in its own parent
+                 * rather than the site root and there is no single folder to gate against
+                 * (FR-005b, US6 acceptance scenario 4). The server refuses per folder instead.
                  */
-                $canAddChildren: computed(() => {
-                    // System Host is a real destination, so this is a permission answer — but about
-                    // System Host, not about whichever site the switcher happens to show.
-                    if ($systemHostSelected()) {
-                        return systemHostCanAddChildren() !== false;
-                    }
-
-                    // All site content spans every folder, so it names no single place — but content
-                    // added here lands on the site root, and that is whose permission decides. Asked
-                    // before the node below on purpose: selecting all site content clears the tree
-                    // selection, and a node left over from before it was cleared would be answering
-                    // about a folder that is not the destination.
-                    if ($allSiteContentSelected()) {
-                        return siteCanAddChildren() !== false;
-                    }
-
-                    const permissions = (
-                        selectedNode()?.data as { permissions?: string[] } | undefined
-                    )?.permissions;
-
-                    if (!permissions?.length) {
-                        return siteCanAddChildren() !== false;
-                    }
-
-                    return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
-                })
+                $canDuplicateHere: computed(() => $allSiteContentSelected() || $canAddChildren())
             };
         }
     ),
     withHooks((store) => {
         let systemHostGate: EffectRef | undefined;
+        const destroyRef = inject(DestroyRef);
+        const folderBulkDeleteService = inject(DotFolderBulkDeleteService);
+        const folderBulkDuplicateService = inject(DotFolderBulkDuplicateService);
+        const uploadFileService = inject(DotUploadFileService);
+        const currentUserService = inject(DotCurrentUserService);
 
         return {
             onInit() {
@@ -850,10 +966,54 @@ export const DotContentDriveStore = signalStore(
                 store.loadSitePermissions(store.currentSite);
                 // Once, not per site: System Host belongs to none of them.
                 store.loadSystemHostPermissions();
-                // Fire-and-forget on purpose: the listing renders unmarked and marks appear when
-                // this answers. Nothing here is awaited, and a failure leaves the portlet exactly as
-                // it is today (FR-022, FR-023).
-                store.establishInFlightFolders();
+                // Runs still going from before this page loaded, read from each queue and routed to
+                // whichever part of the store owns them (#37062, FR-015 as amended).
+                //
+                // Fire-and-forget on purpose: the listing renders unmarked and marks and statuses
+                // appear when this answers. Nothing here is awaited, and a failure leaves the
+                // portlet exactly as it is today (FR-022, FR-023).
+                //
+                // Every read already answers `[]` on failure. Each is still caught here, because
+                // a join fails as a whole: one read that throws anyway must cost only its own runs.
+                //
+                // Only the author's own duplicates and uploads come back. The listings are not
+                // scoped to the reader, and only the submitter is sent the completion that ends a
+                // run, so anyone else's restored status would never go away. Delete marks every
+                // author's runs, as it always has: the folders are in use either way.
+                //
+                // Delete is applied from its own read, not the join. A folder the delete leaves
+                // while a slower read is still out is announced then, and marking it only after
+                // every read answered would mark it again, busy until reload.
+                folderBulkDeleteService
+                    .readActiveRuns()
+                    .pipe(
+                        catchError(() => of([] as DotFolderDeleteActiveRun[])),
+                        take(1),
+                        takeUntilDestroyed(destroyRef)
+                    )
+                    .subscribe((deletes) => store.applyInFlightFolders(deletes));
+
+                forkJoin({
+                    duplicates: folderBulkDuplicateService
+                        .readActiveRuns()
+                        .pipe(catchError(() => of([] as DotFolderDuplicateActiveRun[]))),
+                    uploads: uploadFileService
+                        .readActiveUploads()
+                        .pipe(catchError(() => of([] as DotBulkUploadActiveRun[]))),
+                    user: currentUserService.getCurrentUser().pipe(catchError(() => of(null)))
+                })
+                    .pipe(take(1), takeUntilDestroyed(destroyRef))
+                    .subscribe(({ duplicates, uploads, user }) => {
+                        // With no author, no run can be told apart as theirs, so none is restored.
+                        // The upload restore still runs, with nothing: it is what stops holding
+                        // completions for a claim that would otherwise never come.
+                        const userId = user?.userId;
+                        const isAuthors = (run: { userId?: string }) =>
+                            !!userId && run.userId === userId;
+
+                        store.restoreDuplicateRuns(duplicates.filter(isAuthors));
+                        store.restoreUploadRuns(uploads.filter(isAuthors));
+                    });
 
                 /**
                  * Sends a user who cannot read System Host back to all site content.

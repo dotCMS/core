@@ -141,6 +141,18 @@ describe('DotRouterService', () => {
         expect(router.navigate).toHaveBeenCalledWith(['/c/content']);
     });
 
+    it('should go to Site Browser', () => {
+        service.goToSiteBrowser();
+        expect(router.navigate).toHaveBeenCalledWith(['/c/site-browser'], {});
+    });
+
+    it('should go to Site Browser with the folder path', () => {
+        service.goToSiteBrowser('//demo.dotcms.com/application/containers/default/');
+        expect(router.navigate).toHaveBeenCalledWith(['/c/site-browser'], {
+            queryParams: { path: '//demo.dotcms.com/application/containers/default/' }
+        });
+    });
+
     it('should go to edit page', () => {
         service.goToEditTemplate('123');
         expect(router.navigate).toHaveBeenCalledWith(['/templates/edit/123']);
@@ -336,15 +348,21 @@ describe('DotRouterService', () => {
         );
     });
 
-    it('should resolve the Angular Users (Beta) URL to the users-beta portlet ID', () => {
-        expect(service.getPortletId('/users-beta')).toBe('users-beta');
-        expect(service.getPortletId('#/users-beta?test=value')).toBe('users-beta');
+    it('should resolve the Angular Users, Roles and Tools URLs to their portlet IDs', () => {
+        expect(service.getPortletId('/users')).toBe('users');
+        expect(service.getPortletId('#/users?test=value')).toBe('users');
+        expect(service.getPortletId('/roles')).toBe('roles');
+        expect(service.getPortletId('#/roles?test=value')).toBe('roles');
+        expect(service.getPortletId('/tools')).toBe('tools');
+        expect(service.getPortletId('#/tools?test=value')).toBe('tools');
     });
 
-    it('should resolve the legacy /c/users URL to the users portlet ID', () => {
-        expect(service.getPortletId('/c/users')).toBe('users');
-        expect(service.getPortletId('#/c/users?test=value')).toBe('users');
-        expect(service.getPortletId('/c/users/123')).toBe('users');
+    it('should resolve the legacy Users and Roles URLs to the -legacy portlet IDs', () => {
+        expect(service.getPortletId('/c/users-legacy')).toBe('users-legacy');
+        expect(service.getPortletId('#/c/users-legacy?test=value')).toBe('users-legacy');
+        expect(service.getPortletId('/c/users-legacy/123')).toBe('users-legacy');
+        expect(service.getPortletId('/c/roles-legacy')).toBe('roles-legacy');
+        expect(service.getPortletId('#/c/roles-legacy?test=value')).toBe('roles-legacy');
     });
 
     it('should navigate replacing URL params', () => {

@@ -32,16 +32,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -88,16 +83,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -144,16 +134,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -208,16 +193,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -273,16 +253,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -337,16 +312,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -415,8 +385,12 @@
 							"    pm.expect(jsonData.entity[5].key).to.eql('ShallowPush.yml');",
 							"});",
 							"",
-							"pm.test(\"The 'TestPPFilter.yml' Filter must be #7 in the list, as it was updated before to have sort = 20\", function () {",
-							"    pm.expect(jsonData.entity[6].key).to.eql('TestPPFilter.yml');",
+							"pm.test(\"The 'SecondLevelRelationships.yml' Filter must be #7 in the list.\", function () {",
+							"    pm.expect(jsonData.entity[6].key).to.eql('SecondLevelRelationships.yml');",
+							"});",
+							"",
+							"pm.test(\"The 'TestPPFilter.yml' Filter must be #8 in the list, as it was updated before to have sort = 20\", function () {",
+							"    pm.expect(jsonData.entity[7].key).to.eql('TestPPFilter.yml');",
 							"});",
 							""
 						],
@@ -426,16 +400,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -494,6 +463,16 @@
 						"filters",
 						"NoWorkflow.yml"
 					]
+				},
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
 				}
 			},
 			"response": []
@@ -533,6 +512,16 @@
 						"pushpublish",
 						"filters",
 						"TestPPFilter.yml"
+					]
+				},
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
 					]
 				}
 			},

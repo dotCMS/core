@@ -543,3 +543,26 @@ export const DOT_FOLDER_DELETE_FAILURE_REASONS = [
 ] as const;
 
 export type DotFolderDeleteFailureReason = (typeof DOT_FOLDER_DELETE_FAILURE_REASONS)[number];
+
+/**
+ * Why a single folder in a bulk duplication was not duplicated, or why it was skipped.
+ *
+ * The closed set fixed by the submission contract
+ * (`specs/37062-folder-copy-backend/contracts/folder-bulk-duplicate-api.md` §4), carried as
+ * `results[].reason`. Every member but one is a failure reason. `COVERED_BY_PARENT` is a skip
+ * reason: another selected folder contains this one, so duplicating that folder already carries it.
+ * A skip with no reason at all means the run was cancelled before reaching the folder. Adding a
+ * member is a change to both halves of #37062.
+ *
+ * A wire vocabulary, kept here for the same reason as {@link DOT_BULK_UPLOAD_FAILURE_REASONS}.
+ */
+export const DOT_FOLDER_BULK_DUPLICATE_REASONS = [
+    'PERMISSION_DENIED',
+    'PARENT_PERMISSION_DENIED',
+    'PATH_NOT_FOUND',
+    'PROTECTED_FOLDER',
+    'UNCLASSIFIED',
+    'COVERED_BY_PARENT'
+] as const;
+
+export type DotFolderBulkDuplicateReason = (typeof DOT_FOLDER_BULK_DUPLICATE_REASONS)[number];

@@ -242,8 +242,8 @@ describe('injectEmptyStateStyles', () => {
 
     it('uses the i18n label from localStorage when available', () => {
         localStorage.setItem(
-            'dotMessagesKeys',
-            JSON.stringify({ 'editpage.container.is.empty': 'Contenedor vacío' })
+            'dotMessagesBundle',
+            JSON.stringify({ messages: { 'editpage.container.is.empty': 'Contenedor vacío' } })
         );
 
         injectEmptyStateStyles();
@@ -253,6 +253,28 @@ describe('injectEmptyStateStyles', () => {
         ) as HTMLStyleElement;
 
         expect(style.textContent).toContain("content: 'Contenedor vacío'");
+    });
+
+    it('ignores old split-field caches', () => {
+        localStorage.setItem(
+            'dotMessagesKeys',
+            JSON.stringify({ 'editpage.container.is.empty': 'Legacy label' })
+        );
+        injectEmptyStateStyles();
+        expect(
+            document.head.querySelector('[data-dot-styles="uve-empty-state"]')?.textContent
+        ).toContain("content: 'Empty container'");
+    });
+
+    it('ignores non-string labels in the atomic bundle', () => {
+        localStorage.setItem(
+            'dotMessagesBundle',
+            JSON.stringify({ messages: { 'editpage.container.is.empty': 42 } })
+        );
+        injectEmptyStateStyles();
+        expect(
+            document.head.querySelector('[data-dot-styles="uve-empty-state"]')?.textContent
+        ).toContain("content: 'Empty container'");
     });
 
     it('falls back to the default label when localStorage JSON is malformed', () => {
@@ -269,9 +291,11 @@ describe('injectEmptyStateStyles', () => {
 
     it('escapes CSS-breaking characters in the empty container label', () => {
         localStorage.setItem(
-            'dotMessagesKeys',
+            'dotMessagesBundle',
             JSON.stringify({
-                'editpage.container.is.empty': "Ain't \\ broken\nlabel"
+                messages: {
+                    'editpage.container.is.empty': "Ain't \\ broken\nlabel"
+                }
             })
         );
 

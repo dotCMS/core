@@ -12,9 +12,7 @@ import {
     getRunnableLink,
     hasValidValue,
     isDotIdentifier,
-    isSameOriginRelativeUrl,
-    mapQueryParamsToCDParams,
-    mapParamsFromEditContentlet
+    isSameOriginRelativeUrl
 } from './dot-utils';
 
 const EMPTY_CONTENTLET: DotCMSContentlet = {
@@ -464,83 +462,6 @@ describe('Dot Utils', () => {
 
         it('should return TRUE when value is false', () => {
             expect(hasValidValue(false)).toEqual(true);
-        });
-    });
-
-    describe('mapQueryParamsToCDParams', () => {
-        it('should add CD_ prefix to query parameters', () => {
-            const queryParams = new URLSearchParams('folderId=123&path=/images');
-
-            expect(mapQueryParamsToCDParams(queryParams)).toEqual({
-                CD_folderId: '123',
-                CD_path: '/images'
-            });
-        });
-
-        it('should return empty object when no query parameters', () => {
-            const queryParams = new URLSearchParams('');
-
-            expect(mapQueryParamsToCDParams(queryParams)).toEqual({});
-        });
-
-        it('should handle single query parameter', () => {
-            const queryParams = new URLSearchParams('folderId=456');
-
-            expect(mapQueryParamsToCDParams(queryParams)).toEqual({
-                CD_folderId: '456'
-            });
-        });
-
-        it('should handle multiple query parameters', () => {
-            const queryParams = new URLSearchParams('folderId=123&path=/images&filter=active');
-
-            expect(mapQueryParamsToCDParams(queryParams)).toEqual({
-                CD_folderId: '123',
-                CD_path: '/images',
-                CD_filter: 'active'
-            });
-        });
-    });
-
-    describe('mapParamsFromEditContentlet', () => {
-        it('should extract CD_ prefixed params and remove prefix', () => {
-            const cdParams = new URLSearchParams('CD_folderId=123&CD_path=/images');
-
-            expect(mapParamsFromEditContentlet(cdParams)).toEqual({
-                folderId: '123',
-                path: '/images'
-            });
-        });
-
-        it('should return empty object when no CD_ params', () => {
-            const cdParams = new URLSearchParams('folderId=123&path=/images');
-
-            expect(mapParamsFromEditContentlet(cdParams)).toEqual({});
-        });
-
-        it('should filter out non-CD_ params', () => {
-            const cdParams = new URLSearchParams(
-                'CD_folderId=123&CD_path=/images&regularParam=value'
-            );
-
-            expect(mapParamsFromEditContentlet(cdParams)).toEqual({
-                folderId: '123',
-                path: '/images'
-            });
-        });
-
-        it('should handle single CD_ parameter', () => {
-            const cdParams = new URLSearchParams('CD_folderId=456');
-
-            expect(mapParamsFromEditContentlet(cdParams)).toEqual({
-                folderId: '456'
-            });
-        });
-
-        it('should return empty object when URLSearchParams is empty', () => {
-            const cdParams = new URLSearchParams('');
-
-            expect(mapParamsFromEditContentlet(cdParams)).toEqual({});
         });
     });
 

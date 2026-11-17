@@ -14,7 +14,7 @@
     <properties>
         <maven.deploy.skip>false</maven.deploy.skip>
         <flatten.mode>bom</flatten.mode>
-        <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
+        <aws-java-sdk.version>1.12.797</aws-java-sdk.version>
         <aws-java-sdk-v2.version>2.41.34</aws-java-sdk-v2.version>
         <twelvemonkeys.version>3.13.1-fixed</twelvemonkeys.version>
         <vips-ffm.version>1.9.8</vips-ffm.version>
@@ -24,7 +24,7 @@
         <bouncy-castle.version>1.85</bouncy-castle.version>
         <awaitility.version>4.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
-        <jackson.version>2.17.2</jackson.version>
+        <jackson.version>2.18.12</jackson.version>
         <jersey.version>2.47</jersey.version>
         <graalvm.polyglot.version>25.0.1</graalvm.polyglot.version>
         <micrometer.version>1.15.12</micrometer.version>
@@ -32,9 +32,11 @@
         <pyroscope-agent.version>2.9.2</pyroscope-agent.version>
         <opensearch.version>3.3.0</opensearch.version>
         <langchain4j.version>1.15.1</langchain4j.version>
+        <grpc.version>1.75.0</grpc.version>
         <netty.version>4.1.138.Final</netty.version>
         <commonmark.version>0.22.0</commonmark.version>
-        <jsoup.version>1.21.1</jsoup.version>
+        <jsoup.version>1.23.2</jsoup.version>
+        <guava.version>33.7.2-jre</guava.version>
     </properties>
     <dependencyManagement>
 
@@ -74,6 +76,18 @@
                 <groupId>com.dotcms</groupId>
                 <artifactId>dotcms-logging-bom</artifactId>
                 <version>${project.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <!-- grpc: imported before langchain4j-bom so every io.grpc artifact (grpc-netty-shaded
+                 arrives transitively via langchain4j-vertex-ai-gemini) resolves to one version.
+                 Still on 1.75.x: 1.76+ expects guava 33.4+, which ${guava.version} now satisfies, so
+                 moving grpc forward is no longer blocked by guava and can be done as its own change. -->
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-bom</artifactId>
+                <version>${grpc.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -180,11 +194,6 @@
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.commons-fileupload</artifactId>
-                <version>1.3.3_1</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.commons-httpclient</artifactId>
                 <version>3.1_3</version>
             </dependency>
@@ -240,11 +249,6 @@
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.fileupload-ext</artifactId>
-                <version>ukv_3</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.gif89</artifactId>
                 <version>ukv_2</version>
             </dependency>
@@ -262,11 +266,6 @@
                 <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.httpbridge</artifactId>
                 <version>ukv_2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.httpclient</artifactId>
-                <version>4.2.2_2</version>
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
@@ -329,11 +328,6 @@
                 <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.jxl</artifactId>
                 <version>2.6_2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.ldap</artifactId>
-                <version>ukv_2</version>
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
@@ -618,7 +612,7 @@
                 <!-- Google Guava: Google Core Libraries -->
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>32.0.1-jre</version>
+                <version>${guava.version}</version>
                 <exclusions>
                     <!-- checker-qual is a banned dependency in this project -->
                     <exclusion>
@@ -677,7 +671,7 @@
             <dependency>
                 <groupId>commons-fileupload</groupId>
                 <artifactId>commons-fileupload</artifactId>
-                <version>1.5</version>
+                <version>1.6.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
@@ -772,7 +766,7 @@
             <dependency>
                 <groupId>com.graphql-java</groupId>
                 <artifactId>graphql-java</artifactId>
-                <version>17.5</version>
+                <version>19.11</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
@@ -783,12 +777,12 @@
             <dependency>
                 <groupId>com.graphql-java</groupId>
                 <artifactId>graphql-java-extended-scalars</artifactId>
-                <version>17.1</version>
+                <version>19.1</version>
             </dependency>
             <dependency>
                 <groupId>com.graphql-java-kickstart</groupId>
                 <artifactId>graphql-java-servlet</artifactId>
-                <version>13.0.1</version>
+                <version>14.0.0</version>
             </dependency>
 
 

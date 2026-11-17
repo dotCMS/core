@@ -4,7 +4,8 @@ import {
     computed,
     inject,
     OnDestroy,
-    viewChild
+    viewChild,
+    viewChildren
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -13,7 +14,7 @@ import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
-import { TooltipModule } from 'primeng/tooltip';
+import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -69,6 +70,13 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
     // declared as ES private." The standard cannot be followed here.
     private readonly $searchInput = viewChild.required(DotSearchInputComponent);
 
+    /**
+     * The explanation on each scope option. Found through a query even though the listbox renders
+     * the options, because queries follow where a template is declared, not where it is stamped.
+     * `private`, not `#`, for the same compiler reason as {@link $searchInput}.
+     */
+    private readonly $scopeTooltips = viewChildren(Tooltip);
+
     protected readonly $searchTerm = computed(
         () => (this.#store.getFilterValue('title') as string) ?? ''
     );
@@ -122,7 +130,7 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
     protected readonly $activeScopeLabel = computed(
         () =>
             this.scopeOptions.find((option) => option.value === this.$searchScope())?.label ??
-            this.#messageService.get('content-drive.search.scope.all-fields')
+            this.#messageService.get('content-drive.search.scope.title')
     );
 
     /**
@@ -245,6 +253,15 @@ export class DotContentDriveSearchInputComponent implements OnDestroy {
     protected onSearch(term: string): void {
         this.#store.setGlobalSearch(term);
         this.#store.selectAllSiteContent();
+    }
+
+    /**
+     * Hides every scope option's explanation once the panel closes.
+     */
+    protected onScopePanelHide(): void {
+        // A tooltip only hides on its own mouse-leave. Closing the panel by clicking outside it
+        // removes the hovered option without one, so its explanation stayed floating over the page.
+        this.$scopeTooltips().forEach((tooltip) => tooltip.hide());
     }
 
     /**

@@ -1,14 +1,13 @@
 package com.dotcms.filters.interceptor;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotmarketing.util.RegEX;
 import org.apache.commons.collections.iterators.ReverseListIterator;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -187,7 +186,7 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
 
                 // if the filter applies just for some filter patterns.
                 if (webInterceptor.isActive() &&
-                        this.anyMatchFilter(webInterceptor, request.getRequestURI())) {
+                        this.anyMatchFilter(webInterceptor, HttpRequestDataUtil.getDispatchPath(request))) {
 
                     result          = webInterceptor.intercept(requestResult, responseResult);
                     shouldContinue &= (Result.Type.SKIP_NO_CHAIN != result.getType());
@@ -232,7 +231,7 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
                 final WebInterceptor webInterceptor = iterator.next();
                 // if the filter applies just for some filter patterns.
                 if (webInterceptor.isActive() &&
-                        this.anyMatchFilter(webInterceptor, request.getRequestURI())) {
+                        this.anyMatchFilter(webInterceptor, HttpRequestDataUtil.getDispatchPath(request))) {
 
                     if (!webInterceptor.afterIntercept(requestResult, responseResult)) {
 
@@ -243,6 +242,15 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
         }
     } // after.
 
+    /**
+     * Tells whether the interceptor applies to a path: true when the interceptor declares no
+     * filters, or when any of its filter patterns matches the path, ignoring case.
+     *
+     * @param webInterceptor the interceptor whose filter patterns are checked
+     * @param uri the already-decoded path the container dispatches to, as returned by
+     *            {@link HttpRequestDataUtil#getDispatchPath(HttpServletRequest)}
+     * @return true if the interceptor must run for this path
+     */
     @VisibleForTesting
     public boolean anyMatchFilter(final WebInterceptor webInterceptor,
                                    final String uri) {
@@ -268,19 +276,14 @@ public class SimpleWebInterceptorDelegateImpl implements WebInterceptorDelegate 
         return isOk;
     } // checkInterceptorFilter.
 
+    /**
+     * Matches one filter pattern against a path. The path is not decoded again: it comes from the
+     * container already decoded, and a second decode would turn a literal {@code %} into
+     * something else.
+     */
     private boolean match (final String uri, final String filterPattern) {
 
-        String uftUri = null;
-
-        try {
-
-            uftUri = URLDecoder.decode(uri, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-
-            uftUri = uri;
-        }
-
-        return RegEX.containsCaseInsensitive(uftUri, filterPattern.trim());
+        return RegEX.containsCaseInsensitive(uri, filterPattern.trim());
     } // match.
 
     private void init(final WebInterceptor webInterceptor) {

@@ -4,6 +4,10 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDRE
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.BasicAuthentication;
+import com.dotcms.auth.InteractiveUserPolicy;
+import com.dotcms.auth.LoginLockout;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.bradmcevoy.http.CollectionResource;
@@ -15,6 +19,8 @@ import com.bradmcevoy.http.LockToken;
 import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.Request.Method;
 import com.bradmcevoy.http.Resource;
+import com.bradmcevoy.http.exceptions.BadRequestException;
+import com.dotcms.security.multipart.IllegalFileExtensionsValidator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -28,7 +34,6 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FolderCache;
-import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -50,11 +55,8 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.*;
 import com.google.common.annotations.VisibleForTesting;
-import com.liferay.portal.auth.AuthException;
-import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
 import java.io.File;
@@ -73,6 +75,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Optional;
 import java.util.Timer;
+import java.util.function.Supplier;
 import org.apache.commons.lang.StringUtils;
 import org.apache.oro.text.regex.MalformedPatternException;
 import org.apache.oro.text.regex.Perl5Compiler;
@@ -94,14 +97,15 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class DotWebdavHelper {
 
-	private static final String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
 	private static ThreadLocal<Perl5Matcher> localP5Matcher = new ThreadLocal<Perl5Matcher>(){
 		protected Perl5Matcher initialValue() {
 			return new Perl5Matcher();
 		}
 	};
 	private  org.apache.oro.text.regex.Pattern tempResourcePattern;
-	private String tempFolderPath = "dotwebdav";
+	private static final IllegalFileExtensionsValidator FILE_EXTENSION_VALIDATOR = new IllegalFileExtensionsValidator();
+	/** Sub-folder of the asset temp path that holds WebDAV temp storage, apart from other features. */
+	private static final String TEMP_FOLDER_NAME = "dotwebdav";
 
 	private HostAPI hostAPI = APILocator.getHostAPI();
 	private FolderAPI folderAPI = APILocator.getFolderAPI();
@@ -166,35 +170,44 @@ public class DotWebdavHelper {
 		}
 	}
 
-	public User authorizePrincipal(final String username, final String passwd) throws DotSecurityException, NoSuchUserException, DotDataException {
+	/**
+	 * Checks the credentials a WebDAV client sent and returns the matching user, under the shared
+	 * Basic authentication policy ({@code ALLOW_BASIC_AUTH}). In token-only mode the credential must
+	 * be an API token and the stored password is not consulted. When passwords are allowed, the
+	 * password is checked against the one stored in dotCMS, or accepted as an API token. Every
+	 * decision taken on a token is written to the security log by
+	 * {@link #logTokenAuthentication}; the credential itself never is.
+	 *
+	 * @param username the login sent by the client: an email address or a user id, depending on
+	 *                 the company's authentication type
+	 * @param passwd   the password or API token sent by the client
+	 * @return the authenticated {@link User}
+	 * @throws DotSecurityException if credentials are disabled or not accepted
+	 * @throws NoSuchUserException if the named user does not exist
+	 * @throws DotDataException if the user lookup fails
+	 */
+	public User authorizePrincipal(final String username, final String passwd)
+			throws DotSecurityException, NoSuchUserException, DotDataException {
 
-
-		final Company company         = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
-		final boolean useEmailAsLogin = !company.getAuthType().equals(Company.AUTH_TYPE_ID);
-
-		try {
-
-			if (PRE_AUTHENTICATOR != null && !PRE_AUTHENTICATOR.equals("")) {
-
-				final Authenticator authenticator = (Authenticator) new com.dotcms.repackage.bsh.
-						Interpreter().eval("new " + PRE_AUTHENTICATOR + "()");
-				if (useEmailAsLogin) {
-
-					authenticator.authenticateByEmailAddress(company.getCompanyId(), username, passwd);
-				} else {
-
-					authenticator.authenticateByUserId      (company.getCompanyId(), username, passwd);
-				}
-			}
-		} catch (AuthException ae) {
-
-			Logger.debug(this, "Username : " + username + " failed to login", ae);
-			throw new DotSecurityException(ae.getMessage(),ae);
-		} catch (Exception e) {
-
-			Logger.error(this, e.getMessage(), e);
-			throw new DotSecurityException(e.getMessage(),e);
+		final BasicAuthentication.Mode mode = BasicAuthentication.mode();
+		if (mode == BasicAuthentication.Mode.NONE) {
+			throw new DotSecurityException("Basic authentication is disabled");
 		}
+		if (mode == BasicAuthentication.Mode.JWT_TOKEN) {
+			final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+			final String ipAddress = request != null ? request.getRemoteAddr() : null;
+			final BasicAuthentication.ApiTokenAuthentication outcome =
+					BasicAuthentication.authenticateApiTokenDetailed(username, passwd, ipAddress);
+			final User tokenUser = outcome.user().orElse(null);
+			final boolean eligible = tokenUser != null && InteractiveUserPolicy.isEligible(tokenUser);
+			logTokenAuthentication(mode, eligible ? tokenUser : null,
+					eligible ? null : outcome.rejection().orElse(BasicAuthentication.Rejection.INELIGIBLE_ACCOUNT),
+					outcome.token().orElse(null), username, ipAddress);
+			return requireInteractive(outcome.user()
+					.orElseThrow(() -> new DotSecurityException("Invalid API token credentials")));
+		}
+
+		final Company company = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
 
 		final UserAPI userAPI = APILocator.getUserAPI();
 		final User user       = company.getAuthType().equals(Company.AUTH_TYPE_ID)?
@@ -206,23 +219,129 @@ public class DotWebdavHelper {
 			throw new DotSecurityException("The user was returned NULL");
 		}
 
-		// Validate password and rehash when is needed
-		if (!LoginFactory.passwordMatch(passwd, user) && !this.tryMatchJsonWebToken(passwd, user)) {
+		// Validate password and rehash when is needed. Refused while locked out; WebDAV attempts are
+		// counted apart from other logins from this address, so a client retrying a stale password does
+		// not lock its user out of the backend.
+		if (!LoginLockout.getInstance().passwordMatch(passwd, user, LoginLockout.webdavSource(),
+				this::tryMatchJsonWebToken)) {
 
 			Logger.debug(this, ()-> "The user's passwords didn't match");
 			throw new DotSecurityException("The user's passwords didn't match");
 		}
 
+		return requireInteractive(user);
+	}
+
+	/**
+	 * Refuses an account that cannot be used as the identity of a client request (the built-in
+	 * system account), so a token or password for it does not open WebDAV.
+	 *
+	 * @param user the account the credentials resolved to
+	 * @return the same account when it is eligible
+	 * @throws DotSecurityException if the account is not eligible for interactive use
+	 */
+	private User requireInteractive(final User user) throws DotSecurityException {
+		if (InteractiveUserPolicy.refuseIfNotEligible(user,
+				HttpServletRequestThreadLocal.INSTANCE.getRequest(), null) == null) {
+			throw new DotSecurityException("User not eligible for interactive use");
+		}
 		return user;
 	}
 
+	/**
+	 * Legacy-mode alternative to the stored password: accepts the Basic-auth password when it is an
+	 * API token the token API validates and whose owner is the named user. It runs only in
+	 * {@link BasicAuthentication.Mode#ALL}, after the stored password has failed. A password that does
+	 * not parse as a token is a failed password login, not a token decision: it is refused silently
+	 * here and left to the lockout and to the token API's own parse-failure line. When a token was
+	 * parsed, the decision is written to the security log in the same form as in token mode: accepted,
+	 * or refused because the token is not an API token (a browser login token is never a WebDAV
+	 * credential, in either mode), because the API token belongs to another account, or because the
+	 * account may not act as a client identity (the caller still refuses it afterwards). The token
+	 * value is never written. The login the client sent is not available here, so the line's login
+	 * field carries the id of the account that login already resolved to. Because a matching token is
+	 * not a password guess, the lockout accepts it while the source is locked and hands the attempt
+	 * back, so an accepted line can appear for a locked-out source.
+	 *
+	 * @param jsonWebToken the Basic-auth password, possibly a token
+	 * @param user         the {@link User} the Basic-auth login resolved to
+	 * @return {@code true} only when the password is a valid API token belonging to {@code user}
+	 */
 	private boolean tryMatchJsonWebToken (final String jsonWebToken, final User user) {
 
 		final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 		final String ipAddress           = null != request? request.getRemoteAddr(): null;
 		final Optional<JWToken> tokenOpt = APILocator.getApiTokenAPI().fromJwt(jsonWebToken.trim(), ipAddress);
 
-		return tokenOpt.isPresent() && tokenOpt.get().getUserId().equals(user.getUserId());
+		if (tokenOpt.isEmpty()) {
+			return false;
+		}
+		final JWToken token     = tokenOpt.get();
+		final boolean apiToken  = token instanceof ApiToken;
+		final boolean matched   = apiToken && token.getUserId().equals(user.getUserId());
+		final BasicAuthentication.Rejection rejection;
+		if (!apiToken) {
+			rejection = BasicAuthentication.Rejection.WRONG_TOKEN_TYPE;
+		} else if (!matched) {
+			rejection = BasicAuthentication.Rejection.OWNER_MISMATCH;
+		} else {
+			rejection = InteractiveUserPolicy.isEligible(user) ? null
+					: BasicAuthentication.Rejection.INELIGIBLE_ACCOUNT;
+		}
+		logTokenAuthentication(BasicAuthentication.Mode.ALL, rejection == null ? user : null, rejection,
+				token, user.getUserId(), ipAddress);
+
+		return matched;
+	}
+
+	/** Longest client-sent login name reproduced in an audit line; the rest is cut off. */
+	private static final int MAX_AUDITED_LOGIN_LENGTH = 100;
+
+	/**
+	 * Writes the audit line for a decision taken on a token sent as the WebDAV password: accepted at
+	 * INFO, rejected at WARN with the reason. The line names the mode, the login the client sent, the
+	 * account it resolved to when accepted, the token type, and the token id for an API token (the
+	 * id is the token's database key, listed in the API Tokens tool; a login token's id and subject
+	 * are left out because they are token material). The credential itself is never written. A token
+	 * of an account that {@link InteractiveUserPolicy} will refuse is reported here as rejected
+	 * ({@code INELIGIBLE_ACCOUNT}), never as accepted; the policy then writes its own refusal line
+	 * when the caller applies it.
+	 *
+	 * @param mode           the Basic-auth mode the decision was taken in
+	 * @param user           the {@link User} the token authenticated, or {@code null} when rejected
+	 * @param rejection      why the token was refused, or {@code null} when accepted
+	 * @param token          the parsed {@link JWToken}, or {@code null} when the credential was not one
+	 * @param requestedLogin the login name the client sent; client input, so control characters are
+	 *                       stripped and the value is cut to {@value #MAX_AUDITED_LOGIN_LENGTH} characters
+	 * @param ipAddress      the client address, or {@code null} when no request is bound to the thread
+	 */
+	private static void logTokenAuthentication(final BasicAuthentication.Mode mode, final User user,
+			final BasicAuthentication.Rejection rejection, final JWToken token,
+			final String requestedLogin, final String ipAddress) {
+
+		final boolean accepted = user != null;
+		final String login = stripLogControls(requestedLogin);
+		final StringBuilder line = new StringBuilder("WebDAV token authentication ")
+				.append(accepted ? "accepted" : "rejected (" + rejection + ")")
+				.append(": mode ").append(mode)
+				.append(", login ").append(login.length() > MAX_AUDITED_LOGIN_LENGTH
+						? login.substring(0, MAX_AUDITED_LOGIN_LENGTH) + "..." : login);
+		if (accepted) {
+			line.append(", user ").append(user.getUserId());
+		}
+		if (token != null) {
+			line.append(", tokenType ").append(token.getTokenType());
+			if (token instanceof ApiToken) {
+				line.append(", tokenId ").append(token.getId());
+			}
+		}
+		line.append(", from ").append(UtilMethods.isSet(ipAddress) ? ipAddress : "unknown");
+
+		if (accepted) {
+			SecurityLogger.logInfo(DotWebdavHelper.class, line.toString());
+		} else {
+			SecurityLogger.logWarn(DotWebdavHelper.class, line.toString());
+		}
 	}
 
 	public boolean isFolder(String uriAux, User user) throws IOException {
@@ -391,14 +510,26 @@ public class DotWebdavHelper {
 		return folder;
 	}
 
+	/**
+	 * Resolves a temporary WebDAV resource from a request-derived path. The path is built under
+	 * {@link #getTempDir()} and must resolve inside it; otherwise {@code null} is returned and the
+	 * caller treats it as "not found".
+	 *
+	 * @param url the request URL (endpoint mapping is stripped internally)
+	 * @return the temp {@link File}, or {@code null} when the path has a {@code .} or {@code ..}
+	 *         segment or is not inside the temp directory
+	 */
 	public File loadTempFile(String url){
 		try {
 			url = stripMapping(url);
 		} catch (IOException e) {
-			Logger.error( this, "Error happened with uri: [" + url + "]", e);
+			Logger.error(this, "Unable to strip the WebDAV mapping from a temp path", e);
 		}
-		Logger.debug(this, "Getting temp file from path " + url);
-		return new File(getTempDir().getPath() + url);
+		try {
+			return resolveTempPath(url, () -> new IOException("Invalid WebDAV temp path"));
+		} catch (IOException e) {
+			return null;
+		}
 	}
 
 	/**
@@ -503,8 +634,165 @@ public class DotWebdavHelper {
 		return result;
 	}
 
+	/**
+	 * Returns the directory that holds WebDAV temp storage: a dedicated sub-folder of the asset temp
+	 * path, so WebDAV never shares a root with the other features that write there.
+	 *
+	 * @return the WebDAV temp directory
+	 */
 	public File getTempDir () {
-		return new File(ConfigUtils.getAssetTempPath());
+		return new File(ConfigUtils.getAssetTempPath(), TEMP_FOLDER_NAME);
+	}
+
+	/**
+	 * Verifies that {@code candidate} resolves to a location strictly inside the WebDAV temp
+	 * directory ({@link #getTempDir()}). The temp directory itself is not a valid temp resource.
+	 * Canonicalization collapses {@code .} and {@code ..} segments and resolves symlinks, so the
+	 * check holds however the path is written. Fails closed: any canonicalization error is treated
+	 * as "not contained".
+	 *
+	 * @param candidate the {@link File} built from request-derived input
+	 * @return {@code true} only when the canonical candidate is a descendant of the temp directory
+	 */
+	private boolean isWithinTempDir(final File candidate) {
+		try {
+			final String root = getTempDir().getCanonicalPath();
+			return candidate.getCanonicalPath().startsWith(root + File.separator);
+		} catch (IOException e) {
+			Logger.error(this, "WebDAV temp-path canonicalization failed; rejecting", e);
+			logRejection("Rejected a WebDAV temp path that could not be canonicalized");
+			return false;
+		}
+	}
+
+	/**
+	 * Tells whether a path has a {@code .} or {@code ..} segment. Such segments are never needed to
+	 * address temp storage, so a path that has one is rejected before it is resolved.
+	 *
+	 * @param path the request-derived path, using {@code /} or the platform separator
+	 * @return {@code true} when any segment is exactly {@code .} or {@code ..}
+	 */
+	static boolean hasDotSegment(final String path) {
+		for (final String segment : path.split("[/\\\\]")) {
+			if (".".equals(segment) || "..".equals(segment)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Resolves a request-derived path under the temp directory. The path must have no {@code .} or
+	 * {@code ..} segment and must resolve strictly inside the temp directory; otherwise the rejection
+	 * is logged and the exception built by {@code rejection} is thrown.
+	 *
+	 * @param relativePath the path to append to the temp directory
+	 * @param rejection    builds the exception thrown when the path is not valid
+	 * @param <E>          the type of the rejection exception
+	 * @return the resolved {@link File}
+	 * @throws E when the path is not valid
+	 */
+	private <E extends Exception> File resolveTempPath(final String relativePath, final Supplier<E> rejection)
+			throws E {
+		if (hasDotSegment(relativePath)) {
+			logRejection("Rejected a WebDAV temp path with a dot segment");
+			throw rejection.get();
+		}
+		return requireWithinTempDir(new File(getTempDir().getPath() + relativePath), rejection);
+	}
+
+	/**
+	 * Logs a rejected WebDAV temp-storage request to the security log, with the id of the user who
+	 * made it. The message never includes request data.
+	 *
+	 * @param message what was rejected
+	 */
+	private static void logRejection(final String message) {
+		SecurityLogger.logWarn(DotWebdavHelper.class, () -> message + ", userId: " + currentUserId());
+	}
+
+	/**
+	 * Returns the id of the user authenticated on the current WebDAV request, or {@code unknown} when
+	 * the code does not run inside a WebDAV request.
+	 *
+	 * @return the current user id, or {@code unknown}
+	 */
+	private static String currentUserId() {
+		final Request request = HttpManager.request();
+		final Object tag = request != null && request.getAuthorization() != null
+				? request.getAuthorization().getTag() : null;
+		return tag instanceof User ? ((User) tag).getUserId() : "unknown";
+	}
+
+	/**
+	 * Returns {@code candidate} when it resolves strictly inside the temp directory (see
+	 * {@link #isWithinTempDir(File)}); otherwise logs the rejection and throws the exception built by
+	 * {@code rejection}. Each caller supplies the exception that matches its own failure contract.
+	 *
+	 * @param candidate the {@link File} built from request-derived input
+	 * @param rejection builds the exception thrown when the candidate is outside the temp directory
+	 * @param <E>       the type of the rejection exception
+	 * @return {@code candidate}, unchanged
+	 * @throws E when the candidate is not inside the temp directory
+	 */
+	private <E extends Exception> File requireWithinTempDir(final File candidate, final Supplier<E> rejection)
+			throws E {
+		if (!isWithinTempDir(candidate)) {
+			logRejection("Rejected a WebDAV temp path outside the temp directory");
+			throw rejection.get();
+		}
+		return candidate;
+	}
+
+	/**
+	 * Tells whether a client-supplied name can be used as a child name in temp storage: a single
+	 * plain path segment that is not empty, not {@code .} or {@code ..}, and contains no path
+	 * separator or NUL character.
+	 *
+	 * @param name the name received from the WebDAV client
+	 * @return {@code true} when the name is a single plain path segment
+	 */
+	static boolean isPlainSegment(final String name) {
+		return name != null
+				&& !name.isEmpty()
+				&& !".".equals(name)
+				&& !"..".equals(name)
+				&& name.indexOf('/') < 0
+				&& name.indexOf('\\') < 0
+				&& name.indexOf('\0') < 0;
+	}
+
+	/**
+	 * Rejects a client-supplied name that is not a single plain path segment, before it reaches
+	 * temp storage.
+	 *
+	 * @param resource the resource handling the request, reported in the rejection
+	 * @param name     the name received from the WebDAV client
+	 * @throws BadRequestException (HTTP 400) when the name is not a single plain path segment
+	 */
+	static void requirePlainSegment(final Resource resource, final String name) throws BadRequestException {
+		if (!isPlainSegment(name)) {
+			logRejection("Rejected a WebDAV name that is not a single path segment");
+			throw new BadRequestException(resource, "Invalid name");
+		}
+	}
+
+	/**
+	 * Resolves the target of a write into temp storage: {@code name} inside {@code folder}. The name
+	 * must be a single plain path segment and the target must stay strictly inside the temp
+	 * directory.
+	 *
+	 * @param resource the resource handling the request, reported in the rejection
+	 * @param folder   the temp folder receiving the write
+	 * @param name     the name received from the WebDAV client
+	 * @return the target {@link File}
+	 * @throws BadRequestException (HTTP 400) when the name or the target is not valid
+	 */
+	File resolveTempChild(final Resource resource, final File folder, final String name)
+			throws BadRequestException {
+		requirePlainSegment(resource, name);
+		return requireWithinTempDir(new File(folder, name),
+				() -> new BadRequestException(resource, "Invalid destination"));
 	}
 
 	public String getHostName ( String uri ) {
@@ -523,6 +811,14 @@ public class DotWebdavHelper {
 		return false;
 	}
 
+	/**
+	 * Creates a temporary WebDAV folder under {@link #getTempDir()}. The path must have no {@code .} or
+	 * {@code ..} segment and resolve inside the temp directory; otherwise nothing is created.
+	 *
+	 * @param path the request-derived folder path (endpoint mapping is stripped internally)
+	 * @return the created temp folder
+	 * @throws DotRuntimeException if the path has a dot segment or is not inside the temp directory
+	 */
 	public File createTempFolder(String path){
 		try {
 			path = stripMapping(path);
@@ -535,7 +831,8 @@ public class DotWebdavHelper {
 			path = path.substring(1, path.length());
 		}
 		path = path.replace("/", File.separator);
-		File f = new File(getTempDir().getPath() + File.separator + path);
+		final File f = resolveTempPath(File.separator + path,
+				() -> new DotRuntimeException("Invalid WebDAV temp folder path"));
 		f.mkdirs();
 		return f;
 	}
@@ -575,8 +872,17 @@ public class DotWebdavHelper {
 		return nf;
 	}
 
+	/**
+	 * Creates a temporary WebDAV file under {@link #getTempDir()}. The path must have no {@code .} or
+	 * {@code ..} segment and resolve inside the temp directory; otherwise nothing is created.
+	 *
+	 * @param path the request-derived file path, relative to the temp directory
+	 * @return the created temp file
+	 * @throws IOException if the path has a dot segment or is not inside the temp directory, or the
+	 *                     file cannot be created
+	 */
 	public File createTempFile(String path) throws IOException{
-		File file = new File(getTempDir().getPath() + path);
+		final File file = resolveTempPath(path, () -> new IOException("Invalid WebDAV temp file path"));
 		String p = file.getPath().substring(0,file.getPath().lastIndexOf(File.separator));
 		File f = new File(p);
 		f.mkdirs();
@@ -707,6 +1013,8 @@ public class DotWebdavHelper {
 		String folderName = getFolderName(path);
 		String fileName = getFileName(path);
 		fileName = deleteSpecialCharacter(fileName);
+		// Same extension block list as every other upload path; a WebDAV write is an upload too
+		FILE_EXTENSION_VALIDATOR.validate(fileName);
 		final boolean disableWorkflow = Config.getBooleanProperty("dotcms.webdav.disableworkflow", false);
 
 		Host host;
@@ -1839,9 +2147,16 @@ public class DotWebdavHelper {
 		}
 		return returnValue;
 	}
+	/**
+	 * Writes a resource with the current date and no auto-publish, wrapping any failure as a
+	 * {@link DotRuntimeException}. A refused file name is passed through unchanged, so the
+	 * resource layer can answer it as a client error rather than a server one.
+	 */
 	private void setResourceContent(String resourceUri, InputStream content, String contentType, String characterEncoding, User user) throws Exception {
 		try {
 			setResourceContent(resourceUri, content, contentType, characterEncoding, Calendar.getInstance().getTime(), user, false);
+		} catch (final IllegalArgumentException e) {
+			throw e;
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(),e);

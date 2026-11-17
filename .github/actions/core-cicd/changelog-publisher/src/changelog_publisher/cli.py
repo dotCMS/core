@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import datetime as dt
+import json
 import logging
 import os
 import sys
@@ -18,6 +19,7 @@ import requests
 
 from .client import CorpsitesClient
 from .publisher import AmbiguousMatchError, publish
+from .sync import load_state_file, reconcile, sync_with_retries
 from .version import is_current_track
 
 log = logging.getLogger("changelog_publisher")
@@ -92,6 +94,43 @@ def cmd_publish(args: argparse.Namespace) -> int:
     return 0
 
 
+def _diff_line(field: str, old, new) -> str:
+    if field == "tainted":
+        old, new = set(old or []), set(new or [])
+        return f"  tainted: +{','.join(sorted(new - old))} -{','.join(sorted(old - new))}"
+    return f"  {field}: {old} -> {new}"
+
+
+def cmd_sync_site(args: argparse.Namespace) -> int:
+    try:
+        hub = load_state_file(args.state_file)
+    except (OSError, ValueError) as exc:
+        log.error("invalid --state-file: %s", exc)
+        return 2
+    try:
+        client = CorpsitesClient()
+    except RuntimeError as exc:
+        print(f"::evergreen-sync-error::{exc}")
+        return 1
+    try:
+        result = sync_with_retries(client, hub) if args.apply else reconcile(client, hub, apply=False)
+    except (requests.RequestException, AmbiguousMatchError, RuntimeError) as exc:
+        print(f"::evergreen-sync-error::{' '.join(str(exc).split())}")
+        return 1
+
+    if result.status == "would-update":
+        print(f"desired: {json.dumps(result.desired, separators=(',', ':'))}")
+        for f in result.fields:
+            print(_diff_line(f, result.current.get(f), result.desired.get(f)))
+    if result.status == "unchanged":
+        print("::evergreen-sync::unchanged")
+    else:
+        print(f"::evergreen-sync::{result.status} fields={','.join(result.fields)}")
+    for track, version in result.missing_rows.items():
+        print(f"::evergreen-sync-missing-row::{track}={version}")
+    return 3 if result.missing_rows else 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="changelog-publisher")
     sub = p.add_subparsers(dest="command", required=True)
@@ -112,6 +151,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="override human-edit protection and update in place (manual operator use only)",
     )
     pub.set_defaults(func=cmd_publish)
+
+    sy = sub.add_parser("sync-site", help="reconcile the EvergreenState record with a Hub snapshot")
+    sy.add_argument("--state-file", required=True, help="hub-state JSON from `evergreen-tracks state`")
+    sy.add_argument("--apply", action="store_true", help="write + publish when the record differs")
+    sy.set_defaults(func=cmd_sync_site)
     return p
 
 

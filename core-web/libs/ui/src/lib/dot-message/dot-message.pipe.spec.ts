@@ -1,5 +1,8 @@
 import { createPipeFactory, SpectatorPipe } from '@openng/spectator/vitest';
 
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { TestBed } from '@angular/core/testing';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -18,6 +21,143 @@ describe('DotMessagePipe', () => {
     const createPipe = createPipeFactory({
         pipe: DotMessagePipe,
         providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+    });
+
+    describe('bundle recovery', () => {
+        @Component({
+            imports: [DotMessagePipe],
+            changeDetection: ChangeDetectionStrategy.OnPush,
+            template: `
+                <span data-testid="label">{{ 'apps.best' | dm: args }}</span>
+            `
+        })
+        class PersistentLabel {
+            args: string | string[] = ['Costa Rica', 'Panama'];
+        }
+
+        const setup = (
+            initialVersion: string | null = null,
+            args: string | string[] = ['Costa Rica', 'Panama']
+        ) => {
+            const loadedBundleRevision = signal(0);
+            const loadedBundleVersion = signal(initialVersion);
+            const loadedBundleLanguage = signal<string | null>(initialVersion ? 'default' : null);
+            let translation = initialVersion ? 'Old label' : 'apps.best';
+            const get = vi.fn((_key: string, ...args: string[]) =>
+                translation.replace('{0}', args[0]).replace('{1}', args[1])
+            );
+            TestBed.configureTestingModule({
+                imports: [PersistentLabel],
+                providers: [
+                    {
+                        provide: DotMessageService,
+                        useValue: {
+                            get,
+                            loadedBundleVersion,
+                            loadedBundleLanguage,
+                            loadedBundleRevision
+                        }
+                    }
+                ]
+            });
+            const fixture = TestBed.createComponent(PersistentLabel);
+            fixture.componentInstance.args = args;
+            fixture.detectChanges();
+            return {
+                fixture,
+                get,
+                loadedBundleVersion,
+                install: (version: string, message: string, language = 'default') => {
+                    translation = message;
+                    loadedBundleVersion.set(version);
+                    loadedBundleLanguage.set(language);
+                    loadedBundleRevision.update((revision) => revision + 1);
+                    fixture.detectChanges();
+                },
+                label: () =>
+                    fixture.nativeElement.querySelector('[data-testid="label"]').textContent
+            };
+        };
+
+        it('should recover a persistent OnPush label after initial failure and late retry', () => {
+            const { fixture, get, install, label } = setup();
+            expect(label()).toBe('apps.best');
+            fixture.detectChanges();
+            expect(label()).toBe('apps.best');
+            expect(get).toHaveBeenCalledTimes(1);
+
+            install('v1', 'Recovered {0} {1}');
+            expect(label()).toBe('Recovered Costa Rica Panama');
+            expect(get).toHaveBeenCalledTimes(2);
+        });
+
+        it('refreshes an OnPush label when messages are replaced at the same locale and version', () => {
+            const { install, label } = setup('same-version');
+            expect(label()).toBe('Old label');
+            install('same-version', 'Fresh label');
+            expect(label()).toBe('Fresh label');
+        });
+
+        it('should refresh an installed fallback when a newer bundle arrives', () => {
+            const { install, label } = setup('v1');
+            expect(label()).toBe('Old label');
+            install('v2', 'Updated {0}');
+            expect(label()).toBe('Updated Costa Rica');
+        });
+
+        it('should refresh a persistent OnPush label when the locale changes at the same version', () => {
+            const { install, label, loadedBundleVersion, get } = setup('v1');
+            expect(label()).toBe('Old label');
+            install('v1', 'Hola {0}', 'es_ES');
+            expect(loadedBundleVersion()).toBe('v1');
+            expect(label()).toBe('Hola Costa Rica');
+            expect(get).toHaveBeenCalledTimes(2);
+            install('v1', 'Old label', 'default');
+            expect(label()).toBe('Old label');
+            expect(get).toHaveBeenCalledTimes(3);
+        });
+
+        it('should preserve string spreading and cache repeated template checks', () => {
+            const { fixture, install, label, get } = setup('v1', '12');
+            install('v2', 'Bundle count {0} {1}');
+            expect(label()).toBe('Bundle count 1 2');
+            get.mockClear();
+            fixture.componentRef.changeDetectorRef.detectChanges();
+            fixture.componentRef.changeDetectorRef.detectChanges();
+            expect(label()).toBe('Bundle count 1 2');
+            expect(get).not.toHaveBeenCalled();
+        });
+
+        it('should invalidate changed string arguments and support string/array transitions', () => {
+            const { install, get } = setup('v1');
+            install('v2', 'Values {0} {1}');
+            const pipe = TestBed.runInInjectionContext(() => new DotMessagePipe());
+            expect(pipe.transform('apps.best', '12')).toBe('Values 1 2');
+            expect(pipe.transform('apps.best', '12')).toBe('Values 1 2');
+            expect(pipe.transform('apps.best', '34')).toBe('Values 3 4');
+            expect(pipe.transform('apps.best', ['whole', 'value'])).toBe('Values whole value');
+            expect(pipe.transform('apps.best', '😀x')).toBe('Values 😀 x');
+            pipe.transform('apps.best', '');
+            expect(get).toHaveBeenLastCalledWith('apps.best');
+        });
+
+        it('should cache unchanged inputs but detect changed argument values', () => {
+            const { get, install } = setup();
+            install('v1', 'Hello {0} {1}');
+            const pipe = TestBed.runInInjectionContext(() => new DotMessagePipe());
+            const args = ['Costa Rica', 'Panama'];
+            pipe.transform('apps.best', args);
+            get.mockClear();
+            pipe.transform('apps.best', args);
+            pipe.transform('apps.best', ['Costa Rica', 'Panama']);
+            expect(get).not.toHaveBeenCalled();
+
+            args[0] = 'Updated';
+            expect(pipe.transform('apps.best', args)).toBe('Hello Updated Panama');
+            expect(get).toHaveBeenCalledTimes(1);
+            pipe.transform('another.key', args);
+            expect(get).toHaveBeenCalledTimes(2);
+        });
     });
 
     it('should return empty string if param is undefined', () => {

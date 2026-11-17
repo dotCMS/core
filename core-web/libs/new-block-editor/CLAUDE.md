@@ -91,7 +91,7 @@ Do **not** create custom HTTP services in this lib for any of the above. If you 
 | `EditorToolbarStore` | Signal mirror of TipTap mark/block/alignment state for the toolbar. Editor-only concern. |
 | `SlashMenuService` | Slash-menu catalog, filtering, sub-menu loading. Editor-only concern. |
 | `ContentletEditUrlService` | Resolves the legacy-vs-new content editor URL via per-content-type feature-flag cache. Caches the metadata read so repeated contentlet edits within one session don't re-hit the network. The wrapper exists *for* the cache; without it, every "Edit contentlet" click would re-fetch. |
-| `DotUploadService` (adapter) | Promise/async-await adapter around `DotUploadFileService.publishContent()`. Two responsibilities: bridge the async model for `handleMediaDrop` (which is `async` linear code) and unwrap the workflow PUBLISH endpoint's `Record<contentTypeKey, contentlet>` shape into the editor's narrower `UploadedImage` / `UploadedVideo` types. |
+| `DotUploadService` (adapter) | Promise/async-await adapter around `DotUploadFileService.publishContent()`. Two responsibilities: bridge the async model for the `assetUploader` extension (`extensions/asset-uploader/`, whose `uploadAsset` is linear `async` code) and unwrap the workflow PUBLISH endpoint's `Record<contentTypeKey, contentlet>` shape into the editor's narrower `UploadedImage` / `UploadedVideo` types. |
 
 When in doubt: **state & orchestration → local. HTTP → data-access.**
 
@@ -170,7 +170,7 @@ What actions are available on each node type. **Slash** = appears in `/` menu (`
 | `gridBlock` | `grid.extension.ts` | Grid (2 columns) | — | `gridBlock` |
 | `gridColumn` | `grid.extension.ts` | — (created by `insertGrid`) | — | inherits gridBlock |
 | `aiContent` | `ai-content.extension.ts` | Ask AI (centered modal) | — | `aiContent` |
-| `uploadPlaceholder` | `upload-placeholder.extension.ts` | — (transient) | — | always (transient) |
+| `uploadPlaceholder` | `upload-placeholder.extension.ts` (registered by `asset-uploader/asset-uploader.extension.ts`) | — (transient) | — | always (transient) |
 
 ### Marks
 

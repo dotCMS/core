@@ -22,7 +22,6 @@
 
 package com.liferay.portal.model;
 
-import com.dotcms.adminsite.AdminSiteAPI;
 import com.dotmarketing.business.APILocator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.util.PropsUtil;
@@ -157,6 +156,13 @@ public class CompanyModel extends BaseModel {
 		}
 	}
 
+	/**
+	 * Returns the company key, serialized as text. The key is only for server code, so it is left out of every
+	 * JSON view of a company; code that needs it calls this method directly.
+	 *
+	 * @return the company key, or {@code null} if the company has none
+	 */
+	@JsonIgnore
 	public String getKey() {
 		return _key;
 	}

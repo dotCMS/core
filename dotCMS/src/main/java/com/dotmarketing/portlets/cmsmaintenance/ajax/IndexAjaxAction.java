@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.cmsmaintenance.ajax;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
+import com.dotcms.content.index.IndexTimestamp;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
@@ -11,7 +12,6 @@ import com.dotcms.rest.WebResource;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
-import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.servlets.ajax.AjaxAction;
@@ -23,7 +23,6 @@ import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.ServletException;
@@ -74,9 +73,6 @@ public class IndexAjaxAction extends AjaxAction {
 		try {
 			// Check permissions if the user has access to the CMS Maintenance Portlet
 			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
-				String userName = map.get("u");
-				String password = map.get("p");
-				LoginFactory.doLogin(userName, password, false, request, response);
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
 				if(user==null) {
 				    setUser(request);
@@ -123,7 +119,7 @@ public class IndexAjaxAction extends AjaxAction {
 
 
 		final boolean live = map.get("live") != null;
-		final String indexName=((live) ? "live_" : "working_" ) + APILocator.getContentletIndexAPI().timestampFormatter.format(new Date());
+		final String indexName=((live) ? "live_" : "working_" ) + IndexTimestamp.now();
 
 		APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);
         ESMappingUtilHelper.getInstance().addCustomMapping(indexName);

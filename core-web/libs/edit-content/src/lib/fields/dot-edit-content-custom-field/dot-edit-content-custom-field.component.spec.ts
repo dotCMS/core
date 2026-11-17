@@ -97,6 +97,33 @@ describe('DotEditContentCustomFieldComponent', () => {
             expect(spectator.component.$renderMode()).toBe(DotRenderModes.IFRAME);
             expect(spectator.component.$isIframeStrategy()).toBe(true);
         });
+
+        // The backend reads the variable case-insensitively and trimmed (ContentTypeHelper), and
+        // only renders `rendered` HTML for component mode. Reading it any other way here makes the
+        // two disagree: `IFRAME` would mount the native component with nothing to show.
+        it.each([
+            ['IFRAME', DotRenderModes.IFRAME],
+            [' iframe ', DotRenderModes.IFRAME],
+            ['COMPONENT', DotRenderModes.COMPONENT],
+            [' component ', DotRenderModes.COMPONENT]
+        ])('should read newRenderMode %p as %p', (value, expected) => {
+            const field = createFakeCustomField({
+                fieldVariables: [
+                    {
+                        key: NEW_RENDER_MODE_VARIABLE_KEY,
+                        value,
+                        id: NEW_RENDER_MODE_VARIABLE_KEY,
+                        fieldId: '123',
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable'
+                    }
+                ]
+            });
+
+            spectator.setHostInput({ field });
+            spectator.detectChanges();
+
+            expect(spectator.component.$renderMode()).toBe(expected);
+        });
     });
 
     describe('Render Mode Computation', () => {

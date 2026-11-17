@@ -33,17 +33,20 @@ params:
     label: "Service Provider Endpoint Hostname/Port"
     hint: "The fully qualified domain and optionally, port for your dotCMS installation (HTTPS is assumed). This will be used by your IDP for callbacks.  E.g. dotcms.com or testing.dotcms.com:8443"
     required: true
+  additionalAcsUrls:
+    value: ""
+    hidden: false
+    type: "STRING"
+    label: "Additional Assertion Consumer URLs"
+    hint: "Optional. Comma-separated full URLs, besides https://[endpoint hostname]/dotsaml/login/[site id], that the IDP may send SAML Responses to, e.g. a plugin's own login endpoint. Each URL must match the Response Destination and Recipient exactly; no wildcards."
+    required: false
   signatureValidationType:
     hidden: false
     type: "SELECT"
     label: "Validation Type"
-    hint: "Depends on your IDP Configuration."
+    hint: "Select exactly the parts of the SAML Response your IDP signs. dotCMS rejects a response unless the selected parts carry a valid IDP signature."
     required: true
     value:
-      -
-        label: "None"
-        value: "none"
-        selected: true
       -
         label: "Only Response"
         value: "response"
@@ -53,6 +56,7 @@ params:
       -
         label: "Response & Assertion"
         value: "responseandassertion"
+        selected: true
   idPMetadataFile:
     value: ""
     hidden: false

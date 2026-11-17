@@ -12,7 +12,6 @@ type StatusBucket = 'success' | 'danger' | 'warn' | 'info';
 const BUCKETS: Record<PublishAuditStatus, StatusBucket> = {
     // success: bundle reached its target
     [PublishAuditStatus.SUCCESS]: 'success',
-    [PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY]: 'success',
     [PublishAuditStatus.BUNDLE_SAVED_SUCCESSFULLY]: 'success',
 
     // warn: shipped but with non-fatal issues
@@ -37,6 +36,8 @@ const BUCKETS: Record<PublishAuditStatus, StatusBucket> = {
     // warn: actively being packed/sent (in-flight)
     [PublishAuditStatus.BUNDLING]: 'warn',
     [PublishAuditStatus.SENDING_TO_ENDPOINTS]: 'warn',
+    // warn: uploaded to every endpoint, but not installed on the receivers yet
+    [PublishAuditStatus.BUNDLE_SENT_SUCCESSFULLY]: 'warn',
     [PublishAuditStatus.PUBLISHING_BUNDLE]: 'warn',
     [PublishAuditStatus.RECEIVED_BUNDLE]: 'warn'
 };

@@ -12,7 +12,13 @@ import { Button } from 'primeng/button';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
-import { DotMessageSeverity, DotMessageType, DotTag } from '@dotcms/dotcms-models';
+import {
+    DotMessageSeverity,
+    DotMessageType,
+    DotTag,
+    DotTagsCreateResult,
+    DotTagsImportResult
+} from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTagsListComponent } from './dot-tags-list.component';
@@ -22,6 +28,21 @@ const MOCK_TAGS: DotTag[] = [
     { id: '1', label: 'tag1', siteId: 'site1', siteName: 'Site 1', persona: false },
     { id: '2', label: 'tag2', siteId: 'site2', siteName: 'Site 2', persona: false }
 ];
+
+/** Builds an import result from its counts; totalRows and success are derived like the backend does. */
+function createImportResult(
+    overrides: Partial<
+        Pick<DotTagsImportResult, 'successCount' | 'duplicateCount' | 'failureCount'>
+    > = {}
+): DotTagsImportResult {
+    const counts = { successCount: 0, duplicateCount: 0, failureCount: 0, ...overrides };
+
+    return {
+        totalRows: counts.successCount + counts.duplicateCount + counts.failureCount + 1,
+        success: counts.failureCount === 0,
+        ...counts
+    };
+}
 
 describe('DotTagsListComponent', () => {
     let spectator: Spectator<DotTagsListComponent>;
@@ -88,8 +109,14 @@ describe('DotTagsListComponent', () => {
                     'tags.cancel': 'Cancel',
                     'tags.confirm.delete.message': 'tags.confirm.delete.message',
                     'tags.confirm.delete.header': 'tags.confirm.delete.header',
+                    'tags.create.success': 'Successfully created {0} tag(s).',
+                    'tags.create.duplicate': 'Tag {0} already exists.',
+                    'tags.create.mixed': 'Created {0} tag(s). {1} already existed.',
                     'tags.import.success': 'Imported {0} tags successfully.',
-                    'tags.import.partial-success': 'Imported {0} of {1} tags. {2} failed.',
+                    'tags.import.partial-success':
+                        'Imported {0} of {1} tags. {3} already existed. {2} failed.',
+                    'tags.import.with-duplicates':
+                        'Imported {0} of {2} tags. {1} already existed and were skipped.',
                     'tags.show.global': 'Show Global Tags'
                 })
             }
@@ -411,7 +438,75 @@ describe('DotTagsListComponent', () => {
             onClose.next({ name: 'new-tag', siteId: 'site1' });
             onClose.complete();
 
-            expect(store.createTag).toHaveBeenCalledWith({ name: 'new-tag', siteId: 'site1' });
+            expect(store.createTag).toHaveBeenCalledWith(
+                { name: 'new-tag', siteId: 'site1' },
+                expect.any(Function)
+            );
+        });
+
+        describe('create result toast', () => {
+            /** Opens the create dialog, submits it, and lets the store answer with `result`. */
+            function submitCreate(result: DotTagsCreateResult): void {
+                const onClose = new Subject<unknown>();
+                const dialogService = spectator.inject(DialogService, true);
+                vi.spyOn(dialogService, 'open').mockReturnValue({
+                    onClose
+                } as unknown as DynamicDialogRef);
+                (store.createTag as unknown as Mock).mockImplementation(
+                    (_form, onCreated: (result: DotTagsCreateResult) => void) => onCreated(result)
+                );
+
+                spectator.component.openCreateDialog();
+                onClose.next({ name: 'tag1', siteId: 'site1' });
+                onClose.complete();
+            }
+
+            it('should push a SUCCESS message when the tag is created', () => {
+                const displayService = spectator.inject(DotMessageDisplayService, true);
+
+                submitCreate({ created: [MOCK_TAGS[0]], duplicates: [] });
+
+                expect(displayService.push).toHaveBeenCalledWith({
+                    life: 5000,
+                    severity: DotMessageSeverity.SUCCESS,
+                    message: 'Successfully created 1 tag(s).',
+                    type: DotMessageType.SIMPLE_MESSAGE
+                });
+            });
+
+            it('should push an INFO message naming the tag when it already exists', () => {
+                const displayService = spectator.inject(DotMessageDisplayService, true);
+
+                submitCreate({ created: [], duplicates: [MOCK_TAGS[0]] });
+
+                expect(displayService.push).toHaveBeenCalledWith({
+                    life: 5000,
+                    severity: DotMessageSeverity.INFO,
+                    message: 'Tag tag1 already exists.',
+                    type: DotMessageType.SIMPLE_MESSAGE
+                });
+            });
+
+            it('should push an INFO message with both counts when some tags already exist', () => {
+                const displayService = spectator.inject(DotMessageDisplayService, true);
+
+                submitCreate({ created: [MOCK_TAGS[0]], duplicates: [MOCK_TAGS[1]] });
+
+                expect(displayService.push).toHaveBeenCalledWith({
+                    life: 5000,
+                    severity: DotMessageSeverity.INFO,
+                    message: 'Created 1 tag(s). 1 already existed.',
+                    type: DotMessageType.SIMPLE_MESSAGE
+                });
+            });
+
+            it('should not push a message when nothing was created or matched', () => {
+                const displayService = spectator.inject(DotMessageDisplayService, true);
+
+                submitCreate({ created: [], duplicates: [] });
+
+                expect(displayService.push).not.toHaveBeenCalled();
+            });
         });
 
         it('should not call store.createTag when dialog is cancelled', () => {
@@ -569,7 +664,7 @@ describe('DotTagsListComponent', () => {
             } as unknown as DynamicDialogRef);
 
             spectator.component.openImportDialog();
-            onClose.next({ successCount: 5, failureCount: 0, totalRows: 5 });
+            onClose.next(createImportResult({ successCount: 5 }));
             onClose.complete();
 
             expect(store.loadTags).toHaveBeenCalled();
@@ -598,16 +693,15 @@ describe('DotTagsListComponent', () => {
             const displayService = spectator.inject(DotMessageDisplayService, true);
 
             spectator.component.openImportDialog();
-            onClose.next({ successCount: 5, failureCount: 0, totalRows: 5 });
+            onClose.next(createImportResult({ successCount: 5 }));
             onClose.complete();
 
-            expect(displayService.push).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    life: 5000,
-                    severity: DotMessageSeverity.SUCCESS,
-                    type: DotMessageType.SIMPLE_MESSAGE
-                })
-            );
+            expect(displayService.push).toHaveBeenCalledWith({
+                life: 5000,
+                severity: DotMessageSeverity.SUCCESS,
+                message: 'Imported 5 tags successfully.',
+                type: DotMessageType.SIMPLE_MESSAGE
+            });
         });
 
         it('should push a WARNING message when import has failures', () => {
@@ -619,16 +713,80 @@ describe('DotTagsListComponent', () => {
             const displayService = spectator.inject(DotMessageDisplayService, true);
 
             spectator.component.openImportDialog();
-            onClose.next({ successCount: 3, failureCount: 2, totalRows: 5 });
+            onClose.next(
+                createImportResult({ successCount: 2, duplicateCount: 1, failureCount: 2 })
+            );
             onClose.complete();
 
-            expect(displayService.push).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    life: 5000,
-                    severity: DotMessageSeverity.WARNING,
-                    type: DotMessageType.SIMPLE_MESSAGE
-                })
-            );
+            expect(displayService.push).toHaveBeenCalledWith({
+                life: 5000,
+                severity: DotMessageSeverity.WARNING,
+                message: 'Imported 2 of 5 tags. 1 already existed. 2 failed.',
+                type: DotMessageType.SIMPLE_MESSAGE
+            });
+        });
+
+        it('should push an INFO message when every row was a duplicate', () => {
+            const onClose = new Subject<unknown>();
+            const dialogService = spectator.inject(DialogService, true);
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as unknown as DynamicDialogRef);
+            const displayService = spectator.inject(DotMessageDisplayService, true);
+
+            spectator.component.openImportDialog();
+            // createImportResult reports totalRows as 4 (header line included, like the
+            // backend); the message must still say "of 3"
+            onClose.next(createImportResult({ duplicateCount: 3 }));
+            onClose.complete();
+
+            expect(displayService.push).toHaveBeenCalledWith({
+                life: 5000,
+                severity: DotMessageSeverity.INFO,
+                message: 'Imported 0 of 3 tags. 3 already existed and were skipped.',
+                type: DotMessageType.SIMPLE_MESSAGE
+            });
+        });
+
+        it('should push an INFO message when some rows were duplicates and none failed', () => {
+            const onClose = new Subject<unknown>();
+            const dialogService = spectator.inject(DialogService, true);
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as unknown as DynamicDialogRef);
+            const displayService = spectator.inject(DotMessageDisplayService, true);
+
+            spectator.component.openImportDialog();
+            onClose.next(createImportResult({ successCount: 2, duplicateCount: 1 }));
+            onClose.complete();
+
+            expect(displayService.push).toHaveBeenCalledWith({
+                life: 5000,
+                severity: DotMessageSeverity.INFO,
+                message: 'Imported 2 of 3 tags. 1 already existed and were skipped.',
+                type: DotMessageType.SIMPLE_MESSAGE
+            });
+        });
+
+        it('should treat missing counts as 0 instead of rendering NaN', () => {
+            const onClose = new Subject<unknown>();
+            const dialogService = spectator.inject(DialogService, true);
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose
+            } as unknown as DynamicDialogRef);
+            const displayService = spectator.inject(DotMessageDisplayService, true);
+
+            spectator.component.openImportDialog();
+            // failureCount is missing; the total must still be 3, not NaN
+            onClose.next({ successCount: 2, duplicateCount: 1, totalRows: 4, success: true });
+            onClose.complete();
+
+            expect(displayService.push).toHaveBeenCalledWith({
+                life: 5000,
+                severity: DotMessageSeverity.INFO,
+                message: 'Imported 2 of 3 tags. 1 already existed and were skipped.',
+                type: DotMessageType.SIMPLE_MESSAGE
+            });
         });
 
         it('should not push a message when import dialog is cancelled', () => {

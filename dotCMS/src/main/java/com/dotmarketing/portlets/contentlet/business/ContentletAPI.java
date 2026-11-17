@@ -713,14 +713,20 @@ public interface ContentletAPI {
 			DotSecurityException;
 
 	/**
-	 * Adds the permissions query fragment to the given query based on the given user and roles
+	 * Adds the permissions query fragment to the given query based on the given user and roles.
+	 * <p>
+	 * The fragment is appended as text and only a single space separates it from what the query
+	 * already holds, so the query is normalized first: a trailing run of backslashes of odd length
+	 * is completed with one more, which stops it from consuming that separator. Implementations
+	 * that override this method have to keep that normalization, or the fragment they append may
+	 * not parse as a clause of its own.
 	 *
-	 * @param buffy
-	 * @param user
-	 * @param roles
-	 * @param respectFrontendRoles
-	 * @throws DotSecurityException
-	 * @throws DotDataException
+	 * @param buffy the query to append to, normalized in place before the fragment is added
+	 * @param user the {@link User} the query is run for, or {@code null} for an anonymous caller
+	 * @param roles the {@link Role}s held by that user; empty for an anonymous caller
+	 * @param respectFrontendRoles whether the anonymous and logged-in-site roles grant read as well
+	 * @throws DotSecurityException if the caller's roles cannot be resolved
+	 * @throws DotDataException if the role data cannot be read
 	 */
 	public void addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
 
@@ -731,8 +737,15 @@ public interface ContentletAPI {
 	 * {@code secondaryPermissionCheck=true}. Self-guards on {@code PERMISSION_SECONDARY_CATEGORY_CHECK}
 	 * and on admin users. Must be applied alongside {@link #addPermissionsToQuery} by every search
 	 * backend (ES and OS) to keep permission filtering consistent across the migration phases.
+	 * <p>
+	 * The fragment is appended as text and only a single space separates it from what the query
+	 * already holds, so the query is normalized first, the same way {@link #addPermissionsToQuery}
+	 * normalizes it: a trailing run of backslashes of odd length is completed with one more, which
+	 * stops it from consuming that separator. Implementations that override this method have to
+	 * keep that normalization, and must not touch the query on the paths where they append
+	 * nothing.
 	 *
-	 * @param buffy the query buffer to append to
+	 * @param buffy the query buffer to append to, normalized in place before the fragment is added
 	 * @param user the user performing the search
 	 * @param roles the user's roles
 	 * @param respectFrontendRoles whether to include the anonymous/frontend role
@@ -2486,12 +2499,21 @@ public interface ContentletAPI {
 	public Object loadField(String inode, com.dotcms.contenttype.model.field.Field field) throws DotDataException;
 
     /**
-     * Allows to count how many records match the specified lucene query and user
-     * 
-     * @param luceneQuery
-     * @param user
-     * @param respectFrontendRoles
-     * @return
+     * Counts how many indexed contentlets match the given Lucene query and may be read by the
+     * given user.
+     * <p>
+     * The count is narrowed by the same permission clauses a search is narrowed by, the content
+     * read permissions and the secondary category check alike, so a caller never gets a total
+     * that counts content the matching search would hide from them. The category clause is
+     * governed by the {@code PERMISSION_SECONDARY_CATEGORY_CHECK} property, on by default, and a
+     * search drops it on the same terms, so the two agree either way.
+     *
+     * @param luceneQuery the query written by the caller
+     * @param user the {@link User} the count is run for, or {@code null} for an anonymous caller
+     * @param respectFrontendRoles whether the anonymous and logged-in-site roles grant read as well
+     * @return how many matching contentlets the caller may read
+     * @throws DotDataException if the count cannot be read from the index
+     * @throws DotSecurityException if no user is given and front-end roles are not respected
      */
     public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 

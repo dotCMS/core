@@ -192,9 +192,11 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# 5. No magick/EXR operations registered, and the ones we need are.
+# 5. No magick/EXR operations registered. Required capabilities are checked by
+#    delegate configuration above and actual native operations below, not by
+#    matching loader names in the operation listing.
 # ---------------------------------------------------------------------------
-section "registered operations (vips -l)"
+section "forbidden operations (vips -l)"
 
 OPS_OUT=""
 if [ -x "$VIPS_BIN" ]; then
@@ -205,18 +207,12 @@ if [ -z "$OPS_OUT" ]; then
 	fail "could not list operations"
 else
 	for op in magickload magicksave exrload; do
-		if printf '%s\n' "$OPS_OUT" | grep -qw "$op"; then
+		# A here-string avoids grep -q closing a pipe early and triggering
+		# SIGPIPE in printf, which pipefail would misread as a missing match.
+		if grep -qw "$op" <<<"$OPS_OUT"; then
 			fail "forbidden operation still registered: ${op}"
 		else
 			pass "operation absent: ${op}"
-		fi
-	done
-
-	for op in heifload heifsave pdfload svgload jpegload pngload webpload tiffload jp2kload jxlload gifsave webpsave; do
-		if printf '%s\n' "$OPS_OUT" | grep -qw "$op"; then
-			pass "operation present: ${op}"
-		else
-			fail "operation missing: ${op}"
 		fi
 	done
 fi

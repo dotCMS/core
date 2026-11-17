@@ -85,6 +85,26 @@ public class InfrastructureManagementFilterTest extends UnitTestBase {
         verify(chain, never()).doFilter(request, response);
     }
 
+    /**
+     * The container dispatches /x/%2e%2e/dotmgt/livez to /dotmgt/livez, so the port check must
+     * apply even though the raw URI does not start with /dotmgt.
+     */
+    @Test
+    public void testManagementEndpointBlockedOnWrongPortWhenRawUriDiffers() throws IOException, ServletException {
+        reset(request, response, chain, writer);
+        when(response.getWriter()).thenReturn(writer);
+
+        when(request.getRequestURI()).thenReturn("/x/%2e%2e" + HealthEndpointConstants.Endpoints.LIVENESS);
+        when(request.getServletPath()).thenReturn(HealthEndpointConstants.Endpoints.LIVENESS);
+        when(request.getServerPort()).thenReturn(InfrastructureConstants.Ports.DEFAULT_APPLICATION_PORT);
+        when(request.getHeader(InfrastructureConstants.Headers.X_FORWARDED_PORT)).thenReturn(null);
+
+        filter.doFilter(request, response, chain);
+
+        verify(response).sendError(HttpServletResponse.SC_NOT_FOUND);
+        verify(chain, never()).doFilter(request, response);
+    }
+
     @Test
     public void testManagementEndpointWithProxyHeaders() throws IOException, ServletException {
         // Reset mocks for this test

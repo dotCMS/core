@@ -1,0 +1,140 @@
+name: Evergreen Site Sync
+
+on:
+  workflow_call:
+    inputs:
+      trigger:
+        description: 'Human label for Slack notices'
+        required: true
+        type: string
+      apply:
+        type: boolean
+        default: false
+      drift_check:
+        type: boolean
+        default: false
+      as_if_action:
+        type: string
+        default: ''
+      as_if_version:
+        type: string
+        default: ''
+      as_if_track:
+        type: string
+        default: ''
+      slack_channel_id:
+        type: string
+        default: 'CE1TBQU00'  # #dot-releases
+    secrets:
+      DOCKER_USERNAME:
+        required: true
+      DOCKER_TOKEN:
+        required: true
+      DOTCMS_DEVSITE_RELEASENOTES_TOKEN:
+        required: true
+      SLACK_BOT_TOKEN:
+        required: true
+
+# Reconciles the corpsites EvergreenState record with Docker Hub after a registry
+# mutation. Callers run it as a separate job OUTSIDE the evergreen-tracks-registry
+# lock, and it never blocks them (continue-on-error). Success posts nothing.
+jobs:
+  sync:
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    permissions:
+      contents: read
+    continue-on-error: true
+    concurrency:
+      # Dry-runs write nothing, so they get their own group; otherwise a queued dry-run
+      # would cancel a pending apply sync (R3 relies on the newer sync writing state).
+      group: evergreen-tracks-site-sync${{ !inputs.apply && '-dry-run' || '' }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Read Docker Hub state
+        id: hub
+        working-directory: .github/actions/core-cicd/evergreen-tracks
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+          AS_IF_ACTION: ${{ inputs.as_if_action }}
+          AS_IF_VERSION: ${{ inputs.as_if_version }}
+          AS_IF_TRACK: ${{ inputs.as_if_track }}
+        run: |
+          ARGS=()
+          if [ -n "$AS_IF_ACTION" ]; then ARGS+=(--as-if-action "$AS_IF_ACTION"); fi
+          if [ -n "$AS_IF_VERSION" ]; then ARGS+=(--as-if-version "$AS_IF_VERSION"); fi
+          if [ -n "$AS_IF_TRACK" ]; then ARGS+=(--as-if-track "$AS_IF_TRACK"); fi
+          uv run evergreen-tracks state --repo dotcms/dotcms --out "$RUNNER_TEMP/hub-state.json" "${ARGS[@]}"
+
+      - name: Sync EvergreenState record
+        id: sync
+        working-directory: .github/actions/core-cicd/changelog-publisher
+        env:
+          DOTCMS_DEVSITE_URL: ${{ vars.DOTCMS_DEVSITE_URL }}
+          DOTCMS_DEVSITE_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITE_RELEASENOTES_TOKEN }}
+          APPLY: ${{ inputs.apply }}
+        run: |
+          APPLY_FLAG=""
+          if [ "$APPLY" = "true" ]; then APPLY_FLAG="--apply"; fi
+          set +e
+          # shellcheck disable=SC2086
+          OUTPUT=$(uv run changelog-publisher sync-site --state-file "$RUNNER_TEMP/hub-state.json" $APPLY_FLAG 2>&1)
+          RC=$?
+          set -e
+          echo "$OUTPUT"
+          if [ "$RC" -eq 3 ]; then
+            echo "result=missing-row" >> "$GITHUB_OUTPUT"
+            echo "reason=no release row for: $(echo "$OUTPUT" | grep -o '::evergreen-sync-missing-row::.*' | sed 's/^::evergreen-sync-missing-row:://' | paste -sd, -)" >> "$GITHUB_OUTPUT"
+          elif [ "$RC" -ne 0 ]; then
+            echo "result=failure" >> "$GITHUB_OUTPUT"
+            REASON=$(echo "$OUTPUT" | grep -o '::evergreen-sync-error::.*' | sed 's/^::evergreen-sync-error:://' | head -1 || true)
+            echo "reason=${REASON:-sync-site exited rc=$RC (see run log)}" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=ok" >> "$GITHUB_OUTPUT"
+          fi
+          exit "$RC"
+
+      - name: Check for drift
+        id: drift
+        if: always() && inputs.drift_check && steps.hub.outcome == 'success' && steps.sync.outcome == 'success'
+        continue-on-error: true
+        working-directory: .github/actions/core-cicd/changelog-publisher
+        env:
+          DOTCMS_DEVSITE_URL: ${{ vars.DOTCMS_DEVSITE_URL }}
+          DOTCMS_DEVSITE_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITE_RELEASENOTES_TOKEN }}
+        run: |
+          OUTPUT=$(uv run changelog-publisher sync-site --state-file "$RUNNER_TEMP/hub-state.json" 2>&1) || true
+          echo "$OUTPUT"
+          FIELDS=$(echo "$OUTPUT" | grep -o '::evergreen-sync::would-update fields=.*' | head -1 | sed 's/.*fields=//')
+          if [ -n "$FIELDS" ]; then
+            echo "drift=true" >> "$GITHUB_OUTPUT"
+            echo "fields=$FIELDS" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Notify failure
+        if: failure()
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: ${{ inputs.slack_channel_id }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: >-
+            :warning: *Evergreen site sync FAILED* (trigger `${{ inputs.trigger }}`):
+            ${{ steps.sync.outputs.reason || 'Docker Hub state read failed — nothing written' }}.
+            Docker Hub is unaffected.
+            <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>
+
+      - name: Notify drift
+        if: always() && steps.drift.outputs.drift == 'true'
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: ${{ inputs.slack_channel_id }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: >-
+            :eyes: *Evergreen site record drifted from Docker Hub* (trigger `${{ inputs.trigger }}`):
+            still differs after sync in `${{ steps.drift.outputs.fields }}`.
+            <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>

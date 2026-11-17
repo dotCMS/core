@@ -46,8 +46,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class StaticDependencyBundler implements IBundler {
@@ -95,6 +97,17 @@ public class StaticDependencyBundler implements IBundler {
     }
 
 
+    /**
+     * Turns the publish queue entries of the bundle into the static-publishing scope: the sites,
+     * folders, languages and include patterns the content bundlers filter on. For URL-mapped content
+     * every language version contributes its own localized URL, and for a static un-publish the
+     * matching {@code /live/} markers are written so the publisher can remove the artifacts.
+     *
+     * @param output the bundle output the un-publish markers are written to
+     * @throws DotDataException     if an asset cannot be read
+     * @throws DotSecurityException if an asset cannot be read by the system user
+     * @throws IOException          if an un-publish marker cannot be written
+     */
     private void buildPathIncludes(final BundleOutput output)
             throws DotDataException, DotSecurityException, IOException {
         List<PublishQueueElement> assets = config.getAssets();
@@ -164,6 +177,8 @@ public class StaticDependencyBundler implements IBundler {
                         continue;
                     }
 
+                    // Every language version shares the identifier, so the folder and the asset
+                    // type can be read from any of them.
                     final Contentlet contentlet = cons.get(0);
                     Folder folder = folderAPI.find(contentlet.getFolder(), systemUser, false);
                     if (folder != null) {
@@ -171,14 +186,31 @@ public class StaticDependencyBundler implements IBundler {
                     }
 
                     String contentPath = null;
+                    // URL-mapped content: the localized path of each language version, keyed by
+                    // language id (as string), for the per-language un-publish markers below.
+                    final Map<String, String> urlMapPathsByLanguage = new LinkedHashMap<>();
                 	if (contentlet.isFileAsset() || contentlet.isHTMLPage()) {
                         contentPath = id.getPath();
                         includes.add(contentPath);
                     } else if (UtilMethods.isSet(contentlet.getStructure().getUrlMapPattern())) {
-                        String urlMap = contentletAPI.getUrlMapForContentlet(contentlet, systemUser, true);
-                        if (urlMap != null) {
-                            contentPath = urlMap;
-                            includes.add(urlMap);
+                        // The publish queue does not record the language the push was started from
+                        // (PublisherAPIImpl hardcodes language_id=1) and the index returns the
+                        // versions newest-first, so resolving a single version would lock the bundle
+                        // to whichever language was edited last. Each language version can carry its
+                        // own localized URL, so include every version's URL Map: the per-language
+                        // passes in URLMapBundler then find each translation by its own URL. See #36729.
+                        for (final Contentlet version : cons) {
+                            final String urlMap = contentletAPI.getUrlMapForContentlet(version, systemUser, true);
+                            if (!UtilMethods.isSet(urlMap)) {
+                                continue;
+                            }
+                            if (!includes.contains(urlMap)) {
+                                includes.add(urlMap);
+                            }
+                            urlMapPathsByLanguage.putIfAbsent(String.valueOf(version.getLanguageId()), urlMap);
+                            if (contentPath == null) {
+                                contentPath = urlMap;
+                            }
                         }
                     }
 
@@ -190,12 +222,21 @@ public class StaticDependencyBundler implements IBundler {
                         //    (directly or via default-language fallback), so mirror that — otherwise
                         //    fallback-rendered artifacts in other languages are orphaned. See #35365.
                         //  - Other content (file assets, URL-mapped) is published only where it has a
-                        //    real version, so the per-version languages are the right set.
-                        final Collection<String> markerLanguages = contentlet.isHTMLPage()
-                                ? pageMarkerLanguages(id, languages)
-                                : nonLiveLanguages(id.getId());
-                        StaticUnpublishMarker.writeContentMarkers(config, output, h.getHostname(),
-                                markerLanguages, contentPath);
+                        //    real version, so the per-version languages are the right set. URL-mapped
+                        //    content is removed at each language's own localized path. See #36729.
+                        if (contentlet.isHTMLPage()) {
+                            StaticUnpublishMarker.writeContentMarkers(config, output, h.getHostname(),
+                                    pageMarkerLanguages(id, languages), contentPath);
+                        } else if (contentlet.isFileAsset()) {
+                            StaticUnpublishMarker.writeContentMarkers(config, output, h.getHostname(),
+                                    nonLiveLanguages(id.getId()), contentPath);
+                        } else {
+                            for (final String languageId : nonLiveLanguages(id.getId())) {
+                                StaticUnpublishMarker.writeContentMarkers(config, output, h.getHostname(),
+                                        List.of(languageId),
+                                        urlMapPathsByLanguage.getOrDefault(languageId, contentPath));
+                            }
+                        }
                     }
                 }
             }

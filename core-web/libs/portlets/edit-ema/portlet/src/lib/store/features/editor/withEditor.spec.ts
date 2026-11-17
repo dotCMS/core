@@ -13,14 +13,16 @@ import {
 } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { withFlags } from '@dotcms/store';
-import { UVE_MODE } from '@dotcms/types';
+import { DotCMSPageAsset, UVE_MODE } from '@dotcms/types';
 import { WINDOW } from '@dotcms/utils';
 import {
     DotLanguagesServiceMock,
+    createFakeContentlet,
     getExperimentMock,
     mockWorkflowsActions
 } from '@dotcms/utils-testing';
 
+import { UVE_EDIT_PANEL_TABS } from './models';
 import { withView } from './toolbar/withView';
 import { withEditor } from './withEditor';
 
@@ -29,7 +31,7 @@ import {
     DotPageApiService
 } from '../../../services/dot-page-api/dot-page-api.service';
 import { PERSONA_KEY } from '../../../shared/consts';
-import { EDITOR_STATE } from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ACTION_MOCK,
     ACTION_PAYLOAD_MOCK,
@@ -40,7 +42,7 @@ import {
     MOCK_RESPONSE_HEADLESS,
     MOCK_RESPONSE_VTL
 } from '../../../shared/mocks';
-import { ActionPayload, SelectedContentlet } from '../../../shared/models';
+import { ActionPayload, ContentletPayload, SelectedContentlet } from '../../../shared/models';
 import { getPersonalization, mapContainerStructureToArrayOfContainers } from '../../../utils';
 import { PageType, UVEState } from '../../models';
 import { createInitialUVEState } from '../../testing/mocks';
@@ -689,6 +691,171 @@ describe('withEditor', () => {
             });
         });
 
+        describe('$editorContentletEditData', () => {
+            const CONTAINER_ID = 'container-1';
+            const CONTAINER_UUID = '1';
+            const CONTENTLET_ID = 'contentlet-1';
+
+            /** Selects the contentlet as the page rendered it, under the inode it had then. */
+            const selectContentlet = (contentlet: Partial<ContentletPayload> = {}) => {
+                store.setSelected(
+                    toSelected({
+                        ...ACTION_PAYLOAD_MOCK,
+                        container: {
+                            ...ACTION_PAYLOAD_MOCK.container,
+                            identifier: CONTAINER_ID,
+                            uuid: CONTAINER_UUID
+                        },
+                        contentlet: {
+                            ...(ACTION_PAYLOAD_MOCK.contentlet as ContentletPayload),
+                            identifier: CONTENTLET_ID,
+                            inode: 'inode-before-save',
+                            ...contentlet
+                        }
+                    })
+                );
+            };
+
+            /** Loads the page asset as it is after a save: the same contentlet, a new inode. */
+            const loadPageAssetAfterSave = () => {
+                store.setPageAsset({
+                    pageAsset: {
+                        ...MOCK_RESPONSE_HEADLESS,
+                        containers: {
+                            [CONTAINER_ID]: {
+                                container: { identifier: CONTAINER_ID },
+                                containerStructures: [],
+                                contentlets: {
+                                    [`uuid-${CONTAINER_UUID}`]: [
+                                        createFakeContentlet({
+                                            identifier: CONTENTLET_ID,
+                                            inode: 'inode-after-save'
+                                        })
+                                    ]
+                                }
+                            }
+                        }
+                    } as unknown as DotCMSPageAsset
+                });
+            };
+
+            it('should hold no contentlet when nothing is selected', () => {
+                expect(store.$editorContentletEditData()).toEqual({
+                    container: undefined,
+                    contentlet: undefined
+                });
+            });
+
+            it('should give the selected contentlet and its container when the page asset does not hold it', () => {
+                selectContentlet();
+
+                const { container, contentlet } = store.$editorContentletEditData();
+
+                expect(container?.identifier).toBe(CONTAINER_ID);
+                expect(contentlet.inode).toBe('inode-before-save');
+            });
+
+            it("should give the contentlet's latest saved version from the page asset", () => {
+                selectContentlet();
+                loadPageAssetAfterSave();
+
+                expect(store.$editorContentletEditData().contentlet.inode).toBe('inode-after-save');
+            });
+
+            it('should keep the permission from the selection on the saved version', () => {
+                // The page asset carries no permission; only the selection does.
+                selectContentlet({ canEdit: false });
+                loadPageAssetAfterSave();
+
+                const { contentlet } = store.$editorContentletEditData();
+
+                expect(contentlet.inode).toBe('inode-after-save');
+                expect(contentlet['canEdit']).toBe(false);
+            });
+
+            it('should leave the permission out when the selection has none', () => {
+                selectContentlet();
+                loadPageAssetAfterSave();
+
+                expect(store.$editorContentletEditData().contentlet['canEdit']).toBeUndefined();
+            });
+        });
+
+        describe('editorCanEditSelectedContentlet', () => {
+            it.each([
+                {
+                    case: 'the user can edit the selected contentlet',
+                    canEdit: true,
+                    expected: true
+                },
+                {
+                    case: 'the user cannot edit the selected contentlet',
+                    canEdit: false,
+                    expected: false
+                },
+                // Headless pages give no permission; the gate fails open.
+                { case: 'the selection gives no permission', canEdit: undefined, expected: true }
+            ])('should be $expected when $case', ({ canEdit, expected }) => {
+                store.setSelected(
+                    toSelected({
+                        ...ACTION_PAYLOAD_MOCK,
+                        contentlet: {
+                            ...(ACTION_PAYLOAD_MOCK.contentlet as ContentletPayload),
+                            ...(canEdit === undefined ? {} : { canEdit })
+                        }
+                    })
+                );
+
+                expect(store.editorCanEditSelectedContentlet()).toBe(expected);
+            });
+
+            it('should be true when nothing is selected', () => {
+                store.resetSelected();
+
+                expect(store.editorCanEditSelectedContentlet()).toBe(true);
+            });
+        });
+
+        describe('$editorIsIframeLoading', () => {
+            it('should be loading while a headless page in edit mode waits for its client', () => {
+                store.setIsClientReady(false);
+
+                expect(store.$editorIsIframeLoading()).toBe(true);
+            });
+
+            it('should stop loading once the headless client is ready', () => {
+                store.setIsClientReady(true);
+
+                expect(store.$editorIsIframeLoading()).toBe(false);
+            });
+
+            it('should not wait for a client on a traditional page', () => {
+                store.setIsClientReady(false);
+                patchStoreState(store, { pageType: PageType.TRADITIONAL });
+
+                expect(store.$editorIsIframeLoading()).toBe(false);
+            });
+
+            it('should not wait for a client outside edit mode', () => {
+                store.setIsClientReady(false);
+                patchStoreState(store, {
+                    pageParams: {
+                        ...(initialState.pageParams as DotPageApiParams),
+                        mode: UVE_MODE.PREVIEW
+                    }
+                });
+
+                expect(store.$editorIsIframeLoading()).toBe(false);
+            });
+
+            it('should be loading while the page loads, even with the client ready', () => {
+                store.setIsClientReady(true);
+                patchStoreState(store, { uveStatus: UVE_STATUS.LOADING });
+
+                expect(store.$editorIsIframeLoading()).toBe(true);
+            });
+        });
+
         describe('$iframeURL', () => {
             it("should return the iframe's URL", () => {
                 expect(store.$iframeURL()).toBe(
@@ -817,6 +984,40 @@ describe('withEditor', () => {
                 store.updateEditorScrollState();
 
                 expect(store.editorContentArea()).toBe(null);
+            });
+        });
+
+        describe('editorSetEditPanelTab', () => {
+            it('should set the active tab of the edit panel', () => {
+                store.editorSetEditPanelTab(UVE_EDIT_PANEL_TABS.STYLE_EDITOR);
+
+                expect(store.editorEditPanelTab()).toBe(UVE_EDIT_PANEL_TABS.STYLE_EDITOR);
+
+                store.editorSetEditPanelTab(UVE_EDIT_PANEL_TABS.QUICK_EDIT);
+
+                expect(store.editorEditPanelTab()).toBe(UVE_EDIT_PANEL_TABS.QUICK_EDIT);
+            });
+
+            it('should leave the edit panel open or closed as it was', () => {
+                store.setEditPanelOpen(false);
+
+                store.editorSetEditPanelTab(UVE_EDIT_PANEL_TABS.STYLE_EDITOR);
+
+                expect(store.editorEditPanelOpen()).toBe(false);
+            });
+        });
+
+        describe('editorSetContentEditorPlaced', () => {
+            it('should record whether the content editor is placed', () => {
+                expect(store.editorContentEditorPlaced()).toBe(false);
+
+                store.editorSetContentEditorPlaced(true);
+
+                expect(store.editorContentEditorPlaced()).toBe(true);
+
+                store.editorSetContentEditorPlaced(false);
+
+                expect(store.editorContentEditorPlaced()).toBe(false);
             });
         });
 

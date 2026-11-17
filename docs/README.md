@@ -30,8 +30,11 @@ Descriptions say **when to load** the doc, not what it contains.
 | [REST_API_PATTERNS.md](backend/REST_API_PATTERNS.md) | Adding or changing a JAX-RS resource — annotations, `WebResource.InitBuilder`, `@Schema` rules |
 | [MAVEN_BUILD_SYSTEM.md](backend/MAVEN_BUILD_SYSTEM.md) | Adding a dependency or touching build configuration |
 | [CONFIGURATION_PATTERNS.md](backend/CONFIGURATION_PATTERNS.md) | Reading configuration — `Config.getProperty()` and the resolution order |
+| [APPS_CONFIGURATION.md](backend/APPS_CONFIGURATION.md) | Deciding who may change or read Apps configuration, or using its legacy delegation feature flag |
 | [DATABASE_PATTERNS.md](backend/DATABASE_PATTERNS.md) | Writing SQL, using `DotConnect`, or reasoning about transactions |
 | [SECURITY_BACKEND.md](backend/SECURITY_BACKEND.md) | Input validation, auth, SQL/XSS prevention, secure logging on the backend specifically |
+| [CLIENT_ADDRESS_RESOLUTION.md](backend/CLIENT_ADDRESS_RESOLUTION.md) | Using the client's address (API token networks, logs, rules), or setting which proxies' `X-Forwarded-For` is believed |
+| [LOGIN_LOCKOUT.md](backend/LOGIN_LOCKOUT.md) | Working on login lockout, configuring it, or unlocking a locked-out user (support runbook) |
 | [VIRTUAL_THREADS.md](backend/VIRTUAL_THREADS.md) | Deciding whether a workload belongs on a virtual thread — socket I/O yes, file I/O no |
 | [JANDEX_METADATA_SCANNING.md](backend/JANDEX_METADATA_SCANNING.md) | Looking up classes or annotations at runtime — prefer this over reflection |
 | [HEALTH_MONITORING.md](backend/HEALTH_MONITORING.md) | Working on health endpoints or runtime log levels |
@@ -75,7 +78,7 @@ Descriptions say **when to load** the doc, not what it contains.
 | [INTEGRATION_TESTS.md](testing/INTEGRATION_TESTS.md) | Writing or running an integration test — **includes the MainSuite registration rule: an unregistered test is silently never run in CI** |
 | [BACKEND_UNIT_TESTS.md](testing/BACKEND_UNIT_TESTS.md) | Writing a unit test in `:dotcms-core` — Surefire, Mockito setup, naming (there is no category/tag mechanism) |
 | [E2E_TESTS.md](testing/E2E_TESTS.md) | Working on the Playwright suite in `core-web/apps/dotcms-ui-e2e` |
-| [API_TESTING.md](testing/API_TESTING.md) | Writing API tests — Postman (`dotcms-postman/`) and Karate (`test-karate/`) |
+| [API_TESTING.md](testing/API_TESTING.md) | Writing API tests — Postman (`dotcms-postman/`) |
 | [PERFORMANCE_TESTS.md](testing/PERFORMANCE_TESTS.md) | Load testing with JMeter (`test-jmeter/`) or the Kubernetes analytics suite |
 | [test-cases/README.md](test-cases/README.md) | Looking for the manual/feature test-suite index |
 
@@ -106,6 +109,7 @@ Descriptions say **when to load** the doc, not what it contains.
 | [WORKFLOW_PATTERNS.md](claude/WORKFLOW_PATTERNS.md) | Structuring how an assistant approaches a task — context detection, information gathering |
 | [GITHUB_AUTOMATION.md](claude/GITHUB_AUTOMATION.md) | Automating GitHub issue management with dotCMS utilities |
 | [GPG_COMMIT_SIGNING.md](claude/GPG_COMMIT_SIGNING.md) | Setting up signed commits — required so commits made through AI tools are verifiably authorized by you |
+| [BACKEND_GAP_BACKLOG.md](BACKEND_GAP_BACKLOG.md) | Planning next quarter's AI-context work — the drafted backlog of backend and testing gaps (epic #37124) |
 
 Cursor rules live in [`.cursor/rules/`](../.cursor/rules/README.md) (short reminders with globs, linking back to these docs). Slash commands live in `.claude/commands/`, and the skills they call in `.claude/skills/` — see its [CATALOG.md](../.claude/skills/CATALOG.md).
 

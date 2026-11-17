@@ -42,6 +42,12 @@
     background-color: rgba(255, 255, 255, 0.6);
 }
 
+// The first load, before there is any content: the spinner fills the whole editor.
+.edit-content-layout__loading {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+}
+
 // Normalize every p-message banner in the top bar to the same compact banner padding
 // (12px vertical / 28px horizontal) so the info, lock and workflow messages all align with
 // each other. Done here once instead of per-instance styleClass so they can't drift apart.

@@ -1,6 +1,8 @@
 import { ContentDrivePage } from '@pages';
 import { type Page } from '@playwright/test';
 
+import { reloadWhileBatchIsRunning } from './helpers/content-drive-upload-restore';
+
 import { type ContentDriveApiHelpers, test } from '../../fixtures/content-drive.fixture';
 
 /**
@@ -93,6 +95,33 @@ test.describe('Content Drive bulk upload outcomes', () => {
             // else can.
             await drive.expectHandedToBackground();
         }));
+
+    test('keeps reporting a batch across a reload, until it finishes', ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) =>
+        inSeededFolder(
+            { adminPage, apiHelpers, name: `cd-reload-${testSuffix}` },
+            async (drive) => {
+                // The status is put back from the upload queue's active listing, and the completion
+                // ends it. The reload is arranged so the batch is certain to be running when the
+                // page reads that listing (see the helper), rather than racing a reload against a
+                // batch that finishes in about six seconds.
+                await reloadWhileBatchIsRunning(
+                    adminPage,
+                    `cd-reload-${testSuffix}`,
+                    8,
+                    `reload-${testSuffix}`
+                );
+                // By its own count: every test here uploads as the same admin, and the restore
+                // puts back each of that user's batches, so a sibling's status can be on screen too.
+                // No other test sends eight files.
+                await drive.expectStatusToastContaining('Uploading 8 files in the background');
+                // Longer than any other outcome here: the whole batch has to finish first.
+                await drive.expectStatusToastGoneContaining('Uploading 8 files', 240000);
+            }
+        ));
 
     test('names the file that collided, and still uploads the rest', ({
         adminPage,

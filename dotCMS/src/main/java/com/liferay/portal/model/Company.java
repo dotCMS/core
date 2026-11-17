@@ -154,20 +154,45 @@ public class Company extends CompanyModel {
 		return _company;
 	}
 
+	/**
+	 * Returns the background color, which is stored in the company's size field.
+	 *
+	 * @return the background color
+	 */
 	@JsonIgnore
 	public String getBackgroundColor() {
-	  return _company.getSize();
+		return protectedCopyOrSelf().getSize();
 	}
 
+	/**
+	 * Returns the primary color, which is stored in the company's type field.
+	 *
+	 * @return the primary color
+	 */
 	@JsonIgnore
 	public String getPrimaryColor() {
-	    return _company.getType();
-	  }
+		return protectedCopyOrSelf().getType();
+	}
 
+	/**
+	 * Returns the secondary color, which is stored in the company's street field.
+	 *
+	 * @return the secondary color
+	 */
 	@JsonIgnore
 	public String getSecondaryColor() {
-      return _company.getStreet();
-    }
+		return protectedCopyOrSelf().getStreet();
+	}
+
+	/**
+	 * Returns the company the colors are read from: the protected copy when this company has one, otherwise this
+	 * company. A protected copy has no copy of its own, so it reads its own fields.
+	 *
+	 * @return the {@link Company} that holds the colors
+	 */
+	private Company protectedCopyOrSelf() {
+		return _company != null ? _company : this;
+	}
 	
 	public void protect() {
 		_company = (Company) this.clone();
