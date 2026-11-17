@@ -25,6 +25,25 @@ export interface Container {
     payload: ClientData | string;
 }
 
+/** A contentlet of a container, as the dropzone draws it, with its payload read once. */
+export interface DropzoneContentlet {
+    area: ContentletArea;
+    payload: ClientData;
+    /** The JSON written to `data-payload`. */
+    payloadAttribute: string;
+    /** Whether it is the contentlet being moved, in the container it is moved from. */
+    isSource: boolean;
+}
+
+/** A container of the page, as the dropzone draws it, with its payload read once. */
+export interface DropzoneContainer {
+    container: Container;
+    payload: ClientData;
+    /** The JSON written to `data-payload`. */
+    payloadAttribute: string;
+    contentlets: DropzoneContentlet[];
+}
+
 export interface Column {
     x: number;
     y: number;

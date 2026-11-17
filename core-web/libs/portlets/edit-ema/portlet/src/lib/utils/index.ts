@@ -425,15 +425,16 @@ export function doesMoveChangeOrder({
 }
 
 /**
- * Check if two containers are equals
+ * Check if two containers are equals: the same container, by identifier, in the same place on
+ * the page, by uuid. Takes a page container or a container payload on either side.
  *
- * @param {PageContainer} currentContainer
- * @param {ContainerPayload} containerToFind
+ * @param {Pick<PageContainer, 'identifier' | 'uuid'>} currentContainer
+ * @param {Pick<ContainerPayload, 'identifier' | 'uuid'>} containerToFind
  * @return {*}  {boolean}
  */
 export function areContainersEquals(
-    currentContainer: PageContainer,
-    containerToFind?: ContainerPayload
+    currentContainer: Pick<PageContainer, 'identifier' | 'uuid'>,
+    containerToFind?: Pick<ContainerPayload, 'identifier' | 'uuid'>
 ): boolean {
     return (
         currentContainer.identifier === containerToFind?.identifier &&

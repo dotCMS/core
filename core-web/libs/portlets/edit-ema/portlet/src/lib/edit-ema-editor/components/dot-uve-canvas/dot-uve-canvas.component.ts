@@ -58,6 +58,7 @@ import { ReloadEditorContent } from '../../../store/features/editor/models';
 import { IframeAccessMode, PageType } from '../../../store/models';
 import {
     TEMPORAL_DRAG_ITEM,
+    areContainersEquals,
     deleteContentletFromContainer,
     doesMoveChangeOrder,
     getPageOwnedParamKeys,
@@ -719,20 +720,16 @@ export class DotUveCanvasComponent implements AfterViewInit, OnDestroy {
         contentletId: string,
         position: 'before' | 'after' | undefined
     ): boolean {
-        const destination = payload.container;
         const isSameContainer =
-            !!originContainer &&
-            originContainer.identifier === destination?.identifier &&
-            originContainer.uuid === destination?.uuid;
+            !!originContainer && areContainersEquals(originContainer, payload.container);
 
         if (!isSameContainer) {
             return true;
         }
 
         const contentletsId =
-            payload.pageContainers?.find(
-                ({ identifier, uuid }) =>
-                    identifier === originContainer.identifier && uuid === originContainer.uuid
+            payload.pageContainers?.find((container) =>
+                areContainersEquals(container, originContainer)
             )?.contentletsId ??
             originContainer.contentletsId ??
             [];
