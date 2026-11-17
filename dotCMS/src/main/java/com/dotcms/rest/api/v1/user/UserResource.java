@@ -137,6 +137,13 @@ public class UserResource implements Serializable {
 	public static final String USER_WITH_USER_ID_MSG = "User with userId '";
 	/** Item key carrying whether the User is a CMS Administrator; returned to Role administrators. */
 	private static final String ADMIN_ITEM_KEY = "admin";
+	/**
+	 * The session attributes a Login As writes ({@link #updateLoginAsSessionInfo}, {@link #setImpersonatedUserSite}).
+	 * {@link #loginAs} reads them before it starts, so a request that does not complete can put them back.
+	 */
+	private static final List<String> LOGIN_AS_SESSION_ATTRIBUTES = List.of(WebKeys.PRINCIPAL_USER_ID,
+			LoginAsSession.SESSION_KEY, WebKeys.USER, WebKeys.USER_ID, com.dotmarketing.util.WebKeys.CURRENT_HOST,
+			com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
 	private final WebResource webResource;
 	private final UserAPI userAPI;
 	private final HostAPI siteAPI;
@@ -729,6 +736,22 @@ public class UserResource implements Serializable {
         throw new ForbiddenException(message);
     }
 
+	/**
+	 * Starts a Login As: the caller's session acts as the requested user until Logout As. The security log records
+	 * that the caller logged in as the user only once the Login As completes. A request that is refused or fails
+	 * leaves the session as it found it, so a Login As that was already active stays active and Logout As keeps
+	 * working.
+	 *
+	 * @param request      The current {@link HttpServletRequest}.
+	 * @param httpResponse The current {@link HttpServletResponse}.
+	 * @param loginAsForm  The id of the user to log in as and, when that user is an administrator, the caller's
+	 *                     password.
+	 *
+	 * @return 200 with {@code loginAs: true} when it completes; 200 with {@code loginAs: false} and an error key when
+	 * it is refused for a reason the UI shows; 400, 401, 403 or 500 otherwise.
+	 *
+	 * @throws Exception If the request cannot be initialized.
+	 */
 	@Operation(
 	    operationId = "loginAsUser",
 	    summary = "Login as user",
@@ -779,8 +802,10 @@ public class UserResource implements Serializable {
 
 		final String serverName = request.getServerName();
 		final User currentUser = initData.getUser();
-		final Host currentSite = Host.class.cast(request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST));
-		Response response;
+		// a request that does not complete leaves the session as it found it, including a Login As already active
+		final HttpSession session = request.getSession();
+		final Map<String, Object> sessionBefore = loginAsSessionAttributes(session);
+		final String principalBefore = PrincipalThreadLocal.getName();
 		try {
 			final Map<String, Object> sessionData = this.helper.doLoginAs(currentUser, loginAsUserId, loginAsUserPwd, serverName);
 			// the id as stored in the user record, not as it was posted
@@ -788,12 +813,14 @@ public class UserResource implements Serializable {
 			updateLoginAsSessionInfo(request, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), currentUser.getUserId(), loginAsStoredUserId);
 			this.setImpersonatedUserSite(request, loginAsStoredUserId);
-			response = Response.ok(new ResponseEntityView<>(Map.of("loginAs", true))).build();
+			SecurityLogger.logInfo(UserResource.class, String.format("UserID '%s' has successfully logged in as '%s' / " +
+					"Remote IP: '%s'", currentUser.getUserId(), loginAsStoredUserId, request.getRemoteAddr()));
+			return Response.ok(new ResponseEntityView<>(Map.of("loginAs", true))).build();
 		} catch (final DotSecurityException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
 					e.getMessage()));
-			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
+			restoreLoginAsSessionAttributes(session, sessionBefore, principalBefore);
 			// 403, not 401: the caller is authenticated but not allowed; a 401 makes the UI end the session.
 			// The key travels in the error-key header so the UI can tell this denial from other 403s
 			return ExceptionMapperUtil.createResponse(e, "loginas.error.adminrequired", Response.Status.FORBIDDEN);
@@ -801,35 +828,65 @@ public class UserResource implements Serializable {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
 					e.getMessage()));
-			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
+			restoreLoginAsSessionAttributes(session, sessionBefore, principalBefore);
 			return ExceptionMapperUtil.createResponse(e, Response.Status.UNAUTHORIZED);
 		} catch (final DotDataException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
 					e.getMessage()));
-			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
+			restoreLoginAsSessionAttributes(session, sessionBefore, principalBefore);
 			if (UtilMethods.isSet(e.getMessageKey())) {
-				final User user = initData.getUser();
-				response = Response.ok(new ResponseEntityView<>(
-						list(new ErrorEntity(e.getMessageKey(), LanguageUtil.get(user.getLocale(), e.getMessageKey()))),
+				return Response.ok(new ResponseEntityView<>(
+						list(new ErrorEntity(e.getMessageKey(), LanguageUtil.get(currentUser.getLocale(), e.getMessageKey()))),
 						Map.of("loginAs", false))).build();
-			} else {
-				return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
 			}
+			return ExceptionMapperUtil.createResponse(e, Response.Status.BAD_REQUEST);
 		} catch (final Exception e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An error occurred when processing the " +
 					"Login As request from UserID '%s': %s", currentUser.getUserId(), e.getMessage()));
-			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
+			restoreLoginAsSessionAttributes(session, sessionBefore, principalBefore);
 			if (ExceptionUtil.causedBy(e, DotSecurityException.class)) {
-				return ErrorResponseHelper.INSTANCE.getErrorResponse(Response.Status.UNAUTHORIZED, initData.getUser()
+				return ErrorResponseHelper.INSTANCE.getErrorResponse(Response.Status.UNAUTHORIZED, currentUser
 						.getLocale(), e.getMessage());
 			}
 			// In case of unknown error, a Status 500 is returned
 			return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
 		}
-		SecurityLogger.logInfo(UserResource.class, String.format("UserID '%s' has successfully logged in as '%s' / " +
-				"Remote IP: '%s'", currentUser.getUserId(), loginAsUserId, request.getRemoteAddr()));
-		return response;
+	}
+
+	/**
+	 * Reads the session attributes a Login As changes, so they can be put back if the request does not complete.
+	 *
+	 * @param session The current {@link HttpSession}.
+	 *
+	 * @return Each attribute in {@link #LOGIN_AS_SESSION_ATTRIBUTES} with its current value; {@code null} when it is
+	 * not set.
+	 */
+	private static Map<String, Object> loginAsSessionAttributes(final HttpSession session) {
+		final Map<String, Object> attributes = new HashMap<>();
+		LOGIN_AS_SESSION_ATTRIBUTES.forEach(name -> attributes.put(name, session.getAttribute(name)));
+		return attributes;
+	}
+
+	/**
+	 * Puts back the session attributes read by {@link #loginAsSessionAttributes}, and the request's principal name,
+	 * after a Login As that did not complete. A Login As that was already active stays active, so Logout As keeps
+	 * working; a plain session goes back to the caller.
+	 *
+	 * @param session       The current {@link HttpSession}.
+	 * @param attributes    The attributes as they were before the request.
+	 * @param principalName The {@link PrincipalThreadLocal} name as it was before the request.
+	 */
+	private static void restoreLoginAsSessionAttributes(final HttpSession session, final Map<String, Object> attributes,
+			final String principalName) {
+		attributes.forEach((name, value) -> {
+			if (null == value) {
+				session.removeAttribute(name);
+			} else {
+				session.setAttribute(name, value);
+			}
+		});
+		PrincipalThreadLocal.setName(principalName);
 	}
 
 	/**
