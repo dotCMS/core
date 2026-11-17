@@ -25,8 +25,8 @@ import java.util.Map;
  *
  * <p>Behaviour is the library's for dotCMS: REPORT is offered only for resources that implement
  * {@link ReportableResource}, which no dotCMS resource does, so clients get "not implemented"
- * exactly as before. For a resource that did implement it, the library answered a bad request
- * because no report is ever registered; this class gives the same answer without reading the body.
+ * exactly as before. A resource that did implement it is not reachable in dotCMS; this class
+ * answers it with 400 Bad Request without reading the body.
  */
 public class ReportHandler implements ExistingEntityHandler {
 
@@ -66,8 +66,8 @@ public class ReportHandler implements ExistingEntityHandler {
     }
 
     /**
-     * Answers a bad request without reading the body: no report is registered, so there is nothing
-     * the body could name that would be answered.
+     * Answers 400 Bad Request without reading the body: no report is registered, so there is
+     * nothing the body could name that would be answered.
      */
     @Override
     public void processExistingResource(final HttpManager manager, final Request request,

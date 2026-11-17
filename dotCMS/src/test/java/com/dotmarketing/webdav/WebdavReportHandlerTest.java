@@ -1,8 +1,8 @@
 package com.dotmarketing.webdav;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -50,11 +50,11 @@ public class WebdavReportHandlerTest {
     }
 
     /**
-     * A resource that does accept REPORT gets a bad request, which is what the library answered
-     * when no report was registered, and the body is never read.
+     * A resource that does accept REPORT, which no dotCMS resource does, gets 400 Bad Request and
+     * the body is never read.
      */
     @Test
-    public void reportIsABadRequestWithoutReadingTheBody() throws Exception {
+    public void reportOnAReportableResourceIsRefusedWithoutReadingTheBody() throws Exception {
         final Request request = mock(Request.class);
         final Response response = mock(Response.class);
 
@@ -71,7 +71,7 @@ public class WebdavReportHandlerTest {
         for (final HttpExtension extension : manager.getHandlers()) {
             for (final Handler handler : extension.getHandlers()) {
                 if (Arrays.asList(handler.getMethods()).contains(Method.REPORT.code)) {
-                    assertEquals("Only one handler should answer REPORT", null, found);
+                    assertNull("Only one handler should answer REPORT", found);
                     found = handler;
                 }
             }
