@@ -2,6 +2,7 @@ package com.dotcms.cms.login;
 
 import static com.dotcms.util.FunctionUtils.ifTrue;
 
+import com.dotcms.auth.LoginLockout;
 import com.dotmarketing.util.Config;
 import io.vavr.Lazy;
 import java.io.Serializable;
@@ -218,11 +219,13 @@ public interface LoginServiceAPI extends Serializable {
 	 *            MUST be loaded from db with all the information because we are
 	 *            going to save this object if rehash process required
 	 * @return If passwords match, returns {@code true}. Otherwise, returns
-	 *         {@code false}.
+	 *         {@code false}. While login lockout applies to the request's address or the account, returns
+	 *         {@code false} for any password; a wrong password counts toward the lockout (see
+	 *         {@link LoginLockout}).
 	 */
     default boolean passwordMatch(final String password, final User user) {
 
-        return LoginFactory.passwordMatch(password, user);
+        return LoginLockout.getInstance().passwordMatch(password, user);
     }
 
     /**

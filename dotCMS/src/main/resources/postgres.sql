@@ -2573,3 +2573,16 @@ CREATE INDEX idx_job_status ON job (state);
 CREATE INDEX idx_job_created_at ON job (created_at);
 CREATE INDEX idx_job_history_job_id ON job_history (job_id);
 CREATE INDEX idx_job_history_job_id_state ON job_history (job_id, state);
+
+-- Login attempt counts and locks per account and source (client address, 'webdav:' + address, or
+-- '*' for the account-wide count), shared by every node of a cluster.
+CREATE TABLE login_lockout (
+    user_id      VARCHAR(100) NOT NULL,
+    source       VARCHAR(100) NOT NULL,
+    failures     INT          NOT NULL,
+    window_start BIGINT       NOT NULL,
+    locked_until BIGINT       NOT NULL,
+    mod_date     TIMESTAMPTZ  NOT NULL,
+    CONSTRAINT pk_login_lockout PRIMARY KEY (user_id, source)
+);
+CREATE INDEX idx_login_lockout_window ON login_lockout (window_start);

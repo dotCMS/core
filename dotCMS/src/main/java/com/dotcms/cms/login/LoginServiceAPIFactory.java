@@ -5,6 +5,7 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.LoginLockout;
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
@@ -750,7 +751,7 @@ public class LoginServiceAPIFactory implements Serializable {
         @CloseDBIfOpened
         @Override
         public boolean passwordMatch(String password, User user) {
-            return LoginFactory.passwordMatch(password, user);
+            return LoginLockout.getInstance().passwordMatch(password, user);
         }
 
         /**
