@@ -93,22 +93,29 @@ public class WebDavXmlValidationFilterTest {
         verify(chain).doFilter(any(), any());
     }
 
-    /** PROPFIND with no body means allprop, and LOCK with no body is a refresh. Both are legal. */
+    /**
+     * PROPFIND with no body means allprop, and LOCK with no body is a refresh. GET and DELETE never
+     * carry one but still pass through the filter, so every download depends on an empty body
+     * being accepted.
+     */
     @Test
     public void emptyBodyIsAllowed() throws Exception {
-        final FilterChain chain = mock(FilterChain.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
+        for (final String method : List.of("PROPFIND", "LOCK", "GET", "DELETE")) {
+            final FilterChain chain = mock(FilterChain.class);
+            final HttpServletResponse response = mock(HttpServletResponse.class);
 
-        new WebDavXmlValidationFilter().doFilter(request("PROPFIND", ""), response, chain);
+            new WebDavXmlValidationFilter().doFilter(request(method, ""), response, chain);
 
-        verify(response, never()).sendError(anyInt());
-        verify(chain).doFilter(any(), any());
+            verify(response, never().description(method)).sendError(anyInt());
+            verify(chain, description(method)).doFilter(any(), any());
+        }
     }
 
     /**
      * Every WebDAV method that can carry an XML body: the three the servlet parses today, REPORT
-     * (parsed only for resources that support reports), and methods the servlet does not handle
-     * yet but whose RFC-defined bodies are XML. Each must get the same checks.
+     * (parsed only for resources that support reports), MKCOL (which answers 415 to any body),
+     * ACL (a method the servlet knows but has no handler for) and SEARCH (one it does not know at
+     * all). Each must get the same checks.
      */
     private static final List<String> XML_BODY_METHODS =
             List.of("PROPFIND", "PROPPATCH", "LOCK", "REPORT", "MKCOL", "SEARCH", "ACL");
@@ -187,23 +194,24 @@ public class WebDavXmlValidationFilterTest {
     }
 
     /**
-     * Method names are normalised with Locale.ROOT, so a lower-case method name is validated like
-     * any other. Under a Turkish default locale the plain toUpperCase() of "propfind" is
-     * "PROPFİND", with a dotted capital I; this keeps such a name on the validated path.
+     * Method names are case-normalised before the PUT and POST exclusion is applied, so a
+     * lower-case "put" is still recognised as an upload and forwarded unread, under a Turkish
+     * default locale as under any other.
      */
     @Test
-    public void methodMatchingSurvivesATurkishDefaultLocale() throws Exception {
+    public void lowerCaseUploadMethodIsForwardedUntouchedUnderATurkishDefaultLocale()
+            throws Exception {
         final Locale original = Locale.getDefault();
         try {
             Locale.setDefault(new Locale("tr", "TR"));
             final FilterChain chain = mock(FilterChain.class);
             final HttpServletResponse response = mock(HttpServletResponse.class);
+            final HttpServletRequest request = request("put", DOCTYPE_BODY);
 
-            new WebDavXmlValidationFilter()
-                    .doFilter(request("propfind", DOCTYPE_BODY), response, chain);
+            new WebDavXmlValidationFilter().doFilter(request, response, chain);
 
-            verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST);
-            verify(chain, never()).doFilter(any(), any());
+            verify(chain).doFilter(request, response);
+            verify(response, never()).sendError(anyInt());
         } finally {
             Locale.setDefault(original);
         }
