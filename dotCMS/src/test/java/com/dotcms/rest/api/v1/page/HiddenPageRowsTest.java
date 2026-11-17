@@ -24,6 +24,8 @@ public class HiddenPageRowsTest extends UnitTestBase {
     private static final String CONTAINER = "container";
     private static final String DEFAULT = MultiTree.DOT_PERSONALIZATION_DEFAULT;
     private static final String DEFAULT_VARIANT = VariantAPI.DEFAULT_VARIANT.name();
+    private static final String PATH = "//site/application/containers/banner/";
+    private static final String LEGACY = MultiTree.LEGACY_RELATION_TYPE;
 
     /**
      * When none of the page's current rows is hidden from the user, the rows the user sent are
@@ -33,7 +35,7 @@ public class HiddenPageRowsTest extends UnitTestBase {
     public void testKeep_WhenNoRowIsHidden_ShouldReturnTheSentRows() {
         final List<MultiTree> sent = List.of(row("1", "A", 0));
 
-        final List<MultiTree> result = HiddenPageRows.keep(
+        final List<MultiTree> result = keep(
                 List.of(row("1", "A", 0), row("1", "B", 1)), sent, Set.of(), DEFAULT_VARIANT);
 
         assertSame(sent, result);
@@ -45,7 +47,7 @@ public class HiddenPageRowsTest extends UnitTestBase {
      */
     @Test
     public void testKeep_WhenTheVisibleRowIsRemoved_ShouldKeepTheHiddenRow() {
-        final List<MultiTree> result = HiddenPageRows.keep(
+        final List<MultiTree> result = keep(
                 List.of(row("1", "A", 0), row("1", "B", 1)), List.of(), Set.of("B"), DEFAULT_VARIANT);
 
         assertEquals(List.of("1:B:0"), describe(result));
@@ -57,7 +59,7 @@ public class HiddenPageRowsTest extends UnitTestBase {
      */
     @Test
     public void testKeep_WhenThePrecedingRowIsRemoved_ShouldPutTheHiddenRowFirst() {
-        final List<MultiTree> result = HiddenPageRows.keep(
+        final List<MultiTree> result = keep(
                 List.of(row("1", "A", 0), row("1", "B", 1), row("1", "D", 2)),
                 rows(row("1", "D", 0)), Set.of("B"), DEFAULT_VARIANT);
 
@@ -70,7 +72,7 @@ public class HiddenPageRowsTest extends UnitTestBase {
      */
     @Test
     public void testKeep_WhenVisibleRowsAreReordered_ShouldKeepTheHiddenRowAfterItsPredecessor() {
-        final List<MultiTree> result = HiddenPageRows.keep(
+        final List<MultiTree> result = keep(
                 List.of(row("1", "A", 0), row("1", "B", 1), row("1", "D", 2)),
                 rows(row("1", "D", 0), row("1", "A", 1)), Set.of("B"), DEFAULT_VARIANT);
 
@@ -82,7 +84,7 @@ public class HiddenPageRowsTest extends UnitTestBase {
      */
     @Test
     public void testKeep_WhenSeveralRowsAreHidden_ShouldKeepTheirOrder() {
-        final List<MultiTree> result = HiddenPageRows.keep(
+        final List<MultiTree> result = keep(
                 List.of(row("1", "B1", 0), row("1", "A", 1), row("1", "B2", 2)), List.of(),
                 Set.of("B1", "B2"), DEFAULT_VARIANT);
 
@@ -94,7 +96,7 @@ public class HiddenPageRowsTest extends UnitTestBase {
      */
     @Test
     public void testKeep_WhenCurrentRowsAreUnsorted_ShouldUseTheirTreeOrder() {
-        final List<MultiTree> result = HiddenPageRows.keep(
+        final List<MultiTree> result = keep(
                 List.of(row("1", "D", 2), row("1", "B", 1), row("1", "A", 0)),
                 rows(row("1", "A", 0), row("1", "D", 1)), Set.of("B"), DEFAULT_VARIANT);
 
@@ -107,7 +109,7 @@ public class HiddenPageRowsTest extends UnitTestBase {
      */
     @Test
     public void testKeep_WhenASlotIsNotSent_ShouldKeepItsHiddenRows() {
-        final List<MultiTree> result = HiddenPageRows.keep(
+        final List<MultiTree> result = keep(
                 List.of(row("1", "A", 0), row("2", "B", 0)), rows(row("1", "A", 0), row("1", "D", 1)),
                 Set.of("B"), DEFAULT_VARIANT);
 
@@ -120,7 +122,7 @@ public class HiddenPageRowsTest extends UnitTestBase {
      */
     @Test
     public void testKeep_WhenTheUserSendsHiddenContent_ShouldNotDuplicateIt() {
-        final List<MultiTree> result = HiddenPageRows.keep(
+        final List<MultiTree> result = keep(
                 List.of(row("1", "A", 0), row("1", "B", 1)),
                 rows(row("1", "B", 0), row("1", "A", 1)), Set.of("B"), DEFAULT_VARIANT);
 
@@ -136,7 +138,7 @@ public class HiddenPageRowsTest extends UnitTestBase {
         final MultiTree hidden = new MultiTree(PAGE, CONTAINER, "B", "1", 1, "dot:persona:p",
                 DEFAULT_VARIANT, Map.of("width", "50%"));
 
-        final List<MultiTree> result = HiddenPageRows.keep(
+        final List<MultiTree> result = keep(
                 List.of(new MultiTree(PAGE, CONTAINER, "A", "1", 0, "dot:persona:p", DEFAULT_VARIANT, null),
                         hidden),
                 List.of(), Set.of("B"), "variant-1");
@@ -150,8 +152,107 @@ public class HiddenPageRowsTest extends UnitTestBase {
         assertEquals(DEFAULT_VARIANT, hidden.getVariantId());
     }
 
+    /**
+     * A row stored with the legacy instance id is in slot {@code "1"}, where the page editor shows
+     * it and sends it back: a hidden legacy row goes back into that slot and is written as
+     * {@code "1"}, so the slot is not split in two.
+     */
+    @Test
+    public void testKeep_WhenRowsHaveTheLegacyInstanceId_ShouldKeepTheHiddenRowInSlotOne() {
+        final List<MultiTree> result = keep(
+                List.of(row(LEGACY, "A", 0), row(LEGACY, "B", 1)), rows(row("1", "A", 0)), Set.of("B"),
+                DEFAULT_VARIANT);
+
+        assertEquals(List.of("1:A:0", "1:B:1"), describe(result));
+    }
+
+    /**
+     * A container sent as its path is the same slot as the container stored by identifier: the
+     * hidden row is placed among the sent rows rather than numbered on its own.
+     */
+    @Test
+    public void testKeep_WhenTheContainerIsSentAsItsPath_ShouldMatchItsIdentifier() {
+        final List<MultiTree> result = keep(
+                List.of(row("1", "A", 0), row("1", "B", 1)), rows(row(PATH, "1", "A", 0)), Set.of("B"),
+                DEFAULT_VARIANT);
+
+        assertEquals(List.of("1:A:0", "1:B:1"), describe(result));
+    }
+
+    /**
+     * Hidden content sent back in its slot, with the container sent as its path, is saved where
+     * the user put it and not added a second time.
+     */
+    @Test
+    public void testKeep_WhenHiddenContentIsSentWithTheContainerPath_ShouldNotDuplicateIt() {
+        final List<MultiTree> result = keep(
+                List.of(row("1", "A", 0), row("1", "B", 1)),
+                rows(row(PATH, "1", "B", 0), row(PATH, "1", "A", 1)), Set.of("B"), DEFAULT_VARIANT);
+
+        assertEquals(List.of("1:B:0", "1:A:1"), describe(result));
+    }
+
+    /**
+     * Sending hidden content to another slot adds it there and keeps it where it was: a placement
+     * the user could not see is not removed, and the same content may sit in several containers.
+     */
+    @Test
+    public void testKeep_WhenHiddenContentIsSentToAnotherSlot_ShouldAlsoKeepItWhereItWas() {
+        final List<MultiTree> result = keep(
+                List.of(row("1", "A", 0), row("1", "B", 1)), rows(row("1", "A", 0), row("2", "B", 0)),
+                Set.of("B"), DEFAULT_VARIANT);
+
+        assertEquals(List.of("1:A:0", "1:B:1", "2:B:0"), describe(result));
+    }
+
+    /**
+     * Only content the user did not send back in its own slot needs a visibility check: content
+     * sent in its slot is saved as sent, and content sent only to another slot may still be kept
+     * where it was.
+     */
+    @Test
+    public void testUnsentContentIds_ShouldListTheContentNotSentInItsSlot() {
+        final HiddenPageRows rows = new HiddenPageRows(
+                List.of(row("1", "A", 0), row("1", "B", 1), row("2", "C", 0), row("2", "D", 1)),
+                List.of(row("1", "A", 0), row("2", "B", 0), row("2", "D", 1)), HiddenPageRowsTest::containerId);
+
+        assertEquals(Set.of("B", "C"), rows.unsentContentIds());
+    }
+
+    /**
+     * The check list matches slots the way {@link #keep} does: a legacy instance id is slot
+     * {@code "1"} and a container path is its identifier.
+     */
+    @Test
+    public void testUnsentContentIds_WhenSlotsAreSentInAnotherForm_ShouldMatchThem() {
+        final HiddenPageRows rows = new HiddenPageRows(
+                List.of(row(LEGACY, "A", 0), row(LEGACY, "B", 1)), List.of(row(PATH, "1", "A", 0)),
+                HiddenPageRowsTest::containerId);
+
+        assertEquals(Set.of("B"), rows.unsentContentIds());
+    }
+
+    private static List<MultiTree> keep(final List<MultiTree> currentRows, final List<MultiTree> sentRows,
+            final Set<String> hiddenContentIds, final String variantName) {
+        return new HiddenPageRows(currentRows, sentRows, HiddenPageRowsTest::containerId)
+                .keep(hiddenContentIds, variantName);
+    }
+
+    /**
+     * Resolves {@link #PATH} to {@link #CONTAINER}, as {@link MultiTree#getContainerAsID()} resolves
+     * a file container's path to its identifier.
+     */
+    private static String containerId(final MultiTree row) {
+        return PATH.equals(row.getContainer()) ? CONTAINER : row.getContainer();
+    }
+
     private static MultiTree row(final String uuid, final String contentId, final int order) {
-        return new MultiTree(PAGE, CONTAINER, contentId, uuid, order, DEFAULT, DEFAULT_VARIANT, null);
+        return row(CONTAINER, uuid, contentId, order);
+    }
+
+    private static MultiTree row(final String container, final String uuid, final String contentId,
+            final int order) {
+        return new MultiTree(PAGE, container, contentId, uuid, order, DEFAULT, DEFAULT_VARIANT, null);
     }
 
     private static List<MultiTree> rows(final MultiTree... rows) {

@@ -15,6 +15,7 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImmutableCategoryField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.datagen.CategoryDataGen;
+import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -56,10 +57,14 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.business.render.HTMLPageAssetRenderedAPIImpl;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDGenerator;
@@ -1178,6 +1183,123 @@ public class PageResourceReadAccessTest {
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         assertTrue(slotContentIds(page.getPage(), containerId, "1", MultiTree.DOT_PERSONALIZATION_DEFAULT,
                 VariantAPI.DEFAULT_VARIANT.name()).isEmpty());
+    }
+
+    /**
+     * Given a page the reader can edit, whose container slot is stored with the legacy instance id
+     * and holds content the reader can read followed by content the reader has no READ on,
+     * When the reader saves the slot the way the page editor shows it, as slot "1", with the
+     * content they can read,
+     * Then the content the reader could not see stays in slot "1", after that content, and no row
+     * is left under the legacy instance id, which would split the slot in two.
+     */
+    @Test
+    public void saveContent_slotStoredWithLegacyInstanceId_keepsHiddenContentInSlotOne() throws Exception {
+        final PageRenderTestUtil.PageRenderTest page = newPageEditableByReader();
+        final String containerId = page.getFirstContainer().getIdentifier();
+        placeRows(page.getPage(), containerId, MultiTree.LEGACY_RELATION_TYPE,
+                MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name(), content, unreadableContent);
+
+        final Response response = saveContent(reader, page.getPage(), null, entry(null, containerId, "1", content));
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(List.of(content.getIdentifier(), unreadableContent.getIdentifier()),
+                slotContentIds(page.getPage(), containerId, "1", MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                        VariantAPI.DEFAULT_VARIANT.name()));
+        assertTrue(slotContentIds(page.getPage(), containerId, MultiTree.LEGACY_RELATION_TYPE,
+                MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name()).isEmpty());
+    }
+
+    /**
+     * Given a page the reader can edit, whose file container (stored by identifier) holds content
+     * the reader can read followed by content the reader has no READ on, in a container folder the
+     * reader cannot read, so the save cannot turn the container's path into its identifier,
+     * When the reader saves the content they can read, sending the container as its path, as the
+     * page editor does,
+     * Then the content the reader could not see stays after that content, each in its own position.
+     */
+    @Test
+    public void saveContent_containerSentAsItsPath_keepsHiddenContentInOrder() throws Exception {
+        final PageRenderTestUtil.PageRenderTest page = newPageEditableByReader();
+        final String folderName = "hidden-rows-" + System.currentTimeMillis();
+        final FileAssetContainer fileContainer = newFileContainerTheReaderCannotRead(folderName);
+        placeRows(page.getPage(), fileContainer.getIdentifier(), "1", MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                VariantAPI.DEFAULT_VARIANT.name(), content, unreadableContent);
+
+        final Response response = saveContent(reader, page.getPage(), null,
+                entry(null, fileContainerPath(folderName), "1", content));
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(List.of(content.getIdentifier() + "@0", unreadableContent.getIdentifier() + "@1"),
+                slotPlacements(page.getPage(), fileContainer.getIdentifier(), "1"));
+    }
+
+    /**
+     * Given a page the reader can edit, whose file container (stored by identifier) holds content
+     * the reader can read and content the reader has no READ on, in a container folder the reader
+     * cannot read,
+     * When an API client of the reader's sends both contents back in reverse order, with the
+     * container as its path,
+     * Then the save succeeds and places each content once, where it was sent.
+     */
+    @Test
+    public void saveContent_containerSentAsItsPathWithHiddenContent_placesItOnce() throws Exception {
+        final PageRenderTestUtil.PageRenderTest page = newPageEditableByReader();
+        final String folderName = "hidden-rows-" + System.currentTimeMillis();
+        final FileAssetContainer fileContainer = newFileContainerTheReaderCannotRead(folderName);
+        placeRows(page.getPage(), fileContainer.getIdentifier(), "1", MultiTree.DOT_PERSONALIZATION_DEFAULT,
+                VariantAPI.DEFAULT_VARIANT.name(), content, unreadableContent);
+
+        final Response response = saveContent(reader, page.getPage(), null,
+                entry(null, fileContainerPath(folderName), "1", unreadableContent, content));
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(List.of(unreadableContent.getIdentifier() + "@0", content.getIdentifier() + "@1"),
+                slotPlacements(page.getPage(), fileContainer.getIdentifier(), "1"));
+    }
+
+    /**
+     * Creates a file container on the test site, in a folder under the containers folder that the
+     * reader has no READ on, accepting the content type of the test contents.
+     */
+    private static FileAssetContainer newFileContainerTheReaderCannotRead(final String folderName)
+            throws Exception {
+        final ContentType webPageContent = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find("webPageContent");
+        final FileAssetContainer fileContainer = new ContainerAsFileDataGen()
+                .host(site)
+                .folderName(folderName)
+                .ignoreDefaultContentTypes()
+                .contentType(webPageContent, "$!{body}")
+                .nextPersisted();
+        final Folder folder = APILocator.getFolderAPI().findFolderByPath(
+                Constants.CONTAINER_FOLDER_PATH + "/" + folderName, site, APILocator.systemUser(), false);
+        assertFalse("The reader must not be able to read the container folder",
+                APILocator.getPermissionAPI().doesUserHavePermission(folder, PermissionAPI.PERMISSION_READ,
+                        reader, false));
+        return fileContainer;
+    }
+
+    /**
+     * Returns the path the page editor sends for a file container of the test site.
+     */
+    private static String fileContainerPath(final String folderName) {
+        return FileAssetContainerUtil.getInstance().getFullPath(site,
+                Constants.CONTAINER_FOLDER_PATH + "/" + folderName + "/");
+    }
+
+    /**
+     * Returns the default-content placements of one slot of the page's container as
+     * {@code contentId@treeOrder}, in tree order, read from the database.
+     */
+    private static List<String> slotPlacements(final HTMLPageAsset page, final String containerId,
+            final String uuid) throws Exception {
+        return APILocator.getMultiTreeAPI().getMultiTreesByPersonalizedPage(page.getIdentifier(),
+                        MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name()).stream()
+                .filter(row -> containerId.equals(row.getContainer()) && uuid.equals(row.getRelationType()))
+                .sorted(Comparator.comparingInt(MultiTree::getTreeOrder).thenComparing(MultiTree::getContentlet))
+                .map(row -> row.getContentlet() + "@" + row.getTreeOrder())
+                .collect(Collectors.toList());
     }
 
     private static Response requestPersonas(final PageResource resource, final String pageId) throws Exception {

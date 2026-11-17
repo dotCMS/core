@@ -250,6 +250,12 @@ public class PageResourceHelper implements Serializable {
         final List<MultiTree> pageRows = keepHiddenRows
                 ? Optional.ofNullable(multiTreeAPI.getMultiTreesByVariant(pageId, variantName)).orElse(List.of())
                 : List.of();
+        // What the user could not see is decided by the edit-mode render's own filter, so the save
+        // and the page editor cannot disagree. That includes archived content, which the editor
+        // never shows: a non-admin save keeps its rows. This deliberately differs from the net-loss
+        // guard in MultiTreeAPIImpl.overridesMultitreesByPersonalization, which ignores archived
+        // rows: the guard measures how much content a save loses, while this decides which rows a
+        // save may replace, and a user cannot choose to remove a row they were never shown.
         final PageTreeReadFilter editorView = keepHiddenRows
                 ? PageTreeReadFilter.forRender(user, PageMode.EDIT_MODE)
                 : null;
@@ -281,7 +287,10 @@ public class PageResourceHelper implements Serializable {
      * not remove them. "Could not see" follows the edit-mode render
      * ({@link PageTreeReadFilter#forRender} in {@link PageMode#EDIT_MODE}): content the user has no
      * READ permission on (counting the anonymous user's, which the editor falls back to), archived
-     * content, and content that cannot be loaded.
+     * content, and content that cannot be loaded. Only content the user did not send back in its
+     * slot is checked: content sent in its slot is saved as sent either way. In a page editor save
+     * that leaves the content the editor did not show plus the content the user removed, so the
+     * check does not grow with the content on the page.
      *
      * @param pageId          the page being saved
      * @param pageRows        the page's current rows in the tree the variant shows, for every
@@ -301,10 +310,11 @@ public class PageResourceHelper implements Serializable {
         final List<MultiTree> currentRows = pageRows.stream()
                 .filter(row -> personalization.equals(row.getPersonalization()))
                 .collect(Collectors.toList());
+        final HiddenPageRows rows = new HiddenPageRows(currentRows, sentRows);
         final Set<String> hiddenContentIds = new HashSet<>();
-        for (final MultiTree row : currentRows) {
-            if (UtilMethods.isSet(row.getContentlet()) && !editorView.canRead(row.getContentlet(), variantName)) {
-                hiddenContentIds.add(row.getContentlet());
+        for (final String contentId : rows.unsentContentIds()) {
+            if (UtilMethods.isSet(contentId) && !editorView.canRead(contentId, variantName)) {
+                hiddenContentIds.add(contentId);
             }
         }
         if (!hiddenContentIds.isEmpty()) {
@@ -312,7 +322,7 @@ public class PageResourceHelper implements Serializable {
                     "Page '%s' save keeps %d contentlet(s) the user cannot see (personalization='%s', variant='%s')",
                     pageId, hiddenContentIds.size(), personalization, variantName));
         }
-        return HiddenPageRows.keep(currentRows, sentRows, hiddenContentIds, variantName);
+        return rows.keep(hiddenContentIds, variantName);
     }
 
     /**
