@@ -5,6 +5,7 @@ import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 import static com.dotmarketing.util.Constants.RESPECT_FRONT_END_ROLES;
 import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
 
+import com.dotcms.adminsite.AdminSiteAPI;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -278,6 +279,10 @@ public class LoginServiceAPIFactory implements Serializable {
         
         }
         
+        /**
+         * {@inheritDoc}
+         * Backend membership, including mixed-role accounts, is checked before creating a session.
+         */
         @CloseDBIfOpened
         @Override
         @RequestCost(Price.LOGIN_USERNAME_PASS)
@@ -326,12 +331,22 @@ public class LoginServiceAPIFactory implements Serializable {
 
             String userString = loggedInUser.getUserId() + "/" + loggedInUser.getEmailAddress();
 
-            if (!APILocator.getAdminSiteAPI().isAdminSite(request) && !loggedInUser.isFrontendUser()
-                    && !APILocator.getAdminSiteAPI().allowBackendLoginsOnNonAdminSites()) {
+            final AdminSiteAPI adminSite = APILocator.getAdminSiteAPI();
+            final boolean backendLogin = adminSite.isAdminSiteEnabled()
+                    && APILocator.getRoleAPI().doesUserHaveRole(loggedInUser,
+                            APILocator.getRoleAPI().loadBackEndUserRole());
+
+            if (backendLogin && !adminSite.allowInsecureRequests() && !request.isSecure()) {
+                SecurityLogger.logInfo(this.getClass(), "Backend login rejected: HTTPS is required.");
+                return false;
+            }
+
+            if (backendLogin && !adminSite.allowBackendLoginsOnNonAdminSites()
+                    && !adminSite.isAdminSite(request)) {
                 SecurityLogger.logInfo(this.getClass(), "3. User: " + userString
                         + " cannot login to dotCMS via the non-admin site: '"
                         + request.getHeader("host") + "'.  Please use the admin site url to login: '"
-                        + APILocator.getAdminSiteAPI().getAdminSiteUrl() + "'.");
+                        + adminSite.getAdminSiteUrl() + "'.");
                 return false;
             }
 

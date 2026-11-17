@@ -148,6 +148,12 @@ limitation out in the release notes.
 
 ## Admin-Site Login and Role Checks
 
+Production deployments should set `DOT_ADMIN_SITE_URL` in the environment. It is authoritative:
+resolving it does not load the company, and branding edits never write it. The editable branding
+`portalURL` and company JSON exports retain the stored legacy value. Without an explicit admin
+URL, local/upgrade installs use that stored value, or the built-in default for an unset or
+`localhost` placeholder. A failed company lookup is not cached as a default.
+
 `ADMIN_SITE_ALLOW_BACKEND_LOGINS_ANY_SITE` defaults to `true`: backend logins and role checks
 remain independent of the request's host, including synthetic requests created by background
 jobs without the originating site's host. Normal authentication and role checks still apply.
@@ -157,6 +163,14 @@ explicitly require an admin host for backend logins and request-scoped backend r
 Ensure synthetic requests carry the correct host before enabling this stricter policy.
 Admin-console URI filtering remains active on non-admin hosts regardless of this setting.
 With `ADMIN_SITE_ENABLED=false`, neither setting imposes admin-site host restrictions.
+The strict policy also covers users holding both frontend and backend roles and REST backend
+role checks. `ADMIN_SITE_REQUESTS_FORCE_SECURE=true` rejects insecure backend logins before a
+session or login cookie is created, even on authentication URIs outside the admin URI list.
+
+Company updates publish cluster-wide invalidation with their transaction. Calculated admin-site
+values also expire after five minutes to bound staleness if a notification is missed. Management
+probes run before admin-site filtering, so the filter does not introduce a company lookup on
+that path. The ingress must validate Host headers and prevent untrusted direct-origin access.
 
 ## Configuration Documentation Pattern
 When adding new properties, include:

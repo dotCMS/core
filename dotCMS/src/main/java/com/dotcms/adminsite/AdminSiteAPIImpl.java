@@ -12,6 +12,7 @@ import io.vavr.control.Try;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -25,6 +26,7 @@ import javax.servlet.http.HttpServletRequest;
 @ApplicationScoped
 public class AdminSiteAPIImpl implements AdminSiteAPI {
 
+    private static final Duration CONFIG_CACHE_TTL = Duration.ofMinutes(5);
 
     /***
      * Caffeine cache that holds the calculated configuration for the AdminSite functionality.
@@ -33,7 +35,9 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
      * When a value changes in the system_table, the {@link AdminSiteKeyListener} invalidates this cache
      * allowing the configuration to reload across the cluster.
      */
-    private final transient Cache<String, Object> adminSiteConfig = Caffeine.newBuilder().build();
+    private final transient Cache<String, Object> adminSiteConfig = Caffeine.newBuilder()
+            .expireAfterWrite(CONFIG_CACHE_TTL)
+            .build();
 
     /**
      * Thread-safe lazy accessor for the calculated AdminSite configuration values.
@@ -294,30 +298,22 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
     }
 
     /**
-     * calculates the admin site url based on config properties. Only runs on cache misses,
-     * so each log below is naturally "once per config change".
+     * Resolves the configured admin URL without a company lookup. Unconfigured installs use
+     * the stored portal URL; lookup failures propagate so a temporary outage cannot poison the cache.
      *
-     * @return
+     * @return the configured or legacy admin origin
      */
     String _baseAdminSiteDomain() {
-        if (!isAdminSiteConfigured()) {
+        String adminSiteUrl = Config.getStringProperty(ADMIN_SITE_URL, null);
+        if (!UtilMethods.isSet(adminSiteUrl)) {
             Logger.warn(AdminSiteAPI.class,
-                    "ADMIN_SITE_URL is not configured.  This is the url that is used to access dotCMS. Please add it to your system's environmental variables, e.g. DOT_ADMIN_SITE_URL=https://www.siteadmin.com or DOT_ADMIN_SITE_URL=https://www.siteadmin.com:8443");
+                    "ADMIN_SITE_URL is not configured. Set DOT_ADMIN_SITE_URL in production.");
+
+            // Never derive the canonical URL from the client-controlled Host header.
+            final String oldHost = APILocator.getCompanyAPI().getDefaultCompany().getOldPortalURL();
+            adminSiteUrl = !UtilMethods.isSet(oldHost) || "localhost".equalsIgnoreCase(oldHost)
+                    ? _ADMIN_SITE_URL_DEFAULT : oldHost;
         }
-
-        // NOTE: We intentionally do NOT fall back to the request's Host header here.
-        // Deriving the admin url from the client-controlled Host header would allow
-        // Host-header poisoning of getAdminSiteUrl/getAdminDomains.
-        // The legacy company portal url is the fallback so existing installs that configured
-        // it keep their domain - except the installer's "localhost" placeholder, which is
-        // treated as never-configured so the dotCMS default applies.
-        String oldHost = Try.of(() -> APILocator.getCompanyAPI().getDefaultCompany().getOldPortalURL()).getOrNull();
-
-        if (!UtilMethods.isSet(oldHost) || "localhost".equalsIgnoreCase(oldHost)) {
-            oldHost = _ADMIN_SITE_URL_DEFAULT;
-        }
-
-        String adminSiteUrl = Config.getStringProperty(ADMIN_SITE_URL, oldHost);
 
         while (adminSiteUrl.endsWith("/")) {
             adminSiteUrl = adminSiteUrl.substring(0, adminSiteUrl.length() - 1);
@@ -410,7 +406,7 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
 
     /**
      * {@inheritDoc}
-     * The value is cached until {@link #invalidateCache()} is called after a configuration change.
+     * The value is cached until invalidation or the bounded cache lifetime expires.
      */
     @Override
     public boolean allowBackendLoginsOnNonAdminSites() {

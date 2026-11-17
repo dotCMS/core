@@ -24,6 +24,8 @@ package com.liferay.portal.model;
 
 import com.dotmarketing.business.APILocator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.Serial;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.Xss;
@@ -37,6 +39,10 @@ import com.liferay.util.Xss;
  */
 
 public class CompanyModel extends BaseModel {
+    // Keep cached companies readable by nodes running the previous version.
+    @Serial
+    private static final long serialVersionUID = -8744738597834842569L;
+
 	public static boolean CACHEABLE = GetterUtil.get(PropsUtil.get(
 				"value.object.cacheable.com.liferay.portal.model.Company"),
 			VALUE_OBJECT_CACHEABLE);
@@ -180,14 +186,23 @@ public class CompanyModel extends BaseModel {
 		}
 	}
 
-    @JsonIgnore
+    /**
+     * Returns the stored portal URL for persistence, branding and portable JSON exports.
+     *
+     * @return the legacy portal URL, independent of deployment configuration
+     */
+    @JsonProperty("portalURL")
     public String getOldPortalURL() {
         return _portalURL;
     }
 
+    /**
+     * Returns the canonical admin URL for links back to the console, not for persistence.
+     *
+     * @return the admin origin resolved from deployment configuration or the legacy fallback
+     */
+    @JsonIgnore
 	public String getPortalURL() {
-        // This is the call that sets the return path back to the dotCMS admin console.
-        // It intentionally always resolves through the canonical ADMIN_SITE_URL.
         return APILocator.getAdminSiteAPI().getAdminSiteUrl();
 	}
 

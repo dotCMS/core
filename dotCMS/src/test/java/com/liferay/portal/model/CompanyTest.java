@@ -115,7 +115,7 @@ class CompanyTest {
         assertNull(copy.getKeyDigest());
         assertEquals("sample.company", copy.getCompanyId());
         assertEquals("Sample Company", copy.getName());
-        assertEquals("https://sample.example", copy.getPortalURL());
+        assertEquals("https://sample.example", copy.getOldPortalURL());
         assertEquals("dotcms@sample.example", copy.getEmailAddress());
         assertEquals("#111111", copy.getBackgroundColor());
         assertEquals("#222222", copy.getPrimaryColor());

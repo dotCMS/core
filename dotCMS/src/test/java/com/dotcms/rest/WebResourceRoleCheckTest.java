@@ -36,7 +36,8 @@ public class WebResourceRoleCheckTest {
     @Before
     public void setUp() throws Exception {
         roleAPI = mock(RoleAPI.class);
-        user = new User("dotcms.org.1");
+        user = mock(User.class);
+        when(user.isBackendUser()).thenReturn(true);
         backendRole = new Role();
         backendRole.setId(BACKEND_ROLE_ID);
         backendRole.setRoleKey(Role.DOTCMS_BACK_END_USER);
@@ -125,6 +126,16 @@ public class WebResourceRoleCheckTest {
     public void testHasAnyRole_WhenUserIsNull_ShouldReturnFalse() throws Exception {
         assertFalse(WebResource.hasAnyRole(roleAPI, null, Set.of(Role.DOTCMS_BACK_END_USER)));
         verify(roleAPI, never()).loadRoleByKeyOrId(anyString());
+    }
+
+    /** Raw backend membership cannot override host-scoped backend eligibility. */
+    @Test
+    public void backendRoleHonorsHost() throws Exception {
+        when(roleAPI.loadRoleByKeyOrId(Role.DOTCMS_BACK_END_USER)).thenReturn(backendRole);
+        when(roleAPI.doesUserHaveRole(user, backendRole)).thenReturn(true);
+        when(user.isBackendUser()).thenReturn(false);
+
+        assertFalse(WebResource.hasAnyRole(roleAPI, user, Set.of(Role.DOTCMS_BACK_END_USER)));
     }
 
     /**

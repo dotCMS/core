@@ -22,12 +22,18 @@
 
 package com.liferay.portal.ejb;
 
+import com.dotcms.adminsite.AdminSiteAPI;
+import com.dotcms.api.system.event.Payload;
+import com.dotcms.api.system.event.SystemEventType;
+import com.dotcms.business.SystemTableUpdatedKeyEvent;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.repackage.net.sf.hibernate.Session;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.util.Logger;
+import io.vavr.control.Try;
 import com.liferay.portal.NoSuchCompanyException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.util.HibernateUtil;
@@ -76,6 +82,14 @@ public class CompanyPersistence extends BasePersistence {
 		}
 	}
 
+    /**
+     * Persists a {@link com.liferay.portal.model.Company} and notifies cluster nodes that the
+     * stored admin-URL fallback may have changed. Local eviction waits for a successful commit.
+     *
+     * @param company the company to persist
+     * @return the persisted company
+     * @throws SystemException if persistence fails
+     */
 	@WrapInTransaction
 	protected com.liferay.portal.model.Company update(
 		com.liferay.portal.model.Company company) throws SystemException {
@@ -158,10 +172,14 @@ public class CompanyPersistence extends BasePersistence {
 				CompanyPool.remove(company.getPrimaryKey());
 				CompanyPool.put(company.getPrimaryKey(), company);
 
-				// the admin site url can be derived from the company's stored portal url -
-				// clear it (once this transaction commits) so the next read picks it up
-				com.dotmarketing.db.HibernateUtil.addCommitListenerNoThrow(() ->
-						APILocator.getAdminSiteAPI().invalidateCache());
+                // Publish with the transaction; repeated delivery only invalidates calculated values.
+                final SystemTableUpdatedKeyEvent event = new SystemTableUpdatedKeyEvent(AdminSiteAPI.ADMIN_SITE_URL);
+                Try.run(() -> APILocator.getSystemEventsAPI()
+                        .push(SystemEventType.CLUSTER_WIDE_EVENT, new Payload(event)))
+                        .onFailure(e -> Logger.error(CompanyPersistence.class,
+                                "Could not publish admin-site cache invalidation; peers will refresh on expiry.", e));
+                com.dotmarketing.db.HibernateUtil.addCommitListenerNoThrow(() ->
+                        APILocator.getAdminSiteAPI().invalidateCache());
 			}
 
 			return company;

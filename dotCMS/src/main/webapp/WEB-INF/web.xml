@@ -195,11 +195,6 @@
 		<url-pattern>*.scss</url-pattern>
 	</filter-mapping>
 
-  <filter-mapping>
-    <filter-name>AdminSiteRequestFilter</filter-name>
-    <url-pattern>/*</url-pattern>
-  </filter-mapping>
-
 	<filter-mapping>
 			<filter-name>HttpHeaderSecurityFilter</filter-name>
 			<url-pattern>/*</url-pattern>
@@ -217,6 +212,11 @@
 		<filter-name>InfrastructureManagementFilter</filter-name>
 		<url-pattern>/dotmgt/*</url-pattern>
 	</filter-mapping>
+
+    <filter-mapping>
+        <filter-name>AdminSiteRequestFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 
 	<filter-mapping>
 		<filter-name>CharsetEncodingFilter</filter-name>

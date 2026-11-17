@@ -457,6 +457,9 @@ public  class WebResource {
      * a role id and only found a key while the role cache happened to hold the role, so the check
      * failed every time the cache had just been cleared (for instance, by deleting any role).
      *
+     * Backend and administrator roles also require the user's request-scoped eligibility, so
+     * raw membership cannot bypass admin-site restrictions.
+     *
      * @param roleAPI  the {@link RoleAPI} used to resolve the roles and check membership
      * @param user     the {@link User} being checked, possibly {@code null}
      * @param roleKeys the keys (or ids) of the roles, any one of which grants access
@@ -471,7 +474,14 @@ public  class WebResource {
         }
         for (final String roleKey : roleKeys) {
             final Role role = Try.of(() -> roleAPI.loadRoleByKeyOrId(roleKey)).getOrNull();
-            if (null != role && Try.of(() -> roleAPI.doesUserHaveRole(user, role)).getOrElse(false)) {
+            if (null == role) {
+                continue;
+            }
+            if (Role.DOTCMS_BACK_END_USER.equals(role.getRoleKey()) && !user.isBackendUser()
+                    || Role.CMS_ADMINISTRATOR_ROLE.equals(role.getRoleKey()) && !user.isAdmin()) {
+                continue;
+            }
+            if (Try.of(() -> roleAPI.doesUserHaveRole(user, role)).getOrElse(false)) {
                 return true;
             }
         }
