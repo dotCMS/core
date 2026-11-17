@@ -208,6 +208,19 @@ public interface FieldAPI {
     void delete(FieldVariable fieldVar) throws DotDataException, UniqueFieldValueDuplicatedException;
 
     /**
+     * Deletes a field variable as the given user. The user needs the same rights on the content
+     * type of the variable's field as {@link #save(FieldVariable, User)} asks for: READ and
+     * EDIT_PERMISSIONS.
+     *
+     * @param fieldVar the variable to delete
+     * @param user     the user deleting it
+     * @throws DotDataException     if the variable cannot be deleted
+     * @throws DotSecurityException if the user cannot change the variables of that content type
+     */
+    void delete(FieldVariable fieldVar, User user)
+            throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException;
+
+    /**
      * Returns the dataType and the number of the column of that field. e.g bool1
      * Only one Host Field and Tag Field per Content Type is allowed.
      * By default only 25 fields of each dataType is allowed, can be modified by this property db.number.of.contentlet.columns.per.datatype

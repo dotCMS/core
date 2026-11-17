@@ -46,6 +46,7 @@ import com.dotcms.variant.model.Variant;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.PermissionAPI;
@@ -70,7 +71,10 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.context.Context;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -94,6 +98,8 @@ public class PageResourceReadAccessTest {
     private static Contentlet archivedContent;
     private static String missingContentId;
     private static HTMLPageAsset personaPage;
+    private static HTMLPageAsset htmlPersonaPage;
+    private static final String DEFAULT_ROW_STYLE = "defaultRowStyle";
     private static Persona personaWithReadableContent;
     private static Persona personaWithoutReadableContent;
     private static Persona personaWithPublicContent;
@@ -161,6 +167,7 @@ public class PageResourceReadAccessTest {
 
         prepareMixedPage(webPageContent);
         preparePersonaPage(webPageContent);
+        prepareHtmlPersonaPage();
         prepareEditablePage();
         prepareLivePage(webPageContent);
     }
@@ -272,6 +279,29 @@ public class PageResourceReadAccessTest {
         personaWithFrontEndRoleContent = newPersona("frontendrole");
         saveRow(personaPage, containerId, frontEndRoleContent.getIdentifier(), 10,
                 personaTag(personaWithFrontEndRoleContent), VariantAPI.DEFAULT_VARIANT.name());
+    }
+
+    /**
+     * Builds a page whose container prints the identifier and the {@code testStyle} style property
+     * of each contentlet it renders, with rows in the container instance its template renders, so
+     * its HTML shows them: default content the reader can read, styled in its row, and the same
+     * content as the persona page for the persona with content the reader can read and the persona
+     * whose content the reader has no READ on.
+     */
+    private static void prepareHtmlPersonaPage() throws Exception {
+        final PageRenderTestUtil.PageRenderTest personalized = PageRenderTestUtil.createPage(1, site, true,
+                "<span>$!{ContentIdentifier}</span><i>$!{dotContentMap.dotStyleProperties.testStyle}</i>");
+        htmlPersonaPage = personalized.getPage();
+        final String containerId = personalized.getFirstContainer().getIdentifier();
+
+        saveRow(htmlPersonaPage, containerId, ContainerUUID.UUID_START_VALUE, content.getIdentifier(), 0,
+                personaTag(personaWithReadableContent));
+        saveRow(htmlPersonaPage, containerId, ContainerUUID.UUID_START_VALUE, unreadableContent.getIdentifier(), 1,
+                personaTag(personaWithoutReadableContent));
+        APILocator.getMultiTreeAPI().saveMultiTree(new MultiTree(htmlPersonaPage.getIdentifier(), containerId,
+                defaultContent.getIdentifier(), ContainerUUID.UUID_START_VALUE, 2,
+                MultiTree.DOT_PERSONALIZATION_DEFAULT, VariantAPI.DEFAULT_VARIANT.name(),
+                Map.of("testStyle", DEFAULT_ROW_STYLE)));
     }
 
     /**
@@ -851,6 +881,79 @@ public class PageResourceReadAccessTest {
     }
 
     /**
+     * Given a page like the persona page whose rows sit in the container its template renders,
+     * When the reader renders its HTML in edit and preview mode as the persona whose content the
+     * reader has no READ on,
+     * Then the HTML shows the page's default content, the same content the page's JSON lists, with
+     * the style of its row.
+     */
+    @Test
+    public void renderHtml_asPersonaWithoutReadableContent_showsDefaultContent() throws Exception {
+        for (final PageMode mode : List.of(PageMode.EDIT_MODE, PageMode.PREVIEW_MODE)) {
+            final String html = renderedHtml(reader, personaWithoutReadableContent, mode);
+
+            assertTrue(mode + ": the default content should be shown",
+                    html.contains(defaultContent.getIdentifier()));
+            assertFalse(mode + ": the persona's content should not be shown",
+                    html.contains(unreadableContent.getIdentifier()));
+            assertTrue(mode + ": the default content should keep the style of its row",
+                    html.contains(DEFAULT_ROW_STYLE));
+        }
+    }
+
+    /**
+     * Given the same page, rendered in edit mode for the reader as the persona whose content the
+     * reader has no READ on,
+     * When the containers ask which personalization to show, for that persona and for another
+     * persona set on the visitor while the page renders,
+     * Then they show the default content for the first one and the other persona as it is.
+     */
+    @Test
+    public void personalizationToRender_onlyReplacesThePersonaWhoseContentIsHidden() throws Exception {
+        final HttpServletRequest previous = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(requestAsPersona(personaWithoutReadableContent, null));
+        try {
+            final Context context = new PageRenderUtil(htmlPersonaPage, reader, PageMode.EDIT_MODE, 1, site)
+                    .addAll(new VelocityContext());
+
+            assertEquals(MultiTree.DOT_PERSONALIZATION_DEFAULT, PageRenderUtil.personalizationToRender(context,
+                    htmlPersonaPage.getIdentifier(), personaTag(personaWithoutReadableContent)));
+            assertEquals(personaTag(personaWithReadableContent), PageRenderUtil.personalizationToRender(context,
+                    htmlPersonaPage.getIdentifier(), personaTag(personaWithReadableContent)));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previous);
+        }
+    }
+
+    /**
+     * Given the same page,
+     * When the reader renders its HTML in edit mode as a persona with content the reader can read,
+     * Then the HTML shows that persona's content and not the default content.
+     */
+    @Test
+    public void renderHtml_asPersonaWithReadableContent_showsPersonaContent() throws Exception {
+        final String html = renderedHtml(reader, personaWithReadableContent, PageMode.EDIT_MODE);
+
+        assertTrue("The persona's content should be shown", html.contains(content.getIdentifier()));
+        assertFalse("The default content should not be shown", html.contains(defaultContent.getIdentifier()));
+    }
+
+    /**
+     * Given the same page,
+     * When a CMS administrator renders its HTML in edit mode as the persona whose content the
+     * reader has no READ on,
+     * Then the HTML shows that persona's content.
+     */
+    @Test
+    public void renderHtml_asPersona_forAdmin_showsPersonaContent() throws Exception {
+        final String html = renderedHtml(TestUserUtils.getAdminUser(), personaWithoutReadableContent,
+                PageMode.EDIT_MODE);
+
+        assertTrue("The persona's content should be shown", html.contains(unreadableContent.getIdentifier()));
+        assertFalse("The default content should not be shown", html.contains(defaultContent.getIdentifier()));
+    }
+
+    /**
      * Given a published page personalized for a persona with published content that also has a
      * newer, unpublished version,
      * When the anonymous user views it live as that persona,
@@ -1125,6 +1228,26 @@ public class PageResourceReadAccessTest {
         }
     }
 
+    /**
+     * Renders the HTML of the page built by {@link #prepareHtmlPersonaPage()} for a user viewing it
+     * as a persona, the way the editor renders a page whose containers use Velocity.
+     */
+    private static String renderedHtml(final User user, final Persona persona, final PageMode mode)
+            throws Exception {
+        final HttpServletRequest request = requestAsPersona(persona, null);
+        request.setAttribute(WebKeys.USER, user);
+        request.setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, site);
+        request.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE, "1");
+        final HttpServletRequest previous = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        try {
+            return APILocator.getHTMLPageAssetRenderedAPI().getPageHtml(request,
+                    mock(HttpServletResponse.class), user, htmlPersonaPage.getURI(), mode);
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previous);
+        }
+    }
+
     private static HttpServletRequest requestAsPersona(final Persona persona, final String variantName) {
         final HttpServletRequest request = new MockSessionRequest(new MockAttributeRequest(
                 new MockHttpRequestIntegrationTest("localhost", "/").request()).request()).request();
@@ -1217,6 +1340,12 @@ public class PageResourceReadAccessTest {
             final int order, final String personalization, final String variantName) throws Exception {
         APILocator.getMultiTreeAPI().saveMultiTree(new MultiTree(page.getIdentifier(), containerId, contentId,
                 UUIDGenerator.generateUuid(), order, personalization, variantName, null));
+    }
+
+    private static void saveRow(final HTMLPageAsset page, final String containerId, final String containerUUID,
+            final String contentId, final int order, final String personalization) throws Exception {
+        APILocator.getMultiTreeAPI().saveMultiTree(new MultiTree(page.getIdentifier(), containerId, contentId,
+                containerUUID, order, personalization, VariantAPI.DEFAULT_VARIANT.name(), null));
     }
 
     private static User newBackendUser() throws Exception {

@@ -1463,15 +1463,6 @@ Structure defaultFileAssetStructure = CacheLocator.getContentTypeCache().getStru
         }
     }
 
-    function migratePage(objId, referer) {
-        var loc ='<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/director/direct" /><portlet:param name="cmd" value="migrate" /></portlet:actionURL>&htmlPage=' + objId + '&referer=' + referer;
-        if(inFrame){
-            window.location = loc;
-        }else{
-            top.location = loc;
-        }
-    }
-
     function copyHTMLPage (objId, parentId, referer) {
         BrowserAjax.copyHTMLPage(objId, parentId, function (response) {
             // copyHTMLPageCallback

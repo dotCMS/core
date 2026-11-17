@@ -107,6 +107,15 @@ public class RoleFactoryImpl extends RoleFactory {
 		return r;
 	}
 
+	/**
+	 * Returns the roles of a user, each role once. The user's cached role list always holds both
+	 * directly assigned and inherited roles; the flag only filters what is returned.
+	 *
+	 * @param userId the user to look up
+	 * @param includeImplicitRoles true to include roles inherited through parent roles
+	 * @return the user's roles, without duplicates
+	 * @throws DotDataException if the roles cannot be read
+	 */
 	@Override
 	protected List<Role> loadRolesForUser(String userId, boolean includeImplicitRoles) throws DotDataException {
 		try {
@@ -144,15 +153,20 @@ public class RoleFactoryImpl extends RoleFactory {
 						&& !rolesToProcess.contains(APILocator.getRoleAPI().loadCMSAnonymousRole())){
 					rolesToProcess.add(APILocator.getRoleAPI().loadCMSAnonymousRole());
 				}
+				// a role reachable more than once (held directly and through its parent, or a
+				// parent/child cycle) is listed and walked only the first time
+				final Set<String> processed = new HashSet<>();
 				while(!rolesToProcess.isEmpty()) {
 					Role r = rolesToProcess.poll();
-					if(r ==null) continue;
+					if(r == null || !processed.add(r.getId())) continue;
 					UserRoleCacheHelper h = new UserRoleCacheHelper(r.getId(),rids.contains(r.getId())?false:true);
 					helpers.add(h);
 					if(includeImplicitRoles || rids.contains(r.getId())){
 						roles.add(r);
 					}
-					if(r.getRoleChildren() != null && includeImplicitRoles)
+					// always walk the children: the cached list serves both kinds of lookup, so a
+					// direct-only call must still store the inherited roles for later callers
+					if(r.getRoleChildren() != null)
 						for(String roleId: r.getRoleChildren()) {
 							rolesToProcess.add(getRoleById(roleId));
 						}
@@ -324,16 +338,31 @@ public class RoleFactoryImpl extends RoleFactory {
 				() -> CacheLocator.getPermissionCache().flushShortTermCache());
 	}
 
+	/**
+	 * Inserts or updates a role and recomputes the qualified names of the role and its
+	 * descendants. When the role is created under a parent, or an existing role moves to a
+	 * different parent, the cached role lists of all users are dropped, because those lists
+	 * include roles inherited through the tree. After the commit, before the calling thread goes
+	 * on, the cached roles, role lists and short-lived permission decisions are dropped again,
+	 * since another request may have cached them from the old tree in the meantime.
+	 *
+	 * @param role the role to store
+	 * @return the stored role
+	 * @throws DotDataException if the role cannot be read or written
+	 */
 	@Override
 	protected Role save(Role role) throws DotDataException {
 //		role.setRoleKey(UUIDGenerator.generateUuid());
 		HibernateUtil hu = new HibernateUtil(Role.class);
 
 		Role r = null;
+		// a role whose place in the tree changes is inherited by a different set of users
+		boolean hierarchyChanged;
 		if(InodeUtils.isSet(role.getId())) {
 			hu.setQuery("from com.dotmarketing.business.Role where id = ?");
 			hu.setParam(role.getId());
 			r = (Role)hu.load();
+			hierarchyChanged = !Objects.equals(r.getParent(), role.getParent());
 			rc.remove(r.getId());
 			if(UtilMethods.isSet(r.getParent())) {
 				rc.remove(r.getParent());
@@ -350,6 +379,7 @@ public class RoleFactoryImpl extends RoleFactory {
 		} else {
 
 			r = role;
+			hierarchyChanged = UtilMethods.isSet(role.getParent()) && !role.getParent().equals(role.getId());
 			if(DbConnectionFactory.isMsSql()){
 				String roleKey= StringUtils.camelCaseLower(r.getName());
 				DotConnect dc = new DotConnect();
@@ -413,6 +443,20 @@ public class RoleFactoryImpl extends RoleFactory {
 		}
 		if(r.getParent().equals(r.getId())){
 			rc.clearRootRoleCache();
+		}
+		if(hierarchyChanged){
+			// cached role lists include inherited roles, so a move must be seen by every user now;
+			// flush again after the commit in case another request rebuilt roles, role lists or
+			// permission decisions from the old tree meanwhile; synchronous, so the caller only
+			// returns once the new tree is what everyone reads
+			rc.clearUserRoleCache();
+			HibernateUtil.addCommitListener("role-hierarchy-flush-caches",
+					new HibernateUtil.DotSyncRunnable(() -> {
+						rc.clearRoleCache();
+						rc.clearRootRoleCache();
+						rc.clearUserRoleCache();
+						CacheLocator.getPermissionCache().flushShortTermCache();
+					}));
 		}
 		rc.add(r);
 		HibernateUtil.evict(r);

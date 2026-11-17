@@ -30,6 +30,7 @@ import com.liferay.portal.util.WebKeys;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import io.vavr.control.Try;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -113,9 +114,11 @@ public class ResponseMetaHeaderAudienceTest extends UnitTestBase {
      */
     @Test
     public void testIntercept_whenSessionUserIsAnonymous_shouldNotAddVersionHeaders() {
-        givenSessionUser("anonymous", true);
+        final User user = givenSessionUser("anonymous", true);
 
-        new SdkVersionWebInterceptor().intercept(request, response);
+        try (MockedStatic<APILocator> apiLocator = givenUserLookup(user)) {
+            new SdkVersionWebInterceptor().intercept(request, response);
+        }
 
         verifyNoHeaders();
     }
@@ -127,9 +130,11 @@ public class ResponseMetaHeaderAudienceTest extends UnitTestBase {
      */
     @Test
     public void testIntercept_whenSessionUserIsInactive_shouldNotAddVersionHeaders() {
-        givenSessionUser("dotcms.org.1", false);
+        final User user = givenSessionUser("dotcms.org.1", false);
 
-        new SdkVersionWebInterceptor().intercept(request, response);
+        try (MockedStatic<APILocator> apiLocator = givenUserLookup(user)) {
+            new SdkVersionWebInterceptor().intercept(request, response);
+        }
 
         verifyNoHeaders();
     }
@@ -141,9 +146,11 @@ public class ResponseMetaHeaderAudienceTest extends UnitTestBase {
      */
     @Test
     public void testIntercept_whenSessionUserIsLoggedIn_shouldAddVersionHeaders() {
-        givenSessionUser("dotcms.org.1", true);
+        final User user = givenSessionUser("dotcms.org.1", true);
 
-        new SdkVersionWebInterceptor().intercept(request, response);
+        try (MockedStatic<APILocator> apiLocator = givenUserLookup(user)) {
+            new SdkVersionWebInterceptor().intercept(request, response);
+        }
 
         verifyVersionHeaders();
     }
@@ -291,10 +298,11 @@ public class ResponseMetaHeaderAudienceTest extends UnitTestBase {
     @Test
     public void testIntercept_whenNodeIdRequestedWithCredentials_shouldAddNodeHeader() {
         Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID, false);
-        givenSessionUser("dotcms.org.1", true);
+        final User user = givenSessionUser("dotcms.org.1", true);
         when(request.getParameter("nodeid")).thenReturn("true");
 
         try (MockedStatic<APILocator> apiLocator = givenNodeHeaderInputs()) {
+            givenUserLookup(apiLocator, user);
             new ResponseMetaDataWebInterceptor().intercept(request, response);
         }
 
@@ -401,11 +409,31 @@ public class ResponseMetaHeaderAudienceTest extends UnitTestBase {
         return attributes;
     }
 
-    private void givenSessionUser(final String userId, final boolean active) {
+    /**
+     * Stores {@code user} in the request's session. The session user is checked against the
+     * current user record on every request, so a test that expects the user to count as logged
+     * in also serves that record through {@link #givenUserLookup(User)}.
+     */
+    private User givenSessionUser(final String userId, final boolean active) {
         final User user = user(userId, active);
         final HttpSession session = mock(HttpSession.class);
         when(session.getAttribute(WebKeys.USER)).thenReturn(user);
         when(request.getSession(false)).thenReturn(session);
+        return user;
+    }
+
+    /** Serves a user API that returns {@code user} for its id from {@link APILocator#getUserAPI()}. */
+    private static MockedStatic<APILocator> givenUserLookup(final User user) {
+        final MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class);
+        givenUserLookup(apiLocator, user);
+        return apiLocator;
+    }
+
+    /** Adds the user lookup for {@code user} to an already mocked {@link APILocator}. */
+    private static void givenUserLookup(final MockedStatic<APILocator> apiLocator, final User user) {
+        final UserAPI userAPI = mock(UserAPI.class);
+        Try.run(() -> when(userAPI.loadUserById(user.getUserId())).thenReturn(user)).get();
+        apiLocator.when(APILocator::getUserAPI).thenReturn(userAPI);
     }
 
     private void verifyNoHeaders() {
