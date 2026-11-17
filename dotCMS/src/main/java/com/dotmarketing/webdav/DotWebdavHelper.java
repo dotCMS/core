@@ -5,6 +5,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.BasicAuthentication;
+import com.dotcms.auth.InteractiveUserPolicy;
 import com.dotcms.auth.LoginLockout;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
@@ -53,11 +54,8 @@ import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.*;
 import com.google.common.annotations.VisibleForTesting;
-import com.liferay.portal.auth.AuthException;
-import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
-import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.FileUtil;
 import io.vavr.control.Try;
 import java.io.File;
@@ -98,7 +96,6 @@ import javax.servlet.http.HttpServletRequest;
  */
 public class DotWebdavHelper {
 
-	private static final String PRE_AUTHENTICATOR = PropsUtil.get("auth.pipeline.pre");
 	private static ThreadLocal<Perl5Matcher> localP5Matcher = new ThreadLocal<Perl5Matcher>(){
 		protected Perl5Matcher initialValue() {
 			return new Perl5Matcher();
@@ -175,10 +172,8 @@ public class DotWebdavHelper {
 	/**
 	 * Checks the credentials a WebDAV client sent and returns the matching user, under the shared
 	 * Basic authentication policy ({@code ALLOW_BASIC_AUTH}). In token-only mode the credential must
-	 * be an API token and neither the pre-authenticator nor the stored password is consulted. When
-	 * passwords are allowed and a pre-authenticator is configured through {@code auth.pipeline.pre},
-	 * it runs first; a thrown exception denies access, but its return value alone does not. The
-	 * password is then checked against the one stored in dotCMS, or accepted as an API token.
+	 * be an API token and the stored password is not consulted. When passwords are allowed, the
+	 * password is checked against the one stored in dotCMS, or accepted as an API token.
 	 *
 	 * @param username the login sent by the client: an email address or a user id, depending on
 	 *                 the company's authentication type
@@ -188,26 +183,7 @@ public class DotWebdavHelper {
 	 * @throws NoSuchUserException if the named user does not exist
 	 * @throws DotDataException if the user lookup fails
 	 */
-	public User authorizePrincipal(final String username, final String passwd) throws DotSecurityException, NoSuchUserException, DotDataException {
-
-		return authorizePrincipal(username, passwd, PRE_AUTHENTICATOR);
-	}
-
-	/**
-	 * Same as {@link #authorizePrincipal(String, String)}, with the pre-authenticator class given
-	 * explicitly instead of read from {@code auth.pipeline.pre}.
-	 *
-	 * @param username         the login sent by the client
-	 * @param passwd           the password or API token sent by the client
-	 * @param preAuthenticator fully qualified class name of the pre-authenticator, or
-	 *                         {@code null}/empty when none is configured
-	 * @return the authenticated {@link User}
-	 * @throws DotSecurityException if credentials are disabled or not accepted
-	 * @throws NoSuchUserException if the named user does not exist
-	 * @throws DotDataException if the user lookup fails
-	 */
-	@VisibleForTesting
-	User authorizePrincipal(final String username, final String passwd, final String preAuthenticator)
+	public User authorizePrincipal(final String username, final String passwd)
 			throws DotSecurityException, NoSuchUserException, DotDataException {
 
 		final BasicAuthentication.Mode mode = BasicAuthentication.mode();
@@ -217,39 +193,11 @@ public class DotWebdavHelper {
 		if (mode == BasicAuthentication.Mode.JWT_TOKEN) {
 			final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 			final String ipAddress = request != null ? request.getRemoteAddr() : null;
-			return BasicAuthentication.authenticateApiToken(username, passwd, ipAddress)
-					.orElseThrow(() -> new DotSecurityException("Invalid API token credentials"));
+			return requireInteractive(BasicAuthentication.authenticateApiToken(username, passwd, ipAddress)
+					.orElseThrow(() -> new DotSecurityException("Invalid API token credentials")));
 		}
 
-		final Company company         = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
-		final boolean useEmailAsLogin = !company.getAuthType().equals(Company.AUTH_TYPE_ID);
-
-		try {
-
-			if (preAuthenticator != null && !preAuthenticator.equals("")) {
-
-				final Authenticator authenticator = (Authenticator) new com.dotcms.repackage.bsh.
-						Interpreter().eval("new " + preAuthenticator + "()");
-				// The return value is intentionally not used to deny access here: a pre-authenticator
-				// can answer FAILURE/DNE to mean "cannot validate this login", not "this user is
-				// denied", and the password/token check below is the actual decision. Only a thrown
-				// exception, caught below, is treated as an explicit denial.
-				if (useEmailAsLogin) {
-					authenticator.authenticateByEmailAddress(company.getCompanyId(), username, passwd);
-				} else {
-					authenticator.authenticateByUserId(company.getCompanyId(), username, passwd);
-				}
-			}
-		} catch (AuthException ae) {
-
-			Logger.debug(this, "Username : " + stripLogControls(username) + " failed to login", ae);
-			this.countPreAuthenticatorFailure(username, useEmailAsLogin);
-			throw new DotSecurityException(ae.getMessage(),ae);
-		} catch (Exception e) {
-
-			Logger.error(this, stripLogControls(e.getMessage()), e);
-			throw new DotSecurityException(e.getMessage(),e);
-		}
+		final Company company = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
 
 		final UserAPI userAPI = APILocator.getUserAPI();
 		final User user       = company.getAuthType().equals(Company.AUTH_TYPE_ID)?
@@ -271,28 +219,23 @@ public class DotWebdavHelper {
 			throw new DotSecurityException("The user's passwords didn't match");
 		}
 
-		return user;
+		return requireInteractive(user);
 	}
 
 	/**
-	 * Counts a password that a pre-authenticator such as LDAP refused before dotCMS checked it, as a failed
-	 * WebDAV login, so the login lockout applies to those failures too.
+	 * Refuses an account that cannot be used as the identity of a client request (the built-in
+	 * system account), so a token or password for it does not open WebDAV.
 	 *
-	 * @param username        The login name sent by the WebDAV client.
-	 * @param useEmailAsLogin Whether the login name is an email address rather than a user ID.
+	 * @param user the account the credentials resolved to
+	 * @return the same account when it is eligible
+	 * @throws DotSecurityException if the account is not eligible for interactive use
 	 */
-	private void countPreAuthenticatorFailure(final String username, final boolean useEmailAsLogin) {
-		try {
-			final UserAPI userAPI = APILocator.getUserAPI();
-			final User user = useEmailAsLogin
-					? userAPI.loadByUserByEmail(username, userAPI.getSystemUser(), false)
-					: userAPI.loadUserById(username, userAPI.getSystemUser(), false);
-			if (null != user) {
-				LoginLockout.getInstance().countFailure(user.getUserId(), LoginLockout.webdavSource());
-			}
-		} catch (final Exception e) {
-			Logger.debug(this, () -> "No login lockout count for WebDAV user " + username + ": " + e.getMessage());
+	private User requireInteractive(final User user) throws DotSecurityException {
+		if (InteractiveUserPolicy.refuseIfNotEligible(user,
+				HttpServletRequestThreadLocal.INSTANCE.getRequest(), null) == null) {
+			throw new DotSecurityException("User not eligible for interactive use");
 		}
+		return user;
 	}
 
 	private boolean tryMatchJsonWebToken (final String jsonWebToken, final User user) {

@@ -26,6 +26,14 @@ public class SamlConstants {
 	public static final String ALLOW_UNSOLICITED_RESPONSES = "allow.unsolicited.responses";
 
 	/**
+	 * Optional IdP property, a field on the SAML app. Comma-separated assertion consumer URLs accepted as the
+	 * Response Destination and the bearer Recipient, besides this service provider's own ACS URL. For plugins
+	 * that receive SAML Responses on their own endpoint. Each URL must match exactly; there is no prefix or
+	 * wildcard matching.
+	 */
+	public static final String ADDITIONAL_ACS_URLS = "additionalAcsUrls";
+
+	/**
 	 * Optional IdP property. Seconds an outstanding authentication request stays valid while the user
 	 * authenticates at the IdP.
 	 */

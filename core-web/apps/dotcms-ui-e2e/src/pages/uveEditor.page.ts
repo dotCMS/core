@@ -81,20 +81,26 @@ export class UveEditorPage {
      * Adds a form to a container the way an editor does: the container's add menu, then the form
      * in the form selector.
      *
-     * The add button appears when the editor sees the pointer enter the container. Right after the
-     * canvas re-renders (a first form was just placed) that hover can arrive before the editor
-     * reacts to it, and hovering again with a pointer that has not moved sends nothing. The pointer
-     * is therefore moved off the canvas and back until the button shows.
+     * The add button, and the menu it opens, exist only while the editor holds a hovered area. It
+     * sets one when the pointer moves inside the canvas, and drops it whenever the canvas scrolls,
+     * resizes or reloads its content, which happens on its own just after the page opens or a
+     * form is placed. Nothing brings the button back until the pointer moves again, so a click
+     * on a button that has just gone waits out the test. The whole sequence (move off the canvas
+     * and back, open the menu, pick Form) is therefore retried until Form is clicked. A retry
+     * cannot add a second form: the form selector only opens on that last click.
      */
     async addForm(containerIndex: number, formName: string) {
         const addContent = this.page.getByRole('button', { name: 'Add content' });
+        const formItem = this.page.getByRole('menuitem', { name: 'Form' });
         await expect(async () => {
             await this.page.mouse.move(0, 0);
             await this.container(containerIndex).hover();
-            await expect(addContent).toBeVisible({ timeout: 2000 });
+            if (!(await formItem.isVisible())) {
+                await addContent.click({ timeout: 2000 });
+            }
+
+            await formItem.click({ timeout: 2000 });
         }).toPass({ timeout: 20000 });
-        await addContent.click();
-        await this.page.getByRole('menuitem', { name: 'Form' }).click();
         await this.page
             .getByRole('row', { name: formName })
             .getByTestId('form-select-button')

@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.business.SystemTable;
+import com.dotcms.config.SystemTableConfigSource;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource.InitBuilder;
@@ -201,6 +202,22 @@ public class SystemTableResource implements Serializable {
 	}
 
 	/**
+	 * Checks that the key may be stored: it is not blacklisted and it is not a provisioning key.
+	 *
+	 * @param key The key to check.
+	 *
+	 * @throws IllegalArgumentException If the key may not be stored.
+	 */
+	private void checkWriteAllowed(final String key) throws IllegalArgumentException {
+		this.checkBlackList(key);
+		if (SystemTableConfigSource.isProvisioningKey(key)) {
+			Logger.debug(this, ()-> "Key is read from the environment or the properties file only: " + key);
+			throw new IllegalArgumentException("Key not allowed: " + key
+					+ " is set in the environment or the properties file only");
+		}
+	}
+
+	/**
 	 * Saves or updates the value of a given key to the system table.
 	 *
 	 * @param request  The current instance of the {@link HttpServletRequest}.
@@ -209,7 +226,8 @@ public class SystemTableResource implements Serializable {
 	 *
 	 * @return The key that was saved.
 	 *
-	 * @throws IllegalArgumentException If the key is blacklisted.
+	 * @throws IllegalArgumentException If the key is blacklisted, or is read from the
+	 * 									environment or the properties file only.
 	 */
 	@POST
 	@JSONP
@@ -218,14 +236,16 @@ public class SystemTableResource implements Serializable {
 	@Operation(summary = "Saves or updates a system table entry",
 			description = "Saves or updates the value of a key in the system table. The change is applied " +
 					"cluster wide: every node is notified and re-resolves the key, so the request does not " +
-					"need to be repeated against each node.")
+					"need to be repeated against each node. Keys the server reads from the environment or " +
+					"the properties file only are refused with a 400, since a value stored for them would " +
+					"have no effect.")
 	public ResponseEntityStringView save(
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
 			final KeyValueForm form) throws IllegalAccessException {
 		checkNotNull(form, IllegalArgumentException.class, "KeyValueForm cannot be null");
 		this.init(request, response);
-		this.checkBlackList(form.getKey());
+		this.checkWriteAllowed(form.getKey());
 		Logger.debug(this, ()-> "Saving/updating system table value for key: " + form.getKey());
 		this.systemTable.set(form.getKey(), form.getValue());
 		
@@ -239,7 +259,8 @@ public class SystemTableResource implements Serializable {
 	 *
 	 * @return The key that was updated.
 	 *
-	 * @throws IllegalArgumentException If the key is blacklisted.
+	 * @throws IllegalArgumentException If the key is blacklisted, or is read from the
+	 * 									environment or the properties file only.
 	 */
 	@PUT
 	@JSONP
@@ -249,14 +270,16 @@ public class SystemTableResource implements Serializable {
 	@Operation(summary = "Updates an existing system table entry",
 			description = "Updates the value of an existing key in the system table, or returns a 404 if the " +
 					"key does not exist. The change is applied cluster wide: every node is notified and " +
-					"re-resolves the key, so the request does not need to be repeated against each node.")
+					"re-resolves the key, so the request does not need to be repeated against each node. " +
+					"Keys the server reads from the environment or the properties file only are refused " +
+					"with a 400, since a value stored for them would have no effect.")
 	public ResponseEntityStringView update(
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
 			final KeyValueForm form) throws IllegalAccessException {
 		checkNotNull(form, IllegalArgumentException.class, "KeyValueForm cannot be null");
 		this.init(request, response);
-		this.checkBlackList(form.getKey());
+		this.checkWriteAllowed(form.getKey());
 
 		final Optional<String> valueOpt = this.systemTable.get(form.getKey());
 		if (valueOpt.isEmpty()) {

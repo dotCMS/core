@@ -11,7 +11,7 @@
             "manifestRootsToUpdate": ["dist/{projectRoot}"]
         }
     },
-    "tags": [],
+    "tags": ["skip:build"],
     "targets": {
         "build": {
             "executor": "@nx/esbuild:esbuild",
@@ -85,12 +85,7 @@
                 "cwd": "."
             },
             "cache": true,
-            "inputs": [
-                "{projectRoot}/assets/**",
-                "{projectRoot}/package.json",
-                "{projectRoot}/project.json",
-                "{projectRoot}/scripts/verify-package.sh"
-            ]
+            "inputs": ["default", "^production", { "dependentTasksOutputFiles": "**/*" }]
         },
         "verify-compose-static": {
             "executor": "nx:run-commands",

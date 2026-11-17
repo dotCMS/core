@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import com.dotcms.datagen.TestUserUtils;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -99,7 +100,7 @@ public class FileToolTest {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameter(VariantAPI.VARIANT_KEY)).thenReturn(variant.name());
-        when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+        when(request.getAttribute(WebKeys.USER)).thenReturn(TestUserUtils.getAdminUser());
 
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
@@ -137,7 +138,7 @@ public class FileToolTest {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameter(VariantAPI.VARIANT_KEY)).thenReturn(variant.name());
-        when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+        when(request.getAttribute(WebKeys.USER)).thenReturn(TestUserUtils.getAdminUser());
 
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
@@ -174,7 +175,7 @@ public class FileToolTest {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameter(VariantAPI.VARIANT_KEY)).thenReturn(variant.name());
-        when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+        when(request.getAttribute(WebKeys.USER)).thenReturn(TestUserUtils.getAdminUser());
 
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
@@ -214,7 +215,7 @@ public class FileToolTest {
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameter(VariantAPI.VARIANT_KEY)).thenReturn(variant_1.name());
-        when(request.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+        when(request.getAttribute(WebKeys.USER)).thenReturn(TestUserUtils.getAdminUser());
 
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 
@@ -275,7 +276,7 @@ public class FileToolTest {
         assertNull(fileToolFor(null).getFile(fileAsset.getIdentifier(), false,
                 fileAsset.getLanguageId()));
 
-        final Contentlet result = fileToolFor(APILocator.systemUser())
+        final Contentlet result = fileToolFor(TestUserUtils.getAdminUser())
                 .getFile(fileAsset.getIdentifier(), false, fileAsset.getLanguageId());
         assertNotNull(result);
         assertEquals(fileAsset.getIdentifier(), result.getIdentifier());

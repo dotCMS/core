@@ -1221,8 +1221,16 @@ public class ContentHandler implements IHandler {
 
 	/**
 	 * Checks whether saving the specified {@code tree} row would give its parent or its child more
-	 * related items than the relationship allows: one child per parent for {@code MANY_TO_ONE} and
-	 * {@code ONE_TO_ONE}, and one parent per child for {@code ONE_TO_MANY} and {@code ONE_TO_ONE}.
+	 * related items than the relationship allows: one child per parent and one parent per child for
+	 * {@code ONE_TO_ONE}, one parent per child for {@code ONE_TO_MANY}, and, for
+	 * {@code MANY_TO_ONE}, one related item per content of the type that holds the field the
+	 * relationship was created from.
+	 * <p>
+	 * A {@code MANY_TO_ONE} relationship can be stored with the field on either side. A field created
+	 * as many-to-one is stored with the related ("one") type as the parent and the field's type as
+	 * the child, so the child can have one parent only. A field on the parent whose cardinality is
+	 * changed to many-to-one keeps its sides, so the parent can have one child only
+	 * (<a href="https://github.com/dotCMS/core/issues/38538">#38538</a>).
 	 *
 	 * @param tree The {@code tree} row to check.
 	 *
@@ -1237,14 +1245,58 @@ public class ContentHandler implements IHandler {
 			return false;
 		}
 		final RELATIONSHIP_CARDINALITY cardinality = RELATIONSHIP_CARDINALITY.fromOrdinal(relationship.getCardinality());
-		final boolean oneChildPerParent = cardinality == RELATIONSHIP_CARDINALITY.MANY_TO_ONE
-				|| cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
-		final boolean oneParentPerChild = cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_MANY
-				|| cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
+		final boolean manyToOneFromParent = cardinality == RELATIONSHIP_CARDINALITY.MANY_TO_ONE
+				&& isOriginatingFieldOnParent(relationship);
+		final boolean oneChildPerParent = cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE || manyToOneFromParent;
+		final boolean oneParentPerChild = cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE
+				|| cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_MANY
+				|| (cardinality == RELATIONSHIP_CARDINALITY.MANY_TO_ONE && !manyToOneFromParent);
 		return (oneChildPerParent && this.hasOtherRelated(OTHER_CHILDREN_SQL, tree.getParent(), tree.getChild(),
 						tree.getRelationType()))
 				|| (oneParentPerChild && this.hasOtherRelated(OTHER_PARENTS_SQL, tree.getChild(), tree.getParent(),
 						tree.getRelationType()));
+	}
+
+	/**
+	 * Checks whether the field the relationship was created from, named in its
+	 * {@code <Content Type>.<field>} relation type, is on the parent type. When the parent and child
+	 * types differ, the Content Type in the relation type tells the side. A type related to itself
+	 * is told apart by the relation names: a field on the parent is stored as the child relation
+	 * name, and a field on the child as the parent relation name. A relationship that wasn't created
+	 * from a field, or whose side can't be told, is treated as having it on the child, which is how
+	 * dotCMS stores a relationship created as many-to-one.
+	 *
+	 * @param relationship The relationship to check.
+	 *
+	 * @return If the originating field is on the parent type, returns {@code true}.
+	 *
+	 * @throws DotDataException The parent Content Type couldn't be read. The bundle fails instead
+	 *                          of applying the relationship with the wrong side limited.
+	 */
+	private static boolean isOriginatingFieldOnParent(final Relationship relationship) throws DotDataException {
+		final String relationType = relationship.getRelationTypeValue();
+		final int separator = null == relationType ? -1 : relationType.indexOf('.');
+		if (separator < 0) {
+			return false;
+		}
+		final String typeVariable = relationType.substring(0, separator);
+		final String fieldVariable = relationType.substring(separator + 1);
+		if (!relationship.getParentStructureInode().equals(relationship.getChildStructureInode())) {
+			final String parentVariable;
+			try {
+				parentVariable = APILocator.getContentTypeAPI(APILocator.systemUser())
+						.find(relationship.getParentStructureInode()).variable();
+			} catch (final DotSecurityException e) {
+				throw new DotDataException(e);
+			}
+			return typeVariable.equalsIgnoreCase(parentVariable);
+		}
+		// For a type related to itself, deleting the originating field clears its relation name
+		// but keeps the relationship, so a cleared child relation name next to a different parent
+		// one still means the originating field was on the parent
+		return !fieldVariable.equals(relationship.getParentRelationName())
+				&& (fieldVariable.equals(relationship.getChildRelationName())
+						|| null == relationship.getChildRelationName());
 	}
 
 	private static final String OTHER_CHILDREN_SQL =

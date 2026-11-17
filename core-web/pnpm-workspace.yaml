@@ -17,26 +17,6 @@ overrides:
     # in #36443; pinned to clear a critical alert (dotCMS/core#38455). Remove this override
     # together with @nxext/stencil.
     storybook: 9.1.21
-    # @angular/build, @angular-devkit/build-angular and ng-packagr 22.1.x pin piscina to
-    # exactly 5.2.0 (critical prototype-pollution RCE, GHSA-67c8-pqhq-4rmx). 22.2.x pins
-    # 5.3.2, but moving the tooling to 22.2 needs the framework on 22.2 as well, because
-    # analogjs picks its Angular API from @angular/compiler-cli's version. Remove this
-    # override when Angular moves to 22.2.
-    piscina: 5.3.2
-    # @angular/cli 22.1.x pins @modelcontextprotocol/sdk to exactly 1.29.0 and zod to exactly
-    # 4.4.3, both with open advisories fixed in 1.32.0 and 4.6.6 (dotCMS/core#38487). 22.2.x
-    # drops the MCP SDK dependency and pins zod 4.6.6. Remove both when Angular moves to 22.2.
-    '@angular/cli>@modelcontextprotocol/sdk': 1.32.0
-    '@angular/cli>zod': 4.6.6
-    # @angular/build 22.1.x pins vite to exactly 8.1.5 (advisories fixed in 8.1.6,
-    # dotCMS/core#38487); 22.2.x pins 8.3.x. Remove when Angular moves to 22.2.
-    '@angular/build>vite': 8.1.6
-    # @angular-devkit/build-angular 22.1.x pins postcss to exactly 8.5.19 and
-    # webpack-dev-middleware to exactly 8.0.3 (advisories fixed in 8.5.23 and 8.3.0,
-    # dotCMS/core#38487); 22.2.x pins 8.5.28 and 8.3.0 or later. Remove when Angular moves
-    # to 22.2.
-    '@angular-devkit/build-angular>postcss': 8.5.23
-    '@angular-devkit/build-angular>webpack-dev-middleware': 8.3.0
     # nx 23.3.x pins undici to exactly 7.29.0 (advisories fixed in 7.30.1,
     # dotCMS/core#38487). Remove when Nx moves to a release that pins 7.30.1 or later.
     'nx>undici': 7.30.1

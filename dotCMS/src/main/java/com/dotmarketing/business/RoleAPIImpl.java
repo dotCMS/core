@@ -657,13 +657,25 @@ public class RoleAPIImpl implements RoleAPI {
 		return this.doesUserHaveRoles(userId, roleIds);
 	}
 
+	/**
+	 * A CMS Administrator may read role membership, and so may a user who holds a Roles screen and a
+	 * Users screen. A Roles screen is the {@code roles} portlet or the old Roles &amp; Tools screen kept
+	 * as {@code roles-legacy}; a Users screen is {@code users} or {@code users-legacy}, as decided by
+	 * {@link LayoutAPI#doesUserHaveAccessToUsersPortlet(User)}. So a role that kept only the two old
+	 * screens can still list the users in a role there.
+	 *
+	 * @param user the {@link User} making the request
+	 * @return {@code true} when the user may read role membership
+	 * @throws DotDataException if the user's portlet access cannot be resolved
+	 */
 	@Override
 	public boolean canReadRoleMembership(final User user) throws DotDataException {
 
 		final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		return user.isAdmin() ||
-				(layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
-						layoutAPI.doesUserHaveAccessToUsersPortlet(user));
+				((layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user)
+						|| layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES_LEGACY.toString(), user))
+						&& layoutAPI.doesUserHaveAccessToUsersPortlet(user));
 	}
 
 	@CloseDBIfOpened

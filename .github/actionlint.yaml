@@ -5,13 +5,18 @@
 # keyed `.*` or `^\.github/...$` silently matches nothing, which is worth
 # knowing before assuming an ignore is working.
 #
-# Every entry is a PRE-EXISTING finding in a file this repo has not fixed yet,
-# recorded so a PR that touches one of these files is not blocked by debt it did
-# not introduce. Remove an entry when the underlying issue is fixed. The message
-# patterns are deliberately narrow, so a NEW problem in the same file still
-# fails.
+# Entries cover pre-existing findings or documented GitHub syntax that the pinned
+# validator does not yet support. Remove entries when the underlying issue or
+# validator limitation is fixed. Patterns are deliberately narrow so other
+# problems in the same file still fail.
 
 paths:
+  # GitHub supports queue: max for job concurrency; actionlint 1.7.7 predates it.
+  # https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions#concurrency
+  .github/workflows/cicd_comp_publish-pr-test-image.yml:
+    ignore:
+      - '^unexpected key "queue" for "concurrency" section[.]'
+
   # 11 workflow_dispatch inputs against GitHub's documented maximum of 10. This
   # needs a human decision (merge or drop an input, or confirm GitHub no longer
   # enforces the limit), not a lint fix.
@@ -33,6 +38,14 @@ paths:
   # SC2024 ("sudo doesn't affect redirects") likewise comes from this file as it
   # stands on main, and is a genuine if minor nit — the redirect is not run as
   # root. Both arrived with main, not with this PR.
+  # SC2129 (group the redirects into one { ...; } >> file) in the pre-existing
+  # Change Detection Summary step: dozens of single-line appends to
+  # $GITHUB_STEP_SUMMARY, so the fix is a restructure of that script, not a lint
+  # fix. The file's SC2086 and SC2006 findings were fixed rather than ignored.
+  .github/workflows/cicd_comp_initialize-phase.yml:
+    ignore:
+      - 'shellcheck reported issue in this script: SC2129'
+
   .github/workflows/cicd_comp_test-phase.yml:
     ignore:
       - 'property "(docker_username|docker_token)" is not defined'

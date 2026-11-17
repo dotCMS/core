@@ -346,7 +346,7 @@ describe('DotRolesStore', () => {
 
         it('allows user + tool edits on a system role — CMS Administrator is one', () => {
             // RoleHelper gates grants on `editUsers` only, and layouts on
-            // nothing at all. Blocking system roles here made the Beta stricter
+            // nothing at all. Blocking system roles here made the portlet stricter
             // than both the backend and the legacy portlet.
             select({ system: true, locked: true, editUsers: true, editLayouts: true });
 

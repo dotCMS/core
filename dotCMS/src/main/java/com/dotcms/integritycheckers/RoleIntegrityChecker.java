@@ -167,15 +167,15 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
                 	+ " (name, role_key, local_role_id, remote_role_id, local_role_fqn, remote_role_fqn, endpoint_id)"
                 	+ " select tr1.qualified_name as name, tr1.role_key as role_key, tr1.id as local_role_id, tr2.id as remote_role_id,"
                 	+	" tr1.qualified_id as local_role_fqn, tr2.qualified_id as remote_role_fqn,"
-                	+ " '"+ endpointId+ "'"
+                	+ " ?"
                 	+ " from "+NAME_TEMP_TABLE_LOCAL +" tr1 join "+NAME_TEMP_TABLE_REMOTE +" tr2 on tr1.role_key = tr2.role_key"
                     + " where tr1.qualified_name = tr2.qualified_name and tr1.qualified_id <> tr2.qualified_id order by name asc";
 
-                dc.executeStatement(INSERT_INTO_RESULTS_TABLE);
+                dc.setSQL(INSERT_INTO_RESULTS_TABLE).addParam(endpointId).loadResult();
 
             }
 
-            return (Long) dc.getRecordCount(getIntegrityType().getResultsTableName(), "where endpoint_id = '"+ endpointId+ "'") > 0;
+            return hasResults(endpointId);
         } catch (final Exception e) {
             throw new Exception(String.format("Error running the Roles Integrity Check for Endpoint '%s': %s",
                     endpointId, e.getMessage()), e);
@@ -198,8 +198,10 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
         dc.setSQL("select name, local_role_id, remote_role_id from "+ getIntegrityType().getResultsTableName() +
             	 " where endpoint_id = ? order by name asc");
         dc.addParam(key);
+        final List<Map<String, Object>> results = dc.loadObjectResults();
+        requireWellFormedIds(results, "remote_role_id");
 
-        for (Map<String, Object> result : dc.loadObjectResults()) {
+        for (Map<String, Object> result : results) {
         	String oldRoleId = (String) result.get("local_role_id");
         	String newRoleId = (String) result.get("remote_role_id");
 
@@ -215,17 +217,39 @@ public class RoleIntegrityChecker extends AbstractIntegrityChecker {
         }
 	}
 
+    /**
+     * Moves a local role to the id the remote end point uses for it: copies the role under the new
+     * id, points every reference (child roles, users, permissions, layouts, workflow) at it, deletes
+     * the old row and restores the original role key on the copy. Every id is bound as a parameter.
+     *
+     * @param dc the connection helper to run the statements with
+     * @param oldRole the local role being moved
+     * @param oldRoleId the local role id
+     * @param newRoleId the remote role id the local role takes
+     * @throws DotDataException when a statement fails
+     * @throws DotSecurityException when the workflow references cannot be updated
+     */
     private void applyFixToRole( DotConnect dc, Role oldRole, String oldRoleId, String newRoleId) throws DotDataException, DotSecurityException {
 		// Create new role with dummy role_key to ensure uniqueness
 		dc.setSQL(
-			"INSERT INTO cms_role (id, role_name, description, role_key, db_fqn, parent, edit_permissions, edit_users, edit_layouts, locked, system) "+
-			"SELECT '"+newRoleId+"', role_name, description, '"+newRoleId+"', REPLACE(db_fqn, '"+oldRoleId+"', '"+newRoleId+"'), parent, edit_permissions, edit_users, edit_layouts, locked, system "+
-			"FROM cms_role WHERE id='"+ oldRoleId +"'"
+			// The statement is built from string literals only; values are bound.
+			"INSERT INTO cms_role (id, role_name, description, role_key, db_fqn, parent, edit_permissions, edit_users, edit_layouts, locked, system) "+ // nosemgrep
+			"SELECT ?, role_name, description, ?, REPLACE(db_fqn, ?, ?), parent, edit_permissions, edit_users, edit_layouts, locked, system "+
+			"FROM cms_role WHERE id = ?"
 		);
+		dc.addParam(newRoleId);
+		dc.addParam(newRoleId);
+		dc.addParam(oldRoleId);
+		dc.addParam(newRoleId);
+		dc.addParam(oldRoleId);
 		dc.loadResult();
 
 		// Replace references from old role to new role
-		dc.setSQL("UPDATE cms_role SET db_fqn=REPLACE(db_fqn, '"+oldRoleId+"', '"+newRoleId+"') WHERE id <> '"+ oldRoleId +"' AND db_fqn LIKE '%"+ oldRoleId +"%'");
+		dc.setSQL("UPDATE cms_role SET db_fqn = REPLACE(db_fqn, ?, ?) WHERE id <> ? AND db_fqn LIKE ?");
+		dc.addParam(oldRoleId);
+		dc.addParam(newRoleId);
+		dc.addParam(oldRoleId);
+		dc.addParam("%" + oldRoleId + "%");
 		dc.loadResult();
 
 		dc.setSQL("UPDATE cms_role SET parent=? WHERE parent=?");

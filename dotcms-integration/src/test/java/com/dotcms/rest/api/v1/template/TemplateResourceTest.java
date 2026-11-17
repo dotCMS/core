@@ -1263,7 +1263,7 @@ public class TemplateResourceTest {
         final HttpSession mockHttpSession = mock(HttpSession.class);
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameter("host_id")).thenReturn(site.getIdentifier());
-        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(APILocator.systemUser());
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(TestUserUtils.getAdminUser());
         when(request.getSession()).thenReturn(mockHttpSession);
 
         final TemplateHelper templateHelper = new TemplateHelper();

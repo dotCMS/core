@@ -20,12 +20,14 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -44,6 +46,8 @@ public class UserAjaxIntegrationTest {
 
     private static RoleAPI roleAPI;
     private static Role usersToolRole;
+    /** Grants only the old Users screen, kept as {@code users-legacy} after the Angular portlet took over {@code users}. */
+    private static Role usersLegacyToolRole;
     private static WebContextFactory.WebContextBuilder previousWebContextBuilder;
 
     @BeforeClass
@@ -54,6 +58,11 @@ public class UserAjaxIntegrationTest {
         final Layout usersLayout = new LayoutDataGen()
                 .name("Users tool " + UUIDGenerator.shorty()).portletIds("users").nextPersisted();
         usersToolRole = new RoleDataGen().layout(usersLayout).nextPersisted();
+
+        final Layout usersLegacyLayout = new LayoutDataGen()
+                .name("Users legacy tool " + UUIDGenerator.shorty())
+                .portletIds(PortletID.USERS_LEGACY.toString()).nextPersisted();
+        usersLegacyToolRole = new RoleDataGen().layout(usersLegacyLayout).nextPersisted();
 
         previousWebContextBuilder = currentWebContextBuilder();
     }
@@ -116,6 +125,25 @@ public class UserAjaxIntegrationTest {
         assertFalse("precondition: the caller must not be a CMS Administrator", manager.isAdmin());
         assertTrue("precondition: the caller must have the Users tool",
                 APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("users", manager));
+        setUpDwrContext(manager);
+        return manager;
+    }
+
+    /**
+     * Creates a back-end user, not a CMS Administrator, whose only tool is the old Users screen
+     * ({@code users-legacy}), and makes them the logged-in user.
+     *
+     * @return the logged-in {@link User}
+     * @throws DotDataException if the user cannot be persisted or their portlets cannot be read
+     */
+    private static User newUsersLegacyManagerLoggedIn() throws DotDataException {
+        final User manager = new UserDataGen()
+                .roles(TestUserUtils.getBackendRole(), usersLegacyToolRole).nextPersisted();
+        assertFalse("precondition: the caller must not be a CMS Administrator", manager.isAdmin());
+        assertFalse("precondition: the caller must not have the users portlet",
+                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), manager));
+        assertTrue("precondition: the caller must have the users-legacy portlet",
+                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS_LEGACY.toString(), manager));
         setUpDwrContext(manager);
         return manager;
     }
@@ -203,6 +231,60 @@ public class UserAjaxIntegrationTest {
         new UserAjax().updateUserRoles(manager.getUserId(), directRoleIds(manager));
 
         assertEquals(before, directRoleIdSet(manager));
+    }
+
+    /**
+     * Method to test: {@link UserAjax#updateUserRoles(String, List)}, through the Users portlet check
+     * in {@link com.dotmarketing.business.ajax.DwrUtil#validateUsersPortletPermissions(User)}
+     * Given Scenario: A user who is not a CMS Administrator and whose only tool is the old Users
+     * screen ({@code users-legacy}) saves their own roles without changing them.
+     * Expected Result: No error; the roles are identical before and after, exactly as for a holder
+     * of {@code users}, so a role that kept the old screen can still use it.
+     */
+    @Test
+    public void updateUserRoles_usersLegacyHolderUnchangedRoles_succeeds() throws Exception {
+        final User manager = newUsersLegacyManagerLoggedIn();
+        final Set<String> before = directRoleIdSet(manager);
+
+        new UserAjax().updateUserRoles(manager.getUserId(), directRoleIds(manager));
+
+        assertEquals(before, directRoleIdSet(manager));
+    }
+
+    /**
+     * Method to test: {@link UserAjax#assignUserAccess(Map)}
+     * Given Scenario: A user who is not a CMS Administrator and holds the {@code users} portlet marks
+     * their own account active, as the Users screen's access checkboxes do.
+     * Expected Result: The Users portlet gate lets the call through and the flag comes back granted.
+     * This is the baseline for the {@code users-legacy} case below.
+     */
+    @Test
+    public void assignUserAccess_usersHolder_passesTheUsersPortletGate() throws Exception {
+        final User manager = newUserManagerLoggedIn();
+
+        final Map<String, Object> result = new UserAjax().assignUserAccess(Map.of(
+                "userid", manager.getUserId(), "access", "userActive", "granted", "true"));
+
+        assertEquals(Boolean.TRUE, result.get("granted"));
+        assertEquals("active", result.get("role"));
+    }
+
+    /**
+     * Method to test: {@link UserAjax#assignUserAccess(Map)}
+     * Given Scenario: A user who is not a CMS Administrator and whose only tool is the old Users
+     * screen ({@code users-legacy}) marks their own account active.
+     * Expected Result: The Users portlet gate accepts the legacy id and the flag comes back granted,
+     * exactly as for a holder of {@code users}.
+     */
+    @Test
+    public void assignUserAccess_usersLegacyHolder_passesTheUsersPortletGate() throws Exception {
+        final User manager = newUsersLegacyManagerLoggedIn();
+
+        final Map<String, Object> result = new UserAjax().assignUserAccess(Map.of(
+                "userid", manager.getUserId(), "access", "userActive", "granted", "true"));
+
+        assertEquals(Boolean.TRUE, result.get("granted"));
+        assertEquals("active", result.get("role"));
     }
 
     /**
