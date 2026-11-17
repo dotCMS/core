@@ -11,7 +11,7 @@ The editor (dotAdmin) and the page (`@dotcms/uve`) talk through `postMessage`. T
 ```
 
 - `velocity`: signed pixels per 16.67ms frame. Negative scrolls up. `0` stops.
-- Sent when the value changes while a drag is in progress, and once with `0` when the pointer is back between both edge zones, on drop, on drag end, and when a file dragged in from the desktop leaves the app window. A scroll that is running keeps going while the pointer is beside the iframe or outside the app window during a drag from the editor; it only starts with the pointer over the iframe's width.
+- Sent when the value changes while a drag is in progress, and once with `0` when the pointer is back between both edge zones, on drop, on drag end, and when a file dragged in from the desktop leaves the app window. A scroll that is running keeps going while the pointer is beside the iframe or outside the app window during a drag from the editor; it only starts with the pointer over the iframe itself, not above, below or beside it.
 - Page behavior: runs a frame loop scrolling the window instantly by `velocity × (frameTime / 16.67)`; stops the loop at `0` or when the page limit is reached. After receiving this message once, the page ignores `uve-scroll-inside-iframe` for the rest of the page's life.
 - Non-finite values are treated as `0`. Magnitude is clamped to 40.
 

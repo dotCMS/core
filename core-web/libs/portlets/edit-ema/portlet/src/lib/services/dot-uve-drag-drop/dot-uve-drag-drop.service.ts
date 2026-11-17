@@ -200,12 +200,16 @@ export class DotUveDragDropService {
                 }
 
                 const iframeRect = iframe.nativeElement.getBoundingClientRect();
-                const isInsideIframe =
-                    event.clientX > iframeRect.left && event.clientX < iframeRect.right;
-                // Beside the iframe a scroll never starts (a palette tile picked up near the
-                // bottom must not scroll the page), but one already running follows the pointer.
+                const isOverIframe =
+                    event.clientX > iframeRect.left &&
+                    event.clientX < iframeRect.right &&
+                    event.clientY >= iframeRect.top &&
+                    event.clientY < iframeRect.bottom;
+                // Outside the iframe a scroll never starts (a palette tile picked up near the
+                // bottom, or a pointer over the toolbar above the preview, must not scroll the
+                // page), but one already running follows the pointer, at full speed past an edge.
                 const velocity =
-                    isInsideIframe || lastVelocity !== 0
+                    isOverIframe || lastVelocity !== 0
                         ? getEdgeScrollVelocity(event.clientY, iframeRect)
                         : 0;
 
