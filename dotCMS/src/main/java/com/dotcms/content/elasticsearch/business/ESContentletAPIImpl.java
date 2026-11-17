@@ -7397,8 +7397,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
                         relationshipRecords.getRecords().addAll((List<Contentlet>) fieldValue);
                     } else if (fieldValue instanceof String && UtilMethods.isSet((String) fieldValue)) {
                         try {
-                            relationshipRecords.getRecords().addAll(RelationshipUtil.filterContentlet(
-                                    contentlet.getLanguageId(), (String) fieldValue, user, false));
+                            // The field value is a user-supplied String (identifiers and/or a
+                            // Lucene query). filterContentlet resolves identifiers internally with
+                            // the system user, so gate the resolved targets by the acting user's
+                            // READ permission before relating them; otherwise a save could relate
+                            // content the user cannot see (private-issues#930). Mirrors the
+                            // CSV-import path RelationshipUtil.getRelatedContentFromQuery (#35222).
+                            final List<Contentlet> resolved = RelationshipUtil.filterContentlet(
+                                    contentlet.getLanguageId(), (String) fieldValue, user, false);
+                            relationshipRecords.getRecords().addAll(permissionAPI.filterCollection(
+                                    resolved, PermissionAPI.PERMISSION_READ, user, false));
                         } catch (DotDataException | DotSecurityException | DotStateException e) {
                             Logger.warn(this, "Could not resolve relationship field '"
                                     + field.variable() + "': " + e.getMessage());

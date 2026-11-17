@@ -5484,4 +5484,82 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         final String query = "{\"query\":{\"query_string\":{\"query\":\"+identifier:" + identifier + "\"}}}";
         return APILocator.getSearchAPI().search(query, true, caller, true).getContentlets().size();
     }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)} resolving a
+     * relationship field whose value is a raw identifier String.
+     * <p>
+     * Given Scenario: A limited back-end user checks in a parent contentlet whose relationship
+     * field carries the identifier of a child it cannot READ (the child lives on a site the user
+     * has no permission on). This is the checkin leg that resolves the String field value in
+     * {@link ESContentletAPIImpl} getContentletRelationships, distinct from the REST populate leg.
+     * <p>
+     * ExpectedResult: The unreadable child is dropped, so no relationship row is persisted
+     * (private-issues#930). The system user still relates it, proving the fixture is valid.
+     */
+    @Test
+    public void checkinRelationshipFieldValueFiltersTargetsLimitedUserCannotRead()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType childType = new ContentTypeDataGen().host(host).nextPersisted();
+        final Field relationshipFieldDef = new FieldDataGen()
+                .type(RelationshipField.class)
+                .values(String.valueOf(
+                        WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                .relationType(childType.variable())
+                .next();
+        final ContentType parentType = new ContentTypeDataGen().host(host)
+                .field(relationshipFieldDef).nextPersisted();
+        final Field relationshipField = parentType.fields(RelationshipField.class).get(0);
+        final Relationship relationship = relationshipAPI.byTypeValue(
+                parentType.variable() + "." + relationshipField.variable());
+
+        final Contentlet unreadableChild = new ContentletDataGen(childType).host(host)
+                .nextPersisted();
+        final User limitedUser = new UserDataGen().roles(TestUserUtils.getBackendRole())
+                .nextPersisted();
+
+        // The limited user may create parent content on the host and type, but has NO permission on
+        // the child (it lives on the fresh site), so it cannot READ it.
+        PermissionUtilTest.addPermission(host, limitedUser,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+        PermissionUtilTest.addPermission(parentType, limitedUser,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT,
+                PermissionAPI.PERMISSION_PUBLISH, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+
+        try {
+            assertFalse("precondition: the limited user must not be able to READ the child",
+                    APILocator.getPermissionAPI().doesUserHavePermission(unreadableChild,
+                            PermissionAPI.PERMISSION_READ, limitedUser, false));
+
+            // Limited user: the relationship to the unreadable child must NOT be persisted
+            final Contentlet parent = new ContentletDataGen(parentType).host(host).next();
+            // Put the raw identifier String on the map (as the REST layer does); setProperty would
+            // pre-resolve it into a List and bypass the String-resolution branch under test.
+            parent.getMap().put(relationshipField.variable(), unreadableChild.getIdentifier());
+            parent.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+            final Contentlet saved = contentletAPI.checkin(parent, limitedUser, false);
+            final List<String> childrenAsLimited = TreeFactory.getRelatedIdsByParentAndRelationType(
+                    saved.getIdentifier(), relationship.getRelationTypeValue());
+            assertTrue("A relationship to content the saving user cannot read must not be persisted",
+                    childrenAsLimited.isEmpty());
+
+            // Control: the system user still relates the child, so the difference is the READ gate
+            final Contentlet parentAsSystem = new ContentletDataGen(parentType).host(host).next();
+            parentAsSystem.getMap().put(relationshipField.variable(), unreadableChild.getIdentifier());
+            parentAsSystem.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+            final Contentlet savedAsSystem = contentletAPI.checkin(parentAsSystem, user, false);
+            final List<String> childrenAsSystem = TreeFactory.getRelatedIdsByParentAndRelationType(
+                    savedAsSystem.getIdentifier(), relationship.getRelationTypeValue());
+            assertEquals("The system user must still relate the child", 1, childrenAsSystem.size());
+            assertEquals(unreadableChild.getIdentifier(), childrenAsSystem.get(0));
+        } finally {
+            UserDataGen.remove(limitedUser);
+            ContentTypeDataGen.remove(parentType);
+            ContentTypeDataGen.remove(childType);
+        }
+    }
+
 }

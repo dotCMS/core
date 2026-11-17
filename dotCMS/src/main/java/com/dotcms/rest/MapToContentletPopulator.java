@@ -21,6 +21,8 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -898,6 +900,30 @@ public class MapToContentletPopulator  {
         return new ContentletRelationshipsTransformer(contentlet, contentRelationships).findFirst();
     }
 
+    /**
+     * Resolves the {@link User} on whose behalf the current save is running, so relationship
+     * targets are gated by that user's READ permission instead of being resolved as the system
+     * user (private-issues#930). The authenticated REST user is placed on the request by
+     * {@code WebResource} for every save endpoint (session and API-token auth alike), so it is read
+     * from the request bound to the current thread. When there is no request in scope -- internal,
+     * non-request callers -- this falls back to the system user, preserving their existing behavior.
+     *
+     * @return the logged-in user for the current request, or the system user when none is available
+     * @throws DotDataException if the system user cannot be loaded
+     */
+    private User resolveSavingUser() throws DotDataException {
+
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        if (null != request) {
+            final User loggedInUser = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+            if (null != loggedInUser) {
+                return loggedInUser;
+            }
+        }
+
+        return APILocator.getUserAPI().getSystemUser();
+    }
+
     private ContentletRelationships getContentletRelationships(final Map<String, Object> map,
                                                                        final Contentlet contentlet) throws DotDataException {
 
@@ -918,9 +944,21 @@ public class MapToContentletPopulator  {
 
                     try {
 
-                        final List<Contentlet> contentlets = RelationshipUtil
-                                .filterContentlet(contentlet.getLanguageId(), query,
-                                        APILocator.getUserAPI().getSystemUser(), false);
+                        // Resolve the relationship targets on behalf of the user performing the
+                        // save, not the system user, and drop any the user cannot READ. Otherwise
+                        // an editor could relate their content to content they cannot see
+                        // (private-issues#930). This mirrors the CSV-import entry point
+                        // RelationshipUtil.getRelatedContentFromQuery (#35222): filterContentlet
+                        // resolves identifiers internally with the system user and its Lucene
+                        // branch searches as the given user, so the explicit READ filter below is
+                        // what closes the gap for both value shapes. Batch-filter in one
+                        // round-trip (see JAVA_STANDARDS permission checks: batch vs scalar).
+                        final User user = resolveSavingUser();
+                        final List<Contentlet> resolvedContentlets = RelationshipUtil
+                                .filterContentlet(contentlet.getLanguageId(), query, user, false);
+                        final List<Contentlet> contentlets = APILocator.getPermissionAPI()
+                                .filterCollection(resolvedContentlets,
+                                        PermissionAPI.PERMISSION_READ, user, false);
 
                         if (contentlets.size() > 0) {
 

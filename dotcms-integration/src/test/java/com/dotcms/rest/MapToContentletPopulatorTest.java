@@ -20,6 +20,17 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHeaderRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.mock.request.MockSessionRequest;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
+import com.liferay.portal.util.WebKeys;
+import javax.servlet.http.HttpServletRequest;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
@@ -808,6 +819,125 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
         //Must have the categories from both fields
         assertTrue("Must contain category on field 1.", present.contains(categories.get(0)));
         assertTrue("Must contain category on field 2.", present.contains(categories.get(1)));
+    }
+
+    /**
+     * Method to test: {@link MapToContentletPopulator#populate(Contentlet, Map)} resolving a
+     * relationship field value on a REST save.
+     * <p>
+     * Given Scenario: A save payload for a parent contentlet carries a relationship field whose
+     * value points at a child contentlet the saving user does NOT have READ permission on, once as
+     * an explicit identifier and once as a Lucene query. The acting user is bound to the request
+     * thread as {@code WebResource} does on every save endpoint.
+     * <p>
+     * ExpectedResult: The unreadable child is dropped, so no relationship is populated for the
+     * limited user (private-issues#930). The system user, with no request in scope, still resolves
+     * the child, proving the setup is otherwise valid and the only difference is the READ gate.
+     */
+    @Test
+    public void Test_populate_filters_relationship_targets_the_saving_user_cannot_read()
+            throws DotDataException, DotSecurityException {
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final HttpServletRequest originalRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        User limitedUser = null;
+        Role otherRole   = null;
+        Contentlet secretChild = null;
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType930");
+            childContentType  = createAndSaveSimpleContentType("childContentType930");
+            final Field relationshipField = createAndSaveRelationshipField(
+                    "related930", parentContentType.id(), childContentType.variable());
+
+            // The limited user is a backend user that holds only its own roles; the child is
+            // granted READ to an unrelated role, so the limited user cannot read it.
+            otherRole = new RoleDataGen().nextPersisted();
+            limitedUser = new UserDataGen()
+                    .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+
+            secretChild = new ContentletDataGen(childContentType.id())
+                    .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                    .nextPersisted();
+
+            final int readEdit = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT;
+            permissionAPI.save(new Permission(secretChild.getPermissionId(), otherRole.getId(),
+                    readEdit, true), secretChild, user, false);
+
+            // Precondition: the limited user truly cannot read the child
+            assertFalse("The limited user must not be able to READ the child",
+                    permissionAPI.doesUserHavePermission(secretChild,
+                            PermissionAPI.PERMISSION_READ, limitedUser, false));
+
+            // Bind the limited user to the request thread the way WebResource does on a save
+            bindRequestUser(limitedUser);
+
+            // (a) explicit identifier value -> unreadable child must be filtered out
+            Contentlet parentById = createContentlet(parentContentType);
+            parentById = populator.populate(parentById, relationshipProps(
+                    parentContentType, relationshipField, secretChild.getIdentifier()));
+            assertNull("A relationship to content the saving user cannot read must not be populated"
+                    + " (identifier value)", parentById.get(Contentlet.RELATIONSHIP_KEY));
+
+            // (b) Lucene query value -> same outcome
+            Contentlet parentByQuery = createContentlet(parentContentType);
+            parentByQuery = populator.populate(parentByQuery, relationshipProps(
+                    parentContentType, relationshipField, "+contentType:" + childContentType.variable()));
+            assertNull("A relationship resolved by query must exclude content the saving user cannot"
+                    + " read", parentByQuery.get(Contentlet.RELATIONSHIP_KEY));
+
+            // Control: the system user (no request in scope) still resolves the child, so the
+            // difference above is the READ gate and not a broken fixture.
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+            Contentlet parentAsSystem = createContentlet(parentContentType);
+            parentAsSystem = populator.populate(parentAsSystem, relationshipProps(
+                    parentContentType, relationshipField, secretChild.getIdentifier()));
+            assertNotNull("The system user must still resolve the child",
+                    parentAsSystem.get(Contentlet.RELATIONSHIP_KEY));
+            final ContentletRelationships asSystem =
+                    (ContentletRelationships) parentAsSystem.get(Contentlet.RELATIONSHIP_KEY);
+            assertEquals(1, asSystem.getRelationshipsRecords().size());
+            assertEquals(1, asSystem.getRelationshipsRecords().get(0).getRecords().size());
+            assertEquals(secretChild.getIdentifier(),
+                    asSystem.getRelationshipsRecords().get(0).getRecords().get(0).getIdentifier());
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(originalRequest);
+            if (UtilMethods.isSet(secretChild) && UtilMethods.isSet(secretChild.getInode())) {
+                ContentletDataGen.remove(secretChild);
+            }
+            if (UtilMethods.isSet(limitedUser)) {
+                UserDataGen.remove(limitedUser);
+            }
+            if (UtilMethods.isSet(otherRole)) {
+                RoleDataGen.remove(otherRole);
+            }
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    private Map<String, Object> relationshipProps(final ContentType parentType, final Field relField,
+            final String value) {
+        final Map<String, Object> properties = new HashMap<>();
+        properties.put(Contentlet.STRUCTURE_INODE_KEY, parentType.id());
+        properties.put(relField.variable(), value);
+        return properties;
+    }
+
+    private void bindRequestUser(final User actingUser) {
+        final MockHeaderRequest request = new MockHeaderRequest(new MockSessionRequest(
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request()).request());
+        request.setAttribute(WebKeys.USER, actingUser);
+        request.setAttribute(WebKeys.USER_ID, actingUser.getUserId());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
     }
 
 }
