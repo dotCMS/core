@@ -72,8 +72,8 @@ public class WebDavXmlValidationFilter implements Filter {
     private static final Set<String> CONTENT_BODY_METHODS = Set.of("PUT", "POST");
 
     /**
-     * WebDAV request bodies (property, lock and report requests) are tiny. Validating one means holding it in memory, so
-     * this bounds how much a caller can make us buffer.
+     * WebDAV request bodies (property, lock and report requests) are tiny. Validating one means
+     * holding it in memory, so this bounds how much a caller can make us buffer.
      */
     static final int MAX_BODY_BYTES =
             Config.getIntProperty("WEBDAV_MAX_XML_BODY_BYTES", 512 * 1024);

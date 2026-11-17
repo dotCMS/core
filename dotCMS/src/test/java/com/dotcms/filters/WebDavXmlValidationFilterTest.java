@@ -187,9 +187,9 @@ public class WebDavXmlValidationFilterTest {
     }
 
     /**
-     * Method names are normalised with Locale.ROOT. Under a Turkish default locale the plain
-     * toUpperCase() of "propfind" is "PROPFİND", with a dotted capital I, which would not match
-     * and would skip validation altogether.
+     * Method names are normalised with Locale.ROOT, so a lower-case method name is validated like
+     * any other. Under a Turkish default locale the plain toUpperCase() of "propfind" is
+     * "PROPFİND", with a dotted capital I; this keeps such a name on the validated path.
      */
     @Test
     public void methodMatchingSurvivesATurkishDefaultLocale() throws Exception {
