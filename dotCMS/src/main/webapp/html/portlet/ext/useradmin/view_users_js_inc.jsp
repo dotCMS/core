@@ -4,6 +4,7 @@
 <%@page import="com.dotmarketing.util.Config"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.dotmarketing.util.PasswordGenerator"%>
 
 <script type="text/javascript" src="/dwr/interface/UserAjax.js"></script>
 <script type="text/javascript" src="/dwr/interface/RoleAjax.js"></script>
@@ -90,11 +91,16 @@
 		dwr.util.useLoadingMessage("<%=LanguageUtil.get(pageContext, "Loading")%>....");
 	});
 
+<%
+    String _jsPwdGroups = PasswordGenerator.Builder.buildJsGroupsJson();
+%>
     // Random Password Generator Fn
     var PasswordGenerator = {
 
-        // Based on https://www.grc.com/ppp.htm
-        _pattern: /[!#%+23456789:=?@ABCDEFGHJKLMNPRSTUVWXYZabcdefghijkmnopqrstuvwxyz]/,
+        // Per-group character strings injected server-side.  Each element is one character
+        // group (special, upper, lower, digits).  get() guarantees at least two characters
+        // from each non-empty group — mirroring the Java PasswordGenerator desiredMin=2.
+        _groups: <%= _jsPwdGroups %>,
 
         _getRandomByte: function() {
         if(window.crypto && window.crypto.getRandomValues)
@@ -115,21 +121,41 @@
         }
         },
 
+        // Uniform random index in [0, n) using rejection sampling to eliminate modulo bias.
+        // Bytes in the partial-bucket tail (>= floor(256/n)*n) are discarded and re-drawn.
+        _randomIndex: function(n) {
+        var threshold = Math.floor(256 / n) * n;
+        var b;
+        do { b = this._getRandomByte(); } while (b >= threshold);
+        return b % n;
+        },
+
         get: function(length) {
-        return Array.apply(null, {'length': length})
-            .map(function()
-            {
-            var result;
-            while(true)
-            {
-                result = String.fromCharCode(this._getRandomByte());
-                if(this._pattern.test(result))
-                {
-                return result;
+        var self = this;
+        var groups = this._groups;
+        var password = [];
+        var combined = '';
+
+        // Guarantee at least 2 chars from every non-empty group (mirrors Java desiredMin=2).
+        for (var g = 0; g < groups.length; g++) {
+            if (groups[g].length > 0) {
+                combined += groups[g];
+                var toTake = Math.min(2, groups[g].length);
+                for (var k = 0; k < toTake; k++) {
+                    password.push(groups[g].charAt(self._randomIndex(groups[g].length)));
                 }
             }
-            }, this)
-            .join('');
+        }
+        // Fill remaining slots from the combined pool.
+        while (password.length < length) {
+            password.push(combined.charAt(self._randomIndex(combined.length)));
+        }
+        // Fisher-Yates shuffle using rejection-sampled randomness.
+        for (var i = password.length - 1; i > 0; i--) {
+            var j = self._randomIndex(i + 1);
+            var tmp = password[i]; password[i] = password[j]; password[j] = tmp;
+        }
+        return password.join('');
         }
 
     };

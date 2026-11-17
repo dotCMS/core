@@ -155,3 +155,4 @@ Release-25.07.10 LTS
 149. https://github.com/dotCMS/core/issues/37974 : chore(security): remove unused legacy artifacts flagged by image scans (stale package.json, dot.commons-fileupload, dot.httpclient, snakeoil key) #38364 #37974
 150. https://github.com/dotCMS/core/issues/37975 : chore(deps): bump log4j to 2.25.4 and jsoup to 1.23.2 in core and the Tika bundle #38369 #37975
 151. https://github.com/dotCMS/private-issues/issues/729 : CI: shell injection via unquoted inputs.pr_branch (PR head ref) in link-pr-to-issue workflow #38403 #729
+152. https://github.com/dotCMS/private-issues/issues/971 : Increase default password policy: min 15 chars with complexity requirements #34989 #38375 #971
