@@ -238,7 +238,7 @@ describe('DotUveActionsHandlerService – IFRAME_SCROLL', () => {
         pageScrolled();
 
         expect(uveStore.updateEditorScrollState).toHaveBeenCalledTimes(1);
-        expect(uveStore.updateEditorScrollState.mock.calls[0][0]).toBeUndefined();
+        expect(uveStore.updateEditorScrollState).toHaveBeenCalledWith(undefined);
     });
 });
 
