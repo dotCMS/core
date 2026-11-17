@@ -7,6 +7,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.Mockito.description;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -19,6 +20,7 @@ import java.util.Locale;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -103,17 +105,85 @@ public class WebDavXmlValidationFilterTest {
         verify(chain).doFilter(any(), any());
     }
 
-    /** GET and PUT carry no XML for the servlet to parse, so they must not be buffered or inspected. */
+    /**
+     * Every WebDAV method that can carry an XML body: the three the servlet parses today, REPORT
+     * (parsed only for resources that support reports), and methods the servlet does not handle
+     * yet but whose RFC-defined bodies are XML. Each must get the same checks.
+     */
+    private static final List<String> XML_BODY_METHODS =
+            List.of("PROPFIND", "PROPPATCH", "LOCK", "REPORT", "MKCOL", "SEARCH", "ACL");
+
     @Test
-    public void nonXmlMethodsAreForwardedUntouched() throws Exception {
-        final FilterChain chain = mock(FilterChain.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
-        final HttpServletRequest request = request("PUT", DOCTYPE_BODY);
+    public void everyXmlBodiedMethodRejectsADoctypeBody() throws Exception {
+        for (final String method : XML_BODY_METHODS) {
+            final FilterChain chain = mock(FilterChain.class);
+            final HttpServletResponse response = mock(HttpServletResponse.class);
 
-        new WebDavXmlValidationFilter().doFilter(request, response, chain);
+            new WebDavXmlValidationFilter().doFilter(request(method, DOCTYPE_BODY), response, chain);
 
-        verify(chain).doFilter(request, response);
-        verify(response, never()).sendError(anyInt());
+            verify(response, description(method)).sendError(HttpServletResponse.SC_BAD_REQUEST);
+            verify(chain, never().description(method)).doFilter(any(), any());
+        }
+    }
+
+    @Test
+    public void everyXmlBodiedMethodRejectsAnOversizedBody() throws Exception {
+        for (final String method : XML_BODY_METHODS) {
+            final FilterChain chain = mock(FilterChain.class);
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+
+            new WebDavXmlValidationFilter().doFilter(request(method, oversized()), response, chain);
+
+            verify(response, description(method))
+                    .sendError(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE);
+            verify(chain, never().description(method)).doFilter(any(), any());
+        }
+    }
+
+    @Test
+    public void everyXmlBodiedMethodPassesANormalBodyIntact() throws Exception {
+        for (final String method : XML_BODY_METHODS) {
+            final FilterChain chain = mock(FilterChain.class);
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+
+            new WebDavXmlValidationFilter()
+                    .doFilter(request(method, LEGITIMATE_PROPFIND), response, chain);
+
+            verify(response, never().description(method)).sendError(anyInt());
+            final ArgumentCaptor<ServletRequest> forwarded =
+                    ArgumentCaptor.forClass(ServletRequest.class);
+            verify(chain, description(method)).doFilter(forwarded.capture(), any());
+            assertArrayEquals("Body was not replayed intact for " + method,
+                    LEGITIMATE_PROPFIND.getBytes(StandardCharsets.UTF_8),
+                    forwarded.getValue().getInputStream().readAllBytes());
+        }
+    }
+
+    /**
+     * PUT and POST bodies are file content, not WebDAV requests: an uploaded .xml file may
+     * legitimately declare a DOCTYPE and be any size. They must reach the servlet as the very same
+     * request, unread, so the upload streams through without being buffered or capped.
+     */
+    @Test
+    public void uploadedXmlFilesAreForwardedUntouched() throws Exception {
+        for (final String method : List.of("PUT", "POST")) {
+            for (final String body : List.of(DOCTYPE_BODY, oversized())) {
+                final FilterChain chain = mock(FilterChain.class);
+                final HttpServletResponse response = mock(HttpServletResponse.class);
+                final HttpServletRequest request =
+                        new HttpServletRequestWrapper(request(method, body)) {
+                            @Override
+                            public String getContentType() {
+                                return "application/xml";
+                            }
+                        };
+
+                new WebDavXmlValidationFilter().doFilter(request, response, chain);
+
+                verify(chain, description(method)).doFilter(request, response);
+                verify(response, never().description(method)).sendError(anyInt());
+            }
+        }
     }
 
     /**
@@ -143,10 +213,7 @@ public class WebDavXmlValidationFilterTest {
     public void oversizedBodyIsRejected() throws Exception {
         final FilterChain chain = mock(FilterChain.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
-        final String huge = "<propfind xmlns=\"DAV:\">"
-                + "x".repeat(WebDavXmlValidationFilter.MAX_BODY_BYTES + 1) + "</propfind>";
-
-        new WebDavXmlValidationFilter().doFilter(request("PROPFIND", huge), response, chain);
+        new WebDavXmlValidationFilter().doFilter(request("PROPFIND", oversized()), response, chain);
 
         verify(response).sendError(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE);
         verify(chain, never()).doFilter(any(), any());
@@ -170,6 +237,14 @@ public class WebDavXmlValidationFilterTest {
             assertFalse("A clean document was reported as declaring a DOCTYPE in " + charset,
                     WebDavXmlValidationFilter.declaresDoctype(clean.getBytes(charset)));
         }
+    }
+
+    /** A well-formed XML body one byte past the cap. */
+    private static String oversized() {
+        final String open = "<propfind xmlns=\"DAV:\">";
+        final String close = "</propfind>";
+        return open + "x".repeat(WebDavXmlValidationFilter.MAX_BODY_BYTES + 1 - open.length()
+                - close.length()) + close;
     }
 
     private static HttpServletRequest request(final String method, final String body) throws Exception {

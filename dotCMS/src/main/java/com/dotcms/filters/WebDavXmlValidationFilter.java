@@ -42,9 +42,18 @@ import org.xml.sax.helpers.DefaultHandler;
  * keeps the parse predictable.
  *
  * <p>The check lives here rather than in the parser because the WebDAV servlet comes from a
- * third-party library whose parsers cannot be configured from dotCMS code. One of the three parses
+ * third-party library whose parsers cannot be configured from dotCMS code. One of its parses
  * happens in a static method, so supplying the library a custom parser would not cover it either.
- * A filter covers all three.
+ * A filter covers every one of them.
+ *
+ * <p>Every method is validated except PUT and POST, whose bodies are file content rather than
+ * WebDAV requests. Choosing by exclusion means a method the servlet starts parsing later, or one
+ * this list never anticipated, is checked by default. In milton 1.8.1.4 the bodies that reach an
+ * XML parser are PROPFIND, PROPPATCH, LOCK and REPORT (the last only for resources that support
+ * reports, which no dotCMS resource does today); MKCOL answers 415 to any body, and methods such
+ * as SEARCH and ACL have no handler. The Content-Type cannot make this decision: clients send
+ * PROPFIND bodies as text/xml, application/xml or with no type at all, while an uploaded .xml file
+ * arrives as a PUT with application/xml.
  *
  * <p>Detection is a real parse rather than a search of the raw bytes, because a byte search is
  * defeated by the document's encoding: in UTF-16 the literal "DOCTYPE" does not appear as those
@@ -55,11 +64,15 @@ import org.xml.sax.helpers.DefaultHandler;
  */
 public class WebDavXmlValidationFilter implements Filter {
 
-    /** The only WebDAV methods whose bodies the servlet parses as XML. */
-    private static final Set<String> XML_BODY_METHODS = Set.of("PROPFIND", "PROPPATCH", "LOCK");
+    /**
+     * Methods whose body is file content, not a WebDAV request: PUT stores the bytes as the file
+     * and POST carries a form or multipart upload. They pass through unread, so an upload is never
+     * buffered, capped or rejected for declaring a DOCTYPE of its own.
+     */
+    private static final Set<String> CONTENT_BODY_METHODS = Set.of("PUT", "POST");
 
     /**
-     * RFC 4918 property and lock bodies are tiny. Validating one means holding it in memory, so
+     * WebDAV request bodies (property, lock and report requests) are tiny. Validating one means holding it in memory, so
      * this bounds how much a caller can make us buffer.
      */
     static final int MAX_BODY_BYTES =
@@ -97,7 +110,7 @@ public class WebDavXmlValidationFilter implements Filter {
         final HttpServletRequest request = (HttpServletRequest) req;
         final HttpServletResponse response = (HttpServletResponse) res;
 
-        if (!XML_BODY_METHODS.contains(request.getMethod().toUpperCase(Locale.ROOT))) {
+        if (CONTENT_BODY_METHODS.contains(request.getMethod().toUpperCase(Locale.ROOT))) {
             chain.doFilter(req, res);
             return;
         }
@@ -111,8 +124,9 @@ public class WebDavXmlValidationFilter implements Filter {
             return;
         }
 
-        // An absent body is legal: PROPFIND with no body means allprop, and LOCK with no body is
-        // a lock refresh. Only inspect when there is something to inspect.
+        // An absent body is legal: PROPFIND with no body means allprop, LOCK with no body is a
+        // lock refresh, and most methods never carry one. Only inspect when there is something
+        // to inspect.
         if (body.get().length > 0 && declaresDoctype(body.get())) {
             SecurityLogger.logWarn(WebDavXmlValidationFilter.class,
                     String.format("Rejecting WebDAV %s body declaring a DOCTYPE from %s",
