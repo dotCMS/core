@@ -1,7 +1,11 @@
 package com.dotcms.adminsite;
 
 
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
+import com.liferay.portal.model.User;
 import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
@@ -148,6 +152,60 @@ public interface AdminSiteAPI {
      */
     default boolean allowBackendLoginsOnNonAdminSites() {
         return Config.getBooleanProperty(ADMIN_SITE_ALLOW_BACKEND_LOGINS_ANY_SITE, true);
+    }
+
+    /**
+     * Checks transport for a verified user's request. Persisted backend or administrator
+     * membership is used so request-scoped role demotion cannot bypass HTTPS enforcement.
+     *
+     * @param user the authenticated {@link User}; this check does not authenticate the user
+     * @param request the request whose transport is reported by the servlet container
+     * @return true when the transport policy permits the request
+     * @throws DotDataException if role membership cannot be resolved
+     */
+    default boolean isSecureBackendRequest(final User user, final HttpServletRequest request)
+            throws DotDataException {
+        if (!isAdminSiteEnabled() || allowInsecureRequests()) {
+            return true;
+        }
+        return !hasBackendRole(user) || request != null && request.isSecure();
+    }
+
+    /**
+     * Checks the common host and transport policy before any login creates a session.
+     * Frontend-only users are unaffected. Backend and administrator membership is checked
+     * independently of frontend membership and the current request's effective permissions.
+     *
+     * @param user the verified {@link User} attempting to log in
+     * @param request the login request
+     * @return true when login policy permits this request
+     * @throws DotDataException if role membership cannot be resolved
+     */
+    default boolean isBackendLoginAllowed(final User user, final HttpServletRequest request)
+            throws DotDataException {
+        if (!isSecureBackendRequest(user, request)) {
+            return false;
+        }
+        if (!isAdminSiteEnabled() || allowBackendLoginsOnNonAdminSites() || !hasBackendRole(user)) {
+            return true;
+        }
+        return request != null && isAdminSite(request);
+    }
+
+    /**
+     * Reads persisted backend membership without the request-scoped User predicates.
+     *
+     * @param user the {@link User} whose roles are checked
+     * @return true for a backend user or CMS administrator
+     * @throws DotDataException if role membership cannot be resolved
+     */
+    private boolean hasBackendRole(final User user) throws DotDataException {
+        if (user == null) {
+            return false;
+        }
+        final RoleAPI roles = APILocator.getRoleAPI();
+        return roles.doesUserHaveRole(user, roles.loadBackEndUserRole())
+                || roles.doesUserHaveRole(user, roles.loadCMSAdminRole());
     }
 
     /**

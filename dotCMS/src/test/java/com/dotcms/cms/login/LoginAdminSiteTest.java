@@ -3,6 +3,7 @@ package com.dotcms.cms.login;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -17,6 +18,7 @@ import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.ejb.UserManagerUtil;
@@ -26,6 +28,7 @@ import com.liferay.portal.util.PortalUtil;
 import java.lang.reflect.Constructor;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.MockedStatic;
@@ -37,20 +40,26 @@ class LoginAdminSiteTest {
     private static final String PASSWORD = "test-password";
     private static final String AUTHENTICATION_REACHED = "session creation reached";
 
+    private enum Flow { PASSWORD, EMAIL, COOKIE }
     private enum Host { ADMIN, PUBLIC }
     private enum Transport { SECURE, INSECURE }
-    private enum Account { BACKEND, FRONTEND, MIXED }
+    private enum Account { BACKEND, FRONTEND, MIXED, ADMIN }
     private enum Outcome { REJECT, AUTHENTICATE }
 
-    /** Backend membership remains restricted even when the account also has a frontend role. */
+    /** Password and SSO logins enforce the same role, host and transport policy before session creation. */
     @ParameterizedTest
     @CsvSource({
-            "PUBLIC, SECURE, MIXED, REJECT",
-            "ADMIN, INSECURE, BACKEND, REJECT",
-            "ADMIN, SECURE, BACKEND, AUTHENTICATE",
-            "PUBLIC, SECURE, FRONTEND, AUTHENTICATE"
+            "PASSWORD, PUBLIC, SECURE, MIXED, REJECT",
+            "PASSWORD, ADMIN, INSECURE, BACKEND, REJECT",
+            "PASSWORD, ADMIN, SECURE, BACKEND, AUTHENTICATE",
+            "PASSWORD, PUBLIC, SECURE, FRONTEND, AUTHENTICATE",
+            "PASSWORD, ADMIN, INSECURE, ADMIN, REJECT",
+            "EMAIL, ADMIN, SECURE, BACKEND, AUTHENTICATE",
+            "COOKIE, PUBLIC, SECURE, MIXED, REJECT",
+            "COOKIE, ADMIN, INSECURE, BACKEND, REJECT",
+            "COOKIE, ADMIN, SECURE, BACKEND, AUTHENTICATE"
     })
-    void loginHonorsAdminPolicy(final Host host, final Transport transport,
+    void loginHonorsAdminPolicy(final Flow flow, final Host host, final Transport transport,
             final Account account, final Outcome outcome) throws Exception {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
@@ -63,42 +72,81 @@ class LoginAdminSiteTest {
         when(user.getEmailAddress()).thenReturn("editor@example.com");
         when(user.isActive()).thenReturn(true);
         when(user.isFrontendUser()).thenReturn(account != Account.BACKEND);
+        when(user.isBackendUser()).thenReturn(host == Host.ADMIN
+                && (account == Account.BACKEND || account == Account.MIXED));
+        when(user.isAdmin()).thenReturn(host == Host.ADMIN && account == Account.ADMIN);
         final User systemUser = mock(User.class);
         when(systemUser.getUserId()).thenReturn("system");
         when(systemUser.getEmailAddress()).thenReturn("system@example.com");
         final UserAPI userAPI = mock(UserAPI.class);
         when(userAPI.loadUserById(USER_ID)).thenReturn(user);
+        when(userAPI.loadUserById(USER_ID, systemUser, false)).thenReturn(user);
+        when(userAPI.getSystemUser()).thenReturn(systemUser);
         final RoleAPI roleAPI = mock(RoleAPI.class);
         final Role backendRole = new Role();
+        backendRole.setId("backend-role");
         when(roleAPI.loadBackEndUserRole()).thenReturn(backendRole);
-        when(roleAPI.doesUserHaveRole(user, backendRole)).thenReturn(account != Account.FRONTEND);
+        when(roleAPI.doesUserHaveRole(user, backendRole))
+                .thenReturn(account == Account.BACKEND || account == Account.MIXED);
+        final Role adminRole = new Role();
+        adminRole.setId("admin-role");
+        when(roleAPI.loadCMSAdminRole()).thenReturn(adminRole);
+        when(roleAPI.doesUserHaveRole(user, adminRole)).thenReturn(account == Account.ADMIN);
         final Company company = mock(Company.class);
         when(company.getCompanyId()).thenReturn("dotcms.org");
-        when(company.getAuthType()).thenReturn(Company.AUTH_TYPE_ID);
-        final AdminSiteAPI adminSite = mock(AdminSiteAPI.class);
+        when(company.getAuthType()).thenReturn(flow == Flow.EMAIL ? Company.AUTH_TYPE_EA : Company.AUTH_TYPE_ID);
+        final AdminSiteAPI adminSite = mock(AdminSiteAPI.class, CALLS_REAL_METHODS);
         when(adminSite.isAdminSiteEnabled()).thenReturn(true);
         when(adminSite.isAdminSite(request)).thenReturn(host == Host.ADMIN);
+        when(adminSite.allowInsecureRequests()).thenReturn(false);
+        when(adminSite.allowBackendLoginsOnNonAdminSites()).thenReturn(false);
+        final PreventSessionFixationUtil sessions = mock(PreventSessionFixationUtil.class);
+        when(sessions.preventSessionFixation(request, true)).thenReturn(mock(HttpSession.class));
 
         try (MockedStatic<APILocator> locator = mockStatic(APILocator.class);
                 MockedStatic<PortalUtil> portal = mockStatic(PortalUtil.class);
-                MockedStatic<UserManagerUtil> users = mockStatic(UserManagerUtil.class)) {
+                MockedStatic<UserManagerUtil> users = mockStatic(UserManagerUtil.class);
+                MockedStatic<PublicEncryptionFactory> encryption = mockStatic(PublicEncryptionFactory.class);
+                MockedStatic<PreventSessionFixationUtil> fixation = mockStatic(PreventSessionFixationUtil.class)) {
             locator.when(APILocator::systemUser).thenReturn(systemUser);
             locator.when(APILocator::getUserAPI).thenReturn(userAPI);
             locator.when(APILocator::getRoleAPI).thenReturn(roleAPI);
             locator.when(APILocator::getAdminSiteAPI).thenReturn(adminSite);
             portal.when(() -> PortalUtil.getCompany(request)).thenReturn(company);
+            if (flow == Flow.COOKIE && host == Host.PUBLIC) {
+                // SSO must check its incoming identity, not an existing frontend-only session.
+                final User frontendSession = mock(User.class);
+                when(frontendSession.getUserId()).thenReturn("frontend-session");
+                when(frontendSession.isActive()).thenReturn(true);
+                portal.when(() -> PortalUtil.getUserId(request)).thenReturn("frontend-session");
+                when(userAPI.loadUserById("frontend-session", systemUser, false)).thenReturn(frontendSession);
+            }
             users.when(() -> UserManagerUtil.authenticateByUserId("dotcms.org", USER_ID, PASSWORD))
                     .thenReturn(Authenticator.SUCCESS);
+            users.when(() -> UserManagerUtil.authenticateByEmailAddress("dotcms.org", "editor@example.com", PASSWORD))
+                    .thenReturn(Authenticator.SUCCESS);
+            users.when(() -> UserManagerUtil.getUserId("dotcms.org", "editor@example.com")).thenReturn(USER_ID);
+            encryption.when(() -> PublicEncryptionFactory.decryptString(USER_ID)).thenReturn(USER_ID);
+            fixation.when(PreventSessionFixationUtil::getInstance).thenReturn(sessions);
             final LoginServiceAPI login = loginService(userAPI);
 
+            if (flow == Flow.COOKIE) {
+                assertEquals(outcome == Outcome.AUTHENTICATE, login.doCookieLogin(USER_ID, request, response));
+                if (outcome == Outcome.REJECT) {
+                    verify(sessions, never()).preventSessionFixation(request, true);
+                }
+                return;
+            }
+
+            final String loginName = flow == Flow.EMAIL ? "editor@example.com" : USER_ID;
             if (outcome == Outcome.REJECT) {
-                assertFalse(login.doActionLogin(USER_ID, PASSWORD, false, request, response));
+                assertFalse(login.doActionLogin(loginName, PASSWORD, false, request, response));
                 verify(request, never()).getSession();
                 return;
             }
 
             final AuthException stopped = assertThrows(AuthException.class,
-                    () -> login.doActionLogin(USER_ID, PASSWORD, false, request, response));
+                    () -> login.doActionLogin(loginName, PASSWORD, false, request, response));
             assertEquals(AUTHENTICATION_REACHED, stopped.getMessage());
             verify(request).getSession();
         }

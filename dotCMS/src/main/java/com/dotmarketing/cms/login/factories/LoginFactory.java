@@ -18,6 +18,7 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
+import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
@@ -41,29 +42,28 @@ public class LoginFactory {
     private static final DotKeyLockManager<String> lockManager = DotKeyLockManagerBuilder.newLockManager("LOGIN_LOCK");
     
 
+    /**
+     * Re-establishes a verified cookie or SSO identity only after active-account and admin-site
+     * policy checks. An existing session for the same identity is revalidated without replacement.
+     *
+     * @param userId the verified user ID, encrypted ID or company-scoped email
+     * @param request the login request
+     * @param response the response used by the login flow
+     * @return true when login policy permits the identity
+     */
     public static boolean doCookieLogin(String userId, HttpServletRequest request, HttpServletResponse response) {
 
         try {
             return lockManager.tryLock(LOCK_PREFIX + userId, () -> {
 
-				// if multiple threads are stuck trying to login with the same encryptedId, we need to check if the user is already logged in
-				if(PortalUtil.getUserId(request) != null) {
-					return true;
-				}
-                String decryptedId = Try.of(()->PublicEncryptionFactory.decryptString(userId)).getOrElse(userId);
-                if(decryptedId.equals(PortalUtil.getUserId(request))) {
-                    return true;
-                }
-                
-                /*Custom Code*/
-				User user = null;
-				if (Validator.isEmailAddress(decryptedId)) {
-					user = APILocator.getUserAPI()
-							.loadByUserByEmail(decryptedId, APILocator.getUserAPI().getSystemUser(), false);
-				} else {
-					user = APILocator.getUserAPI()
-							.loadUserById(decryptedId, APILocator.getUserAPI().getSystemUser(), false);
-				}
+                // Check the incoming SSO identity, not a possibly different existing session user.
+                final String currentUserId = PortalUtil.getUserId(request);
+                final String decryptedId = Try.of(() -> PublicEncryptionFactory.decryptString(userId)).getOrElse(userId);
+                final String resolvedId = Validator.isEmailAddress(decryptedId)
+                        ? UserManagerUtil.getUserId(PortalUtil.getCompany(request).getCompanyId(), decryptedId)
+                        : decryptedId;
+                final User user = APILocator.getUserAPI()
+                        .loadUserById(resolvedId, APILocator.getUserAPI().getSystemUser(), false);
 
 				if(user == null) {
 					SecurityLogger.logInfo(LoginFactory.class,"Auto login failed (No user found) from  id: " + userId);
@@ -75,6 +75,14 @@ public class LoginFactory {
 					return false;
 				}
 
+
+                if (!APILocator.getAdminSiteAPI().isBackendLoginAllowed(user, request)) {
+                    SecurityLogger.logInfo(LoginFactory.class, "Cookie/SSO login rejected by admin-site policy.");
+                    return false;
+                }
+                if (user.getUserId().equals(currentUserId)) {
+                    return true;
+                }
 
 				final HttpSession session = PreventSessionFixationUtil.getInstance().preventSessionFixation(request, true);
 
@@ -162,11 +170,10 @@ public class LoginFactory {
 				}
 			}
 
-            if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
-            	user = APILocator.getUserAPI().loadByUserByEmail(userName, APILocator.getUserAPI().getSystemUser(), false);
-            } else {
-            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
-            }
+            final String resolvedId = Company.AUTH_TYPE_EA.equals(comp.getAuthType())
+                    ? UserManagerUtil.getUserId(comp.getCompanyId(), userName) : userName;
+            user = APILocator.getUserAPI().loadUserById(resolvedId,
+                    APILocator.getUserAPI().getSystemUser(), false);
 
             if ((user == null) || (!UtilMethods.isSet(user.getEmailAddress()))) {
         		SecurityLogger.logInfo(LoginFactory.class,"An invalid attempt to login or no email set for " + userName + " from IP: " + request.getRemoteAddr());
@@ -186,6 +193,11 @@ public class LoginFactory {
             // address or account; a failure counts toward the lock.
             match = LoginLockout.getInstance().passwordMatch(password, user,
             		LoginLockout.clientAddress(request), (secret, candidate) -> false);
+            }
+
+            if (match && !APILocator.getAdminSiteAPI().isBackendLoginAllowed(user, request)) {
+                SecurityLogger.logInfo(LoginFactory.class, "Login rejected by admin-site policy.");
+                return false;
             }
 
             if (match) {

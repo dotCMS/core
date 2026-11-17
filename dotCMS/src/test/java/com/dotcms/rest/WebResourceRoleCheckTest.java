@@ -1,19 +1,37 @@
 package com.dotcms.rest;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.adminsite.AdminSiteAPI;
+import com.dotcms.auth.dotAuth.rest.DotAuthSessionCredentialProcessorImpl;
+import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
+import com.dotcms.rest.exception.SecurityException;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Config;
+import com.liferay.portal.auth.PrincipalThreadLocal;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import org.mockito.MockedStatic;
 import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,6 +46,8 @@ import org.junit.Test;
 public class WebResourceRoleCheckTest {
 
     private static final String BACKEND_ROLE_ID = "b1a2c3d4-0000-0000-0000-000000000001";
+
+    private enum Credential { SESSION, API_TOKEN }
 
     private RoleAPI roleAPI;
     private User user;
@@ -128,7 +148,7 @@ public class WebResourceRoleCheckTest {
         verify(roleAPI, never()).loadRoleByKeyOrId(anyString());
     }
 
-    /** Raw backend membership cannot override host-scoped backend eligibility. */
+    /** Backend requests honor host eligibility and require HTTPS for both session and API-token credentials. */
     @Test
     public void backendRoleHonorsHost() throws Exception {
         when(roleAPI.loadRoleByKeyOrId(Role.DOTCMS_BACK_END_USER)).thenReturn(backendRole);
@@ -136,6 +156,47 @@ public class WebResourceRoleCheckTest {
         when(user.isBackendUser()).thenReturn(false);
 
         assertFalse(WebResource.hasAnyRole(roleAPI, user, Set.of(Role.DOTCMS_BACK_END_USER)));
+
+        final String previousPrincipal = PrincipalThreadLocal.getName();
+        final AdminSiteAPI adminSite = mock(AdminSiteAPI.class, CALLS_REAL_METHODS);
+        when(adminSite.isAdminSiteEnabled()).thenReturn(true);
+        when(adminSite.allowInsecureRequests()).thenReturn(false);
+        when(roleAPI.loadBackEndUserRole()).thenReturn(backendRole);
+        when(user.getUserId()).thenReturn("editor");
+        when(user.isActive()).thenReturn(true);
+        final JsonWebTokenAuthCredentialProcessor jwt = mock(JsonWebTokenAuthCredentialProcessor.class);
+
+        try (MockedStatic<APILocator> apis = mockStatic(APILocator.class);
+                MockedStatic<PortalUtil> portal = mockStatic(PortalUtil.class);
+                MockedStatic<Config> config = mockStatic(Config.class);
+                MockedStatic<DotAuthSessionCredentialProcessorImpl> sessions =
+                        mockStatic(DotAuthSessionCredentialProcessorImpl.class)) {
+            apis.when(APILocator::getAdminSiteAPI).thenReturn(adminSite);
+            apis.when(APILocator::getRoleAPI).thenReturn(roleAPI);
+            config.when(() -> Config.getBooleanProperty(AdminSiteAPI.ADMIN_SITE_ENABLED, false))
+                    .thenReturn(true);
+            sessions.when(DotAuthSessionCredentialProcessorImpl::getInstance)
+                    .thenReturn(mock(DotAuthSessionCredentialProcessorImpl.class));
+            final WebResource resource = new WebResource(mock(ApiProvider.class), jwt);
+
+            for (final Credential credential : Credential.values()) {
+                final HttpServletRequest request = mock(HttpServletRequest.class);
+                final HttpServletResponse response = mock(HttpServletResponse.class);
+                portal.when(() -> PortalUtil.getUser(request))
+                        .thenReturn(credential == Credential.SESSION ? user : null);
+                when(jwt.processAuthHeaderFromJWT(request)).thenReturn(user);
+
+                final SecurityException denied = assertThrows(SecurityException.class,
+                        () -> resource.getCurrentUser(request, response, Map.of(), AnonymousAccess.NONE));
+                assertEquals(javax.ws.rs.core.Response.Status.FORBIDDEN.getStatusCode(),
+                        denied.getResponse().getStatus());
+
+                when(request.isSecure()).thenReturn(true);
+                assertSame(user, resource.getCurrentUser(request, response, Map.of(), AnonymousAccess.NONE));
+            }
+        } finally {
+            PrincipalThreadLocal.setName(previousPrincipal);
+        }
     }
 
     /**

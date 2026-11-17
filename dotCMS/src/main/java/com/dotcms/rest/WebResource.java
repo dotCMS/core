@@ -11,6 +11,7 @@ import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.rest.validation.ServletPreconditions;
+import com.dotcms.adminsite.AdminSiteAPI;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.LayoutAPI;
@@ -532,6 +533,8 @@ public  class WebResource {
         if(user==null) {
             user = authenticate(request, response, paramsMap, access,
                     fallbackToAnonymousOnAuthFailure, authCheckOptions);
+        } else {
+            checkBackendTransport(request, user);
         }
         return user;
     }
@@ -698,6 +701,8 @@ public  class WebResource {
                 && UserAPI.CMS_ANON_USER_ID.equals(user.getUserId()) && access == AnonymousAccess.NONE) {
             throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
         } 
+
+        checkBackendTransport(request, user);
 
         request.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
         request.setAttribute(com.liferay.portal.util.WebKeys.USER, user);
@@ -970,6 +975,27 @@ public  class WebResource {
         if(Config.getBooleanProperty("FORCE_SSL_ON_RESP_API", false)
                 && UtilMethods.isSet(request) && !request.isSecure()) {
             throw new SecurityException("SSL Required.", Response.Status.FORBIDDEN);
+        }
+    }
+
+    /**
+     * Applies backend HTTPS policy after identity resolution, including cached sessions and API
+     * tokens. The global REST SSL bypass option does not bypass this admin-site policy.
+     *
+     * @param request the authenticated request
+     * @param user the resolved {@link User}
+     * @throws SecurityException if transport is forbidden or role membership cannot be checked
+     */
+    private static void checkBackendTransport(final HttpServletRequest request, final User user) {
+        if (!Config.getBooleanProperty(AdminSiteAPI.ADMIN_SITE_ENABLED, false)) {
+            return;
+        }
+        try {
+            if (!APILocator.getAdminSiteAPI().isSecureBackendRequest(user, request)) {
+                throw new SecurityException("HTTPS is required for backend requests.", Response.Status.FORBIDDEN);
+            }
+        } catch (DotDataException e) {
+            throw new SecurityException("Unable to validate backend transport policy.", e, Response.Status.FORBIDDEN);
         }
     }
 

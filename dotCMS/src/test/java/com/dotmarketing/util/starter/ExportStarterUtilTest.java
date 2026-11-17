@@ -103,7 +103,7 @@ class ExportStarterUtilTest {
      * Method to test: {@link ExportStarterUtil#additionalDataMapper()}.
      * Given scenario: the company JSON the starter writes is read back into a {@link Company}, as the starter import
      * does.
-     * Expected result: the company is read with its id and name and without a key, which the import generates.
+     * Expected result: the company retains its id, name and stored portal URL without a key, which the import generates.
      */
     @Test
     void additionalDataMapper_writtenCompany_isReadBackWithoutKey() throws Exception {
@@ -113,6 +113,7 @@ class ExportStarterUtilTest {
 
         assertEquals("sample.company", readBack.getCompanyId());
         assertEquals("Sample Company", readBack.getName());
+        assertEquals("https://sample.example", readBack.getOldPortalURL());
         assertNull(readBack.getKey());
     }
 

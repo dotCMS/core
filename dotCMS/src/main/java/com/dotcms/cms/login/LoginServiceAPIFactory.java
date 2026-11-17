@@ -315,10 +315,9 @@ public class LoginServiceAPIFactory implements Serializable {
                 throw new AuthException();
             }
 
-            User loggedInUser = Try.of(() ->
-                            Company.AUTH_TYPE_EA.equals(company.getAuthType())
-                                    ? APILocator.getUserAPI().loadByUserByEmail(emailOrUserId, APILocator.systemUser(), false)
-                                    : APILocator.getUserAPI().loadUserById(emailOrUserId))
+            final String userId = Company.AUTH_TYPE_EA.equals(company.getAuthType())
+                    ? UserManagerUtil.getUserId(company.getCompanyId(), emailOrUserId) : emailOrUserId;
+            User loggedInUser = Try.of(() -> APILocator.getUserAPI().loadUserById(userId))
                     .onFailure(e -> Logger.warnAndDebug(this.getClass(), "Failed to load user:" + e.getMessage(), e))
                     .getOrNull();
 
@@ -332,20 +331,10 @@ public class LoginServiceAPIFactory implements Serializable {
             String userString = loggedInUser.getUserId() + "/" + loggedInUser.getEmailAddress();
 
             final AdminSiteAPI adminSite = APILocator.getAdminSiteAPI();
-            final boolean backendLogin = adminSite.isAdminSiteEnabled()
-                    && APILocator.getRoleAPI().doesUserHaveRole(loggedInUser,
-                            APILocator.getRoleAPI().loadBackEndUserRole());
-
-            if (backendLogin && !adminSite.allowInsecureRequests() && !request.isSecure()) {
-                SecurityLogger.logInfo(this.getClass(), "Backend login rejected: HTTPS is required.");
-                return false;
-            }
-
-            if (backendLogin && !adminSite.allowBackendLoginsOnNonAdminSites()
-                    && !adminSite.isAdminSite(request)) {
+            if (!adminSite.isBackendLoginAllowed(loggedInUser, request)) {
                 SecurityLogger.logInfo(this.getClass(), "3. User: " + userString
-                        + " cannot login to dotCMS via the non-admin site: '"
-                        + request.getHeader("host") + "'.  Please use the admin site url to login: '"
+                        + " cannot login to dotCMS under the admin-site host/HTTPS policy from: '"
+                        + request.getHeader("host") + "'. Please use a secure admin URL: '"
                         + adminSite.getAdminSiteUrl() + "'.");
                 return false;
             }
@@ -737,6 +726,10 @@ public class LoginServiceAPIFactory implements Serializable {
             }
         }
 
+        /**
+         * {@inheritDoc}
+         * Clears an existing login cookie on rejection; SSO requests may have no cookies yet.
+         */
         @CloseDBIfOpened
         @Override
         public boolean doCookieLogin(final String encryptedId, final HttpServletRequest request, final HttpServletResponse response) {
@@ -744,8 +737,10 @@ public class LoginServiceAPIFactory implements Serializable {
             final boolean doCookieLogin = LoginServiceAPI.super.doCookieLogin(encryptedId, request, response);
 
             if (!doCookieLogin) {
+                if (request.getCookies() != null) {
                     com.liferay.util.CookieUtil.deleteCookie(request, response, CookieKeys.JWT_ACCESS_TOKEN);
-                    SecurityLogger.logInfo(this.getClass(), "Cookie login failed, deleting rMe cookie.");
+                }
+                SecurityLogger.logInfo(this.getClass(), "Cookie login failed; any existing login cookie was cleared.");
 
             }
 

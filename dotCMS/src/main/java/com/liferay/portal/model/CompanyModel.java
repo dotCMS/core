@@ -206,6 +206,13 @@ public class CompanyModel extends BaseModel {
         return APILocator.getAdminSiteAPI().getAdminSiteUrl();
 	}
 
+    /**
+     * Restores or updates the stored portal URL without changing deployment configuration.
+     * The explicit JSON binding keeps starter imports paired with the stored-value getter.
+     *
+     * @param portalURL the legacy portal URL to persist
+     */
+    @JsonProperty("portalURL")
 	public void setPortalURL(String portalURL) {
         // still assign the underlying field: this setter is also used when a Company is built
         // from its db row, and getOldPortalURL() is the fallback when ADMIN_SITE_URL is unset.

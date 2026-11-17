@@ -164,8 +164,14 @@ Ensure synthetic requests carry the correct host before enabling this stricter p
 Admin-console URI filtering remains active on non-admin hosts regardless of this setting.
 With `ADMIN_SITE_ENABLED=false`, neither setting imposes admin-site host restrictions.
 The strict policy also covers users holding both frontend and backend roles and REST backend
-role checks. `ADMIN_SITE_REQUESTS_FORCE_SECURE=true` rejects insecure backend logins before a
-session or login cookie is created, even on authentication URIs outside the admin URI list.
+role checks. The same login policy covers password, cookie/remember-me and browser SSO flows,
+including administrator-only accounts and an SSO identity different from the existing session.
+Email logins resolve the user ID within the authenticating company.
+
+`ADMIN_SITE_REQUESTS_FORCE_SECURE=true` rejects insecure backend logins before establishing
+an authenticated session. It also rejects insecure authenticated backend/admin REST requests,
+including cached sessions and API JWTs, outside the admin URI list. Skipping the global REST SSL
+check does not bypass this admin-site transport policy. Frontend-only users are unaffected.
 
 Company updates publish cluster-wide invalidation with their transaction. Calculated admin-site
 values also expire after five minutes to bound staleness if a notification is missed. Management
