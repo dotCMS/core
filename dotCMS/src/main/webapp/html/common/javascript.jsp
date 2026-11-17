@@ -37,8 +37,6 @@
         /** static js **/
 
       files.add("/html/js/dotcms/dojo/data/UsersReadStore.js");
-      files.add("/html/js/calendar/calendar_stripped.js");
-      files.add("/html/js/calendar/calendar-setup_stripped.js");
         files.add("/html/js/util.js");
         files.add("/html/js/validation.js");
         files.add("/html/js/dotcms-utils/dotcms-utils.js");

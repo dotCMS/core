@@ -291,11 +291,6 @@
 
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.jazzy-core</artifactId>
-                <version>ukv_2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.jboss-logging</artifactId>
                 <version>3.3.0.Final_2</version>
             </dependency>
@@ -502,11 +497,6 @@
                 <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.woodstox-core-lgpl</artifactId>
                 <version>4.2.0_2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.xpp3-min</artifactId>
-                <version>1.1.4c_2</version>
             </dependency>
 
             <dependency>
