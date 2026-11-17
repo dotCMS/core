@@ -937,19 +937,23 @@ describe('utils functions', () => {
             expect(result.errorCode).toBe(CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND);
         });
 
-        it('should report a pivot that is missing from a container that holds other contentlets', () => {
-            const result = move({
-                id: 'c1',
-                from: containerA(),
-                to: containerB(),
-                pivot: 'missing',
+        // PR review of #38575: new content is saved before it is placed, so the block it was
+        // dropped next to can be gone by then (removed by someone else while the create dialog
+        // was open). It still goes in, at the end, as it did before.
+        it('should place new content at the end when the contentlet it was dropped next to is gone', () => {
+            const result = insertContentletInContainer({
+                pageContainers: pageContainersOf(containerA(), containerB()),
+                container: containerB(),
+                contentlet: contentlet('missing'),
                 position: 'after',
-                pageContainers: pageContainersOf(containerA(), containerB())
+                pageId: 'page-id',
+                language_id: '1',
+                newContentletId: 'new'
             });
 
-            expect(result.didInsert).toBe(false);
-            expect(result.errorCode).toBe(CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND);
-            expect(orderOf(result.pageContainers, 'container-b')).toEqual(['b1']);
+            expect(result.didInsert).toBe(true);
+            expect(result.errorCode).toBeUndefined();
+            expect(orderOf(result.pageContainers, 'container-b')).toEqual(['b1', 'new']);
         });
 
         it('should leave the order as it was when it is dropped right after the contentlet above it', () => {

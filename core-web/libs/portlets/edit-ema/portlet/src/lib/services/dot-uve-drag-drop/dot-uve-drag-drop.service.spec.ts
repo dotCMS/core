@@ -267,11 +267,13 @@ describe('DotUveDragDropService', () => {
                 .filter((message) => message.name === __DOTCMS_UVE_EVENT__.UVE_SCROLL_INSIDE_IFRAME)
                 .at(-1)?.direction;
 
-        // R1
+        // R1: a scroll that started inside the iframe continues past the edge at full speed.
         describe('past the top or bottom of the iframe', () => {
             it.each([{ clientY: 0 }, { clientY: -20 }])(
                 'should scroll up at the maximum speed with the pointer at or above the top (y=$clientY)',
                 ({ clientY }) => {
+                    dragOver(50);
+
                     dragOver(clientY);
 
                     expect(lastVelocity()).toBe(-MAX_VELOCITY);
@@ -281,9 +283,25 @@ describe('DotUveDragDropService', () => {
             it.each([{ clientY: 800 }, { clientY: 850 }])(
                 'should scroll down at the maximum speed with the pointer at or below the bottom (y=$clientY)',
                 ({ clientY }) => {
+                    dragOver(750);
+
                     dragOver(clientY);
 
                     expect(lastVelocity()).toBe(MAX_VELOCITY);
+                }
+            );
+
+            // PR review of #38575: the toolbar sits right above the preview, within its width.
+            it.each([
+                { where: 'above the top, as over the toolbar', clientY: -20 },
+                { where: 'below the bottom', clientY: 850 }
+            ])(
+                'should not start scrolling when the pointer first arrives $where',
+                ({ clientY }) => {
+                    dragOver(clientY);
+
+                    expect(velocities().filter((velocity) => velocity !== 0)).toEqual([]);
+                    expect(legacyScrolls()).toBe(0);
                 }
             );
 
@@ -428,14 +446,17 @@ describe('DotUveDragDropService', () => {
         // R6
         describe('legacy scroll request', () => {
             it.each([
-                { clientY: -20, direction: 'up' },
-                { clientY: 850, direction: 'down' }
+                { from: 50, clientY: -20, direction: 'up' },
+                { from: 750, clientY: 850, direction: 'down' }
             ])(
-                'should send it past the edge of the iframe (y=$clientY)',
-                ({ clientY, direction }) => {
+                'should keep sending it past the edge of the iframe (y=$clientY)',
+                ({ from, clientY, direction }) => {
+                    dragOver(from);
+                    vi.advanceTimersByTime(250);
+
                     dragOver(clientY);
 
-                    expect(legacyScrolls()).toBe(1);
+                    expect(legacyScrolls()).toBe(2);
                     expect(lastLegacyDirection()).toBe(direction);
                 }
             );

@@ -194,36 +194,51 @@ describe('withEditorInsert', () => {
             });
         });
 
-        // Review of #38575: a pivot that is gone is not a duplicate.
-        describe('when the contentlet it should go next to is not in the container', () => {
-            const createIntoMissingPivot = () =>
-                createInto({
-                    contentlet: {
-                        identifier: 'missing-1',
-                        inode: 'missing-1-inode',
-                        title: 'missing-1',
-                        contentType: 'test'
-                    },
-                    position: 'after'
-                });
+        /** A position `after` the contentlet `identifier`, which the container does not hold. */
+        const createIntoMissingPivot = (identifier: string) =>
+            createInto({
+                contentlet: {
+                    identifier,
+                    inode: `${identifier}-inode`,
+                    title: identifier,
+                    contentType: 'test'
+                },
+                position: 'after'
+            });
 
+        // Review of #38575: a moved contentlet dropped next to itself has nothing to go next to
+        // once it left its place, and that is not a duplicate.
+        describe('when a moved contentlet is dropped next to itself', () => {
             it('should report that the pivot is gone, not that the contentlet is already there', () => {
-                expect(store.editorInsertContentlet(createIntoMissingPivot(), 'new-1')).toEqual({
+                expect(
+                    store.editorInsertContentlet(createIntoMissingPivot('moved-1'), 'moved-1')
+                ).toEqual({
                     didInsert: false,
                     errorCode: CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND
                 });
             });
 
             it('should not save', () => {
-                store.editorInsertContentlet(createIntoMissingPivot(), 'new-1');
+                store.editorInsertContentlet(createIntoMissingPivot('moved-1'), 'moved-1');
 
                 expect(editorSave).not.toHaveBeenCalled();
             });
 
             it('should end the drag', () => {
-                store.editorInsertContentlet(createIntoMissingPivot(), 'new-1');
+                store.editorInsertContentlet(createIntoMissingPivot('moved-1'), 'moved-1');
 
                 expect(resetEditorProperties).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        // PR review of #38575: new content is saved before it is placed, so the contentlet it was
+        // dropped next to can be gone by then. It still goes in, at the end of the container.
+        describe('when the contentlet new content should go next to is gone', () => {
+            it('should place it and save the page', () => {
+                expect(
+                    store.editorInsertContentlet(createIntoMissingPivot('missing-1'), 'new-1')
+                ).toEqual({ didInsert: true });
+                expect(editorSave).toHaveBeenCalledTimes(1);
             });
         });
 

@@ -246,7 +246,9 @@ describe('registerUVEEvents scroll during a drag', () => {
         expect(scrollBy).toHaveBeenCalledTimes(scrollsBeforeStop);
     });
 
-    it('should stop at the top of the page when scrolling up', () => {
+    // The editor sends a velocity only when it changes, so the page waits at the limit instead
+    // of stopping: one that stopped would stay still if the page then grew.
+    it('should not scroll past the top of the page, and wait there', () => {
         pageAt(0);
 
         scrollAtVelocity(-12);
@@ -254,12 +256,10 @@ describe('registerUVEEvents scroll during a drag', () => {
         runFrame(1000 + FRAME);
 
         expect(scrollBy).not.toHaveBeenCalled();
-        expect(frames.size).toBe(0);
-        // It stopped because of the limit, not because it never started.
-        expect(requestAnimationFrame).toHaveBeenCalled();
+        expect(frames.size).toBe(1);
     });
 
-    it('should stop at the bottom of the page when scrolling down', () => {
+    it('should not scroll past the bottom of the page, and wait there', () => {
         pageAt(2200);
 
         scrollAtVelocity(12);
@@ -267,8 +267,24 @@ describe('registerUVEEvents scroll during a drag', () => {
         runFrame(1000 + FRAME);
 
         expect(scrollBy).not.toHaveBeenCalled();
-        expect(frames.size).toBe(0);
-        expect(requestAnimationFrame).toHaveBeenCalled();
+        expect(frames.size).toBe(1);
+    });
+
+    // PR review of #38575: content that loads at the bottom makes the page longer while the
+    // pointer stays still in the edge zone.
+    it('should scroll again, one frame at a time, when the page grows at the bottom', () => {
+        pageAt(2200);
+        scrollAtVelocity(12);
+        runFrame(1000);
+        runFrame(1000 + FRAME);
+
+        Object.defineProperty(document.documentElement, 'scrollHeight', {
+            value: 4000,
+            configurable: true
+        });
+        runFrame(1000 + 10 * FRAME);
+
+        expect(lastInstantScroll()).toBeCloseTo(12, 0);
     });
 
     it.each([NaN, Infinity, -Infinity, '12', null])(
