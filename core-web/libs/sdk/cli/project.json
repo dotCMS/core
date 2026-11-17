@@ -90,12 +90,10 @@
             },
             "cache": true,
             "inputs": [
-                "{projectRoot}/package.json",
-                "{projectRoot}/project.json",
-                "{projectRoot}/scripts/verify-package.sh",
-                {
-                    "dependentTasksOutputFiles": "**/*.js"
-                }
+                "default",
+                "^production",
+                "{workspaceRoot}/libs/sdk/*/package.json",
+                { "dependentTasksOutputFiles": "**/*" }
             ]
         }
     }

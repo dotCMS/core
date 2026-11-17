@@ -1,5 +1,6 @@
 package com.dotcms.security;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -13,8 +14,11 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletRequestWrapper;
 import javax.servlet.ServletResponseWrapper;
@@ -26,6 +30,8 @@ import javax.servlet.http.HttpSession;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotcms.rendering.velocity.viewtools.VelocitySessionWrapper;
 import com.dotmarketing.util.Config;
+import com.liferay.portal.model.Company;
+import com.liferay.portal.model.CompanyModel;
 import org.apache.velocity.util.introspection.SecureIntrospectorImpl;
 import org.junit.Test;
 
@@ -257,6 +263,54 @@ public class SecureIntrospectorImplTest {
         assertDenied(VelocitySessionWrapper.class, "getServletContext");
         assertDeniedIfPresent("org.apache.catalina.connector.RequestFacade", "getServletContext");
         assertDeniedIfPresent("org.apache.catalina.session.StandardSessionFacade", "getServletContext");
+    }
+
+    /**
+     * The company key is only for server code: a template can read a company's other values, including the key
+     * digest, but not the key itself, whichever way it got hold of the company.
+     */
+    @Test
+    public void company_key_accessors_are_denied() {
+        assertDenied(Company.class, "getKey");
+        assertDenied(Company.class, "getKeyObj");
+        assertDenied(CompanyModel.class, "getKey");
+        assertAllowed(Company.class, "getKeyDigest");
+        assertAllowed(Company.class, "getEmailAddress");
+        assertAllowed(Company.class, "getName");
+        assertAllowed(Company.class, "getPortalURL");
+    }
+
+    /**
+     * Template helpers that resolve a property path by reflection refuse a path that reads the company key at any
+     * step, and still read every other path.
+     */
+    @Test
+    public void property_paths_through_the_company_key_are_refused() throws Exception {
+        final Company company = new Company("sample.company");
+        company.setName("Sample Company");
+        company.setKeyObj(new SecretKeySpec("0123456789abcdef".getBytes(StandardCharsets.UTF_8), "AES"));
+        final Map<String, Object> holder = new HashMap<>();
+        holder.put("company", company);
+        holder.put("key", "a map value");
+
+        assertRefused(company, "key");
+        assertRefused(company, "key.bytes[0]");
+        assertRefused(company, "keyObj.encoded[0]");
+        assertRefused(holder, "company.key.bytes[0]");
+        assertEquals("Sample Company", SecureIntrospectorImpl.readPropertyPath(company, "name"));
+        assertEquals(company.getKeyDigest(), SecureIntrospectorImpl.readPropertyPath(company, "keyDigest"));
+        assertEquals("a map value", SecureIntrospectorImpl.readPropertyPath(holder, "key"));
+        assertEquals("Sample Company", SecureIntrospectorImpl.readPropertyPath(holder, "company.name"));
+    }
+
+    private void assertRefused(final Object bean, final String path) throws Exception {
+        try {
+            SecureIntrospectorImpl.readPropertyPath(bean, path);
+        } catch (final SecureIntrospectorImpl.RestrictedPropertyException e) {
+            return;
+        }
+        // The value is not printed, so a failure does not write part of a key to the build log
+        throw new AssertionError("the path " + path + " must be refused");
     }
 
     /**
