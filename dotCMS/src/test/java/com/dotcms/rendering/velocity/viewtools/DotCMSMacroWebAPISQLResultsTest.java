@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import javax.naming.NamingException;
+import javax.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
@@ -97,6 +98,38 @@ class DotCMSMacroWebAPISQLResultsTest {
             jndi.close();
             config.close();
             apiLocator.close();
+        }
+    }
+
+    /**
+     * The macro must ask the gate about the request it was initialised with: that request is
+     * where the render reports who wrote the code being run, so a macro that asked about
+     * anything else would be judging a different author. The override the other cases use
+     * cannot see this, so this one goes through the real method.
+     */
+    @Test
+    void theGateIsAskedAboutTheRequestTheMacroWasInitialisedWith() {
+        final HttpServletRequest ownRequest = mock(HttpServletRequest.class);
+        final ViewContext viewContext = mock(ViewContext.class);
+        when(viewContext.getRequest()).thenReturn(ownRequest);
+        final DotCMSMacroWebAPI plainMacro = new DotCMSMacroWebAPI();
+        plainMacro.init(viewContext);
+        // the switch has to be on, or the macro never gets as far as asking who wrote the code
+        config.when(() -> Config.getBooleanProperty(eq("ENABLE_SCRIPTING"), any(Boolean.class)))
+                .thenReturn(true);
+
+        try (MockedStatic<RestrictedViewToolAccess> gate =
+                mockStatic(RestrictedViewToolAccess.class)) {
+            gate.when(() -> RestrictedViewToolAccess.renderingAuthorHasAccess(any()))
+                    .thenReturn(false);
+
+            final List<HashMap<String, String>> result =
+                    plainMacro.getSQLResults(EXTERNAL_NAME, SQL, 0, 10);
+
+            assertEquals(1, result.size(), "Expected one error row but got " + result);
+            assertEquals("true", result.get(0).get("hasDotConnectSQLError"));
+            gate.verify(() -> RestrictedViewToolAccess.renderingAuthorHasAccess(ownRequest));
+            jndi.verify(() -> JNDIUtil.lookup(any(), anyString()), never());
         }
     }
 

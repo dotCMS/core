@@ -1,10 +1,13 @@
 package com.dotcms.variant.business.web;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.variant.VariantAPI;
 import com.liferay.portal.model.User;
 import org.junit.Test;
 
@@ -140,5 +143,32 @@ public class VariantWebAPIImplTest {
 
         assertEquals("+variant:default " + query,
                 variantWebAPI.scopeQueryToDefaultVariant(query, frontEndUser()));
+    }
+
+    @Test
+    public void testCanReadVariant_WhenBackEndUser_ShouldAllowAnyVariant() {
+        assertTrue(variantWebAPI.canReadVariant("someVariant", backEndUser()));
+    }
+
+    /**
+     * The check a lookup by inode needs: the caller already named the exact version, so there is no
+     * variant left to choose and the only thing left to do is to refuse the wrong one.
+     */
+    @Test
+    public void testCanReadVariant_WhenCallerCannotNameItsVariant_ShouldAllowOnlyTheDefaultOne() {
+        for (final User user : new User[]{frontEndUser(), null}) {
+            assertFalse(variantWebAPI.canReadVariant("someVariant", user));
+            assertTrue(variantWebAPI.canReadVariant(VariantAPI.DEFAULT_VARIANT.name(), user));
+        }
+    }
+
+    /**
+     * A version carrying no variant of its own is the default variant in everything but the column,
+     * which is what an older row looks like.
+     */
+    @Test
+    public void testCanReadVariant_WhenTheVersionCarriesNoVariant_ShouldAllowIt() {
+        assertTrue(variantWebAPI.canReadVariant(null, frontEndUser()));
+        assertTrue(variantWebAPI.canReadVariant("", frontEndUser()));
     }
 }

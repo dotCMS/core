@@ -83,6 +83,7 @@ export interface DotAuthSamlConfigValues {
     idpName?: string;
     sPIssuerURL?: string;
     sPEndpointHostname?: string;
+    additionalAcsUrls?: string;
     signatureValidationType?: DotAuthSignatureValidation;
     idPMetadataFile?: string;
     publicCert?: string;
@@ -101,6 +102,7 @@ export const DOT_AUTH_SAML_DECLARED_KEYS = [
     'idpName',
     'sPIssuerURL',
     'sPEndpointHostname',
+    'additionalAcsUrls',
     'signatureValidationType',
     'idPMetadataFile',
     'publicCert',
@@ -248,6 +250,8 @@ export interface DotAuthSamlUiConfig extends DotAuthProvisioningConfig {
     idpName: string;
     /** SP endpoint hostname (drives SP entity/ACS URLs) — not edited in the UI, but must round-trip so a save never blanks it. */
     spEndpointHostname: string;
+    /** Comma-separated extra ACS URLs the SAML runtime accepts as Destination/Recipient (exact match). */
+    additionalAcsUrls: string;
     metadataUrl: string;
     entityId: string;
     ssoUrl: string;

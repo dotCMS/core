@@ -18,7 +18,6 @@ import static org.mockito.Mockito.when;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
-import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.liferay.util.JNDIUtil;
 import com.zaxxer.hikari.HikariDataSource;
@@ -28,10 +27,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import javax.naming.NamingException;
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import javax.sql.DataSource;
-import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -64,7 +63,7 @@ class SQLResultsViewToolTest {
     private DataSource dotcmsPool;
     private DataSource externalDb;
     private Object previousPool;
-    private Contentlet author;
+    private boolean authorMayQuery;
     private SQLResultsViewTool tool;
 
     /**
@@ -95,15 +94,14 @@ class SQLResultsViewToolTest {
         jndi.when(() -> JNDIUtil.lookup(any(), eq("default"))).thenThrow(new NamingException("not bound"));
         givenDotcmsDbAccess(false);
 
-        author = mock(Contentlet.class);
-        when(author.getIdentifier()).thenReturn("widget-identifier");
+        authorMayQuery = true;
 
         final ViewContext viewContext = mock(ViewContext.class);
-        when(viewContext.getVelocityContext()).thenReturn(mock(Context.class));
+        when(viewContext.getRequest()).thenReturn(mock(HttpServletRequest.class));
         tool = new SQLResultsViewTool() {
             @Override
-            protected Contentlet getDbAccessorContentlet() {
-                return author;
+            protected boolean callerMayQueryTheDatabase() {
+                return authorMayQuery;
             }
         };
         tool.init(viewContext);
@@ -146,12 +144,71 @@ class SQLResultsViewToolTest {
 
     @Test
     void dataSourceIsNotResolvedWhenAuthorCannotRunQueries() {
-        author = null;
+        authorMayQuery = false;
 
         final List<HashMap<String, String>> result = tool.getSQLResults(EXTERNAL_NAME, SQL, 0, 10);
 
         assertSingleError(result, AUTHOR_REFUSED);
         jndi.verify(() -> JNDIUtil.lookup(any(), anyString()), never());
+    }
+
+    /**
+     * The tool must ask the gate about the request it was initialised with: that request is
+     * where the render reports who wrote the code being run, so a tool that asked about
+     * anything else would be judging a different author. The override the other cases use
+     * cannot see this, so these two go through the real method.
+     */
+    @Test
+    void theGateIsAskedAboutTheRequestTheToolWasInitialisedWith() {
+        final HttpServletRequest ownRequest = mock(HttpServletRequest.class);
+        final SQLResultsViewTool plainTool = toolReading(ownRequest);
+
+        try (MockedStatic<RestrictedViewToolAccess> gate =
+                mockStatic(RestrictedViewToolAccess.class)) {
+            gate.when(() -> RestrictedViewToolAccess.renderingAuthorHasAccess(any()))
+                    .thenReturn(false);
+
+            assertSingleError(plainTool.getSQLResults(EXTERNAL_NAME, SQL, 0, 10), AUTHOR_REFUSED);
+
+            gate.verify(() -> RestrictedViewToolAccess.renderingAuthorHasAccess(ownRequest));
+            jndi.verify(() -> JNDIUtil.lookup(any(), anyString()), never());
+        }
+    }
+
+    /**
+     * The other half of the same wiring: an author the gate accepts gets as far as the data
+     * source, so a refusal cannot be mistaken for the tool simply never running.
+     */
+    @Test
+    void anAcceptedAuthorReachesTheDataSource() {
+        final HttpServletRequest ownRequest = mock(HttpServletRequest.class);
+        final SQLResultsViewTool plainTool = toolReading(ownRequest);
+
+        try (MockedStatic<RestrictedViewToolAccess> gate =
+                mockStatic(RestrictedViewToolAccess.class)) {
+            gate.when(() -> RestrictedViewToolAccess.renderingAuthorHasAccess(ownRequest))
+                    .thenReturn(true);
+
+            plainTool.getSQLResults(EXTERNAL_NAME, SQL, 0, 10);
+
+            jndi.verify(() -> JNDIUtil.lookup(any(), eq(EXTERNAL_NAME)), atLeastOnce());
+        }
+    }
+
+    /**
+     * A tool initialised with the given request and nothing else stubbed, so the gate it
+     * consults is the real one.
+     *
+     * @param request the request the tool is handed
+     *
+     * @return the tool, ready to be asked for results
+     */
+    private static SQLResultsViewTool toolReading(final HttpServletRequest request) {
+        final ViewContext viewContext = mock(ViewContext.class);
+        when(viewContext.getRequest()).thenReturn(request);
+        final SQLResultsViewTool plainTool = new SQLResultsViewTool();
+        plainTool.init(viewContext);
+        return plainTool;
     }
 
     // ---- dotCMS database flag ----

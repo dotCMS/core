@@ -182,7 +182,8 @@ public class RuleWatcher extends TestWatcher {
         final DotConnect dotConnect = new DotConnect();
         final List<Map<String, Object>> byPriority = dotConnect.setSQL(
                 "select priority, dist_action, count(*) as total, min(ident_to_index) as sample,"
-                        + " min(id) as min_id, max(id) as max_id, max(index_val) as last_error"
+                        + " min(id) as min_id, max(id) as max_id, max(index_val) as last_error,"
+                        + " max(time_entered) as newest_entry"
                         + " from dist_reindex_journal group by priority, dist_action order by priority")
                 .loadObjectResults();
         dotConnect.setSQL("delete from dist_reindex_journal").loadResult();
@@ -192,7 +193,10 @@ public class RuleWatcher extends TestWatcher {
 
     /**
      * Describes the reindex worker for the stuck-journal log line: its state, whether a worker is
-     * alive, and the journal cursor ({@code ReindexQueueFactory.lastIdIndexed}). These are
+     * alive, the journal cursor ({@code ReindexQueueFactory.lastIdIndexed}), and when the worker
+     * was last woken (and the state that wake-up found) and last paused itself, next to the
+     * current time. Compared with the rows' {@code newest_entry}, these say whether a
+     * wake-up arrived after the rows were written and was lost to a self-pause. These are
      * package-private in core, so they are read by reflection, and only on this failure path.
      *
      * @return a one-line description, or the reason it could not be read
@@ -204,13 +208,17 @@ public class RuleWatcher extends TestWatcher {
                     ReindexThread.class.getDeclaredMethod("currentStateName");
             final java.lang.reflect.Method alive =
                     ReindexThread.class.getDeclaredMethod("isWorkerAlive");
+            final java.lang.reflect.Method wakeups =
+                    ReindexThread.class.getDeclaredMethod("wakeupHistory");
             final java.lang.reflect.Field cursor =
                     ReindexQueueFactory.class.getDeclaredField("lastIdIndexed");
             state.setAccessible(true);
             alive.setAccessible(true);
+            wakeups.setAccessible(true);
             cursor.setAccessible(true);
             return "reindex worker state=" + state.invoke(thread) + ", alive=" + alive.invoke(thread)
-                    + ", journal cursor=" + cursor.getLong(null);
+                    + ", journal cursor=" + cursor.getLong(null) + ", " + wakeups.invoke(thread)
+                    + ", now " + java.time.Instant.now();
         } catch (final ReflectiveOperationException | RuntimeException e) {
             return "reindex worker state unavailable: " + e;
         }

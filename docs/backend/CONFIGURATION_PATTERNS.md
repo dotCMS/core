@@ -87,10 +87,33 @@ Only add the property to `dotmarketing-config.properties` when the default must 
 (for example when a frontend reader treats an absent property as enabled); otherwise the Javadoc
 and the read site are enough.
 
+## Interactive User Resolution — Upgrade Note
+
+A client request or session that resolves to the built-in `system` account is treated as having no
+authenticated user. Server-side flows (page rendering, jobs, workflow scripts, static publishing) are
+unchanged: they act as that account through `SystemUserScope`. API tokens already issued for the
+account stop authenticating. Other users are unaffected.
+
+`USER_RESOLUTION_EXCLUDE_SYSTEM_USER` (default `true`) is a rollback aid only. Set it to `false`
+(or `DOT_USER_RESOLUTION_EXCLUDE_SYSTEM_USER=false` in the environment) to restore the previous
+behavior; it is read on every call, so no restart is needed, and one warning is logged per JVM
+while it is off. Turning it off disables the refusal in every place that applies it: the shared
+resolver, the request/session wrapper, `WebResource.authenticate` and the credential processors.
+
 ## Config Class Resolution Order
 1. **Environment variables** (with `DOT_` prefix)
 2. **System table** (database)
 3. **Properties files** (all files are loaded)
+
+**Provisioning keys skip the System table.** The keys in `SystemTableConfigSource.PROVISIONING_KEYS`
+(the remote-call address policy: `REMOTE_CALL_SUBNET_BLACKLIST`, `REMOTE_CALL_SUBNET_ALLOWLIST`,
+`REMOTE_CALL_ALLOW_IPV6`, `REMOTE_CALL_ALLOW_REDIRECTS`, `ALLOW_ACCESS_TO_PRIVATE_SUBNETS`, and the
+download-by-URL settings `TEMP_RESOURCE_BY_URL_ADMIN_ONLY` and `TEMP_RESOURCE_BY_URL_ALLOWED_EXTENSIONS`)
+are read from the environment and the properties files only. A System table row for one of them has
+no effect, `/api/v1/system-table` refuses to store the key (it can still be read and deleted, so a
+stale row can be cleaned up), and `PUT /api/v1/configuration` refuses to set it at runtime. Add a key
+to that set when a setting must not be changeable from inside the running application;
+`SystemTableConfigSource.isProvisioningKey(key)` is the single check every path uses.
 
 ## Anonymous Content API Access — Upgrade Note
 

@@ -10,6 +10,7 @@ import {
     Component,
     Input,
     OnDestroy,
+    effect,
     inject
 } from '@angular/core';
 import { AbstractControl, UntypedFormControl, ValidationErrors } from '@angular/forms';
@@ -85,6 +86,16 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
         }
     }
 
+    constructor() {
+        effect(() => {
+            this.dotMessageService.loadedBundleRevision?.();
+            if (this._field) {
+                this.errorMsg = this.getErrors(this._field.errors);
+                this.cd.markForCheck();
+            }
+        });
+    }
+
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
@@ -97,8 +108,8 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
      * @param {ValidationErrors} errors
      * @private
      */
-    private getErrors(errors: ValidationErrors) {
-        let errorMsgs = [];
+    private getErrors(errors: ValidationErrors | null): string {
+        let errorMsgs: string[] = [];
         if (errors) {
             errorMsgs = [
                 ...this.getMsgDefaultValidators(errors),
@@ -106,7 +117,7 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
             ];
         }
 
-        return this.defaultMessage ? this.defaultMessage : errorMsgs.slice(0, 1)[0];
+        return this.defaultMessage || errorMsgs[0] || '';
     }
 
     private getMsgDefaultValidators(errors: ValidationErrors) {

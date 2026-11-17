@@ -106,6 +106,24 @@ public class VariantWebAPIImpl implements VariantWebAPI{
     }
 
     /**
+     * Tells whether a version living in the given variant may be served to the given user.
+     *
+     * <p>A version with no variant of its own counts as the default one, which is what an older
+     * row with no variant recorded looks like.
+     *
+     * @param variantId the variant the resolved version lives in
+     * @param user the {@link User} the request is served for, or null when there is none
+     * @return true when the user names its own variant, or when the version lives in the default
+     * one
+     */
+    @Override
+    public boolean canReadVariant(final String variantId, final User user) {
+        return selectsVariant(user)
+                || !UtilMethods.isSet(variantId)
+                || VariantAPI.DEFAULT_VARIANT.name().equals(variantId);
+    }
+
+    /**
      * Returns the query to run for this caller, scoped to the variant the caller may read.
      *
      * @param query the Lucene query as the caller wrote it

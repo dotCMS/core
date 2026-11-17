@@ -96,6 +96,10 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
         expect(TestBed.inject(ASSET_PICKER_LAUNCHER, null, { optional: true })).toBeNull();
     });
 
+    it('should not offer browse buttons in TinyMCE dialogs — there is no picker to open', () => {
+        expect(spectator.service.filePickerOptions()).toEqual({});
+    });
+
     it('should open the legacy asset search dialog', () => {
         clickAddImage(EMPTY_CONTENTLET);
 

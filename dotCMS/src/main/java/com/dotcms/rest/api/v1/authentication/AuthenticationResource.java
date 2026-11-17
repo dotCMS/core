@@ -5,7 +5,6 @@ import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.rest.ErrorEntity;
-import com.dotcms.rest.ResponseEntityMapMapView;
 import com.dotcms.rest.ResponseEntityMapView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.annotation.NoCache;
@@ -227,7 +226,7 @@ public class AuthenticationResource implements Serializable {
                 responses = {
                     @ApiResponse(responseCode = "200", description = "User data successfully collected",
                                 content = @Content(
-                                    schema = @Schema(implementation = ResponseEntityMapMapView.class)
+                                    schema = @Schema(implementation = ResponseEntitySessionUsersView.class)
                                 )),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized request"),
@@ -240,7 +239,11 @@ public class AuthenticationResource implements Serializable {
         try {
             Map<String, Map<String,Object>> users = authenticationHelper.getUsers(request);
             // todo: add here the loggedInDate???
-            res = Response.ok(new ResponseEntityMapMapView(users)).build();
+            final HttpSession session = request.getSession(false);
+            final Locale sessionLocale = session == null ? null
+                    : (Locale) session.getAttribute(Globals.LOCALE_KEY);
+            res = Response.ok(new ResponseEntitySessionUsersView(users,
+                    sessionLocale == null ? null : sessionLocale.toString())).build();
         } catch (Exception e) {
             res = ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
         }

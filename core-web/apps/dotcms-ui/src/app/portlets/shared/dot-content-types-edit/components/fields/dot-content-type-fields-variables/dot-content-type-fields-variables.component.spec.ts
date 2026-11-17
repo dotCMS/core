@@ -1,4 +1,4 @@
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -81,6 +81,56 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         vi.spyOn(dotFieldVariableService, 'load').mockReturnValue(of([]));
         fixtureHost.detectChanges();
         expect(comp.$fieldVariables().length).toBe(0);
+    });
+
+    it('should not offer the editor until the stored variables have arrived', () => {
+        // Offered earlier, a pair added before the load answered was replaced by the
+        // loaded list, so the admin's edit vanished without a word.
+        const loaded = new Subject<DotFieldVariable[]>();
+        vi.spyOn(dotFieldVariableService, 'load').mockReturnValue(loaded);
+        fixtureHost.detectChanges();
+
+        expect(de.query(By.css('dot-key-value-ng'))).toBeNull();
+
+        loaded.next(mockFieldVariables);
+        fixtureHost.detectChanges();
+
+        expect(de.query(By.css('dot-key-value-ng'))).not.toBeNull();
+    });
+
+    it('should report a failed load rather than offer an editor with nothing in it', () => {
+        const httpError = new HttpErrorResponse({ status: 500, statusText: 'Server Error' });
+        const httpErrorManager = de.injector.get(DotHttpErrorManagerService);
+        vi.spyOn(httpErrorManager, 'handle').mockReturnValue(
+            of({ redirected: false, status: HttpCode.SERVER_ERROR })
+        );
+        vi.spyOn(dotFieldVariableService, 'load').mockReturnValue(throwError(() => httpError));
+        fixtureHost.detectChanges();
+
+        expect(httpErrorManager.handle).toHaveBeenCalledWith(httpError);
+        expect(de.query(By.css('dot-key-value-ng'))).toBeNull();
+    });
+
+    it.each([
+        ['a network failure', 0],
+        ['a gateway error', 502]
+    ])('should report %s while loading as a server error', (_, status) => {
+        const httpError = new HttpErrorResponse({
+            status,
+            statusText: 'Bad Gateway',
+            error: '<html>proxy page</html>'
+        });
+        const httpErrorManager = de.injector.get(DotHttpErrorManagerService);
+        vi.spyOn(httpErrorManager, 'handle').mockReturnValue(
+            of({ redirected: false, status: HttpCode.SERVER_ERROR })
+        );
+        vi.spyOn(dotFieldVariableService, 'load').mockReturnValue(throwError(() => httpError));
+        fixtureHost.detectChanges();
+
+        // The error manager shows nothing for statuses it has no handler for.
+        expect(httpErrorManager.handle).toHaveBeenCalledWith(
+            expect.objectContaining({ status: HttpCode.SERVER_ERROR, error: null })
+        );
     });
 
     /** Hands the editor a new list, as `updatedList` does. */
@@ -230,6 +280,22 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             expect(httpErrorManager.handle).toHaveBeenCalledWith(httpError);
             // Closing on a failed write would look like it succeeded.
             expect(saved).not.toHaveBeenCalled();
+        });
+
+        it('should report a save that failed at the gateway as a server error', () => {
+            vi.spyOn(dotFieldVariableService, 'save').mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 502, statusText: 'Bad Gateway' }))
+            );
+
+            changeTo([
+                ...mockFieldVariables,
+                { key: 'newKey', value: 'newValue' } as DotFieldVariable
+            ]);
+            comp.saveChanges();
+
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(
+                expect.objectContaining({ status: HttpCode.SERVER_ERROR })
+            );
         });
 
         it('should not re-send a write that already went through', () => {

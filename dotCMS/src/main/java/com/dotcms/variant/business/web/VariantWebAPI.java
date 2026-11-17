@@ -34,6 +34,20 @@ public interface VariantWebAPI {
     String currentVariantId(final User user);
 
     /**
+     * Whether a version living in the given variant may be served to the given user.
+     *
+     * <p>A caller that names its own variant may read any of them; every other caller may only be
+     * served the default one. This is the check for a lookup that resolves nothing of its own -
+     * one by inode, where the caller already named the exact version it wants - so where
+     * {@link #currentVariantId(User)} chooses a variant, this one refuses the wrong choice.
+     *
+     * @param variantId the variant the resolved version lives in
+     * @param user the {@link User} the request is served for, or null when there is none
+     * @return true when the version may be served to that user
+     */
+    boolean canReadVariant(final String variantId, final User user);
+
+    /**
      * Returns the Lucene query to run for the given user, scoped to the variant that user is
      * allowed to read.
      *
