@@ -908,16 +908,21 @@ public class MapToContentletPopulator  {
      * from the request bound to the current thread. When there is no request in scope -- internal,
      * non-request callers -- this falls back to the system user, preserving their existing behavior.
      *
-     * @return the logged-in user for the current request, or the system user when none is available
+     * @return the user bound to the current request (the anonymous user when the request carries no
+     *         authenticated user), or the system user only when there is no request in scope
      * @throws DotDataException if the system user cannot be loaded
      */
     private User resolveSavingUser() throws DotDataException {
 
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         if (null != request) {
-            final User loggedInUser = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
-            if (null != loggedInUser) {
-                return loggedInUser;
+            // getUser returns the anonymous user (never null) when the request has no logged-in
+            // user, so an anonymous save is gated against the anonymous user's READ rather than
+            // falling back to the system user and skipping the gate. This matches the checkin leg,
+            // which resolves relationships as the incoming user or the anonymous user, never system.
+            final User requestUser = WebAPILocator.getUserWebAPI().getUser(request);
+            if (null != requestUser) {
+                return requestUser;
             }
         }
 
