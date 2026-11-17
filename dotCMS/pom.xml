@@ -875,11 +875,6 @@
             <artifactId>jaxen</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>werken-xpath</groupId>
-            <artifactId>werken-xpath</artifactId>
-        </dependency>
-
         <!--
           *****************************
              JSON
@@ -1151,11 +1146,6 @@
         <dependency>
             <groupId>org.dom4j</groupId>
             <artifactId>dom4j</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jdom</groupId>
-            <artifactId>jdom</artifactId>
         </dependency>
 
         <dependency>
