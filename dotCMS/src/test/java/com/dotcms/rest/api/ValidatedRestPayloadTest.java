@@ -17,6 +17,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import javax.validation.Constraint;
 import javax.validation.ConstraintValidator;
 import javax.validation.ConstraintValidatorContext;
@@ -41,6 +42,7 @@ import org.glassfish.jersey.server.ContainerResponse;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.hibernate.validator.constraints.Length;
 import org.hibernate.validator.constraints.NotBlank;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -56,12 +58,25 @@ public class ValidatedRestPayloadTest {
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static ApplicationHandler handler;
+    private static Locale originalLocale;
 
+    /**
+     * Pins the default locale to English, because {@link Validated} interpolates messages with
+     * {@link Locale#getDefault()} and the expected texts are the English ones.
+     */
     @BeforeClass
     public static void startApplication() {
+        originalLocale = Locale.getDefault();
+        Locale.setDefault(Locale.ENGLISH);
         handler = new ApplicationHandler(new ResourceConfig()
                 .register(JacksonJaxbJsonProvider.class)
                 .register(FormResource.class));
+    }
+
+    /** Restores the default locale the JVM had before this class ran. */
+    @AfterClass
+    public static void restoreLocale() {
+        Locale.setDefault(originalLocale);
     }
 
     /** A {@code @NotNull} field without its own message reports the library default text. */
