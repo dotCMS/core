@@ -1338,6 +1338,31 @@ public class UserAPITest extends IntegrationTestBase {
 	 * ExpectedResult: Limited user should be able to save self-user
 	 *
 	 */
+	/**
+	 * Given scenario: a user without permission over another user tries to save that other user,
+	 *                 whose record is in the user cache
+	 * Expected result: the save is refused and the cached record is evicted, as the object handed
+	 *                  to the save can be the cached instance, already changed by the caller
+	 */
+	@Test
+	public void test_save_refused_evictsTheCachedUser() throws DotDataException, DotSecurityException {
+		final User target = new UserDataGen().nextPersisted();
+		final User withoutPermission = new UserDataGen().nextPersisted();
+		final User cached = userAPI.loadUserById(target.getUserId());
+		assertNotNull("the record must be cached before the save",
+				CacheLocator.getUserCache().get(target.getUserId()));
+
+		try {
+			userAPI.save(cached, withoutPermission, false);
+			fail("the save must be refused");
+		} catch (final DotSecurityException expected) {
+			// the save is refused
+		}
+
+		assertNull("the refused save must evict the cached record",
+				CacheLocator.getUserCache().get(target.getUserId()));
+	}
+
 	@Test
 	public void test_save_selfUser() throws DotDataException, DotSecurityException {
 

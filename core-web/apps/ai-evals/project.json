@@ -101,5 +101,5 @@
             }
         }
     },
-    "tags": ["scope:agentic"]
+    "tags": ["scope:agentic", "skip:build"]
 }

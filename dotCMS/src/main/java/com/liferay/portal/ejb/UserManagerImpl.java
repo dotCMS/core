@@ -22,7 +22,6 @@ package com.liferay.portal.ejb;
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.auth.LoginLockout;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.enterprise.AuthPipeProxy;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.PasswordFactoryProxy.AuthenticationStatus;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
@@ -54,7 +53,6 @@ import com.liferay.portal.UserActiveException;
 import com.liferay.portal.UserEmailAddressException;
 import com.liferay.portal.UserIdException;
 import com.liferay.portal.UserPasswordException;
-import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.auth.PrincipalException;
 import com.liferay.portal.auth.PrincipalFinder;
@@ -534,7 +532,9 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
     }
 
     /**
-     * Authenticates the user based on their e-mail or user ID.
+     * Authenticates the user based on their e-mail or user ID. When no account matches the login, the password is
+     * still checked, against a placeholder hash, so that the login does the same password hashing work as one with a
+     * wrong password.
      *
      * @param companyId      The ID of the company that the user belongs to.
      * @param login          The identification mechanism: The user e-mail, or the user ID.
@@ -553,14 +553,9 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         login = login.trim().toLowerCase();
         Logger.debug(this, String.format("Authenticating user '%s'", login));
         this.validateInputData(login, password, byEmailAddress);
-        Logger.debug(this, String.format("Running Login PRE authenticators by %s for User '%s'", byEmailAddress ?
-                                                                                                         "email" :
-                                                                                                         "user ID",
-                login));
-        int authResult = this.runCustomAuthenticators(companyId, login, password, byEmailAddress,
-                PropsUtil.getArray(PropsUtil.AUTH_PIPELINE_PRE));
         final User user = this.findUser(companyId, login, byEmailAddress);
         if (null == user) {
+            checkPasswordWithoutAccount(password);
             this.delayRequest(1);
             return Authenticator.DNE;
         }
@@ -582,35 +577,69 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             this.processFailedLogin(user, login, companyId, byEmailAddress, attempt, true);
             return Authenticator.FAILURE;
         }
+        final int authResult = LoginFactory.passwordMatch(password, user)
+                ? Authenticator.SUCCESS : Authenticator.FAILURE;
+        Logger.debug(this, String.format("Does password for User '%s' match? %s", login,
+                authResult == Authenticator.SUCCESS));
         if (authResult == Authenticator.SUCCESS) {
-            authResult = LoginFactory.passwordMatch(password, user) ? Authenticator.SUCCESS : Authenticator.FAILURE;
-            Logger.debug(this, String.format("Does password for User '%s' match? %s", login,
-                    authResult == Authenticator.SUCCESS));
-            if (authResult == Authenticator.SUCCESS) {
-                this.checkUserStatus(user);
-                Logger.debug(this, String.format("Running Login POST authenticators by %s for User '%s'",
-                        byEmailAddress ? "email" : "user ID", login));
-                authResult = this.runCustomAuthenticators(companyId, login, password, byEmailAddress,
-                        PropsUtil.getArray(PropsUtil.AUTH_PIPELINE_POST));
-                if (authResult == Authenticator.SUCCESS && user.getFailedLoginAttempts() > 0) {
-                    // User authenticated, reset failed attempts
-                    Logger.debug(this, String.format("Setting failed login attempts for user '%s' to zero.",
-                            user.getUserId()));
-                    user.setFailedLoginAttempts(0);
-                    UserUtil.update(user);
-                }
-                if (authResult == Authenticator.SUCCESS) {
-                    // Earlier attempts from this address no longer count toward a lock
-                    LoginLockout.getInstance().succeeded(attempt);
-                }
+            this.checkUserStatus(user);
+            if (user.getFailedLoginAttempts() > 0) {
+                // User authenticated, reset failed attempts
+                Logger.debug(this, String.format("Setting failed login attempts for user '%s' to zero.",
+                        user.getUserId()));
+                user.setFailedLoginAttempts(0);
+                UserUtil.update(user);
             }
-        }
-        if (authResult == Authenticator.FAILURE) {
+            // Earlier attempts from this address no longer count toward a lock
+            LoginLockout.getInstance().succeeded(attempt);
+        } else {
             this.processFailedLogin(user, login, companyId, byEmailAddress, attempt, false);
-        } else if (authResult != Authenticator.SUCCESS) {
-            LoginLockout.getInstance().failed(attempt);
         }
         return authResult;
+    }
+
+    /**
+     * Runs the password hash verifier for a login that matches no account, against {@link PlaceholderHash}, so the
+     * login costs the same as checking a stored password. The result is ignored: such a login always fails.
+     *
+     * @param password The password typed by the user.
+     */
+    private static void checkPasswordWithoutAccount(final String password) {
+        final String placeholder = PlaceholderHash.VALUE;
+        if (null == placeholder) {
+            return;
+        }
+        try {
+            PasswordFactoryProxy.authPassword(password, placeholder);
+        } catch (final PasswordException | RuntimeException e) {
+            // This check only evens out the work done; it must never turn a refused login into an error
+            Logger.debug(UserManagerImpl.class, "Unable to check a password for a login with no account", e);
+        }
+    }
+
+    /**
+     * Holds the hash of a random secret that is never kept anywhere, made once with the current password hashing
+     * settings the first time a login matches no account. No password matches it.
+     */
+    private static final class PlaceholderHash {
+
+        private static final String VALUE = create();
+
+        /**
+         * Creates the placeholder hash.
+         *
+         * @return The hash, or {@code null} if it cannot be created; logins with no account then skip the check until
+         * the next restart.
+         */
+        private static String create() {
+            try {
+                return PasswordFactoryProxy.generateRandomHash();
+            } catch (final PasswordException | RuntimeException e) {
+                Logger.error(UserManagerImpl.class, "Unable to prepare the placeholder password hash; logins with no "
+                        + "matching account skip the password check until the next restart", e);
+                return null;
+            }
+        }
     }
 
     /**
@@ -641,36 +670,6 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             Logger.error(this, "Password cannot be null");
             throw new UserPasswordException(UserPasswordException.PASSWORD_INVALID);
         }
-    }
-
-    /**
-     * Executes the list of custom authenticators. Developers can execute them before and/or after the default
-     * authentication process in dotCMS, in case an additional security layer is required. If the array of
-     * authenticators is empty, the {@link Authenticator#SUCCESS} will be returned by default.
-     * <p>Here are the properties that can be used to declare such authenticators:
-     * <ul>
-     *     <li>Pre-Authenticators: {@link PropsUtil#AUTH_PIPELINE_PRE}</li>
-     *     <li>Post-Authenticators: {@link PropsUtil#AUTH_PIPELINE_POST}</li>
-     * </ul>
-     * </p>
-     *
-     * @param companyId      The current Company ID.
-     * @param login          The user's email or ID.
-     * @param password       The human-readable user's password.
-     * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
-     *                       done via User ID, set to {@code false}.
-     * @param classes        The list of pre- or post-authenticator classes, specified in either the
-     *                       {@link PropsUtil#AUTH_PIPELINE_PRE} or {@link PropsUtil#AUTH_PIPELINE_POST} properties.
-     *
-     * @return The result of the authentication process: {@link Authenticator#SUCCESS}, {@link Authenticator#FAILURE},
-     * or {@link Authenticator#DNE}.
-     *
-     * @throws AuthException An error occurred when executing one of the authenticators.
-     */
-    private int runCustomAuthenticators(final String companyId, final String login, final String password,
-                                        final boolean byEmailAddress, final String[] classes) throws AuthException {
-        return byEmailAddress ? AuthPipeProxy.authenticateByEmailAddress(classes, companyId, login, password) :
-                       AuthPipeProxy.authenticateByUserId(classes, companyId, login, password);
     }
 
     /**
@@ -729,7 +728,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
     }
 
     /**
-     * Executes the optional custom on-failure handlers and updates the User information after a failed login attempt.
+     * Updates the User information after a failed login attempt.
      *
      * @param user           The {@link User} that failed to log in.
      * @param login          The user's email or ID.
@@ -750,7 +749,6 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             LoginLockout.getInstance().failed(attempt);
         }
         try {
-            this.runCustomOnFailureHandlers(companyId, login, byEmailAddress);
             if (refused) {
                 this.delayFailedLogin(user, login);
             } else {
@@ -760,25 +758,6 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             final String errorMsg = String.format("An error occurred when handling failed login for User '%s': " +
                                                           "%s", login, e.getMessage());
             Logger.error(this, errorMsg, e);
-        }
-    }
-
-    /**
-     * Executes the list of custom failure handlers. They can be executed after a given User has failed to authenticate.
-     * It can be specified via the following property: {@link PropsUtil#AUTH_FAILURE}.
-     *
-     * @param companyId      The current Company ID.
-     * @param login          The user's email or ID.
-     * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
-     *                       done via User ID, set to {@code false}.
-     *
-     * @throws AuthException An error occurred when executing one of the authenticators.
-     */
-    private void runCustomOnFailureHandlers(String companyId, String login, boolean byEmailAddress) throws AuthException {
-        if (byEmailAddress) {
-            AuthPipeProxy.onFailureByEmailAddress(PropsUtil.getArray(PropsUtil.AUTH_FAILURE), companyId, login);
-        } else {
-            AuthPipeProxy.onFailureByUserId(PropsUtil.getArray(PropsUtil.AUTH_FAILURE), companyId, login);
         }
     }
 
@@ -799,10 +778,9 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
      *                       done via User ID, set to {@code false}.
      *
      * @throws SystemException User failed attempts data could not be saved.
-     * @throws AuthException   An error occurred when executing the handlers for maximum failed loin attempts.
      */
     private void handleFailedLoginAttempt(final User user, final String login, final String companyId,
-                                          final boolean byEmailAddress) throws SystemException, AuthException {
+                                          final boolean byEmailAddress) throws SystemException {
         int failedLoginAttempts = user.getFailedLoginAttempts();
         Logger.debug(this, String.format("Current failed login attempts for user '%s' is %s", login,
                 failedLoginAttempts));
@@ -823,7 +801,6 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
                 user.setFailedLoginAttempts(0);
                 UserUtil.update(user);
             }
-            this.runCustomMaxFailuresHandlers(login, companyId, byEmailAddress);
         }
     }
 
@@ -855,27 +832,6 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         return LoginLockout.getInstance().isEnabled(maxFailures)
                 ? Math.min(user.getFailedLoginAttempts(), maxFailures - 1)
                 : user.getFailedLoginAttempts();
-    }
-
-    /**
-     * Executes the list of custom failure handlers when the maximum number of login attempts has been reached. It can
-     * be specified via the following property: {@link PropsUtil#AUTH_MAX_FAILURES}.
-     *
-     * @param login          The user's email or ID.
-     * @param companyId      The current Company ID.
-     * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
-     *                       done via User ID, set to {@code false}.
-     *
-     * @throws AuthException An error occurred when executing one of the authenticators.
-     */
-    private void runCustomMaxFailuresHandlers(final String login, final String companyId,
-                                              final boolean byEmailAddress) throws AuthException {
-        if (byEmailAddress) {
-            AuthPipeProxy.onMaxFailuresByEmailAddress(PropsUtil.getArray(PropsUtil.AUTH_MAX_FAILURES), companyId,
-                    login);
-        } else {
-            AuthPipeProxy.onMaxFailuresByUserId(PropsUtil.getArray(PropsUtil.AUTH_MAX_FAILURES), companyId, login);
-        }
     }
 
     /**

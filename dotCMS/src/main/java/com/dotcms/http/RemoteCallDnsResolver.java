@@ -23,28 +23,52 @@ public class RemoteCallDnsResolver extends SystemDefaultDnsResolver {
             Lazy.of(() -> Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
 
     /**
-     * Resolves the host and refuses the result when any of its addresses is internal.
+     * Resolves the host and hands the client the addresses the address policy permits. The
+     * policy decides which address families may be used, so the client only ever connects to
+     * an address that passed the check.
      *
      * @param host the host name or address literal to resolve
      * @return the addresses the client may connect to
-     * @throws UnknownHostException when the host cannot be resolved or resolves to an internal
-     *                              address
+     * @throws UnknownHostException when the host cannot be resolved or none of its addresses
+     *                              may be connected to
      */
     @Override
     public InetAddress[] resolve(final String host) throws UnknownHostException {
 
-        final InetAddress[] addresses = super.resolve(host);
+        final InetAddress[] addresses = lookup(host);
         if (allowAccessToPrivateSubnets.get()) {
             return addresses;
         }
-        for (final InetAddress address : addresses) {
-            if (IPUtils.isInternalAddress(address)) {
-                SecurityLogger.logInfo(this.getClass(), "Refused to connect to host '" + host
-                        + "': it resolves to a private or internal address");
-                throw new UnknownHostException("Host '" + host
-                        + "' refused: it resolves to a private or internal address");
-            }
+        final InetAddress[] permitted = permitted(addresses);
+        if (permitted.length == 0) {
+            SecurityLogger.logInfo(this.getClass(), "Refused to connect to host '" + host
+                    + "': it resolves to a private or internal address");
+            throw new UnknownHostException("Host '" + host
+                    + "' refused: it resolves to a private or internal address");
         }
-        return addresses;
+        return permitted;
+    }
+
+    /**
+     * The system lookup of the host, before the policy is applied. Kept apart from
+     * {@link #resolve(String)} so a test can supply the addresses a host resolves to.
+     *
+     * @param host the host name or address literal to resolve
+     * @return every address the host resolves to
+     * @throws UnknownHostException when the host cannot be resolved
+     */
+    protected InetAddress[] lookup(final String host) throws UnknownHostException {
+        return super.resolve(host);
+    }
+
+    /**
+     * The addresses of a resolved host the configured address policy permits. Kept apart from
+     * {@link #resolve(String)} so a test can supply a fixed policy instead of the configured one.
+     *
+     * @param addresses every address the host resolved to
+     * @return the addresses the client may connect to, empty when none may
+     */
+    protected InetAddress[] permitted(final InetAddress[] addresses) {
+        return IPUtils.permittedAddresses(addresses);
     }
 }

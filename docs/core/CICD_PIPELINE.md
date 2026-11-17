@@ -281,6 +281,41 @@ zero tests for weeks (#38336).
     cache-dependency-path: 'core-web/pnpm-lock.yaml'
 ```
 
+### Nx Remote Cache
+
+Maven invokes Nx for frontend builds and tests. The shared build/test workflows use:
+
+- Organization/repository variable `NX_SELF_HOSTED_REMOTE_CACHE_SERVER`: the HTTPS cache server URL.
+- Organization/repository secret `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN`: its writer access token.
+- Repository variable `NX_SELF_HOSTED_REMOTE_CACHE_READ_SERVER`: `https://nx-cache-read.dotcms.dev`, the public GET-only endpoint for PRs (including forks). No secret is needed.
+
+Organization settings must grant this repository access to both. The token is explicitly forwarded
+through reusable workflow calls, not placed in Maven arguments or committed files.
+
+Remote reads and writes are enabled for merge-queue builds, trunk runs on `main`/`master`, nightly
+runs from `main`, and LTS runs on protected `release-*` branches. Only the frontend test matrix job
+receives the credentials. Feature-branch dispatches and arbitrary-ref deployment/release workflows
+receive no token. PR frontend builds/tests use only the public reader URL; the reusable workflows
+explicitly clear the writer token even if a caller accidentally supplies it. No secret is added to PR callers.
+
+Caddy allows only cache GETs on the reader and injects backend authentication privately. Writes are
+blocked at Caddy with **403**, including requests supplying valid writer credentials. Nx 23.3.1 treats
+PUT 403 as a benign read-only result; PUT 405 fails cache-miss builds. Cached artifacts and terminal
+output are publicly readable by known/derived hash: never cache secrets or private output. The owner
+approved this public-read posture. Storage remains private and only trusted workflows populate it.
+
+Missing writer URL/token disables the shared HTTP cache for trusted jobs; missing reader URL disables
+it for PR jobs, with no fallback to writer credentials. The build workflow passes the URL through
+`maven-job`'s `nx-remote-cache-server` input, selected at Maven execution time; an empty input preserves
+the existing artifact-backed localhost cache when available. Builds with `save-nx-cache=true` prefer
+localhost so main's push and scheduled nightly keep refreshing that fallback. Other builds prefer the
+shared server. Frontend test jobs do not start the localhost server.
+Set `BUILD_CACHE_DISABLED=true` to disable Maven's remote cache and the shared Nx HTTP cache, including
+PR reads. The `CI : No Build Cache` PR label also disables the shared Nx HTTP cache for that PR's builds
+and frontend tests. The pre-existing localhost build cache and Nx's local cache are unchanged.
+
+Workflow wiring regression checks: `bash .github/workflows/tests/nx-remote-cache.test.sh`.
+
 ### Docker Cache
 ```yaml
 - name: Build Docker image

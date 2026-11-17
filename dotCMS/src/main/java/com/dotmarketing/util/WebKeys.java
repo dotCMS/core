@@ -24,6 +24,13 @@ public final class WebKeys {
 	public static final String ONCE_PER_VISIT_COOKIE = "opvc";
 	public static final String SITE_VISITS_COOKIE = "sitevisitscookie";
 
+	/**
+	 * Session key of the legacy director action URL. Nothing sets or reads it any more: the
+	 * director action was removed.
+	 *
+	 * @deprecated no replacement; kept only so code that still names the key compiles
+	 */
+	@Deprecated(forRemoval = true)
 	public static final String DIRECTOR_URL = "com.dotmarketing.preview.DirectorURL";
 	public static final String VIEW_FOLDERS_URL = "com.dotmarketing.preview.ViewFolderURL";
 	public static final String VIEW_BROWSER_URL = "com.dotmarketing.preview.ViewBrowserURL";

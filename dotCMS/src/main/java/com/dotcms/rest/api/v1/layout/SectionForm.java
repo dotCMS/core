@@ -6,10 +6,13 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import javax.validation.constraints.NotNull;
+import java.util.List;
 
 /**
  * Body of {@code POST /v1/layouts} and {@code PUT /v1/layouts/{layoutId}}: the name and icon of
- * a navigation section. Trimming, length and uniqueness rules are applied by {@link LayoutHelper}.
+ * a navigation section. On create only, the position and the ordered tools may be sent too, so
+ * the section is saved complete in one call. Trimming, length and uniqueness rules are applied
+ * by {@link LayoutHelper}.
  *
  * @author hassandotcms
  */
@@ -24,10 +27,18 @@ public class SectionForm extends Validated {
     @Schema(description = "Icon name, at most 255 characters; may be empty", example = "campaign")
     private final String icon;
 
+    @Schema(description = "Create only: position of the section in the navigation; defaults to after every existing section", example = "3")
+    private final Integer tabOrder;
+
+    @Schema(description = "Create only: tool (portlet) ids the section holds, in order; defaults to none")
+    private final List<String> portletIds;
+
     private SectionForm(final Builder builder) {
         super();
         this.name = builder.name;
         this.icon = builder.icon;
+        this.tabOrder = builder.tabOrder;
+        this.portletIds = builder.portletIds;
         checkValid();
     }
 
@@ -39,6 +50,16 @@ public class SectionForm extends Validated {
         return icon;
     }
 
+    /** @return the requested position on create, or {@code null} for after every existing section */
+    public Integer getTabOrder() {
+        return tabOrder;
+    }
+
+    /** @return the ordered tool ids on create, or {@code null} for none */
+    public List<String> getPortletIds() {
+        return portletIds;
+    }
+
     /** Jackson builder. */
     public static final class Builder {
 
@@ -48,6 +69,12 @@ public class SectionForm extends Validated {
         @JsonProperty
         private String icon;
 
+        @JsonProperty
+        private Integer tabOrder;
+
+        @JsonProperty
+        private List<String> portletIds;
+
         public Builder name(final String name) {
             this.name = name;
             return this;
@@ -55,6 +82,16 @@ public class SectionForm extends Validated {
 
         public Builder icon(final String icon) {
             this.icon = icon;
+            return this;
+        }
+
+        public Builder tabOrder(final Integer tabOrder) {
+            this.tabOrder = tabOrder;
+            return this;
+        }
+
+        public Builder portletIds(final List<String> portletIds) {
+            this.portletIds = portletIds;
             return this;
         }
 
