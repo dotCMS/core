@@ -804,42 +804,6 @@
 	<!-- /MailingList -->
 
 
-	<!-- Director -->
-	<definition name="portlet.ext.director" extends="portal">
-		<put name="portlet_sub_nav"
-			value="/portlet/ext/director/sub_nav.jsp" />
-	</definition>
-	<definition name="portlet.ext.director.unlock_contentlet"
-		extends="portlet.ext.director">
-		<put name="content"
-			value="/portlet/ext/director/unlock_contentlet.jsp" />
-	</definition>
-	<definition name="portlet.ext.director.unlock_htmlpage"
-		extends="portlet.ext.director">
-		<put name="content"
-			value="/portlet/ext/director/unlock_htmlpage.jsp" />
-	</definition>
-	<definition name="portlet.ext.director.unlock_template"
-		extends="portlet.ext.director">
-		<put name="content"
-			value="/portlet/ext/director/unlock_template.jsp" />
-	</definition>
-	<definition name="portlet.ext.director.unlock_link"
-		extends="portlet.ext.director">
-		<put name="content"
-			value="/portlet/ext/director/unlock_link.jsp" />
-	</definition>
-	<definition name="portlet.ext.director.unlock_popup_link"
-		extends="portlet.ext.director">
-		<put name="content"
-			value="/portlet/ext/director/unlock_link.jsp" />
-	</definition>
-	<definition name="portlet.ext.director.unlock_file"
-		extends="portlet.ext.director">
-		<put name="content"
-			value="/portlet/ext/director/unlock_file.jsp" />
-	</definition>
-
 	<!-- Link -->
 	<definition name="portlet.ext.links.view" extends="portal">
 		<put name="content" value="/portlet/ext/links/view.jsp" />

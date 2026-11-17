@@ -783,9 +783,11 @@ public class UserResource implements Serializable {
 		Response response;
 		try {
 			final Map<String, Object> sessionData = this.helper.doLoginAs(currentUser, loginAsUserId, loginAsUserPwd, serverName);
+			// the id as stored in the user record, not as it was posted
+			final String loginAsStoredUserId = sessionData.get(WebKeys.USER_ID).toString();
 			updateLoginAsSessionInfo(request, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
-					.CURRENT_HOST)), currentUser.getUserId(), loginAsUserId);
-			this.setImpersonatedUserSite(request, sessionData.get(WebKeys.USER_ID).toString());
+					.CURRENT_HOST)), currentUser.getUserId(), loginAsStoredUserId);
+			this.setImpersonatedUserSite(request, loginAsStoredUserId);
 			response = Response.ok(new ResponseEntityView<>(Map.of("loginAs", true))).build();
 		} catch (final DotSecurityException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
@@ -841,7 +843,7 @@ public class UserResource implements Serializable {
 	 * @param request         The {@link HttpServletRequest} object.
 	 * @param site            The {@link Host} object representing the Site that the Login As user is directed to.
 	 * @param principalUserId The ID of the Administrator User that is temporarily impersonating user.
-	 * @param loginAsUserId   The ID of the user that is being impersonated.
+	 * @param loginAsUserId   The ID of the user that is being impersonated, as stored in its user record.
 	 */
 	private void updateLoginAsSessionInfo(final HttpServletRequest request, final Host site, final String
 			principalUserId, final String loginAsUserId) {

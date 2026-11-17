@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.system;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -13,6 +14,7 @@ import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.util.Config;
 
 import org.junit.jupiter.api.AfterEach;
@@ -24,6 +26,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import java.util.Map;
+import java.util.List;
 
 /**
  * Unit tests for {@link ConfigurationResource}.
@@ -399,5 +402,30 @@ public class ConfigurationResourceTest {
     @SuppressWarnings("unchecked")
     private static Map<String, Object> entityMap(final Response response) {
         return (Map<String, Object>) ((ResponseEntityView) response.getEntity()).getEntity();
+    }
+
+    // ── set: provisioning keys ───────────────────────────────────────────────
+
+    /**
+     * A request that names a key the server reads from the environment or the properties file
+     * only is refused as a whole, however the key is spelled.
+     */
+    @Test
+    void rejectProvisioningKeys_provisioningKeyInAnySpelling_throwsBadRequest() {
+        for (final String key : new String[]{"REMOTE_CALL_ALLOW_IPV6", "remote_call_allow_ipv6",
+                "DOT_TEMP_RESOURCE_BY_URL_ADMIN_ONLY"}) {
+            assertThrows(BadRequestException.class,
+                    () -> ConfigurationResource.rejectProvisioningKeys(List.of(NON_FLAG_KEY, key)), key);
+        }
+    }
+
+    /**
+     * Other keys, an empty request and a missing key set pass the check.
+     */
+    @Test
+    void rejectProvisioningKeys_otherKeys_passes() {
+        ConfigurationResource.rejectProvisioningKeys(List.of(NON_FLAG_KEY, "REMOTE_CALL_TIMEOUT"));
+        ConfigurationResource.rejectProvisioningKeys(List.of());
+        ConfigurationResource.rejectProvisioningKeys(null);
     }
 }

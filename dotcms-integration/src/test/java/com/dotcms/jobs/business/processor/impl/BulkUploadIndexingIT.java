@@ -44,6 +44,7 @@ import org.junit.jupiter.api.Test;
  * reproduce the thing the ADR exists to prevent.
  */
 @EnableWeld
+@org.junit.jupiter.api.extension.ExtendWith(com.dotcms.junit.SystemUserScopeExtension.class)
 public class BulkUploadIndexingIT extends Junit5WeldBaseTest {
 
     @BeforeAll

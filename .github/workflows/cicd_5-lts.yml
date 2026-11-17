@@ -74,6 +74,9 @@ jobs:
       core-build: true
       run-pr-checks: false
       version: ${{ needs.setup.outputs.version }}
+    secrets:
+      NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: >-
+        ${{ github.ref_protected && startsWith(github.ref, 'refs/heads/release-') && secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN || '' }}
     permissions:
       contents: read
       packages: write
@@ -106,6 +109,8 @@ jobs:
       opensearch_phase: ${{ needs.test-matrix.outputs.opensearch_phase }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
+      NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN: >-
+        ${{ github.ref_protected && startsWith(github.ref, 'refs/heads/release-') && secrets.NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN || '' }}
 
   # Validate SDK package.json shapes - same guardrail as cicd_1-pr.yml. LTS branches
   # never get a PR check (this workflow's only trigger is `push`), so this is the one

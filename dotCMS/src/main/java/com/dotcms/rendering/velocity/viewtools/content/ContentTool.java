@@ -2,6 +2,7 @@ package com.dotcms.rendering.velocity.viewtools.content;
 
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotcms.visitor.domain.Visitor.AccruedTag;
@@ -184,8 +185,10 @@ public class ContentTool implements ViewTool {
         }
 
         final String contentletId = contentlet.getIdentifier();
-        final String personalization = Try.of(() -> WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(req))
+        final String visitorPersonalization = Try.of(() -> WebAPILocator.getPersonalizationWebAPI().getContainerPersonalization(req))
                 .getOrElse(MultiTree.DOT_PERSONALIZATION_DEFAULT);
+        // The same personalization the container shows the content for
+        final String personalization = PageRenderUtil.personalizationToRender(context, pageId, visitorPersonalization);
 
         try {
             final Optional<Map<String, Object>> stylePropertiesOpt = APILocator.getMultiTreeAPI()
