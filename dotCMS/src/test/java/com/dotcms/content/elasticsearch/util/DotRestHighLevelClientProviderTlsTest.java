@@ -56,6 +56,24 @@ public class DotRestHighLevelClientProviderTlsTest {
     }
 
     @Test
+    public void testDefaultConfig_RefusesCertificateSignedByUntrustedCa() throws Exception {
+        try (TlsTestServer signed = TlsTestServer.startSignedByCa("signed.example", "dns:signed.example,ip:127.0.0.1",
+                "{\"tagline\":\"test\"}")) {
+            Config.setProperty("ES_ENDPOINTS", "https://127.0.0.1:" + signed.port());
+            try {
+                status();
+                fail("a certificate signed by an untrusted CA should have been refused");
+            } catch (Exception e) {
+                boolean rejected = false;
+                for (Throwable t = e; t != null; t = t.getCause()) {
+                    rejected |= t instanceof SSLException;
+                }
+                assertTrue("expected a certificate rejection but got: " + e, rejected);
+            }
+        }
+    }
+
+    @Test
     public void testCertRequiredTrue_RefusesUntrustedCertificate() {
         Config.setProperty("ES_TLS_CERT_REQUIRED", "true");
         try {

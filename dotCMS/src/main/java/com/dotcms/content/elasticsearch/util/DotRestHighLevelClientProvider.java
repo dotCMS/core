@@ -54,7 +54,7 @@ import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.conn.util.PublicSuffixMatcherLoader;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.conn.ssl.TrustAllStrategy;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.message.BasicHeader;
 import org.apache.http.ssl.SSLContexts;
@@ -127,7 +127,7 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
      * Builds the low-level client builder for the configured endpoints, including TLS settings.
      *
      * <p>By default an {@code https} endpoint stays lenient: a PEM bundle is used if one is loaded,
-     * otherwise any server certificate is accepted, and the server name is not checked. Setting
+     * otherwise a single self-signed certificate is accepted, and the server name is not checked. Setting
      * {@code ES_TLS_CERT_REQUIRED=true} validates the server certificate and requires the server name
      * to match it, against the PEM bundle when one is loaded and the JVM truststore otherwise. A
      * warning is logged while validation is off.</p>
@@ -181,10 +181,10 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                     } else if (securedConnection && !certRequired){
                         try {
                             httpClientBuilder.setSSLContext(SSLContexts
-                                    .custom().loadTrustMaterial(TrustAllStrategy.INSTANCE).build());
+                                    .custom().loadTrustMaterial(new TrustSelfSignedStrategy()).build());
                         } catch (NoSuchAlgorithmException | KeyManagementException | KeyStoreException e) {
                             Logger.error(this.getClass(),
-                                    "Error setting TrustAllStrategy for Elastic RestHighLevelClient",
+                                    "Error setting TrustSelfSignedStrategy for Elastic RestHighLevelClient",
                                     e);
                             throw new DotRuntimeException(e);
                         }

@@ -46,6 +46,24 @@ public final class TlsTestServer implements AutoCloseable {
      */
     public static TlsTestServer start(final String commonName, final String subjectAltNames,
             final String responseBody) throws Exception {
+        return start(commonName, subjectAltNames, responseBody, false);
+    }
+
+    /**
+     * Starts a server whose certificate is signed by a freshly generated CA, so the chain it
+     * presents has two certificates and the leaf is not self-signed.
+     *
+     * @param commonName the subject common name of the server certificate
+     * @param subjectAltNames value for keytool's {@code -ext san=...}; must not be {@code null}
+     * @param responseBody JSON returned for every request
+     */
+    public static TlsTestServer startSignedByCa(final String commonName, final String subjectAltNames,
+            final String responseBody) throws Exception {
+        return start(commonName, subjectAltNames, responseBody, true);
+    }
+
+    private static TlsTestServer start(final String commonName, final String subjectAltNames,
+            final String responseBody, final boolean signedByCa) throws Exception {
         final Path dir = Files.createTempDirectory("tls-test-server");
         final Path keystore = dir.resolve("server.p12");
         final Path pem = dir.resolve("server.pem");
@@ -61,8 +79,12 @@ public final class TlsTestServer implements AutoCloseable {
                         "-validity", "2", "-keystore", keystore.toString(), "-storetype", "PKCS12",
                         "-storepass", STORE_PASSWORD, "-keypass", STORE_PASSWORD};
         run(generate);
-        run(keytool.toString(), "-exportcert", "-rfc", "-alias", "server", "-keystore", keystore.toString(),
-                "-storepass", STORE_PASSWORD, "-file", pem.toString());
+        if (signedByCa) {
+            signWithNewCa(keytool, dir, keystore, subjectAltNames, pem);
+        } else {
+            run(keytool.toString(), "-exportcert", "-rfc", "-alias", "server", "-keystore", keystore.toString(),
+                    "-storepass", STORE_PASSWORD, "-file", pem.toString());
+        }
 
         final KeyStore store = KeyStore.getInstance("PKCS12");
         try (FileInputStream in = new FileInputStream(keystore.toFile())) {
@@ -87,12 +109,33 @@ public final class TlsTestServer implements AutoCloseable {
         return new TlsTestServer(https, dir, pem);
     }
 
+    private static void signWithNewCa(final Path keytool, final Path dir, final Path keystore,
+            final String subjectAltNames, final Path caPem) throws Exception {
+        final Path caStore = dir.resolve("ca.p12");
+        final Path request = dir.resolve("server.csr");
+        final Path signed = dir.resolve("server-signed.pem");
+        run(keytool.toString(), "-genkeypair", "-alias", "ca", "-keyalg", "RSA", "-keysize", "2048",
+                "-dname", "CN=Test CA", "-ext", "bc:c", "-validity", "2", "-keystore", caStore.toString(),
+                "-storetype", "PKCS12", "-storepass", STORE_PASSWORD, "-keypass", STORE_PASSWORD);
+        run(keytool.toString(), "-exportcert", "-rfc", "-alias", "ca", "-keystore", caStore.toString(),
+                "-storepass", STORE_PASSWORD, "-file", caPem.toString());
+        run(keytool.toString(), "-certreq", "-alias", "server", "-keystore", keystore.toString(),
+                "-storepass", STORE_PASSWORD, "-file", request.toString());
+        run(keytool.toString(), "-gencert", "-alias", "ca", "-keystore", caStore.toString(),
+                "-storepass", STORE_PASSWORD, "-infile", request.toString(), "-outfile", signed.toString(),
+                "-rfc", "-ext", "san=" + subjectAltNames, "-validity", "2");
+        run(keytool.toString(), "-importcert", "-noprompt", "-alias", "ca", "-file", caPem.toString(),
+                "-keystore", keystore.toString(), "-storepass", STORE_PASSWORD);
+        run(keytool.toString(), "-importcert", "-noprompt", "-alias", "server", "-file", signed.toString(),
+                "-keystore", keystore.toString(), "-storepass", STORE_PASSWORD);
+    }
+
     /** The loopback port the server listens on. */
     public int port() {
         return server.getAddress().getPort();
     }
 
-    /** The server certificate as a PEM file. Being self-signed, it is also its own CA. */
+    /** The PEM file of the CA to trust: the server certificate itself when self-signed, or the signing CA. */
     public Path certificatePem() {
         return certificatePem;
     }

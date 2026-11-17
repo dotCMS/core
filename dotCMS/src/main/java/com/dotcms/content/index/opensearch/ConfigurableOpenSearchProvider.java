@@ -193,7 +193,7 @@ class ConfigurableOpenSearchProvider {
                 return httpClientBuilder;
             } catch (Exception e) {
                 Logger.error(this.getClass(), "Error configuring HTTP client", e);
-                throw new DotRuntimeException("Failed to configure HTTP client", e);
+                throw new DotRuntimeException("Failed to configure HTTP client: " + e.getMessage(), e);
             }
         });
 
@@ -362,6 +362,8 @@ class ConfigurableOpenSearchProvider {
             if (index == 0) {
                 throw new GeneralSecurityException("No certificate found in OS_TLS_CA_CERT file " + caCertPath);
             }
+        } catch (IOException e) {
+            throw new IOException("Unable to read the OS_TLS_CA_CERT file " + caCertPath + ": " + e, e);
         }
         return trustStore;
     }

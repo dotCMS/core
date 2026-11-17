@@ -44,7 +44,12 @@ public class ConfigurableOpenSearchProviderTlsTest {
     }
 
     private static String connect(final OSClientConfig config) throws Exception {
-        return new ConfigurableOpenSearchProvider(config).getClient().info().version().number();
+        final ConfigurableOpenSearchProvider provider = new ConfigurableOpenSearchProvider(config);
+        try {
+            return provider.getClient().info().version().number();
+        } finally {
+            provider.close();
+        }
     }
 
     private static boolean isCertificateRejection(final Throwable error) {
@@ -104,6 +109,20 @@ public class ConfigurableOpenSearchProviderTlsTest {
     public void testCertRequired_WithCaCertificate_RefusesMismatchedName() {
         assertRejectedForName(config(otherName).certRequired(true)
                 .caCertPath(otherName.certificatePem().toString()).build());
+    }
+
+    @Test
+    public void testCertRequired_WithMissingCaFile_NamesTheFile() {
+        try {
+            connect(config(matchingName).certRequired(true).caCertPath("/no/such/ca.pem").build());
+            fail("an unreadable CA file should have been reported");
+        } catch (Exception e) {
+            boolean named = false;
+            for (Throwable t = e; t != null; t = t.getCause()) {
+                named |= String.valueOf(t.getMessage()).contains("OS_TLS_CA_CERT file /no/such/ca.pem");
+            }
+            assertTrue("expected the file to be named but got: " + e, named);
+        }
     }
 
     @Test
