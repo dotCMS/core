@@ -51,7 +51,6 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.PortletRequestProcessor;
 import com.liferay.portal.struts.StrutsUtil;
-import com.liferay.portal.util.ContentUtil;
 import com.liferay.portal.util.PortalInstances;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
@@ -251,17 +250,13 @@ public class MainServlet extends ActionServlet {
     ContentSecurityPolicyUtil.addBackendHeader(res);
 
     if (!PortalInstances.matches()) {
-      String html = ContentUtil.get("messages/en_US/init.html");
-
-      res.getOutputStream().print(html);
+      res.getOutputStream().print("unavailable");
 
       return;
     }
 
     if (ShutdownUtil.isShutdown()) {
-      String html = ContentUtil.get("messages/en_US/shutdown.html");
-
-      res.getOutputStream().print(html);
+      res.getOutputStream().print("unavailable");
 
       return;
     }
