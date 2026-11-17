@@ -1,5 +1,7 @@
 package com.liferay.portal.servlet;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -10,7 +12,11 @@ import static org.mockito.Mockito.when;
 import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Unit tests for how {@link ImageServlet} serves the stored company logo.
@@ -76,5 +82,25 @@ class ImageServletTest {
         new ImageServlet().serveLogo(STOCK_LOGO, request, response);
 
         verify(response).sendError(HttpServletResponse.SC_NOT_FOUND);
+    }
+
+    /** A stored logo that is not a dotAsset path is replaced at startup. */
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"/dA/../html/logo.png", "/dA/abc/%2e%2e/%2e%2e/html/logo.png",
+            "/dAx/logo.png", "/image/company_logo?img_id=dotcms.org"})
+    void storedLogoNotADotAssetPath_isMigrated(final String storedLogo) {
+        assertTrue(ImageServlet.needsLogoMigration(storedLogo), String.valueOf(storedLogo));
+    }
+
+    /** A stored dotAsset logo is kept. */
+    @ParameterizedTest
+    @ValueSource(strings = {STOCK_LOGO, "/dA/e9f32fc04a4d7a0e7e6a025ee65fcf30/asset/my logo (1).png",
+            "/dA/a083e942-5fb0-47ef-9619-6f8f40593474/asset/company_logo.png",
+            "/dA/e9f32fc04a4d7a0e7e6a025ee65fcf30/asset/O'Neil.png",
+            "/dA/e9f32fc04a4d7a0e7e6a025ee65fcf30/asset/logo#2.png",
+            "/dA/e9f32fc04a4d7a0e7e6a025ee65fcf30/asset/50%.png"})
+    void storedDotAssetLogo_isKept(final String storedLogo) {
+        assertFalse(ImageServlet.needsLogoMigration(storedLogo), storedLogo);
     }
 }

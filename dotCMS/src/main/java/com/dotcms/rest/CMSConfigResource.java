@@ -1,6 +1,7 @@
 package com.dotcms.rest;
 
 import com.dotcms.company.CompanyAPI;
+import com.dotcms.company.CompanyBrandingChanges;
 import com.dotcms.company.CompanyLogoPath;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
@@ -13,10 +14,12 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.api.v1.company.CompanyBasicInfoForm;
 import com.dotcms.rest.api.v1.system.ConfigurationHelper;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.InvalidTimeZoneException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONException;
@@ -96,7 +99,7 @@ public class CMSConfigResource {
             @FormParam("city") final String loginLogo,
             @FormParam("state") String navLogo) throws IOException, JSONException {
 
-        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true, PortletID.CONFIGURATION.toString() );
+        InitDataObject initData = initAsConfigurationAdministrator( user, password, request, response );
 
         //Nav Logo Feature is not for Community level license
         if(LicenseUtil.getLevel() == LicenseLevel.COMMUNITY.level && UtilMethods.isSet(navLogo)){
@@ -126,23 +129,22 @@ public class CMSConfigResource {
         if ( !isAcceptedColor( backgroundColor, storedCompany.getSize() )
                 || !isAcceptedColor( primaryColor, storedCompany.getType() )
                 || !isAcceptedColor( secondaryColor, storedCompany.getStreet() ) ) {
-            return responseResource.responseError(
-                    "Colors must be hex colors (e.g. #FF0000)", HttpStatus.SC_BAD_REQUEST );
+            return rejectBasicInfo( responseResource, initData,
+                    "Colors must be hex colors (e.g. #FF0000)" );
         }
         if ( !CompanyBasicInfoForm.isAcceptedBackgroundImage( homeURL )
                 && !homeURL.equals( storedCompany.getHomeURL() ) ) {
-            return responseResource.responseError(
+            return rejectBasicInfo( responseResource, initData,
                     "The background image must be a dotAsset path starting with /dA/, one of the bundled backgrounds "
-                            + CompanyBasicInfoForm.BACKGROUND_PRESETS_TEXT + ", or the background currently saved",
-                    HttpStatus.SC_BAD_REQUEST );
+                            + CompanyBasicInfoForm.BACKGROUND_PRESETS_TEXT + ", or the background currently saved" );
         }
         if ( UtilMethods.isSet( loginLogo ) && !CompanyLogoPath.isValid( loginLogo ) ) {
-            return responseResource.responseError(
-                    "The login screen logo must be a dotAsset path starting with /dA/", HttpStatus.SC_BAD_REQUEST );
+            return rejectBasicInfo( responseResource, initData,
+                    "The login screen logo must be a dotAsset path starting with /dA/" );
         }
         if ( UtilMethods.isSet( navLogo ) && !CompanyLogoPath.isValid( navLogo ) ) {
-            return responseResource.responseError(
-                    "The navigation bar logo must be a dotAsset path starting with /dA/", HttpStatus.SC_BAD_REQUEST );
+            return rejectBasicInfo( responseResource, initData,
+                    "The navigation bar logo must be a dotAsset path starting with /dA/" );
         }
 
         try {
@@ -156,6 +158,7 @@ public class CMSConfigResource {
 
             //Getting the current company
             final Company currentCompany = APILocator.getCompanyAPI().getDefaultCompany();
+            final Company previousCompany = (Company) currentCompany.clone();
 
             //Set the values
             currentCompany.setPortalURL( portalURL );
@@ -170,6 +173,9 @@ public class CMSConfigResource {
 
             //Update the company
             CompanyManagerUtil.updateCompany( currentCompany );
+            SecurityLogger.logInfo( this.getClass(), "Company basic information saved by user '"
+                    + initData.getUser().getUserId() + "'; changed fields: "
+                    + CompanyBrandingChanges.changedFields( previousCompany, currentCompany ) );
 
             //And prepare the response
             JSONObject jsonResponse = new JSONObject();
@@ -191,6 +197,46 @@ public class CMSConfigResource {
         }
 
         return responseResource.response( responseMessage.toString() );
+    }
+
+    /**
+     * Records a refused basic information save (who and why, without the submitted values) and
+     * builds the 400 response.
+     *
+     * @param responseResource the response helper of the request
+     * @param initData the authenticated request data
+     * @param reason why the save was refused; a fixed text, never a submitted value
+     * @return the 400 response carrying the reason
+     */
+    private Response rejectBasicInfo(final ResourceResponse responseResource, final InitDataObject initData,
+            final String reason) {
+        SecurityLogger.logInfo(this.getClass(), "Company basic information not saved for user '"
+                + initData.getUser().getUserId() + "': " + reason);
+        return responseResource.responseError(reason, HttpStatus.SC_BAD_REQUEST);
+    }
+
+    /**
+     * Authenticates the request for a configuration write: the user must be a back-end user who
+     * is a CMS Administrator and has the Configuration portlet, the same rule as the
+     * {@code /api/v1/configuration} endpoints.
+     *
+     * @param user user id for the legacy path-based login, usually empty
+     * @param password password for the legacy path-based login, usually empty
+     * @param request the current request
+     * @param response the current response
+     * @return the initialized request data
+     * @throws com.dotcms.rest.exception.SecurityException if the user may not change the configuration
+     */
+    private InitDataObject initAsConfigurationAdministrator(final String user, final String password,
+            final HttpServletRequest request, final HttpServletResponse response) {
+        return new WebResource.InitBuilder(webResource)
+                .params("user/" + user + "/password/" + password)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
+                .requiredPortlet(PortletID.CONFIGURATION.toString())
+                .init();
     }
 
     /**
@@ -227,7 +273,7 @@ public class CMSConfigResource {
                                             @FormParam ("languageId") String languageId,
                                             @FormParam ("timeZoneId") String timeZoneId ) throws IOException, JSONException {
 
-        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true, PortletID.CONFIGURATION.toString() );
+        InitDataObject initData = initAsConfigurationAdministrator( user, password, request, response );
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "languageId", languageId );
@@ -293,7 +339,7 @@ public class CMSConfigResource {
                                               @FormParam ("user") String user, @FormParam ("password") String password,
                                               @FormParam ("authType") String authType ) throws IOException, JSONException {
 
-        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true, PortletID.CONFIGURATION.toString() );
+        InitDataObject initData = initAsConfigurationAdministrator( user, password, request, response );
 
         Map<String, String> paramsMap = initData.getParamsMap();
         paramsMap.put( "authType", authType );
@@ -363,7 +409,7 @@ public class CMSConfigResource {
                                       @FormDataParam ("logoFile") File logoFile,
                                       @FormDataParam ("logoFile") FormDataContentDisposition logoDetail ) throws IOException, JSONException {
 
-        InitDataObject initData = webResource.init( "user/" + user + "/password/" + password, request, response, true , PortletID.CONFIGURATION.toString());
+        InitDataObject initData = initAsConfigurationAdministrator( user, password, request, response );
 
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse( initData.getParamsMap() );

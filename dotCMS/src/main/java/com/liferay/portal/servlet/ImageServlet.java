@@ -56,16 +56,37 @@ import com.liferay.util.ParamUtil;
  */
 public class ImageServlet extends HttpServlet {
 
+	/**
+	 * Initializes the servlet and replaces the stored login screen logo with a new dotAsset when
+	 * it is missing or is not a dotAsset path.
+	 *
+	 * @param sc the servlet configuration
+	 * @throws ServletException if the servlet cannot be initialized
+	 */
+	@Override
 	public void init(ServletConfig sc) throws ServletException {
 		synchronized (ImageServlet.class) {
 			super.init(sc);
 		}
 		final Company company = APILocator.getCompanyAPI().getDefaultCompany();
-		//If the City column does not startsWith /dA means that we need to migrate the old logo
-		//to a new dotAsset
-		if (company.getCity() == null || !company.getCity().startsWith("/dA")) {
+		if (needsLogoMigration(company.getCity())) {
+			if (company.getCity() != null && !company.getCity().isEmpty()) {
+				Logger.warn(this, "The stored login screen logo is not a dotAsset path; "
+						+ "it is replaced with the default logo");
+			}
 			migrateCurrentLogoToDotAsset(company);
 		}
+	}
+
+	/**
+	 * Tells whether the stored login screen logo has to be replaced by a new dotAsset at startup:
+	 * when it is missing or is not a dotAsset path ({@link CompanyLogoPath#isValid(String)}).
+	 *
+	 * @param storedLogo the stored login screen logo, may be {@code null}
+	 * @return {@code true} if the logo has to be migrated
+	 */
+	static boolean needsLogoMigration(final String storedLogo) {
+		return !CompanyLogoPath.isValid(storedLogo);
 	}
 
 	/**

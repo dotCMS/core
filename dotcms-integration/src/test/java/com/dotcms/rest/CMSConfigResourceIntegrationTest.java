@@ -1,14 +1,17 @@
 package com.dotcms.rest;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.company.CompanyAPI;
 import com.dotcms.datagen.LayoutDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
@@ -40,6 +43,7 @@ public class CMSConfigResourceIntegrationTest extends IntegrationTestBase {
     private static CMSConfigResource resource;
     private static CompanyAPI companyAPI;
     private static User configurationUser;
+    private static User adminUser;
     private static Layout configurationLayout;
     private static Company original;
 
@@ -50,6 +54,7 @@ public class CMSConfigResourceIntegrationTest extends IntegrationTestBase {
         companyAPI = APILocator.getCompanyAPI();
         original = (Company) companyAPI.getDefaultCompany().clone();
 
+        adminUser = TestUserUtils.getAdminUser();
         configurationUser = new UserDataGen().nextPersisted();
         APILocator.getRoleAPI().addRoleToUser(
                 APILocator.getRoleAPI().loadBackEndUserRole(), configurationUser);
@@ -224,8 +229,68 @@ public class CMSConfigResourceIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Calls the endpoint as the Configuration portlet user, resending the stored values of every
-     * other field.
+     * A back-end user who has the Configuration portlet but is not a CMS Administrator cannot
+     * change the company basic information, locale, authentication type or logo, and nothing is
+     * changed.
+     */
+    @Test
+    public void writes_withConfigurationPortletButNotAdministrator_areRejected() throws Exception {
+        final Company before = (Company) companyAPI.getDefaultCompany().clone();
+        final java.util.List<java.util.concurrent.Callable<Response>> writes = java.util.List.of(
+                () -> resource.saveCompanyBasicInfo(requestFor(configurationUser), response(), "", "",
+                        "http://localhost:8080", "dotcms.com", "dotCMS Website <website@dotcms.com>",
+                        "#000000", "#111111", "#222222", before.getHomeURL(), DOT_ASSET_LOGO, ""),
+                () -> resource.saveCompanyLocaleInfo(requestFor(configurationUser), response(), "", "",
+                        "en_US", "UTC"),
+                () -> resource.saveCompanyAuthTypeInfo(requestFor(configurationUser), response(), "", "",
+                        "userId"),
+                () -> resource.saveCompanyLogo(requestFor(configurationUser), response(), "", "",
+                        null, null));
+        for (int i = 0; i < writes.size(); i++) {
+            try {
+                writes.get(i).call();
+                fail("Expected SecurityException for write #" + i);
+            } catch (final SecurityException expected) {
+                // rejected before doing anything
+            }
+        }
+        final Company after = companyAPI.getDefaultCompany();
+        assertEquals(before.getSize(), after.getSize());
+        assertEquals(before.getType(), after.getType());
+        assertEquals(before.getStreet(), after.getStreet());
+        assertEquals(before.getAuthType(), after.getAuthType());
+    }
+
+    /**
+     * Deleting publishing environments and endpoints keeps the Configuration portlet rule, like
+     * creating and editing them: a user with the portlet who is not a CMS Administrator is not
+     * refused.
+     */
+    @Test
+    public void publishingDeletes_withConfigurationPortlet_areNotRefused() throws Exception {
+        resource.deleteEnvironment(requestFor(configurationUser), response(), "", "",
+                "not-an-environment", null, null);
+        resource.deleteEndpoint(requestFor(configurationUser), response(), "", "",
+                "not-an-endpoint", null, null);
+    }
+
+    /**
+     * A request authenticated as the given user.
+     */
+    private static HttpServletRequest requestFor(final User user) {
+        final HttpServletRequest request = new MockAttributeRequest(
+                new MockHttpRequestIntegrationTest("localhost", "/").request()).request();
+        request.setAttribute(WebKeys.USER, user);
+        return request;
+    }
+
+    private static HttpServletResponse response() {
+        return new MockHttpResponse().response();
+    }
+
+    /**
+     * Calls the endpoint as a CMS Administrator, resending the stored values of every other
+     * field.
      */
     private static Response save(final String loginLogo, final String navLogo) throws Exception {
         return save(loginLogo, navLogo, "#1b3359", "#4e65f1", "#233f9b");
@@ -248,11 +313,7 @@ public class CMSConfigResourceIntegrationTest extends IntegrationTestBase {
     private static Response save(final String loginLogo, final String navLogo,
             final String backgroundColor, final String primaryColor, final String secondaryColor,
             final String backgroundImage) throws Exception {
-        final HttpServletRequest request = new MockAttributeRequest(
-                new MockHttpRequestIntegrationTest("localhost", "/").request()).request();
-        request.setAttribute(WebKeys.USER, configurationUser);
-        final HttpServletResponse response = new MockHttpResponse().response();
-        return resource.saveCompanyBasicInfo(request, response, "", "",
+        return resource.saveCompanyBasicInfo(requestFor(adminUser), response(), "", "",
                 "http://localhost:8080", "dotcms.com", "dotCMS Website <website@dotcms.com>",
                 backgroundColor, primaryColor, secondaryColor, backgroundImage,
                 loginLogo, navLogo);

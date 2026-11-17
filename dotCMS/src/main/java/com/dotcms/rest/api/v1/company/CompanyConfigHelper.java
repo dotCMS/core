@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.company;
 
 import com.dotcms.company.CompanyAPI;
+import com.dotcms.company.CompanyBrandingChanges;
 import com.dotcms.company.CompanyLogoPath;
 import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.enterprise.LicenseUtil;
@@ -20,6 +21,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.auth.PrincipalThreadLocal;
@@ -183,6 +185,7 @@ public class CompanyConfigHelper {
 
             final Company company = companyAPI.getDefaultCompany();
             validateBackgroundImage(form.getBackgroundImage(), company.getHomeURL());
+            final Company previousCompany = (Company) company.clone();
 
             // Map semantic names → Liferay Company model fields
             company.setPortalURL(form.getPortalURL());
@@ -206,6 +209,9 @@ public class CompanyConfigHelper {
                     : StringPool.BLANK);                   // state = navBarLogo
 
             CompanyManagerUtil.updateCompany(company);
+            SecurityLogger.logInfo(this.getClass(), "Company basic information saved by user '"
+                    + user.getUserId() + "'; changed fields: "
+                    + CompanyBrandingChanges.changedFields(previousCompany, company));
 
             return toView(company);
         } catch (BadRequestException e) {
