@@ -1018,6 +1018,16 @@ public class FieldAPIImpl implements FieldAPI {
 
   @WrapInTransaction
   @Override
+  public void delete(final FieldVariable fieldVar, final User user)
+          throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException {
+    final Field field = fieldFactory.byId(fieldVar.fieldId());
+    final ContentType type = APILocator.getContentTypeAPI(user).find(field.contentTypeId());
+    APILocator.getPermissionAPI().checkPermission(type, PermissionLevel.EDIT_PERMISSIONS, user);
+    delete(fieldVar);
+  }
+
+  @WrapInTransaction
+  @Override
   public void delete(final FieldVariable fieldVar) throws DotDataException, UniqueFieldValueDuplicatedException {
     fieldFactory.delete(fieldVar);
     final Field field = this.find(fieldVar.fieldId());

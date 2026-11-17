@@ -97,14 +97,14 @@ public class FieldAPIImpl implements FieldAPI, Serializable {
 	}
 
 	/**
-	 * Deletes a field variable as the given user. The variable is looked up by its id, and the
-	 * user needs the same rights on its content type as
-	 * {@link com.dotcms.contenttype.business.FieldAPI#save(com.dotcms.contenttype.model.field.FieldVariable, User)}
-	 * asks for to save one.
+	 * Deletes a field variable as the given user. The variable is looked up by its id and deleted
+	 * through
+	 * {@link com.dotcms.contenttype.business.FieldAPI#delete(com.dotcms.contenttype.model.field.FieldVariable, User)},
+	 * which checks the user's rights on the content type it belongs to.
 	 *
 	 * @param fieldVar             the variable to delete; only its id is used
 	 * @param user                 the user deleting it
-	 * @param respectFrontendRoles whether the user's front-end roles count
+	 * @param respectFrontendRoles not used: the user's front-end roles do not count
 	 * @throws DotSecurityException if the user cannot change the variables of that content type
 	 */
 	@WrapInTransaction
@@ -113,9 +113,8 @@ public class FieldAPIImpl implements FieldAPI, Serializable {
 			DotSecurityException {
 		final com.dotcms.contenttype.model.field.FieldVariable stored =
 				FactoryLocator.getFieldFactory().loadVariable(fieldVar.getId());
-		checkCanChangeVariablesOf(stored.fieldId(), user, respectFrontendRoles);
 		try {
-			APILocator.getContentTypeFieldAPI().delete(stored);
+			APILocator.getContentTypeFieldAPI().delete(stored, user);
 		} catch (final UniqueFieldValueDuplicatedException e) {
 			throw new DotDataException(e.getMessage(), e);
 		}
