@@ -30,7 +30,6 @@ com.dotcms.rest.api.v1.content.search.LuceneQueryBuilderTest
 com.dotcms.rest.api.v1.page.PageResourceHelperTest
 com.dotcms.rest.api.v1.usage.UsageResourceIntegrationTest
 com.dotcms.rest.api.v2.languages.LanguageVariablesHelperTest
-com.dotcms.security.apps.AppsUtilTest
 com.dotcms.storage.BinaryBlockFilJoinerImplTest
 com.dotcms.telemetry.collectors.experiment.CountExperimentsEditedInThePast30DaysMetricTypeTest
 com.dotcms.telemetry.collectors.experiment.CountExperimentsWithBounceRateGoalMetricTypeTest
