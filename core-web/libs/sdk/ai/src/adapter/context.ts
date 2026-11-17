@@ -1,3 +1,5 @@
+import { HttpError } from '../sandbox/errors';
+
 import type { Adapter } from '../sandbox/types';
 
 export interface ContentTypeSummary {
@@ -187,34 +189,71 @@ async function loadCurrentUser(request: RequestFn): Promise<CurrentUserSummary |
     };
 }
 
+/** HTTP statuses that mean the instance refused the credentials, not the request. */
+const AUTH_FAILURE_STATUSES = new Set([401, 403]);
+
+function authStatus(error: unknown): number | undefined {
+    const status =
+        error instanceof HttpError
+            ? error.status
+            : (error as { status?: unknown } | null | undefined)?.status;
+
+    return typeof status === 'number' && AUTH_FAILURE_STATUSES.has(status) ? status : undefined;
+}
+
 /**
  * Load a minimal snapshot of dotCMS instance context for sandbox injection.
  * Each loader is independent — a failure in one does not poison the others.
+ *
+ * One exception: when EVERY loader is refused with 401/403, the credentials themselves are
+ * not accepted, and an all-empty snapshot would read as an empty instance (no sites, no
+ * content types, no languages). That case throws an `HttpError` with the status the instance
+ * returned, so the call fails with an authentication message instead of running against
+ * empty globals. A partial failure (a token that may read some of these but not others)
+ * still degrades per loader, as before.
  */
 export async function loadDotCMSContext(
     apiAdapter: Adapter,
     onError?: (label: string, error: unknown) => void
 ): Promise<DotCMSContext> {
     const request = getRequestFn(apiAdapter);
+    const failures: unknown[] = [];
+    const fail = (label: string, err: unknown) => {
+        failures.push(err);
+        onError?.(label, err);
+    };
 
     const [contentTypes, sites, languages, currentUser] = await Promise.all([
         loadContentTypes(request).catch((err): ContentTypeSummary[] => {
-            onError?.('contentTypes', err);
+            fail('contentTypes', err);
             return [];
         }),
         loadSites(request).catch((err): SiteSummary[] => {
-            onError?.('sites', err);
+            fail('sites', err);
             return [];
         }),
         loadLanguages(request).catch((err): LanguageSummary[] => {
-            onError?.('languages', err);
+            fail('languages', err);
             return [];
         }),
         loadCurrentUser(request).catch((err): CurrentUserSummary | null => {
-            onError?.('currentUser', err);
+            fail('currentUser', err);
             return null;
         })
     ]);
+
+    const statuses = failures.map(authStatus);
+    if (failures.length === 4 && statuses.every((status) => status !== undefined)) {
+        const status = statuses[0] as number;
+        throw new HttpError(
+            status,
+            status === 401 ? 'Unauthorized' : 'Forbidden',
+            'dotCMS rejected the configured API token while loading instance context ' +
+                '(content types, sites, languages, current user). The token is invalid, expired, ' +
+                'revoked, or lacks back-end access. Create a new API token in dotCMS and update ' +
+                'the server configuration (AUTH_TOKEN); retrying with the same token will not help.'
+        );
+    }
 
     return { contentTypes, sites, languages, currentUser };
 }
