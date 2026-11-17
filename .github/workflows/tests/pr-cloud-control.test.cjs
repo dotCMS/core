@@ -314,7 +314,7 @@ test('merged PR environments are decommissioned without artifacts or registry ac
             existing: { ...stopped, deploy_status } });
         assert.equal(calls.length, 2);
         assert.equal(calls[1].method, 'PATCH');
-        assert.equal(calls[1].url, 'https://cloud.dotcms.dev/api/envs/dotpr/decommission?env_key=1234-feat-my-branch-with-dots');
+        assert.equal(calls[1].url, 'https://cloud.dotcms.dev/api/envs/dotpr/decommission?env_key=1234');
         assert.equal(calls[1].headers.Authorization, 'Bearer test-token');
         assert.equal(registryCalls.length, 0);
     }
