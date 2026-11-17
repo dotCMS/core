@@ -247,12 +247,8 @@ public class UploadMultipleFilesAction extends DotPortletAction {
 				} else {
 					if (session.getAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE) != null) {
 						currentLang = Long.parseLong(session.getAttribute(WebKeys.CONTENT_SELECTED_LANGUAGE).toString());
-					} else if (session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE) != null) {
-						// LanguageWebAPI only writes this when the language actually changes, so a
-						// default-language visitor has no value here
-						currentLang = Long.parseLong(session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE).toString());
 					} else {
-						currentLang = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+						currentLang = Long.parseLong(session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE).toString());
 					}
 				}
 				if (currentLang != 0) {

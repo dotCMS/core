@@ -338,6 +338,20 @@ function doShutdownDotcms(){
 
 }
 
+dojo.ready(function () {
+
+
+    var tab = dijit.byId("mainTabContainer");
+    dojo.connect(tab, 'selectChild',
+            function (evt) {
+                selectedTab = tab.selectedChildWidget;
+                if (selectedTab.id == "systemProps") {
+                    initLoadConfigsAPI();
+                }
+
+            });
+
+});
 
 
 
@@ -1943,13 +1957,7 @@ dd.leftdl {
     <!-- START System Info TAB -->
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <div id="systemProps" dojoType="dijit.layout.ContentPane" title="<%= LanguageUtil.get(pageContext, "System-Properties") %>" >
-        <div style="margin-left:30%;max-width:400px;padding:1em;text-align: center;cursor: pointer"
-             onclick="top.location='/dotAdmin/#/c/configuration?mId=1a87&systemProps=1'">
-            This tab is moving to the <a href="/dotAdmin/#/c/configuration?mId=1a87&systemProps=1" target="_top">Configuration</a>
-            screen.
-        </div>
-
-        <%@ include file="/html/portlet/ext/cmsconfig/system_config.jsp" %>
+        <%@ include file="/html/portlet/ext/cmsmaintenance/system_config.jsp" %>
     </div>
 
 
@@ -2072,45 +2080,15 @@ dojo.require("dijit.form.DateTextBox");
 
 		checkReindexation();
 		checkFixAsset();
-        var countdownId;
-        var tab = dijit.byId("mainTabContainer");
+
+			var tab =dijit.byId("mainTabContainer");
 		   	dojo.connect(tab, 'selectChild',
 			 function (evt) {
 			 	selectedTab = tab.selectedChildWidget;
-                 if (countdownId) {
-                     clearTimeout(countdownId);
-                     countdownId = null
-                 }
 
-                 if (selectedTab.id == "indexTabCp") {
-                     refreshIndexStats();
-                 }
-                 if (selectedTab.id == "systemProps") {
-                     initLoadConfigsAPI();
-                     /*
-                     document.getElementById("countdownSpan").innerHTML="5";
-                     countdownId = setInterval(()=>{
-                         let x=5;
-                         try{
-                             x = parseInt(document.getElementById("countdownSpan").innerHTML);
-                         }
-                         catch(e){
-                             console.error(e);
-                         }
-                         if(!x || isNaN(x)){
-                             x=5;
-                             document.getElementById("countdownSpan").innerHTML=x+"";
-                         }
-                         document.getElementById("countdownSpan").innerHTML=(--x+"");
-                         if(x <= 0){
-                             top.location="/dotAdmin/#/c/configuration?mId=1a87&systemProps=" + new Date().getTime();
-                         }
-
-                     }, 1000);
-
- */
-
-                 }
+				  	if(selectedTab.id =="indexTabCp"){
+				  		refreshIndexStats();
+				  	}
 
 			});
 

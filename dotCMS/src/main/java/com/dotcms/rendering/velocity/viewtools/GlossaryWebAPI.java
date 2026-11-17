@@ -7,7 +7,6 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Config;
@@ -25,24 +24,25 @@ public class GlossaryWebAPI implements ViewTool {
         this.request = context.getRequest();
 
     }
-
-    /**
-     * Resolves the language the same way the other viewtools that need it do, so the session, a
-     * language set as a request attribute and the time-machine (tm_lang) language are all honoured,
-     * and falls back to the default language when there is nothing to resolve.
-     *
-     * @return the current language id, as a string
-     */
-    private String currentLanguageId() {
-        return String.valueOf(WebAPILocator.getLanguageWebAPI().getLanguage(request).getId());
-    }
     
     public String get(String key) {
-    	return get(key, currentLanguageId());
+    	String language = null;
+    	if(language == null)
+    		language = (String)request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);	
+    	if (language == null)
+    		language = String.valueOf(langAPI.getDefaultLanguage().getId());	
+    	return get(key, language);
     }
     
     
     public String get(String key, List args) {
+        String language = null;
+    	if(language == null)
+    		language = (String)request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);
+        
+        if (language == null)
+            language = String.valueOf(langAPI.getDefaultLanguage().getId());
+        
         try {
         	key = key.replace(" ","\\ ");
             MessagesTools resources = new MessagesTools();
@@ -88,7 +88,11 @@ public class GlossaryWebAPI implements ViewTool {
     
     
     public int getInt(String key) {
-        final String language = currentLanguageId();
+        String language = null;
+        if(language == null)
+    		language = (String)request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);	
+        if (language == null)
+            language = String.valueOf(langAPI.getDefaultLanguage().getId());
         
         return getInt(key, language);
     }
@@ -113,7 +117,11 @@ public class GlossaryWebAPI implements ViewTool {
     
     
     public float getFloat(String key) {
-        final String language = currentLanguageId();
+        String language = null;
+        if(language == null)
+    		language = (String)request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);	
+        if (language == null)
+            language = String.valueOf(langAPI.getDefaultLanguage().getId());
         return getFloat(key, language);
     }
     
@@ -136,9 +144,13 @@ public class GlossaryWebAPI implements ViewTool {
     }
     
     public boolean getBoolean(String key) {
-        // an explicit languageId parameter still wins over the resolved language
-        final String languageId = request.getParameter("languageId");
-        final String language = UtilMethods.isSet(languageId) ? languageId : currentLanguageId();
+        String language = null;
+        if (language == null)
+            language = request.getParameter("languageId");
+        if(language == null)
+    		language = (String)request.getSession().getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE);	
+        if (language == null)
+            language = String.valueOf(langAPI.getDefaultLanguage().getId());
         return getBoolean(key, language);
     }
     

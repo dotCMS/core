@@ -954,7 +954,13 @@ public class ContentsWebAPI implements ViewTool {
 	 */
 	public String getContentletByUrl(HttpServletRequest request, String structureName, String fieldName) throws DotStateException, DotSecurityException, DotDataException {
 		long x = System.currentTimeMillis();
-		Language lang = WebAPILocator.getLanguageWebAPI().getLanguage(request);
+		// get the default language
+		long languageId = langAPI.getDefaultLanguage().getId();
+		try {
+			languageId = ((Language) request.getSession(false).getAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE)).getId();
+		} catch (Exception e) {
+
+		}
 
 		ArrayList<String> al = new ArrayList<>();
 		String url = request.getRequestURI();
@@ -1030,7 +1036,7 @@ public class ContentsWebAPI implements ViewTool {
 		}
 		luceneQuery.append(")");
 		luceneQuery.append(" +languageId:");
-		luceneQuery.append(lang.getId());
+		luceneQuery.append(languageId);
 		luceneQuery.append(" +deleted:false");
 		luceneQuery.append(" +live:true ");
 

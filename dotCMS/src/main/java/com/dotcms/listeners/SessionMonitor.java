@@ -203,9 +203,7 @@ public class SessionMonitor implements ServletRequestListener,
         final HttpSession session = ((HttpServletRequest) event.getServletRequest())
                 .getSession(false);
         if (session != null && session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID) != null) {
-            if (session.getAttribute(USER_REMOTE_ADDR) == null) {
-                session.setAttribute(USER_REMOTE_ADDR, event.getServletRequest().getRemoteAddr());
-            }
+            session.setAttribute(USER_REMOTE_ADDR, event.getServletRequest().getRemoteAddr());
             track(session);
         }
 
@@ -230,8 +228,7 @@ public class SessionMonitor implements ServletRequestListener,
         }
         userSessions.put(session.getId(), session);
         if (userId instanceof String && UtilMethods.isSet((String) userId)
-                && !UserAPI.CMS_ANON_USER_ID.equalsIgnoreCase((String) userId)
-                && session.getAttribute(DOT_CLUSTER_SESSION) == null) {
+                && !UserAPI.CMS_ANON_USER_ID.equalsIgnoreCase((String) userId)) {
             session.setAttribute(DOT_CLUSTER_SESSION, true);
         }
     }

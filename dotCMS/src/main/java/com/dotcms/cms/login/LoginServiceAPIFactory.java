@@ -21,6 +21,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
+import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.exception.ExceptionUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ReflectionUtils;
@@ -47,6 +48,7 @@ import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.events.EventsProcessor;
+import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -58,6 +60,8 @@ import com.liferay.portal.util.WebKeys;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.Serializable;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.Date;
 import java.util.Iterator;
@@ -342,6 +346,10 @@ public class LoginServiceAPIFactory implements Serializable {
                 throw new AuthException(e.getMessage());
             }
 
+            LicenseUtil.licenseExpiresMessage(loggedInUser);
+            if (Config.getBooleanProperty("show.lts.eol.message", false)) {
+                messageLTSVersionEOL(loggedInUser);
+            }
             DotConcurrentFactory.getInstance().getSubmitter()
                     .delay(() -> messageTokensToExpire(loggedInUser), 3, TimeUnit.SECONDS);
 
@@ -911,6 +919,51 @@ public class LoginServiceAPIFactory implements Serializable {
             Logger.info("", message.create().getMessage().toString());
         } catch (Exception e) {
             Logger.error(this, "Error sending message: " + e.getMessage(), e);
+        }
+    }
+
+
+    /**
+     * Message to show LTS version is reaching or already reached EOL.
+     * Must set the property date.lts.eol in dotmarketing-config.properties, the date should be in MM/dd/yyyy format.
+     * Must set the property show.lts.eol.message in dotmarketing-config.properties to true.
+     * If the user has the CMSAdmin role, show the message when the days left for LTS to EOL is less than 30.
+     * If the LTS already went EOL, show the message to everyone.
+     */
+    public static void messageLTSVersionEOL(final User user) throws DotDataException, LanguageException, ParseException {
+        final SimpleDateFormat dateFormat = new SimpleDateFormat("MM/dd/yyyy");
+        final Date dateLTSEOL = dateFormat.parse(Config.getStringProperty("date.lts.eol", "12/31/2099")); //LTS EOL Date
+        final long daysleftToEOL = DateUtil.diffDates(new Date(), dateLTSEOL).get("diffDays"); //days left for LTS to EOL
+        SystemMessageBuilder message = null;
+        if (APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole()) && //check if user have CMSAdmin Role
+                (daysleftToEOL <= 30) && (daysleftToEOL > 0)) { //check if days left for LTS to EOL is less than 30 and over 0
+            //Message Admins that EOL is less than 30 days
+            message = new SystemMessageBuilder()
+                    .setMessage(LanguageUtil.format(
+                            user.getLocale(),
+                            "lts.expires.soon.message",
+                            daysleftToEOL))
+                    .setSeverity(MessageSeverity.WARNING)
+                    .setType(MessageType.SIMPLE_MESSAGE)
+                    .setLife(86400000);
+        }
+        //if LTS already EOL show message to everyone
+        if (daysleftToEOL <= 0) {
+            message = new SystemMessageBuilder()
+                    .setMessage(LanguageUtil.get(
+                            user.getLocale(),
+                            "lts.expired.message"))
+                    .setSeverity(MessageSeverity.ERROR)
+                    .setType(MessageType.SIMPLE_MESSAGE)
+                    .setLife(86400000);
+        }
+        if (null != message) {
+            final SystemMessageBuilder finalMessage = message;
+            DotConcurrentFactory.getInstance().getSubmitter().delay(() -> {
+                        SystemMessageEventUtil.getInstance().pushMessage(finalMessage.create(), list(user.getUserId()));
+                        Logger.info("", finalMessage.create().getMessage().toString());
+                    },
+                    3000, TimeUnit.MILLISECONDS);
         }
     }
 
