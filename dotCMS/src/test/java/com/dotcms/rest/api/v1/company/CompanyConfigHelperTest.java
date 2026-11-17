@@ -15,6 +15,7 @@ import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import java.io.Serializable;
 import java.util.List;
@@ -71,6 +72,24 @@ class CompanyConfigHelperTest {
         assertNull(info.changeDate());
         assertNull(info.changeLicense());
         assertEquals(fallback, info.text());
+    }
+
+    /** Branding edits round-trip the stored value without changing the production admin URL. */
+    @Test
+    void brandingReadsStoredUrl() {
+        final CompanyAPI companyAPI = mock(CompanyAPI.class);
+        final Company company = mock(Company.class);
+        when(companyAPI.getDefaultCompany()).thenReturn(company);
+        when(company.getCompanyId()).thenReturn("dotcms.org");
+        when(company.getName()).thenReturn("Sample Company");
+        when(company.getEmailAddress()).thenReturn("admin@example.com");
+        when(company.getMx()).thenReturn("example.com");
+        when(company.getPortalURL()).thenReturn("https://admin.example.com");
+        when(company.getOldPortalURL()).thenReturn("https://legacy.example.com");
+        final CompanyConfigHelper config = new CompanyConfigHelper(companyAPI, contentletAPI,
+                versionableAPI, permissionAPI, mock(UserAPI.class));
+
+        assertEquals("https://legacy.example.com", config.getCompanyConfig(mock(User.class)).portalURL());
     }
 
     // ==================== Stock login logo ====================

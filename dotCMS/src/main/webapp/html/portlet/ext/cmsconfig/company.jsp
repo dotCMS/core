@@ -356,7 +356,7 @@
             <div class="form-horizontal">
                <dl>
                   <dt><%= LanguageUtil.get(pageContext, "portal-url") %></dt>
-                  <dd><input dojoType="dijit.form.TextBox" id="companyPortalUrl" name="companyPortalUrl" size="25" type="text" value="<%= company.getPortalURL() %>" style="width: 250px"></dd>
+                  <dd><input dojoType="dijit.form.TextBox" id="companyPortalUrl" name="companyPortalUrl" size="25" type="text" value="<%= company.getOldPortalURL() %>" style="width: 250px"></dd>
                </dl>
                <dl>
                   <dt><%= LanguageUtil.get(pageContext, "email-address") %></dt>

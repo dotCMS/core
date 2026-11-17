@@ -5,6 +5,7 @@ import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 import static com.dotmarketing.util.Constants.RESPECT_FRONT_END_ROLES;
 import static com.dotmarketing.util.CookieUtil.createJsonWebTokenCookie;
 
+import com.dotcms.adminsite.AdminSiteAPI;
 import com.dotcms.api.system.event.message.MessageSeverity;
 import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
@@ -45,7 +46,6 @@ import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
-import com.liferay.portal.auth.PrincipalFinder;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.ejb.UserManagerUtil;
 import com.liferay.portal.events.EventsProcessor;
@@ -58,8 +58,8 @@ import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
-import com.liferay.util.InstancePool;
 import io.vavr.Lazy;
+import io.vavr.control.Try;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -279,84 +279,99 @@ public class LoginServiceAPIFactory implements Serializable {
         
         }
         
+        /**
+         * {@inheritDoc}
+         * Backend membership, including mixed-role accounts, is checked before creating a session.
+         */
         @CloseDBIfOpened
         @Override
         @RequestCost(Price.LOGIN_USERNAME_PASS)
-        public boolean doActionLogin(String userId,
+        public boolean doActionLogin(String emailOrUserId,
                                      final String password,
                                      final boolean rememberMe,
                                      final HttpServletRequest request,
                                      final HttpServletResponse response) throws Exception {
 
-            boolean authenticated = false;
-            int authResult = Authenticator.FAILURE;
+
 
             final Company company = PortalUtil.getCompany(request);
 
-            //Search for the system user
-            final User systemUser = APILocator.getUserAPI().getSystemUser();
-
-            if ( Company.AUTH_TYPE_EA.equals(company.getAuthType()) ) {
-
-                //Verify that the System User is not been use to log in inside the system
-                if ( systemUser.getEmailAddress().equalsIgnoreCase( userId ) ) {
-                    SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as a System User has been made  - you cannot login as the System User");
-                    throw new AuthException( "Unable to login as System User - you cannot login as the System User." );
-                }
-
-                authResult = UserManagerUtil.authenticateByEmailAddress( company.getCompanyId(), userId, password );
-                userId     = UserManagerUtil.getUserId( company.getCompanyId(), userId );
-            } else {
-
-                //Verify that the System User is not been use to log in inside the system
-                if ( systemUser.getUserId().equalsIgnoreCase( userId ) ) {
-                    SecurityLogger.logInfo(this.getClass(),"An invalid attempt to login as a System User has been made  - you cannot login as the System User");
-                    throw new AuthException( "Unable to login as System User - you cannot login as the System User." );
-                }
-
-                authResult = UserManagerUtil.authenticateByUserId( company.getCompanyId(), userId, password );
+            //Verify that the System User is not being used to log in inside the system
+            if (APILocator.systemUser().getEmailAddress().equalsIgnoreCase(emailOrUserId) ||
+                    APILocator.systemUser().getUserId().equalsIgnoreCase(emailOrUserId)) {
+                SecurityLogger.logInfo(this.getClass(),
+                        "1. An invalid attempt to login as a System User has been made  - you cannot login as the System User");
+                throw new AuthException("Unable to login as System User - you cannot login as the System User.");
             }
 
-            try {
-
-                final PrincipalFinder principalFinder =
-                        (PrincipalFinder) InstancePool.get(
-                                PropsUtil.get(PropsUtil.PRINCIPAL_FINDER));
-
-                userId = principalFinder.fromLiferay(userId);
-            }
-            catch (Exception e) {
-
-                // quiet
-            }
-
-            if (authResult == Authenticator.SUCCESS) {
-
-                this.doAuthentication(userId, rememberMe, request, response);
-                authenticated = true;
-                final User logInUser = APILocator.getUserAPI().loadUserById(userId);
-                LicenseUtil.licenseExpiresMessage(logInUser);
-                if (Config.getBooleanProperty("show.lts.eol.message", false)) {
-                    messageLTSVersionEOL(logInUser);
-                }
-                new Thread(() -> {
-                    try {
-                        Thread.sleep(3000);
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
-                    }
-                    messageTokensToExpire(logInUser);
-                }).start();
-            }
+            int authResult = Company.AUTH_TYPE_EA.equals(company.getAuthType())
+                    ? UserManagerUtil.authenticateByEmailAddress(company.getCompanyId(), emailOrUserId, password)
+                    : UserManagerUtil.authenticateByUserId(company.getCompanyId(), emailOrUserId, password);
 
             if (authResult != Authenticator.SUCCESS) {
-                SecurityLogger.logInfo(this.getClass(), "An invalid attempt to login as " + userId + " has been made from IP: " + request.getRemoteAddr());
+                SecurityLogger.logInfo(this.getClass(),
+                        "4. An invalid attempt to login as " + emailOrUserId + " has been made from IP: "
+                                + request.getRemoteAddr());
                 throw new AuthException();
             }
 
-            SecurityLogger.logInfo(this.getClass(), "User " + userId + " has successfully login from IP: " + request.getRemoteAddr());
+            User loggedInUser = Try.of(() ->
+                            Company.AUTH_TYPE_EA.equals(company.getAuthType())
+                                    ? APILocator.getUserAPI().loadByUserByEmail(emailOrUserId, APILocator.systemUser(), false)
+                                    : APILocator.getUserAPI().loadUserById(emailOrUserId))
+                    .onFailure(e -> Logger.warnAndDebug(this.getClass(), "Failed to load user:" + e.getMessage(), e))
+                    .getOrNull();
 
-            return authenticated;
+            if (loggedInUser == null || loggedInUser.getUserId() == null || !loggedInUser.isActive()) {
+                SecurityLogger.logInfo(this.getClass(),
+                        "2. An invalid attempt to login with " + emailOrUserId + " has been made from IP: "
+                                + request.getRemoteAddr());
+                return false;
+            }
+
+            String userString = loggedInUser.getUserId() + "/" + loggedInUser.getEmailAddress();
+
+            final AdminSiteAPI adminSite = APILocator.getAdminSiteAPI();
+            final boolean backendLogin = adminSite.isAdminSiteEnabled()
+                    && APILocator.getRoleAPI().doesUserHaveRole(loggedInUser,
+                            APILocator.getRoleAPI().loadBackEndUserRole());
+
+            if (backendLogin && !adminSite.allowInsecureRequests() && !request.isSecure()) {
+                SecurityLogger.logInfo(this.getClass(), "Backend login rejected: HTTPS is required.");
+                return false;
+            }
+
+            if (backendLogin && !adminSite.allowBackendLoginsOnNonAdminSites()
+                    && !adminSite.isAdminSite(request)) {
+                SecurityLogger.logInfo(this.getClass(), "3. User: " + userString
+                        + " cannot login to dotCMS via the non-admin site: '"
+                        + request.getHeader("host") + "'.  Please use the admin site url to login: '"
+                        + adminSite.getAdminSiteUrl() + "'.");
+                return false;
+            }
+
+            try {
+                this.doAuthentication(loggedInUser.getUserId(), rememberMe, request, response);
+            }
+            catch (Exception e) {
+                SecurityLogger.logInfo(this.getClass(),
+                        "5. An invalid attempt to login as " + userString + " has been made from IP: "
+                                + request.getRemoteAddr());
+                Logger.warn(this.getClass(), "An invalid attempt to login as " + userString + ":" + e.getMessage(), e);
+                throw new AuthException(e.getMessage());
+            }
+
+            LicenseUtil.licenseExpiresMessage(loggedInUser);
+            if (Config.getBooleanProperty("show.lts.eol.message", false)) {
+                messageLTSVersionEOL(loggedInUser);
+            }
+            DotConcurrentFactory.getInstance().getSubmitter()
+                    .delay(() -> messageTokensToExpire(loggedInUser), 3, TimeUnit.SECONDS);
+
+            SecurityLogger.logInfo(this.getClass(),
+                    "User " + userString + " has successfully login from IP: " + request.getRemoteAddr());
+
+            return true;
         }
 
         /**
@@ -921,7 +936,7 @@ public class LoginServiceAPIFactory implements Serializable {
             Logger.error(this, "Error sending message: " + e.getMessage(), e);
         }
     }
-    
+
 
     /**
      * Message to show LTS version is reaching or already reached EOL.

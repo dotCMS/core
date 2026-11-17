@@ -89,6 +89,7 @@ import org.junit.runners.Suite;
         Task250604UpdateFolderInodesTest.class,
         com.dotcms.rendering.js.FileJavascriptReaderTest.class,
         FixTask00090RecreateMissingFoldersInParentPathTest.class,
+    com.dotcms.adminsite.AdminSiteAPITest.class,
         AnalyticsValidatorUtilTest.class,
         Task250826AddIndexesToUniqueFieldsTableTest.class,
         SecondaryCategoryPermissionTest.class,

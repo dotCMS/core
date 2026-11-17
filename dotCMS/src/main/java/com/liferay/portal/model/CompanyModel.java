@@ -22,7 +22,10 @@
 
 package com.liferay.portal.model;
 
+import com.dotmarketing.business.APILocator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import java.io.Serial;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
 import com.liferay.util.Xss;
@@ -36,6 +39,10 @@ import com.liferay.util.Xss;
  */
 
 public class CompanyModel extends BaseModel {
+    // Keep cached companies readable by nodes running the previous version.
+    @Serial
+    private static final long serialVersionUID = -8744738597834842569L;
+
 	public static boolean CACHEABLE = GetterUtil.get(PropsUtil.get(
 				"value.object.cacheable.com.liferay.portal.model.Company"),
 			VALUE_OBJECT_CACHEABLE);
@@ -97,6 +104,7 @@ public class CompanyModel extends BaseModel {
 			XSS_ALLOW_BY_MODEL);
 	public static long LOCK_EXPIRATION_TIME = GetterUtil.getLong(PropsUtil.get(
 				"lock.expiration.time.com.liferay.portal.model.CompanyModel"));
+
 
 	public CompanyModel() {
 	}
@@ -178,22 +186,42 @@ public class CompanyModel extends BaseModel {
 		}
 	}
 
+    /**
+     * Returns the stored portal URL for persistence, branding and portable JSON exports.
+     *
+     * @return the legacy portal URL, independent of deployment configuration
+     */
+    @JsonProperty("portalURL")
+    public String getOldPortalURL() {
+        return _portalURL;
+    }
+
+    /**
+     * Returns the canonical admin URL for links back to the console, not for persistence.
+     *
+     * @return the admin origin resolved from deployment configuration or the legacy fallback
+     */
+    @JsonIgnore
 	public String getPortalURL() {
-		return _portalURL;
+        return APILocator.getAdminSiteAPI().getAdminSiteUrl();
 	}
 
 	public void setPortalURL(String portalURL) {
-		if (((portalURL == null) && (_portalURL != null)) ||
-				((portalURL != null) && (_portalURL == null)) ||
-				((portalURL != null) && (_portalURL != null) &&
-				!portalURL.equals(_portalURL))) {
-			if (!XSS_ALLOW_PORTALURL) {
-				portalURL = Xss.strip(portalURL);
-			}
+        // still assign the underlying field: this setter is also used when a Company is built
+        // from its db row, and getOldPortalURL() is the fallback when ADMIN_SITE_URL is unset.
+        // to change the admin url, set the ADMIN_SITE_URL configuration variable instead,
+        // e.g. DOT_ADMIN_SITE_URL=https://www.siteadmin.com or DOT_ADMIN_SITE_URL=https://www.siteadmin.com:8443
+        if (((portalURL == null) && (_portalURL != null)) ||
+                ((portalURL != null) && (_portalURL == null)) ||
+                ((portalURL != null) && (_portalURL != null) &&
+                !portalURL.equals(_portalURL))) {
+            if (!XSS_ALLOW_PORTALURL) {
+                portalURL = Xss.strip(portalURL);
+            }
 
-			_portalURL = portalURL;
-			setModified(true);
-		}
+            _portalURL = portalURL;
+            setModified(true);
+        }
 	}
 
 	public String getHomeURL() {
@@ -421,7 +449,7 @@ public class CompanyModel extends BaseModel {
 	}
 
 	public String getAuthType() {
-		return _authType;
+        return (Company.AUTH_TYPE_EA.equalsIgnoreCase(this._authType)) ? Company.AUTH_TYPE_EA : Company.AUTH_TYPE_ID;
 	}
 
 	public void setAuthType(String authType) {
@@ -476,7 +504,7 @@ public class CompanyModel extends BaseModel {
 	}
 
 	public Object clone() {
-		return new Company(getCompanyId(), getKey(), getPortalURL(),
+		return new Company(getCompanyId(), getKey(), getOldPortalURL(),
 			getHomeURL(), getMx(), getName(), getShortName(), getType(),
 			getSize(), getStreet(), getCity(), getState(), getZip(),
 			getPhone(), getFax(), getEmailAddress(), getAuthType(),

@@ -47,6 +47,11 @@
 		<filter-class>com.dotcms.filters.RequestTrackingFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
+    <filter>
+        <filter-name>AdminSiteRequestFilter</filter-name>
+        <filter-class>com.dotcms.adminsite.AdminSiteRequestFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
 	<filter>
 		<filter-name>InteractiveIdentityFilter</filter-name>
 		<filter-class>com.dotcms.auth.InteractiveIdentityFilter</filter-class>
@@ -208,13 +213,16 @@
 		<url-pattern>/dotmgt/*</url-pattern>
 	</filter-mapping>
 
+    <filter-mapping>
+        <filter-name>AdminSiteRequestFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
+
 	<filter-mapping>
 		<filter-name>CharsetEncodingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-	
 
-	
 	<filter-mapping>
 		<filter-name>ThreadNameFilter</filter-name>
 		<url-pattern>/*</url-pattern>

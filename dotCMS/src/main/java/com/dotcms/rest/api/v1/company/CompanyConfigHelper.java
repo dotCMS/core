@@ -341,7 +341,8 @@ public class CompanyConfigHelper {
     }
 
     /**
-     * Maps a Liferay Company model to a CompanyConfigView with semantic field names.
+     * Maps stored company fields to the branding view. The canonical admin URL is deployment
+     * configuration, not the editable portal URL, and must not overwrite that stored value.
      */
     private CompanyConfigView toView(final Company company) {
 
@@ -365,7 +366,7 @@ public class CompanyConfigHelper {
         return CompanyConfigView.builder()
                 .companyId(company.getCompanyId())
                 .companyName(company.getName())
-                .portalURL(company.getPortalURL())
+                .portalURL(company.getOldPortalURL())
                 .emailAddress(company.getEmailAddress())
                 .mx(company.getMx())
                 .primaryColor(company.getType())
