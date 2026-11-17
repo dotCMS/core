@@ -5,8 +5,8 @@
  *  - `definitions/` — the tool factories (`searchTool()`, `pageCreateTool()`, …), the
  *    model-facing layer. Each returns a plain object shaped for the Vercel AI SDK and the MCP
  *    TypeScript SDK alike, whose `execute` validates the model's input and never throws.
- *  - `operations/` — `createPage`, `placeContent`, `verifyPage`, `uploadAssets`,
- *    `downloadAssets`, the direct layer. Typed options in, typed manifest out, typed errors
+ *  - `operations/` — `createPage`, `placeContent`, `verifyPage`, `lookupContent`,
+ *    `upsertContent`, `uploadAssets`, `downloadAssets`, the direct layer. Typed options in, typed manifest out, typed errors
  *    thrown. Use these when YOU write the call; the tools are formatting on top.
  *
  * Both are built on `toolkit/`, which is internal. See ./README.md for what goes where.
@@ -27,6 +27,8 @@ export { searchTool } from './definitions/search';
 export { pageCreateTool } from './definitions/page-create';
 export { pagePlaceContentTool } from './definitions/page-place-content';
 export { pageVerifyTool } from './definitions/page-verify';
+export { lookupTool } from './definitions/lookup';
+export { upsertContentTool } from './definitions/upsert-content';
 export { uploadAssetsTool } from './definitions/upload-assets';
 export { downloadAssetsTool } from './definitions/download-assets';
 
@@ -74,6 +76,22 @@ export type {
     VerifyPageOptions,
     VerifySlotResult
 } from './operations/page-verify';
+
+export { lookupContent } from './operations/lookup';
+export type {
+    LookupManifest,
+    LookupOptions,
+    LookupResult,
+    LookupVersion
+} from './operations/lookup';
+
+export { upsertContent } from './operations/upsert-content';
+export type {
+    RelationshipIssue,
+    RelationshipIssueCode,
+    UpsertContentManifest,
+    UpsertContentOptions
+} from './operations/upsert-content';
 
 export { uploadAssets } from './operations/upload-assets';
 export type { UploadAssetsManifest, UploadAssetsOptions } from './operations/upload-assets';

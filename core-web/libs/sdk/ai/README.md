@@ -72,7 +72,7 @@ The layers only point one way: `tools` builds on `runtime`, which builds on `ada
 
 ## Ready-made tools — `@dotcms/ai/tools`
 
-The same seven tools dotCMS's own MCP server ships, packaged for yours. You bring the host (an MCP server, an agent loop, a workflow node); the tools bring the tuned descriptions, the validated input schemas and the sharp-edge handling behind each one.
+The same nine tools dotCMS's own MCP server ships, packaged for yours. You bring the host (an MCP server, an agent loop, a workflow node); the tools bring the tuned descriptions, the validated input schemas and the sharp-edge handling behind each one.
 
 | Factory | Tool name | What it does | Read-only | Resolves to |
 |---|---|---|---|---|
@@ -81,6 +81,8 @@ The same seven tools dotCMS's own MCP server ships, packaged for yours. You brin
 | `pageCreateTool` | `page_create` | Creates and publishes a page, creating its folder first so the URL cannot collapse | no | `CreatePageManifest` |
 | `pagePlaceContentTool` | `page_place_content` | Places contentlets into page slots without wiping the slots it didn't touch | no | `PagePlaceContentManifest` |
 | `pageVerifyTool` | `page_verify` | Renders a page and diagnoses empty slots, swallowed VTL errors and stale cache | yes | `VerifyPageManifest` |
+| `lookupTool` | `lookup` | Finds existing content (unpublished included) with its language versions and the relationships that point to its type | yes | `LookupManifest` |
+| `upsertContentTool` | `upsert_content` | Creates or updates one contentlet in one language; validates field keys and checks relationships resolve before and after the write | no | `UpsertContentManifest` |
 | `uploadAssetsTool` | `upload_assets` | Uploads a local directory into dotCMS as file assets | no | `UploadAssetsManifest` |
 | `downloadAssetsTool` | `download_assets` | Streams dotCMS file assets to a local directory | no | `DownloadAssetsManifest` |
 

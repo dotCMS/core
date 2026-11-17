@@ -265,7 +265,7 @@ export async function resolveLanguageId(
 }
 
 /** Languages from the cache, falling back to a direct read when the cache is empty. */
-async function loadLanguages(
+export async function loadLanguages(
     dotcms: DotCMSRuntime
 ): Promise<Array<{ id: number; isoCode: string }>> {
     const { languages } = await safeContext(dotcms);

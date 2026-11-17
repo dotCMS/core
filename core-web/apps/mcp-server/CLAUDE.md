@@ -84,7 +84,7 @@ See the [`@dotcms/ai` README](../../libs/sdk/ai/README.md) for the layering rule
 
 ## MCP Tools Available
 
-`search`, `execute`, `page_create`, `page_place_content`, `page_verify`, `upload_assets`, `download_assets` — see the table in the [`@dotcms/ai` README](../../libs/sdk/ai/README.md#ready-made-tools--dotcmsaitools).
+`search`, `execute`, `page_create`, `page_place_content`, `page_verify`, `lookup`, `upsert_content`, `upload_assets`, `download_assets` — see the table in the [`@dotcms/ai` README](../../libs/sdk/ai/README.md#ready-made-tools--dotcmsaitools).
 
 ## Development Guidelines
 

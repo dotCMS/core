@@ -7,11 +7,13 @@ import { join } from 'node:path';
 
 import { downloadAssetsTool } from './download-assets';
 import { executeTool } from './execute';
+import { lookupTool } from './lookup';
 import { pageCreateTool } from './page-create';
 import { pagePlaceContentTool } from './page-place-content';
 import { pageVerifyTool } from './page-verify';
 import { searchTool } from './search';
 import { uploadAssetsTool } from './upload-assets';
+import { upsertContentTool } from './upsert-content';
 
 import { dotcmsConnection, type DotCMSConnection } from '../toolkit/connection';
 import { isToolFailure, type ToolFailure } from '../toolkit/tool-runtime';
@@ -75,11 +77,13 @@ const DOTCMS = dotcmsConnection({ url: 'https://demo.dotcms.com', token: 'secret
 const FACTORIES: Record<string, (connection: DotCMSConnection) => AnyDotCMSTool> = {
     download_assets: (connection) => downloadAssetsTool(connection, { root: '/' }),
     execute: executeTool,
+    lookup: lookupTool,
     page_create: pageCreateTool,
     page_place_content: pagePlaceContentTool,
     page_verify: pageVerifyTool,
     search: searchTool,
-    upload_assets: (connection) => uploadAssetsTool(connection, { root: '/' })
+    upload_assets: (connection) => uploadAssetsTool(connection, { root: '/' }),
+    upsert_content: upsertContentTool
 };
 
 describe('tool factories', () => {
@@ -161,7 +165,7 @@ describe('tool factories', () => {
                 .filter(([, factory]) => factory(DOTCMS).annotations.readOnlyHint)
                 .map(([name]) => name);
 
-            expect(readOnly).toEqual(['page_verify', 'search']);
+            expect(readOnly).toEqual(['lookup', 'page_verify', 'search']);
         });
 
         it('leaves defaulted fields optional in the input-side JSON Schema a model reads', () => {

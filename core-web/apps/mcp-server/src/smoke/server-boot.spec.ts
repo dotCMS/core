@@ -133,11 +133,13 @@ describe('mcp-server boot smoke test', () => {
         expect(tools).toEqual([
             'download_assets',
             'execute',
+            'lookup',
             'page_create',
             'page_place_content',
             'page_verify',
             'search',
-            'upload_assets'
+            'upload_assets',
+            'upsert_content'
         ]);
     });
 
