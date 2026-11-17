@@ -226,12 +226,12 @@ public class PasswordPolicyIntegrationTest {
         assertStoredHashOf(userId, FIFTEEN);
 
         final DotDataException rejectedUpdate = assertThrows(DotDataException.class,
-                () -> resource.update(adminRequest(), response,
+                () -> resource.udpate(adminRequest(), response,
                         updateFormFor(created).password(FOURTEEN.toCharArray()).build()));
         assertEquals(ERROR_KEY, rejectedUpdate.getMessageKey());
 
         final String other = "Zyxwvuts98#abcd";
-        assertEquals(Status.OK.getStatusCode(), resource.update(adminRequest(), response,
+        assertEquals(Status.OK.getStatusCode(), resource.udpate(adminRequest(), response,
                 updateFormFor(created).password(other.toCharArray()).build()).getStatus());
         assertStoredHashOf(userId, other);
     }

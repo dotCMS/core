@@ -214,11 +214,59 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 			return null;
 		}
 
-        List<Role> roles = new ArrayList<>();
 		if (user == null && !respectFrontendRoles) {
 			throw new DotSecurityException("You must specify a user if you are not respecting frontend roles");
 		}
 
+        final RestHighLevelClient client = RestHighLevelClientProvider.getInstance().getClient();
+        final SearchRequest request = new SearchRequest(indexToHit);
+
+		applyPermissionsFilter(jsonObject, user, respectFrontendRoles);
+
+        final SearchResponse response;
+        try {
+			final SearchSourceBuilder searchSourceBuilder =  SearchSourceBuilderUtil
+					.getSearchSourceBuilder(jsonObject.toString())
+					.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+
+			if(limit>0)
+				searchSourceBuilder.size(limit);
+			if(offset>0)
+				searchSourceBuilder.from(offset);
+
+			if(UtilMethods.isSet(sortBy) ) {
+				ESContentFactoryImpl.addBuilderSort(sortBy, searchSourceBuilder);
+			}
+
+            request.source(searchSourceBuilder);
+            response = client.search(request, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            throw new DotStateException(e.getMessage(), e);
+        }
+
+        return response;
+
+    }
+
+	/**
+	 * Adds the permission filter to a raw query for every non-administrator user, combining it
+	 * with the query the caller sent. Administrators are left untouched.
+	 *
+	 * <p>The filter is built on the server side from the user's roles. Nothing in the request
+	 * body takes part in the decision, so a caller cannot influence whether it is applied.</p>
+	 *
+	 * @param jsonObject           the raw query body, modified in place
+	 * @param user                 the user the search runs as
+	 * @param respectFrontendRoles whether front-end roles count towards the permission check
+	 * @return the same {@code jsonObject}, so callers and tests can read the body that will be sent
+	 * @throws DotDataException if the roles of the user cannot be loaded
+	 * @throws DotSecurityException if the permission clauses cannot be built for the user
+	 */
+	@VisibleForTesting
+	static JSONObject applyPermissionsFilter(final JSONObject jsonObject, final User user,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		List<Role> roles = new ArrayList<>();
         boolean isAdmin = false;
 		if (user != null) {
 			if (!APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())) {
@@ -228,12 +276,9 @@ public class ESSearchAPIImpl implements ESSeachAPI {
             }
         }
 
-        final RestHighLevelClient client = RestHighLevelClientProvider.getInstance().getClient();
-        final SearchRequest request = new SearchRequest(indexToHit);
-
         /*
-        Getting the permissions query but only for non admin users
-        and if the user is not already passing permissions on the query.
+        Getting the permissions query for non admin users. The filter is always built on the server
+        side, regardless of the keys present in the request body.
          */
 		StringBuffer perms = new StringBuffer();
 		if (!isAdmin) {
@@ -328,28 +373,6 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 			}
 		}
 
-        final SearchResponse response;
-        try {
-			final SearchSourceBuilder searchSourceBuilder =  SearchSourceBuilderUtil
-					.getSearchSourceBuilder(jsonObject.toString())
-					.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-
-			if(limit>0)
-				searchSourceBuilder.size(limit);
-			if(offset>0)
-				searchSourceBuilder.from(offset);
-
-			if(UtilMethods.isSet(sortBy) ) {
-				ESContentFactoryImpl.addBuilderSort(sortBy, searchSourceBuilder);
-			}
-
-            request.source(searchSourceBuilder);
-            response = client.search(request, RequestOptions.DEFAULT);
-        } catch (IOException e) {
-            throw new DotStateException(e.getMessage(), e);
-        }
-
-        return response;
-
-    }
+		return jsonObject;
+	}
 }

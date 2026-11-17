@@ -391,6 +391,6 @@ public class ContentImportThreadTest extends IntegrationTestBase {
 
     private static List<Contentlet> findByTitle(final ContentType contentType, final String title) throws Exception {
         return APILocator.getContentletAPI().findByStructure(contentType.inode(), systemUser, false, 0, 0)
-                .stream().filter(contentlet -> title.equals(contentlet.getTitle())).toList();
+                .stream().filter(contentlet -> title.equals(contentlet.getTitle())).collect(Collectors.toList());
     }
 }
