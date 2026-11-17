@@ -5,6 +5,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -436,6 +437,56 @@ public class RestrictedViewToolAccessTest {
             Config.setProperty(
                     FeatureFlagName.FEATURE_FLAG_CUSTOM_FIELD_VIEW_TOOL_PREVIEW_ENABLED, null);
         }
+    }
+
+    /**
+     * Method to test: {@link RestrictedViewToolAccess#withRenderingAuthor} and
+     * {@link RestrictedViewToolAccess#withFieldPreviewAuthorReturn}
+     * When: the body of a bracketed render throws
+     * Should: still put back the announcement the surrounding render had, and let the exception
+     * through unchanged
+     *
+     * <p>This is the reason the bracket exists: written by hand, the restore sits in a
+     * {@code finally} a call site can leave out, and the only symptom is that whatever the
+     * surrounding render does next is judged on the inner author.
+     */
+    @Test
+    public void bracketedRenderRestoresTheSurroundingAuthorEvenWhenTheBodyThrows()
+            throws Exception {
+        final User author = developer();
+        final HttpServletRequest request = request(author);
+        final Object outerRender =
+                RestrictedViewToolAccess.announceRenderingAuthor(request, author.getUserId());
+        assertTrue("precondition: the surrounding render names an author with access",
+                RestrictedViewToolAccess.renderingAuthorHasAccess(request));
+
+        try {
+            RestrictedViewToolAccess.withRenderingAuthor(request, limitedUser.getUserId(), () -> {
+                assertFalse("The body runs under its own author",
+                        RestrictedViewToolAccess.renderingAuthorHasAccess(request));
+                throw new IllegalStateException("the render blew up");
+            });
+            fail("The bracket swallowed the body's exception");
+        } catch (final IllegalStateException expected) {
+            assertEquals("the render blew up", expected.getMessage());
+        }
+        assertTrue("The surrounding render must decide again once the body is over, however it "
+                        + "ended",
+                RestrictedViewToolAccess.renderingAuthorHasAccess(request));
+
+        final ContentType contentType = previewedContentType();
+        letUserChangeContentType(author, contentType);
+        assertEquals("The returning form hands back what the body produced", "rendered",
+                RestrictedViewToolAccess.withFieldPreviewAuthorReturn(request, contentType, author,
+                        () -> {
+                            assertTrue("and the preview decides while it runs",
+                                    RestrictedViewToolAccess.renderingAuthorHasAccess(request));
+                            return "rendered";
+                        }));
+        assertTrue("and the surrounding render decides again afterwards",
+                RestrictedViewToolAccess.renderingAuthorHasAccess(request));
+
+        RestrictedViewToolAccess.restoreRenderingAuthor(request, outerRender);
     }
 
     /**

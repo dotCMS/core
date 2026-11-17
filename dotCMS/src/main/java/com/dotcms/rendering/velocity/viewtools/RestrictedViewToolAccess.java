@@ -405,6 +405,189 @@ public final class RestrictedViewToolAccess {
     }
 
     /**
+     * The body of a render that produces a value, for the bracket methods below.
+     *
+     * @param <T> what the render produces
+     * @param <E> the checked exception the render is allowed to throw, inferred from the body,
+     *            so that the bracket does not force a caller to catch what it never throws
+     */
+    @FunctionalInterface
+    public interface Render<T, E extends Exception> {
+
+        T render() throws E;
+    }
+
+    /**
+     * The body of a render that produces nothing, for the bracket methods below.
+     *
+     * @param <E> the checked exception the render is allowed to throw, inferred from the body
+     */
+    @FunctionalInterface
+    public interface VoidRender<E extends Exception> {
+
+        void render() throws E;
+    }
+
+    /**
+     * Runs the body with the given user announced as the author of the code it renders, and puts
+     * back the previous announcement afterwards.
+     *
+     * <p>This is {@link #announceRenderingAuthor} and {@link #restoreRenderingAuthor} as a single
+     * call. Renders nest, so the restore has to happen on every way out of the body, including a
+     * thrown exception; a caller that writes the pair by hand and forgets the {@code finally}
+     * leaves the inner author standing for whatever the surrounding render does next, which no
+     * test of the inner render would catch. Prefer this form; the two halves stay public for the
+     * paths whose cleanup is already bundled with other work.
+     *
+     * @param request  the request the render is running under; {@code null} is ignored
+     * @param authorId ID of the user that last modified the content being rendered
+     * @param body     the render
+     * @param <E>      whatever the body throws
+     *
+     * @throws E whatever the body throws, unchanged
+     */
+    public static <E extends Exception> void withRenderingAuthor(final HttpServletRequest request,
+            final String authorId, final VoidRender<E> body) throws E {
+        withRenderingAuthorReturn(request, authorId, () -> {
+            body.render();
+            return null;
+        });
+    }
+
+    /**
+     * Runs the body with the given user announced as the author of the code it renders, and puts
+     * back the previous announcement afterwards. The value the body produces is handed back.
+     *
+     * @param request  the request the render is running under; {@code null} is ignored
+     * @param authorId ID of the user that last modified the content being rendered
+     * @param body     the render
+     * @param <T>      what the render produces
+     * @param <E>      whatever the body throws
+     *
+     * @return what the body returned
+     *
+     * @throws E whatever the body throws, unchanged
+     *
+     * @see #withRenderingAuthor(HttpServletRequest, String, VoidRender)
+     */
+    public static <T, E extends Exception> T withRenderingAuthorReturn(
+            final HttpServletRequest request, final String authorId, final Render<T, E> body)
+            throws E {
+        final Object previous = announceRenderingAuthor(request, authorId);
+        try {
+            return body.render();
+        } finally {
+            restoreRenderingAuthor(request, previous);
+        }
+    }
+
+    /**
+     * Runs the body with the code of the given Velocity resource announced as what it renders,
+     * and puts back the previous announcement afterwards.
+     *
+     * @param request              the request the render is running under; {@code null} is ignored
+     * @param velocityResourcePath the resource path the renderer resolved
+     * @param body                 the render
+     * @param <E>                  whatever the body throws
+     *
+     * @throws E whatever the body throws, unchanged
+     *
+     * @see #withRenderingAuthor(HttpServletRequest, String, VoidRender)
+     * @see #announceRenderingAuthorOf(HttpServletRequest, String)
+     */
+    public static <E extends Exception> void withRenderingAuthorOf(
+            final HttpServletRequest request, final String velocityResourcePath,
+            final VoidRender<E> body) throws E {
+        withRenderingAuthorOfReturn(request, velocityResourcePath, () -> {
+            body.render();
+            return null;
+        });
+    }
+
+    /**
+     * Runs the body with the code of the given Velocity resource announced as what it renders,
+     * and puts back the previous announcement afterwards. The value the body produces is handed
+     * back.
+     *
+     * @param request              the request the render is running under; {@code null} is ignored
+     * @param velocityResourcePath the resource path the renderer resolved
+     * @param body                 the render
+     * @param <T>                  what the render produces
+     * @param <E>                  whatever the body throws
+     *
+     * @return what the body returned
+     *
+     * @throws E whatever the body throws, unchanged
+     *
+     * @see #withRenderingAuthor(HttpServletRequest, String, VoidRender)
+     * @see #announceRenderingAuthorOf(HttpServletRequest, String)
+     */
+    public static <T, E extends Exception> T withRenderingAuthorOfReturn(
+            final HttpServletRequest request, final String velocityResourcePath,
+            final Render<T, E> body) throws E {
+        final Object previous = announceRenderingAuthorOf(request, velocityResourcePath);
+        try {
+            return body.render();
+        } finally {
+            restoreRenderingAuthor(request, previous);
+        }
+    }
+
+    /**
+     * Runs the body as a Custom Field preview rendered for the given user, and puts back the
+     * previous announcement afterwards.
+     *
+     * @param request        the request the preview is running under; {@code null} is ignored
+     * @param contentType    the Content Type the field belongs to
+     * @param previewingUser the user the Content Editor is rendering the preview for
+     * @param body           the render
+     * @param <E>            whatever the body throws
+     *
+     * @throws E whatever the body throws, unchanged
+     *
+     * @see #withRenderingAuthor(HttpServletRequest, String, VoidRender)
+     * @see #announceFieldPreviewAuthor(HttpServletRequest, Permissionable, User)
+     */
+    public static <E extends Exception> void withFieldPreviewAuthor(
+            final HttpServletRequest request, final Permissionable contentType,
+            final User previewingUser, final VoidRender<E> body) throws E {
+        withFieldPreviewAuthorReturn(request, contentType, previewingUser, () -> {
+            body.render();
+            return null;
+        });
+    }
+
+    /**
+     * Runs the body as a Custom Field preview rendered for the given user, and puts back the
+     * previous announcement afterwards. The value the body produces is handed back.
+     *
+     * @param request        the request the preview is running under; {@code null} is ignored
+     * @param contentType    the Content Type the field belongs to
+     * @param previewingUser the user the Content Editor is rendering the preview for
+     * @param body           the render
+     * @param <T>            what the render produces
+     * @param <E>            whatever the body throws
+     *
+     * @return what the body returned
+     *
+     * @throws E whatever the body throws, unchanged
+     *
+     * @see #withRenderingAuthor(HttpServletRequest, String, VoidRender)
+     * @see #announceFieldPreviewAuthor(HttpServletRequest, Permissionable, User)
+     */
+    public static <T, E extends Exception> T withFieldPreviewAuthorReturn(
+            final HttpServletRequest request, final Permissionable contentType,
+            final User previewingUser, final Render<T, E> body) throws E {
+        final Object previous =
+                announceFieldPreviewAuthor(request, contentType, previewingUser);
+        try {
+            return body.render();
+        } finally {
+            restoreRenderingAuthor(request, previous);
+        }
+    }
+
+    /**
      * Reads the author of the content being rendered from the request and checks their access.
      *
      * <p>The value is put there by whoever renders that content, under

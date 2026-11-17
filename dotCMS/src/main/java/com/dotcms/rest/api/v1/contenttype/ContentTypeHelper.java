@@ -577,9 +577,7 @@ public class ContentTypeHelper implements Serializable {
             // The fields' code is about to run as a preview for this user alone, so name them:
             // the restricted view tools it calls answer to their role, and nothing else on this
             // path names anybody.
-            final Object previousAuthor =
-                    RestrictedViewToolAccess.announceFieldPreviewAuthor(request, contentType, user);
-            try {
+            RestrictedViewToolAccess.withFieldPreviewAuthor(request, contentType, user, () ->
                 fieldsMap.forEach(fieldMap -> {
                     if (fieldMap.get("clazz").equals(ImmutableCustomField.class.getName())
                             && getCustomFieldRenderMode(fieldMap).equals(CustomField.RenderMode.COMPONENT)) {
@@ -594,10 +592,7 @@ public class ContentTypeHelper implements Serializable {
                                     "'%s': %s", fieldMap.get("variable"), ExceptionUtil.getErrorMessage(e)));
                         }
                     }
-                });
-            } finally {
-                RestrictedViewToolAccess.restoreRenderingAuthor(request, previousAuthor);
-            }
+                }));
         } catch (final Exception e) {
             Logger.error(ContentTypeHelper.class, String.format(
                     "Failed to initialize Velocity context for Custom Field rendering: %s",
