@@ -95,12 +95,51 @@ public class MapToContentletPopulator  {
     private static final Pattern HTML_START =
             Pattern.compile("^<(!|/?[a-zA-Z][a-zA-Z0-9]*[\\s/>])");
 
+    /**
+     * Populates the given {@link Contentlet} from the submitted map, resolving relationship targets
+     * as the user bound to the current request, or the system user when there is no request in scope
+     * (see {@link #resolveSavingUser()}). Callers that know the acting user -- in particular
+     * front-end view tools, where the request belongs to the site visitor rather than the saving
+     * user -- should call {@link #populate(Contentlet, Map, User)} and pass it explicitly. A caller
+     * that must force the system user while a request is in scope can wrap the call in
+     * {@code SystemUserScope}, which {@code RequestUserResolver} honors ahead of the request.
+     *
+     * @param contentlet      the contentlet to populate
+     * @param stringObjectMap the submitted field values
+     * @return the populated contentlet
+     */
     @CloseDBIfOpened
     public Contentlet populate(final Contentlet contentlet, final Map<String, Object> stringObjectMap) {
 
         try {
 
-            this.processMap(contentlet, stringObjectMap);
+            this.processMap(contentlet, stringObjectMap, resolveSavingUser());
+        } catch (DotDataException | DotSecurityException e) {
+
+            throw new DotStateException(e);
+        }
+
+        return contentlet;
+    }
+
+    /**
+     * Populates the given {@link Contentlet} from the submitted map, resolving and READ-filtering
+     * relationship targets on behalf of {@code user} (private-issues#930). Use this overload from
+     * callers that know the saving user and must not rely on the request bound to the current thread
+     * -- for example front-end view tools, where the request belongs to the site visitor.
+     *
+     * @param contentlet      the contentlet to populate
+     * @param stringObjectMap the submitted field values
+     * @param user            the user on whose behalf the save runs
+     * @return the populated contentlet
+     */
+    @CloseDBIfOpened
+    public Contentlet populate(final Contentlet contentlet, final Map<String, Object> stringObjectMap,
+            final User user) {
+
+        try {
+
+            this.processMap(contentlet, stringObjectMap, user);
         } catch (DotDataException | DotSecurityException e) {
 
             throw new DotStateException(e);
@@ -145,7 +184,7 @@ public class MapToContentletPopulator  {
     }
 
     private void processMap(final Contentlet contentlet,
-                              final Map<String, Object> map) throws DotDataException, DotSecurityException {
+                              final Map<String, Object> map, final User user) throws DotDataException, DotSecurityException {
 
         final String stInode = this.getStInode(map, contentlet);
 
@@ -174,7 +213,7 @@ public class MapToContentletPopulator  {
                 }
 
                 // look for relationships
-                contentlet.setProperty(RELATIONSHIP_KEY, this.getContentletRelationships(map, contentlet));
+                contentlet.setProperty(RELATIONSHIP_KEY, this.getContentletRelationships(map, contentlet, user));
 
                 // fill fields
                 this.fillFields(contentlet, map, type, fieldMap);
@@ -930,7 +969,8 @@ public class MapToContentletPopulator  {
     }
 
     private ContentletRelationships getContentletRelationships(final Map<String, Object> map,
-                                                                       final Contentlet contentlet) throws DotDataException {
+                                                                       final Contentlet contentlet,
+                                                                       final User user) throws DotDataException {
 
         final RelationshipAPI relationshipAPI = APILocator.getRelationshipAPI();
         final ContentType contentType = contentlet.getContentType();
@@ -954,11 +994,15 @@ public class MapToContentletPopulator  {
                         // an editor could relate their content to content they cannot see
                         // (private-issues#930). This mirrors the CSV-import entry point
                         // RelationshipUtil.getRelatedContentFromQuery (#35222): filterContentlet
-                        // resolves identifiers internally with the system user and its Lucene
+                        // applies no permission check on the identifier branch and its Lucene
                         // branch searches as the given user, so the explicit READ filter below is
                         // what closes the gap for both value shapes. Batch-filter in one
                         // round-trip (see JAVA_STANDARDS permission checks: batch vs scalar).
-                        final User user = resolveSavingUser();
+                        // This populate (query) leg does not apply front-end roles: filterContentlet
+                        // searches with respectFrontendRoles=false and the checkin preservation net
+                        // (addRestrictedContentForLimitedUser) uses false as well, so the subsystem
+                        // ignores front-end roles here. Front-end-role-sensitive establishment is
+                        // handled on the checkin/identifier leg, which threads respectFrontendRoles.
                         final List<Contentlet> resolvedContentlets = RelationshipUtil
                                 .filterContentlet(contentlet.getLanguageId(), query, user, false);
                         final List<Contentlet> contentlets = APILocator.getPermissionAPI()

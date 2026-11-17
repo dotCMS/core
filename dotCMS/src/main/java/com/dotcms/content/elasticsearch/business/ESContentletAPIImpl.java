@@ -5945,7 +5945,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (contentRelationships == null) {
 
             //Obtain all relationships
-            contentRelationships = getContentletRelationships(contentlet, user);
+            contentRelationships = getContentletRelationships(contentlet, user, respectFrontendRoles);
 
             if (contentRelationships != null) {
                 getAllRelationships(contentlet, contentRelationships);
@@ -7364,7 +7364,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotSecurityException
      */
     private ContentletRelationships getContentletRelationships(final Contentlet contentlet,
-            final User user)
+            final User user, final boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
         ContentletRelationships contentRelationships = null;
 
@@ -7398,15 +7398,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     } else if (fieldValue instanceof String && UtilMethods.isSet((String) fieldValue)) {
                         try {
                             // The field value is a user-supplied String (identifiers and/or a
-                            // Lucene query). filterContentlet resolves identifiers internally with
-                            // the system user, so gate the resolved targets by the acting user's
-                            // READ permission before relating them; otherwise a save could relate
-                            // content the user cannot see (private-issues#930). Mirrors the
-                            // CSV-import path RelationshipUtil.getRelatedContentFromQuery (#35222).
+                            // Lucene query). filterContentlet applies no permission check on the
+                            // identifier branch -- it resolves ids with identifierAPI.find /
+                            // findContentletForLanguage -- while its Lucene branch searches as the
+                            // given user. The explicit READ filter below is therefore the gate that
+                            // keeps a save from relating content the user cannot see
+                            // (private-issues#930). respectFrontendRoles is threaded through from
+                            // checkin so a front-end submission still relates content the user can
+                            // read through a front-end role. Mirrors the CSV-import path
+                            // RelationshipUtil.getRelatedContentFromQuery (#35222).
                             final List<Contentlet> resolved = RelationshipUtil.filterContentlet(
-                                    contentlet.getLanguageId(), (String) fieldValue, user, false);
+                                    contentlet.getLanguageId(), (String) fieldValue, null, user,
+                                    respectFrontendRoles, false);
                             relationshipRecords.getRecords().addAll(permissionAPI.filterCollection(
-                                    resolved, PermissionAPI.PERMISSION_READ, user, false));
+                                    resolved, PermissionAPI.PERMISSION_READ, user,
+                                    respectFrontendRoles));
                         } catch (DotDataException | DotSecurityException | DotStateException e) {
                             Logger.warn(this, "Could not resolve relationship field '"
                                     + field.variable() + "': " + e.getMessage());

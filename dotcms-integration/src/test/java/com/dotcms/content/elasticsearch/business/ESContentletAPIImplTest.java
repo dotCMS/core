@@ -5556,9 +5556,118 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
             assertEquals("The system user must still relate the child", 1, childrenAsSystem.size());
             assertEquals(unreadableChild.getIdentifier(), childrenAsSystem.get(0));
         } finally {
+            ContentletDataGen.remove(unreadableChild);
             UserDataGen.remove(limitedUser);
             ContentTypeDataGen.remove(parentType);
             ContentTypeDataGen.remove(childType);
+            removeSite(host);
+        }
+    }
+
+    /**
+     * Method to test: {@link ESContentletAPIImpl} getContentletRelationships, threading
+     * {@code respectFrontendRoles} into the READ filter applied to a relationship field whose value
+     * is a raw identifier String.
+     * <p>
+     * Given Scenario: A user can READ the child only through a front-end role (the logged-in site
+     * role), the way a logged-in visitor reads content granted to "Registered Users". The user checks
+     * in a parent whose relationship field carries the child identifier, once with
+     * {@code respectFrontendRoles = true} (a front-end submission) and once with {@code false} (a
+     * back-end save).
+     * <p>
+     * ExpectedResult: With {@code respectFrontendRoles = true} the child is related, because the
+     * front-end role grant is honored; with {@code false} it is dropped, because back-end checks do
+     * not consider front-end roles (private-issues#930). This proves {@code respectFrontendRoles} is
+     * threaded through to the gate instead of being hardcoded.
+     */
+    @Test
+    public void checkinRelationshipFieldValueRespectsFrontendRoleReadableTarget()
+            throws DotDataException, DotSecurityException {
+        final Host host = new SiteDataGen().nextPersisted();
+        final ContentType childType = new ContentTypeDataGen().host(host).nextPersisted();
+        final Field relationshipFieldDef = new FieldDataGen()
+                .type(RelationshipField.class)
+                .values(String.valueOf(
+                        WebKeys.Relationship.RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                .relationType(childType.variable())
+                .next();
+        final ContentType parentType = new ContentTypeDataGen().host(host)
+                .field(relationshipFieldDef).nextPersisted();
+        final Field relationshipField = parentType.fields(RelationshipField.class).get(0);
+        final Relationship relationship = relationshipAPI.byTypeValue(
+                parentType.variable() + "." + relationshipField.variable());
+
+        final Contentlet frontEndReadableChild = new ContentletDataGen(childType).host(host)
+                .nextPersisted();
+        // The logged-in site role is a front-end role that PermissionAPI.filterCollection (the gate)
+        // auto-adds ONLY when respectFrontendRoles is true. The user is deliberately NOT granted this
+        // role, so the child is readable when respectFrontendRoles is true and not when it is false.
+        final Role frontEndRole = APILocator.getRoleAPI().loadLoggedinSiteRole();
+        final User frontEndUser = new UserDataGen()
+                .roles(TestUserUtils.getBackendRole()).nextPersisted();
+
+        // The user may create parent content on the host and type; READ on the child comes ONLY from
+        // the front-end role grant below, never from an individual permission.
+        PermissionUtilTest.addPermission(host, frontEndUser,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+        PermissionUtilTest.addPermission(parentType, frontEndUser,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ, PermissionAPI.PERMISSION_EDIT,
+                PermissionAPI.PERMISSION_PUBLISH, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+        APILocator.getPermissionAPI().save(
+                getPermission(frontEndRole, frontEndReadableChild, PermissionAPI.PERMISSION_READ),
+                frontEndReadableChild, APILocator.systemUser(), false);
+
+        try {
+            // Preconditions checked against the actual gate (filterCollection), whose front-end-role
+            // semantics differ from doesUserHavePermission: it auto-adds the logged-in site role only
+            // when respectFrontendRoles is true.
+            assertTrue("precondition: the child must be filtered out on the back end (false)",
+                    APILocator.getPermissionAPI().filterCollection(List.of(frontEndReadableChild),
+                            PermissionAPI.PERMISSION_READ, frontEndUser, false).isEmpty());
+            assertEquals("precondition: the child must be readable through the front-end role (true)",
+                    1, APILocator.getPermissionAPI().filterCollection(List.of(frontEndReadableChild),
+                            PermissionAPI.PERMISSION_READ, frontEndUser, true).size());
+
+            // Front-end submission (respectFrontendRoles = true): the child must be related
+            final Contentlet parentFrontEnd = new ContentletDataGen(parentType).host(host).next();
+            parentFrontEnd.getMap().put(relationshipField.variable(),
+                    frontEndReadableChild.getIdentifier());
+            parentFrontEnd.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+            final Contentlet savedFrontEnd = contentletAPI.checkin(parentFrontEnd, frontEndUser, true);
+            final List<String> childrenFrontEnd = TreeFactory.getRelatedIdsByParentAndRelationType(
+                    savedFrontEnd.getIdentifier(), relationship.getRelationTypeValue());
+            assertEquals("A front-end-readable target must be related when respectFrontendRoles is"
+                    + " true", 1, childrenFrontEnd.size());
+            assertEquals(frontEndReadableChild.getIdentifier(), childrenFrontEnd.get(0));
+
+            // Back-end save (respectFrontendRoles = false): the front-end-only grant must be ignored
+            final Contentlet parentBackEnd = new ContentletDataGen(parentType).host(host).next();
+            parentBackEnd.getMap().put(relationshipField.variable(),
+                    frontEndReadableChild.getIdentifier());
+            parentBackEnd.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+            final Contentlet savedBackEnd = contentletAPI.checkin(parentBackEnd, frontEndUser, false);
+            final List<String> childrenBackEnd = TreeFactory.getRelatedIdsByParentAndRelationType(
+                    savedBackEnd.getIdentifier(), relationship.getRelationTypeValue());
+            assertTrue("A target readable only via a front-end role must be dropped when"
+                    + " respectFrontendRoles is false", childrenBackEnd.isEmpty());
+        } finally {
+            ContentletDataGen.remove(frontEndReadableChild);
+            UserDataGen.remove(frontEndUser);
+            ContentTypeDataGen.remove(parentType);
+            ContentTypeDataGen.remove(childType);
+            removeSite(host);
+        }
+    }
+
+    private void removeSite(final Host host) {
+        try {
+            APILocator.getHostAPI().archive(host, APILocator.systemUser(), false);
+            APILocator.getHostAPI().delete(host, APILocator.systemUser(), false);
+        } catch (final Exception e) {
+            Logger.warn(this, "Could not clean up test site '" + host.getHostname() + "': "
+                    + e.getMessage());
         }
     }
 

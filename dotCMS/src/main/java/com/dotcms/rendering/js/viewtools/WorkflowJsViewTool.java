@@ -455,7 +455,7 @@ public class WorkflowJsViewTool implements JsViewTool, JsHttpServletRequestAware
 
             final User user = WebAPILocator.getUserWebAPI().getUser(this.request);
             final PageMode pageMode = PageMode.get(this.request);
-            final Contentlet contentlet = this.contentHelper.populateContentletFromMap(contentletIn, contentletMap);
+            final Contentlet contentlet = this.contentHelper.populateContentletFromMap(contentletIn, contentletMap, user);
             Optional.ofNullable(inodeToOverride).ifPresent(contentlet::setInode);
             if (null != workflowAction) {
 

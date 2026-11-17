@@ -923,6 +923,85 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link MapToContentletPopulator#populate(Contentlet, Map, User)} resolving a
+     * relationship field value on behalf of an explicitly supplied user.
+     * <p>
+     * Given Scenario: The request bound to the current thread belongs to a privileged user who CAN
+     * read the child (as happens for a front-end view tool, where the request belongs to the site
+     * visitor), but {@code populate} is called with an explicit limited user who CANNOT read it.
+     * <p>
+     * ExpectedResult: The gate uses the explicit user, not the request, so the unreadable child is
+     * dropped (private-issues#930). This proves the identity is taken from the parameter and not from
+     * {@code HttpServletRequestThreadLocal}.
+     */
+    @Test
+    public void Test_populate_with_explicit_user_gates_against_that_user_not_the_request()
+            throws DotDataException, DotSecurityException {
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final HttpServletRequest originalRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        User limitedUser = null;
+        Role otherRole   = null;
+        Contentlet secretChild = null;
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType930b");
+            childContentType  = createAndSaveSimpleContentType("childContentType930b");
+            final Field relationshipField = createAndSaveRelationshipField(
+                    "related930b", parentContentType.id(), childContentType.variable());
+
+            otherRole = new RoleDataGen().nextPersisted();
+            limitedUser = new UserDataGen()
+                    .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+
+            secretChild = new ContentletDataGen(childContentType.id())
+                    .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                    .nextPersisted();
+
+            final int readEdit = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT;
+            permissionAPI.save(new Permission(secretChild.getPermissionId(), otherRole.getId(),
+                    readEdit, true), secretChild, user, false);
+
+            assertFalse("The limited user must not be able to READ the child",
+                    permissionAPI.doesUserHavePermission(secretChild,
+                            PermissionAPI.PERMISSION_READ, limitedUser, false));
+            assertTrue("The request user (admin) must be able to READ the child",
+                    permissionAPI.doesUserHavePermission(secretChild,
+                            PermissionAPI.PERMISSION_READ, user, false));
+
+            // Bind the privileged user to the request, then populate on behalf of the limited user.
+            bindRequestUser(user);
+            Contentlet parent = createContentlet(parentContentType);
+            parent = populator.populate(parent, relationshipProps(
+                    parentContentType, relationshipField, secretChild.getIdentifier()), limitedUser);
+
+            assertNull("populate(user) must gate against the explicit user, not the request thread,"
+                    + " so a child only the request user can read must not be populated",
+                    parent.get(Contentlet.RELATIONSHIP_KEY));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(originalRequest);
+            if (UtilMethods.isSet(secretChild) && UtilMethods.isSet(secretChild.getInode())) {
+                ContentletDataGen.remove(secretChild);
+            }
+            if (UtilMethods.isSet(limitedUser)) {
+                UserDataGen.remove(limitedUser);
+            }
+            if (UtilMethods.isSet(otherRole)) {
+                RoleDataGen.remove(otherRole);
+            }
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
     private Map<String, Object> relationshipProps(final ContentType parentType, final Field relField,
             final String value) {
         final Map<String, Object> properties = new HashMap<>();
