@@ -532,14 +532,15 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
                 pageContainer.contentletsId.splice(offset, 0, newContentletId);
 
                 didInsert = true;
-            } else if (!pageContainer.contentletsId.length) {
-                // Nothing to place it next to: a container that holds nothing else takes it.
+            } else if (pivotId !== undefined && pivotId === newContentletId) {
+                // A moved contentlet dropped next to itself: its place left with the move, so
+                // there is nothing to place it next to, and it is not appended to the end (#38575).
+                errorCode = CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND;
+            } else {
+                // The pivot is gone, as when someone removed it while new content was being
+                // created: the contentlet still goes in, at the end.
                 pageContainer.contentletsId.push(newContentletId);
                 didInsert = true;
-            } else {
-                // The pivot is gone, as when a moved contentlet is dropped next to itself:
-                // nothing is placed rather than appending it to the end (#38575).
-                errorCode = CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND;
             }
         }
 

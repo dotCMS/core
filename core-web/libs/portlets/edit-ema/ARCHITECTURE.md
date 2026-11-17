@@ -131,7 +131,7 @@ The dropzone (`edit-ema-editor/components/ema-page-dropzone/`) is the one place 
 
 While a contentlet on the page is moved, the dropzone draws a gray placeholder over its original place, only in the container it came from (matched on container identifier and uuid, since one contentlet can sit in several containers). The placeholder takes the pointer, so it does not fall through to the container, and resolves to no target.
 
-The canvas resets the editor without saving when the target is `none`, when the drop lands outside the dropzone (`data-dropzone` on the drop's target is not `"true"`), or when a move would leave its container's order as it is (`doesMoveChangeOrder` in `utils/index.ts`). At the utils level a positioned insert whose pivot is gone from a non-empty container inserts nothing rather than appending.
+The canvas resets the editor without saving when the target is `none`, when the drop lands outside the dropzone (`data-dropzone` on the drop's target is not `"true"`), or when a move would leave its container's order as it is (`doesMoveChangeOrder` in `utils/index.ts`). At the utils level a positioned insert whose pivot is the contentlet being inserted (a move dropped next to itself) inserts nothing rather than appending; a pivot that is gone for any other reason, as when someone removed it while new content was being created, still lets the contentlet in at the end.
 
 ### Auto-scroll during a drag
 
