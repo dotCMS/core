@@ -146,6 +146,18 @@ across rollback. Block password-based Basic/DOTAUTH and legacy credential access
 gateway, or use a binary that supports the policy. Call the default-change and this rollback
 limitation out in the release notes.
 
+## Admin-Site Login and Role Checks
+
+`ADMIN_SITE_ALLOW_BACKEND_LOGINS_ANY_SITE` defaults to `true`: backend logins and role checks
+remain independent of the request's host, including synthetic requests created by background
+jobs without the originating site's host. Normal authentication and role checks still apply.
+
+With `ADMIN_SITE_ENABLED=true`, set `DOT_ADMIN_SITE_ALLOW_BACKEND_LOGINS_ANY_SITE=false` to
+explicitly require an admin host for backend logins and request-scoped backend role checks.
+Ensure synthetic requests carry the correct host before enabling this stricter policy.
+Admin-console URI filtering remains active on non-admin hosts regardless of this setting.
+With `ADMIN_SITE_ENABLED=false`, neither setting imposes admin-site host restrictions.
+
 ## Configuration Documentation Pattern
 When adding new properties, include:
 ```properties

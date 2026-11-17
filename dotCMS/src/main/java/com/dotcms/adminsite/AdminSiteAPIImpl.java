@@ -409,14 +409,13 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
 
 
     /**
-     * Whether backend users can call the /api/v1/authentication api on non-admin sites.
-     * This is checked on every login attempt, so the value is lazily computed once and cached
-     * (invalidated by {@link #invalidateCache()} when the system_table changes).
+     * {@inheritDoc}
+     * The value is cached until {@link #invalidateCache()} is called after a configuration change.
      */
     @Override
     public boolean allowBackendLoginsOnNonAdminSites() {
         return (Boolean) getConfigValue(ADMIN_SITE_ALLOW_BACKEND_LOGINS_ANY_SITE,
-                k -> Config.getBooleanProperty(ADMIN_SITE_ALLOW_BACKEND_LOGINS_ANY_SITE, false));
+                k -> Config.getBooleanProperty(ADMIN_SITE_ALLOW_BACKEND_LOGINS_ANY_SITE, true));
     }
 
 }

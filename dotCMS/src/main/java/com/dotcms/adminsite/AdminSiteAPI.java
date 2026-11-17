@@ -26,6 +26,11 @@ public interface AdminSiteAPI {
     String ADMIN_SITE_REQUESTS_FORCE_SECURE = "ADMIN_SITE_REQUESTS_FORCE_SECURE";
 
 
+    /**
+     * Allows backend logins and backend role checks on any host by default, including synthetic
+     * requests from background jobs. Set to false to require an admin host when admin-site
+     * restrictions are enabled. Admin-console URI filtering is unaffected.
+     */
     String ADMIN_SITE_ALLOW_BACKEND_LOGINS_ANY_SITE = "ADMIN_SITE_ALLOW_BACKEND_LOGINS_ANY_SITE";
 
 
@@ -136,12 +141,13 @@ public interface AdminSiteAPI {
 
 
     /**
-     * whether backend users can call the /api/v1/authentication api
-     * on non-admin sites
-     * @return
+     * Returns whether backend logins and backend role checks may ignore the request's host.
+     * This does not bypass admin-console URI filtering or normal authentication and role checks.
+     *
+     * @return true by default; false when host restrictions are explicitly requested
      */
     default boolean allowBackendLoginsOnNonAdminSites() {
-        return Config.getBooleanProperty(ADMIN_SITE_ALLOW_BACKEND_LOGINS_ANY_SITE, false);
+        return Config.getBooleanProperty(ADMIN_SITE_ALLOW_BACKEND_LOGINS_ANY_SITE, true);
     }
 
     /**
