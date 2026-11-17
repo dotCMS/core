@@ -361,8 +361,10 @@ public class AWSS3Publisher extends Publisher {
                         if ( !liveFolder.exists() ) {
                             Logger.warn(this.getClass(), "Bundle is EMPTY");
                             PushPublishLogger.log(this.getClass(), "Bundle is EMPTY");
-                            endpointWasEmpty = true;
-                            bundleWasEmpty = true;
+                            // With vanity aliases on, the bundle's vanity URLs are still published or
+                            // removed below, so the endpoint did work and must not be reported as empty
+                            endpointWasEmpty = !isS3VanityAliasEnabled();
+                            bundleWasEmpty |= endpointWasEmpty;
                         } else {
                             //For each host.
                             for (File hostFolder : liveFolder.listFiles(FileUtil.getOnlyFolderFileFilter())) {
@@ -533,7 +535,8 @@ public class AWSS3Publisher extends Publisher {
      *
 	 * @return - a ready-to-use endpoint publisher
 	 */
-	private AWSS3EndPointPublisher getAWSS3EndPointPublisher(final String tokenProp,
+	@VisibleForTesting
+	AWSS3EndPointPublisher getAWSS3EndPointPublisher(final String tokenProp,
             final String secretProp, final String endPoint, final String region) {
 		AWSS3EndPointPublisher endPointPublisher;
 		if (!UtilMethods.isSet(tokenProp) || !UtilMethods.isSet(secretProp)) {
