@@ -53,12 +53,18 @@ function createDragScroller() {
     const step = (time: number) => {
         frameId = null;
 
-        if (
-            velocity === 0 ||
-            (velocity < 0 && window.scrollY <= 0) ||
-            (velocity > 0 && computeScrollIsInBottom())
-        ) {
+        if (velocity === 0) {
             halt();
+
+            return;
+        }
+
+        // At the top or bottom, wait instead of stopping: the editor sends a velocity only when
+        // it changes, so a loop that stopped would stay still if the page then grew.
+        if ((velocity < 0 && window.scrollY <= 0) || (velocity > 0 && computeScrollIsInBottom())) {
+            // The first step after waiting is one frame's, not the whole wait's.
+            lastFrameTime = null;
+            frameId = requestAnimationFrame(step);
 
             return;
         }
