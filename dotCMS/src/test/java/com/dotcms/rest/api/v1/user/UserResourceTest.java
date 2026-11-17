@@ -963,9 +963,10 @@ public class UserResourceTest extends UnitTestBase {
     /**
      * <ul>
      *     <li><b>Method to test:</b> {@link UserResource#loginAs(HttpServletRequest, HttpServletResponse, LoginAsForm)}</li>
-     *     <li><b>Given Scenario:</b> The helper accepts, but the session has no selected site, so setting the
-     *     target's site fails after the session was updated.</li>
-     *     <li><b>Expected Result:</b> 500, and no "logged in as" line.</li>
+     *     <li><b>Given Scenario:</b> A session with no user in it, as with a token-only request; the helper accepts,
+     *     but the session has no selected site, so setting the target's site fails after the session was
+     *     updated.</li>
+     *     <li><b>Expected Result:</b> 500, no "logged in as" line, and the session is left as empty as it was.</li>
      * </ul>
      */
     @Test
@@ -977,6 +978,7 @@ public class UserResourceTest extends UnitTestBase {
 
         assertEquals(Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(), response.getStatus());
         assertEquals(List.of(), call.completedLines());
+        assertEquals(Map.of(), call.session);
     }
 
     /**
