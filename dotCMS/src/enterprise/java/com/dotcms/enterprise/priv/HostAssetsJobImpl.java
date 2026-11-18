@@ -84,6 +84,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -125,10 +126,10 @@ public class HostAssetsJobImpl extends ParentProxy{
 	private final Host SYSTEM_HOST;
 	private final Folder SYSTEM_FOLDER;
 	/**
-	 * Inodes of the folders the destination site already had before this copy started. Their
-	 * permissions are left as they are.
+	 * Inodes of the folders this copy created in the destination site. Only these get the source
+	 * folder's permissions; folders that were already there keep their own.
 	 */
-	private Set<String> existingDestinationFolderInodes = Set.of();
+	private final Set<String> foldersCreatedByThisCopy = new HashSet<>();
 
 	/**
 	 * This feature flag allows you to enable/disable copying Content Types when you copy a Site.
@@ -300,9 +301,6 @@ public class HostAssetsJobImpl extends ParentProxy{
 	private void copySiteAssets(final Host sourceSite, final Host destinationSite, final HostCopyOptions copyOptions) throws DotDataException, DotContentletStateException, DotSecurityException {
 		try {
 			HibernateUtil.startTransaction();
-			this.existingDestinationFolderInodes = this.folderAPI
-					.findSubFoldersRecursively(destinationSite, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES)
-					.stream().map(Folder::getInode).collect(Collectors.toSet());
 			// Global Vars
 			double progressIncrement;
 			double currentProgress;
@@ -1085,8 +1083,8 @@ public class HostAssetsJobImpl extends ParentProxy{
 	 * <p>
 	 * A folder this copy creates gets the source folder's own permissions, the same way copied
 	 * templates, containers, menu links and contentlets do. A folder with no permissions of its own
-	 * keeps inheriting from its parent in the new site. A folder the destination site already had
-	 * before the copy started keeps its own permissions.
+	 * keeps inheriting from its parent in the new site. A folder that was already at that path in
+	 * the destination site keeps its own permissions.
 	 *
 	 * @param sourceFolder             Source original site folder
 	 * @param destinationSite          Target site folder
@@ -1103,19 +1101,60 @@ public class HostAssetsJobImpl extends ParentProxy{
 					.format("---> Folder `%s` has been copied already. ", sourceFolder.getPath()));
 			return folderMappingsBySourceId.get(sourceFolder.getInode()).destinationFolder;
 		}
-		final Folder newFolder = this.folderAPI.createFolders(APILocator.getIdentifierAPI().find(sourceFolder.getIdentifier()).getPath(),
-						destinationSite, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
+		final Folder newFolder = this.createFoldersAndTrack(
+				APILocator.getIdentifierAPI().find(sourceFolder.getIdentifier()).getPath(), destinationSite);
 		newFolder.setTitle(sourceFolder.getTitle());
 		if (sourceFolder.isShowOnMenu()) {
 			newFolder.setSortOrder(sourceFolder.getSortOrder());
 			newFolder.setShowOnMenu(true);
 		}
 		this.folderAPI.save(newFolder, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
-		if (!this.existingDestinationFolderInodes.contains(newFolder.getInode())) {
+		if (this.foldersCreatedByThisCopy.contains(newFolder.getInode())) {
 			APILocator.getPermissionAPI().copyPermissions(sourceFolder, newFolder);
 		}
 		folderMappingsBySourceId.put(sourceFolder.getInode(), new FolderMapping(sourceFolder, newFolder));
 		return newFolder;
+	}
+
+	/**
+	 * Creates every missing folder of the given path in the destination site, the same way
+	 * {@link com.dotmarketing.portlets.folders.business.FolderAPI#createFolders} does, and records
+	 * the folders it actually created, parents included, in {@link #foldersCreatedByThisCopy}.
+	 * Folders that already existed at those paths are returned or passed through unchanged.
+	 *
+	 * @param path            the folder path to create, such as {@code /a/b}
+	 * @param destinationSite the site to create it in
+	 *
+	 * @return the folder at the end of the path
+	 *
+	 * @throws DotDataException     An error occurred when interacting with the database.
+	 * @throws DotSecurityException An internal permission error occurred.
+	 */
+	private Folder createFoldersAndTrack(final String path, final Host destinationSite)
+			throws DotDataException, DotSecurityException {
+		final List<String> missingPaths = new ArrayList<>();
+		final StringBuilder prefix = new StringBuilder("/");
+		for (final String name : path.split("/")) {
+			if (UtilMethods.isNotSet(name)) {
+				continue;
+			}
+			prefix.append(name).append('/');
+			final Folder existing = this.folderAPI.findFolderByPath(prefix.toString(), destinationSite,
+					this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
+			if (null == existing || !InodeUtils.isSet(existing.getInode())) {
+				missingPaths.add(prefix.toString());
+			}
+		}
+		final Folder folder = this.folderAPI.createFolders(path, destinationSite, this.SYSTEM_USER,
+				DONT_RESPECT_FRONTEND_ROLES);
+		for (final String missingPath : missingPaths) {
+			final Folder created = this.folderAPI.findFolderByPath(missingPath, destinationSite,
+					this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
+			if (null != created && InodeUtils.isSet(created.getInode())) {
+				this.foldersCreatedByThisCopy.add(created.getInode());
+			}
+		}
+		return folder;
 	}
 
 	/**

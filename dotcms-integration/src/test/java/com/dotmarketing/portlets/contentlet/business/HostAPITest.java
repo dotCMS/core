@@ -1969,10 +1969,10 @@ public class HostAPITest extends IntegrationTestBase  {
     /**
      * Method to test: the Site Copy job ({@link HostAssetsJobProxy}) when it copies folders.
      * Given: a source site with one folder that has permissions of its own, for an owner role,
-     * and one folder that has none, and a destination site that gives a second role READ on its
+     * with a child folder under it, and one folder that has none, and a destination site that gives a second role READ on its
      * folders.
      * Expected: the first copied folder has the same permissions as its source, so only the
-     * owner role applies to it, and the second copied folder takes its permissions from the
+     * owner role applies to it and to its child, and the second copied folder takes its permissions from the
      * destination site.
      */
     @Test
@@ -1991,11 +1991,16 @@ public class HostAPITest extends IntegrationTestBase  {
             sourceSite = new SiteDataGen().nextPersisted();
             final Folder folderWithPermissions = new FolderDataGen().site(sourceSite)
                     .name("owned" + System.currentTimeMillis()).nextPersisted();
+            final Folder childFolder = new FolderDataGen().parent(folderWithPermissions)
+                    .name("child" + System.currentTimeMillis()).nextPersisted();
             final Folder inheritingFolder = new FolderDataGen().site(sourceSite)
                     .name("inheriting" + System.currentTimeMillis()).nextPersisted();
             permissionAPI.save(List.of(
                     new Permission(folderWithPermissions.getPermissionId(), ownerRole.getId(),
-                            PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true)),
+                            PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true),
+                    new Permission(Folder.class.getCanonicalName(),
+                            folderWithPermissions.getPermissionId(), ownerRole.getId(),
+                            PermissionAPI.PERMISSION_READ, true)),
                     folderWithPermissions, systemUser, false);
 
             destinationSite = createSite("copy" + System.currentTimeMillis() + ".dotcms.com",
@@ -2027,6 +2032,11 @@ public class HostAPITest extends IntegrationTestBase  {
                             PermissionAPI.PERMISSION_READ, user, false));
             assertEquals(permissionAPI.getPermissions(folderWithPermissions, true, true).size(),
                     permissionAPI.getPermissions(copiedWithPermissions, true, true).size());
+            final Folder copiedChild = APILocator.getFolderAPI().findFolderByPath(
+                    childFolder.getPath(), destinationSite, systemUser, false);
+            assertFalse("A copied child folder takes its permissions from its copied parent",
+                    permissionAPI.doesUserHavePermission(copiedChild,
+                            PermissionAPI.PERMISSION_READ, user, false));
         } finally {
             if (destinationSite != null) {
                 archiveHost(destinationSite, systemUser);
