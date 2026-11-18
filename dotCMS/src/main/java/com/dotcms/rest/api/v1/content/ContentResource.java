@@ -259,7 +259,7 @@ public class ContentResource {
         // Popped BEFORE the transformer builds the entity map so the transient warnings key
         // never leaks into the response entity; surfaced as advisory messages (#36658).
         final List<MessageEntity> conversionMessages =
-                MapToContentletPopulator.popStoryBlockConversionMessages(contentlet);
+                MapToContentletPopulator.popSaveWarningMessages(contentlet);
         final Map<String, Object> entityMap = new DotTransformerBuilder().defaultOptions()
                 .content(contentlet).build().toMaps().stream().findFirst().orElse(Collections.emptyMap());
         return null != conversionMessages

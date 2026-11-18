@@ -30,6 +30,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships.ContentletRelationshipRecords;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -39,10 +40,13 @@ import com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTran
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.InodeUtils;
+import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONObject;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -170,6 +174,12 @@ public class MapToContentletPopulator  {
                 for (final Field field : new LegacyFieldTransformer(type.fields()).asOldFieldList()) {
                     fieldMap.put(field.getVelocityVarName(), field);
                 }
+
+                // Keys that only match a field by case are ignored like any unknown key; say so.
+                caseMismatchedFieldKeys(map.keySet(), fieldMap.keySet()).forEach(
+                        (key, variable) -> appendSaveWarning(contentlet, String.format(
+                                "Key '%s' was ignored: field variables are case-sensitive. "
+                                        + "Did you mean '%s'?", key, variable)));
 
                 // look for relationships
                 contentlet.setProperty(RELATIONSHIP_KEY, this.getContentletRelationships(map, contentlet));
@@ -349,7 +359,7 @@ public class MapToContentletPopulator  {
                             + "Send a full Tiptap/ProseMirror JSON document to modify this field.",
                     field.getVelocityVarName(), sourceName, STORY_BLOCK_RICH_OVERWRITE_PROTECT_PROP);
             Logger.warn(this, message);
-            appendStoryBlockWarning(contentlet, message);
+            appendSaveWarning(contentlet, message);
             return existing;
         }
 
@@ -365,7 +375,7 @@ public class MapToContentletPopulator  {
                                 + "existing value rather than clearing the field.",
                         field.getVelocityVarName(), sourceName);
                 Logger.warn(this, message);
-                appendStoryBlockWarning(contentlet, message);
+                appendSaveWarning(contentlet, message);
                 return existing;
             }
             // Full-replace applies; tell the caller which stored rich blocks the submitted value
@@ -380,7 +390,7 @@ public class MapToContentletPopulator  {
                             field.getVelocityVarName(), missing.size(), sourceName,
                             summarize(missing));
                     Logger.warn(this, message);
-                    appendStoryBlockWarning(contentlet, message);
+                    appendSaveWarning(contentlet, message);
                 }
             }
             return converted.toString();
@@ -396,19 +406,19 @@ public class MapToContentletPopulator  {
 
     /**
      * Stashes an advisory warning on the contentlet under
-     * {@link Contentlet#STORY_BLOCK_CONVERSION_WARNINGS_KEY}. The REST layer pops the key and
+     * {@link Contentlet#SAVE_WARNINGS_KEY}. The REST layer pops the key and
      * surfaces each entry in the response envelope's {@code messages}; the key is transient and
      * stripped before persistence like the other workflow bookkeeping keys.
      */
     @SuppressWarnings("unchecked")
-    private void appendStoryBlockWarning(final Contentlet contentlet, final String message) {
-        final Object current = contentlet.getMap().get(Contentlet.STORY_BLOCK_CONVERSION_WARNINGS_KEY);
+    private void appendSaveWarning(final Contentlet contentlet, final String message) {
+        final Object current = contentlet.getMap().get(Contentlet.SAVE_WARNINGS_KEY);
         final List<String> warnings;
         if (current instanceof List) {
             warnings = (List<String>) current;
         } else {
             warnings = new ArrayList<>();
-            contentlet.getMap().put(Contentlet.STORY_BLOCK_CONVERSION_WARNINGS_KEY, warnings);
+            contentlet.getMap().put(Contentlet.SAVE_WARNINGS_KEY, warnings);
         }
         warnings.add(message);
     }
@@ -422,19 +432,19 @@ public class MapToContentletPopulator  {
     }
 
     /**
-     * Pops the transient Story Block conversion warnings off the given contentlets (first
+     * Pops the transient save warnings off the given contentlets (first
      * non-empty batch wins; the key is removed from every one so it can never leak into a
      * response entity map) and converts them to {@link MessageEntity} items for the response
      * envelope's {@code messages}. Returns {@code null} when there is nothing to report.
      */
-    public static List<MessageEntity> popStoryBlockConversionMessages(final Contentlet... contentlets) {
+    public static List<MessageEntity> popSaveWarningMessages(final Contentlet... contentlets) {
         List<MessageEntity> result = null;
         for (final Contentlet contentlet : contentlets) {
             if (contentlet == null) {
                 continue;
             }
             final Object popped = contentlet.getMap()
-                    .remove(Contentlet.STORY_BLOCK_CONVERSION_WARNINGS_KEY);
+                    .remove(Contentlet.SAVE_WARNINGS_KEY);
             if (result == null && popped instanceof List && !((List<?>) popped).isEmpty()) {
                 result = ((List<?>) popped).stream()
                         .map(String::valueOf)
@@ -916,6 +926,8 @@ public class MapToContentletPopulator  {
 
                 if (UtilMethods.isSet(query)) {
 
+                    this.warnAboutRelatedIdentifiers(contentlet, queryEntry.getKey(), query);
+
                     try {
 
                         final List<Contentlet> contentlets = RelationshipUtil
@@ -937,6 +949,11 @@ public class MapToContentletPopulator  {
                     } catch (Exception e) {
 
                         Logger.warn(this, e.getMessage(), e);
+                        appendSaveWarning(contentlet, String.format(
+                                "Relationship field '%s' was not changed: its value could not be "
+                                        + "resolved (%s). Send related identifiers as a "
+                                        + "comma-separated string or an array, or a Lucene query.",
+                                queryEntry.getKey(), e.getMessage()));
                     }
                 } else if (query != null && query.trim().equals("")){
 
@@ -973,6 +990,96 @@ public class MapToContentletPopulator  {
     }
 
     /**
+     * The value of a relationship field as the comma-separated filter
+     * {@link RelationshipUtil#filterContentlet} reads: identifiers and/or Lucene queries. Besides
+     * that string, accepts an array of them (a JSON array arrives as a {@link Collection}). An
+     * empty array, like an empty string, clears the relationship.
+     */
+    @VisibleForTesting
+    static String relationshipFilter(final Object value) {
+        final Collection<?> values = value instanceof Collection
+                ? (Collection<?>) value
+                : value instanceof Object[] ? Arrays.asList((Object[]) value) : null;
+        if (null == values) {
+            return String.valueOf(value);
+        }
+        return values.stream()
+                .filter(Objects::nonNull)
+                .map(element -> String.valueOf(element).trim())
+                .filter(element -> !element.isEmpty())
+                .collect(Collectors.joining(COMMA));
+    }
+
+    /**
+     * Keys of the request that are not a field variable of the type but match one when case is
+     * ignored, mapped to that variable. Such a key is ignored on save, like any unknown key.
+     */
+    @VisibleForTesting
+    static Map<String, String> caseMismatchedFieldKeys(final Collection<String> keys,
+                                                       final Collection<String> fieldVariables) {
+        final Map<String, String> byLowerCase = new HashMap<>();
+        fieldVariables.stream().filter(Objects::nonNull)
+                .forEach(variable -> byLowerCase.putIfAbsent(variable.toLowerCase(), variable));
+        final Map<String, String> mismatched = new LinkedHashMap<>();
+        for (final String key : keys) {
+            if (null == key || fieldVariables.contains(key)) {
+                continue;
+            }
+            final String variable = byLowerCase.get(key.toLowerCase());
+            if (null != variable) {
+                mismatched.put(key, variable);
+            }
+        }
+        return mismatched;
+    }
+
+    /**
+     * Adds a save warning for each related identifier in {@code filter} that will not relate as
+     * the caller expects: one that does not exist (it is skipped), and one with no version in
+     * the language being saved (the relationship is stored, but reading this contentlet in that
+     * language returns it without the related content until a version exists). Lucene queries
+     * in the filter are not checked.
+     */
+    private void warnAboutRelatedIdentifiers(final Contentlet contentlet, final String fieldName,
+                                             final String filter) {
+        if (LuceneQueryUtils.isLuceneQuery(filter)) {
+            return;
+        }
+        final long languageId = contentlet.getLanguageId();
+        for (final String element : filter.split(COMMA)) {
+            final String id = element.trim();
+            if (!UUIDUtil.isUUID(id)) {
+                continue;
+            }
+            try {
+                final Identifier identifier = APILocator.getIdentifierAPI().find(id);
+                if (null == identifier || !UtilMethods.isSet(identifier.getId())) {
+                    appendSaveWarning(contentlet, String.format(
+                            "Relationship field '%s': no content exists with identifier '%s'; "
+                                    + "it was not related.", fieldName, id));
+                    continue;
+                }
+                if (languageId > 0 && null == APILocator.getContentletAPI()
+                        .findContentletForLanguage(languageId, identifier)) {
+                    final Language language = APILocator.getLanguageAPI().getLanguage(languageId);
+                    final String languageLabel = null != language
+                            ? language.getIsoCode() + " (id " + languageId + ")"
+                            : "id " + languageId;
+                    appendSaveWarning(contentlet, String.format(
+                            "Relationship field '%s': related content '%s' has no version in "
+                                    + "language %s. The relationship is saved, but reading this "
+                                    + "content in that language returns it without the related "
+                                    + "content until '%s' has a version in that language.",
+                            fieldName, id, languageLabel, id));
+                }
+            } catch (final Exception e) {
+                Logger.debug(this, String.format("Could not check related identifier '%s': %s",
+                        id, e.getMessage()));
+            }
+        }
+    }
+
+    /**
      * Gets the query to be used for filtering related contentlet. It supports legacy and field relationships
      * @param contentType
      * @param fieldsMap
@@ -988,7 +1095,7 @@ public class MapToContentletPopulator  {
         //Important: On this method fieldsMap.contains is not valid
         if (!relationship.isRelationshipField() && fieldsMap.get(relationTypeValue) != null) {
             //returns a legacy relationship
-            queryMap.put(relationTypeValue, (String) fieldsMap.get(relationTypeValue));
+            queryMap.put(relationTypeValue, relationshipFilter(fieldsMap.get(relationTypeValue)));
         } else if (relationship.isRelationshipField()) {
             //returns a field relationship if exists
             final Set<String> relationshipFields = contentType.fields().stream()
@@ -998,13 +1105,13 @@ public class MapToContentletPopulator  {
             if (fieldsMap.get(relationship.getChildRelationName()) != null && relationshipFields
                     .contains(relationship.getChildRelationName())) {
                 queryMap.put(relationship.getChildRelationName(),
-                        (String) fieldsMap.get(relationship.getChildRelationName()));
+                        relationshipFilter(fieldsMap.get(relationship.getChildRelationName())));
             }
 
             if (fieldsMap.get(relationship.getParentRelationName()) != null && relationshipFields
                     .contains(relationship.getParentRelationName())) {
                 queryMap.put(relationship.getParentRelationName(),
-                        (String) fieldsMap.get(relationship.getParentRelationName()));
+                        relationshipFilter(fieldsMap.get(relationship.getParentRelationName())));
             }
         }
 

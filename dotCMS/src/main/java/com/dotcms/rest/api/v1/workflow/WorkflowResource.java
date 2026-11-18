@@ -3155,7 +3155,7 @@ public class WorkflowResource {
         // the contentlets BEFORE the entity map is built so the transient key never leaks.
         final List<MessageEntity> messages = mergeMessages(
                 ignoredSystemFieldsMessages(ignoredSystemFields),
-                MapToContentletPopulator.popStoryBlockConversionMessages(
+                MapToContentletPopulator.popSaveWarningMessages(
                         contentlet, basicContentlet, hydratedContentlet));
         final Map<String, Object> entity = this.workflowHelper.contentletToMap(hydratedContentlet);
         return Response.ok(
