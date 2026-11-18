@@ -447,6 +447,8 @@ apps/mcp-server/                  # MCP server (thin xmcp host)
 │   │   ├── page_verify.ts
 │   │   ├── lookup.ts
 │   │   ├── upsert_content.ts
+│   │   ├── create_content_type.ts
+│   │   ├── update_content_type.ts
 │   │   ├── upload_assets.ts
 │   │   └── download_assets.ts
 │   ├── lib/

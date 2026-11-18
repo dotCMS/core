@@ -5,6 +5,8 @@ import { mkdtemp, readdir, rm, truncate, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { createContentTypeTool } from './content-type-create';
+import { updateContentTypeTool } from './content-type-update';
 import { downloadAssetsTool } from './download-assets';
 import { executeTool } from './execute';
 import { lookupTool } from './lookup';
@@ -75,6 +77,7 @@ function sent(fetchMock: ReturnType<typeof vi.fn>, n = 0): { url: string; auth: 
 const DOTCMS = dotcmsConnection({ url: 'https://demo.dotcms.com', token: 'secret-tok' });
 
 const FACTORIES: Record<string, (connection: DotCMSConnection) => AnyDotCMSTool> = {
+    create_content_type: createContentTypeTool,
     download_assets: (connection) => downloadAssetsTool(connection, { root: '/' }),
     execute: executeTool,
     lookup: lookupTool,
@@ -83,6 +86,7 @@ const FACTORIES: Record<string, (connection: DotCMSConnection) => AnyDotCMSTool>
     page_verify: pageVerifyTool,
     search: searchTool,
     upload_assets: (connection) => uploadAssetsTool(connection, { root: '/' }),
+    update_content_type: updateContentTypeTool,
     upsert_content: upsertContentTool
 };
 

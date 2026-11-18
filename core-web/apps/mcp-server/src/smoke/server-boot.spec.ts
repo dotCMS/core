@@ -131,6 +131,7 @@ describe('mcp-server boot smoke test', () => {
         // non-tool file being bundled in — it would show up here as an extra entry.
         const tools = (list?.result?.tools ?? []).map((tool) => tool.name).sort();
         expect(tools).toEqual([
+            'create_content_type',
             'download_assets',
             'execute',
             'lookup',
@@ -138,6 +139,7 @@ describe('mcp-server boot smoke test', () => {
             'page_place_content',
             'page_verify',
             'search',
+            'update_content_type',
             'upload_assets',
             'upsert_content'
         ]);

@@ -6,7 +6,8 @@
  *    model-facing layer. Each returns a plain object shaped for the Vercel AI SDK and the MCP
  *    TypeScript SDK alike, whose `execute` validates the model's input and never throws.
  *  - `operations/` — `createPage`, `placeContent`, `verifyPage`, `lookupContent`,
- *    `upsertContent`, `uploadAssets`, `downloadAssets`, the direct layer. Typed options in, typed manifest out, typed errors
+ *    `upsertContent`, `createContentType`, `updateContentType`, `uploadAssets`,
+ *    `downloadAssets`, the direct layer. Typed options in, typed manifest out, typed errors
  *    thrown. Use these when YOU write the call; the tools are formatting on top.
  *
  * Both are built on `toolkit/`, which is internal. See ./README.md for what goes where.
@@ -29,6 +30,8 @@ export { pagePlaceContentTool } from './definitions/page-place-content';
 export { pageVerifyTool } from './definitions/page-verify';
 export { lookupTool } from './definitions/lookup';
 export { upsertContentTool } from './definitions/upsert-content';
+export { createContentTypeTool } from './definitions/content-type-create';
+export { updateContentTypeTool } from './definitions/content-type-update';
 export { uploadAssetsTool } from './definitions/upload-assets';
 export { downloadAssetsTool } from './definitions/download-assets';
 
@@ -92,6 +95,22 @@ export type {
     UpsertContentManifest,
     UpsertContentOptions
 } from './operations/upsert-content';
+
+export { createContentType } from './operations/content-type-create';
+export type {
+    CreateContentTypeManifest,
+    CreateContentTypeOptions,
+    CreatedField
+} from './operations/content-type-create';
+
+export { updateContentType } from './operations/content-type-update';
+export type {
+    FieldUpdate,
+    UpdateContentTypeManifest,
+    UpdateContentTypeOptions
+} from './operations/content-type-update';
+
+export type { FieldInput, FieldType } from './operations/shared/content-type-fields';
 
 export { uploadAssets } from './operations/upload-assets';
 export type { UploadAssetsManifest, UploadAssetsOptions } from './operations/upload-assets';
