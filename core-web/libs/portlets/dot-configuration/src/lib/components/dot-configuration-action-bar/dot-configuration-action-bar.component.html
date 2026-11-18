@@ -1,0 +1,31 @@
+<span
+    class="truncate text-sm font-medium"
+    [class.text-gray-500]="!$isFailed()"
+    [class.text-red-600]="$isFailed()"
+    [attr.role]="$isFailed() ? 'alert' : 'status'"
+    data-testid="configuration-action-bar-status">
+    {{ $statusText() }}
+</span>
+
+<div class="flex flex-none items-center gap-2">
+    <p-button
+        [text]="true"
+        severity="secondary"
+        [label]="'configuration.action-bar.restore-defaults' | dm"
+        [disabled]="$isSaving()"
+        (onClick)="restoreDefaults.emit()"
+        data-testid="configuration-action-bar-restore-btn" />
+    <p-button
+        [outlined]="true"
+        severity="secondary"
+        [label]="'configuration.action-bar.cancel' | dm"
+        [disabled]="!dirty() || $isSaving()"
+        (onClick)="discard.emit()"
+        data-testid="configuration-action-bar-cancel-btn" />
+    <p-button
+        [label]="'configuration.action-bar.save' | dm"
+        [loading]="$isSaving()"
+        [disabled]="!canSave()"
+        (onClick)="save.emit()"
+        data-testid="configuration-action-bar-save-btn" />
+</div>

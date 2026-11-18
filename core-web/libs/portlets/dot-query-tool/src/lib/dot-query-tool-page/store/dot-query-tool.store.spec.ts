@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { EMPTY, of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import {
     buildPersistedQueryKey,
@@ -33,22 +34,22 @@ const MOCK_RESPONSE = {
 
 describe('DotQueryToolStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotQueryToolStore>>;
-    let searchSpy: jest.Mock;
+    let searchSpy: Mock;
 
     const createService = createServiceFactory({
         service: DotQueryToolStore,
         providers: [
             mockProvider(DotQueryToolService, {
-                search: jest.fn().mockReturnValue(of(MOCK_RESPONSE))
+                search: vi.fn().mockReturnValue(of(MOCK_RESPONSE))
             }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
-            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
+            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ admin: true }))
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: true }))
             }),
             // `withFlags` batch-fetches the side-panel flag on init.
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest
+                getFeatureFlags: vi
                     .fn()
                     .mockReturnValue(
                         of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true })
@@ -61,7 +62,7 @@ describe('DotQueryToolStore', () => {
         window.localStorage.clear();
         spectator = createService();
         spectator.flushEffects();
-        searchSpy = spectator.inject(DotQueryToolService).search as jest.Mock;
+        searchSpy = spectator.inject(DotQueryToolService).search as Mock;
         searchSpy.mockClear();
         searchSpy.mockReturnValue(of(MOCK_RESPONSE));
     });
@@ -200,7 +201,7 @@ describe('DotQueryToolStore', () => {
         it('routes errors through DotHttpErrorManagerService and sets ERROR status', () => {
             const error = { status: 500 } as unknown;
             searchSpy.mockReturnValueOnce(throwError(() => error));
-            const handler = spectator.inject(DotHttpErrorManagerService).handle as jest.Mock;
+            const handler = spectator.inject(DotHttpErrorManagerService).handle as Mock;
 
             spectator.service.setQuery('+live:true');
             spectator.service.runSearch();
@@ -239,12 +240,12 @@ describe('DotQueryToolStore persistedQuery', () => {
         service: DotQueryToolStore,
         providers: [
             mockProvider(DotQueryToolService, {
-                search: jest.fn().mockReturnValue(of(MOCK_RESPONSE))
+                search: vi.fn().mockReturnValue(of(MOCK_RESPONSE))
             }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
-            mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') }),
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
+            mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') }),
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ admin: true }))
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: true }))
             })
         ]
     });

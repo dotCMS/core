@@ -9,11 +9,11 @@
             "e2eTestRunner": "playwright",
             "linter": "eslint",
             "style": "scss",
-            "unitTestRunner": "jest"
+            "unitTestRunner": "vitest-analog"
         },
         "@nx/angular:library": {
             "linter": "eslint",
-            "unitTestRunner": "jest"
+            "unitTestRunner": "vitest-analog"
         },
         "@nx/angular:component": {
             "style": "scss",
@@ -57,7 +57,7 @@
         },
         "@nx/react": {
             "library": {
-                "unitTestRunner": "jest"
+                "unitTestRunner": "vitest"
             }
         },
         "@schematics/angular:component": {
@@ -97,7 +97,16 @@
         },
         "test": {
             "cache": true,
-            "inputs": ["default", "^production", "{workspaceRoot}/karma.conf.js"]
+            "inputs": [
+                "default",
+                "^production",
+                "{workspaceRoot}/tools/vitest-stub-scss.mts",
+                { "externalDependencies": ["vitest"] }
+            ],
+            "outputs": [
+                "{workspaceRoot}/target/core-web-reports/{projectName}.xml",
+                "{workspaceRoot}/coverage/{projectRoot}"
+            ]
         },
         "e2e": {
             "cache": true,
@@ -106,19 +115,6 @@
         "lint": {
             "cache": true,
             "inputs": ["default", "{workspaceRoot}/eslint.config.mjs"]
-        },
-        "@nx/jest:jest": {
-            "inputs": ["default", "^production", "{workspaceRoot}/karma.conf.js"],
-            "cache": true,
-            "options": {
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "codeCoverage": true
-                }
-            }
         },
         "@nx/eslint:lint": {
             "inputs": ["default", "{workspaceRoot}/eslint.config.mjs"],
@@ -155,7 +151,25 @@
         "@nx/esbuild:esbuild": {
             "cache": true,
             "dependsOn": ["^build"],
-            "inputs": ["production", "^production"]
+            "inputs": [
+                "production",
+                "^production",
+                "{workspaceRoot}/pnpm-workspace.yaml",
+                {
+                    "json": "{workspaceRoot}/package.json",
+                    "fields": [
+                        "packageManager",
+                        "pnpm.onlyBuiltDependencies",
+                        "pnpm.neverBuiltDependencies",
+                        "pnpm.allowBuilds",
+                        "pnpm.supportedArchitectures",
+                        "pnpm.patchedDependencies"
+                    ]
+                },
+                {
+                    "runtime": "node -e \"try{console.log('pnpm major '+require('child_process').execSync('pnpm --version',{stdio:['ignore','pipe','ignore']}).toString().trim().split('.')[0])}catch{console.log('pnpm major unavailable')}\""
+                }
+            ]
         }
     },
     "namedInputs": {
@@ -164,7 +178,10 @@
             "{workspaceRoot}/angular.json",
             "{workspaceRoot}/tsconfig.base.json",
             "{workspaceRoot}/nx.json",
-            "{workspaceRoot}/babel.config.json"
+            "{workspaceRoot}/pnpm-lock.yaml",
+            { "runtime": "node --version" },
+            "{workspaceRoot}/babel.config.json",
+            "{workspaceRoot}/tools/rollup/types-first.cjs"
         ],
         "production": [
             "default",
@@ -175,14 +192,22 @@
             "!{projectRoot}/jest.config.[jt]s",
             "!{projectRoot}/eslint.config.mjs",
             "!{projectRoot}/src/test-setup.[jt]s"
-        ]
+        ],
+        "warBuild": [
+            "{workspaceRoot}/pnpm-lock.yaml",
+            "{workspaceRoot}/package.json",
+            { "runtime": "node --version" }
+        ],
+        "dotcmsScss": ["{workspaceRoot}/libs/dotcms-scss/**/*"],
+        "tailwindSources": ["{workspaceRoot}/**/*"]
     },
     "plugins": [
         {
             "plugin": "@nx/eslint/plugin",
             "options": {
                 "targetName": "lint"
-            }
+            },
+            "exclude": ["libs/sdk/angular/toolchain/**"]
         },
         {
             "plugin": "@nx/vite/plugin",
@@ -210,55 +235,6 @@
             "options": {
                 "testTargetName": "test"
             }
-        },
-        {
-            "plugin": "@nx/jest/plugin",
-            "options": {
-                "targetName": "test"
-            },
-            "include": [
-                "apps/dotcdn/**/*",
-                "apps/dotcms-binary-field-builder/**/*",
-                "apps/dotcms-ui/**/*",
-                "apps/mcp-server/**/*",
-                "libs/block-editor/**/*",
-                "libs/data-access/**/*",
-                "libs/dot-rules/**/*",
-                "libs/edit-content/**/*",
-                "libs/edit-content-bridge/**/*",
-                "libs/global-store/**/*",
-                "libs/image-editor/**/*",
-                "libs/new-block-editor/**/*",
-                "libs/portlets/dot-analytics/data-access/**/*",
-                "libs/portlets/dot-analytics/portlet/**/*",
-                "libs/portlets/dot-categories/**/*",
-                "libs/portlets/dot-content-drive/portlet/**/*",
-                "libs/portlets/dot-content-drive/ui/**/*",
-                "libs/portlets/dot-es-search/**/*",
-                "libs/portlets/dot-experiments/data-access/**/*",
-                "libs/portlets/dot-experiments/portlet/**/*",
-                "libs/portlets/dot-locales/data-access/**/*",
-                "libs/portlets/dot-locales/portlet/**/*",
-                "libs/portlets/dot-plugins/**/*",
-                "libs/portlets/dot-query-tool/**/*",
-                "libs/portlets/dot-tags/**/*",
-                "libs/portlets/dot-usage/**/*",
-                "libs/portlets/dot-velocity-playground/**/*",
-                "libs/portlets/edit-ema/portlet/**/*",
-                "libs/portlets/edit-ema/ui/**/*",
-                "libs/sdk/ai/**/*",
-                "libs/sdk/analytics/**/*",
-                "libs/sdk/angular/**/*",
-                "libs/sdk/client/**/*",
-                "libs/sdk/create-app/**/*",
-                "libs/sdk/experiments/**/*",
-                "libs/sdk/react/**/*",
-                "libs/sdk/types/**/*",
-                "libs/sdk/uve/**/*",
-                "libs/template-builder/**/*",
-                "libs/ui/**/*",
-                "libs/utils/**/*"
-            ]
         },
         {
             "plugin": "@nx/playwright/plugin",
@@ -311,6 +287,7 @@
             "include": [
                 "libs/sdk/ai/**/*",
                 "libs/sdk/client/**/*",
+                "libs/sdk/events/**/*",
                 "libs/sdk/experiments/**/*",
                 "libs/sdk/react/**/*",
                 "libs/sdk/types/**/*",

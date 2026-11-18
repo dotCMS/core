@@ -46,7 +46,8 @@ public abstract class OSClientConfig {
     public abstract Optional<String> clientKeyPath();
 
     /**
-     * Path to CA certificate for TLS verification
+     * Path to the PEM file of the CA that signed the server certificate. Used as the trust anchor
+     * when {@link #certRequired()} is true; otherwise the JVM truststore applies.
      */
     public abstract Optional<String> caCertPath();
 
@@ -68,12 +69,13 @@ public abstract class OSClientConfig {
 
     /**
      * Enforce TLS certificate and hostname verification.
-     * Defaults to {@code false} — set {@code OS_TLS_CERT_REQUIRED=true} only when the server
-     * certificate is trusted by the JVM truststore or {@code OS_TLS_CA_CERT} is configured.
+     * Defaults to {@code true}. When the server certificate is signed by a private CA, set
+     * {@code OS_TLS_CA_CERT} to that CA's PEM file. Set {@code OS_TLS_CERT_REQUIRED=false} only to
+     * connect to a server whose certificate cannot be verified; the client then logs a warning.
      */
     @Value.Default
     public boolean certRequired() {
-        return false;
+        return true;
     }
 
     /**
@@ -127,20 +129,6 @@ public abstract class OSClientConfig {
         for (String endpoint : endpoints()) {
             if (!UtilMethods.isSet(endpoint)) {
                 throw new IllegalArgumentException("Endpoints cannot be null or empty");
-            }
-        }
-
-        // Validate TLS configuration
-        if (tlsEnabled()) {
-            boolean hasCertAuth = clientCertPath().isPresent() && clientKeyPath().isPresent();
-            boolean hasBasicAuth = username().isPresent() && password().isPresent();
-            boolean hasJwtAuth = jwtToken().isPresent();
-
-            if (!hasCertAuth && !hasBasicAuth && !hasJwtAuth && !trustSelfSigned() && certRequired()) {
-                throw new IllegalArgumentException(
-                    "TLS is enabled with OS_TLS_CERT_REQUIRED=true but no authentication method or " +
-                    "trust strategy is configured. Set OS_TLS_TRUST_SELF_SIGNED=true, provide credentials, " +
-                    "or configure OS_TLS_CA_CERT.");
             }
         }
 

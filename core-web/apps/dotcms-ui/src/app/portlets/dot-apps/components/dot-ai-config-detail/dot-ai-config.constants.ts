@@ -35,21 +35,21 @@ export const CAPABILITY_META: DotAiCapabilityMeta[] = [
         sectionKey: 'chat',
         title: 'apps.ai.capability.chat.title',
         description: 'apps.ai.capability.chat.description',
-        icon: 'pi pi-comments'
+        icon: 'forum'
     },
     {
         capability: DotAiCapability.EMBEDDINGS,
         sectionKey: 'embeddings',
         title: 'apps.ai.capability.embeddings.title',
         description: 'apps.ai.capability.embeddings.description',
-        icon: 'pi pi-sitemap'
+        icon: 'scatter_plot'
     },
     {
         capability: DotAiCapability.IMAGE,
         sectionKey: 'image',
         title: 'apps.ai.capability.image.title',
         description: 'apps.ai.capability.image.description',
-        icon: 'pi pi-image'
+        icon: 'image'
     }
 ];
 

@@ -4,16 +4,27 @@ export * from './lib/fields/dot-edit-content-file-field/components/dot-binary-fi
 export * from './lib/fields/dot-edit-content-file-field/components/dot-file-field/dot-file-field.component';
 export * from './lib/fields/dot-edit-content-tag-field/components/tag-field/tag-field.component';
 export * from './lib/models/dot-edit-content-dialog.interface';
+export * from './lib/models/dot-edit-content-dialog.constant';
 export * from './lib/services/dot-edit-content.service';
-export * from './lib/components/dot-edit-content-side-panel/dot-edit-content-side-panel.component';
-export { DotSidePanelNavController } from './lib/services/dot-side-panel-nav.service';
+// The Edit Content side panel's content, loaded on demand: open it with DotSidePanelService.
+export { loadDotEditContentSidePanel } from './lib/components/dot-edit-content-side-panel/load-dot-edit-content-side-panel';
+// Edit Code: a file's source in Monaco, in a side panel, loaded on demand. Opened from Content
+// Drive's row menu and from the page editor's VTL menu, both deciding with `toSourceEditorRequest`.
+export { loadDotSourceEditorSidePanel } from './lib/components/dot-source-editor-side-panel/load-dot-source-editor-side-panel';
+export type { DotSourceEditorRequest } from './lib/models/dot-source-editor.model';
+export { toSourceEditorRequest } from './lib/utils/source-editor.util';
 export * from './lib/utils/functions.util';
 export * from './lib/models/dot-edit-content-field.constant';
 
 // Relationship "select existing content" picker — reused by Content Drive's relationship filter.
-export { DotSelectExistingContentComponent } from './lib/fields/dot-edit-content-relationship-field/components/dot-select-existing-content/dot-select-existing-content.component';
-export { FooterComponent as DotSelectExistingContentFooterComponent } from './lib/fields/dot-edit-content-relationship-field/components/dot-select-existing-content/components/footer/footer.component';
-export { ExistingContentStore } from './lib/fields/dot-edit-content-relationship-field/components/dot-select-existing-content/store/existing-content.store';
+// Exported for Content Drive's DOT_RELATIONSHIP_PICKER provider: the shared field-filter chip
+// cannot import this library directly (that would make the dependency circular and drag this
+// library into the legacy custom-element bundle), so the portlet supplies the capability instead.
+export { AddRelationshipsComponent } from './lib/fields/dot-edit-content-relationship-field/components/add-relationships/add-relationships.component';
+export type {
+    AddRelationshipsInput,
+    AddRelationshipsResult
+} from './lib/fields/dot-edit-content-relationship-field/components/add-relationships/models/add-relationships.models';
 export {
     getContentTypeIdFromRelationship,
     getSelectionModeByCardinality
@@ -27,3 +38,10 @@ export type {
 // Exported as the inner control rather than the `dot-edit-content-host-folder-field` wrapper: the
 // wrapper is card chrome bound to a `DotCMSContentTypeField`, which a bulk move has no equivalent of.
 export { DotHostFolderFieldComponent } from './lib/fields/dot-edit-content-host-folder-field/components/host-folder-field/host-folder-field.component';
+
+// Lets Content Drive take over "switch to the old editor" and a load error in its own panel
+// (#37759).
+// Remove with the legacy editor.
+export { EDIT_CONTENT_NAVIGATION_OVERRIDE } from './lib/models/edit-content-navigation-override';
+export type { EditContentNavigationOverride } from './lib/models/edit-content-navigation-override';
+export type { EditContentIdentity } from './lib/services/host/edit-content-host.model';

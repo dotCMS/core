@@ -1,4 +1,5 @@
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator';
+import { Mock, vi } from 'vitest';
 
 import { Component, Input } from '@angular/core';
 
@@ -40,13 +41,13 @@ const MOCK_UVE_STATE_EDIT = {
     languageId: 'test'
 };
 
-jest.mock('@dotcms/uve', () => ({
-    getUVEState: jest.fn()
+vi.mock('@dotcms/uve', () => ({
+    getUVEState: vi.fn()
 }));
 
 // Test suite
 describe('DotContentletBlock', () => {
-    const getUVEStateMock = getUVEState as jest.Mock;
+    const getUVEStateMock = getUVEState as Mock;
 
     let spectator: Spectator<DotContentletBlock>;
     const createComponent = createComponentFactory({
@@ -66,7 +67,7 @@ describe('DotContentletBlock', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should create the component', () => {
@@ -74,7 +75,7 @@ describe('DotContentletBlock', () => {
     });
 
     it('should log a message if no data is provided', () => {
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
             /* empty */
         });
         spectator.setInput('node', undefined);
@@ -85,7 +86,7 @@ describe('DotContentletBlock', () => {
     });
 
     it('should log a message if node has no attrs data', () => {
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {
             /* empty */
         });
         spectator.setInput('node', { type: 'dotContent' });
@@ -96,10 +97,10 @@ describe('DotContentletBlock', () => {
     });
 
     it('should use NoComponentProvided in dev mode if no component is found', () => {
-        jest.spyOn(console, 'error').mockImplementation(() => {
+        vi.spyOn(console, 'error').mockImplementation(() => {
             /* empty */
         });
-        jest.spyOn(console, 'warn').mockImplementation(() => {
+        vi.spyOn(console, 'warn').mockImplementation(() => {
             /* empty */
         });
         getUVEStateMock.mockReturnValue(MOCK_UVE_STATE_EDIT);
@@ -110,7 +111,7 @@ describe('DotContentletBlock', () => {
     });
 
     it('should log a warning and render nothing if no component is found', () => {
-        const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {
+        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
             /* empty */
         });
         spectator.setInput('customRenderers', {});
@@ -122,7 +123,7 @@ describe('DotContentletBlock', () => {
     });
 
     it('should not show NoComponentProvided in non-dev mode if no component is found', () => {
-        jest.spyOn(console, 'warn').mockImplementation(() => {
+        vi.spyOn(console, 'warn').mockImplementation(() => {
             /* empty */
         });
         getUVEStateMock.mockReturnValue(null);
@@ -169,7 +170,7 @@ describe('DotContentletBlock', () => {
     });
 
     it('should handle missing contentType gracefully', () => {
-        const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {
+        const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {
             /* empty */
         });
 

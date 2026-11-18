@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-jest.mock('consola');
+vi.mock('consola');
 
 import { consola } from 'consola';
+import { MockedClass, vi } from 'vitest';
 
 import {
     DotCMSClientConfig,
@@ -16,11 +17,11 @@ import { PageClient } from './page-api';
 import { FetchHttpClient } from '../adapters/fetch-http-client';
 
 // Mock the FetchHttpClient
-jest.mock('../adapters/fetch-http-client');
+vi.mock('../adapters/fetch-http-client');
 
 describe('PageClient', () => {
-    const mockRequest = jest.fn();
-    const MockedFetchHttpClient = FetchHttpClient as jest.MockedClass<typeof FetchHttpClient>;
+    const mockRequest = vi.fn();
+    const MockedFetchHttpClient = FetchHttpClient as MockedClass<typeof FetchHttpClient>;
 
     const validConfig: DotCMSClientConfig = {
         dotcmsUrl: 'https://demo.dotcms.com',
@@ -74,20 +75,22 @@ describe('PageClient', () => {
 
     beforeEach(() => {
         mockRequest.mockReset();
-        global.console.error = jest.fn(); // Mock console.error to prevent actual errors from being logged in the console when running tests
+        global.console.error = vi.fn(); // Mock console.error to prevent actual errors from being logged in the console when running tests
 
-        MockedFetchHttpClient.mockImplementation(
-            () =>
-                ({
-                    request: mockRequest
-                }) as Partial<FetchHttpClient> as FetchHttpClient
-        );
+        // A regular function, not an arrow: Vitest calls a mocked class's
+        // implementation with `new`, and arrow functions are not constructible.
+        // Jest's automock wrapped the arrow, so this worked there.
+        MockedFetchHttpClient.mockImplementation(function () {
+            return {
+                request: mockRequest
+            } as Partial<FetchHttpClient> as FetchHttpClient;
+        });
 
         mockRequest.mockResolvedValue(mockGraphQLResponse);
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('GraphQL API', () => {
@@ -200,7 +203,7 @@ describe('PageClient', () => {
         });
 
         it('should print graphql errors', async () => {
-            const consolaSpy = jest.spyOn(consola, 'error');
+            const consolaSpy = vi.spyOn(consola, 'error');
             const pageClient = new PageClient(validConfig, requestOptions, new FetchHttpClient());
 
             mockRequest.mockResolvedValue({
@@ -359,7 +362,7 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/page', graphQLOptions);
-                fail('Should have thrown an error');
+                expect.fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
@@ -406,7 +409,7 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/restricted-page', graphQLOptions);
-                fail('Should have thrown an error');
+                expect.fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
@@ -444,7 +447,7 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/missing');
-                fail('Should have thrown an error');
+                expect.fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
@@ -473,7 +476,7 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/page');
-                fail('Should have thrown an error');
+                expect.fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
@@ -501,7 +504,7 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/missing-page', graphQLOptions);
-                fail('Should have thrown an error');
+                expect.fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
@@ -534,7 +537,7 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/error-page', graphQLOptions);
-                fail('Should have thrown an error');
+                expect.fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
@@ -558,7 +561,7 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/unknown-error-page');
-                fail('Should have thrown an error');
+                expect.fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
@@ -595,7 +598,7 @@ describe('PageClient', () => {
 
             try {
                 await pageClient.get('/test-page', graphQLOptions);
-                fail('Should have thrown an error');
+                expect.fail('Should have thrown an error');
             } catch (error: unknown) {
                 expect(error).toBeInstanceOf(DotErrorPage);
                 if (error instanceof DotErrorPage) {
@@ -698,7 +701,7 @@ describe('PageClient', () => {
             };
 
             it('should call logVerboseError with status/code for structured errors', async () => {
-                const consolaSpy = jest.spyOn(consola, 'error');
+                const consolaSpy = vi.spyOn(consola, 'error');
                 const pageClient = new PageClient(
                     verboseConfig,
                     requestOptions,
@@ -726,7 +729,7 @@ describe('PageClient', () => {
             });
 
             it('should call logVerboseError for unstructured errors (no extensions.code)', async () => {
-                const consolaSpy = jest.spyOn(consola, 'error');
+                const consolaSpy = vi.spyOn(consola, 'error');
                 const pageClient = new PageClient(
                     verboseConfig,
                     requestOptions,
@@ -755,7 +758,7 @@ describe('PageClient', () => {
             });
 
             it('should include variables in the verbose log output', async () => {
-                const consolaSpy = jest.spyOn(consola, 'error');
+                const consolaSpy = vi.spyOn(consola, 'error');
                 const pageClient = new PageClient(
                     verboseConfig,
                     requestOptions,
@@ -775,7 +778,7 @@ describe('PageClient', () => {
             });
 
             it('should use consola.error (non-verbose) for structured errors when logLevel is default', async () => {
-                const consolaSpy = jest.spyOn(consola, 'error').mockClear();
+                const consolaSpy = vi.spyOn(consola, 'error').mockClear();
                 const pageClient = new PageClient(
                     validConfig,
                     requestOptions,

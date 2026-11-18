@@ -128,6 +128,19 @@ public interface ProviderConfig {
     // OpenAI / Azure OpenAI
     @Value.Redacted @Nullable String apiKey();
     @Nullable String size();
+
+    /**
+     * How the provider should deliver a generated image — {@code url} or {@code b64_json} (image
+     * only). Never set from the app's saved {@code providerConfig}: it is a per-request decision
+     * made by the caller that builds the model, which is why it is left null by default and the
+     * strategies pass it on only when somebody asked for one.
+     *
+     * <p>{@code /api/inference/v1/images/generations} sets {@code b64_json} because it returns
+     * no hosted artifact minted upstream at all, not merely none returned to the caller. The
+     * legacy {@code /api/v1/ai/image} endpoint leaves it unset and keeps the provider's default,
+     * because its own response contract is a URL.</p>
+     */
+    @Nullable String responseFormat();
     @Nullable Integer dimensions();
     @Nullable String endpoint();
     @Nullable String deploymentName();

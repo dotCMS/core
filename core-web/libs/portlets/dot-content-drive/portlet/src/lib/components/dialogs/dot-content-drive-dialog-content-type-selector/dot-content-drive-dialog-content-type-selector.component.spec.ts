@@ -1,12 +1,14 @@
-import { beforeEach, describe, expect, it } from '@jest/globals';
 import {
     byTestId,
     createComponentFactory,
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { signal } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -22,6 +24,9 @@ import { DotContentDriveNavigationService } from '../../../shared/services/dot-c
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 
 const SELECTED_VARIABLE = 'Blog';
+
+// Real signal: the component reads it in a computed, and a vi.fn cannot invalidate one.
+const systemHostSelected = signal(false);
 
 describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
     let spectator: Spectator<DotContentDriveDialogContentTypeSelectorComponent>;
@@ -41,17 +46,18 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
         ],
         providers: [
             mockProvider(DotContentDriveStore, {
-                closeDialog: jest.fn(),
-                currentSite: jest
+                closeDialog: vi.fn(),
+                currentSite: vi
                     .fn()
                     .mockReturnValue({ hostname: 'demo.dotcms.com', identifier: 'site-1' }),
-                path: jest.fn().mockReturnValue('/about-us/'),
-                selectedNode: jest
+                path: vi.fn().mockReturnValue('/about-us/'),
+                selectedNode: vi
                     .fn()
-                    .mockReturnValue({ data: { type: 'folder', inode: 'inode-1' } })
+                    .mockReturnValue({ data: { type: 'folder', inode: 'inode-1' } }),
+                $systemHostSelected: systemHostSelected
             }),
             mockProvider(DotContentDriveNavigationService, {
-                createContent: jest.fn()
+                createContent: vi.fn()
             }),
             {
                 provide: DotMessageService,
@@ -74,7 +80,7 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('palette preferences', () => {
@@ -132,36 +138,17 @@ describe('DotContentDriveDialogContentTypeSelectorComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should create the content in the current folder and close the dialog when Create is clicked', () => {
+        // Where the new content goes is the navigation service's call, shared with `createContent`
+        // links (#37759); the selector only names the type.
+        it('should ask the navigation service to create the chosen type and close the dialog', () => {
             const createButton = spectator
                 .query(byTestId('content-type-selector-create'))
                 ?.querySelector('button');
 
             spectator.click(createButton);
 
-            // folderPath = hostname + current path (new editor); folderInode = current folder (legacy editor)
-            expect(navigationService.createContent).toHaveBeenCalledWith(SELECTED_VARIABLE, {
-                folderPath: 'demo.dotcms.com/about-us/',
-                folderInode: 'inode-1'
-            });
+            expect(navigationService.createContent).toHaveBeenCalledWith(SELECTED_VARIABLE);
             expect(store.closeDialog).toHaveBeenCalled();
-        });
-
-        it('should fall back to the current site (no folder) when browsing the root', () => {
-            // Root: no path selected and the root node carries an empty inode.
-            store.path.mockReturnValue(undefined);
-            store.selectedNode.mockReturnValue({ data: { inode: '' } });
-
-            const createButton = spectator
-                .query(byTestId('content-type-selector-create'))
-                ?.querySelector('button');
-
-            spectator.click(createButton);
-
-            expect(navigationService.createContent).toHaveBeenCalledWith(SELECTED_VARIABLE, {
-                folderPath: 'demo.dotcms.com',
-                folderInode: undefined
-            });
         });
     });
 

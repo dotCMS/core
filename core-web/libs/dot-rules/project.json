@@ -5,17 +5,5 @@
     "sourceRoot": "libs/dot-rules/src",
     "prefix": "dot",
     "tags": ["skip:test"],
-    "targets": {
-        "test": {
-            "options": {
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            }
-        }
-    }
+    "targets": {}
 }

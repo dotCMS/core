@@ -4,6 +4,7 @@ import static com.dotcms.rest.api.v1.content.dotimport.ContentImportHelper.CMD_P
 import static com.dotcms.rest.api.v1.content.dotimport.ContentImportHelper.CMD_PUBLISH;
 
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobListView;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobView;
 import com.dotcms.jobs.business.job.JobViewPaginatedResult;
@@ -13,9 +14,11 @@ import com.dotcms.rest.ResponseEntityJobView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.job.SSEMonitorUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.swagger.v3.oas.annotations.Operation;
@@ -42,6 +45,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.glassfish.jersey.media.sse.EventOutput;
@@ -55,6 +59,8 @@ import org.glassfish.jersey.media.sse.SseFeature;
 @Path("/v1/content/_import")
 @Tag(name = "Content")
 public class ContentImportResource {
+
+    private static final String TEXT_CSV = "text/csv";
 
     private final WebResource webResource;
     private final ContentImportHelper importHelper;
@@ -230,7 +236,76 @@ public class ContentImportResource {
     }
 
     /**
-     * Retrieves the status of a content import job based on the provided job ID.
+     * Returns the CSV template of a Content Type: the header line the importer expects, and one
+     * sample row showing the format every column takes. The caller must be able to read the
+     * Content Type.
+     *
+     * @param request The HTTP servlet request containing user and context information.
+     * @param response The HTTP servlet response that will contain the response to the client.
+     * @param contentType The id or the variable name of the Content Type the template is for.
+     * @return A Response carrying the template as a CSV attachment.
+     * @throws DotDataException If the Content Type cannot be read from the database.
+     * @throws DotSecurityException If the caller does not hold READ permission on the Content Type.
+     */
+    @GET
+    @Path("/_template")
+    @NoCache
+    @Produces({TEXT_CSV, MediaType.APPLICATION_JSON})
+    @Operation(
+            operationId = "downloadContentImportTemplate",
+            summary = "Downloads the CSV template of a Content Type",
+            description = "Returns a CSV file with one header line naming every field an import row can set, and one sample row showing the format each of those columns takes. Requires READ permission on the Content Type.",
+            tags = {"Content Import"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "The CSV template, as a file attachment.",
+                            content = @Content(
+                                    mediaType = TEXT_CSV,
+                                    schema = @Schema(type = "string", description = "A header line of field variable names, and a sample row."),
+                                    examples = @ExampleObject(value = "title,body\n\"XXX\",\"XXX\"")
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad Request: No Content Type was given."),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User does not have READ permission on the Content Type."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: The Content Type could not be found.")
+            }
+    )
+    public Response downloadTemplate(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @Parameter(
+                    description = "The id or the variable name of the Content Type",
+                    required = true,
+                    in = ParameterIn.QUERY
+            )
+            @QueryParam("contentType") final String contentType)
+            throws DotDataException, DotSecurityException {
+
+        // Initialize the WebResource and set required user information
+        final var initDataObject = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final String template = ContentImportTemplate.generate(contentType,
+                initDataObject.getUser());
+        // The media type is pinned rather than negotiated: application/json is declared only so a
+        // strictly-JSON client is not turned away before the error mappers can answer it, and the
+        // body here is always CSV.
+        return Response.ok(template, TEXT_CSV)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"CSV_Template.csv\"")
+                .build();
+    }
+
+    /**
+     * Retrieves the status of a content import job based on the provided job ID. Only the user
+     * who created the job and CMS Administrators may read it; any other user is reported as a
+     * not-found job.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -244,7 +319,9 @@ public class ContentImportResource {
     @Operation(
             operationId = "getJobStatus",
             summary = "Retrieves the status of a content import job",
-            description = "Fetches the detailed current status of a specific content import job identified by its ID.",
+            description = "Fetches the detailed current status of a specific content import job identified by its ID."
+                    + " Only the user who created the job and CMS Administrators can read it."
+                    + " Parameters the server sets for uploaded files (tempFileId, requestFingerPrint) are not included.",
             tags = {"Content Import"},
             responses = {
                     @ApiResponse(
@@ -257,7 +334,7 @@ public class ContentImportResource {
                     ),
                     @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
                     @ApiResponse(responseCode = "403", description = "Forbidden: User does not have permissions to view the specified job."),
-                    @ApiResponse(responseCode = "404", description = "Not Found: Job with the specified ID could not be found."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: No job with the specified ID exists, or the job was not created by the caller (CMS Administrators can read any job)."),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while retrieving the job status.")
             }
     )
@@ -285,12 +362,13 @@ public class ContentImportResource {
 
         Logger.debug(this, ()->String.format(" user %s is retrieving status of job: %s", initDataObject.getUser().getUserId(), jobId));
 
-        Job job = importHelper.getJob(jobId);
+        Job job = importHelper.getJob(jobId, initDataObject.getUser());
         return new ResponseEntityView<>(importHelper.view(job));
     }
 
     /**
-     * Cancels a content import job based on the provided job ID.
+     * Cancels a content import job based on the provided job ID. Only the user who created the
+     * job and CMS Administrators may cancel it; any other user is reported as a not-found job.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -304,7 +382,8 @@ public class ContentImportResource {
     @Operation(
             operationId = "cancelContentImportJob",
             summary = "Cancel a content import job",
-            description = "Requests cancellation of a specific content import job identified by its ID. Note that cancellation is asynchronous and may not be immediate.",
+            description = "Requests cancellation of a specific content import job identified by its ID. Note that cancellation is asynchronous and may not be immediate."
+                    + " Only the user who created the job and CMS Administrators can cancel it.",
             tags = {"Content Import"},
             responses = {
                     @ApiResponse(
@@ -325,7 +404,7 @@ public class ContentImportResource {
                     ),
                     @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
                     @ApiResponse(responseCode = "403", description = "Forbidden: User does not have permissions to cancel the specified job."),
-                    @ApiResponse(responseCode = "404", description = "Not Found: Job with the specified ID could not be found or is already completed/cancelled."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: No job with the specified ID exists, or the job was not created by the caller (CMS Administrators can cancel any job)."),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while attempting to cancel the job.")
             }
     )
@@ -354,12 +433,13 @@ public class ContentImportResource {
                 initDataObject.getUser().getUserId(),
                 jobId));
 
-        importHelper.cancelJob(jobId);
+        importHelper.cancelJob(jobId, initDataObject.getUser());
         return new ResponseEntityView<>("Cancellation request successfully sent to job " + jobId);
     }
 
     /**
-     * Retrieves the status of all content import jobs.
+     * Retrieves the status of content import jobs, regardless of state.
+     * CMS Administrators see every user's jobs; anyone else sees only the jobs they created.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -372,7 +452,8 @@ public class ContentImportResource {
     @Operation(
             operationId = "getContentImportJobs",
             summary = "Retrieves content import jobs",
-            description = "Fetches a paginated list of all content import jobs regardless of state. Results can be paginated using query parameters.",
+            description = "Fetches a paginated list of all content import jobs regardless of state."
+                    + " Returns only the jobs the caller created, or every job for CMS Administrators; the pagination total counts the same jobs. Results can be paginated using query parameters.",
             tags = {"Content Import"},
             responses = {
                     @ApiResponse(
@@ -411,12 +492,13 @@ public class ContentImportResource {
         Logger.debug(this, () -> String.format("User %s is listing content import jobs",
                 initDataObject.getUser().getUserId()));
 
-        final JobPaginatedResult result = importHelper.getJobs(page, pageSize);
+        final JobPaginatedResult result = importHelper.getJobs(JobListView.ALL, initDataObject.getUser(), page, pageSize);
         return new ResponseEntityView<>(importHelper.view(result));
     }
 
     /**
      * Retrieves the status of active content import jobs.
+     * CMS Administrators see every user's jobs; anyone else sees only the jobs they created.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -430,7 +512,8 @@ public class ContentImportResource {
     @Operation(
             operationId = "getActiveContentImportJobs",
             summary = "Retrieves active content import jobs",
-            description = "Fetches a paginated list of active content import jobs (jobs with state NEW, PROCESSING, or WAITING). Results can be paginated using query parameters.",
+            description = "Fetches a paginated list of active content import jobs (jobs with state NEW, PROCESSING, or WAITING)."
+                    + " Returns only the jobs the caller created, or every job for CMS Administrators; the pagination total counts the same jobs. Results can be paginated using query parameters.",
             tags = {"Content Import"},
             responses = {
                     @ApiResponse(
@@ -469,12 +552,13 @@ public class ContentImportResource {
         Logger.debug(this, () -> String.format("User %s is listing active content import jobs",
                 initDataObject.getUser().getUserId()));
 
-        final JobPaginatedResult result = importHelper.getActiveJobs(page, pageSize);
+        final JobPaginatedResult result = importHelper.getJobs(JobListView.ACTIVE, initDataObject.getUser(), page, pageSize);
         return new ResponseEntityView<>(importHelper.view(result));
     }
 
     /**
      * Retrieves the status of completed content import jobs.
+     * CMS Administrators see every user's jobs; anyone else sees only the jobs they created.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -488,7 +572,8 @@ public class ContentImportResource {
     @Operation(
             operationId = "getCompletedContentImportJobs",
             summary = "Retrieves completed content import jobs",
-            description = "Fetches a paginated list of completed content import jobs (jobs with state COMPLETED). Results can be paginated using query parameters.",
+            description = "Fetches a paginated list of completed content import jobs (jobs with state COMPLETED)."
+                    + " Returns only the jobs the caller created, or every job for CMS Administrators; the pagination total counts the same jobs. Results can be paginated using query parameters.",
             tags = {"Content Import"},
             responses = {
                     @ApiResponse(
@@ -527,12 +612,13 @@ public class ContentImportResource {
         Logger.debug(this, () -> String.format("User %s is listing completed content import jobs",
                 initDataObject.getUser().getUserId()));
 
-        final JobPaginatedResult result = importHelper.getCompletedJobs(page, pageSize);
+        final JobPaginatedResult result = importHelper.getJobs(JobListView.COMPLETED, initDataObject.getUser(), page, pageSize);
         return new ResponseEntityView<>(importHelper.view(result));
     }
 
     /**
      * Retrieves the status of canceled content import jobs.
+     * CMS Administrators see every user's jobs; anyone else sees only the jobs they created.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -546,7 +632,8 @@ public class ContentImportResource {
     @Operation(
             operationId = "getCanceledContentImportJobs",
             summary = "Retrieves canceled content import jobs",
-            description = "Fetches a paginated list of canceled content import jobs (jobs with state CANCELED). Results can be paginated using query parameters.",
+            description = "Fetches a paginated list of canceled content import jobs (jobs with state CANCELED)."
+                    + " Returns only the jobs the caller created, or every job for CMS Administrators; the pagination total counts the same jobs. Results can be paginated using query parameters.",
             tags = {"Content Import"},
             responses = {
                     @ApiResponse(
@@ -585,12 +672,13 @@ public class ContentImportResource {
         Logger.debug(this, () -> String.format("User %s is listing canceled content import jobs",
                 initDataObject.getUser().getUserId()));
 
-        final JobPaginatedResult result = importHelper.getCanceledJobs(page, pageSize);
+        final JobPaginatedResult result = importHelper.getJobs(JobListView.CANCELED, initDataObject.getUser(), page, pageSize);
         return new ResponseEntityView<>(importHelper.view(result));
     }
 
     /**
      * Retrieves the status of failed content import jobs.
+     * CMS Administrators see every user's jobs; anyone else sees only the jobs they created.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -604,7 +692,8 @@ public class ContentImportResource {
     @Operation(
             operationId = "getFailedContentImportJobs",
             summary = "Retrieves failed content import jobs",
-            description = "Fetches a paginated list of failed content import jobs (jobs with state FAILED). Results can be paginated using query parameters.",
+            description = "Fetches a paginated list of failed content import jobs (jobs with state FAILED)."
+                    + " Returns only the jobs the caller created, or every job for CMS Administrators; the pagination total counts the same jobs. Results can be paginated using query parameters.",
             tags = {"Content Import"},
             responses = {
                     @ApiResponse(
@@ -643,12 +732,13 @@ public class ContentImportResource {
         Logger.debug(this, () -> String.format("User %s is listing failed content import jobs",
                 initDataObject.getUser().getUserId()));
 
-        final JobPaginatedResult result = importHelper.getFailedJobs(page, pageSize);
+        final JobPaginatedResult result = importHelper.getJobs(JobListView.FAILED, initDataObject.getUser(), page, pageSize);
         return new ResponseEntityView<>(importHelper.view(result));
     }
 
     /**
      * Retrieves the status of abandoned content import jobs.
+     * CMS Administrators see every user's jobs; anyone else sees only the jobs they created.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -662,7 +752,8 @@ public class ContentImportResource {
     @Operation(
             operationId = "getAbandonedContentImportJobs",
             summary = "Retrieves abandoned content import jobs",
-            description = "Fetches a paginated list of abandoned content import jobs (jobs with state ABANDONED). Results can be paginated using query parameters.",
+            description = "Fetches a paginated list of abandoned content import jobs (jobs with state ABANDONED)."
+                    + " Returns only the jobs the caller created, or every job for CMS Administrators; the pagination total counts the same jobs. Results can be paginated using query parameters.",
             tags = {"Content Import"},
             responses = {
                     @ApiResponse(
@@ -702,12 +793,13 @@ public class ContentImportResource {
         Logger.debug(this, () -> String.format("User %s is listing abandoned content import jobs",
                 initDataObject.getUser().getUserId()));
 
-        final JobPaginatedResult result = importHelper.getAbandonedJobs(page, pageSize);
+        final JobPaginatedResult result = importHelper.getJobs(JobListView.ABANDONED, initDataObject.getUser(), page, pageSize);
         return new ResponseEntityView<>(importHelper.view(result));
     }
 
     /**
      * Retrieves the status of successful content import jobs.
+     * CMS Administrators see every user's jobs; anyone else sees only the jobs they created.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -721,7 +813,8 @@ public class ContentImportResource {
     @Operation(
             operationId = "getSuccessfulContentImportJobs",
             summary = "Retrieves successful content import jobs",
-            description = "Fetches a paginated list of successful content import jobs (jobs with state COMPLETED and successful result). Results can be paginated using query parameters.",
+            description = "Fetches a paginated list of successful content import jobs (jobs with state COMPLETED and successful result)."
+                    + " Returns only the jobs the caller created, or every job for CMS Administrators; the pagination total counts the same jobs. Results can be paginated using query parameters.",
             tags = {"Content Import"},
             responses = {
                     @ApiResponse(
@@ -760,12 +853,14 @@ public class ContentImportResource {
         Logger.debug(this, () -> String.format("User %s is listing successful content import jobs",
                 initDataObject.getUser().getUserId()));
 
-        final JobPaginatedResult result = importHelper.getSuccessfulJobs(page, pageSize);
+        final JobPaginatedResult result = importHelper.getJobs(JobListView.SUCCESSFUL, initDataObject.getUser(), page, pageSize);
         return new ResponseEntityView<>(importHelper.view(result));
     }
 
     /**
-     * Monitors the progress of a specific content import job identified by its jobId.
+     * Monitors the progress of a specific content import job identified by its jobId. Only the
+     * user who created the job and CMS Administrators may monitor it; for any other user the
+     * stream reports a not-found job.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -779,12 +874,15 @@ public class ContentImportResource {
     @Operation(
             operationId = "monitorContentImportJobs",
             summary = "Monitor a content import job in real-time",
-            description = "Establishes a Server-Sent Events (SSE) connection to monitor the progress of a specific content import job in real-time. This endpoint will continuously send updates as the job progresses, including status changes and completion information.",
+            description = "Establishes a Server-Sent Events (SSE) connection to monitor the progress of a specific content import job in real-time. This endpoint will continuously send updates as the job progresses, including status changes and completion information."
+                    + " Only the user who created the job and CMS Administrators can monitor it.",
             tags = {"Content Import"},
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Server-Sent Events stream established successfully. Events will be sent as the job progresses.",
+                            description = "Server-Sent Events stream established successfully. Events will be sent as the job progresses."
+                                    + " If no job with the specified ID exists, or the caller may not monitor it, the stream sends a single"
+                                    + " job-not-found event with data 404 and closes.",
                             content = @Content(
                                     mediaType = SseFeature.SERVER_SENT_EVENTS,
                                     schema = @Schema(implementation = EventOutput.class)
@@ -792,7 +890,6 @@ public class ContentImportResource {
                     ),
                     @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
                     @ApiResponse(responseCode = "403", description = "Forbidden: User does not have permissions to monitor the specified job."),
-                    @ApiResponse(responseCode = "404", description = "Not Found: Job with the specified ID could not be found."),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while establishing the monitoring connection.")
             }
     )
@@ -804,7 +901,7 @@ public class ContentImportResource {
                     name = "jobId",
                     in = ParameterIn.PATH,
                     required = true,
-                    description = "The unique identifier (UUID) of the job whose status is to be retrieved.",
+                    description = "The unique identifier (UUID) of the job to monitor.",
                     schema = @Schema(type = "string", format = "uuid", example = "e6d9bae8-657b-4e2f-8524-c0222db66355")
             )
             final String jobId
@@ -821,6 +918,6 @@ public class ContentImportResource {
         Logger.debug(this, () -> String.format("User %s is monitoring content import job %s",
                 initDataObject.getUser().getUserId(), jobId));
 
-        return sseMonitorUtil.monitorJob(jobId);
+        return sseMonitorUtil.monitorJob(jobId, initDataObject.getUser());
     }
 }

@@ -1,4 +1,5 @@
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 
@@ -43,22 +44,22 @@ describe('DynamicRouteInitializerService', () => {
                 {
                     provide: DotMenuService,
                     useValue: {
-                        loadMenu: jest.fn().mockReturnValue(of(mockMenus))
+                        loadMenu: vi.fn().mockReturnValue(of(mockMenus))
                     }
                 },
                 {
                     provide: DynamicRouteService,
                     useValue: {
-                        registerRoutesFromMenuItems: jest.fn().mockReturnValue(1),
-                        getRegisteredRoutes: jest.fn().mockReturnValue(['portlet-1'])
+                        registerRoutesFromMenuItems: vi.fn().mockReturnValue(1),
+                        getRegisteredRoutes: vi.fn().mockReturnValue(['portlet-1'])
                     }
                 },
                 {
                     provide: LoggerService,
                     useValue: {
-                        info: jest.fn(),
-                        error: jest.fn(),
-                        warn: jest.fn()
+                        info: vi.fn(),
+                        error: vi.fn(),
+                        warn: vi.fn()
                     }
                 }
             ]
@@ -82,7 +83,7 @@ describe('DynamicRouteInitializerService', () => {
 
     it('should be a no-op on repeated calls without force', async () => {
         await service.initialize();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         const count = await service.initialize();
 
@@ -93,9 +94,9 @@ describe('DynamicRouteInitializerService', () => {
 
     it('should re-initialize when force=true', async () => {
         await service.initialize();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
-        (dynamicRouteService.registerRoutesFromMenuItems as jest.Mock).mockReturnValue(2);
+        (dynamicRouteService.registerRoutesFromMenuItems as Mock).mockReturnValue(2);
         const count = await service.initialize(true);
 
         expect(menuService.loadMenu).toHaveBeenCalledWith(true);
@@ -104,7 +105,7 @@ describe('DynamicRouteInitializerService', () => {
     });
 
     it('should resolve to 0 on error', async () => {
-        (menuService.loadMenu as jest.Mock).mockReturnValue(throwError(() => new Error('fail')));
+        (menuService.loadMenu as Mock).mockReturnValue(throwError(() => new Error('fail')));
 
         const count = await service.initialize();
 

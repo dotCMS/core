@@ -1,14 +1,35 @@
 package com.dotcms.rest.api.v1.user;
 
+import com.dotcms.api.web.WebSessionContext;
+import com.dotcms.datagen.LayoutDataGen;
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.ejb.UserTestUtil;
 import java.util.Collections;
-import com.dotcms.rest.ErrorResponseHelper;
+import com.dotcms.rest.exception.ForbiddenException;
+import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.PortletID;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.business.Role;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.v1.system.role.SmallRoleView;
+import com.dotcms.rest.ErrorResponseHelper;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.DotRestInstanceProvider;
 import com.dotcms.util.PaginationUtil;
@@ -25,18 +46,15 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
-import com.dotmarketing.business.Role;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
 import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 import static org.junit.Assert.*;
 
 import org.junit.AfterClass;
@@ -44,6 +62,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class UserResourceIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     static HttpServletResponse response;
     static HttpServletRequest request;
@@ -57,11 +78,22 @@ public class UserResourceIntegrationTest {
     // test's REST auth check into a spurious 401.
     private static final List<Role> rolesToClean = new ArrayList<>();
     private static final List<User> usersToClean = new ArrayList<>();
+    private static final List<Layout> layoutsToClean = new ArrayList<>();
 
     @AfterClass
     public static void cleanUpFilterFixtures() throws Exception {
         usersToClean.forEach(UserDataGen::remove);
         rolesToClean.forEach(RoleDataGen::remove);
+        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+        for (final Layout layout : layoutsToClean) {
+            // Delete the copy the Hibernate session already holds (the tests' portlet checks load it);
+            // deleting our own copy of the same layout fails with NonUniqueObjectException. A layout
+            // that is gone comes back as an empty Layout, not null
+            final Layout attached = layoutAPI.findLayout(layout.getId());
+            if (attached != null && UtilMethods.isSet(attached.getId())) {
+                layoutAPI.removeLayout(attached);
+            }
+        }
         // the deletions above cleared the global role cache; resolve the back-end role again
         // so the next suite class's REST auth check never starts against a cold cache
         APILocator.getRoleAPI().loadBackEndUserRole();
@@ -98,6 +130,11 @@ public class UserResourceIntegrationTest {
     }
 
     private static HttpServletRequest mockRequest() {
+        return mockRequestAs("admin@dotcms.com", "admin");
+    }
+
+    /** Builds a request authenticated as the given user with a Bearer API token. */
+    private static HttpServletRequest mockRequestAs(final String email, final String password) {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
                         new MockAttributeRequest(new MockHttpRequestIntegrationTest(host.getHostname(), "/").request())
@@ -105,12 +142,76 @@ public class UserResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+                TOKEN_UTILS.bearerHeaderForEmail(email));
 
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,host);
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID,host.getIdentifier());
 
         return request;
+    }
+
+    /**
+     * A request authenticated as the given user through the session, with no Authorization
+     * header, for callers that are not the admin.
+     */
+    private static HttpServletRequest requestFor(final User asUser) {
+        final MockHeaderRequest request = new MockHeaderRequest(
+                new MockSessionRequest(
+                        new MockAttributeRequest(new MockHttpRequestIntegrationTest(host.getHostname(), "/").request())
+                                .request())
+                        .request());
+        request.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER_ID, asUser.getUserId());
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, host.getIdentifier());
+        return request;
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A back-end user with no portlets filters the user list by a role key.
+     * ExpectedResult: Forbidden. Filtering by role reveals who holds it, so it takes the same
+     * privilege as {@code includeRoles}.
+     */
+    @Test(expected = ForbiddenException.class)
+    public void test_filter_byRoleKey_plainBackendUser_isForbidden() throws Exception {
+        final String unique = "rkPlain" + System.currentTimeMillis();
+        final Role role = new RoleDataGen().key(unique + "Key").nextPersisted();
+        final User plain = new UserDataGen().roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        rolesToClean.add(role);
+        usersToClean.add(plain);
+
+        resource.filter(requestFor(plain), response, unique, 0, 40, null, "ASC",
+                false, false, null, 0, List.of(role.getRoleKey()), null, false);
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A back-end user with the Roles and Users portlets, not an administrator,
+     * filters by a role key that one user holds.
+     * ExpectedResult: 200 with the granted user listed.
+     */
+    @Test
+    public void test_filter_byRoleKey_rolesAndUsersPortlets_isAllowed() throws Exception {
+        final String unique = "rkDelegate" + System.currentTimeMillis();
+        final Role role = new RoleDataGen().key(unique + "Key").nextPersisted();
+        final User granted = new UserDataGen().firstName(unique).roles(role).nextPersisted();
+        final Layout layout = new LayoutDataGen().portletIds("roles", "users").nextPersisted();
+        final Role portletRole = new RoleDataGen().layout(layout).nextPersisted();
+        final User delegate = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole(), portletRole).nextPersisted();
+        rolesToClean.add(role);
+        rolesToClean.add(portletRole);
+        usersToClean.add(granted);
+        usersToClean.add(delegate);
+
+        final Response resourceResponse = resource.filter(requestFor(delegate), response, unique, 0, 40,
+                null, "ASC", false, false, null, 0, List.of(role.getRoleKey()), null, false);
+
+        assertEquals(200, resourceResponse.getStatus());
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> userMaps = (List<Map<String, Object>>)
+                ((ResponseEntityView<Object>) resourceResponse.getEntity()).getEntity();
+        assertTrue(userMaps.stream().anyMatch(map -> granted.getUserId().equals(map.get("userId"))));
     }
 
     private void loginAs() throws Exception {
@@ -129,6 +230,168 @@ public class UserResourceIntegrationTest {
         loginAs();
     }
 
+    /**
+     * Method to test: {@link UserResource#loginAs}
+     * Given Scenario: an administrator asks to Login As a user whose id is sent with surrounding
+     * spaces.
+     * ExpectedResult: the session names the user by the id stored in the user record, so the
+     * session tools and the per-request check match the session to that user.
+     */
+    @Test
+    public void test_loginAs_withPaddedUserId_storesTheStoredUserId() throws Exception {
+        final LoginAsForm loginAsForm = new LoginAsForm.Builder().userId("  " + user.getUserId() + " ").build();
+        request = mockRequest();
+
+        final Response resourceResponse = resource.loginAs(request, response, loginAsForm);
+
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        assertEquals(user.getUserId(), request.getSession().getAttribute(WebKeys.USER_ID));
+        assertEquals(adminUser.getUserId(), request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
+    }
+
+    /**
+     * Creates a back-end user with the Login As role, a known password and, optionally, the CMS
+     * Administrator role.
+     */
+    private static User newLoginAsUser(final String password, final boolean cmsAdmin) throws Exception {
+        final Role loginAsRole = APILocator.getRoleAPI().findRoleByFQN(Role.SYSTEM + " --> " + Role.LOGIN_AS);
+        final List<Role> roles = new ArrayList<>(List.of(loginAsRole, APILocator.getRoleAPI().loadBackEndUserRole()));
+        if (cmsAdmin) {
+            roles.add(APILocator.getRoleAPI().loadCMSAdminRole());
+        }
+        final User loginAsUser = new UserDataGen().password(password).roles(roles.toArray(new Role[0])).nextPersisted();
+        usersToClean.add(loginAsUser);
+        return loginAsUser;
+    }
+
+    /**
+     * Given: a non-admin user holding the Login As role
+     * When: they try to Login As an administrator, re-entering their own password
+     * Then: the operation is refused
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_doLoginAs_nonAdmin_cannotImpersonateAdmin() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User nonAdmin = newLoginAsUser(password, false);
+        UserResourceHelper.getInstance().doLoginAs(nonAdmin, adminUser.getUserId(), password, host.getHostname());
+    }
+
+    /**
+     * Method to test: {@link UserResource#loginAs}
+     * Given Scenario: a non-admin user holding the Login As role asks to Login As an administrator.
+     * ExpectedResult: the answer is 403 (not 401, which makes the UI end the session) and the
+     * session still belongs to the caller: the administrator is not stored as the session
+     * user and no principal user is set.
+     */
+    @Test
+    public void test_loginAs_nonAdminToAdmin_answers403AndKeepsSession() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User nonAdmin = newLoginAsUser(password, false);
+        final HttpServletRequest nonAdminRequest = mockRequestAs(nonAdmin.getEmailAddress(), password);
+        // the caller's back-end session, as the login in the browser leaves it
+        nonAdminRequest.getSession().setAttribute(WebKeys.USER_ID, nonAdmin.getUserId());
+        final LoginAsForm form = new LoginAsForm.Builder().userId(adminUser.getUserId()).build();
+
+        final Response result = resource.loginAs(nonAdminRequest, response, form);
+
+        assertNotNull(result);
+        assertEquals(Status.FORBIDDEN.getStatusCode(), result.getStatus());
+        assertEquals("loginas.error.adminrequired", result.getHeaderString("error-key"));
+        // a denied Login As leaves the caller's session as it was
+        assertEquals(nonAdmin.getUserId(), nonAdminRequest.getSession().getAttribute(WebKeys.USER_ID));
+        assertNull(nonAdminRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
+    }
+
+    /**
+     * Given: a non-admin user holding the Login As role and {@code LOGIN_AS_ADMIN_REQUIRES_ADMIN=false}
+     * When: they try to Login As an administrator, re-entering their own password
+     * Then: the previous behavior is kept and the operation is allowed
+     */
+    @Test
+    public void test_doLoginAs_nonAdmin_canImpersonateAdmin_whenRestrictionDisabled() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User nonAdmin = newLoginAsUser(password, false);
+        final boolean previous = Config.getBooleanProperty(UserResourceHelper.LOGIN_AS_ADMIN_REQUIRES_ADMIN, true);
+        Config.setProperty(UserResourceHelper.LOGIN_AS_ADMIN_REQUIRES_ADMIN, false);
+        try {
+            final Map<String, Object> sessionData = UserResourceHelper.getInstance()
+                    .doLoginAs(nonAdmin, adminUser.getUserId(), password, host.getHostname());
+            assertEquals(adminUser.getUserId(), sessionData.get(WebKeys.USER_ID));
+            assertEquals(nonAdmin.getUserId(), sessionData.get(WebKeys.PRINCIPAL_USER_ID));
+        } finally {
+            Config.setProperty(UserResourceHelper.LOGIN_AS_ADMIN_REQUIRES_ADMIN, previous);
+        }
+    }
+
+    /**
+     * Given: an administrator holding the Login As role
+     * When: they Login As another administrator, re-entering their own password
+     * Then: the operation is allowed
+     */
+    @Test
+    public void test_doLoginAs_admin_canImpersonateAdmin_withOwnPassword() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User admin = newLoginAsUser(password, true);
+        final Map<String, Object> sessionData = UserResourceHelper.getInstance()
+                .doLoginAs(admin, adminUser.getUserId(), password, host.getHostname());
+        assertEquals(adminUser.getUserId(), sessionData.get(WebKeys.USER_ID));
+        assertEquals(admin.getUserId(), sessionData.get(WebKeys.PRINCIPAL_USER_ID));
+    }
+
+    /**
+     * Given: an administrator holding the Login As role
+     * When: they Login As another administrator with a password that is not their own
+     * Then: the operation is refused
+     */
+    @Test
+    public void test_doLoginAs_admin_wrongPassword_isRefused() throws Exception {
+        final User admin = newLoginAsUser("loginAsPwd" + System.currentTimeMillis(), true);
+        try {
+            UserResourceHelper.getInstance().doLoginAs(admin, adminUser.getUserId(), "not-the-password",
+                    host.getHostname());
+            fail("Login As an administrator with a wrong password must be refused");
+        } catch (final DotDataException e) {
+            assertEquals("loginas.error.invalidloginascredentials", e.getMessageKey());
+        }
+    }
+
+    /**
+     * Method to test: {@link UserResource#loginAs} and {@link UserResource#logoutAs}
+     * Given Scenario: an administrator logs in as user B, who also holds the Login As role. B's session then asks
+     * to Login As B itself, which is refused.
+     * ExpectedResult: the refused request answers {@code loginAs:false} and the session still acts as B with the
+     * administrator as principal, so Logout As answers 200 and brings the administrator back.
+     */
+    @Test
+    public void test_loginAs_refusedDuringLoginAs_keepsLogoutAsWorking() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User admin = newLoginAsUser(password, true);
+        final User loginAsHolder = newLoginAsUser("loginAsPwd" + System.nanoTime(), false);
+        final Role holderRole = APILocator.getRoleAPI().getUserRole(loginAsHolder);
+        APILocator.getRoleAPI().addLayoutToRole(APILocator.getLayoutAPI().findAllLayouts().get(0), holderRole);
+        APILocator.getPermissionAPI().save(new Permission(host.getPermissionId(), holderRole.getId(),
+                PermissionAPI.PERMISSION_READ, true), host, adminUser, false);
+        final HttpServletRequest sessionRequest = loginAs(admin, password, loginAsHolder);
+        // from here on the request is authenticated by its session, which now acts as the Login As user, as a new
+        // request from the browser would be: no token, and no user cached on the request by the previous call
+        ((MockHeaderRequest) sessionRequest).setHeader("Authorization", null);
+        sessionRequest.removeAttribute(WebKeys.USER);
+        sessionRequest.removeAttribute(WebKeys.USER_ID);
+
+        final Response refused = resource.loginAs(sessionRequest, new MockHttpResponse(),
+                new LoginAsForm.Builder().userId(loginAsHolder.getUserId()).build());
+
+        assertEquals(Status.OK.getStatusCode(), refused.getStatus());
+        assertEquals(Map.of("loginAs", false), ((ResponseEntityView<?>) refused.getEntity()).getEntity());
+        assertEquals(loginAsHolder.getUserId(), sessionRequest.getSession().getAttribute(WebKeys.USER_ID));
+        assertEquals(admin.getUserId(), sessionRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
+
+        final Response loggedOut = resource.logoutAs(sessionRequest, new MockHttpResponse());
+
+        assertEquals(Status.OK.getStatusCode(), loggedOut.getStatus());
+        assertEquals(admin.getUserId(), sessionRequest.getSession().getAttribute(WebKeys.USER_ID));
+    }
+
     @Test
     public void test_logoutAs_success() throws Exception {
         loginAs();
@@ -140,10 +403,155 @@ public class UserResourceIntegrationTest {
         assertNull(request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
     }
 
+    /**
+     * Method to test: {@link UserResource#logoutAs}
+     * Given Scenario: An administrator logs in as another user, and the session reports an active
+     * Login As. The administrator then logs out as that user.
+     * ExpectedResult: The administrator is the session user again and the session no longer
+     * reports an active Login As.
+     */
+    @Test
+    public void test_logoutAs_afterLoginAs_restoresTheAdministrator() throws Exception {
+        loginAs();
+        final WebSessionContext sessionContext = WebSessionContext.getInstance(request);
+        assertTrue(APILocator.getLoginAsAPI().isLoginAsUser(sessionContext));
+        assertEquals(adminUser.getUserId(),
+                APILocator.getLoginAsAPI().getPrincipalUser(sessionContext).getUserId());
+
+        final Response resourceResponse = resource.logoutAs(request, response);
+
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        assertEquals(adminUser.getUserId(), request.getSession().getAttribute(WebKeys.USER_ID));
+        assertFalse(APILocator.getLoginAsAPI().isLoginAsUser(sessionContext));
+    }
+
+    /**
+     * Method to test: {@link UserResource#logoutAs}
+     * Given Scenario: A back-end user who never used Login As has a session that holds a
+     * PRINCIPAL_USER_ID attribute naming the administrator, written directly to the session.
+     * The user calls Logout As.
+     * ExpectedResult: Logout As answers 400 because no Login As is active, and the session user
+     * stays the back-end user.
+     */
+    @Test
+    public void test_logoutAs_withoutLoginAs_keepsTheCurrentUser() throws Exception {
+        final User publisher = TestUserUtils.getPublisher(host);
+        usersToClean.add(publisher);
+        final HttpServletRequest publisherRequest =
+                mockRequestAs(publisher.getEmailAddress(), publisher.getFirstName());
+        publisherRequest.getSession().setAttribute(WebKeys.USER_ID, publisher.getUserId());
+        publisherRequest.getSession().setAttribute(WebKeys.PRINCIPAL_USER_ID, adminUser.getUserId());
+
+        final Response resourceResponse = resource.logoutAs(publisherRequest, new MockHttpResponse());
+
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), resourceResponse.getStatus());
+        assertEquals(publisher.getUserId(), publisherRequest.getSession().getAttribute(WebKeys.USER_ID));
+    }
+
+    /**
+     * Method to test: {@link UserResource#loginAs}
+     * Given Scenario: an administrator logs in as an active back-end user.
+     * ExpectedResult: the session resolves to the impersonated user on the following requests
+     * and still records the administrator as the principal.
+     */
+    @Test
+    public void test_loginAs_activeUser_sessionResolvesToTheImpersonatedUser() throws Exception {
+        loginAs();
+        final HttpSession session = request.getSession();
+
+        final User resolved = PortalUtil.getUser(session);
+
+        assertNotNull("the Login As session must resolve to a user", resolved);
+        assertEquals(user.getUserId(), resolved.getUserId());
+        assertEquals(adminUser.getUserId(), session.getAttribute(WebKeys.PRINCIPAL_USER_ID));
+        assertTrue(APILocator.getLoginAsAPI().isLoginAsUser(WebSessionContext.getInstance(request)));
+    }
+
+    /**
+     * Method to test: {@link UserResource#loginAs}
+     * Given Scenario: an administrator logs in as a back-end user, who is then made inactive.
+     * ExpectedResult: the session no longer resolves to a user, and the user id, the principal
+     * and the Login As record are gone from it.
+     */
+    @Test
+    public void test_loginAs_impersonatedUserMadeInactive_signsTheSessionOut() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User admin = newLoginAsUser(password, true);
+        final User impersonated = newImpersonableUser();
+        final HttpServletRequest adminRequest = loginAs(admin, password, impersonated);
+        final HttpSession session = adminRequest.getSession();
+        assertEquals(impersonated.getUserId(), PortalUtil.getUser(session).getUserId());
+
+        final User toSave = (User) APILocator.getUserAPI().loadUserById(impersonated.getUserId()).clone();
+        toSave.setActive(false);
+        APILocator.getUserAPI().save(toSave, APILocator.systemUser(), false);
+
+        assertNull("a session whose impersonated user was made inactive has no user", PortalUtil.getUser(session));
+        assertNull(session.getAttribute(WebKeys.USER_ID));
+        assertNull(session.getAttribute(WebKeys.PRINCIPAL_USER_ID));
+        assertFalse(APILocator.getLoginAsAPI().isLoginAsUser(WebSessionContext.getInstance(adminRequest)));
+    }
+
+    /**
+     * Method to test: {@link UserResource#loginAs}
+     * Given Scenario: an administrator logs in as a back-end user, and the administrator is then
+     * made inactive.
+     * ExpectedResult: the session no longer resolves to a user, and the user id and the principal
+     * are gone from it.
+     */
+    @Test
+    public void test_loginAs_administratorMadeInactive_signsTheSessionOut() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User admin = newLoginAsUser(password, true);
+        final User impersonated = newImpersonableUser();
+        final HttpServletRequest adminRequest = loginAs(admin, password, impersonated);
+        final HttpSession session = adminRequest.getSession();
+        assertEquals(impersonated.getUserId(), PortalUtil.getUser(session).getUserId());
+
+        final User toSave = (User) APILocator.getUserAPI().loadUserById(admin.getUserId()).clone();
+        toSave.setActive(false);
+        APILocator.getUserAPI().save(toSave, APILocator.systemUser(), false);
+
+        assertNull("a session whose administrator was made inactive has no user", PortalUtil.getUser(session));
+        assertNull(session.getAttribute(WebKeys.USER_ID));
+        assertNull(session.getAttribute(WebKeys.PRINCIPAL_USER_ID));
+    }
+
+    /**
+     * A back-end user that Login As accepts as a target: it holds a layout and may read the test
+     * site, as Login As requires. Removed after the class.
+     */
+    private static User newImpersonableUser() throws Exception {
+        final User impersonated = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        usersToClean.add(impersonated);
+        final Role userRole = APILocator.getRoleAPI().getUserRole(impersonated);
+        APILocator.getRoleAPI().addLayoutToRole(APILocator.getLayoutAPI().findAllLayouts().get(0), userRole);
+        APILocator.getPermissionAPI().save(new Permission(host.getPermissionId(), userRole.getId(),
+                PermissionAPI.PERMISSION_READ, true), host, adminUser, false);
+        return impersonated;
+    }
+
+    /**
+     * Logs the given administrator in as the given user through the endpoint and returns the
+     * administrator's request, whose session now holds the Login As.
+     */
+    private static HttpServletRequest loginAs(final User admin, final String password, final User impersonated)
+            throws Exception {
+        final HttpServletRequest adminRequest = mockRequestAs(admin.getEmailAddress(), password);
+        final Response result = resource.loginAs(adminRequest, new MockHttpResponse(),
+                new LoginAsForm.Builder().userId(impersonated.getUserId()).build());
+        assertEquals(Status.OK.getStatusCode(), result.getStatus());
+        assertEquals(impersonated.getUserId(), adminRequest.getSession().getAttribute(WebKeys.USER_ID));
+        assertEquals(admin.getUserId(), adminRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
+        return adminRequest;
+    }
+
     @SuppressWarnings("unchecked")
-    private List<String> filterUserIdsByRoleKeys(final String filter, final List<String> roleKeys) {
+    private List<String> filterUserIdsByRoleKeys(final String filter, final List<String> roleKeys)
+            throws Exception {
         final Response resourceResponse = resource.filter(mockRequest(), response, filter, 0, 40,
-                null, "ASC", false, false, null, 0, roleKeys);
+                null, "ASC", false, false, null, 0, roleKeys, null, false);
         assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
         final List<Map<String, Object>> userMaps = (List<Map<String, Object>>)
                 ((ResponseEntityView<Object>) resourceResponse.getEntity()).getEntity();
@@ -195,6 +603,328 @@ public class UserResourceIntegrationTest {
                 List.of(roleA.getRoleKey(), roleB.getRoleKey()));
         assertTrue(userIds.contains(userA.getUserId()));
         assertTrue(userIds.contains(userB.getUserId()));
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A role saved WITHOUT a role key has one user directly granted to it; another
+     * user with the same name prefix is not granted. An administrator calls the endpoint with that
+     * role's ID.
+     * ExpectedResult: Only the granted user is returned -- roles without a key can be filtered by ID.
+     */
+    @Test
+    public void test_filter_byRoleId_keylessRole_returnsOnlyGrantedUsers() throws Exception {
+        final String unique = "riFilter" + uniq();
+        final Role keyless = new RoleDataGen().key(null).name("Keyless " + unique).nextPersisted();
+        rolesToClean.add(keyless);
+        assertNull("precondition: the role must have no key",
+                APILocator.getRoleAPI().loadRoleById(keyless.getId()).getRoleKey());
+        final User granted = new UserDataGen().firstName(unique).roles(keyless).nextPersisted();
+        usersToClean.add(granted);
+        final User notGranted = new UserDataGen().firstName(unique).nextPersisted();
+        usersToClean.add(notGranted);
+
+        final List<String> userIds = items(resource.filter(mockRequest(), response, unique, 0, 40, null, "ASC",
+                false, false, null, 0, null, List.of(keyless.getId()), false))
+                .stream().map(item -> item.get("userId").toString()).collect(Collectors.toList());
+        assertTrue("granted user must be returned", userIds.contains(granted.getUserId()));
+        assertFalse("user without the role must not be returned", userIds.contains(notGranted.getUserId()));
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A plain back-end user -- not a CMS Administrator and without Roles+Users
+     * portlet access -- filters the list by role: by the Back-end access role key; by the Front-end
+     * access role key; by the CMS Administrator role key; by the CMS Administrator role ID; by the
+     * Back-end key combined with the CMS Administrator key; by the Back-end key combined with a
+     * role ID; and by a key and an ID that match no Role.
+     * ExpectedResult: Every combination is rejected with a {@link ForbiddenException} (403), the
+     * access roles and the unknown key and ID included: filtering by role reveals who holds it.
+     */
+    @Test
+    public void test_filter_byRole_plainBackendUser_everyRoleFilterForbidden() throws Exception {
+        final String suffix = uniq();
+        final String password = "pw" + suffix;
+        final User caller = plainBackendCaller("plainrolefilter" + suffix, password);
+
+        final String cmsAdminRoleId = APILocator.getRoleAPI().loadCMSAdminRole().getId();
+        final Map<String, List<String>[]> forbidden = new java.util.LinkedHashMap<>();
+        forbidden.put("Back-end key", pair(List.of(Role.DOTCMS_BACK_END_USER), null));
+        forbidden.put("Front-end key", pair(List.of(Role.DOTCMS_FRONT_END_USER), null));
+        forbidden.put("CMS Administrator key", pair(List.of(Role.CMS_ADMINISTRATOR_ROLE), null));
+        forbidden.put("CMS Administrator id", pair(null, List.of(cmsAdminRoleId)));
+        forbidden.put("Back-end key + CMS Administrator key",
+                pair(List.of(Role.DOTCMS_BACK_END_USER, Role.CMS_ADMINISTRATOR_ROLE), null));
+        forbidden.put("Back-end key + role id", pair(List.of(Role.DOTCMS_BACK_END_USER), List.of(cmsAdminRoleId)));
+        forbidden.put("unknown key", pair(List.of("no-such-role-" + suffix), null));
+        forbidden.put("unknown id", pair(null, List.of("no-such-role-" + suffix)));
+        for (final Map.Entry<String, List<String>[]> entry : forbidden.entrySet()) {
+            try {
+                resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                        null, 1, 40, null, "ASC", false, false, null, 0,
+                        entry.getValue()[0], entry.getValue()[1], false);
+                fail("filtering by [" + entry.getKey() + "] must answer 403 without the Roles+Users privilege");
+            } catch (final ForbiddenException e) {
+                // expected
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A back-end user who is NOT a CMS Administrator but holds a Role whose layout
+     * carries both the Roles and the Users portlets filters the list by the CMS Administrator role
+     * key, then by its ID.
+     * ExpectedResult: Both calls succeed (200), the CMS Administrators are listed and every item
+     * still carries the {@code admin} flag -- the bar is Roles + Users portlet access, not CMS
+     * Administrator only.
+     */
+    @Test
+    public void test_filter_byRole_rolesAndUsersPortletUser_allowedWithAdminFlag() throws Exception {
+        final String suffix = uniq();
+        final String password = "pw" + suffix;
+        final Layout layout = new LayoutDataGen().name("users-roles-" + suffix)
+                .portletIds(PortletID.ROLES.toString(), PortletID.USERS.toString()).nextPersisted();
+        layoutsToClean.add(layout);
+        final Role portletRole = new RoleDataGen().key("rolesusers" + suffix).nextPersisted();
+        rolesToClean.add(portletRole);
+        APILocator.getRoleAPI().addLayoutToRole(layout, portletRole);
+        final User caller = new UserDataGen().firstName("portlet").lastName("RoleFilter")
+                .emailAddress("portletrolefilter" + suffix + "@dotcms.com").password(password)
+                .roles(portletRole, TestUserUtils.getBackendRole()).nextPersisted();
+        usersToClean.add(caller);
+        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+        assertFalse("precondition: caller must not be an admin", caller.isAdmin());
+        assertTrue("precondition: caller must have the Roles and Users portlets",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), caller)
+                        && layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller));
+
+        final String cmsAdminRoleId = APILocator.getRoleAPI().loadCMSAdminRole().getId();
+        final List<List<String>[]> filters = List.of(
+                pair(List.of(Role.CMS_ADMINISTRATOR_ROLE), null), pair(null, List.of(cmsAdminRoleId)));
+        for (final List<String>[] filter : filters) {
+            final Response allowed = resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                    null, 1, 100, null, "ASC", false, false, null, 0, filter[0], filter[1], false);
+            assertEquals(Status.OK.getStatusCode(), allowed.getStatus());
+            final Map<String, Object> admin = itemFor(items(allowed), adminUser.getUserId());
+            assertEquals("a Roles+Users portlet user keeps the admin flag", Boolean.TRUE, admin.get("admin"));
+            assertFalse("the caller does not hold CMS Administrator, so it must not be listed",
+                    items(allowed).stream().anyMatch(item -> caller.getUserId().equals(item.get("userId"))));
+        }
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A back-end user who is NOT a CMS Administrator and does NOT hold the
+     * {@code users} portlet, but holds a Role whose layout carries the Roles portlet and
+     * {@link PortletID#USERS_LEGACY} -- the old Users screen, kept as an opt-in portlet after the
+     * Angular one took over {@code users}. The user filters by the CMS Administrator role key, then
+     * asks for {@code includeRoles}.
+     * ExpectedResult: Both calls succeed (200), the listed CMS Administrators still carry the
+     * {@code admin} flag, and {@code includeRoles} is accepted -- the Role-administrator gate honors
+     * the legacy Users portlet id exactly like {@code users}, so a role that kept the old screen is
+     * not locked out of it.
+     */
+    @Test
+    public void test_filter_byRole_rolesAndUsersLegacyPortletUser_allowedWithAdminFlag() throws Exception {
+        final String suffix = uniq();
+        final String password = "pw" + suffix;
+        final Layout layout = new LayoutDataGen().name("users-legacy-roles-" + suffix)
+                .portletIds(PortletID.ROLES.toString(), PortletID.USERS_LEGACY.toString()).nextPersisted();
+        layoutsToClean.add(layout);
+        final Role portletRole = new RoleDataGen().key("rolesuserslegacy" + suffix).nextPersisted();
+        rolesToClean.add(portletRole);
+        APILocator.getRoleAPI().addLayoutToRole(layout, portletRole);
+        final User caller = new UserDataGen().firstName("portletLegacy").lastName("RoleFilter")
+                .emailAddress("portletlegacyrolefilter" + suffix + "@dotcms.com").password(password)
+                .roles(portletRole, TestUserUtils.getBackendRole()).nextPersisted();
+        usersToClean.add(caller);
+        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+        assertFalse("precondition: caller must not be an admin", caller.isAdmin());
+        assertFalse("precondition: caller must NOT hold the users portlet",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller));
+        assertTrue("precondition: caller must hold the Roles portlet and the legacy Users portlet",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), caller)
+                        && layoutAPI.doesUserHaveAccessToUsersPortlet(caller));
+
+        final String cmsAdminRoleId = APILocator.getRoleAPI().loadCMSAdminRole().getId();
+        final Response allowed = resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                null, 1, 100, null, "ASC", false, false, null, 0, List.of(cmsAdminRoleId), null, false);
+        assertEquals(Status.OK.getStatusCode(), allowed.getStatus());
+        final Map<String, Object> admin = itemFor(items(allowed), adminUser.getUserId());
+        assertEquals("a Roles + legacy-Users portlet user keeps the admin flag", Boolean.TRUE, admin.get("admin"));
+
+        final Response withRoles = resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                null, 1, 100, null, "ASC", false, false, null, 0, List.of(cmsAdminRoleId), null, true);
+        assertEquals("includeRoles must be accepted for a Roles + legacy-Users portlet holder",
+                Status.OK.getStatusCode(), withRoles.getStatus());
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A back-end user who is NOT a CMS Administrator and holds neither {@code roles}
+     * nor {@code users}, only a Role whose layout carries the two old screens,
+     * {@link PortletID#ROLES_LEGACY} and {@link PortletID#USERS_LEGACY}. The user filters by the CMS
+     * Administrator role key, then asks for {@code includeRoles}.
+     * ExpectedResult: Both calls succeed (200) and the listed CMS Administrators carry the
+     * {@code admin} flag -- the Role-administrator gate takes {@code roles-legacy} in place of
+     * {@code roles}, so a role that kept both old screens is not locked out of the role filter.
+     */
+    @Test
+    public void test_filter_byRole_rolesLegacyAndUsersLegacyPortletUser_allowedWithAdminFlag() throws Exception {
+        final String suffix = uniq();
+        final String password = "pw" + suffix;
+        final Layout layout = new LayoutDataGen().name("legacy-screens-" + suffix)
+                .portletIds(PortletID.ROLES_LEGACY.toString(), PortletID.USERS_LEGACY.toString()).nextPersisted();
+        layoutsToClean.add(layout);
+        final Role portletRole = new RoleDataGen().key("legacyscreens" + suffix).nextPersisted();
+        rolesToClean.add(portletRole);
+        APILocator.getRoleAPI().addLayoutToRole(layout, portletRole);
+        final User caller = new UserDataGen().firstName("legacyScreens").lastName("RoleFilter")
+                .emailAddress("legacyscreensrolefilter" + suffix + "@dotcms.com").password(password)
+                .roles(portletRole, TestUserUtils.getBackendRole()).nextPersisted();
+        usersToClean.add(caller);
+        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+        assertFalse("precondition: caller must not be an admin", caller.isAdmin());
+        assertFalse("precondition: caller must NOT hold the roles portlet",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), caller));
+        assertFalse("precondition: caller must NOT hold the users portlet",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller));
+        assertTrue("precondition: caller must hold roles-legacy and users-legacy",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES_LEGACY.toString(), caller)
+                        && layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS_LEGACY.toString(), caller));
+
+        final String cmsAdminRoleId = APILocator.getRoleAPI().loadCMSAdminRole().getId();
+        final Response allowed = resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                null, 1, 100, null, "ASC", false, false, null, 0, List.of(cmsAdminRoleId), null, false);
+        assertEquals(Status.OK.getStatusCode(), allowed.getStatus());
+        final Map<String, Object> admin = itemFor(items(allowed), adminUser.getUserId());
+        assertEquals("a roles-legacy + users-legacy user keeps the admin flag", Boolean.TRUE, admin.get("admin"));
+
+        final Response withRoles = resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                null, 1, 100, null, "ASC", false, false, null, 0, List.of(cmsAdminRoleId), null, true);
+        assertEquals("includeRoles must be accepted for a roles-legacy + users-legacy holder",
+                Status.OK.getStatusCode(), withRoles.getStatus());
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: Two back-end users who are not CMS Administrators, each holding a Role whose
+     * layout carries only ONE of the two portlets: the Users portlet alone, and the Roles portlet
+     * alone. Each lists users without any role parameter, then filters by the CMS Administrator
+     * role key, then by its ID, then asks for {@code includeRoles}.
+     * ExpectedResult: The plain list succeeds (200) for both, so the caller is otherwise allowed in;
+     * every role filter and {@code includeRoles} are rejected with a {@link ForbiddenException}
+     * (403) -- the privilege needs both portlets, not either of them.
+     */
+    @Test
+    public void test_filter_byRole_singlePortletUser_forbidden() throws Exception {
+        final String cmsAdminRoleId = APILocator.getRoleAPI().loadCMSAdminRole().getId();
+        for (final PortletID portlet : List.of(PortletID.USERS, PortletID.ROLES)) {
+            final String suffix = uniq();
+            final String password = "pw" + suffix;
+            final Layout layout = new LayoutDataGen().name("single-portlet-" + suffix)
+                    .portletIds(portlet.toString()).nextPersisted();
+            layoutsToClean.add(layout);
+            final Role portletRole = new RoleDataGen().key("singleportlet" + suffix).nextPersisted();
+            rolesToClean.add(portletRole);
+            APILocator.getRoleAPI().addLayoutToRole(layout, portletRole);
+            final User caller = new UserDataGen().firstName("single").lastName("Portlet")
+                    .emailAddress("singleportlet" + suffix + "@dotcms.com").password(password)
+                    .roles(portletRole, TestUserUtils.getBackendRole()).nextPersisted();
+            usersToClean.add(caller);
+            final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+            assertFalse("precondition: caller must not be an admin", caller.isAdmin());
+            assertTrue("precondition: caller must have the " + portlet + " portlet",
+                    layoutAPI.doesUserHaveAccessToPortlet(portlet.toString(), caller));
+            assertFalse("precondition: caller must lack Roles+Users portlet access",
+                    layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), caller)
+                            && layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller));
+
+            final Response allowed = resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                    null, 1, 40, null, "ASC", false, false, null, 0, null, null, false);
+            assertEquals("a " + portlet + "-only caller must still list users without a role filter",
+                    Status.OK.getStatusCode(), allowed.getStatus());
+
+            final Map<String, List<String>[]> forbidden = new java.util.LinkedHashMap<>();
+            forbidden.put("CMS Administrator key", pair(List.of(Role.CMS_ADMINISTRATOR_ROLE), null));
+            forbidden.put("CMS Administrator id", pair(null, List.of(cmsAdminRoleId)));
+            for (final Map.Entry<String, List<String>[]> entry : forbidden.entrySet()) {
+                try {
+                    resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                            null, 1, 40, null, "ASC", false, false, null, 0,
+                            entry.getValue()[0], entry.getValue()[1], false);
+                    fail("filtering by [" + entry.getKey() + "] must answer 403 for a " + portlet + "-only caller");
+                } catch (final ForbiddenException e) {
+                    // expected
+                }
+            }
+            try {
+                resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                        null, 1, 40, null, "ASC", false, false, null, 0, null, null, true);
+                fail("includeRoles=true must answer 403 for a " + portlet + "-only caller");
+            } catch (final ForbiddenException e) {
+                // expected
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String>[] pair(final List<String> roleKeys, final List<String> roleIds) {
+        return new List[] {roleKeys, roleIds};
+    }
+
+    /**
+     * Persists a back-end user that is neither a CMS Administrator nor a Roles+Users portlet holder,
+     * registers it for cleanup and asserts both preconditions.
+     */
+    private static User plainBackendCaller(final String emailLocalPart, final String password) throws Exception {
+        final User caller = new UserDataGen().firstName("plain").lastName("Caller")
+                .emailAddress(emailLocalPart + "@dotcms.com").password(password)
+                .roles(TestUserUtils.getBackendRole()).nextPersisted();
+        usersToClean.add(caller);
+        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+        assertFalse("precondition: caller must not be an admin", caller.isAdmin());
+        assertFalse("precondition: caller must lack Roles+Users portlet access",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), caller)
+                        && layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller));
+        return caller;
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: The same user is listed twice: once by a plain back-end user -- not a CMS
+     * Administrator and without Roles+Users portlet access -- and once by an administrator.
+     * ExpectedResult: The administrator's items carry the {@code admin} flag ({@code true} for the
+     * administrator itself, {@code false} for the plain user); the plain back-end user's items do
+     * not, while the rest of each item and the {@code Link} header are the same for both callers.
+     */
+    @Test
+    public void test_filter_adminFlag_onlyReturnedToRoleAdministrators() throws Exception {
+        final String suffix = uniq();
+        final String password = "pw" + suffix;
+        final User caller = plainBackendCaller("plainadminflag" + suffix, password);
+        // "admin" matches both the administrator and the caller's email local part, so both are listed
+        final String query = "admin";
+
+        final Response adminResponse = resource.filter(mockRequest(), response,
+                query, 1, 100, null, "ASC", false, false, null, 0, null, null, false);
+        final List<Map<String, Object>> adminItems = items(adminResponse);
+        assertEquals("an administrator must still get the admin flag",
+                Boolean.FALSE, itemFor(adminItems, caller.getUserId()).get("admin"));
+        assertEquals("the administrator's own item must carry admin=true",
+                Boolean.TRUE, itemFor(adminItems, adminUser.getUserId()).get("admin"));
+
+        final Response plainResponse = resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                query, 1, 100, null, "ASC", false, false, null, 0, null, null, false);
+        final List<Map<String, Object>> plainItems = items(plainResponse);
+        for (final String userId : List.of(caller.getUserId(), adminUser.getUserId())) {
+            assertFalse("a non role-administrator must not get the admin flag",
+                    itemFor(plainItems, userId).containsKey("admin"));
+        }
+        assertEquals(caller.getEmailAddress(), itemFor(plainItems, caller.getUserId()).get("emailAddress"));
+        assertEquals("the Link header must not depend on the caller's privilege",
+                adminResponse.getHeaderString("Link"), plainResponse.getHeaderString("Link"));
     }
 
     // ==================== PUT /v1/users — roles reconcile (#37109) ====================
@@ -357,7 +1087,7 @@ public class UserResourceIntegrationTest {
                 .firstName("RoleIds")
                 .lastName("Create" + uniq())
                 .email("roleids-" + uniq() + "@dotcms.com")
-                .password("Passw0rd!".toCharArray())
+                .password("Passw0rd!-Neutral26".toCharArray())
                 .active(true);
     }
 
@@ -476,5 +1206,830 @@ public class UserResourceIntegrationTest {
         final List<Role> directRoles = roleAPI.loadRolesForUser(created.getUserId(), false);
         assertTrue("new user must receive the default Front-end User role",
                 directRoles.stream().anyMatch(role -> Role.DOTCMS_FRONT_END_USER.equals(role.getRoleKey())));
+    }
+
+    // ==================== GET /v1/users/filter — includeRoles (#37233) ====================
+
+    /**
+     * Invokes {@code GET /v1/users/filter} with the given query, paging, role-key filter and
+     * {@code includeRoles} flag; every other parameter keeps its default.
+     */
+    private Response filter(final String query, final int page, final int perPage,
+                            final List<String> roleKeys, final boolean includeRoles) throws Exception {
+        return resource.filter(mockRequest(), response, query, page, perPage, null, "ASC",
+                false, false, null, 0, roleKeys, null, includeRoles);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> items(final Response resourceResponse) {
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        return (List<Map<String, Object>>) ((ResponseEntityView<?>) resourceResponse.getEntity()).getEntity();
+    }
+
+    private static Map<String, Object> itemFor(final List<Map<String, Object>> items, final String userId) {
+        return items.stream()
+                .filter(item -> userId.equals(item.get("userId")))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("user " + userId + " not in page"));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<SmallRoleView> rolesOf(final Map<String, Object> item) {
+        assertTrue("item must carry a roles key", item.containsKey("roles"));
+        return (List<SmallRoleView>) item.get("roles");
+    }
+
+    private static Set<String> roleIds(final List<SmallRoleView> roles) {
+        return roles.stream().map(SmallRoleView::getId).collect(Collectors.toSet());
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A user holds a role; the list is requested WITHOUT {@code includeRoles}.
+     * Expected Result: The item has no {@code roles} key and its key set is exactly
+     * {@link User#toMap()} — the existing payload is untouched (opt-in contract).
+     */
+    @Test
+    public void test_filter_includeRolesOff_payloadUnchanged() throws Exception {
+        final User target = UserTestUtil.getUser("rolesoff" + uniq(), false, true);
+        final Role role = new RoleDataGen().key("rolesoff" + uniq()).nextPersisted();
+        APILocator.getRoleAPI().addRoleToUser(role, target);
+
+        final Map<String, Object> item = itemFor(items(filter(target.getUserId(), 1, 40, null, false)),
+                target.getUserId());
+
+        assertFalse("roles must be absent when not requested", item.containsKey("roles"));
+        assertEquals("item keys must be exactly User#toMap()", target.toMap().keySet(), item.keySet());
+    }
+
+    /**
+     * Given Scenario: A user directly holds two user-assignable roles; {@code includeRoles=true}.
+     * Expected Result: The item carries {@code roles} with both roles, each exposing id, name and
+     * roleKey; the user's personal role is not listed.
+     */
+    @Test
+    public void test_filter_includeRolesOn_listsDirectRolesWithIdNameKey() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User target = UserTestUtil.getUser("rolesonuser" + uniq(), false, true);
+        final Role roleA = new RoleDataGen().key("rolesona" + uniq()).name("Roles On A " + uniq()).nextPersisted();
+        final Role roleB = new RoleDataGen().key("rolesonb" + uniq()).name("Roles On B " + uniq()).nextPersisted();
+        roleAPI.addRoleToUser(roleA, target);
+        roleAPI.addRoleToUser(roleB, target);
+        final Role personal = roleAPI.getUserRole(target);
+
+        final List<SmallRoleView> roles = rolesOf(itemFor(items(filter(target.getUserId(), 1, 40, null, true)),
+                target.getUserId()));
+
+        final Set<String> ids = roleIds(roles);
+        assertTrue("role A must be listed", ids.contains(roleA.getId()));
+        assertTrue("role B must be listed", ids.contains(roleB.getId()));
+        assertFalse("the personal role must not be listed", ids.contains(personal.getId()));
+        final SmallRoleView viewA = roles.stream().filter(r -> roleA.getId().equals(r.getId())).findFirst().get();
+        assertEquals(roleA.getName(), viewA.getName());
+        assertEquals(roleA.getRoleKey(), viewA.getRoleKey());
+    }
+
+    /**
+     * Given Scenario: Role hierarchy parent -> child; the user directly holds ONLY the parent, so
+     * the child is held by inheritance (visible through {@code loadRolesForUser(id, true)}).
+     * Expected Result: {@code roles} lists the parent and NOT the child — direct memberships only.
+     */
+    @Test
+    public void test_filter_includeRolesOn_excludesInheritedChildRole() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User target = UserTestUtil.getUser("inheritroles" + uniq(), false, true);
+        final Role parent = new RoleDataGen().key("inheritparent" + uniq()).nextPersisted();
+        final Role child = new RoleDataGen().key("inheritchild" + uniq()).parent(parent.getId()).nextPersisted();
+        roleAPI.addRoleToUser(parent, target);
+        // sanity: the child really is implicit for this user
+        assertTrue(roleAPI.loadRolesForUser(target.getUserId(), true).stream()
+                .anyMatch(r -> child.getId().equals(r.getId())));
+
+        final Set<String> ids = roleIds(rolesOf(itemFor(items(filter(target.getUserId(), 1, 40, null, true)),
+                target.getUserId())));
+
+        assertTrue("directly held parent must be listed", ids.contains(parent.getId()));
+        assertFalse("inherited child must not be listed", ids.contains(child.getId()));
+    }
+
+    /**
+     * Given Scenario: The user directly holds a role saved WITHOUT a role key (as the Roles
+     * portlet allows); {@code includeRoles=true}.
+     * Expected Result: The role is listed with its id and name and a null roleKey.
+     */
+    @Test
+    public void test_filter_includeRolesOn_keylessRoleListedWithNullKey() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User target = UserTestUtil.getUser("keylessroles" + uniq(), false, true);
+        final Role keyless = new RoleDataGen().key(null).name("Keyless " + uniq()).nextPersisted();
+        assertNull("precondition: the role must have no key", roleAPI.loadRoleById(keyless.getId()).getRoleKey());
+        roleAPI.addRoleToUser(keyless, target);
+
+        final List<SmallRoleView> roles = rolesOf(itemFor(items(filter(target.getUserId(), 1, 40, null, true)),
+                target.getUserId()));
+
+        final SmallRoleView view = roles.stream().filter(r -> keyless.getId().equals(r.getId())).findFirst()
+                .orElseThrow(() -> new AssertionError("keyless role must be listed by id"));
+        assertEquals(keyless.getName(), view.getName());
+        assertNull(view.getRoleKey());
+    }
+
+    /**
+     * Given Scenario: Two users share role S (unique key); one of them also holds role E. The list
+     * is requested with {@code roleKey=S}, {@code per_page=1}, {@code includeRoles=true}, for
+     * pages 1 and 2.
+     * Expected Result: Each page carries exactly one item, both pages together cover both users,
+     * totalEntries is 2, every item lists S, and only the second user's item lists E.
+     */
+    @Test
+    public void test_filter_includeRolesOn_combinedWithRoleKeyFilterAndPaging() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final String prefix = "pageroles" + uniq();
+        final User userOne = UserTestUtil.getUser(prefix + "a", false, true);
+        final User userTwo = UserTestUtil.getUser(prefix + "b", false, true);
+        final Role shared = new RoleDataGen().key("pagerolesshared" + uniq()).nextPersisted();
+        final Role extra = new RoleDataGen().key("pagerolesextra" + uniq()).nextPersisted();
+        roleAPI.addRoleToUser(shared, userOne);
+        roleAPI.addRoleToUser(shared, userTwo);
+        roleAPI.addRoleToUser(extra, userTwo);
+
+        final Response pageOne = filter(prefix, 1, 1, List.of(shared.getRoleKey()), true);
+        final Response pageTwo = filter(prefix, 2, 1, List.of(shared.getRoleKey()), true);
+        final List<Map<String, Object>> first = items(pageOne);
+        final List<Map<String, Object>> second = items(pageTwo);
+
+        assertEquals(1, first.size());
+        assertEquals(1, second.size());
+        assertEquals(2, ((ResponseEntityView<?>) pageOne.getEntity()).getPagination().getTotalEntries());
+        final Set<String> seen = Set.of((String) first.get(0).get("userId"), (String) second.get(0).get("userId"));
+        assertEquals(Set.of(userOne.getUserId(), userTwo.getUserId()), seen);
+
+        for (final Map<String, Object> item : List.of(first.get(0), second.get(0))) {
+            final Set<String> ids = roleIds(rolesOf(item));
+            assertTrue("every page item must list the shared role", ids.contains(shared.getId()));
+            assertEquals("only userTwo holds the extra role",
+                    userTwo.getUserId().equals(item.get("userId")), ids.contains(extra.getId()));
+        }
+    }
+
+    /**
+     * Given Scenario: A plain back-end user -- not a CMS Administrator and without Users+Roles portlet
+     * access -- calls the list with and without {@code includeRoles}.
+     * Expected Result: Without the flag the call succeeds exactly as before (200); with the flag it is
+     * rejected with a {@link ForbiddenException} (403), matching the gate of
+     * {@code GET /v1/roles/users/{id}} so the flag does not widen who can read role membership.
+     */
+    @Test
+    public void test_filter_includeRolesOn_plainBackendUserForbidden_defaultPathUnchanged() throws Exception {
+        final String suffix = uniq();
+        final String password = "pw" + suffix;
+        final Role plain = new RoleDataGen().key("plainbackend" + suffix).nextPersisted();
+        final User caller = new UserDataGen().firstName("plain").lastName("Backend")
+                .emailAddress("plainbackend" + suffix + "@dotcms.com").password(password)
+                .roles(plain, TestUserUtils.getBackendRole()).nextPersisted();
+        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+        assertFalse("precondition: caller must not be an admin", caller.isAdmin());
+        assertFalse("precondition: caller must lack Roles+Users portlet access",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), caller)
+                        && layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller));
+
+        final Response allowed = resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                caller.getUserId(), 1, 40, null, "ASC", false, false, null, 0, null, null, false);
+        assertEquals("default path must keep working for any back-end user",
+                Status.OK.getStatusCode(), allowed.getStatus());
+        assertFalse(itemFor(items(allowed), caller.getUserId()).containsKey("roles"));
+
+        try {
+            resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                    caller.getUserId(), 1, 40, null, "ASC", false, false, null, 0, null, null, true);
+            fail("includeRoles=true must be forbidden for a non role-administrator");
+        } catch (final ForbiddenException e) {
+            // expected
+        }
+    }
+
+    /**
+     * Given Scenario: The user directly holds an ordinary root role whose NAME starts with "User"
+     * ({@code Role#isUser()} is name-based and would flag it as a personal role) plus their real
+     * personal role; {@code includeRoles=true}.
+     * Expected Result: The "User ..." role is listed and only the personal role is left out --
+     * personal roles are recognized by their ID-based DBFQN under the cms_users root, as the legacy
+     * Users portlet did.
+     */
+    @Test
+    public void test_filter_includeRolesOn_rootRoleNamedUserIsNotTreatedAsPersonal() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User target = UserTestUtil.getUser("usernamedrole" + uniq(), false, true);
+        final Role userManagers = new RoleDataGen().key("usermanagers" + uniq()).name("User Managers " + uniq())
+                .nextPersisted();
+        assertTrue("precondition: the name-based check must misclassify this role",
+                roleAPI.loadRoleById(userManagers.getId()).isUser());
+        roleAPI.addRoleToUser(userManagers, target);
+        final Role personal = roleAPI.getUserRole(target);
+
+        final Set<String> ids = roleIds(rolesOf(itemFor(items(filter(target.getUserId(), 1, 40, null, true)),
+                target.getUserId())));
+
+        assertTrue("a root role merely named 'User...' must be listed", ids.contains(userManagers.getId()));
+        assertFalse("the personal role must still be excluded", ids.contains(personal.getId()));
+    }
+
+    // ==================== GET /v1/users/filter — profile fields per caller ====================
+
+    /** Keys every caller gets for each listed user: enough to identify and display the user. */
+    private static final Set<String> DIRECTORY_KEYS = Set.of("userId", "id", "firstName", "lastName",
+            "fullName", "name", "emailAddress", "emailaddress", "gravitar", "type");
+
+    /** Keys of the full profile that only Users-portlet holders and CMS Administrators get. */
+    private static final Set<String> FULL_PROFILE_ONLY_KEYS = Set.of("lastLoginIP", "lastLoginDate",
+            "failedLoginAttempts", "admin", "passwordExpired", "passwordReset", "passwordExpirationDate",
+            "hasConsoleAccess", "active", "backendUser", "frontendUser", "additionalInfo", "createDate",
+            "modificationDate");
+
+    /** A persisted back-end user holding the given extra roles, registered for cleanup. */
+    private static User backendUser(final String tag, final String password, final Role... extraRoles)
+            throws Exception {
+        final Role[] roles = new Role[extraRoles.length + 1];
+        System.arraycopy(extraRoles, 0, roles, 0, extraRoles.length);
+        roles[extraRoles.length] = TestUserUtils.getBackendRole();
+        final User created = new UserDataGen().firstName("Profile").lastName(tag)
+                .emailAddress(tag + "@dotcms.com").password(password).roles(roles).nextPersisted();
+        usersToClean.add(created);
+        return created;
+    }
+
+    /** A persisted role whose layout grants the given portlet, registered for cleanup. */
+    private static Role roleWithPortlet(final String tag, final PortletID portlet) throws Exception {
+        final Role role = new RoleDataGen().key(tag).nextPersisted();
+        rolesToClean.add(role);
+        final Layout layout = new LayoutDataGen().name("Layout " + tag).portletIds(portlet.toString())
+                .nextPersisted();
+        layoutsToClean.add(layout);
+        APILocator.getRoleAPI().addLayoutToRole(layout, role);
+        return role;
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A back-end user who is not a CMS Administrator and has no access to the Users portlet
+     * lists users.
+     * Expected Result: The call succeeds (200) and every item carries only the directory fields -- id, names,
+     * email and gravatar -- none of the account-state fields such as last login, failed attempts or flags.
+     */
+    @Test
+    public void test_filter_withoutUsersPortlet_itemsCarryDirectoryFieldsOnly() throws Exception {
+        final String suffix = uniq();
+        final String password = "pw" + suffix;
+        final Role plain = new RoleDataGen().key("nousersportlet" + suffix).nextPersisted();
+        rolesToClean.add(plain);
+        final User caller = backendUser("nousersportlet" + suffix, password, plain);
+        assertFalse("precondition: caller must not be an admin", caller.isAdmin());
+        assertFalse("precondition: caller must lack Users portlet access",
+                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller));
+
+        final List<Map<String, Object>> page = items(resource.filter(
+                mockRequestAs(caller.getEmailAddress(), password), response,
+                "", 1, 100, null, "ASC", false, false, null, 0, null, null, false));
+        assertFalse("the list must not be empty", page.isEmpty());
+
+        final Map<String, Object> adminItem = itemFor(page, adminUser.getUserId());
+        assertEquals(adminUser.getEmailAddress(), adminItem.get("emailAddress"));
+        assertEquals(adminUser.getFullName(), adminItem.get("fullName"));
+        for (final Map<String, Object> item : page) {
+            assertTrue("item " + item.get("userId") + " must carry every directory key: " + item.keySet(),
+                    item.keySet().containsAll(DIRECTORY_KEYS));
+            for (final String key : FULL_PROFILE_ONLY_KEYS) {
+                assertFalse("item " + item.get("userId") + " must not carry '" + key + "'", item.containsKey(key));
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A back-end user who is not a CMS Administrator but has access to the Users portlet lists
+     * users, and so does a CMS Administrator.
+     * Expected Result: Both receive the full profile of each user, including the account-state fields the
+     * Users portlet displays.
+     */
+    @Test
+    public void test_filter_usersPortletHolderAndAdmin_itemsCarryFullProfile() throws Exception {
+        final String suffix = uniq();
+        final String password = "pw" + suffix;
+        final Role usersPortlet = roleWithPortlet("usersportlet" + suffix, PortletID.USERS);
+        final User caller = backendUser("usersportlet" + suffix, password, usersPortlet);
+        assertFalse("precondition: caller must not be an admin", caller.isAdmin());
+        assertTrue("precondition: caller must have Users portlet access",
+                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller));
+
+        final Map<String, Object> asPortletHolder = itemFor(items(resource.filter(
+                mockRequestAs(caller.getEmailAddress(), password), response,
+                adminUser.getUserId(), 1, 40, null, "ASC", false, false, null, 0, null, null, false)),
+                adminUser.getUserId());
+        final Map<String, Object> asAdmin = itemFor(items(resource.filter(
+                mockRequest(), response,
+                adminUser.getUserId(), 1, 40, null, "ASC", false, false, null, 0, null, null, false)),
+                adminUser.getUserId());
+
+        // The account-state fields (minus the admin flag) go to any full-profile caller: the Users-portlet
+        // holder and the administrator alike. The admin flag itself is gated separately on Role-administrator
+        // access (CMS Administrator, or Roles+Users portlets), so a Users-portlet-only holder does not get it.
+        final Set<String> accountStateSansAdmin = new HashSet<>(FULL_PROFILE_ONLY_KEYS);
+        accountStateSansAdmin.remove("admin");
+        for (final Map<String, Object> item : List.of(asPortletHolder, asAdmin)) {
+            assertTrue("full profile must carry every directory key: " + item.keySet(),
+                    item.keySet().containsAll(DIRECTORY_KEYS));
+            assertTrue("full profile must carry every account-state key: " + item.keySet(),
+                    item.keySet().containsAll(accountStateSansAdmin));
+        }
+        assertFalse("a Users-portlet-only holder is not a Role administrator, so it gets no admin flag",
+                asPortletHolder.containsKey("admin"));
+        assertEquals("the administrator keeps the admin flag", Boolean.TRUE, asAdmin.get("admin"));
+    }
+
+    // ==================== GET /v1/users/filter — orderby / direction (#37458) ====================
+
+    private static final long JAN_1 = 1767225600000L; // 2026-01-01T00:00:00Z
+    private static final long JAN_2 = JAN_1 + 86_400_000L;
+    private static final long JAN_3 = JAN_2 + 86_400_000L;
+
+    /**
+     * Seeds four users whose first names share a fresh unique prefix (returned, and used as the {@code query}
+     * filter so the assertions only ever see these rows):
+     * <pre>
+     *   first name    last name   email                  last login
+     *   {p}Bob        Zed         {p}3@sort.dotcms.com   2026-01-03
+     *   {p}Alice      Young       {p}4@sort.dotcms.com   2026-01-01
+     *   {p}Bob        Alpha       {p}2@sort.dotcms.com   (never)
+     *   {p}Carol      Xu          {p}1@sort.dotcms.com   2026-01-02
+     * </pre>
+     * Email order is the reverse of first-name order and one user has no last login, so sorting on the
+     * wrong column, or in the wrong direction, or with NULLs first, all fail visibly. Seeding per test (rather
+     * than once per class) keeps every test self-contained, including under failsafe re-runs.
+     */
+    private static String seedSortFixtures() throws Exception {
+        final String prefix = "srt" + System.nanoTime();
+        seedSortUser(prefix, "Bob", "Zed", "3", new Date(JAN_3));
+        seedSortUser(prefix, "Alice", "Young", "4", new Date(JAN_1));
+        seedSortUser(prefix, "Bob", "Alpha", "2", null);
+        seedSortUser(prefix, "Carol", "Xu", "1", new Date(JAN_2));
+        return prefix;
+    }
+
+    /**
+     * Persists one sort fixture. A non-null {@code lastLogin} is written to {@code lastlogindate} through
+     * {@code UserAPI.save}; {@code null} leaves the column NULL, as for a user who never logged in.
+     */
+    private static void seedSortUser(final String prefix, final String firstName, final String lastName,
+                                     final String emailOrder, final Date lastLogin) throws Exception {
+        final User seeded = new UserDataGen()
+                .firstName(prefix + firstName)
+                .lastName(lastName)
+                .emailAddress(prefix + emailOrder + "@sort.dotcms.com")
+                .nextPersisted();
+        usersToClean.add(seeded);
+        if (null != lastLogin) {
+            seeded.setLastLoginDate(lastLogin);
+            APILocator.getUserAPI().save(seeded, APILocator.systemUser(), false);
+        }
+    }
+
+    /** {@code GET /v1/users/filter} over the fixtures behind {@code prefix} with the given sort parameters. */
+    private List<Map<String, Object>> sorted(final String prefix, final String orderBy, final String direction)
+            throws Exception {
+        return items(resource.filter(mockRequest(), response, prefix, 0, 100, orderBy, direction,
+                false, false, null, 0, null, null, false));
+    }
+
+    /** One field of every item, in response order; {@link Date} values are reduced to epoch millis. */
+    private static List<Object> column(final List<Map<String, Object>> items, final String key) {
+        return items.stream()
+                .map(item -> item.get(key))
+                .map(value -> value instanceof Date ? (Object) ((Date) value).getTime() : value)
+                .collect(Collectors.toList());
+    }
+
+    private static List<Object> reversed(final List<Object> list) {
+        final List<Object> copy = new ArrayList<>(list);
+        Collections.reverse(copy);
+        return copy;
+    }
+
+    private static List<Object> withPrefix(final String prefix, final String... names) {
+        final List<Object> result = new ArrayList<>();
+        for (final String name : names) {
+            result.add(prefix + name);
+        }
+        return result;
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter} with {@code orderby=firstName}
+     * Given Scenario: Four seeded users; the endpoint is called with {@code direction=ASC} and then {@code DESC}.
+     * Expected Result: First names come back ascending, and DESC is the exact reverse (AC-001).
+     */
+    @Test
+    public void test_filter_orderByFirstName_ascAndDescAreReverses() throws Exception {
+        final String p = seedSortFixtures();
+        final List<Object> ascending = column(sorted(p, "firstName", "ASC"), "firstName");
+        assertEquals(withPrefix(p, "Alice", "Bob", "Bob", "Carol"), ascending);
+        assertEquals("DESC must reverse ASC", reversed(ascending),
+                column(sorted(p, "firstName", "DESC"), "firstName"));
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter} with {@code orderby=emailAddress}
+     * Given Scenario: The seeded emails sort in the opposite order of the first names.
+     * Expected Result: Emails ascending, then the reverse for DESC -- proving the email column, not the name,
+     * drove the order (AC-001).
+     */
+    @Test
+    public void test_filter_orderByEmailAddress_ascAndDescAreReverses() throws Exception {
+        final String p = seedSortFixtures();
+        final List<Object> ascending = column(sorted(p, "emailAddress", "ASC"), "emailAddress");
+        assertEquals(List.of(p + "1@sort.dotcms.com", p + "2@sort.dotcms.com",
+                p + "3@sort.dotcms.com", p + "4@sort.dotcms.com"), ascending);
+        assertEquals("DESC must reverse ASC", reversed(ascending),
+                column(sorted(p, "emailAddress", "DESC"), "emailAddress"));
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter} with {@code orderby=lastLoginDate}
+     * Given Scenario: Three seeded users have staggered last logins and one has none.
+     * Expected Result: Dates ascending then the NULL; dates descending then the NULL. The user without a login
+     * is last in both directions (AC-001, AC-003).
+     */
+    @Test
+    public void test_filter_orderByLastLoginDate_nullsLastInBothDirections() throws Exception {
+        final String p = seedSortFixtures();
+        final List<Object> expectedAsc = new ArrayList<>(List.of(JAN_1, JAN_2, JAN_3));
+        expectedAsc.add(null);
+        assertEquals(expectedAsc, column(sorted(p, "lastLoginDate", "ASC"), "lastLoginDate"));
+
+        final List<Object> expectedDesc = new ArrayList<>(List.of(JAN_3, JAN_2, JAN_1));
+        expectedDesc.add(null);
+        assertEquals("never-logged-in users must stay last on DESC", expectedDesc,
+                column(sorted(p, "lastLoginDate", "DESC"), "lastLoginDate"));
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter} with {@code orderby=firstName}
+     * Given Scenario: Two seeded users share the first name Bob, with last names Alpha and Zed.
+     * Expected Result: Ties are broken by last name in the same direction, so the order is deterministic (AC-004).
+     */
+    @Test
+    public void test_filter_orderByFirstName_tiesBrokenByLastName() throws Exception {
+        final String p = seedSortFixtures();
+        assertEquals(List.of("Young", "Alpha", "Zed", "Xu"), column(sorted(p, "firstName", "ASC"), "lastName"));
+        assertEquals(List.of("Xu", "Zed", "Alpha", "Young"), column(sorted(p, "firstName", "DESC"), "lastName"));
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter} without {@code orderby}
+     * Given Scenario: The endpoint is called with no sort field, as every pre-existing caller does.
+     * Expected Result: The order is the historical default, full name ascending -- unchanged by this fix (AC-002).
+     */
+    @Test
+    public void test_filter_noOrderBy_keepsDefaultFullNameOrder() throws Exception {
+        final String p = seedSortFixtures();
+        final List<Object> fullNames = sorted(p, null, "ASC").stream()
+                .map(item -> item.get("firstName") + " " + item.get("lastName"))
+                .collect(Collectors.toList());
+        assertEquals(withPrefix(p, "Alice Young", "Bob Alpha", "Bob Zed", "Carol Xu"), fullNames);
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter} with {@code orderby=mod_date desc}
+     * Given Scenario: A whitelisted SQL sort term that already carries its own direction is sent, together with
+     * the {@code direction} parameter.
+     * Expected Result: The direction is not appended a second time; the call succeeds and the four fixtures come
+     * back ordered by modification date, newest first (AC-006). Before the fix this produced
+     * {@code order by mod_date desc asc} and an SQL syntax error.
+     */
+    /**
+     * Method to test: {@link UserResource#filter} with {@code orderby=-mod_date}
+     * Given Scenario: The sanitizer's leading-dash descending shorthand is sent, together with {@code direction=ASC}.
+     * Expected Result: The dash is translated to {@code desc} and nothing else is appended; the call succeeds and the
+     * fixtures come back newest first (AC-006, review finding #1). Before the fix this produced
+     * {@code order by -mod_date asc}, which PostgreSQL rejects (unary minus on a timestamp).
+     */
+    @Test
+    public void test_filter_dashPrefixedTerm_sortsDescending() throws Exception {
+        final String p = seedSortFixtures();
+        final List<Object> modDates = column(sorted(p, "-mod_date", "ASC"), "modificationDate");
+        assertEquals("all four fixtures must be returned", 4, modDates.size());
+        for (int i = 1; i < modDates.size(); i++) {
+            assertTrue("modificationDate must be non-increasing at index " + i,
+                    (Long) modDates.get(i - 1) >= (Long) modDates.get(i));
+        }
+    }
+
+    @Test
+    public void test_filter_sanitizedTermWithDirection_isNotDoubled() throws Exception {
+        final String p = seedSortFixtures();
+        final List<Object> modDates = column(sorted(p, "mod_date desc", "ASC"), "modificationDate");
+        assertEquals("all four fixtures must be returned", 4, modDates.size());
+        for (int i = 1; i < modDates.size(); i++) {
+            assertTrue("modificationDate must be non-increasing at index " + i,
+                    (Long) modDates.get(i - 1) >= (Long) modDates.get(i));
+        }
+    }
+
+    // ==================== Role changes require a CMS Administrator ====================
+
+    private static final String USER_MANAGER_PASSWORD = "Passw0rd!";
+
+    /**
+     * Creates a back-end user who is not a CMS Administrator but has the Users and Roles tools,
+     * holding the given extra roles. Registered for cleanup.
+     */
+    private static User newUserManager(final Role... extraRoles) throws Exception {
+        final String suffix = uniq();
+        final com.dotmarketing.business.Layout layout = new com.dotcms.datagen.LayoutDataGen()
+                .name("Users and Roles " + suffix).portletIds("users", "roles").nextPersisted();
+        final Role toolsRole = new RoleDataGen().layout(layout).nextPersisted();
+        rolesToClean.add(toolsRole);
+
+        final List<Role> roles = new ArrayList<>(List.of(TestUserUtils.getBackendRole(), toolsRole));
+        roles.addAll(List.of(extraRoles));
+        final User manager = new UserDataGen().firstName("Manager").lastName("User" + suffix)
+                .emailAddress("usermanager" + suffix + "@dotcms.com").password(USER_MANAGER_PASSWORD)
+                .roles(roles.toArray(new Role[0])).nextPersisted();
+        usersToClean.add(manager);
+
+        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+        assertFalse("precondition: the caller must not be a CMS Administrator", manager.isAdmin());
+        assertTrue("precondition: the caller must have the Users and Roles tools",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), manager)
+                        && layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), manager));
+        return manager;
+    }
+
+    private static HttpServletRequest requestAs(final User user) {
+        return mockRequestAs(user.getEmailAddress(), USER_MANAGER_PASSWORD);
+    }
+
+    /** The ids of the roles the user holds directly. */
+    private static List<String> directRoleIds(final User user) throws Exception {
+        return APILocator.getRoleAPI().loadRolesForUser(user.getUserId(), false).stream()
+                .map(Role::getId).collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator updates
+     * their own account with the CMS Administrator role added by key.
+     * Expected Result: {@link DotSecurityException} (403); still not a CMS Administrator, roles unchanged.
+     */
+    @Test
+    public void test_update_nonAdminAddingAdministratorRoleByKey_forbidden() throws Exception {
+        final User manager = newUserManager();
+        final Set<String> before = Set.copyOf(directRoleIds(manager));
+        final List<String> roles = directRoleIds(manager);
+        roles.add(Role.CMS_ADMINISTRATOR_ROLE);
+
+        assertThrows(DotSecurityException.class, () -> resource.update(requestAs(manager), response,
+                updateFormFor(manager).roles(roles).build()));
+
+        assertFalse(manager.isAdmin());
+        assertEquals(before, Set.copyOf(directRoleIds(manager)));
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator updates
+     * their own account with an ordinary assignable role added by id.
+     * Expected Result: {@link DotSecurityException} (403); the role is not granted.
+     */
+    @Test
+    public void test_update_nonAdminAddingRoleById_forbidden() throws Exception {
+        final User manager = newUserManager();
+        final Role ordinary = new RoleDataGen().key("ordinary" + uniq()).nextPersisted();
+        rolesToClean.add(ordinary);
+        final List<String> roles = directRoleIds(manager);
+        roles.add(ordinary.getId());
+
+        assertThrows(DotSecurityException.class, () -> resource.update(requestAs(manager), response,
+                updateFormFor(manager).roles(roles).build()));
+
+        assertFalse(APILocator.getRoleAPI().doesUserHaveRole(manager, ordinary));
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator holds an
+     * extra assignable role and updates their own account without it.
+     * Expected Result: {@link DotSecurityException} (403); the role is still held.
+     */
+    @Test
+    public void test_update_nonAdminRemovingOwnRole_forbidden() throws Exception {
+        final Role extra = new RoleDataGen().key("extra" + uniq()).nextPersisted();
+        rolesToClean.add(extra);
+        final User manager = newUserManager(extra);
+        final List<String> roles = directRoleIds(manager);
+        roles.remove(extra.getId());
+
+        assertThrows(DotSecurityException.class, () -> resource.update(requestAs(manager), response,
+                updateFormFor(manager).roles(roles).build()));
+
+        assertTrue(APILocator.getRoleAPI().doesUserHaveRole(manager, extra));
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator holds an
+     * extra assignable role and updates their own account without it and with an ordinary new role.
+     * Expected Result: {@link DotSecurityException} (403); nothing changes: the extra role is still
+     * held and the new role is not granted.
+     */
+    @Test
+    public void test_update_nonAdminAddingAndRemovingRoles_forbidden() throws Exception {
+        final Role extra = new RoleDataGen().key("extra" + uniq()).nextPersisted();
+        final Role ordinary = new RoleDataGen().key("ordinary" + uniq()).nextPersisted();
+        rolesToClean.add(extra);
+        rolesToClean.add(ordinary);
+        final User manager = newUserManager(extra);
+        final List<String> roles = directRoleIds(manager);
+        roles.remove(extra.getId());
+        roles.add(ordinary.getId());
+
+        assertThrows(DotSecurityException.class, () -> resource.update(requestAs(manager), response,
+                updateFormFor(manager).roles(roles).build()));
+
+        assertTrue(APILocator.getRoleAPI().doesUserHaveRole(manager, extra));
+        assertFalse(APILocator.getRoleAPI().doesUserHaveRole(manager, ordinary));
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator holds role P
+     * directly and its child role C through it. They update their own account sending every role
+     * they hold, inherited ones included, as the Users screen does on every save.
+     * Expected Result: 200; the direct roles are unchanged and C is not granted directly.
+     */
+    @Test
+    public void test_update_nonAdminRolesWithInheritedRole_succeeds() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final Role parent = new RoleDataGen().key("parent" + uniq()).nextPersisted();
+        final Role child = new RoleDataGen().key("child" + uniq()).parent(parent.getId()).nextPersisted();
+        rolesToClean.add(child);
+        rolesToClean.add(parent);
+        final User manager = newUserManager(parent);
+        assertTrue("precondition: the child role must be inherited", roleAPI.doesUserHaveRole(manager, child));
+        final Set<String> before = Set.copyOf(directRoleIds(manager));
+        assertFalse("precondition: the child role must not be held directly", before.contains(child.getId()));
+
+        final List<String> everyRoleHeld = roleAPI.loadRolesForUser(manager.getUserId(), true).stream()
+                .map(Role::getId).collect(Collectors.toList());
+        final Response resourceResponse = resource.update(requestAs(manager), response,
+                updateFormFor(manager).roles(everyRoleHeld).build());
+
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        assertEquals(before, Set.copyOf(directRoleIds(manager)));
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator changes
+     * only their own first name and sends no roles.
+     * Expected Result: 200; the name is updated and the roles are unchanged.
+     */
+    @Test
+    public void test_update_nonAdminRolesFieldAbsent_succeeds() throws Exception {
+        final User manager = newUserManager();
+        final Set<String> before = Set.copyOf(directRoleIds(manager));
+
+        final Response resourceResponse = resource.update(requestAs(manager), response,
+                updateFormFor(manager).firstName("Renamed").build());
+
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        assertEquals("Renamed", APILocator.getUserAPI().loadUserById(manager.getUserId()).getFirstName());
+        assertEquals(before, Set.copyOf(directRoleIds(manager)));
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user holds parent role P directly and its child role C through it. A CMS
+     * Administrator sets the user's roles to C instead of P.
+     * Expected Result: 200; P is removed and C is now held directly, so the user keeps C.
+     */
+    @Test
+    public void test_update_adminReplacingParentRoleWithChild_childGrantedDirectly() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final Role parent = new RoleDataGen().key("parentswap" + uniq()).nextPersisted();
+        final Role child = new RoleDataGen().key("childswap" + uniq()).parent(parent.getId()).nextPersisted();
+        rolesToClean.add(child);
+        rolesToClean.add(parent);
+        final User target = new UserDataGen().roles(TestUserUtils.getBackendRole(), parent).nextPersisted();
+        usersToClean.add(target);
+        assertTrue("precondition: the child role must be inherited", roleAPI.doesUserHaveRole(target, child));
+
+        final List<String> roles = directRoleIds(target);
+        roles.remove(parent.getId());
+        roles.add(child.getId());
+        final Response resourceResponse = resource.update(mockRequest(), response,
+                updateFormFor(target).roles(roles).build());
+
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        final Set<String> direct = Set.copyOf(directRoleIds(target));
+        assertFalse("the parent role must be removed", direct.contains(parent.getId()));
+        assertTrue("the child role must be held directly", direct.contains(child.getId()));
+        assertTrue(roleAPI.doesUserHaveRole(target, child));
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A CMS Administrator updates another user, adding the CMS Administrator role by key.
+     * Expected Result: 200; the user is now a CMS Administrator.
+     */
+    @Test
+    public void test_update_adminAddingAdministratorRole_succeeds() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User target = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+        usersToClean.add(target);
+        final List<String> roles = directRoleIds(target);
+        roles.add(Role.CMS_ADMINISTRATOR_ROLE);
+
+        final Response resourceResponse = resource.update(mockRequest(), response,
+                updateFormFor(target).roles(roles).build());
+
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        assertTrue(target.isAdmin());
+        roleAPI.removeRoleFromUser(roleAPI.loadCMSAdminRole(), target);
+    }
+
+    /**
+     * Method to test: {@link UserResource#create(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator creates a
+     * user with the CMS Administrator role.
+     * Expected Result: {@link ForbiddenException} (403) before anything is written; no user is created.
+     */
+    @Test
+    public void test_create_nonAdminWithAdministratorRole_forbidden() throws Exception {
+        final User manager = newUserManager();
+        final String newUserId = "createdbymanager-" + uniq();
+
+        assertThrows(ForbiddenException.class, () -> resource.create(requestAs(manager), response,
+                createFormFor(newUserId).roles(List.of(Role.DOTCMS_BACK_END_USER, Role.CMS_ADMINISTRATOR_ROLE))
+                        .build()));
+
+        assertThrows(com.dotmarketing.business.NoSuchUserException.class,
+                () -> APILocator.getUserAPI().loadUserById(newUserId));
+    }
+
+    /**
+     * Method to test: {@link UserResource#create(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator creates a
+     * user without the roles field (the default Front-end User role applies).
+     * Expected Result: {@link ForbiddenException} (403) before anything is written; no user is created.
+     */
+    @Test
+    public void test_create_nonAdminWithDefaultRole_forbidden() throws Exception {
+        final User manager = newUserManager();
+        final String newUserId = "createdbymanager-" + uniq();
+
+        assertThrows(ForbiddenException.class,
+                () -> resource.create(requestAs(manager), response, createFormFor(newUserId).build()));
+
+        assertThrows(com.dotmarketing.business.NoSuchUserException.class,
+                () -> APILocator.getUserAPI().loadUserById(newUserId));
+    }
+
+    /**
+     * Method to test: {@link UserResource#create(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator creates a
+     * user whose only role entry matches no role.
+     * Expected Result: {@link ForbiddenException} (403) before anything is written; no user is created.
+     */
+    @Test
+    public void test_create_nonAdminWithUnknownRoleOnly_forbiddenAndNoUserCreated() throws Exception {
+        final User manager = newUserManager();
+        final String newUserId = "createdbymanager-" + uniq();
+
+        assertThrows(ForbiddenException.class, () -> resource.create(requestAs(manager), response,
+                createFormFor(newUserId).roles(List.of("no-such-role-" + uniq())).build()));
+
+        assertThrows(com.dotmarketing.business.NoSuchUserException.class,
+                () -> APILocator.getUserAPI().loadUserById(newUserId));
+    }
+
+    /**
+     * Method to test: {@link UserResource#create(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator creates a
+     * user whose only role cannot be assigned to users (editUsers = false).
+     * Expected Result: {@link ForbiddenException} (403) before anything is written; no user is created.
+     */
+    @Test
+    public void test_create_nonAdminWithNonAssignableRoleOnly_forbiddenAndNoUserCreated() throws Exception {
+        final User manager = newUserManager();
+        final Role notAssignable = new RoleDataGen().key("notassignable" + uniq()).editUsers(false)
+                .nextPersisted();
+        rolesToClean.add(notAssignable);
+        final String newUserId = "createdbymanager-" + uniq();
+
+        assertThrows(ForbiddenException.class, () -> resource.create(requestAs(manager), response,
+                createFormFor(newUserId).roles(List.of(notAssignable.getRoleKey())).build()));
+
+        assertThrows(com.dotmarketing.business.NoSuchUserException.class,
+                () -> APILocator.getUserAPI().loadUserById(newUserId));
     }
 }

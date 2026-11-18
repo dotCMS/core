@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, vi } from 'vitest';
 
 import { DotContainer } from '@dotcms/dotcms-models';
 
@@ -10,7 +10,7 @@ import {
 } from './gridstack-utils';
 import { FULL_DATA_MOCK_UNSORTED, MINIMAL_DATA_MOCK, ROWS_MOCK } from './mocks';
 
-global.structuredClone = jest.fn((val) => {
+global.structuredClone = vi.fn((val) => {
     return JSON.parse(JSON.stringify(val));
 });
 

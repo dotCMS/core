@@ -1,5 +1,11 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
@@ -20,7 +26,7 @@ describe('DotImageEditorFocalOverlayComponent', () => {
         providers: [
             provideNoopAnimations(),
             Dispatcher,
-            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) })
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) })
         ],
         componentProviders: [
             mockProvider(ImageEditorStore, {
@@ -34,7 +40,7 @@ describe('DotImageEditorFocalOverlayComponent', () => {
         spectator = createComponent({ detectChanges: false });
         spectator.setInput('imageRect', IMAGE_RECT);
         dispatcher = spectator.inject(Dispatcher, true);
-        jest.spyOn(dispatcher, 'dispatch');
+        vi.spyOn(dispatcher, 'dispatch');
         spectator.detectChanges();
     });
 
@@ -98,7 +104,7 @@ describe('DotImageEditorFocalOverlayComponent', () => {
 
     it('should stop propagation and leave the focal tool on Escape', () => {
         const event = new KeyboardEvent('keydown', { key: 'Escape' });
-        const stopSpy = jest.spyOn(event, 'stopPropagation');
+        const stopSpy = vi.spyOn(event, 'stopPropagation');
 
         spectator.element.dispatchEvent(event);
 
@@ -108,7 +114,7 @@ describe('DotImageEditorFocalOverlayComponent', () => {
 
     /** Finds the first dispatched event whose type matches the given suffix. */
     function dispatchedEvent(typeSuffix: string): { type: string; payload?: unknown } | undefined {
-        const call = (dispatcher.dispatch as jest.Mock).mock.calls.find(([dispatched]) =>
+        const call = (dispatcher.dispatch as Mock).mock.calls.find(([dispatched]) =>
             dispatched.type.includes(typeSuffix)
         );
 

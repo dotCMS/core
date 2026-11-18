@@ -16,6 +16,7 @@ export class LegacyBinaryField {
     readonly preview: Locator;
     readonly editButton: Locator;
     readonly editButtonResponsive: Locator;
+    readonly loadError: Locator;
 
     constructor(
         private frame: Frame,
@@ -29,10 +30,17 @@ export class LegacyBinaryField {
         this.preview = this.root.getByTestId('preview');
         this.editButton = this.root.getByTestId('edit-button');
         this.editButtonResponsive = this.root.getByTestId('edit-button-responsive');
+        // The `.catch` fallback in edit_field.jsp replaces the whole container with this box.
+        this.loadError = frame.locator(`#container-binary-field-${fieldVariable} .callOutBox`);
     }
 
     async expectVisible() {
         await expect(this.dropzone).toBeVisible({ timeout: 15000 });
+    }
+
+    /** Asserts the JSP `.catch` fallback did not replace the field with an error box. */
+    async expectNoLoadError() {
+        await expect(this.loadError).toHaveCount(0);
     }
 
     async expectPreviewVisible() {

@@ -84,9 +84,11 @@ public enum OSIndexProperty {
     TLS_TRUST_SELF_SIGNED("OS_TLS_TRUST_SELF_SIGNED", null),
 
     /**
-     * Enforce TLS certificate and hostname verification.
-     * Defaults to {@code false} — set to {@code true} only when the server certificate is
-     * trusted by the JVM truststore or {@code OS_TLS_CA_CERT} is configured. No ES equivalent.
+     * Enforce TLS certificate and hostname verification. Defaults to {@code true}; set to
+     * {@code false} only to connect to a server whose certificate cannot be verified (a warning is
+     * logged). A private CA is configured with {@code OS_TLS_CA_CERT}. The Elasticsearch client has
+     * its own {@code ES_TLS_CERT_REQUIRED}, which defaults to {@code false}. This property deliberately has
+     * no Elasticsearch fallback: falling back would inherit that lenient default.
      */
     TLS_CERT_REQUIRED("OS_TLS_CERT_REQUIRED", null),
 
@@ -96,7 +98,7 @@ public enum OSIndexProperty {
     /** Path to the PEM client private key for mTLS. No ES equivalent. */
     TLS_CLIENT_KEY("OS_TLS_CLIENT_KEY", null),
 
-    /** Path to the PEM CA certificate used to verify the server. No ES equivalent. */
+    /** Path to the PEM file of the CA that signed the server certificate. No ES equivalent. */
     TLS_CA_CERT("OS_TLS_CA_CERT", null),
 
     // -------------------------------------------------------------------------
@@ -143,6 +145,13 @@ public enum OSIndexProperty {
 
     /** Number of documents per bulk request. Falls back to {@code ES_BULK_BATCH_SIZE}. */
     BULK_BATCH_SIZE("OS_BULK_BATCH_SIZE", "ES_BULK_BATCH_SIZE"),
+
+    /**
+     * Maximum estimated size, in MB, of one reindex bulk request to OpenSearch (#37905). Falls back
+     * to {@code REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE}, but never inherits a disabled ({@code <= 0})
+     * value: see {@code ContentletIndexOperationsOS#resolveReindexBulkMaxBytes()}.
+     */
+    REINDEX_BULK_SIZE_MB("OS_REINDEX_BULK_SIZE_MB", "REINDEX_THREAD_ELASTICSEARCH_BULK_SIZE"),
 
     // -------------------------------------------------------------------------
     // Query behaviour

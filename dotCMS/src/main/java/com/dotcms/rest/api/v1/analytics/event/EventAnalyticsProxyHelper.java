@@ -272,7 +272,7 @@ public class EventAnalyticsProxyHelper {
      * @param host site context for per-site HMAC token lookup; may be {@code null}
      * @return {@code Bearer <token>} header value, or empty if no token is configured
      */
-    static Optional<String> buildAuthHeader(final Host host) {
+    public static Optional<String> buildAuthHeader(final Host host) {
         if (host != null) {
             final Optional<String> siteToken =
                     ContentAnalyticsUtil.getBearerTokenFromAppSecrets(host);

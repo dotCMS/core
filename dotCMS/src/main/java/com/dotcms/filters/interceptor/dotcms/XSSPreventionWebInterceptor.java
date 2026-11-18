@@ -27,13 +27,13 @@ public class XSSPreventionWebInterceptor implements WebInterceptor {
   // All paths needs to be in lower case as the URI is lowercase before to be evaluated
   private static final String[] XSS_PROTECTED_PATHS_DEFAULT ={
           "\\A/html/", 
-          "\\A/c/", 
+          "\\A/c(/|$)", 
           "\\A/servlets", 
           "\\A/servlet/",
-          "\\A/dwr/",
+          "\\A/dwr(/|$)",
           "\\A/dotajaxdirector", 
           "\\A/dotscheduledjobs", 
-          "\\A/jsontags/", 
+          "\\A/jsontags(/|$)", 
           "\\A/edit/"
       };
 

@@ -15,7 +15,6 @@ import {
     DotMessageService,
     DotRouterService
 } from '@dotcms/data-access';
-import { mapParamsFromEditContentlet } from '@dotcms/utils';
 
 import { DotCustomEventHandlerService } from './../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 
@@ -154,9 +153,11 @@ export class DotContentletWrapperComponent {
     }
 
     /**
-     * Handle close event form the iframe
+     * Closes the full-page legacy editor: restores the page title, clears the editor state and
+     * tells the opener it is done.
      *
-     * @memberof DotContentletWrapperComponent
+     * It no longer sends anyone back to Content Drive: Content Drive edits in its own side panel,
+     * so nobody reaches this screen from it (#37759, FR-026).
      */
     onClose(): void {
         this.titleService.setTitle(this._appMainTitle || this.titleService.getTitle());
@@ -164,19 +165,6 @@ export class DotContentletWrapperComponent {
         this.isContentletModified = false;
         this.header = '';
         this.shutdown.emit();
-
-        const searchParams = new URL(
-            this.dotRouterService.currentPortlet.url,
-            window.location.origin
-        ).searchParams;
-
-        const contentDriveParams = mapParamsFromEditContentlet(searchParams);
-
-        if (Object.keys(contentDriveParams).length) {
-            this.dotRouterService.gotoPortlet('content-drive', {
-                queryParams: contentDriveParams
-            });
-        }
     }
 
     /**

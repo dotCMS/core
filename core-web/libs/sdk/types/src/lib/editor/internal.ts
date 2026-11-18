@@ -110,6 +110,12 @@ export interface DotContentletAttributes {
     'data-dot-type': string;
     'data-dot-container': string;
     'data-dot-on-number-of-pages': string;
+    /**
+     * Whether the current user may edit this contentlet instance. Stringified
+     * boolean, mirroring what the Velocity container renderer emits on
+     * traditional pages so the editor reads one attribute on both surfaces.
+     */
+    'data-dot-can-edit': string;
     'data-dot-style-properties'?: string;
 }
 

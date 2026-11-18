@@ -14,6 +14,7 @@ import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
+import com.dotcms.content.index.IndexConfigHelper;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.enterprise.ESSeachAPI;
 import com.dotcms.enterprise.priv.util.SearchSourceBuilderUtil;
@@ -24,6 +25,7 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.model.ImmutableContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
@@ -31,6 +33,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
@@ -57,6 +60,15 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
  *
  */
 public class ESSearchAPIImpl implements ESSeachAPI {
+
+	/** Why the deprecated Elasticsearch-only path refuses to run in Phase 3, and what to do instead. */
+	static final String PHASE3_UNSUPPORTED_MESSAGE = "The deprecated Elasticsearch-only "
+			+ "esSearch()/esRaw() path is not available once the OpenSearch migration reaches its final "
+			+ "phase: Elasticsearch no longer receives writes, so it could only answer from the index "
+			+ "frozen at cutover. Migrate this call to the vendor-neutral $estool.search()/$estool.raw() "
+			+ "(or SearchAPI), which reads from OpenSearch. While templates are being migrated, setting "
+			+ "FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL=true makes these calls return null "
+			+ "from Velocity instead of failing the page.";
 
 	@Override
 	public ESSearchResults esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles)
@@ -205,11 +217,29 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 	 *             perform this action.
 	 * @throws DotDataException
 	 *             An error occurred when retrieving the data.
+	 * @throws DotStateException
+	 *             In Phase 3 of the OpenSearch migration, where Elasticsearch no longer receives
+	 *             writes, or when no Elasticsearch content index is registered.
 	 */
 	@RequestCost(Price.ES_QUERY)
 	private SearchResponse esSearchRaw(JSONObject jsonObject, boolean live, User user,
             boolean respectFrontendRoles, int limit, int offset, String sortBy)
 			throws DotSecurityException, DotDataException {
+
+		// Past the final migration phase Elasticsearch receives no more writes. The switchover keeps
+		// its active pointers, so this path would still resolve an index — the copy frozen at cutover
+		// — and answer with results that look valid but miss everything written since, and still
+		// include everything deleted or unpublished since, with no error anywhere (issue #37635).
+		// Fail instead, and do it on the phase rather than on a missing pointer so the outcome does
+		// not depend on what the index store happens to hold. DotStateException is one of the few
+		// exception types Velocity's method-exception handler rethrows rather than turning into a null, so from
+		// a template the failure surfaces instead of printing unresolved Velocity onto the page.
+		// Templates can soften this to a null while they are migrated — see
+		// FeatureFlagName.FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL and ESContentTool;
+		// Java callers always get the exception.
+		if (IndexConfigHelper.MigrationPhase.current().isMigrationComplete()) {
+			throw new DotStateException(PHASE3_UNSUPPORTED_MESSAGE);
+		}
 
         String indexToHit;
         IndiciesInfo info;
@@ -225,30 +255,93 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 			return null;
 		}
 
-        List<Role> roles = new ArrayList<>();
+		// Before Phase 3 the pointers should always be set; if the store holds none, carrying the null
+		// into SearchRequest dies there with a NullPointerException, which Velocity turns into a null
+		// return and the template renders its own unresolved source (issue #37635). Fail clearly.
+		if (!UtilMethods.isSet(indexToHit)) {
+			throw new DotStateException(String.format(
+					"No active Elasticsearch %s content index is registered, so the deprecated "
+							+ "esSearch()/esRaw() path has nothing to query. Reindex, or migrate this "
+							+ "call to the vendor-neutral $estool.search()/$estool.raw() (or SearchAPI), "
+							+ "which resolves the index for the current migration phase.",
+					live ? "live" : "working"));
+		}
+
 		if (user == null && !respectFrontendRoles) {
 			throw new DotSecurityException("You must specify a user if you are not respecting frontend roles");
 		}
 
-        boolean isAdmin = false;
-		if (user != null) {
-			if (!APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())) {
-				roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
-            } else {
-                isAdmin = true;
-            }
-        }
-
         final RestHighLevelClient client = RestHighLevelClientProvider.getInstance().getClient();
         final SearchRequest request = new SearchRequest(indexToHit);
 
+		applyPermissionsFilter(jsonObject, user, respectFrontendRoles);
+
+        final SearchResponse response;
+        try {
+			final SearchSourceBuilder searchSourceBuilder =  SearchSourceBuilderUtil
+					.getSearchSourceBuilder(jsonObject.toString())
+					.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
+
+			if(limit>0)
+				searchSourceBuilder.size(limit);
+			if(offset>0)
+				searchSourceBuilder.from(offset);
+
+			if(UtilMethods.isSet(sortBy) ) {
+                addBuilderSort(sortBy, searchSourceBuilder);
+			}
+
+            request.source(searchSourceBuilder);
+            response = client.search(request, RequestOptions.DEFAULT);
+        } catch (IOException e) {
+            throw new DotStateException(e.getMessage(), e);
+        }
+
+        return response;
+
+    }
+
+	/**
+	 * Adds the permission filter to a raw query for every non-administrator user, combining it
+	 * with the query the caller sent. Administrators are left untouched.
+	 *
+	 * <p>The filter holds the read-permission clause and the category read clause, the same two
+	 * clauses the Lucene and OpenSearch searches append, so content tagged with a category the
+	 * user's roles cannot read is left out of the results.</p>
+	 *
+	 * <p>The filter is built on the server side from the user's roles. Nothing in the request
+	 * body takes part in the decision, so a caller cannot influence whether it is applied.</p>
+	 *
+	 * @param jsonObject           the raw query body, modified in place
+	 * @param user                 the user the search runs as
+	 * @param respectFrontendRoles whether front-end roles count towards the permission check
+	 * @return the same {@code jsonObject}, so callers and tests can read the body that will be sent
+	 * @throws DotDataException if the roles of the user cannot be loaded
+	 * @throws DotSecurityException if the permission clauses cannot be built for the user
+	 */
+	@VisibleForTesting
+	static JSONObject applyPermissionsFilter(final JSONObject jsonObject, final User user,
+			final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+		List<Role> roles = new ArrayList<>();
+		boolean isAdmin = false;
+		if (user != null) {
+			if (!APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())) {
+				roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
+			} else {
+				isAdmin = true;
+			}
+		}
+
         /*
-        Getting the permissions query but only for non admin users
-        and if the user is not already passing permissions on the query.
+        Getting the permissions query for non admin users. The filter is always built on the server
+        side, regardless of the keys present in the request body.
          */
 		StringBuffer perms = new StringBuffer();
-		if (!isAdmin && !jsonObject.has("permissions:")) {
-			APILocator.getContentletAPIImpl().addPermissionsToQuery(perms, user, roles, respectFrontendRoles);
+		if (!isAdmin) {
+			final ContentletAPI contentletAPI = APILocator.getContentletAPIImpl();
+			contentletAPI.addPermissionsToQuery(perms, user, roles, respectFrontendRoles);
+			contentletAPI.addCategoryPermissionsToQuery(perms, user, roles, respectFrontendRoles);
 		}
 
         //Verify if we have permissions to apply
@@ -339,28 +432,6 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 			}
 		}
 
-        final SearchResponse response;
-        try {
-			final SearchSourceBuilder searchSourceBuilder =  SearchSourceBuilderUtil
-					.getSearchSourceBuilder(jsonObject.toString())
-					.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-
-			if(limit>0)
-				searchSourceBuilder.size(limit);
-			if(offset>0)
-				searchSourceBuilder.from(offset);
-
-			if(UtilMethods.isSet(sortBy) ) {
-                addBuilderSort(sortBy, searchSourceBuilder);
-			}
-
-            request.source(searchSourceBuilder);
-            response = client.search(request, RequestOptions.DEFAULT);
-        } catch (IOException e) {
-            throw new DotStateException(e.getMessage(), e);
-        }
-
-        return response;
-
-    }
+		return jsonObject;
+	}
 }

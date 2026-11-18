@@ -1,10 +1,10 @@
 {
   "/api": {
-    "target": "https://staging-latest.dotcms.cloud",
+    "target": "https://dotcms-staging-latest.dotcms.dev",
     "secure": false
   },
   "/dA": {
-    "target": "https://staging-latest.dotcms.cloud",
+    "target": "https://dotcms-staging-latest.dotcms.dev",
     "secure": false
   }
 }

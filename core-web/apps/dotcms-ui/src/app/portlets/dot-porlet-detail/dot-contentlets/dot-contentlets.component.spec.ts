@@ -1,5 +1,6 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -53,7 +54,7 @@ import { DotEditContentletComponent } from '../../../view/components/dot-content
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 class MockDotContentletEditorService {
-    edit = jest.fn();
+    edit = vi.fn();
 }
 
 const mockContentletEditorService = new MockDotContentletEditorService();
@@ -116,9 +117,9 @@ describe('DotContentletsComponent', () => {
                 provide: IframeOverlayService,
                 useValue: {
                     overlay: of(false),
-                    show: jest.fn(),
-                    hide: jest.fn(),
-                    toggle: jest.fn()
+                    show: vi.fn(),
+                    hide: vi.fn(),
+                    toggle: vi.fn()
                 }
             }
         ]
@@ -130,7 +131,7 @@ describe('DotContentletsComponent', () => {
         dotRouterService = spectator.inject(DotRouterService);
         dotIframeService = spectator.inject(DotIframeService);
         dotCustomEventHandlerService = spectator.inject(DotCustomEventHandlerService);
-        jest.spyOn(dotIframeService, 'reloadData');
+        vi.spyOn(dotIframeService, 'reloadData');
     });
 
     it('should call contentlet modal', fakeAsync(() => {
@@ -158,7 +159,7 @@ describe('DotContentletsComponent', () => {
 
     it('should call dotCustomEventHandlerService on customEvent', () => {
         spectator.detectChanges();
-        jest.spyOn(dotCustomEventHandlerService, 'handle').mockImplementation(() => {
+        vi.spyOn(dotCustomEventHandlerService, 'handle').mockImplementation(() => {
             /* mock implementation */
         });
         const edit = spectator.debugElement.query(By.css('dot-edit-contentlet'));

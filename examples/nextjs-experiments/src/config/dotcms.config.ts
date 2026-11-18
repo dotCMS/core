@@ -1,3 +1,4 @@
+import type { DotCMSEventsConfig } from "@dotcms/events";
 import type { DotCMSPageRendererMode } from "@dotcms/types";
 
 /**
@@ -24,20 +25,20 @@ export const aiSearchIndexName = "example-travel-lux";
 
 
 /**
- * Centralized configuration for dotCMS A/B Experiments.
- *
- * Consumed by `withExperiments()` (from `@dotcms/experiments`) in
- * `src/views/Page.tsx`, which wraps `DotCMSLayoutBody` to serve experiment
- * variants and report results. The `apiKey` acts as the enable switch: when it
- * is empty the page renders without experiments.
+ * Configuration for `dotEvents.init()` from `@dotcms/events`, called once in
+ * `src/instrumentation-client.ts`. Experiments are on by default: the SDK asks dotCMS
+ * for the visitor's variant and redirects to it. Impressions and clicks are opt-in; this
+ * example turns both on.
  *
  * Environment variables:
- * - NEXT_PUBLIC_DOTCMS_HOST            → server (required)
- * - NEXT_PUBLIC_DOTCMS_EXPERIMENTS_KEY → apiKey (required to enable experiments)
- * - NEXT_PUBLIC_EXPERIMENTS_DEBUG      → debug (optional; "true" enables verbose logging)
+ * - NEXT_PUBLIC_DOTCMS_HOST      → dotcmsUrl (required)
+ * - NEXT_PUBLIC_DOTCMS_SITE_AUTH → siteAuth, from the Content Analytics app (required)
+ * - NEXT_PUBLIC_EVENTS_DEBUG     → debug (optional; "true" logs what the SDK does)
  */
-export const experimentsConfig = {
-    server: process.env.NEXT_PUBLIC_DOTCMS_HOST ?? "",
-    apiKey: process.env.NEXT_PUBLIC_DOTCMS_EXPERIMENTS_KEY ?? "",
-    debug: process.env.NEXT_PUBLIC_EXPERIMENTS_DEBUG === "true",
+export const eventsConfig: DotCMSEventsConfig = {
+    dotcmsUrl: process.env.NEXT_PUBLIC_DOTCMS_HOST ?? "",
+    siteAuth: process.env.NEXT_PUBLIC_DOTCMS_SITE_AUTH ?? "",
+    impressions: true,
+    clicks: true,
+    debug: process.env.NEXT_PUBLIC_EVENTS_DEBUG === "true",
 };

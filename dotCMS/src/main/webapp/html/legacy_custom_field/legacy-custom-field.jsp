@@ -16,6 +16,7 @@
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
 <%@ page import="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" %>
 <%@ page import="com.dotcms.rest.api.v1.DotObjectMapperProvider" %>
+<%@ page import="com.liferay.util.Xss" %>
 <%@page import="com.dotmarketing.portlets.contentlet.business.ContentletAPI"%>
 <%@ page import="com.dotmarketing.util.Logger" %>
 <%@ page import="java.util.HashMap" %>
@@ -237,8 +238,8 @@
     String isModal = request.getParameter("modal"); // Check if opened as modal
     boolean modalMode = "true".equals(isModal);
 
-    // Use DotObjectMapperProvider to get properly configured ObjectMapper
-    ObjectMapper mapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+    // Mapper whose output can be placed inside a script element
+    ObjectMapper mapper = DotObjectMapperProvider.getInstance().getScriptEmbeddableObjectMapper();
 %>
 
 
@@ -363,8 +364,8 @@
                          */
                         (() => {
                             // Initialize the height manager using the external module
-                            const iframeId = '<%= field.variable() %>';
-                            const inode = '<%= inode != null ? inode : "new" %>';
+                            const iframeId = '<%= Xss.encodeForJavaScript(field.variable()) %>';
+                            const inode = '<%= Xss.encodeForJavaScript(inode != null ? inode : "new") %>';
                             const modalMode = <%= modalMode %>;
 
                             if (window.DotIframeHeightManager) {

@@ -16,14 +16,21 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
 import javax.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.util.Map;
 
 /**
  * This class is a ViewTool that provides functionality related to completions.
  * It interacts with the CompletionsAPI to perform operations such as summarizing and raw processing.
+ *
+ * <p>Output is HTML-escaped by default (#37153): {@code summarize} escapes the provider's
+ * {@code openAiResponse} subtree, the echoed {@code query} and each match's {@code extractedText};
+ * {@code raw} escapes the whole provider payload; error payloads are escaped in full. Contentlet
+ * fields under {@code dotCMSResults} are returned as stored. Templates that need the unescaped
+ * payload go through {@code $ai.unsafe.completions}, which constructs this tool with escaping off
+ * and behaves exactly as before #37153.
+ *
+ * <p>When a call fails, the method returns the generic payload from {@link AIViewToolErrorHandler}
+ * and the exception is logged server-side; no exception detail reaches the template.
  */
 public class CompletionsTool implements ViewTool {
 
@@ -32,13 +39,24 @@ public class CompletionsTool implements ViewTool {
     private final Host host;
     private final AppConfig config;
     private final User user;
+    private final boolean escapeOutput;
 
-    CompletionsTool(Object initData) {
+    CompletionsTool(final Object initData) {
+        this(initData, true);
+    }
+
+    /**
+     * @param initData     the Velocity {@link ViewContext}
+     * @param escapeOutput {@code true} to HTML-escape results (the {@code $ai} default),
+     *                     {@code false} for the {@code $ai.unsafe} behaviour
+     */
+    CompletionsTool(final Object initData, final boolean escapeOutput) {
         this.context = (ViewContext) initData;
         this.request = this.context.getRequest();
         this.host = host();
         this.config = config();
         this.user = user();
+        this.escapeOutput = escapeOutput;
     }
 
     @Override
@@ -80,24 +98,9 @@ public class CompletionsTool implements ViewTool {
                 .user(user)
                 .build();
         try {
-            return APILocator.getDotAIAPI().getCompletionsAPI(config).summarize(form);
+            return escapeSearchShaped(APILocator.getDotAIAPI().getCompletionsAPI(config).summarize(form));
         } catch (Exception e) {
-            return handleException(e);
-        }
-    }
-
-    /**
-     * Handles exceptions that occur during the execution of the tool.
-     * @param e The exception to handle.
-     * @return A map containing the error message and stack trace.
-     */
-    private Map<String, Object> handleException(final Exception e) {
-        try (StringWriter out = new StringWriter()) {
-            final PrintWriter writer = new PrintWriter(out);
-            e.printStackTrace(writer);
-            return Map.of("error", e.getMessage(), "stackTrace", out.toString());
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+            return escape(AIViewToolErrorHandler.handle(CompletionsTool.class, e));
         }
     }
 
@@ -110,7 +113,7 @@ public class CompletionsTool implements ViewTool {
         try {
             return raw(new JSONObject(prompt));
         } catch (Exception e) {
-            return handleException(e);
+            return escape(AIViewToolErrorHandler.handle(CompletionsTool.class, e));
         }
     }
 
@@ -121,16 +124,19 @@ public class CompletionsTool implements ViewTool {
      */
     public Object raw(final JSONObject prompt) {
         try {
-            return APILocator.getDotAIAPI()
+            return escape(APILocator.getDotAIAPI()
                     .getCompletionsAPI(config)
-                    .raw(prompt, UtilMethods.extractUserIdOrNull(user));
+                    .raw(prompt, UtilMethods.extractUserIdOrNull(user)));
         } catch (Exception e) {
-            return handleException(e);
+            return escape(AIViewToolErrorHandler.handle(CompletionsTool.class, e));
         }
     }
 
     /**
      * Processes the given prompt in raw format.
+     * The parameter stays a raw {@code Map} on purpose: {@link JSONObject} implements the raw
+     * {@code Map} type, and a parameterised {@code Map<String, Object>} here makes the
+     * {@code raw(new JSONObject(...))} calls in this class ambiguous between the two overloads.
      * @param prompt The prompt to process.
      * @return The processed object.
      */
@@ -138,8 +144,18 @@ public class CompletionsTool implements ViewTool {
         try {
             return raw(new JSONObject(prompt));
         } catch (Exception e) {
-            return handleException(e);
+            return escape(AIViewToolErrorHandler.handle(CompletionsTool.class, e));
         }
+    }
+
+    /** Whole-payload escaping (provider output and error payloads), or pass-through when unsafe. */
+    private Object escape(final Object payload) {
+        return escapeOutput ? AIViewToolOutputEscaper.deepEscape(payload) : payload;
+    }
+
+    /** By-source escaping for the summarize shape, or pass-through when unsafe. */
+    private Object escapeSearchShaped(final Object payload) {
+        return escapeOutput ? AIViewToolOutputEscaper.escapeSearchShaped(payload) : payload;
     }
 
     @VisibleForTesting

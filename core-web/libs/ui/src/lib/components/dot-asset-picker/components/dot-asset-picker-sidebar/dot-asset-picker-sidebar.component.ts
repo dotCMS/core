@@ -11,6 +11,7 @@ import { DotFolderSearchResultsComponent } from '../../../dot-folder-search-resu
 import { DotFolderTreeComponent } from '../../../dot-folder-tree/dot-folder-tree.component';
 import { DotSearchInputComponent } from '../../../dot-search-input/dot-search-input.component';
 import { DotSiteComponent } from '../../../dot-site/dot-site.component';
+import { DotTruncatedLabelComponent } from '../../../dot-truncated-label/dot-truncated-label.component';
 import { DotAssetPickerStore } from '../../store/dot-asset-picker.store';
 
 /**
@@ -32,7 +33,8 @@ import { DotAssetPickerStore } from '../../store/dot-asset-picker.store';
         DotSearchInputComponent,
         DotSiteComponent,
         DotFolderNamePipe,
-        DotMessagePipe
+        DotMessagePipe,
+        DotTruncatedLabelComponent
     ],
     // Three rows now: site selector, folder search, then the tree taking what is left.
     host: { class: 'grid h-full w-full min-h-0 grid-rows-[min-content_min-content_1fr]' }
@@ -58,9 +60,9 @@ export class DotAssetPickerSidebarComponent {
         // the tree keeps its own inset on top of the wrapper's `px-4` and its rows sit further
         // right than the two inputs above them.
         root: { class: 'w-full h-full min-w-0 overflow-x-hidden border-none p-0!' },
-        wrapper: { class: 'min-w-0 overflow-x-hidden' },
-        nodeContent: { class: 'min-w-0' },
-        nodeLabel: { class: 'min-w-0 overflow-hidden' }
+        wrapper: { class: 'min-w-0 overflow-x-hidden' }
+        // The node-level guards that let a long label shrink instead of widening its row belong
+        // to `dot-folder-tree` now (#37363).
     };
 
     /**

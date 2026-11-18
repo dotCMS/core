@@ -23,16 +23,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "password",
-							"value": "admin",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -72,16 +67,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "password",
-							"value": "admin",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -131,6 +121,9 @@
 						"v1",
 						"logout"
 					]
+				},
+				"auth": {
+					"type": "noauth"
 				}
 			},
 			"response": []
@@ -169,6 +162,9 @@
 						"maintenance",
 						"_downloadStarter"
 					]
+				},
+				"auth": {
+					"type": "noauth"
 				}
 			},
 			"response": []
@@ -207,6 +203,9 @@
 						"maintenance",
 						"_downloadStarterWithAssets"
 					]
+				},
+				"auth": {
+					"type": "noauth"
 				}
 			},
 			"response": []

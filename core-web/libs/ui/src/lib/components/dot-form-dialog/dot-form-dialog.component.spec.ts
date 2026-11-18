@@ -1,4 +1,5 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { By } from '@angular/platform-browser';
 
@@ -32,7 +33,7 @@ describe('DotFormDialogComponent', () => {
         providers: [
             {
                 provide: DynamicDialogRef,
-                useValue: { close: jest.fn() }
+                useValue: { close: vi.fn() }
             },
             {
                 provide: DotMessageService,
@@ -47,7 +48,7 @@ describe('DotFormDialogComponent', () => {
     }
 
     beforeEach(() => {
-        jest.spyOn(document, 'querySelector').mockReturnValue(document.createElement('div'));
+        vi.spyOn(document, 'querySelector').mockReturnValue(document.createElement('div'));
         spectator = createHost();
         dynamicDialogRef = spectator.inject(DynamicDialogRef);
         spectator.detectChanges();
@@ -64,8 +65,8 @@ describe('DotFormDialogComponent', () => {
 
     describe('buttons', () => {
         beforeEach(() => {
-            jest.spyOn(spectator.component.save, 'emit');
-            jest.spyOn(spectator.component.cancel, 'emit');
+            vi.spyOn(spectator.component.save, 'emit');
+            vi.spyOn(spectator.component.cancel, 'emit');
         });
 
         it('should have save button', () => {

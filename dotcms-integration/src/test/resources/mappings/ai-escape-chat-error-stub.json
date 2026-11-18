@@ -1,0 +1,28 @@
+{
+  "priority": 1,
+  "request": {
+    "method": "POST",
+    "urlPathPattern": "/chat/completions",
+    "headers": {
+      "Authorization": {
+        "equalTo": "Bearer some-api-key-1a2bc3"
+      }
+    },
+    "bodyPatterns": [
+      {
+        "matches": "(?s).*Escaping probe failure.*"
+      }
+    ]
+  },
+  "response": {
+    "status": 500,
+    "jsonBody": {
+      "error": {
+        "message": "<b>boom</b> upstream failure for escaping probe",
+        "type": "server_error",
+        "param": null,
+        "code": null
+      }
+    }
+  }
+}

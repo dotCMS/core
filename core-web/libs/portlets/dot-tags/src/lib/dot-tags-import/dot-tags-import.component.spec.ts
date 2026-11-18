@@ -1,5 +1,11 @@
-import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import {
+    Spectator,
+    byTestId,
+    createComponentFactory,
+    mockProvider
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
@@ -13,10 +19,15 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotTagsImportComponent } from './dot-tags-import.component';
 
-const downloadClickMock = jest.fn();
+const downloadClickMock = vi.fn();
 
-jest.mock('@dotcms/utils', () => ({
-    getDownloadLink: jest.fn(() => ({
+// Partial mock (spread the real module), not a bare factory: an ESM mock exposes ONLY
+// what the factory returns, so everything else @dotcms/utils publishes came back
+// missing — the file died on "No 'EMPTY_SYSTEM_FIELD' export is defined on the mock".
+// Jest's CJS mock just yielded undefined for the untouched exports.
+vi.mock('@dotcms/utils', async () => ({
+    ...(await vi.importActual('@dotcms/utils')),
+    getDownloadLink: vi.fn(() => ({
         click: downloadClickMock
     }))
 }));
@@ -38,32 +49,41 @@ describe('DotTagsImportComponent', () => {
     const mockFile = new File(['tag1,SYSTEM_HOST'], 'test.csv', { type: 'text/csv' });
 
     const IMPORT_RESPONSE = {
-        entity: { totalRows: 10, successCount: 10, failureCount: 0, success: true }
+        entity: {
+            totalRows: 11,
+            successCount: 10,
+            duplicateCount: 0,
+            failureCount: 0,
+            success: true
+        }
     };
 
     const createComponent = createComponentFactory({
         component: DotTagsImportComponent,
         schemas: [CUSTOM_ELEMENTS_SCHEMA],
         providers: [
-            { provide: DynamicDialogRef, useValue: { close: jest.fn() } },
+            { provide: DynamicDialogRef, useValue: { close: vi.fn() } },
             mockProvider(DotTagsService, {
-                importTags: jest.fn().mockReturnValue(of(IMPORT_RESPONSE))
+                importTags: vi.fn().mockReturnValue(of(IMPORT_RESPONSE))
             }),
             {
                 provide: DotMessageService,
-                useValue: new MockDotMessageService({})
+                useValue: new MockDotMessageService({
+                    'tags.import.partial-success':
+                        'Imported {0} of {1} tags. {3} already existed. {2} failed.'
+                })
             },
             {
                 provide: GlobalStore,
                 useValue: {
-                    currentSiteId: jest.fn().mockReturnValue('demo-site-id')
+                    currentSiteId: vi.fn().mockReturnValue('demo-site-id')
                 }
             }
         ]
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createComponent();
         component = spectator.component;
     });
@@ -103,7 +123,7 @@ describe('DotTagsImportComponent', () => {
     describe('importFile', () => {
         it('should not call service when no file selected', () => {
             const tagsService = spectator.inject(DotTagsService);
-            (tagsService.importTags as jest.Mock).mockClear();
+            (tagsService.importTags as Mock).mockClear();
             component.importFile();
             expect(tagsService.importTags).not.toHaveBeenCalled();
         });
@@ -121,7 +141,7 @@ describe('DotTagsImportComponent', () => {
             const tagsService = spectator.inject(DotTagsService);
             const ref = spectator.inject(DynamicDialogRef);
 
-            (tagsService.importTags as jest.Mock).mockReturnValue(
+            (tagsService.importTags as Mock).mockReturnValue(
                 throwError(() => ({ error: { message: 'Import failed' } }))
             );
 
@@ -133,18 +153,93 @@ describe('DotTagsImportComponent', () => {
             expect(ref.close).not.toHaveBeenCalled();
         });
 
-        it('should show inline error and keep dialog open when API returns success:false', () => {
+        it('should close dialog with the result when every row was a duplicate', () => {
+            const tagsService = spectator.inject(DotTagsService);
+            const ref = spectator.inject(DynamicDialogRef);
+            const allDuplicates = {
+                totalRows: 4,
+                successCount: 0,
+                duplicateCount: 3,
+                failureCount: 0,
+                success: true
+            };
+
+            (tagsService.importTags as Mock).mockReturnValue(of({ entity: allDuplicates }));
+
+            component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
+            component.importFile();
+
+            expect(ref.close).toHaveBeenCalledWith(allDuplicates);
+        });
+
+        it('should close dialog when only duplicates were skipped even if success is false', () => {
+            const tagsService = spectator.inject(DotTagsService);
+            const ref = spectator.inject(DynamicDialogRef);
+            const allDuplicates = {
+                totalRows: 4,
+                successCount: 0,
+                duplicateCount: 3,
+                failureCount: 0,
+                success: false
+            };
+
+            (tagsService.importTags as Mock).mockReturnValue(of({ entity: allDuplicates }));
+
+            component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
+            component.importFile();
+
+            expect(ref.close).toHaveBeenCalledWith(allDuplicates);
+            expect(component.errorMessage()).toBeNull();
+        });
+
+        it('should keep dialog open when rows failed even if success is true', () => {
             const tagsService = spectator.inject(DotTagsService);
             const ref = spectator.inject(DynamicDialogRef);
 
-            (tagsService.importTags as jest.Mock).mockReturnValue(
-                of({ entity: { totalRows: 5, successCount: 0, failureCount: 5, success: false } })
+            (tagsService.importTags as Mock).mockReturnValue(
+                of({
+                    entity: {
+                        totalRows: 3,
+                        successCount: 1,
+                        duplicateCount: 0,
+                        failureCount: 1,
+                        success: true
+                    }
+                })
             );
 
             component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
             component.importFile();
 
-            expect(component.errorMessage()).toBeTruthy();
+            expect(component.errorMessage()).toBe(
+                'Imported 1 of 2 tags. 0 already existed. 1 failed.'
+            );
+            expect(ref.close).not.toHaveBeenCalled();
+        });
+
+        it('should show inline error and keep dialog open when API returns success:false', () => {
+            const tagsService = spectator.inject(DotTagsService);
+            const ref = spectator.inject(DynamicDialogRef);
+
+            (tagsService.importTags as Mock).mockReturnValue(
+                of({
+                    entity: {
+                        totalRows: 7,
+                        successCount: 1,
+                        duplicateCount: 2,
+                        failureCount: 3,
+                        success: false
+                    }
+                })
+            );
+
+            component.onFileSelect({ files: [mockFile] } as FileSelectEvent);
+            component.importFile();
+
+            // Total is the sum of the counts; the backend's totalRows includes the header line
+            expect(component.errorMessage()).toBe(
+                'Imported 1 of 6 tags. 2 already existed. 3 failed.'
+            );
             expect(component.importing()).toBe(false);
             expect(ref.close).not.toHaveBeenCalled();
         });
@@ -200,7 +295,7 @@ describe('DotTagsImportComponent', () => {
             );
             expect(downloadClickMock).toHaveBeenCalled();
 
-            const [blobArg] = (getDownloadLink as jest.Mock).mock.calls[0];
+            const [blobArg] = (getDownloadLink as Mock).mock.calls[0];
             const csvText = await readBlobAsText(blobArg as Blob);
 
             expect(csvText).toContain('"Tag Name","Host ID"');
@@ -210,7 +305,7 @@ describe('DotTagsImportComponent', () => {
 
         it('should fallback to SYSTEM_HOST when current site id is null', async () => {
             const globalStore = spectator.inject(GlobalStore);
-            (globalStore.currentSiteId as jest.Mock).mockReturnValue(null);
+            (globalStore.currentSiteId as Mock).mockReturnValue(null);
 
             component.downloadTemplate();
 
@@ -218,7 +313,7 @@ describe('DotTagsImportComponent', () => {
                 expect.any(Blob),
                 'tags-import-template.csv'
             );
-            const [blobArg] = (getDownloadLink as jest.Mock).mock.calls[0];
+            const [blobArg] = (getDownloadLink as Mock).mock.calls[0];
             const csvText = await readBlobAsText(blobArg as Blob);
 
             expect(csvText).toContain('"Marketing","SYSTEM_HOST"');

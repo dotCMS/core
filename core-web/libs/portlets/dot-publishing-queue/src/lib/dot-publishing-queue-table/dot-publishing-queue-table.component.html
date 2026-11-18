@@ -219,6 +219,7 @@
                             appendTo="body"
                             showTransitionOptions="0ms"
                             hideTransitionOptions="0ms"
+                            (onHide)="onKebabHide(kebab)"
                             data-testid="pq-bundles-kebab-menu" />
                         <div
                             class="opacity-0 transition-opacity group-hover:opacity-100 focus-within:opacity-100">
@@ -228,7 +229,7 @@
                                 size="small"
                                 severity="secondary"
                                 styleClass="w-9 h-9 p-0"
-                                (onClick)="kebab.toggle($event)"
+                                (onClick)="onKebabToggle(kebab, $event)"
                                 [attr.aria-label]="'publishing-queue.row.actions' | dm"
                                 data-testid="pq-bundles-kebab-btn">
                                 <span

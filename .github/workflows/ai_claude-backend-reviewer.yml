@@ -18,7 +18,7 @@ jobs:
   # Gate 1 — Pilot author allowlist
   # ─────────────────────────────────────────────────────────────────
   authorized-authors:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       contents: read
     outputs:
@@ -31,10 +31,10 @@ jobs:
         run: |
           PILOT_AUTHORS='["danielsolis-dotcms","gortiz-dotcms","danielsilva-dotcms"]'
           if echo "$PILOT_AUTHORS" | jq -e --arg a "$AUTHOR" 'index($a) != null' > /dev/null; then
-            echo "authorized=true" >> $GITHUB_OUTPUT
+            echo "authorized=true" >> "$GITHUB_OUTPUT"
             echo "✅ $AUTHOR is in the pilot list"
           else
-            echo "authorized=false" >> $GITHUB_OUTPUT
+            echo "authorized=false" >> "$GITHUB_OUTPUT"
             echo "ℹ️  $AUTHOR is not in the pilot list — skipping backend review"
           fi
 
@@ -45,11 +45,17 @@ jobs:
   detect-backend-changes:
     needs: authorized-authors
     if: needs.authorized-authors.outputs.authorized == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       contents: read
     outputs:
       has_java: ${{ steps.check.outputs.has_java }}
+      # Taken before the review starts; finalize-backend-review uses it to tell
+      # this run's comment from the ones earlier runs posted.
+      started_at: ${{ steps.check.outputs.started_at }}
+      # The changed .java paths, one per line, computed here with full history.
+      # finalize-backend-review checks the posted review against this list.
+      java_files: ${{ steps.check.outputs.java_files }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -60,14 +66,21 @@ jobs:
         env:
           BASE_REF: ${{ github.base_ref }}
         run: |
+          echo "started_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
           CHANGED=$(git diff --name-only "origin/${BASE_REF}...HEAD")
           echo "Changed files:"
           echo "$CHANGED"
-          if echo "$CHANGED" | grep -qE '\.java$'; then
-            echo "has_java=true" >> $GITHUB_OUTPUT
+          JAVA_FILES=$(printf '%s\n' "$CHANGED" | grep -E '\.java$' || true)
+          {
+            echo "java_files<<JAVA_FILES_EOF"
+            printf '%s\n' "$JAVA_FILES"
+            echo "JAVA_FILES_EOF"
+          } >> "$GITHUB_OUTPUT"
+          if [ -n "$JAVA_FILES" ]; then
+            echo "has_java=true" >> "$GITHUB_OUTPUT"
             echo "✅ Java files detected — proceeding with backend review"
           else
-            echo "has_java=false" >> $GITHUB_OUTPUT
+            echo "has_java=false" >> "$GITHUB_OUTPUT"
             echo "ℹ️  No Java files changed — skipping backend review"
           fi
 
@@ -97,22 +110,52 @@ jobs:
       bedrock_role_arn: ${{ vars.BEDROCK_ROLE_ARN }}
       trigger_mode: automatic
       timeout_minutes: 30
-      runner: ubuntu-latest
+      runner: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
       enable_mention_detection: false
       # No progress comment: claude-code-action finds the comment to reuse by
       # "authored by the Claude app bot" with no per-workflow marker, so this
       # review would grab — and overwrite — the code review comment posted by
-      # ai_claude-orchestrator.yml (#36761). STEP 5 below upserts this review's
-      # own <!-- dotcms-backend-review --> comment, so it needs no comment of
-      # its own. Only the code-review orchestrator owns a sticky comment.
+      # ai_claude-orchestrator.yml (#36761). STEP 5 below posts this review's
+      # own <!-- dotcms-backend-review --> comment and finalize-backend-review
+      # keeps only the newest, so it needs no progress comment. Only the
+      # code-review orchestrator owns a sticky comment.
       track_progress: false
+      # Write access is limited to four exact actions: write the review file,
+      # post it on this PR, approve, or request changes. These rules contain no
+      # wildcards, because a wildcard also matches extra flags such as
+      # --repo or a second -F body=@<file>. Each step in STEPs 5 and 6 must be a
+      # single command that matches one rule exactly: compound shell (variables,
+      # pipes, if/then) never matches, and every denied call fails silently.
+      # Removing older review comments needs a comment id, which cannot be pinned
+      # in a rule, so the finalize-backend-review job does it outside the model.
+      # Sub-agents must run in the foreground. Claude Code starts Agent calls as
+      # background tasks by default; the orchestrator then ends its turn while
+      # the four reviewers are still running, the action treats that turn as the
+      # end of the session, and nothing is ever posted.
+      # The executor checks out the PR merge commit at fetch-depth 1, so neither
+      # the base nor the head sha is in the clone and a three-dot diff between
+      # them fails (#38420). The one fetch rule below lets STEP 2 pull the base
+      # commit; every diff is then `<base.sha> HEAD`, the merge commit being the
+      # PR applied on top of that base.
       claude_args: >-
+        --settings '{"env":{"CLAUDE_CODE_DISABLE_BACKGROUND_TASKS":"1"}}'
         --allowedTools
-        "Agent,Bash(git diff*),Bash(git log*),Bash(git show*),Bash(cat CLAUDE.md*),Bash(cat docs/backend/*),Bash(cat docs/core/*),Bash(cat dotCMS/src/*),Bash(find dotCMS/src -name '*.java'*),Bash(grep -rn dotCMS/src*),Bash(gh pr comment*),Bash(gh pr review*),Bash(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments*),Bash(gh api repos/${{ github.repository }}/issues/comments/*),Bash(jq*)"
+        "Agent,Bash(git fetch --depth=1 origin ${{ github.event.pull_request.base.sha }}),Bash(git diff*),Bash(git log*),Bash(git show*),Bash(cat CLAUDE.md*),Bash(cat docs/backend/*),Bash(cat docs/core/*),Bash(cat dotCMS/src/*),Bash(find dotCMS/src -name '*.java'*),Bash(grep -rn dotCMS/src*),Edit(//tmp/dotcms_review_body.md),Bash(gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/dotcms_review_body.md),Bash(gh pr review ${{ github.event.pull_request.number }} --approve),Bash(gh pr review ${{ github.event.pull_request.number }} --request-changes --body-file /tmp/dotcms_review_body.md)"
       prompt: |
         You are the orchestrator of a dotCMS backend code review pipeline.
         Your job is to coordinate specialized sub-agents, collect their findings,
         and post one consolidated review comment on the PR.
+
+        ## Tool rules (apply to you and to every sub-agent)
+        - Run each shell command on its own, exactly as written. Do not
+          redirect output (>, >>, tee), and do not chain commands with ;, &&
+          or a pipe into a file. You cannot save command output to a file:
+          the only file you may write is /tmp/dotcms_review_body.md, through
+          the Write tool.
+        - If a tool call is denied, do not retry it in another form. Carry on
+          with what you already have.
+        - Always finish with STEPs 5 and 6. A review that says which areas
+          could not be checked is better than no review at all.
 
         ## STEP 1 — Load dotCMS conventions
         Read these files before doing anything else:
@@ -122,14 +165,27 @@ jobs:
           cat docs/backend/REST_API_PATTERNS.md
           cat docs/core/SECURITY_PRINCIPLES.md
 
-        ## STEP 2 — Get the Java diff
-          git diff ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }} -- '*.java'
+        ## STEP 2 — Fetch the base commit and list the changed Java files
+        The checkout holds only the PR merge commit, so the base commit must be
+        fetched before any diff. Run these two commands, one at a time:
+          git fetch --depth=1 origin ${{ github.event.pull_request.base.sha }}
+          git diff --name-only ${{ github.event.pull_request.base.sha }} HEAD -- '*.java'
+        Keep the printed paths exactly as printed: STEP 5 repeats them.
+        If either command fails, or the second prints no path, the diff is
+        unavailable: skip STEPs 3 and 4, post the "review unavailable" body in
+        STEP 5, and submit no review in STEP 6. Never report a clean review
+        for a diff you could not read.
 
         ## STEP 3 — Spawn 4 specialized sub-agents in parallel
 
         Use the Agent tool to launch all four sub-agents at the same time.
-        Pass each sub-agent the full diff output from STEP 2 and the relevant
-        rules from the docs you read in STEP 1.
+        Pass each sub-agent the list of changed files from STEP 2, the
+        relevant rules from the docs you read in STEP 1, the Tool rules above,
+        and this instruction: "Read the full diff yourself by running exactly
+        this command:
+          git diff ${{ github.event.pull_request.base.sha }} HEAD -- '*.java'"
+        Do not paste the diff into the sub-agent prompts; each sub-agent
+        reads it directly.
 
         ---
 
@@ -223,23 +279,31 @@ jobs:
            do NOT treat it as NO_FINDINGS. Instead include a warning in the comment:
            ⚠️ **<Domain> review unavailable** — sub-agent failed, manual review required for this area.
 
-        ## STEP 5 — Upsert a single sticky PR comment
+        ## STEP 5 — Post the review comment
 
-        Keep exactly ONE backend-review comment per PR and edit it in place on
-        every run, so it always reflects the CURRENT state of the branch. This is
-        mandatory: when a push resolves earlier findings, the previous comment
-        must be updated (to the smaller finding set, or to "no issues found") —
-        never leave a stale comment showing findings that have already been fixed.
+        Post a review comment on every run, even when the result is "no issues
+        found". A later job in this workflow deletes the older backend-review
+        comments, so the PR always shows only the review of the current branch.
 
-        Write the full review body to a temp file first (posting with a file
-        avoids any risk of shell injection from delimiter collisions).
+        Use the Write tool to write the full review body to
+        /tmp/dotcms_review_body.md. Do not write it through Bash: the file is the
+        only one you are allowed to write, and posting from a file keeps
+        backticks, quotes and $(...) in findings from being run by the shell.
 
-        Write findings to /tmp/dotcms_review_body.md using this format.
-        The FIRST LINE must always be exactly: <!-- dotcms-backend-review -->
-        This marker is invisible in GitHub's rendered markdown and is how you
-        find the existing comment to edit on later runs.
+        Use this format. The FIRST LINE must always be exactly:
+        <!-- dotcms-backend-review -->
+        This marker is invisible in GitHub's rendered markdown and is how the
+        later job finds this review's comments.
+
+        The next lines name every path STEP 2 printed, one per line, exactly
+        as printed:
+        <!-- reviewed-file: path/to/File.java -->
+        These lines are invisible too. The later job compares them with the
+        changed Java files it computed itself and fails the run when they
+        differ, so a review that did not see the whole diff never passes.
 
         <!-- dotcms-backend-review -->
+        <!-- reviewed-file: path/to/File.java -->
         ## 🔍 dotCMS Backend Review
 
         <one block per issue>
@@ -256,49 +320,46 @@ jobs:
         **Next steps**
         - 🔴 / 🟠 Fix locally and push — these need your judgment
         - 🟡 You can ask me to handle mechanical fixes inline: `@claude fix <issue description> in <File.java>`
-        - Every new push updates this comment automatically
+        - Every new push replaces this comment automatically
 
         If ALL agents returned NO_FINDINGS, write this to /tmp/dotcms_review_body.md instead:
           <!-- dotcms-backend-review -->
+          <!-- reviewed-file: path/to/File.java -->
           ✅ **dotCMS Backend Review**: no issues found.
 
-        Then UPSERT the comment. Always run this exact logic — it edits the
-        existing marker comment when one exists and only creates a new comment on
-        the first run. Do not skip it, even when the result is "no issues found":
+        If the diff was unavailable (STEP 2), write this instead, with no
+        reviewed-file lines, naming the command that failed and its error:
+          <!-- dotcms-backend-review -->
+          ⚠️ **dotCMS Backend Review unavailable**: <command and error>. No review was submitted; the Java changes need a human review.
 
-          # Emit one bare id per matching comment and take the last globally with
-          # tail -n1. Do NOT use an aggregate jq filter (e.g. `[...] | last`) here:
-          # with --paginate, gh runs --jq once PER PAGE and concatenates, so an
-          # aggregate returns a per-page result and non-matching pages emit `null`,
-          # yielding a multi-line EXISTING_ID that breaks the PATCH on busy PRs.
-          EXISTING_ID=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments --paginate --jq '.[] | select(.body | contains("<!-- dotcms-backend-review -->")) | .id' | tail -n1)
-          if [ -n "$EXISTING_ID" ]; then
-            gh api repos/${{ github.repository }}/issues/comments/$EXISTING_ID --method PATCH -F body=@/tmp/dotcms_review_body.md
-            echo "Updated existing backend-review comment $EXISTING_ID"
-          else
-            gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/dotcms_review_body.md
-            echo "Created backend-review comment"
-          fi
+        Then post it by running exactly this one command, with nothing before or
+        after it:
+
+          gh pr comment ${{ github.event.pull_request.number }} --body-file /tmp/dotcms_review_body.md
 
         ## STEP 6 — Submit a formal GitHub review
 
-        After upserting the comment, submit a formal PR review so that merging is
+        After posting the comment, submit a formal PR review so that merging is
         blocked while Critical or High findings remain, and unblocked once they
         are resolved. Always submit a review on every run: this reviewer's latest
         review supersedes its previous one, so a later --approve automatically
         clears an earlier --request-changes once the findings are fixed.
 
-        Check whether the review body contains any Critical or High findings:
+        If the diff was unavailable (STEP 2), submit no review at all: stop
+        after STEP 5. An approval that saw no diff is worse than no review.
 
-          if grep -qE '🔴 Critical|🟠 High' /tmp/dotcms_review_body.md; then
-            gh pr review ${{ github.event.pull_request.number }} \
-              --request-changes \
-              --body "🚫 Critical or High severity findings must be resolved before merging. See the review comment above for details."
-          else
-            gh pr review ${{ github.event.pull_request.number }} \
-              --approve \
-              --body "✅ No Critical or High severity issues found."
-          fi
+        Decide from the findings you wrote in STEP 5, then run exactly ONE of
+        these commands as written, with no extra flags and no --body:
+
+        If the review contains any 🔴 Critical or 🟠 High finding:
+          gh pr review ${{ github.event.pull_request.number }} --request-changes --body-file /tmp/dotcms_review_body.md
+
+        Otherwise:
+          gh pr review ${{ github.event.pull_request.number }} --approve
+
+        Every command in STEPs 5 and 6 must be run exactly as written. Any other
+        form (a different flag, an inline --body, a pipe, a variable, an if
+        block) is denied, and the review is then never posted.
 
         Rules:
         - One block per issue — do not combine multiple issues
@@ -307,3 +368,70 @@ jobs:
         - Do not invent issues. Only report what sub-agents confirmed.
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  # ─────────────────────────────────────────────────────────────────
+  # Finalize — keep one review comment, and fail when none was posted or
+  # when the posted one did not cover the PR
+  #
+  # The review job reports success even when the model posted nothing, which
+  # hid a broken reviewer for weeks (#37950), and it reported success when the
+  # model could not read the diff and approved the PR anyway (#38420). This job
+  # fails in both cases. The posted review names the Java files it covered;
+  # that list is compared with the one detect-backend-changes computed from
+  # full history, so a review of a different set of files, or of none, never
+  # stands as a pass. When the run passes, the backend-review comments from
+  # earlier runs are deleted so only the current one shows. It acts only on
+  # comments posted by a bot that start with the marker, so a person quoting
+  # the marker is never touched.
+  # ─────────────────────────────────────────────────────────────────
+  finalize-backend-review:
+    needs: [detect-backend-changes, claude-backend-review]
+    if: ${{ !cancelled() && needs.claude-backend-review.result == 'success' }}
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    permissions:
+      pull-requests: write
+    steps:
+      - name: Verify the review was posted, covers the PR, and remove older ones
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          PR: ${{ github.event.pull_request.number }}
+          STARTED_AT: ${{ needs.detect-backend-changes.outputs.started_at }}
+          JAVA_FILES: ${{ needs.detect-backend-changes.outputs.java_files }}
+        run: |
+          set -euo pipefail
+          # One "<created_at> <id>" line per review comment, oldest first. ISO-8601
+          # UTC timestamps sort correctly as plain strings.
+          COMMENTS=$(gh api "repos/${REPO}/issues/${PR}/comments" --paginate \
+            --jq '.[] | select(.user.type == "Bot" and (.body | startswith("<!-- dotcms-backend-review -->"))) | "\(.created_at) \(.id)"' \
+            | sort)
+          NEWEST=$(printf '%s\n' "$COMMENTS" | tail -n1)
+          if [ -z "$NEWEST" ] || [[ "${NEWEST%% *}" < "$STARTED_AT" ]]; then
+            echo "::error::The backend review finished without posting a review comment. Check the claude-backend-review job log for permission denials."
+            exit 1
+          fi
+          NEWEST_ID="${NEWEST#* }"
+          echo "Current review comment: ${NEWEST_ID}"
+          BODY=$(gh api "repos/${REPO}/issues/comments/${NEWEST_ID}" --jq '.body' | tr -d '\r')
+          if printf '%s\n' "$BODY" | grep -q 'Backend Review unavailable'; then
+            echo "::error::The backend review could not read the PR diff, so nothing was reviewed. Earlier review comments are left in place; the Java changes need a human review."
+            exit 1
+          fi
+          # Every path the detect job found must appear as a reviewed-file line,
+          # and nothing else may: the model has no other way to prove which diff
+          # it read.
+          REVIEWED=$(printf '%s\n' "$BODY" | sed -nE 's/^<!-- reviewed-file: (.+) -->$/\1/p' | sort -u)
+          EXPECTED=$(printf '%s\n' "$JAVA_FILES" | sed '/^$/d' | sort -u)
+          if [ "$REVIEWED" != "$EXPECTED" ]; then
+            echo "Changed Java files (from detect-backend-changes):"
+            printf '%s\n' "$EXPECTED"
+            echo "Files the posted review says it covered:"
+            printf '%s\n' "${REVIEWED:-<none>}"
+            echo "::error::The posted backend review does not cover the changed Java files of this PR, so it does not count. If it approved the PR, dismiss that approval; the Java changes need a human review."
+            exit 1
+          fi
+          printf '%s\n' "$COMMENTS" | sed '$d' | while read -r _ ID; do
+            [ -n "$ID" ] || continue
+            gh api --method DELETE "repos/${REPO}/issues/comments/${ID}"
+            echo "Deleted older review comment ${ID}"
+          done

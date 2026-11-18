@@ -1,5 +1,5 @@
 import { DotBrowserController, DotBrowserOptions } from './asset-browser.interface';
-import { FormFieldAPI, FormFieldValue } from './form-field.interface';
+import { FormFieldAPI, FormFieldSetOptions, FormFieldValue } from './form-field.interface';
 
 /**
  * Interface for bridging form functionality between different frameworks.
@@ -17,8 +17,9 @@ export interface FormBridge {
      * Sets the value of a form field.
      * @param fieldId - The unique identifier of the form field
      * @param value - The value to set for the field
+     * @param options - `markDirty: false` sets the value without marking the field touched or dirty
      */
-    set(fieldId: string, value: FormFieldValue): void;
+    set(fieldId: string, value: FormFieldValue, options?: FormFieldSetOptions): void;
 
     /**
      * Subscribes to changes of a specific form field.
@@ -49,8 +50,10 @@ export interface FormBridge {
     destroy(): void;
 
     /**
-     * Opens the asset browser so the user can pick content — an asset, a page, a folder or a menu
-     * link.
+     * Opens the asset browser so the user can pick content — an asset, a page or a menu link.
+     *
+     * Folders are **not** pickable: they are navigation, reached through the browser's sidebar
+     * tree, and the list panel carries content only.
      *
      * Only the Angular host opens anything: the legacy Dojo editor has never had this dialog, and
      * its bridge resolves `null` with a warning rather than pretending.

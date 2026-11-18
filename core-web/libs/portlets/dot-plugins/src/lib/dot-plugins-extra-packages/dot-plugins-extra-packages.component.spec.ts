@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { Observable, of } from 'rxjs';
+import { MockInstance, vi } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
@@ -19,22 +25,22 @@ describe('DotPluginsExtraPackagesComponent', () => {
     let osgiService: DotOsgiService;
     let dialogRef: DynamicDialogRef;
     let httpErrorManager: DotHttpErrorManagerService;
-    let confirmationConfirmSpy: jest.SpyInstance;
+    let confirmationConfirmSpy: MockInstance;
 
     const osgiServiceMock = {
-        getExtraPackages: jest.fn().mockReturnValue(of({ entity: 'pkg1\npkg2' })),
-        updateExtraPackages: jest.fn().mockReturnValue(of({}))
+        getExtraPackages: vi.fn().mockReturnValue(of({ entity: 'pkg1\npkg2' })),
+        updateExtraPackages: vi.fn().mockReturnValue(of({}))
     };
 
     const createComponent = createComponentFactory({
         component: DotPluginsExtraPackagesComponent,
         providers: [
             { provide: DotOsgiService, useValue: osgiServiceMock },
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
             mockProvider(DotMessageService, {
-                get: jest.fn((key: string, ..._args: string[]) => key)
+                get: vi.fn((key: string, ..._args: string[]) => key)
             }),
-            mockProvider(DynamicDialogRef, { close: jest.fn() })
+            mockProvider(DynamicDialogRef, { close: vi.fn() })
         ],
         shallow: false
     });
@@ -67,9 +73,9 @@ describe('DotPluginsExtraPackagesComponent', () => {
         dialogRef = spectator.inject(DynamicDialogRef);
         httpErrorManager = spectator.inject(DotHttpErrorManagerService);
         const confirmationService = spectator.debugElement.injector.get(ConfirmationService);
-        confirmationConfirmSpy = jest.spyOn(confirmationService, 'confirm');
-        jest.mocked(dialogRef.close).mockClear();
-        jest.mocked(httpErrorManager.handle).mockClear();
+        confirmationConfirmSpy = vi.spyOn(confirmationService, 'confirm');
+        vi.mocked(dialogRef.close).mockClear();
+        vi.mocked(httpErrorManager.handle).mockClear();
     });
 
     describe('initialization', () => {

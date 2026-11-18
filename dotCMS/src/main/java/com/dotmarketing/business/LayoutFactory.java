@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 import java.util.List;
+import java.util.Map;
 
 import com.dotmarketing.exception.DotDataException;
 
@@ -57,5 +58,14 @@ public abstract class LayoutFactory {
 	protected abstract  List<Layout> findAllLayouts() throws DotDataException;
 
 	protected abstract  Layout findLayoutByName(String name) throws DotDataException;
+
+	/**
+	 * Rewrites the navigation position of several layouts and evicts each from the layout cache.
+	 * Runs inside the caller's transaction; validation of the ids is the caller's job.
+	 *
+	 * @param tabOrderByLayoutId new position by layout id
+	 * @throws DotDataException if a write fails
+	 */
+	protected abstract void setTabOrders(Map<String, Integer> tabOrderByLayoutId) throws DotDataException;
 
 }

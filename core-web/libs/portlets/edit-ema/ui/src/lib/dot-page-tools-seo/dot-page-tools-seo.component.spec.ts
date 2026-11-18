@@ -1,6 +1,6 @@
-import { describe, expect, beforeEach } from '@jest/globals';
-import { Spectator, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, createComponentFactory } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { describe, expect, beforeEach } from 'vitest';
 
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';

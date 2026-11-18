@@ -1,5 +1,6 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { Component } from '@angular/core';
 import { FormGroup, FormControl, ReactiveFormsModule } from '@angular/forms';
@@ -30,6 +31,7 @@ export class MockFormComponent {
     field: DotCMSContentTypeField;
     forceLanguage?: AvailableLanguageMonaco;
     hasError: boolean;
+    syntaxErrorsBlockSave = false;
 }
 
 describe('DotEditContentMonacoEditorControlComponent', () => {
@@ -46,7 +48,7 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
     beforeEach(() => {
         spectator = createHost(
             `<form [formGroup]="formGroup">
-                <dot-edit-content-monaco-editor-control [hasError]="hasError" [field]="field" [forceLanguage]="forceLanguage" />
+                <dot-edit-content-monaco-editor-control [hasError]="hasError" [field]="field" [forceLanguage]="forceLanguage" [syntaxErrorsBlockSave]="syntaxErrorsBlockSave" />
             </form>`,
             {
                 hostProps: {
@@ -70,6 +72,8 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
         const expectedOptions = {
             ...DEFAULT_MONACO_CONFIG,
             theme: 'vs',
+            // Monaco owns its DOM, so the field name reaches it through this option.
+            ariaLabel: WYSIWYG_MOCK.name,
             language: 'plaintext' // due the auto detect language is plaintext
         };
 
@@ -118,14 +122,100 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
         const expectedOptions = {
             ...DEFAULT_MONACO_CONFIG,
             ...customProps,
+            ariaLabel: WYSIWYG_MOCK.name,
             language: 'plaintext' // due the auto detect language is plaintext
         };
         expect(component.$monacoOptions()).toEqual(expectedOptions);
     });
 
-    it('should register Velocity language when Monaco is loaded', () => {
-        const registerSpy = jest.spyOn(component, 'registerVelocityLanguage');
+    /**
+     * Issue #37996 — `language` in the `monacoOptions` field variable was overwritten by the
+     * detected language, so a content type could not pin its WYSIWYG code mode to Markdown.
+     */
+    describe('language from the monacoOptions field variable', () => {
+        const withMonacoOptions = (options: object) =>
+            ({
+                ...WYSIWYG_MOCK,
+                fieldVariables: [{ key: 'monacoOptions', value: JSON.stringify(options) }]
+            }) as DotCMSContentTypeField;
+
+        it('should use the configured language instead of the detected one', () => {
+            spectator.setHostInput('field', withMonacoOptions({ language: 'markdown' }));
+            spectator.detectChanges();
+
+            expect(component.$monacoOptions().language).toBe('markdown');
+        });
+
+        it('should let a forced language win over the configured one', () => {
+            spectator.hostComponent.forceLanguage = AvailableLanguageMonaco.Json;
+            spectator.setHostInput('field', withMonacoOptions({ language: 'markdown' }));
+            spectator.detectChanges();
+
+            expect(component.$monacoOptions().language).toBe(AvailableLanguageMonaco.Json);
+        });
+
+        it('should fall back to detection when no language is configured', () => {
+            spectator.setHostInput('field', withMonacoOptions({ wordWrap: 'on' }));
+            spectator.detectChanges();
+
+            expect(component.$monacoOptions().language).toBe(AvailableLanguageMonaco.PlainText);
+        });
+    });
+
+    it('should register the shared Velocity grammar under the id this field uses', () => {
+        const registerSpy = vi.spyOn(monacoMock.languages, 'register');
+
         spectator.detectChanges();
-        expect(registerSpy).toHaveBeenCalled();
+
+        expect(registerSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ id: AvailableLanguageMonaco.Velocity })
+        );
+    });
+
+    /**
+     * AC-209 — a third-party editor owns its DOM, so `<label for>` cannot reach inside it. Both
+     * editors expose a documented option for the accessible name of their own surface, which is
+     * where the field name belongs: otherwise the control announces itself generically, or with no
+     * name at all.
+     */
+    it('should name the editor from the field so it is not announced unnamed', () => {
+        spectator.detectChanges();
+
+        expect(component.$monacoOptions().ariaLabel).toBe(WYSIWYG_MOCK.name);
+    });
+
+    /**
+     * Issue #37996 — the Monaco wrapper registers itself as a form validator and fails the control
+     * whenever the editor shows any marker. Detection can pick the wrong language (Markdown prose
+     * that says "class name" reads as JavaScript), so the wrong checker's squiggles blocked Save
+     * on a field with no required flag and no regex. The shared mock reports one marker on load.
+     */
+    describe('editor syntax markers', () => {
+        const control = () => spectator.hostComponent.formGroup.get(WYSIWYG_MOCK.variable);
+
+        it('should not invalidate the field when the editor reports syntax errors', () => {
+            spectator.detectChanges();
+
+            expect(control()?.errors).toBeNull();
+            expect(control()?.valid).toBe(true);
+        });
+
+        it('should keep syntax errors as a validation error when syntaxErrorsBlockSave is set', () => {
+            spectator.hostComponent.syntaxErrorsBlockSave = true;
+            spectator.detectChanges();
+
+            expect(control()?.errors).toEqual({ monaco: { value: ['Simulated error'] } });
+        });
+
+        it('should honor a change to syntaxErrorsBlockSave made after the editor starts', () => {
+            spectator.detectChanges();
+            expect(control()?.errors).toBeNull();
+
+            spectator.hostComponent.syntaxErrorsBlockSave = true;
+            spectator.detectChanges();
+            control()?.updateValueAndValidity();
+
+            expect(control()?.errors).toEqual({ monaco: { value: ['Simulated error'] } });
+        });
     });
 });

@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -40,9 +41,9 @@ const MOCK_ROWS: StudioPageRow[] = [
 describe('DotA11yPageListComponent', () => {
     let spectator: Spectator<DotA11yPageListComponent>;
 
-    const setFilter = jest.fn();
-    const setPagination = jest.fn();
-    const navigate = jest.fn();
+    const setFilter = vi.fn();
+    const setPagination = vi.fn();
+    const navigate = vi.fn();
 
     const storeMock = {
         pages: () => MOCK_ROWS,
@@ -74,7 +75,7 @@ describe('DotA11yPageListComponent', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createComponent();
         spectator.detectChanges();
     });
@@ -100,12 +101,12 @@ describe('DotA11yPageListComponent', () => {
     });
 
     it('debounces search input before calling setFilter', () => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
         spectator.component.onSearch('contact');
         expect(setFilter).not.toHaveBeenCalled();
-        jest.advanceTimersByTime(300);
+        vi.advanceTimersByTime(300);
         expect(setFilter).toHaveBeenCalledWith('contact');
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     describe('onLazyLoad', () => {

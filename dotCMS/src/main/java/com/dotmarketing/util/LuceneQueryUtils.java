@@ -46,8 +46,13 @@ public class LuceneQueryUtils {
      * backslash-escaped to be treated as literals: {@code \ + - ! ( ) : ^ [ ] " { } ~ * ? | & /}.
      * This is a stable contract of the {@code query_string} syntax that both Elasticsearch and
      * OpenSearch honor identically.
+     *
+     * <p>Public so other query builders can consume the canonical set instead of hand-copying it —
+     * a private copy already drifted once (an extra backslash entry in
+     * {@code BrowserAPIImpl.LUCENE_RESERVED}). Callers that <em>escape</em> use {@link #escape};
+     * callers that need the raw character set (e.g. to strip or split on it) read this constant.</p>
      */
-    private static final String LUCENE_SPECIAL_CHARS = "\\+-!():^[]\"{}~*?|&/";
+    public static final String LUCENE_SPECIAL_CHARS = "\\+-!():^[]\"{}~*?|&/";
 
     /**
      * Backslash-escapes the Lucene {@code query_string} special characters in the given term so it

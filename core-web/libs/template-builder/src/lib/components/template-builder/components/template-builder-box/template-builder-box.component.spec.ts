@@ -1,4 +1,5 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { NgClass, NgFor, NgIf } from '@angular/common';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -66,12 +67,12 @@ describe('TemplateBuilderBoxComponent', () => {
     });
 
     beforeEach(() => {
-        jest.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(jest.fn());
+        vi.spyOn(ConfirmPopup.prototype, 'bindScrollListener').mockImplementation(vi.fn());
         mockMatchMedia();
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('Variant rendering', () => {
@@ -137,7 +138,7 @@ describe('TemplateBuilderBoxComponent', () => {
         });
 
         it('should trigger addContainer when selecting from dropdown', () => {
-            const addContainerMock = jest.spyOn(spectator.component.addContainer, 'emit');
+            const addContainerMock = vi.spyOn(spectator.component.addContainer, 'emit');
             spectator.triggerEventHandler("[data-testId='btn-plus']", 'onChange', {
                 value: containersMock[0]
             });
@@ -145,7 +146,7 @@ describe('TemplateBuilderBoxComponent', () => {
         });
 
         it('should emit addContainer with identifier when source is DB', () => {
-            const addContainerMock = jest.spyOn(spectator.component.addContainer, 'emit');
+            const addContainerMock = vi.spyOn(spectator.component.addContainer, 'emit');
             spectator.triggerEventHandler("[data-testId='btn-plus']", 'onChange', {
                 value: containersMock[0]
             });
@@ -153,7 +154,7 @@ describe('TemplateBuilderBoxComponent', () => {
         });
 
         it('should emit addContainer with path as identifier when source is FILE', () => {
-            const addContainerMock = jest.spyOn(spectator.component.addContainer, 'emit');
+            const addContainerMock = vi.spyOn(spectator.component.addContainer, 'emit');
             spectator.triggerEventHandler("[data-testId='btn-plus']", 'onChange', {
                 value: containersMock[2]
             });
@@ -164,7 +165,7 @@ describe('TemplateBuilderBoxComponent', () => {
         });
 
         it('should trigger editClasses when clicking palette button', () => {
-            const editStyleMock = jest.spyOn(spectator.component.editClasses, 'emit');
+            const editStyleMock = vi.spyOn(spectator.component.editClasses, 'emit');
             spectator.dispatchFakeEvent(
                 spectator.query(byTestId('box-style-class-button')),
                 'onClick'
@@ -190,7 +191,7 @@ describe('TemplateBuilderBoxComponent', () => {
         });
 
         it('should trigger deleteContainer when confirm is accepted', () => {
-            const deleteContainerMock = jest.spyOn(spectator.component.deleteContainer, 'emit');
+            const deleteContainerMock = vi.spyOn(spectator.component.deleteContainer, 'emit');
             spectator.triggerEventHandler(
                 "[data-testId='btn-trash-container']",
                 'deleteConfirmed',
@@ -200,7 +201,7 @@ describe('TemplateBuilderBoxComponent', () => {
         });
 
         it('should trigger deleteColumn when confirm is accepted', () => {
-            const deleteMock = jest.spyOn(spectator.component.deleteColumn, 'emit');
+            const deleteMock = vi.spyOn(spectator.component.deleteColumn, 'emit');
             spectator.triggerEventHandler(
                 "[data-testId='btn-delete-column']",
                 'deleteConfirmed',
@@ -210,7 +211,7 @@ describe('TemplateBuilderBoxComponent', () => {
         });
 
         it('should trigger deleteColumnRejected when confirm is rejected', () => {
-            const rejectMock = jest.spyOn(spectator.component.deleteColumnRejected, 'emit');
+            const rejectMock = vi.spyOn(spectator.component.deleteColumnRejected, 'emit');
             spectator.triggerEventHandler(
                 "[data-testId='btn-delete-column']",
                 'deleteRejected',
@@ -225,7 +226,7 @@ describe('TemplateBuilderBoxComponent', () => {
             spectator = createHost(HOST_TEMPLATE, {
                 hostProps: { ...DEFAULT_HOST_PROPS, items: [] }
             });
-            const deleteMock = jest.spyOn(spectator.component.deleteColumn, 'emit');
+            const deleteMock = vi.spyOn(spectator.component.deleteColumn, 'emit');
 
             spectator.dispatchFakeEvent(spectator.query(byTestId('btn-remove-item')), 'onClick');
             spectator.detectChanges();

@@ -5,18 +5,5 @@
     "sourceRoot": "libs/utils/src",
     "prefix": "dotcms",
     "tags": ["skip:test", "skip:lint"],
-    "targets": {
-        "test": {
-            "options": {
-                "passWithNoTests": true,
-                "verbose": false
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            }
-        }
-    }
+    "targets": {}
 }

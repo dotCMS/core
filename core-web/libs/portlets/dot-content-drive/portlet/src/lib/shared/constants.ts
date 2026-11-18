@@ -3,9 +3,17 @@ import {
     DotCMSBaseTypesContentTypes,
     DotSite
 } from '@dotcms/dotcms-models';
-import { SYSTEM_HOST_ID } from '@dotcms/ui';
+import { CHIP_FILTER_SCROLL_HEIGHT, SYSTEM_HOST_ID } from '@dotcms/ui';
 
-import { DotContentDrivePage, DotContentDrivePagination, DotContentDriveSortOrder } from './models';
+import {
+    DOT_CONTENT_DRIVE_SEARCH_SCOPE,
+    DOT_CONTENT_DRIVE_VIEW_TYPE,
+    DotContentDrivePage,
+    DotContentDrivePagination,
+    DotContentDriveSearchScope,
+    DotContentDriveSortOrder,
+    DotContentDriveViewType
+} from './models';
 
 // We only need the host and the identifier from this, the other properties are mostly to comply with SiteEntity interface
 export const SYSTEM_HOST: DotSite = {
@@ -48,6 +56,20 @@ export const FOLDER_TREE_HIERARCHY_PAGE_SIZE = 200;
 /** Minimum length the folder-search `name` filter accepts; shorter values are rejected with a 400. */
 export const FOLDER_NAME_FILTER_MIN_LENGTH = 2;
 
+/**
+ * The search scope a drive starts on. Title, from feedback: an author typing into the box is
+ * usually looking for an item by its name, and matching every field buried the item under
+ * everything that mentioned the word. It is also the cheaper search. All Fields stays one click away.
+ *
+ * The server's own default is still All Fields, so the request names the scope whenever there is a
+ * term (see the store's `$request`), rather than leaving Title to be read as "nothing chosen".
+ */
+export const DEFAULT_SEARCH_SCOPE: DotContentDriveSearchScope =
+    DOT_CONTENT_DRIVE_SEARCH_SCOPE.TITLE;
+
+/** The key the search scope travels under, in the filter state and in the address. */
+export const SEARCH_SCOPE_FILTER_KEY = 'searchScope';
+
 export const DEFAULT_SORT = {
     field: 'modDate',
     order: DotContentDriveSortOrder.DESC
@@ -62,6 +84,15 @@ export const SORT_ORDER: Record<number, DotContentDriveSortOrder> = {
 // Default tree expanded
 export const DEFAULT_TREE_EXPANDED = true;
 
+/** The listing the Drive opens in when nothing says otherwise (FR-020). */
+export const DEFAULT_VIEW_TYPE: DotContentDriveViewType = DOT_CONTENT_DRIVE_VIEW_TYPE.LIST;
+
+/**
+ * Browser storage key prefix for the remembered view. The portlet's id is appended, so each screen
+ * that hosts the Drive (the Drive itself, and later each custom tool, #37931) remembers its own.
+ */
+export const VIEW_TYPE_STORAGE_KEY_PREFIX = 'dotcms.content-drive.view-type.';
+
 // Default path, it needs to be undefined to show the root folder
 export const DEFAULT_PATH = undefined;
 
@@ -73,6 +104,16 @@ export const DEFAULT_PATH = undefined;
  * existing.
  */
 export const ROOT_PATH = '/';
+
+/**
+ * The location value that means System Host rather than a place inside the current site.
+ *
+ * A reserved word can never be mistaken for a folder, because every real path begins with `/` and
+ * this does not. That is what lets one value in the URL say all four things the sidebar can
+ * select — absent for all site content, `/` for the site root, a path for a folder, and this —
+ * without a second value beside it that could disagree.
+ */
+export const SYSTEM_HOST_PATH = 'SYSTEM_HOST';
 
 export const DEFAULT_PAGE: DotContentDrivePage = {
     hasMoreContent: true,
@@ -108,181 +149,97 @@ export const MAP_BASE_TYPES_TO_NUMBERS: Partial<Record<DotCMSBaseTypesContentTyp
         Object.entries(MAP_NUMBERS_TO_BASE_TYPES).map(([key, value]) => [value, key])
     );
 
-// Debounce time for requests
-export const DEBOUNCE_TIME = 500;
+// Also re-exported: the shared chips write these keys, and the portlet's URL layer reads them.
+export { USER_SEARCHABLE_PREFIX } from '@dotcms/ui';
 
-/**
- * Prefix that marks a filter-bag key as a per-field "user searchable" criterion, e.g. `us.title`.
- * Keeping these entries in the flat `filters` bag lets them ride the existing URL encode/decode and
- * be cleared alongside every other filter. The prefix avoids colliding with known filter keys or a
- * field whose variable happens to be `title`, `workflow`, etc.
- */
-export const USER_SEARCHABLE_PREFIX = 'us.';
+// The "Show Shared Assets" key, which drives `includeSystemHost` on the search request. Living in
+// the filter bag rather than its own query param is what gives it the URL encode/decode, the
+// back/forward guard and the legacy-editor `CD_` round-trip for free, and it is always seeded so
+// the applied state is visible in the URL rather than implied by an absent key.
+//
+// Re-exported rather than redefined: the chip that writes it now lives in `@dotcms/ui` and is
+// shared with the AssetPicker, so one definition serves both. Kept exported from here so the
+// portlet's existing importers — the URL encode/decode pair, the back/forward guard, the legacy
+// `CD_` round-trip and `withFilterDefaults` — are untouched.
+export {
+    SHARED_ASSETS_DISABLED_VALUE,
+    SHARED_ASSETS_ENABLED_VALUE,
+    SHARED_ASSETS_FILTER_KEY
+} from '@dotcms/ui';
 
-/**
- * Filter-bag key backing the "Show Shared Assets" toggle, which drives `includeSystemHost` on the
- * search request. It lives in the bag rather than in its own query param so it inherits the URL
- * encode/decode, the back/forward guard, and the legacy-editor `CD_` round-trip.
- *
- * Like `languageId`, it is always seeded rather than written only when it differs from the default,
- * so the state that is applied is always visible in the URL instead of being implied by absence.
- */
-export const SHARED_ASSETS_FILTER_KEY = 'sharedAssets';
-
-/** Shows SYSTEM_HOST (shared) assets. The seeded default. */
-export const SHARED_ASSETS_ENABLED_VALUE = 'true';
-
-/** Hides SYSTEM_HOST (shared) assets. */
-export const SHARED_ASSETS_DISABLED_VALUE = 'false';
-
-/**
- * Content-type field types offered as Content Drive field filters (phase 1 — simple fields only).
- * The string values match the backend field-type contract (edit-content `FIELD_TYPES`). Grouped by
- * the control rendered and the value shape stored/sent:
- * - text  → single string (contains)
- * - single-select (Select/Radio) → single string (equals), options from `field.values`
- * - multi-select (Multi-Select/Checkbox) → string[], options from `field.values`
- * - date  → `{ from, to }` ISO range
- */
-export const FIELD_FILTER_TEXT_TYPES = ['Text', 'Textarea', 'WYSIWYG'] as const;
-/** Singular field-type names, matched to their native widget in the filter chip. */
-export const FIELD_FILTER_SELECT_TYPE = 'Select';
-export const FIELD_FILTER_RADIO_TYPE = 'Radio';
-export const FIELD_FILTER_MULTISELECT_TYPE = 'Multi-Select';
-export const FIELD_FILTER_CHECKBOX_TYPE = 'Checkbox';
-/** Single-value option fields (stored as one string). */
-export const FIELD_FILTER_SINGLE_SELECT_TYPES = [
-    FIELD_FILTER_SELECT_TYPE,
-    FIELD_FILTER_RADIO_TYPE
-] as const;
-/** Multi-value option fields (stored as a comma-joined list). */
-export const FIELD_FILTER_MULTI_SELECT_TYPES = [
-    FIELD_FILTER_MULTISELECT_TYPE,
-    FIELD_FILTER_CHECKBOX_TYPE
-] as const;
-/** Complex field types (own picker + fetched options), added in phase 2. */
-export const FIELD_FILTER_TAG_TYPE = 'Tag';
-export const FIELD_FILTER_CATEGORY_TYPE = 'Category';
-export const FIELD_FILTER_RELATIONSHIP_TYPE = 'Relationship';
-/**
- * Every field type whose value is a list stored comma-joined (multi-select, checkbox, tag,
- * category). Relationship is intentionally excluded — the backend only supports a single related
- * value, so it's stored as one identifier string.
- */
-export const FIELD_FILTER_MULTI_VALUE_TYPES: readonly string[] = [
-    ...FIELD_FILTER_MULTI_SELECT_TYPES,
-    FIELD_FILTER_TAG_TYPE,
-    FIELD_FILTER_CATEGORY_TYPE
-];
-export const FIELD_FILTER_DATE_TYPES = ['Date', 'Date-and-Time', 'Time'] as const;
-/** Date field type showing time; `Time` is time-only, `Date-and-Time` shows date + time. */
-export const FIELD_FILTER_TIME_ONLY_TYPE = 'Time';
-export const FIELD_FILTER_DATE_TIME_TYPE = 'Date-and-Time';
-
-/**
- * Text-backed field types the legacy content search only ever offered via a plain textbox. They
- * render the same `text` control here and filter as a single contains term against the field's
- * indexed value (JSON/Story-Block/Custom = full text, Binary = file name).
- */
-export const FIELD_FILTER_JSON_TYPE = 'JSON-Field';
-export const FIELD_FILTER_STORY_BLOCK_TYPE = 'Story-Block';
-export const FIELD_FILTER_CUSTOM_TYPE = 'Custom-Field';
-export const FIELD_FILTER_BINARY_TYPE = 'Binary';
-export const FIELD_FILTER_TEXT_FALLBACK_TYPES = [
-    FIELD_FILTER_JSON_TYPE,
-    FIELD_FILTER_STORY_BLOCK_TYPE,
-    FIELD_FILTER_CUSTOM_TYPE,
-    FIELD_FILTER_BINARY_TYPE
-] as const;
-/**
- * Key/Value field. Rendered with a single input + a `key:value` shorthand; the value is stored as
- * the user typed it and translated to the `key_value` joined term when building the search payload.
- */
-export const FIELD_FILTER_KEY_VALUE_TYPE = 'Key-Value';
-
-/** Every field type eligible to become a filter (excludes Host-Folder + out-of-scope types). */
-export const USER_SEARCHABLE_FIELD_TYPES: readonly string[] = [
-    ...FIELD_FILTER_TEXT_TYPES,
-    ...FIELD_FILTER_SINGLE_SELECT_TYPES,
-    ...FIELD_FILTER_MULTI_SELECT_TYPES,
-    ...FIELD_FILTER_DATE_TYPES,
-    ...FIELD_FILTER_TEXT_FALLBACK_TYPES,
-    FIELD_FILTER_TAG_TYPE,
+// Re-exported rather than redefined: the field-filter chips that read these now live in
+// `@dotcms/ui` and are shared with the AssetPicker, so one definition serves both. Kept exported
+// from here so the portlet's own importers — the URL encode/decode pair and the store's request
+// builder — are untouched.
+export {
+    FIELD_FILTER_BINARY_TYPE,
     FIELD_FILTER_CATEGORY_TYPE,
+    FIELD_FILTER_CHECKBOX_TYPE,
+    FIELD_FILTER_CUSTOM_TYPE,
+    FIELD_FILTER_DATE_TIME_TYPE,
+    FIELD_FILTER_DATE_TYPES,
+    FIELD_FILTER_JSON_TYPE,
+    FIELD_FILTER_KEY_VALUE_TYPE,
+    FIELD_FILTER_MULTI_SELECT_TYPES,
+    FIELD_FILTER_MULTI_VALUE_TYPES,
+    FIELD_FILTER_MULTISELECT_TYPE,
+    FIELD_FILTER_RADIO_TYPE,
     FIELD_FILTER_RELATIONSHIP_TYPE,
-    FIELD_FILTER_KEY_VALUE_TYPE
-];
+    FIELD_FILTER_SELECT_TYPE,
+    FIELD_FILTER_SINGLE_SELECT_TYPES,
+    FIELD_FILTER_STORY_BLOCK_TYPE,
+    FIELD_FILTER_TEXT_FALLBACK_TYPES,
+    FIELD_FILTER_TEXT_TYPES,
+    FIELD_FILTER_TIME_ONLY_TYPE,
+    TITLE_FIELD_VARIABLE,
+    USER_SEARCHABLE_FIELD_TYPES,
+    USER_SEARCHABLE_VALUE_SEPARATOR
+} from '@dotcms/ui';
 
-/**
- * Field variable of the content type's title field. It's already covered by the toolbar's keyword
- * search (which queries the contentlet title), so it's not offered as a redundant field filter.
- */
-export const TITLE_FIELD_VARIABLE = 'title';
+// Re-exported rather than redefined: the Status chip moved to `@dotcms/ui` and is shared with the
+// AssetPicker, and the portlet's URL decode layer sanitizes against the same three values.
+export { CONTENT_STATUS, STATUS_FILTER_KEY, STATUS_FILTER_OPTIONS } from '@dotcms/ui';
 
-/** Separator joining multi-select values and date-range `from,to` in the flat filter string. */
-export const USER_SEARCHABLE_VALUE_SEPARATOR = ',';
-
-/**
- * Filter-bag key backing the Status filter (Archived / Unpublished / Locked).
- *
- * Lives in the flat `filters` bag rather than its own query param so it inherits every navigation
- * mechanism the other filters already use: deep link, reload, folder browsing, browser
- * Back/Forward, and the legacy-editor `CD_` round-trip. Giving it a dedicated param would mean
- * bespoke handling in all four places.
- *
- * Unlike `languageId` and {@link SHARED_ASSETS_FILTER_KEY}, it is deliberately NOT seeded by
- * `withFilterDefaults` — an empty selection genuinely means "no status filtering", so leaving it
- * unseeded makes "Clear all" appear and clear correctly with no extra code.
- */
-export const STATUS_FILTER_KEY = 'status';
-
-/** Content states the Status filter offers. Values match the backend `ContentStatus` enum. */
-export const CONTENT_STATUS = {
-    ARCHIVED: 'ARCHIVED',
-    UNPUBLISHED: 'UNPUBLISHED',
-    LOCKED: 'LOCKED'
-} as const;
-
-/**
- * Status options in display order. Archived leads: it is the capability people currently leave
- * Content Drive to get.
- *
- * Selections combine with OR — checking more boxes returns more content, consistent with the
- * content-type and locale filters beside it.
- */
-export const STATUS_FILTER_OPTIONS: { value: string; labelKey: string }[] = [
-    { value: CONTENT_STATUS.ARCHIVED, labelKey: 'content-drive.status-filter.archived' },
-    { value: CONTENT_STATUS.UNPUBLISHED, labelKey: 'content-drive.status-filter.unpublished' },
-    { value: CONTENT_STATUS.LOCKED, labelKey: 'content-drive.status-filter.locked' }
-];
-
-export const PANEL_SCROLL_HEIGHT = '25rem';
+// Aliased rather than redefined: the portlet's panels are chip-filter popovers, so this is the
+// same measurement `@dotcms/ui` already owns, not a second one that happens to match.
+export const PANEL_SCROLL_HEIGHT = CHIP_FILTER_SCROLL_HEIGHT;
 
 // Dialog type
 export const DIALOG_TYPE = {
     FOLDER: 'FOLDER',
     CONTENT_TYPE_SELECTOR: 'CONTENT_TYPE_SELECTOR',
-    ACTION_CENTER: 'ACTION_CENTER'
+    ACTION_CENTER: 'ACTION_CENTER',
+    /**
+     * Edit Permissions for a folder. Opened through the store like the other folder dialogs, so
+     * the URL can name it while it is open (#37759, FR-030); the shell renders it as the JSP
+     * permissions dialog rather than in its own `p-dialog`.
+     */
+    FOLDER_PERMISSIONS: 'FOLDER_PERMISSIONS'
 } as const;
 
 /**
- * Root styles for the Action Center dialog.
+ * Root sizing for the Action Center dialog, as classes rather than inline styles.
  *
  * Fixed height so the content box has something to flex against — without it the column sizes to
- * content and the body never scrolls. `display: flex` / `flex-direction: column` / `overflow: hidden`
- * are required: the theme gives `.p-dialog-content` `flex-grow: 1` and the header/footer
- * `flex-shrink: 0`, but `.p-dialog` itself is not a flex container — without that, `height: 80vh`
- * does not constrain the content and the whole dialog (footer included) grows past the viewport.
+ * content and the body never scrolls.
+ *
+ * **Classes, not `[style]`, and that is the whole point.** One `p-dialog` serves every dialog type
+ * in this portlet, so whatever styles a type applies have to come back off when the next type opens.
+ * PrimeNG's dialog root carries `[style]="sx('root')"` *and* `[ngStyle]="style"` on the same
+ * element; NgStyle's additions land, but its removals are overwritten by the template's own style
+ * map on the next change detection. The result was that the Action Center's `width`/`height` stayed
+ * on the root for the rest of the session — open the workflow center once and Folder Settings was
+ * sized wrong from then on. `[styleClass]` feeds `[class]`, an ordinary Angular class binding that
+ * reconciles properly. The content box is unaffected: it has `[ngStyle]` alone, nothing competing.
+ *
+ * `display: flex` and `flex-direction: column` are deliberately absent — `sx('root')` already sets
+ * both inline, which no class could override anyway.
+ *
+ * `max-h-[80vh]!` is the one that needs `!`: the theme puts `max-height: 90%` on `.p-dialog`, and
+ * a bare utility only ties with it on specificity.
  */
-export const ACTION_CENTER_DIALOG_STYLE = {
-    width: '42rem',
-    maxWidth: '92vw',
-    height: '80vh',
-    maxHeight: '80vh',
-    display: 'flex',
-    'flex-direction': 'column',
-    overflow: 'hidden'
-} as const;
+export const ACTION_CENTER_DIALOG_CLASS =
+    'w-168 max-w-[92vw] h-[80vh] max-h-[80vh]! overflow-hidden';
 
 /**
  * Content-box styles for the Action Center dialog — the dialog's only scroll container.
@@ -299,27 +256,6 @@ export const ACTION_CENTER_DIALOG_CONTENT_STYLE = {
     'min-height': '0',
     overflow: 'hidden',
     padding: '0'
-} as const;
-
-/**
- * Pass-through styling for the Action Center's "these folders can only be bundled" notice, which
- * spans the dialog edge to edge instead of sitting inset like the sections around it.
- *
- * `-mx-6` cancels the dialog body's `px-6`. Because that inset is *padding*, the notice grows into
- * the container's padding box rather than past its border box, so the body's `overflow-y-auto`
- * does not turn into a horizontal scrollbar. The dialog's own content box is `padding: 0` (see
- * {@link ACTION_CENTER_DIALOG_CONTENT_STYLE}), so `px-6` is the only inset to cancel.
- *
- * Both `!` flags are required rather than defensive. `.p-message` sets `border-radius` and
- * `.p-message-content` sets a `padding` shorthand; PrimeNG injects that stylesheet at runtime, so
- * at equal specificity it lands after Tailwind's and wins.
- *
- * The content keeps 24px of its own horizontal padding so the text stays on the same left edge as
- * the dialog header and the sections below it.
- */
-export const ACTION_CENTER_FOLDER_NOTICE_PT = {
-    root: { class: '-mx-6 rounded-none!' },
-    content: { class: 'px-6!' }
 } as const;
 
 export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];
@@ -371,13 +307,87 @@ export const SUGGESTED_ALLOWED_FILE_EXTENSIONS = [
 ];
 
 export const SUCCESS_MESSAGE_LIFE = 4500;
-export const WARNING_MESSAGE_LIFE = 4200;
+/**
+ * Longer than a success, deliberately (FR-023). Both messages that use it are shortfalls the
+ * author has to act on, and one of them now carries a counts line plus a grouped line per
+ * failure reason. It was 4200, which put the outcome an author has to read on screen for less
+ * time than the one they can ignore.
+ */
+export const WARNING_MESSAGE_LIFE = 7000;
 export const ERROR_MESSAGE_LIFE = 4500;
 export const MOVE_TO_FOLDER_WORKFLOW_ACTION_ID = 'dd4c4b7c-e9d3-4dc0-8fbf-36102f9c6324';
 
 /**
- * `editContent` value written for a `new`-mode panel: a non-shareable marker (creating has no
- * identifier) whose only job is to give browser Back a history entry to pop, so Back closes the
- * create panel too (AC8). The deep-link reader ignores it; only real identifiers are resolved.
+ * The Content Drive URL params that say which side panel or folder dialog is open (#37759). They are
+ * a supported entry point: Part 1's redirects build the panel ones, other screens may link to them,
+ * and at most one of them is in the URL at a time (FR-023).
  */
-export const NEW_CONTENT_MARKER = 'new';
+export const CONTENT_DRIVE_URL_PARAM = {
+    /** Identifier of the content open for edit, in either editor. */
+    EDIT_CONTENT: 'editContent',
+    /** Language of the version open for edit. Read only together with `editContent`. */
+    EDIT_CONTENT_LANG: 'editContentLang',
+    /** Variable of the content type being created, in either editor. */
+    CREATE_CONTENT: 'createContent',
+    /** `true` while New Folder is open; its parent is the folder in `path`. */
+    CREATE_FOLDER: 'createFolder',
+    /** Identifier of the folder whose Folder Settings are open. */
+    EDIT_FOLDER: 'editFolder',
+    /** Identifier of the folder whose Edit Permissions dialog is open. */
+    FOLDER_PERMISSIONS: 'folderPermissions'
+} as const;
+
+/**
+ * Inode of the file open in Edit Code (#37965). Unlike {@link CONTENT_DRIVE_URL_PARAM}, not an
+ * entry point: it is written so that browser Back pops the panel through its unsaved-changes prompt
+ * instead of leaving Content Drive, and a URL that carries it opens nothing.
+ */
+export const CONTENT_DRIVE_EDIT_CODE_PARAM = 'editCode';
+
+/**
+ * URL params that choose the listing (#37930). Kept apart from {@link CONTENT_DRIVE_URL_PARAM}: those
+ * name something to open and are all cleared together when they conflict, and the view must survive
+ * that.
+ */
+export const CONTENT_DRIVE_VIEW_PARAM = {
+    /** The view asked for explicitly (`list` or `card`). Wins over everything, and is written back. */
+    VIEW_TYPE: 'viewType',
+    /**
+     * A custom tool's default view (#37931). Read only; loses to the view the user remembered for
+     * this screen, which is why it is not sent as `viewType`.
+     */
+    DEFAULT_VIEW_TYPE: 'defaultViewType'
+} as const;
+
+/**
+ * Operation key for the upload's own phase, the window before the server answers a handle.
+ *
+ * Its own key because it is a different run from the one the server then performs: this one can be
+ * lost by closing the tab and reports nothing when it is, whereas the server's survives the author
+ * leaving. Keying them apart is what lets the indicator hand off from one to the other.
+ */
+export const UPLOAD_BATCH_OPERATION = 'CONTENT_DRIVE_UPLOAD_BATCH';
+
+/**
+ * How many folder names a line prints before it counts them instead.
+ *
+ * Past this the line leads with the number and names none. Naming the first eight of fifty reads as
+ * "eight folders failed", which is worse than saying nothing.
+ *
+ * **What is lost, stated honestly:** the names past this point are not in the notification. They are
+ * in the run's durable record, which the author reaches by following the count (FR-027a) — so this
+ * is a readability trade, not information the client threw away.
+ */
+export const MAX_FOLDER_NAMES = 8;
+
+/**
+ * The operation keys bulk folder delete and duplicate runs are registered under.
+ *
+ * Paired with the run's targets it forms the repeat guard — *this operation over these folders* —
+ * so a delete running for minutes never blocks an unrelated action, nor a delete of different
+ * folders (FR-018). Kept here rather than imported from the quick-action registry: the store's
+ * guard key is its own concern, and tying it to a UI constant would make a rename of one silently
+ * change the other.
+ */
+export const DELETE_FOLDER_OPERATION = 'DELETE_FOLDER';
+export const DUPLICATE_FOLDER_OPERATION = 'DUPLICATE_FOLDER';

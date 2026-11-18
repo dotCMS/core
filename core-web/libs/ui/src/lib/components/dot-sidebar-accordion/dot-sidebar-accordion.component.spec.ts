@@ -1,4 +1,4 @@
-import { Spectator, createComponentFactory, byTestId } from '@openng/spectator/jest';
+import { Spectator, createComponentFactory, byTestId } from '@openng/spectator/vitest';
 
 import { AnimationEvent } from '@angular/animations';
 import { Component } from '@angular/core';

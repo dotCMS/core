@@ -1,5 +1,10 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { TreeNodeData } from '@dotcms/dotcms-models';
@@ -13,8 +18,8 @@ const TARGET_FOLDER = { id: 'test-id' } as TreeNodeData;
 
 // Mock DragEvent since it's not available in Jest environment
 class DragEventMock extends Event {
-    override preventDefault = jest.fn();
-    override stopPropagation = jest.fn();
+    override preventDefault = vi.fn();
+    override stopPropagation = vi.fn();
     dataTransfer: { files?: FileList | null; types?: string[] } | null = null;
 
     constructor(type: string, dataTransferTypes?: string[]) {
@@ -48,14 +53,14 @@ function createDropEvent(files?: FileList | null): DragEvent {
 
 describe('DotUploadDropzoneComponent', () => {
     let spectator: Spectator<DotUploadDropzoneComponent>;
-    let dragEnterSpyEmitter: ReturnType<typeof jest.spyOn>;
-    let elementRefSpy: ReturnType<typeof jest.spyOn>;
-    let uploadFilesSpyEmitter: ReturnType<typeof jest.spyOn>;
+    let dragEnterSpyEmitter: ReturnType<typeof vi.spyOn>;
+    let elementRefSpy: ReturnType<typeof vi.spyOn>;
+    let uploadFilesSpyEmitter: ReturnType<typeof vi.spyOn>;
     const createComponent = createComponentFactory({
         component: DotUploadDropzoneComponent,
         providers: [
             mockProvider(DotMessageService, {
-                get: jest.fn().mockReturnValue('Drag and drop files here')
+                get: vi.fn().mockReturnValue('Drag and drop files here')
             })
         ],
         detectChanges: false
@@ -64,11 +69,11 @@ describe('DotUploadDropzoneComponent', () => {
     beforeEach(() => {
         spectator = createComponent();
         spectator.setInput('targetFolder', TARGET_FOLDER);
-        uploadFilesSpyEmitter = jest.spyOn(spectator.component.uploadFiles, 'emit');
-        dragEnterSpyEmitter = jest.spyOn(spectator.component.dragEnter, 'emit');
+        uploadFilesSpyEmitter = vi.spyOn(spectator.component.uploadFiles, 'emit');
+        dragEnterSpyEmitter = vi.spyOn(spectator.component.dragEnter, 'emit');
         // Spy on the component's elementRef nativeElement.contains method
         if (spectator.component.elementRef?.nativeElement) {
-            elementRefSpy = jest
+            elementRefSpy = vi
                 .spyOn(spectator.component.elementRef.nativeElement, 'contains')
                 .mockReturnValue(false);
         }
@@ -77,7 +82,7 @@ describe('DotUploadDropzoneComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('Component Creation', () => {

@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
 import {
     DotCurrentUserService,
@@ -89,35 +90,35 @@ const MOCK_DETAIL: PublishingJobDetailView = {
 describe('DotPublishingQueueStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotPublishingQueueStore>>;
     let store: InstanceType<typeof DotPublishingQueueStore>;
-    let service: jest.Mocked<DotPublishingQueueService>;
-    let currentUserService: jest.Mocked<DotCurrentUserService>;
-    let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
-    let messageDisplay: jest.Mocked<DotMessageDisplayService>;
+    let service: Mocked<DotPublishingQueueService>;
+    let currentUserService: Mocked<DotCurrentUserService>;
+    let httpErrorManager: Mocked<DotHttpErrorManagerService>;
+    let messageDisplay: Mocked<DotMessageDisplayService>;
 
     const createService = createServiceFactory({
         service: DotPublishingQueueStore,
         providers: [
             mockProvider(DotPublishingQueueService, {
-                listPublishingJobs: jest.fn().mockReturnValue(of(BUNDLES_RESPONSE)),
-                getBundleAssets: jest.fn().mockReturnValue(of(MOCK_ASSETS)),
-                getPublishingJobDetails: jest.fn().mockReturnValue(of(MOCK_DETAIL)),
-                probeBundleDownload: jest.fn().mockReturnValue(of(true)),
-                probeBundleManifest: jest.fn().mockReturnValue(of(true)),
-                removeAssetsFromBundle: jest
+                listPublishingJobs: vi.fn().mockReturnValue(of(BUNDLES_RESPONSE)),
+                getBundleAssets: vi.fn().mockReturnValue(of(MOCK_ASSETS)),
+                getPublishingJobDetails: vi.fn().mockReturnValue(of(MOCK_DETAIL)),
+                probeBundleDownload: vi.fn().mockReturnValue(of(true)),
+                probeBundleManifest: vi.fn().mockReturnValue(of(true)),
+                removeAssetsFromBundle: vi
                     .fn()
                     .mockReturnValue(of([{ assetId: 'a1', success: true, message: 'ok' }])),
-                retryBundles: jest.fn().mockReturnValue(of([])),
-                deleteBundle: jest.fn().mockReturnValue(of({ message: 'ok' })),
-                deleteBundles: jest.fn().mockReturnValue(of({ entity: 'ok' })),
-                purgeBundles: jest.fn().mockReturnValue(of({ entity: { message: 'ok' } })),
-                getUnsendBundles: jest.fn().mockReturnValue(of(UNSENT_BUNDLES_RESPONSE))
+                retryBundles: vi.fn().mockReturnValue(of([])),
+                deleteBundle: vi.fn().mockReturnValue(of({ message: 'ok' })),
+                deleteBundles: vi.fn().mockReturnValue(of({ entity: 'ok' })),
+                purgeBundles: vi.fn().mockReturnValue(of({ entity: { message: 'ok' } })),
+                getUnsendBundles: vi.fn().mockReturnValue(of(UNSENT_BUNDLES_RESPONSE))
             }),
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ userId: 'user-1' }))
+                getCurrentUser: vi.fn().mockReturnValue(of({ userId: 'user-1' }))
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotMessageDisplayService, {
-                push: jest.fn()
+                push: vi.fn()
             }),
             {
                 provide: DotMessageService,
@@ -135,18 +136,16 @@ describe('DotPublishingQueueStore', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        service = spectator.inject(
-            DotPublishingQueueService
-        ) as jest.Mocked<DotPublishingQueueService>;
+        service = spectator.inject(DotPublishingQueueService) as Mocked<DotPublishingQueueService>;
         currentUserService = spectator.inject(
             DotCurrentUserService
-        ) as jest.Mocked<DotCurrentUserService>;
+        ) as Mocked<DotCurrentUserService>;
         httpErrorManager = spectator.inject(
             DotHttpErrorManagerService
-        ) as jest.Mocked<DotHttpErrorManagerService>;
+        ) as Mocked<DotHttpErrorManagerService>;
         messageDisplay = spectator.inject(
             DotMessageDisplayService
-        ) as jest.Mocked<DotMessageDisplayService>;
+        ) as Mocked<DotMessageDisplayService>;
         spectator.flushEffects();
     });
 
@@ -170,7 +169,7 @@ describe('DotPublishingQueueStore', () => {
             store.setBundlesPage(3);
             store.setBundlesSelection(['x']);
             spectator.flushEffects();
-            (service.listPublishingJobs as jest.Mock).mockClear();
+            (service.listPublishingJobs as Mock).mockClear();
 
             store.setSearch('term');
             spectator.flushEffects();
@@ -187,7 +186,7 @@ describe('DotPublishingQueueStore', () => {
     describe('setStatusFilter', () => {
         it('forwards only the chosen statuses on the next list call', () => {
             const filter = [PublishAuditStatus.BUNDLING, PublishAuditStatus.WAITING_FOR_PUBLISHING];
-            (service.listPublishingJobs as jest.Mock).mockClear();
+            (service.listPublishingJobs as Mock).mockClear();
             store.setStatusFilter(filter);
             spectator.flushEffects();
 
@@ -201,7 +200,7 @@ describe('DotPublishingQueueStore', () => {
         it('omits the statuses param when the filter is empty so BE returns every status', () => {
             store.setStatusFilter([PublishAuditStatus.SUCCESS]);
             spectator.flushEffects();
-            (service.listPublishingJobs as jest.Mock).mockClear();
+            (service.listPublishingJobs as Mock).mockClear();
 
             store.setStatusFilter([]);
             spectator.flushEffects();
@@ -235,13 +234,13 @@ describe('DotPublishingQueueStore', () => {
 
     describe('refresh', () => {
         it('reloads bundles', () => {
-            (service.listPublishingJobs as jest.Mock).mockClear();
+            (service.listPublishingJobs as Mock).mockClear();
             store.refresh();
             expect(service.listPublishingJobs).toHaveBeenCalledTimes(1);
         });
 
         it('also reloads the draft count — pushing/deleting moves rows in and out of the unsent set', () => {
-            (service.getUnsendBundles as jest.Mock).mockClear();
+            (service.getUnsendBundles as Mock).mockClear();
             store.refresh();
             expect(service.getUnsendBundles).toHaveBeenCalledTimes(1);
         });
@@ -262,7 +261,7 @@ describe('DotPublishingQueueStore', () => {
         });
 
         it('reuses the cached user id instead of re-resolving the current user', () => {
-            (currentUserService.getCurrentUser as jest.Mock).mockClear();
+            (currentUserService.getCurrentUser as Mock).mockClear();
             store.loadDraftBundlesCount();
             expect(currentUserService.getCurrentUser).not.toHaveBeenCalled();
             expect(service.getUnsendBundles).toHaveBeenCalledWith('user-1', '*', 0, -1);
@@ -270,8 +269,8 @@ describe('DotPublishingQueueStore', () => {
 
         it('keeps the last known count and shows no toast when a refresh fails', () => {
             expect(store.draftBundlesTotal()).toBe(3);
-            (httpErrorManager.handle as jest.Mock).mockClear();
-            (service.getUnsendBundles as jest.Mock).mockReturnValueOnce(
+            (httpErrorManager.handle as Mock).mockClear();
+            (service.getUnsendBundles as Mock).mockReturnValueOnce(
                 throwError(() => new Error('boom'))
             );
 
@@ -303,12 +302,12 @@ describe('DotPublishingQueueStore', () => {
 
     describe('removeBundleAsset', () => {
         beforeEach(() => {
-            (service.removeAssetsFromBundle as jest.Mock).mockClear();
+            (service.removeAssetsFromBundle as Mock).mockClear();
         });
 
         it('calls service.removeAssetsFromBundle with [assetId] and refetches assets', () => {
             store.openAssetList('B-X');
-            (service.getBundleAssets as jest.Mock).mockClear();
+            (service.getBundleAssets as Mock).mockClear();
             store.removeBundleAsset('a1');
             expect(service.removeAssetsFromBundle).toHaveBeenCalledWith('B-X', ['a1']);
             expect(service.getBundleAssets).toHaveBeenCalledWith('B-X');
@@ -321,9 +320,7 @@ describe('DotPublishingQueueStore', () => {
 
         it('error path → httpErrorManager.handle called', () => {
             const error = new Error('boom');
-            (service.removeAssetsFromBundle as jest.Mock).mockReturnValueOnce(
-                throwError(() => error)
-            );
+            (service.removeAssetsFromBundle as Mock).mockReturnValueOnce(throwError(() => error));
             store.openAssetList('B-X');
             store.removeBundleAsset('a1');
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
@@ -332,7 +329,7 @@ describe('DotPublishingQueueStore', () => {
 
     describe('openDetail / loadDetail / closeDetail', () => {
         it('loads details when opened (assets fetched lazily by view-contents dialog)', () => {
-            (service.getBundleAssets as jest.Mock).mockClear();
+            (service.getBundleAssets as Mock).mockClear();
             store.openDetail('B-Y');
             expect(service.getPublishingJobDetails).toHaveBeenCalledWith('B-Y');
             // Details dialog only renders metadata + endpoints + download links.
@@ -374,30 +371,30 @@ describe('DotPublishingQueueStore', () => {
             });
 
         const successCalls = () =>
-            (messageDisplay.push as jest.Mock).mock.calls.filter(
+            (messageDisplay.push as Mock).mock.calls.filter(
                 ([m]) => m.severity === DotMessageSeverity.SUCCESS
             );
 
         const errorCalls = () =>
-            (messageDisplay.push as jest.Mock).mock.calls.filter(
+            (messageDisplay.push as Mock).mock.calls.filter(
                 ([m]) => m.severity === DotMessageSeverity.ERROR
             );
 
         beforeEach(() => {
             // Toast mock accumulates across the retry cases below; reset it so
             // each `not.toHaveBeenCalled` assertion sees a clean slate.
-            (messageDisplay.push as jest.Mock).mockClear();
+            (messageDisplay.push as Mock).mockClear();
         });
 
         it('retryBundles calls service and refreshes', () => {
-            const onDone = jest.fn();
+            const onDone = vi.fn();
             store.retryBundles({ bundleIds: ['x'] }, onDone);
             expect(service.retryBundles).toHaveBeenCalledWith({ bundleIds: ['x'] });
             expect(onDone).toHaveBeenCalled();
         });
 
         it('retryBundles passes the BE success message through verbatim for a single bundle', () => {
-            (service.retryBundles as jest.Mock).mockReturnValueOnce(
+            (service.retryBundles as Mock).mockReturnValueOnce(
                 of([retryResult({ message: 'Bundle successfully re-queued for publishing' })])
             );
             store.retryBundles({ bundleIds: ['x'] });
@@ -413,7 +410,7 @@ describe('DotPublishingQueueStore', () => {
         it('retryBundles summarizes with a count when N bundles all succeed', () => {
             // Individual BE messages are identical canned strings for every bundle
             // in an all-success batch — listing them would just be repetition.
-            (service.retryBundles as jest.Mock).mockReturnValueOnce(
+            (service.retryBundles as Mock).mockReturnValueOnce(
                 of([
                     retryResult({ bundleId: 'a' }),
                     retryResult({ bundleId: 'b' }),
@@ -429,7 +426,7 @@ describe('DotPublishingQueueStore', () => {
         it('retryBundles surfaces the BE message verbatim when a single bundle fails', () => {
             // The BE returns HTTP 200 with success:false when a bundle is already
             // queued — the classic "silent failure" this notification prevents.
-            (service.retryBundles as jest.Mock).mockReturnValueOnce(
+            (service.retryBundles as Mock).mockReturnValueOnce(
                 of([
                     retryResult({
                         success: false,
@@ -450,7 +447,7 @@ describe('DotPublishingQueueStore', () => {
         it('retryBundles lists per-bundle names + BE messages when several fail', () => {
             // Bundle names come from the store's already-loaded rows (bundle-A,
             // bundle-B are the seed fixtures from BUNDLES_RESPONSE).
-            (service.retryBundles as jest.Mock).mockReturnValueOnce(
+            (service.retryBundles as Mock).mockReturnValueOnce(
                 of([
                     retryResult({
                         bundleId: 'bundle-A',
@@ -474,7 +471,7 @@ describe('DotPublishingQueueStore', () => {
         });
 
         it('retryBundles falls back to the bundle id when the row is not in the store', () => {
-            (service.retryBundles as jest.Mock).mockReturnValueOnce(
+            (service.retryBundles as Mock).mockReturnValueOnce(
                 of([
                     retryResult({ bundleId: 'zzz', success: false, message: 'boom' }),
                     retryResult({ bundleId: 'yyy', success: false, message: 'bang' })
@@ -493,7 +490,7 @@ describe('DotPublishingQueueStore', () => {
             const fails: RetryBundleResultView[] = ['a', 'b', 'c', 'd', 'e'].map((id) =>
                 retryResult({ bundleId: id, success: false, message: `msg-${id}` })
             );
-            (service.retryBundles as jest.Mock).mockReturnValueOnce(of(fails));
+            (service.retryBundles as Mock).mockReturnValueOnce(of(fails));
             store.retryBundles({ bundleIds: fails.map((f) => f.bundleId) });
             expect(messageDisplay.push).toHaveBeenCalledWith(
                 expectToast(
@@ -505,7 +502,7 @@ describe('DotPublishingQueueStore', () => {
 
         it('retryBundles emits a partial-outcome toast listing only the failures', () => {
             // Success detail is a count; failure detail is a per-item list.
-            (service.retryBundles as jest.Mock).mockReturnValueOnce(
+            (service.retryBundles as Mock).mockReturnValueOnce(
                 of([
                     retryResult({ bundleId: 'bundle-A' }),
                     retryResult({ bundleId: 'bundle-B' }),
@@ -523,7 +520,7 @@ describe('DotPublishingQueueStore', () => {
         });
 
         it('retryBundles does NOT emit any toast when the response is empty', () => {
-            (service.retryBundles as jest.Mock).mockReturnValueOnce(of([]));
+            (service.retryBundles as Mock).mockReturnValueOnce(of([]));
             store.retryBundles({ bundleIds: [] });
             expect(messageDisplay.push).not.toHaveBeenCalled();
         });
@@ -542,8 +539,8 @@ describe('DotPublishingQueueStore', () => {
         });
 
         it('deleteBundlesBulk is a no-op when given an empty list', () => {
-            jest.clearAllMocks();
-            const onDone = jest.fn();
+            vi.clearAllMocks();
+            const onDone = vi.fn();
             store.deleteBundlesBulk([], onDone);
             expect(service.deleteBundles).not.toHaveBeenCalled();
             expect(onDone).toHaveBeenCalled();
@@ -558,7 +555,7 @@ describe('DotPublishingQueueStore', () => {
         });
 
         it('purgeBundles calls service without statuses for the "ALL" scope', () => {
-            const onDone = jest.fn();
+            const onDone = vi.fn();
             store.purgeBundles(undefined, onDone);
             expect(service.purgeBundles).toHaveBeenCalledWith(undefined);
             expect(onDone).toHaveBeenCalled();
@@ -570,28 +567,28 @@ describe('DotPublishingQueueStore', () => {
         describe('error paths', () => {
             it('retryBundles routes service errors to httpErrorManager.handle', () => {
                 const error = new Error('boom-retry');
-                (service.retryBundles as jest.Mock).mockReturnValueOnce(throwError(() => error));
+                (service.retryBundles as Mock).mockReturnValueOnce(throwError(() => error));
                 store.retryBundles({ bundleIds: ['x'] });
                 expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             });
 
             it('deleteBundle routes service errors to httpErrorManager.handle', () => {
                 const error = new Error('boom-delete');
-                (service.deleteBundle as jest.Mock).mockReturnValueOnce(throwError(() => error));
+                (service.deleteBundle as Mock).mockReturnValueOnce(throwError(() => error));
                 store.deleteBundle('x');
                 expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             });
 
             it('deleteBundlesBulk routes service errors to httpErrorManager.handle', () => {
                 const error = new Error('boom-bulk');
-                (service.deleteBundles as jest.Mock).mockReturnValueOnce(throwError(() => error));
+                (service.deleteBundles as Mock).mockReturnValueOnce(throwError(() => error));
                 store.deleteBundlesBulk(['a', 'b']);
                 expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             });
 
             it('purgeBundles routes service errors to httpErrorManager.handle', () => {
                 const error = new Error('boom-purge');
-                (service.purgeBundles as jest.Mock).mockReturnValueOnce(throwError(() => error));
+                (service.purgeBundles as Mock).mockReturnValueOnce(throwError(() => error));
                 store.purgeBundles([PublishAuditStatus.SUCCESS]);
                 expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             });
@@ -608,7 +605,7 @@ describe('DotPublishingQueueStore', () => {
         it('fires a silent refresh when the tab becomes visible again', () => {
             // `onInit` already started polling — reset the counter and simulate
             // the tab going hidden then visible.
-            (service.listPublishingJobs as jest.Mock).mockClear();
+            (service.listPublishingJobs as Mock).mockClear();
             Object.defineProperty(document, 'hidden', {
                 configurable: true,
                 get: () => false
@@ -620,7 +617,7 @@ describe('DotPublishingQueueStore', () => {
         });
 
         it('does NOT fetch on visibilitychange while the tab is still hidden', () => {
-            (service.listPublishingJobs as jest.Mock).mockClear();
+            (service.listPublishingJobs as Mock).mockClear();
             Object.defineProperty(document, 'hidden', {
                 configurable: true,
                 get: () => true
@@ -632,7 +629,7 @@ describe('DotPublishingQueueStore', () => {
         });
 
         it('unbinds the visibilitychange listener when stopPolling is called', () => {
-            (service.listPublishingJobs as jest.Mock).mockClear();
+            (service.listPublishingJobs as Mock).mockClear();
             store.stopPolling();
             Object.defineProperty(document, 'hidden', {
                 configurable: true,
@@ -648,7 +645,7 @@ describe('DotPublishingQueueStore', () => {
     describe('error handling', () => {
         it('loadBundles error → handle + status=error', () => {
             const error = new Error('boom');
-            (service.listPublishingJobs as jest.Mock).mockReturnValueOnce(throwError(() => error));
+            (service.listPublishingJobs as Mock).mockReturnValueOnce(throwError(() => error));
             store.loadBundles();
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(store.bundlesStatus()).toBe('error');
@@ -656,9 +653,7 @@ describe('DotPublishingQueueStore', () => {
 
         it('loadDetail error → handle + status=error', () => {
             const error = new Error('boom');
-            (service.getPublishingJobDetails as jest.Mock).mockReturnValueOnce(
-                throwError(() => error)
-            );
+            (service.getPublishingJobDetails as Mock).mockReturnValueOnce(throwError(() => error));
             store.openDetail('y');
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(store.detailStatus()).toBe('error');

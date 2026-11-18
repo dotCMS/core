@@ -1,5 +1,6 @@
-import { SpectatorService, createServiceFactory } from '@openng/spectator/jest';
+import { SpectatorService, createServiceFactory } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import {
     DotContentSearchService,
@@ -100,111 +101,116 @@ describe('DotAssetSearchStore', () => {
         dotContentSearchService = spectator.inject(DotContentSearchService);
     });
 
-    it('should have inital state', (done) => {
-        service.vm$.subscribe((res) => {
-            expect(res).toEqual(INITIAL_STATE);
-            done();
-        });
-    });
+    it('should have inital state', () =>
+        new Promise<void>((done) => {
+            service.vm$.subscribe((res) => {
+                expect(res).toEqual(INITIAL_STATE);
+                done();
+            });
+        }));
 
     describe('Updaters', () => {
-        it('should update contentlets', (done) => {
-            const contentlet = [IMAGE_CONTENTLETS_MOCK[0], IMAGE_CONTENTLETS_MOCK[1]];
-            service.updateContentlets(contentlet);
+        it('should update contentlets', () =>
+            new Promise<void>((done) => {
+                const contentlet = [IMAGE_CONTENTLETS_MOCK[0], IMAGE_CONTENTLETS_MOCK[1]];
+                service.updateContentlets(contentlet);
 
-            service.vm$.subscribe((res) => {
-                expect(res).toEqual({
-                    preventScroll: false,
-                    loading: false,
-                    contentlets: contentlet
+                service.vm$.subscribe((res) => {
+                    expect(res).toEqual({
+                        preventScroll: false,
+                        loading: false,
+                        contentlets: contentlet
+                    });
+                    done();
                 });
-                done();
-            });
-        });
+            }));
 
-        it('should merge contentlets', (done) => {
-            const contentlet = [IMAGE_CONTENTLETS_MOCK[0], IMAGE_CONTENTLETS_MOCK[1]];
-            service.mergeContentlets(contentlet);
+        it('should merge contentlets', () =>
+            new Promise<void>((done) => {
+                const contentlet = [IMAGE_CONTENTLETS_MOCK[0], IMAGE_CONTENTLETS_MOCK[1]];
+                service.mergeContentlets(contentlet);
 
-            service.vm$.subscribe((res) => {
-                expect(res).toEqual({
-                    preventScroll: false,
-                    loading: false,
-                    contentlets: [...INITIAL_STATE.contentlets, ...contentlet]
+                service.vm$.subscribe((res) => {
+                    expect(res).toEqual({
+                        preventScroll: false,
+                        loading: false,
+                        contentlets: [...INITIAL_STATE.contentlets, ...contentlet]
+                    });
+                    done();
                 });
-                done();
-            });
-        });
+            }));
     });
 
     describe('Effects', () => {
-        it('should search contentlets', (done) => {
-            const contentlets = CONTENTLETS_MOCK_WITH_LANG.splice(0, 2);
+        it('should search contentlets', () =>
+            new Promise<void>((done) => {
+                const contentlets = CONTENTLETS_MOCK_WITH_LANG.splice(0, 2);
 
-            const spyLoading = jest.spyOn(service, 'updateLoading');
-            const spySearch = jest
-                .spyOn(dotContentSearchService, 'get')
-                .mockReturnValue(of({ jsonObjectView: { contentlets } }));
+                const spyLoading = vi.spyOn(service, 'updateLoading');
+                const spySearch = vi
+                    .spyOn(dotContentSearchService, 'get')
+                    .mockReturnValue(of({ jsonObjectView: { contentlets } }));
 
-            const params = {
-                search: 'image',
-                assetType: 'image',
-                languageId: 1,
-                offset: 0
-            };
+                const params = {
+                    search: 'image',
+                    assetType: 'image',
+                    languageId: 1,
+                    offset: 0
+                };
 
-            spectator.service.searchContentlet(params);
+                spectator.service.searchContentlet(params);
 
-            spectator.service.vm$.subscribe((res) => {
-                expect(res).toEqual({
-                    preventScroll: false,
-                    loading: false,
-                    contentlets
+                spectator.service.vm$.subscribe((res) => {
+                    expect(res).toEqual({
+                        preventScroll: false,
+                        loading: false,
+                        contentlets
+                    });
+
+                    done();
                 });
 
-                done();
-            });
+                expect(spyLoading).toHaveBeenCalledWith(true);
+                expect(spySearch).toHaveBeenCalledWith({
+                    query: `+catchall:${params.search}* title:'${params.search}'^15 +languageId:1 +baseType:(4 OR 9) +metadata.contenttype:image/* +deleted:false +working:true`,
+                    sortOrder: ESOrderDirectionSearch.ASC,
+                    limit: 20,
+                    offset: 0
+                });
+            }));
 
-            expect(spyLoading).toHaveBeenCalledWith(true);
-            expect(spySearch).toHaveBeenCalledWith({
-                query: `+catchall:${params.search}* title:'${params.search}'^15 +languageId:1 +baseType:(4 OR 9) +metadata.contenttype:image/* +deleted:false +working:true`,
-                sortOrder: ESOrderDirectionSearch.ASC,
-                limit: 20,
-                offset: 0
-            });
-        });
+        it('should load next banch', () =>
+            new Promise<void>((done) => {
+                const contentlets = CONTENTLETS_MOCK_WITH_LANG.splice(0, 2);
+                const spySearch = vi
+                    .spyOn(dotContentSearchService, 'get')
+                    .mockReturnValue(of({ jsonObjectView: { contentlets } }));
 
-        it('should load next banch', (done) => {
-            const contentlets = CONTENTLETS_MOCK_WITH_LANG.splice(0, 2);
-            const spySearch = jest
-                .spyOn(dotContentSearchService, 'get')
-                .mockReturnValue(of({ jsonObjectView: { contentlets } }));
+                const params = {
+                    search: 'image',
+                    assetType: 'image',
+                    languageId: 1,
+                    offset: 10
+                };
 
-            const params = {
-                search: 'image',
-                assetType: 'image',
-                languageId: 1,
-                offset: 10
-            };
+                spectator.service.nextBatch(params);
 
-            spectator.service.nextBatch(params);
+                spectator.service.vm$.subscribe((res) => {
+                    expect(res).toEqual({
+                        preventScroll: false,
+                        loading: false,
+                        contentlets
+                    });
 
-            spectator.service.vm$.subscribe((res) => {
-                expect(res).toEqual({
-                    preventScroll: false,
-                    loading: false,
-                    contentlets
+                    done();
                 });
 
-                done();
-            });
-
-            expect(spySearch).toHaveBeenCalledWith({
-                query: `+catchall:${params.search}* title:'${params.search}'^15 +languageId:1 +baseType:(4 OR 9) +metadata.contenttype:image/* +deleted:false +working:true`,
-                sortOrder: ESOrderDirectionSearch.ASC,
-                limit: 20,
-                offset: 10
-            });
-        });
+                expect(spySearch).toHaveBeenCalledWith({
+                    query: `+catchall:${params.search}* title:'${params.search}'^15 +languageId:1 +baseType:(4 OR 9) +metadata.contenttype:image/* +deleted:false +working:true`,
+                    sortOrder: ESOrderDirectionSearch.ASC,
+                    limit: 20,
+                    offset: 10
+                });
+            }));
     });
 });

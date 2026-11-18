@@ -53,3 +53,82 @@ export async function createFolders(
         headers: authHeaders()
     });
 }
+
+/**
+ * Creates one folder that only admits file names matching the given globs.
+ *
+ * Its own helper because the *filter* is the point: a folder's `fileMasks` is a glob on the file
+ * name, checked per folder, and it is the only way to make the server refuse a file for a reason
+ * that has nothing to do with its type or its size. `createFolders` cannot express it — that
+ * endpoint takes paths and nothing else.
+ *
+ * @param siteName the site the folder belongs to, e.g. `demo.dotcms.com`
+ * @param path the folder path, leading slash included
+ * @param fileMasks the globs to admit, e.g. `['*.jpg']`
+ */
+export async function createFilteredFolder(
+    request: APIRequestContext,
+    siteName: string,
+    path: string,
+    fileMasks: string[]
+): Promise<void> {
+    const response = await request.post('/api/v1/assets/folders', {
+        data: {
+            assetPath: `//${siteName}${path}`,
+            data: {
+                // `title` and nothing else about naming: the endpoint rejects an unknown `name`
+                // field outright, and derives the folder's name from the path anyway.
+                title: path.replace(/^\//, ''),
+                fileMasks
+            }
+        },
+        headers: authHeaders()
+    });
+    expect(response.ok()).toBeTruthy();
+
+    await request.delete('/api/v1/caches/region/FolderCache', {
+        headers: authHeaders()
+    });
+}
+
+/**
+ * Submits a bulk folder delete, the same request Content Drive's Action Center sends.
+ *
+ * Answers once the run is queued, not once it has finished: the delete itself happens in a
+ * background job.
+ *
+ * @param siteName the site the folders belong to, e.g. `demo.dotcms.com`
+ * @param paths folder paths from the site root, leading slash included
+ */
+export async function submitFolderDelete(
+    request: APIRequestContext,
+    siteName: string,
+    paths: string[]
+): Promise<void> {
+    const response = await request.post('/api/v1/assets/folders/_bulkdelete', {
+        data: { assetPaths: paths.map((path) => `//${siteName}${path}/`) },
+        headers: authHeaders()
+    });
+    expect(response.status(), await response.text()).toBe(202);
+}
+
+/**
+ * Submits a bulk folder duplicate, the same request Content Drive sends.
+ *
+ * Answers once the run is queued, not once it has finished: the copy itself happens in a
+ * background job.
+ *
+ * @param siteName the site the folders belong to, e.g. `demo.dotcms.com`
+ * @param paths folder paths from the site root, leading slash included
+ */
+export async function submitFolderDuplicate(
+    request: APIRequestContext,
+    siteName: string,
+    paths: string[]
+): Promise<void> {
+    const response = await request.post('/api/v1/assets/folders/_bulkduplicate', {
+        data: { assetPaths: paths.map((path) => `//${siteName}${path}/`) },
+        headers: authHeaders()
+    });
+    expect(response.status(), await response.text()).toBe(202);
+}

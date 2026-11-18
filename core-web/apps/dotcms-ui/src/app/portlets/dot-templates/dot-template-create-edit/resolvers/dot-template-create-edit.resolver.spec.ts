@@ -1,8 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
+import { RouterStateSnapshot } from '@angular/router';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotTemplate } from '@dotcms/dotcms-models';
@@ -46,7 +48,7 @@ describe('DotTemplateDesignerService', () => {
                 {
                     provide: DotTemplatesService,
                     useValue: {
-                        getById: jest.fn().mockReturnValue(
+                        getById: vi.fn().mockReturnValue(
                             of({
                                 this: {
                                     is: 'a page'
@@ -65,70 +67,77 @@ describe('DotTemplateDesignerService', () => {
         dotRouterService = TestBed.inject(DotRouterService);
     });
 
-    it('should return page by id from router', (done) => {
-        service
-            .resolve(
-                {
-                    paramMap: {
-                        get(param) {
-                            return param === 'inode' ? null : 'ID';
+    it('should return page by id from router', () =>
+        new Promise<void>((done) => {
+            service
+                .resolve(
+                    {
+                        paramMap: {
+                            get(param: string) {
+                                return param === 'inode' ? null : 'ID';
+                            }
                         }
-                    }
-                } as any,
-                null
-            )
-            .subscribe((res) => {
-                expect(templateService.getById).toHaveBeenCalledWith('ID');
-                expect(templateService.getById).toHaveBeenCalledTimes(1);
-                expect<any>(res).toEqual({ this: { is: 'a page' } });
-                done();
-            });
-    });
+                    } as any,
+                    null as unknown as RouterStateSnapshot
+                )
+                .subscribe((res) => {
+                    expect(templateService.getById).toHaveBeenCalledWith('ID');
+                    expect(templateService.getById).toHaveBeenCalledTimes(1);
+                    expect<any>(res).toEqual({ this: { is: 'a page' } });
+                    done();
+                });
+        }));
 
-    it('should return page by inode from router', (done) => {
-        jest.spyOn(templateService, 'getFiltered').mockReturnValue(
-            of({ templates: [templateMock], totalRecords: 1 })
-        );
-        service
-            .resolve(
-                {
-                    paramMap: {
-                        get(param) {
-                            return param === 'inode' ? 'inode123' : 'ID';
+    it('should return page by inode from router', () =>
+        new Promise<void>((done) => {
+            vi.spyOn(templateService, 'getFiltered').mockReturnValue(
+                of({ templates: [templateMock], totalRecords: 1 })
+            );
+            service
+                .resolve(
+                    {
+                        paramMap: {
+                            get(param: string) {
+                                return param === 'inode' ? 'inode123' : 'ID';
+                            }
                         }
-                    }
-                } as any,
-                null
-            )
-            .subscribe((res) => {
-                expect(templateService.getFiltered).toHaveBeenCalledWith({ filter: 'inode123' });
-                expect(templateService.getFiltered).toHaveBeenCalledTimes(1);
-                expect<any>(res).toEqual(templateMock);
-                done();
-            });
-    });
+                    } as any,
+                    null as unknown as RouterStateSnapshot
+                )
+                .subscribe((res) => {
+                    expect(templateService.getFiltered).toHaveBeenCalledWith({
+                        filter: 'inode123'
+                    });
+                    expect(templateService.getFiltered).toHaveBeenCalledTimes(1);
+                    expect<any>(res).toEqual(templateMock);
+                    done();
+                });
+        }));
 
-    it('should go to the main portlet if inode is invalid', (done) => {
-        jest.spyOn(templateService, 'getFiltered').mockReturnValue(
-            of({ templates: [], totalRecords: 0 })
-        );
-        service
-            .resolve(
-                {
-                    paramMap: {
-                        get(param) {
-                            return param === 'inode' ? 'inode123' : 'ID';
+    it('should go to the main portlet if inode is invalid', () =>
+        new Promise<void>((done) => {
+            vi.spyOn(templateService, 'getFiltered').mockReturnValue(
+                of({ templates: [], totalRecords: 0 })
+            );
+            service
+                .resolve(
+                    {
+                        paramMap: {
+                            get(param: string) {
+                                return param === 'inode' ? 'inode123' : 'ID';
+                            }
                         }
-                    }
-                } as any,
-                null
-            )
-            .subscribe(() => {
-                expect(templateService.getFiltered).toHaveBeenCalledWith({ filter: 'inode123' });
-                expect(templateService.getFiltered).toHaveBeenCalledTimes(1);
-                expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
-                expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
-                done();
-            });
-    });
+                    } as any,
+                    null as unknown as RouterStateSnapshot
+                )
+                .subscribe(() => {
+                    expect(templateService.getFiltered).toHaveBeenCalledWith({
+                        filter: 'inode123'
+                    });
+                    expect(templateService.getFiltered).toHaveBeenCalledTimes(1);
+                    expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('templates');
+                    expect(dotRouterService.gotoPortlet).toHaveBeenCalledTimes(1);
+                    done();
+                });
+        }));
 });

@@ -6,7 +6,11 @@ import com.dotcms.rest.api.CorsFilter;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import graphql.execution.AsyncExecutionStrategy;
+import graphql.execution.instrumentation.ChainedInstrumentation;
+import graphql.kickstart.execution.config.DefaultExecutionStrategyProvider;
 import graphql.kickstart.servlet.AbstractGraphQLHttpServlet;
+import graphql.kickstart.execution.GraphQLQueryInvoker;
 import graphql.kickstart.servlet.GraphQLConfiguration;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -37,12 +41,29 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
     }
 
 
+    /**
+     * Builds the GraphQL servlet configuration: the dotCMS schema, listener and context, and the
+     * instrumentations applied to every query.
+     *
+     * @return the servlet configuration
+     */
     @Override
     protected GraphQLConfiguration getConfiguration() {
         return GraphQLConfiguration
                 .with(new DotGraphQLSchemaProvider())
                 .with(List.of(new DotGraphQLServletListener()))
                 .with(new DotGraphQLContextBuilder())
+                .with(GraphQLQueryInvoker.newBuilder()
+                        .withExecutionStrategyProvider(new DefaultExecutionStrategyProvider(
+                                new AsyncExecutionStrategy(new DotDataFetcherExceptionHandler()),
+                                null, null))
+                        .withInstrumentation(new ChainedInstrumentation(List.of(
+                                // Reports narrowing clauses that matched nothing, through the response's
+                                // `extensions`. A client that ignores extensions is unaffected. See #34540.
+                                new UnmatchedTypeConditionInstrumentation(),
+                                // Keeps user properties out of results for non-back-end callers.
+                                new UserPropertiesInstrumentation())))
+                        .build())
                 .build();
     }
 

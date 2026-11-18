@@ -80,9 +80,9 @@ graph TB
     subgraph Actions[" "]
         direction LR
         ATitle["🔧 Composite Actions"]
-        A1["Core CICD:<br/>maven-job • setup-java<br/>prepare-runner • cleanup-runner"]
-        A2["Deployment:<br/>deploy-docker • deploy-jfrog<br/>deploy-cli-npm • deploy-javadoc"]
-        A3["Support:<br/>notify-slack • issue-fetcher<br/>issue-labeler • sbom-generator"]
+        A1["Core CI/CD:<br/>maven-job • setup-java<br/>prepare-runner • cleanup-runner"]
+        A2["Deployment:<br/>deploy-docker • deploy-bunny-maven-s3<br/>deploy-cli-npm • deploy-javadoc"]
+        A3["Support:<br/>notify-slack • sbom-generator"]
     end
 
     %% Configuration Layer
@@ -184,10 +184,10 @@ Each top-level CICD workflow has specific triggers, purposes, and configuration 
 |----------|---------|------------------------|
 | **cicd_1-pr.yml** | Push of PR to GitHub | • **No secrets** - runs on unreviewed code<br/>• **Selective testing** - uses filters to skip unaffected tests<br/>• **Post-workflow reporting** - separate workflow handles secrets<br/>• **Filter-based** - `.github/filters.yaml` determines what runs |
 | **cicd_2-merge-queue.yml** | PR added to merge queue | • **All tests** - catches flaky tests and filter issues<br/>• **Includes all PRs ahead** - tests combined code<br/>• **Same commit as main** - success means HEAD of main will be identical<br/>• **Critical monitoring** - failures here block all developers |
-| **cicd_3-trunk.yml** | Push to main branch | • **Artifact reuse** - uses merge queue build artifacts<br/>• **Native CLI builds** - too expensive for every PR<br/>• **Snapshot deployments** - GitHub packages, Artifactory<br/>• **SDK publishing** - optional NPM package publishing |
+| **cicd_3-trunk.yml** | Push to main branch | • **Artifact reuse** - uses merge queue build artifacts<br/>• **Native CLI builds** - too expensive for every PR<br/>• **Snapshot deployments** - GitHub packages, S3 Maven repo<br/>• **SDK publishing** - optional NPM package publishing |
 | **cicd_4-nightly.yml** | Scheduled (3:18 AM daily) | • **Trunk health monitor** - fail-safe detection of breakage<br/>• **Prevents change accumulation** - catch issues before they pile up<br/>• **Critical for CI success** - enabled increased release frequency<br/>• **NOT a release gate** - legacy workflow for codebase quality<br/>• **Long-running tests** - tests too slow for PR workflow |
 | **cicd_5-lts.yml** | Push to release-* branches | • **LTS validation** - tests for long-term support branches<br/>• **Full test suite** - comprehensive validation<br/>• **Version-specific** - uses hardcoded version in workflow |
-| **cicd_6-release.yml** | Manual workflow_dispatch | • **Production release** - creates official releases<br/>• **Full deployment** - Artifactory, Docker, Javadocs<br/>• **Version management** - creates release branches and tags<br/>• **GitHub labels** - updates issue tracking labels |
+| **cicd_6-release.yml** | Manual workflow_dispatch | • **Production release** - creates official releases<br/>• **Full deployment** - S3 Maven repo, Docker, Javadocs<br/>• **Version management** - creates release branches and tags<br/>• **GitHub labels** - updates issue tracking labels |
 
 ### Development Philosophy
 
@@ -304,7 +304,6 @@ flowchart TD
         Test --> Frontend[Frontend Tests]
         Test --> Integration[Integration Tests<br/>6 Suites]
         Test --> Postman[Postman Tests<br/>11 Collections]
-        Test --> Karate[Karate Tests]
         Test --> CLI[CLI Tests]
     end
     
@@ -336,12 +335,12 @@ flowchart TD
     Deploy --> Release[Release Phase]
     Release --> Parallel{Parallel<br/>Operations}
     
-    Parallel --> Artifactory[Deploy to Artifactory]
+    Parallel --> S3Repo[Publish to S3 repo]
     Parallel --> Javadoc[Upload Javadocs to S3]
     Parallel --> Plugins[Update Plugin Repos]
     Parallel --> SBOM[Generate SBOM]
     
-    Artifactory --> Labels{Update<br/>GitHub<br/>Labels?}
+    S3Repo --> Labels{Update<br/>GitHub<br/>Labels?}
     Labels -->|Yes| UpdateLabels[Release Labeling<br/>Next Release → Release vX.X.X]
     Labels -->|No| Finalize
     UpdateLabels --> Finalize[Finalize Phase]
@@ -390,7 +389,7 @@ flowchart TD
     MacSilicon --> Deploy
     
     Deploy --> DeployDocker[Docker Images]
-    Deploy --> DeployCLI[CLI to JFrog]
+    Deploy --> DeployCLI[CLI to S3 repo]
     Deploy --> DeploySDK{Publish<br/>NPM SDKs?}
     
     DeploySDK -->|Yes| SDKPublish[NPM SDK Libs]
@@ -407,7 +406,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    Start[Test Phase] --> Matrix[setup-matrix Job<br/>Parse test-matrix.yml]
+    Start[Test Matrix workflow<br/>runs alongside the build] --> Matrix[setup-matrix Job<br/>Parse test-matrix.yml]
     
     Matrix --> Generate{Generate<br/>Test<br/>Combinations}
     
@@ -418,7 +417,6 @@ flowchart LR
     Check -->|CLI| CLI[CLI Tests<br/>1 suite]
     Check -->|Integration| IT[Integration Tests<br/>6 suites]
     Check -->|Postman| PM[Postman Tests<br/>11 collections]
-    Check -->|Karate| KT[Karate Tests<br/>1 suite]
     Check -->|E2E| E2E[E2E Tests<br/>3 Playwright shards]
     
     subgraph "Integration Suites"
@@ -572,6 +570,7 @@ if: needs.initialize.outputs.found_artifacts == 'false'
 ```yaml
 # Tests are conditionally run based on file changes detected in initialize
 # The filters output is a JSON object - use fromJSON() to access individual values
+# These inputs go to the caller's test-matrix job (cicd_comp_test-matrix.yml), not to the test phase
 with:
   jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
   integration: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
@@ -590,10 +589,14 @@ on:
 
 ### 5. Matrix Generation Pattern
 ```yaml
-# Dynamic test matrix from external YAML config
-- uses: mikefarah/yq@v4.47.1
+# Dynamic test matrix from external YAML config, built by cicd_comp_test-matrix.yml.
+# Each caller runs it as a `test-matrix` job beside the build; the caller's `test` job
+# needs both and passes the matrix to cicd_comp_test-phase.yml.
+- uses: actions/checkout@<sha> # sparse checkout of .github/test-matrix.yml only
   with:
-    cmd: yq -o=json .github/test-matrix.yml
+    sparse-checkout: .github/test-matrix.yml
+    sparse-checkout-cone-mode: false
+- run: yq -o=json .github/test-matrix.yml > config.json   # yq preinstalled on the runner
 ```
 
 ## Key Actions
@@ -613,7 +616,7 @@ on:
 | Action | Purpose | Used By |
 |--------|---------|---------|
 | **deploy-docker** | Multi-platform Docker builds | Deployment phase |
-| **deploy-jfrog** | Artifactory deployment | Deployment, Release |
+| **deploy-bunny-maven-s3** | S3 Maven repository deployment | Deployment, Release |
 | **deploy-cli-npm** | CLI NPM publishing | Deployment phase |
 | **deploy-javadoc** | Javadoc S3 upload | Release phase |
 | **deploy-javascript-sdk** | SDK NPM publishing | Deployment phase |
@@ -624,18 +627,11 @@ on:
 |--------|---------|---------|
 | **notify-slack** | Slack notifications | Deployment, Reporting |
 
-### Issue Management Actions
-
-| Action | Purpose | Used By |
-|--------|---------|---------|
-| **issue-fetcher** | Fetch issue details | Issue linking workflows |
-| **issue-labeler** | Label management | Issue workflows |
-
 ## Configuration Files
 
 ### test-matrix.yml
 Centralized test configuration defining all test suites:
-- Test types (jvm, integration, postman, karate, cli, frontend, e2e)
+- Test types (jvm, integration, postman, cli, frontend, e2e)
 - Default settings (timeouts, Maven options)
 - Suite-specific configurations
 - Conditional execution logic
@@ -692,7 +688,7 @@ Slack channel and user mappings for notifications
    - Verify path filters matched correctly
 
 2. **Verify Test Matrix Generation**
-   - Check setup-matrix job logs
+   - Check the `<Caller> Test Matrix / Setup Test Matrix` job logs (`cicd_comp_test-matrix.yml`)
    - Ensure test-matrix.yml is valid YAML
    - Verify condition inputs are correct
 
@@ -729,7 +725,7 @@ Navigate to: https://github.com/dotCMS/core/actions → **"-6 Release Process"**
 
 | Option | Default | Purpose                                                                                                                                                                                                                                   |
 |--------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Deploy Artifact** | ✅ Enabled | Deploy to Artifactory (repo.dotcms.com)<br/>**Required for successful release**                                                                                                                                                           |
+| **Deploy Artifact** | ✅ Enabled | Publish to S3 repo (dotcms-repo.b-cdn.net)<br/>**Required for successful release**                                                                                                                                                           |
 | **Update Plugins** | ✅ Enabled | Triggers plugin-examples repo update<br/>**Note**: Currently requires manual execution at [dotcms-community/plugin-examples/release-target.yml](https://github.com/dotcms-community/plugin-examples/actions/workflows/release-target.yml) |
 | **Upload Javadocs** | ✅ Enabled | Generate and upload to S3 static bucket<br/>Creates HTML documentation bundle                                                                                                                                                             |
 | **Update GitHub Labels** | ✅ Enabled | Replaces "Next Release" with "Release vX.X.X"<br/>Enables filtering issues by release                                                                                                                                                     |
@@ -744,7 +740,7 @@ Navigate to: https://github.com/dotCMS/core/actions → **"-6 Release Process"**
 5. **Create GitHub Release** - Creates draft release with tag
 6. **Build Artifacts** - Production build with version
 7. **Deploy Images** - Docker images (dotcms, dotcms-dev) to Docker Hub
-8. **Deploy Artifacts** - Maven artifacts to Artifactory
+8. **Deploy Artifacts** - Maven artifacts to the S3 repository
 9. **Upload Javadocs** - Documentation to S3
 10. **Update Plugins** - Triggers plugin repository workflow
 11. **Generate SBOM** - Software Bill of Materials
@@ -762,7 +758,7 @@ After clicking "Run workflow", you'll be redirected to the workflow run page sho
 ### Post-Release
 
 - **Docker Images**: Available immediately at `dotcms/dotcms:{version}`
-- **Maven Artifacts**: Available at repo.dotcms.com
+- **Maven Artifacts**: Available at dotcms-repo.b-cdn.net
 - **Javadocs**: Published to `static.dotcms.com/docs/{version}/javadocs`
 - **GitHub Release**: Created with SBOM attached
 - **Issue Labels**: All "Next Release" issues tagged with actual version
@@ -785,8 +781,22 @@ After clicking "Run workflow", you'll be redirected to the workflow run page sho
 3. Update this documentation with action details
 
 ### Version Updates
-- Ubuntu runner: Update `vars.UBUNTU_RUNNER_VERSION`
-- macOS runner: Update `vars.MACOS_*_RUNNER_VERSION`
+
+Runner images are selected by repository variables (Settings > Secrets and variables > Actions >
+Variables). Workflows read them as `vars.NAME || '<default>'`, so a change takes effect on the next
+run without a pull request. Keep each default in the code equal to the variable's value.
+
+| Variable | Value | Runner | Used by |
+|---|---|---|---|
+| `UBUNTU_RUNNER_VERSION` | `24.04` | `ubuntu-24.04` | Ubuntu jobs, including the `runner` input passed to the AI workflows (a few workflows still hardcode the label and are being migrated) |
+| `MACOS_SILICON_RUNNER_VERSION` | `15` | `macos-15` (arm64) | CLI native build |
+| `MACOS_INTEL_RUNNER_VERSION` | `15-intel` | `macos-15-intel` | CLI native build (GitHub ends hosted Intel macOS runners in fall 2027) |
+| `MACOS_RUNNER_VERSION` | `15` | `macos-15` | Publish Starter |
+
+- Never write `ubuntu-latest` or a literal version in `runs-on`; use
+  `ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}`.
+- Rolling back a runner image is a variable change; follow it with a pull request that realigns the
+  default.
 - Java version: Update `.sdkmanrc` file
 
 ### Best Practices
@@ -814,7 +824,16 @@ Our CI/CD process extensively uses caching and artifacts to optimize performance
 - **GraalVM Native Images**: CLI native build caches
 
 ### Artifact Sharing
-- **maven-repo**: Complete Maven repository shared between jobs
+- **maven-repo**: The version directories the build installed into `~/.m2/repository` (any version; told from
+  downloads by an empty repository id in `_remote.repositories`), without third-party jars or downloaded
+  `com.dotcms` releases such as the SAML plugin's pinned `dotcms-core:26.03.27-01`
+  - Third-party dependencies come from the `<os>-mavencore-v2-<pom hash>` cache, which jobs restore
+    before downloading this artifact; the build job saves it (never a release build)
+  - Exception: Postman and E2E (`needs_maven_deps: false` in `test-matrix.yml`) restore neither the
+    cache nor this artifact, because their modules depend on no dotCMS module. They restore a small
+    `<os>-mavenplugins-v1-<pom hash>` cache of the plugins they run instead, which the first of them to
+    miss saves
+  - The release phase restores the dependency cache after publishing, only for the Javadoc build
   - Enables artifact reuse from merge queue in trunk workflow
   - Allows skipping rebuild if commit already built and tested
   - Retention: 2-90 days depending on artifact type
@@ -830,7 +849,7 @@ Our CI/CD process extensively uses caching and artifacts to optimize performance
 
 - **cli-artifacts**: Native CLI distributions
   - Per-platform artifacts (Linux, macOS Intel, macOS Silicon)
-  - Used for NPM publishing and JFrog deployment
+  - Used for NPM publishing and S3 Maven publishing
   - 2-day retention for snapshot builds
 
 ### Parallel Execution Model

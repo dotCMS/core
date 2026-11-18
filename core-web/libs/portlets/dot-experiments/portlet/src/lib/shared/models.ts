@@ -1,13 +1,15 @@
-import { DotPageLockInfo } from '@dotcms/data-access';
 import {
     AllowedActionsByExperimentStatus,
     ComponentStatus,
     DotExperiment,
+    DotExperimentResults,
     DotExperimentStatus,
+    DotExperimentVariantDetail,
     GOAL_OPERATORS,
     GOAL_TYPES,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/types';
 
 /** Every action of the list gated by `AllowedActionsByExperimentStatus`. */
 export type ExperimentListAction = keyof typeof AllowedActionsByExperimentStatus;
@@ -25,21 +27,100 @@ export interface DotExperimentPageInfo {
     host: string;
 }
 
-/** The URL-backed slice of the list view: filter, status selection, paging and sort. */
+/**
+ * The page the Experiments panel is scoped to, handed down by the UVE shell (#37478).
+ *
+ * Both fields are read live from the editor rather than captured: the editor may navigate to
+ * another page, or to another language version of the same one, while the panel is open.
+ */
+export interface DotExperimentsListPanelScope {
+    pageId: string | null;
+    /** Return context for the variant round trip only — it never narrows the list (FR-034a). */
+    languageId: number | null;
+}
+
+/**
+ * Everything about the list that lives in the address rather than in memory.
+ *
+ * Deliberately not a list of the fields: they are below, and an enumeration in the summary is one
+ * more place to forget when a filter is added.
+ */
 export interface DotExperimentsListViewState {
     filter: string;
+    /**
+     * Language version of the filtered page the editor arrived from; `null` when nobody said.
+     *
+     * Not part of the narrowing — an experiment belongs to a page, not to one of its language
+     * versions. It is carried so a return to the editor can land on the version the editor was
+     * on, which a page identifier cannot express (#37005).
+     */
+    languageId: number | null;
     selectedStatuses: DotExperimentStatus[];
     selectedGoals: GOAL_TYPES[];
+    /**
+     * Ids of the users whose experiments the list is narrowed to; empty means no constraint.
+     *
+     * Ids rather than names: the payload carries the creator's id, so matching never depends on a
+     * name having been resolved. Carried in the address as `created_by` (#37307).
+     */
+    selectedCreators: string[];
+    /**
+     * Lower bound of the scheduled-start period; `null` for no lower bound (#37307).
+     *
+     * A local calendar date, carried in the address as `schedule_from`.
+     */
+    scheduleFrom: string | null;
+    /** Upper bound of the same period; `null` for no upper bound. Address: `schedule_to`. */
+    scheduleTo: string | null;
     page: number;
     perPage: number;
     orderBy: string;
     direction: DotExperimentsListSortDirection;
+    /**
+     * Page the list is narrowed to, by identifier; `null` for the full site-wide list (#37005).
+     *
+     * Matched by **equality**, never as a substring of a path. The free-text `filter` above already
+     * searches the Page column, and reusing it would make `/about` match `/about-us` — which is
+     * exactly the case FR-021b rules out ("all of that page's experiments and no other page's").
+     *
+     * Serialised as `pageAsset`, not `page`: `page` is the pagination cursor two fields up.
+     */
+    selectedPageId: string | null;
+    /**
+     * Page the list is narrowed to, by path; `null` for no such narrowing.
+     *
+     * The same narrowing as `selectedPageId` expressed the way the Universal Visual Editor
+     * expresses a page — `?url=/destinations/index` is the shape of every UVE address, and one of
+     * those pasted into the list used to be ignored, which answered a request for one page with
+     * every experiment on the site.
+     *
+     * Matched by equality against the resolved Page column, for the same reason as `selectedPageId`
+     * above. A path that matches no page therefore narrows to nothing rather than widening — an
+     * unanswerable narrowing is still a narrowing, and the empty state offers the way out.
+     */
+    selectedPageUrl: string | null;
 }
 
 /** Paging change emitted by the table paginator. */
 export interface DotExperimentsListPageChange {
     page: number;
     perPage: number;
+}
+
+/**
+ * The period the list narrows its scheduled starts to, as the address carries it.
+ *
+ * Two independent bounds rather than a nullable pair, mirroring the two query parameters one for
+ * one: either may be absent, and an absent bound constrains nothing on that side. Neither present
+ * is no filter at all (FR-019, FR-020).
+ *
+ * Local calendar dates in `SCHEDULE_BOUND_FORMAT`, not instants — see that constant.
+ */
+export interface ExperimentsListSchedulePeriod {
+    /** Inclusive, from the first instant of its day; `null` for an open lower bound. */
+    from: string | null;
+    /** Inclusive, to the last instant of its day; `null` for an open upper bound. */
+    to: string | null;
 }
 
 /** Sort change emitted by the table header. */
@@ -58,6 +139,14 @@ export interface ExperimentRow {
     /** i18n key of the primary goal type, or `null` when the experiment has no goal. */
     goalLabelKey: string | null;
     variants: number;
+    /**
+     * Display name of the creator as the payload delivered it, or `null` when it carried none.
+     *
+     * Null only against a backend older than #37304, which resolves the name server-side and
+     * always sends one — `System` for the system user, `unknown` for a creator that cannot be
+     * resolved. Those are values to print, not conditions to detect (FR-029).
+     */
+    createdByName: string | null;
     schedule: string;
     statusSeverity: TagSeverity;
     statusLabelKey: string;
@@ -99,6 +188,16 @@ export interface DotExperimentConfigurePage {
     title: string;
     /** Site-relative path, e.g. `/about-us/index`. */
     path: string;
+    /**
+     * Language the page was resolved in — the `language_id` the variant deep link carries (#37005).
+     *
+     * Not optional, and deliberately not defaulted anywhere: `editEmaGuard` *substitutes*
+     * `language_id=1` for a missing param rather than rejecting, so a page object without a
+     * language does not produce a broken link, it produces one that silently opens the wrong
+     * language's content. The deep-link builder refuses when this is absent (FR-004), which only
+     * works if the absence is allowed to reach it.
+     */
+    languageId: number;
 }
 
 /** Everything the Configure screen renders from. */
@@ -123,8 +222,12 @@ export interface DotExperimentsConfigureViewState {
     selectedPage: DotExperimentConfigurePage | null;
     /** i18n key of the Page card's inline error when `?pageId=`/`?url=` did not resolve. */
     pagePrefillError: string | null;
-    /** `null` until the page's lock state has been resolved, or while no page is selected. */
-    pageLockInfo: DotPageLockInfo | null;
+    /**
+     * A confirmed page change is in flight. Variants are gated while it is: they are copies of the
+     * page, and creating one against a page the server has not moved yet is what strands the
+     * experiment between two pages (#37005).
+     */
+    pageChanging: boolean;
     /**
      * True while the variants that stand in the way of a page change are being deleted.
      *
@@ -228,6 +331,18 @@ export interface WeightedVariant {
 }
 
 /**
+ * Which bounded slices currently hold a value worth sending.
+ *
+ * The bounds themselves live in the form's schema, so validity is read off the field tree rather
+ * than re-derived here: an out-of-range allocation or an out-of-window end date is shown on screen
+ * and simply not sent.
+ */
+export interface ConfigureFormValidity {
+    trafficAllocation: boolean;
+    scheduling: boolean;
+}
+
+/**
  * Everything the Configure screen edits, as one model.
  *
  * The screen is a single signal form: the shell owns this model and the rules over it, and each
@@ -240,18 +355,6 @@ export interface WeightedVariant {
  * one `trafficProportion` key. Holding them here is what makes "they add up to 100" a cross-field
  * rule of the form rather than a sum recomputed wherever it happens to be needed.
  */
-/**
- * Which bounded slices currently hold a value worth sending.
- *
- * The bounds themselves live in the form's schema, so validity is read off the field tree rather
- * than re-derived here: an out-of-range allocation or an out-of-window end date is shown on screen
- * and simply not sent.
- */
-export interface ConfigureFormValidity {
-    trafficAllocation: boolean;
-    scheduling: boolean;
-}
-
 export interface ConfigureFormModel {
     name: string;
     description: string;
@@ -303,4 +406,63 @@ export interface VariantRowViewModel {
     disabled: boolean;
     /** i18n key explaining `disabled`; `null` when the row is editable. */
     disabledTooltipKey: string | null;
+    /**
+     * Mode the Universal Visual Editor opens this variant in (#37005, FR-008 – FR-010).
+     *
+     * `PREVIEW` when **any** of: this is the control, the experiment is not a draft, or the page is
+     * locked by another user. Derived here rather than branched in the template, and deliberately
+     * not read off `disabledTooltipKey`: that key reports only the strongest *reason* and is `null`
+     * for the control on an editable draft, which would open the Original for editing.
+     */
+    editorMode: UVE_MODE;
+}
+
+/** How a Lift vs Original reads: a gain, a loss, or nothing to compare against (AC16). */
+export type LiftTone = 'neutral' | 'positive' | 'negative';
+
+/** Translated copy the summary table needs for values the backend does not supply. */
+export interface VariantDetailLabels {
+    /** Shown where the backend has not computed a range or a probability yet. */
+    noDataLabel: string;
+    /** Sits between the two bounds of the 95% conversion rate range. */
+    rangeSeparatorLabel: string;
+}
+
+/**
+ * A summary-table row: the shared variant detail plus the Lift vs Original.
+ *
+ * Lift has no backend field — it is the variant's conversion rate minus the control's — so it is
+ * additive here rather than in `DotExperimentVariantDetail`, which the old reports screen shares.
+ */
+export interface DotExperimentResultVariantDetail extends DotExperimentVariantDetail {
+    /** Signed percentage points to one decimal, or an em dash when there is nothing to compare. */
+    liftVsOriginal: string;
+    liftTone: LiftTone;
+}
+
+/** Everything the Results screen renders from. */
+export interface DotExperimentsResultsViewState {
+    /** `null` until the experiment has loaded, which is also what the skeleton reads (AC23). */
+    experiment: DotExperiment | null;
+    /**
+     * The page the experiment runs on, resolved from its `pageId`.
+     *
+     * `DotExperiment` carries the identifier and nothing else — no title, no path — so a content
+     * search resolves them. `null` while it has not resolved, and also when it cannot be: the
+     * header then reads the variant count alone rather than blocking a report that is complete.
+     */
+    page: DotExperimentConfigurePage | null;
+    /**
+     * `null` while the experiment is DRAFT or SCHEDULED: `getResults` is uncached and costs two
+     * analytics round-trips plus a Monte Carlo run, so it is never called before there is
+     * anything to count (AC10).
+     */
+    results: DotExperimentResults | null;
+    status: ComponentStatus;
+    /**
+     * True when the experiment loaded but its report did not. Kept apart from `status`: everything
+     * the experiment alone can draw stays on screen, and the shell says the report is missing
+     * over it rather than blanking the page.
+     */
+    reportUnavailable: boolean;
 }

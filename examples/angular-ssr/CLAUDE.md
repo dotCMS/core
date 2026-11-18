@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is an Angular SSR (Server-Side Rendering) example project that demonstrates integration with dotCMS as a headless CMS. The project showcases:
 
-- Angular 20.3.0 with server-side rendering capabilities
+- Angular 22 with server-side rendering capabilities
 - dotCMS SDK integration (@dotcms/angular, @dotcms/client, @dotcms/types, @dotcms/uve)
 - Tailwind CSS 4.x for styling
 - Component-based architecture with dotCMS content rendering
@@ -85,6 +85,9 @@ contentlet = input.required<VTLIncludeWithVariations>();
 
 ## Development Guidelines
 
+### Angular Version
+This example and `examples/angular` must stay on the same Angular version: `@dotcms/angular` is built against the Angular version in `core-web`, and an example below it cannot build against the SDK. Any Angular upgrade to one of them must upgrade both in the same change, one major at a time with `ng update` so the official migrations run.
+
 ### dotCMS SDK Dependencies
 The project uses local file dependencies for dotCMS SDKs:
 ```json
@@ -121,6 +124,6 @@ The project is configured for server-side rendering:
 
 ## Prerequisites
 
-- Node.js and npm
+- Node.js `^22.22.3`, `^24.15.0` or `>=26` (required by Angular 22) and npm
 - dotCMS instance running on localhost:8080 (for API integration)
 - Angular CLI for scaffolding new components

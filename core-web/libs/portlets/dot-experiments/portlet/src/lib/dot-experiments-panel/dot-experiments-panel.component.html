@@ -1,0 +1,129 @@
+<!--
+    Mirrors `dot-edit-content-side-panel.component.html` on purpose — see the class docs for why
+    each of these is the way it is rather than the obvious way.
+
+    `maskStyle` forces a transparent mask so the page behind stays visible. The `!important` is
+    required to override PrimeNG's default dimmed background, which neither the theme nor the `pt`
+    API otherwise lets us clear; it is deliberate, not a leftover.
+
+    The shadow goes on `pt.root.class` rather than in component SCSS because the drawer uses
+    `appendTo="body"` and is teleported out of this component's DOM, where component-scoped SCSS
+    and `:host ::ng-deep` cannot reach it.
+
+    `dismissible` is left OFF even though clicking outside DOES close the panel: PrimeNG's own
+    dismissible tears the drawer down immediately, which would bypass the unsaved-changes confirm
+    this panel gains in phase 2. The mask click is handled by the component instead (`onMaskClick`).
+    `closeOnEscape` is off for the same reason — Escape goes through the shared shortcut registry.
+
+    The header's bottom border is the panel's, not the theme's: PrimeNG gives `p-drawer-header`
+    padding and no rule, so every screen below it — the list's toolbar, the configuration header,
+    results — began flush against the panel's title with nothing marking where the chrome ended and
+    the screen started. Drawn here once rather than per screen, so the four cannot disagree.
+
+    `px-5!` on the header is one number shared with the list's toolbar and the outer table cells,
+    because the editor reads those three as a single column. They were three different values — the
+    drawer header takes PrimeNG's `{overlay.modal.padding}`, the toolbar carried `px-3`, the cells
+    whatever the datatable preset gives — so the title, the search field and the first cell each
+    began at a different x. Only in the panel: the portlet's list sits in a page with its own
+    gutter and is left alone (FR-047).
+
+    The header buttons name themselves through PrimeNG's `[ariaLabel]`, never `[attr.aria-label]`:
+    the latter lands on the non-focusable `<p-button>` host, leaving the real `<button>` — whose
+    only content is an icon glyph — with no accessible name.
+-->
+<p-drawer
+    [visible]="store.isOpen()"
+    [modal]="true"
+    [dismissible]="false"
+    [closeOnEscape]="false"
+    [closable]="false"
+    appendTo="body"
+    position="right"
+    [maskStyle]="{ background: 'transparent !important' }"
+    [pt]="{
+        root: {
+            'data-testid': 'experiments-panel',
+            class: '!shadow-2xl',
+            style: { width: $width(), transition: 'width 250ms ease' }
+        },
+        header: { class: 'px-5! border-b border-surface-200' },
+        content: { class: 'p-0! flex flex-col min-h-0' }
+    }">
+    <ng-template #header>
+        <div class="flex w-full items-center justify-between gap-4">
+            <span class="truncate text-xl font-semibold" data-testid="experiments-panel-title">
+                {{ $titleKey() | dm }}
+            </span>
+            <div class="flex items-center gap-1">
+                <!--
+                    A real anchor, not a button calling `window.open`. "Opens in a new tab" is a
+                    promise to the editor rather than to the code: an anchor honours cmd-click and
+                    middle-click, survives a popup blocker and shows where it goes on hover.
+
+                    Unfiltered on purpose (D6): in a page-scoped panel there is no filter to clear,
+                    so carrying `pageId` would narrow the one destination whose point is that it
+                    does not narrow.
+                -->
+                <a
+                    class="p-button p-button-text p-button-sm p-button-icon-only p-button-secondary inline-flex size-11! items-center justify-center no-underline!"
+                    href="/dotAdmin/#/experiments"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    [attr.aria-label]="'experiments.panel.action.open-portlet' | dm"
+                    [pTooltip]="'experiments.panel.action.open-portlet.tooltip' | dm"
+                    tooltipPosition="bottom"
+                    data-testid="experiments-panel-portlet-link">
+                    <i class="material-symbols-outlined text-xl! leading-none">open_in_new</i>
+                </a>
+                <p-button
+                    [text]="true"
+                    severity="secondary"
+                    [ariaLabel]="
+                        ($expanded()
+                            ? 'experiments.panel.action.collapse'
+                            : 'experiments.panel.action.expand'
+                        ) | dm
+                    "
+                    (onClick)="toggleExpanded()"
+                    data-testid="experiments-panel-expand">
+                    <ng-template #icon>
+                        <i class="material-symbols-outlined text-xl!">
+                            {{ $expanded() ? 'close_fullscreen' : 'open_in_full' }}
+                        </i>
+                    </ng-template>
+                </p-button>
+                <p-button
+                    [text]="true"
+                    severity="secondary"
+                    [ariaLabel]="'experiments.panel.action.close' | dm"
+                    (onClick)="requestClose()"
+                    data-testid="experiments-panel-close">
+                    <ng-template #icon>
+                        <i class="material-symbols-outlined text-xl!">close</i>
+                    </ng-template>
+                </p-button>
+            </div>
+        </div>
+    </ng-template>
+
+    @switch (store.view()) {
+        @case ('list') {
+            <dot-experiments-list data-testid="experiments-panel-list" />
+        }
+        @case ('create') {
+            <!-- Creation is the configuration screen with no experiment yet: same component, and
+                 `panel.experimentId()` being null is what puts it in that mode. -->
+            <dot-experiments-configure data-testid="experiments-panel-create" />
+        }
+        @case ('configure') {
+            <dot-experiments-configure data-testid="experiments-panel-configure" />
+        }
+        @case ('results') {
+            @defer {
+                <dot-experiments-results data-testid="experiments-panel-results" />
+            } @placeholder {
+                <div class="flex min-h-0 flex-1 items-center justify-center p-6"></div>
+            }
+        }
+    }
+</p-drawer>

@@ -1,0 +1,5 @@
+{
+  "entity": [
+    { "id": "ct-migrated", "variable": "MigratedType" }
+  ]
+}

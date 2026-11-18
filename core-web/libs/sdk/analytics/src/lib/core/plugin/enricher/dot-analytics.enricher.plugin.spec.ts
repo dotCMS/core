@@ -1,26 +1,28 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { MockedFunction, vi } from 'vitest';
+
 import { dotAnalyticsEnricherPlugin } from './dot-analytics.enricher.plugin';
 
 import { DotCMSPredefinedEventType } from '../../shared/constants/dot-analytics.constants';
 import { enrichPagePayloadOptimized, getLocalTime } from '../../shared/utils/dot-analytics.utils';
 
 // Mock the utility functions
-jest.mock('../../shared/utils/dot-analytics.utils', () => ({
-    enrichPagePayloadOptimized: jest.fn(),
-    getLocalTime: jest.fn()
+vi.mock('../../shared/utils/dot-analytics.utils', () => ({
+    enrichPagePayloadOptimized: vi.fn(),
+    getLocalTime: vi.fn()
 }));
 
 describe('dotAnalyticsEnricherPlugin', () => {
     let plugin: ReturnType<typeof dotAnalyticsEnricherPlugin>;
-    const mockEnrichPagePayloadOptimized = enrichPagePayloadOptimized as jest.MockedFunction<
+    const mockEnrichPagePayloadOptimized = enrichPagePayloadOptimized as MockedFunction<
         typeof enrichPagePayloadOptimized
     >;
-    const mockGetLocalTime = getLocalTime as jest.MockedFunction<typeof getLocalTime>;
+    const mockGetLocalTime = getLocalTime as MockedFunction<typeof getLocalTime>;
 
     beforeEach(() => {
         // Reset all mocks before each test
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         // Create fresh plugin instance
         plugin = dotAnalyticsEnricherPlugin();

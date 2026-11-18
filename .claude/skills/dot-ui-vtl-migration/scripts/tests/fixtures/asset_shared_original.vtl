@@ -1,0 +1,8 @@
+## userID.vtl — legacy custom field, not yet migrated
+<script type="text/javascript">
+  dojo.ready(function() {
+    var f = dijit.byId('userIdField');
+    DotCustomFieldApi.onChangeField('userId', function(v) { console.log(v); });
+  });
+</script>
+<input dojoType="dijit.form.TextBox" id="userIdField" />

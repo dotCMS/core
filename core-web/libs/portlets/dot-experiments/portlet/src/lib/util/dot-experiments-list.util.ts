@@ -1,3 +1,5 @@
+import { Params } from '@angular/router';
+
 import {
     AllowedActionsByExperimentStatus,
     type GOAL_TYPES,
@@ -7,6 +9,7 @@ import {
     type TrafficProportion
 } from '@dotcms/dotcms-models';
 
+import { CONFIGURATION_SEGMENT, EXPERIMENTS_URL, RESULTS_SEGMENT } from '../shared/constants';
 import { DotExperimentPageInfo, ExperimentListAction } from '../shared/models';
 
 /** Day-level format shared by every schedule cell of the experiments list (e.g. `Jun 25, 2026`). */
@@ -101,4 +104,70 @@ function toDisplayDate(epochMillis: number | null | undefined, locale?: string):
 /** Whether an action is offered for a status, per the shared `AllowedActionsByExperimentStatus`. */
 export function isAllowed(action: ExperimentListAction, status: DotExperimentStatus): boolean {
     return AllowedActionsByExperimentStatus[action].includes(status);
+}
+
+/**
+ * Router commands for the Configure screen of an experiment that already exists.
+ *
+ * Shared rather than repeated: the list's row action and the Results header's Configuration button
+ * are two ways to the same URL, and a URL spelled out twice is a URL that can drift.
+ *
+ * @param experimentId - Identifier of the experiment to configure
+ * @returns Absolute router commands, since Configure always hangs off the portlet root
+ */
+export function configureCommandsOf(experimentId: string): string[] {
+    return [EXPERIMENTS_URL, experimentId, CONFIGURATION_SEGMENT];
+}
+
+/**
+ * Router commands for the Results screen of an experiment.
+ *
+ * Shared for the same reason as its Configure twin: the list's menu entry and the Configure
+ * header's View Results button are two ways to the same URL.
+ *
+ * @param experimentId - Identifier of the experiment to report on
+ * @returns Absolute router commands, since Results always hangs off the portlet root
+ */
+export function resultsCommandsOf(experimentId: string): string[] {
+    return [EXPERIMENTS_URL, experimentId, RESULTS_SEGMENT];
+}
+
+/**
+ * The list's page narrowing, as carried by the address of a screen the list opened (#37005).
+ *
+ * A screen reached from a narrowed list has to be able to go back to that same narrowed list —
+ * arriving from UVE the narrowing is the whole context, and dropping it lands the editor on every
+ * experiment on the site, a list they never asked for.
+ *
+ * Only the two keys the list reads as its page filter are echoed. `url` and `section` are the
+ * Configure screen's own arrival hints; passing them on would leave dead params on the list's
+ * address, which it then writes back on every filter change.
+ *
+ * An empty object — not `null` — when the screen was not opened from a narrowed list, so the
+ * caller can hand it to `navigate` unconditionally and get the site-wide list.
+ */
+export function listReturnParams(queryParams: Params): Params {
+    return pageFilterParams(queryParams['pageId'], queryParams['language_id']);
+}
+
+/**
+ * The page narrowing as an address, from a page id and the language it was seen in (#37005).
+ *
+ * The one place the shape is spelled out. Five call sites write it — the list's four doors out and
+ * the return leg above — and two of them read it from different sources, so a second copy of the
+ * shape is exactly how the entry point and the way back drift apart.
+ *
+ * The language is omitted rather than defaulted when unknown: with none, the receiving screen's
+ * lookup is not narrowed and settles the version deterministically, which beats asserting a
+ * language the caller never named.
+ */
+export function pageFilterParams(
+    pageId: string | null | undefined,
+    languageId: number | string | null | undefined
+): Params {
+    if (!pageId) {
+        return {};
+    }
+
+    return languageId ? { pageId, language_id: languageId } : { pageId };
 }

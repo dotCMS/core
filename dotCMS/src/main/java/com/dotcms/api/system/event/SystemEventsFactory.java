@@ -27,6 +27,8 @@ import io.vavr.control.Try;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +49,40 @@ public class SystemEventsFactory implements Serializable {
 	private final DotConcurrentFactory concurrentFactory		 = DotConcurrentFactory.getInstance();
 	private final SystemEventsDAO systemEventsDAO = new SystemEventsDAOImpl();
 	private final SystemEventsAPI systemEventsAPI = new SystemEventsAPIImpl();
+	private final SystemEventsCursorAPI systemEventsCursorAPI = new SystemEventsCursorAPIImpl();
+
+	/**
+	 * How many DISTINCT events have been skipped because their payload could not be deserialized.
+	 * Exposed so the condition is countable rather than only visible as scattered stack traces
+	 * (issue #37249).
+	 *
+	 * <p>Distinct matters. The overlap window re-reads the same span every poll, and a row that fails
+	 * conversion never becomes an event, so the delegate's delivery dedupe never sees it and never
+	 * suppresses it. Counting each conversion attempt therefore turned one broken payload class into a
+	 * number that climbed by roughly one every five seconds for as long as the row sat in the window —
+	 * a figure that answers no question an operator has, next to a warning repeating the same advice.
+	 */
+	private static final java.util.concurrent.atomic.AtomicLong UNREADABLE_PAYLOAD_COUNT =
+			new java.util.concurrent.atomic.AtomicLong(0L);
+
+	/**
+	 * Ids of unreadable rows already counted, mapped to their {@code created} stamp so they can be
+	 * evicted once the read floor moves past them. Bounded by the rate of bad rows over the overlap
+	 * window, never by total event volume — the same rule, and the same reasoning, as the delivery
+	 * dedupe in {@code SystemEventsCursorTracker}. An id below the floor can never be returned by a
+	 * query again, so dropping it cannot cause a double count.
+	 */
+	private static final java.util.Map<String, Long> COUNTED_UNREADABLE_EVENTS =
+			new java.util.concurrent.ConcurrentHashMap<>();
+
+	/**
+	 * @return the number of distinct events skipped since startup because their payload could not be
+	 * read. Reported periodically by the delivery reconciliation, where it explains part of any gap
+	 * between what a node authored and what its poller observed.
+	 */
+	public static long getUnreadablePayloadCount() {
+		return UNREADABLE_PAYLOAD_COUNT.get();
+	}
 
 
 	/**
@@ -98,6 +134,69 @@ public class SystemEventsFactory implements Serializable {
 	 */
 	public SystemEventsAPI getSystemEventsAPI() {
 		return this.systemEventsAPI;
+	}
+
+	/**
+	 * Returns a singleton instance of the per-node delivery cursor API.
+	 *
+	 * <p>Kept separate from {@link SystemEventsAPI} on purpose: publish/subscribe are the seams a
+	 * future change of transport would cut at, and cursor bookkeeping is an implementation detail of
+	 * the database-backed poller.
+	 *
+	 * @return The {@link SystemEventsCursorAPI} instance.
+	 */
+	public SystemEventsCursorAPI getSystemEventsCursorAPI() {
+		return this.systemEventsCursorAPI;
+	}
+
+	/**
+	 * The concrete implementation of the {@link SystemEventsCursorAPI} class.
+	 *
+	 * <p><b>STUB — not implemented yet.</b> See task T024.
+	 */
+	private final class SystemEventsCursorAPIImpl implements SystemEventsCursorAPI {
+
+		@Override
+		public java.util.Optional<SystemEventsCursor> findByServerId(final String serverId)
+				throws DotDataException {
+
+			final DotConnect dc = new DotConnect();
+			dc.setSQL("SELECT server_id, last_event_date, mod_date FROM system_event_cursor WHERE server_id = ?");
+			dc.addParam(serverId);
+
+			final List<Map<String, Object>> results = dc.loadObjectResults();
+			if (results.isEmpty()) {
+				// An absent row is a meaningful state, not an error: the node seeds at "now" rather
+				// than replaying the retained backlog.
+				return java.util.Optional.empty();
+			}
+
+			final Map<String, Object> record = results.get(0);
+			return java.util.Optional.of(new SystemEventsCursor(
+					(String) record.get("server_id"),
+					((Number) record.get("last_event_date")).longValue(),
+					(java.util.Date) record.get("mod_date")));
+		}
+
+		@Override
+		public void save(final String serverId, final long lastEventDate) throws DotDataException {
+
+			// Upsert: a node holds at most one cursor, so repeated polls update in place rather than
+			// accumulating rows. This is the whole of the new per-poll write volume - O(nodes), never
+			// O(events x nodes).
+			final DotConnect dc = new DotConnect();
+			// Single string literal on purpose: every value is bound through addParam below, and
+			// assembling the statement with + trips static-analysis injection heuristics even when
+			// the fragments are all constants. Matches how every other query in this class is written.
+			dc.setSQL("INSERT INTO system_event_cursor (server_id, last_event_date, mod_date) VALUES (?, ?, ?) ON CONFLICT (server_id) DO UPDATE SET last_event_date = ?, mod_date = ?");
+			final Date now = new Date();
+			dc.addParam(serverId);
+			dc.addParam(lastEventDate);
+			dc.addParam(now);
+			dc.addParam(lastEventDate);
+			dc.addParam(now);
+			dc.loadResult();
+		}
 	}
 
 	/**
@@ -229,7 +328,7 @@ public class SystemEventsFactory implements Serializable {
 			}
 			try {
 				final List<SystemEventDTO> result = (List<SystemEventDTO>) this.systemEventsDAO.getEventsSince(createdDate);
-				return this.conversionUtils.convert(result, this::convertSystemEventDTO);
+				return convertBatchSkippingUnreadableRows(result, createdDate);
 			} catch (DotDataException e) {
 				final String msg = "An error occurred when retreiving system events created since: ["
 						+ new Date(createdDate) + "]";
@@ -325,6 +424,69 @@ public class SystemEventsFactory implements Serializable {
 		 *            - The {@link SystemEventDTO} object.
 		 * @return The {@link Notification} object.
 		 */
+		/**
+		 * Converts a polled batch, skipping any row whose payload cannot be read instead of failing
+		 * the whole batch.
+		 *
+		 * <p>{@link Payload} records the payload's concrete class name and the receiving node
+		 * reconstructs into it, so a class with no usable Jackson creator can be written but never read
+		 * back. Converting the batch as a unit meant one such row destroyed delivery of <b>every</b>
+		 * event in its window. That is not hypothetical: on a two-node cluster, {@code UserSessionBean}
+		 * riding {@code SWITCH_SITE} events — emitted during ordinary admin activity — made every poll
+		 * on both nodes throw, and nothing was delivered at all for as long as one sat inside the read
+		 * window (issue #37249).
+		 *
+		 * <p>A bad row is now logged with enough detail to identify and fix the offending class, and
+		 * the rest of the batch is delivered.
+		 *
+		 * @param records the rows read from the queue
+		 * @return the events that could be reconstructed
+		 */
+		private Collection<SystemEvent> convertBatchSkippingUnreadableRows(
+				final List<SystemEventDTO> records, final long readFloor) {
+
+			if (null == records || records.isEmpty()) {
+				return Collections.emptyList();
+			}
+
+			// Rows below the floor can never be read again, so their ids need not be retained.
+			COUNTED_UNREADABLE_EVENTS.values().removeIf(created -> created < readFloor);
+
+			final List<SystemEvent> events = new ArrayList<>(records.size());
+			for (final SystemEventDTO record : records) {
+				try {
+					events.add(convertSystemEventDTO(record));
+				} catch (final Exception e) {
+					recordUnreadableRow(record, e);
+				}
+			}
+			return events;
+		}
+
+		/**
+		 * Counts and reports an unreadable row the first time it is seen, and stays silent on the
+		 * re-reads the overlap window produces. Both halves matter: the count is the magnitude an
+		 * operator acts on, and one warning per distinct event is enough to identify the broken
+		 * payload class — repeating it every poll only buries it.
+		 */
+		private void recordUnreadableRow(final SystemEventDTO record, final Exception cause) {
+
+			if (null != COUNTED_UNREADABLE_EVENTS.putIfAbsent(record.getId(),
+					record.getCreationDate())) {
+				// Already counted; this is the overlap window re-reading the same row.
+				Logger.debug(this, () -> "Skipping already-reported unreadable system event ["
+						+ record.getId() + "]");
+				return;
+			}
+
+			final long skipped = UNREADABLE_PAYLOAD_COUNT.incrementAndGet();
+			Logger.warn(this, "Skipping system event [" + record.getId() + "] of type ["
+					+ record.getEventType() + "]: its payload cannot be deserialized, so this "
+					+ "event will not be delivered. The payload class needs an explicit "
+					+ "@JsonCreator constructor. Distinct events skipped since startup: " + skipped
+					+ ". Cause: " + cause.getMessage());
+		}
+
 		private SystemEvent convertSystemEventDTO(final SystemEventDTO record) {
 			final String id = record.getId();
 			final SystemEventType eventType = SystemEventType.valueOf(record.getEventType());

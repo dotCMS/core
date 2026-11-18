@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { fakeAsync, tick, TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 
@@ -43,8 +45,8 @@ describe('DotAlertConfirmService', () => {
         mockData = {
             header: 'Header',
             message: 'Message',
-            accept: jest.fn(),
-            reject: jest.fn(),
+            accept: vi.fn(),
+            reject: vi.fn(),
             footerLabel: {
                 accept: 'Delete',
                 reject: 'Reject'
@@ -57,7 +59,7 @@ describe('DotAlertConfirmService', () => {
 
     describe('confirmation', () => {
         it('should set model and call confirm method in primeng service', fakeAsync(() => {
-            jest.spyOn(confirmationService, 'confirm');
+            vi.spyOn(confirmationService, 'confirm');
             service.confirmDialogOpened$.pipe(take(1)).subscribe((response: boolean) => {
                 expect(response).toBe(true);
             });

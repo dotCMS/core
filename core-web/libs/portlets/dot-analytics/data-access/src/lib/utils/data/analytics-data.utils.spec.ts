@@ -1,4 +1,5 @@
 import { format, parse } from 'date-fns';
+import { vi } from 'vitest';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 
@@ -585,12 +586,12 @@ describe('Analytics Data Utils', () => {
 
     describe('getDateRange', () => {
         beforeEach(() => {
-            jest.useFakeTimers();
-            jest.setSystemTime(new Date('2024-01-15T04:00:00.000'));
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2024-01-15T04:00:00.000'));
         });
 
         afterEach(() => {
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
 
         describe('success cases', () => {
@@ -631,13 +632,13 @@ describe('Analytics Data Utils', () => {
 
     describe('fillMissingApiDates + transformPageViewTimeLineData (relative range regression)', () => {
         beforeEach(() => {
-            jest.useFakeTimers();
+            vi.useFakeTimers();
             // Reproduces the reported bug: today = Jun 10, API returns Jun 03 … Jun 09.
-            jest.setSystemTime(new Date('2026-06-10T12:00:00.000'));
+            vi.setSystemTime(new Date('2026-06-10T12:00:00.000'));
         });
 
         afterEach(() => {
-            jest.useRealTimers();
+            vi.useRealTimers();
         });
 
         it('keeps the earliest day and does not append today for a last7days range', () => {
@@ -689,10 +690,10 @@ describe('Analytics Data Utils', () => {
         });
 
         it('should return previous period for predefined last7days', () => {
-            jest.useFakeTimers();
-            jest.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
             const result = getPreviousPeriod('last7days');
-            jest.useRealTimers();
+            vi.useRealTimers();
             // last7days: Jan 8 - Jan 14 (7 complete days ending yesterday). Previous: Jan 1 - Jan 7
             expect(result[0]).toBe('2024-01-01');
             expect(result[1]).toBe('2024-01-07');
@@ -757,7 +758,7 @@ describe('Analytics Data Utils', () => {
             });
 
             it('should use the factory function to create empty entities', () => {
-                const customFactory = jest.fn((date: Date, dateKey: string) => ({
+                const customFactory = vi.fn((date: Date, dateKey: string) => ({
                     'EventSummary.day': dateKey,
                     'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
                     'EventSummary.totalEvents': '999' // Custom value to verify factory is used

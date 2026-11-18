@@ -23,6 +23,7 @@ import com.dotcms.publishing.DotBundleException;
 import com.dotcms.publishing.DotPublishingException;
 import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublishStatus;
+import com.dotcms.publishing.IPublisher;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.output.DirectoryBundleOutput;
@@ -447,9 +448,9 @@ public class PublisherTestUtil {
     private static PublisherConfig setUpConfigForPublisher(PublisherConfig pconf)
             throws IllegalAccessException, InstantiationException {
 
-        final List<Class> publishers = pconf.getPublishers();
-        for (Class<?> publisher : publishers) {
-            pconf = ((Publisher) publisher.newInstance()).setUpConfig(pconf);
+        final List<Class<? extends IPublisher>> publishers = pconf.getPublishers();
+        for (final Class<? extends IPublisher> publisher : publishers) {
+            pconf = publisher.newInstance().setUpConfig(pconf);
         }
 
         return pconf;

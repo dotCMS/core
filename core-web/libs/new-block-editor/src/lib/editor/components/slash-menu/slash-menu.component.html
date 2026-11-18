@@ -8,14 +8,34 @@
             (mousedown)="$event.preventDefault(); service.select(item)"
             (mousemove)="onMouseMove(i)">
             @if (item.icon) {
-                <span
-                    class="slash-menu-item-icon material-symbols-outlined flex size-10 shrink-0 items-center justify-center rounded-sm border border-gray-200 bg-white text-gray-700"
-                    aria-hidden="true">
-                    {{ item.icon }}
-                </span>
+                @if (item.iconKind === 'glyph') {
+                    <!--
+                        Emoji rows (#37340). No box and no `material-symbols-outlined`: the glyph
+                        IS the icon, and that class would apply a ligature font and variation
+                        settings built for Material's own names. `leading-none` is what actually
+                        centres it — the font's own line box sits high inside a taller container.
+                    -->
+                    <span
+                        class="flex size-6 shrink-0 items-center justify-center text-xl leading-none"
+                        aria-hidden="true">
+                        {{ item.icon }}
+                    </span>
+                } @else {
+                    <span
+                        class="slash-menu-item-icon material-symbols-outlined flex size-10 shrink-0 items-center justify-center rounded-sm border border-gray-200 bg-white text-gray-700"
+                        aria-hidden="true">
+                        {{ item.icon }}
+                    </span>
+                }
             }
             <span class="flex min-w-0 flex-col">
-                <span class="text-sm leading-tight font-medium text-gray-900">
+                <!--
+                    `truncate` matters for the emoji rows (#37340): shortcodes like
+                    `:face_with_open_eyes_and_hand_over_mouth:` are far wider than this fixed
+                    `w-72` dropdown, and without it the whole list grew a horizontal scrollbar.
+                    Harmless for the block rows, whose labels are two words.
+                -->
+                <span class="truncate text-sm leading-tight font-medium text-gray-900">
                     {{ item.label }}
                 </span>
                 <span class="truncate text-xs text-gray-500">{{ item.description }}</span>

@@ -159,8 +159,10 @@ public interface AbstractPublishingJobView {
     /**
      * Scheduled execution time for bundles in the {@code SCHEDULED} status — the future
      * {@code publishDate} the bundle was pushed with, before the publisher cron picks it up.
-     * Null for every other status (the bundle is already past the scheduling phase). Distinct
-     * from {@link #createDate()}, which is when the bundle entered the queue.
+     * Null for every other status, including a queued bundle whose publish date is already due:
+     * that one is reported as {@code BUNDLE_REQUESTED} with the publish date as
+     * {@link #createDate()} instead, since it is waiting for the job, not for a date (#37449).
+     * For {@code SCHEDULED} bundles {@link #createDate()} is when the assets entered the queue.
      *
      * @return Scheduled publish date/time, or null when the bundle is not in SCHEDULED status
      */

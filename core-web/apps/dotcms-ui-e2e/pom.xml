@@ -61,10 +61,10 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <configuration>
-                    <executable>${node.install.dir}/pnpm</executable>
+                    <executable>${pnpm.executable}</executable>
                     <workingDirectory>${e2e.frontend.dir}</workingDirectory>
                     <environmentVariables>
-                        <PATH>${node.install.dir}:${env.PATH}</PATH>
+                        <PATH>${pnpm.bin.dir}:${node.install.dir}:${env.PATH}</PATH>
                     </environmentVariables>
                 </configuration>
                 <executions>
@@ -103,7 +103,7 @@
                                 <CI>true</CI>
                                 <CURRENT_ENV>${e2e.test.env}</CURRENT_ENV>
                                 <NODE_OPTIONS>${e2e.node.options}</NODE_OPTIONS>
-                                <PATH>${node.install.dir}:${env.PATH}</PATH>
+                                <PATH>${pnpm.bin.dir}:${node.install.dir}:${env.PATH}</PATH>
                             </environmentVariables>
                         </configuration>
                     </execution>
@@ -175,6 +175,10 @@
                                     <DOT_INDEX_POLICY_SINGLE_CONTENT>FORCE</DOT_INDEX_POLICY_SINGLE_CONTENT>
                                     <DOT_ASYNC_REINDEX_COMMIT_LISTENERS>false</DOT_ASYNC_REINDEX_COMMIT_LISTENERS>
                                     <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>
+                                    <!-- With synchronous commit listeners, the cache-flush delay is a sleep on the
+                                         request thread after every write (3000 ms by default). One node needs no
+                                         wait for a cluster to catch up; the integration tests use 10 as well. -->
+                                    <DOT_NETWORK_CACHE_FLUSH_DELAY>10</DOT_NETWORK_CACHE_FLUSH_DELAY>
                                     <DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>600</DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>
                                     <JVM_ENDPOINT_TEST_PASS>obfuscate_me</JVM_ENDPOINT_TEST_PASS>
                                     <DOT_ENABLE_SCRIPTING>true</DOT_ENABLE_SCRIPTING>

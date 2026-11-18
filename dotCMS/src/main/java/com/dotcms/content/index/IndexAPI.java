@@ -9,6 +9,7 @@ import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.index.domain.CreateIndexStatus;
 import com.dotcms.content.index.domain.IndexStats;
+import com.dotcms.content.index.domain.SearchClusterHealth;
 import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -70,6 +71,19 @@ public interface IndexAPI {
     Map<String, IndexStats> getIndicesStats();
 
     /**
+     * Same as {@link #getIndicesStats()}, but a failure to read the engine propagates instead of being
+     * answered with an empty map. For callers that must tell "this engine holds no indices" from "this
+     * engine could not be asked" — the migration readiness report, where confusing the two prescribes
+     * a reindex over an outage (issue #37636). Implementations whose {@code getIndicesStats()} already
+     * propagates need not override it.
+     *
+     * @return a map of index names to their statistics
+     */
+    default Map<String, IndexStats> getIndicesStatsOrThrow() {
+        return getIndicesStats();
+    }
+
+    /**
      * Flushes field and filter caches for the specified indices.
      * This operation can take up to a minute to complete.
      *
@@ -115,6 +129,17 @@ public interface IndexAPI {
      * @return set containing all index names
      */
     Set<String> listIndices();
+
+    /**
+     * Same as {@link #listIndices()}, but a failure to read the engine propagates instead of being
+     * answered with an empty set — see {@link #getIndicesStatsOrThrow()} for why that difference
+     * matters.
+     *
+     * @return set containing all index names
+     */
+    default Set<String> listIndicesOrThrow() {
+        return listIndices();
+    }
 
     /**
      * Checks if the specified index is closed.
@@ -354,4 +379,29 @@ public interface IndexAPI {
      * @return cluster statistics object
      */
     ClusterStats getClusterStats();
+
+    /**
+     * Returns the health of this install's indices on the search engine that serves reads: status,
+     * node and shard counts, and pending work, with the engine that answered stamped on the result.
+     * Used by the cluster status report that every dotCMS server sends to the Network screens.
+     *
+     * <p>Unlike {@link #getClusterHealth()}, which lists the health of each of this cluster's
+     * indices, this is one summary over all indices carrying {@link #getClusterPrefix()}: the
+     * status and shard counts cover only those indices, while node counts and pending work stay
+     * cluster-wide. Each attempt gives up after
+     * {@link com.dotcms.content.index.domain.SearchClusterHealth#TIMEOUT_PROPERTY} milliseconds (the
+     * search client may try each configured host in turn), and implementations throw an unchecked
+     * exception when the engine can't be asked or doesn't answer in time; they
+     * never answer with an empty or default result, so the caller can tell an outage from a
+     * healthy cluster.</p>
+     *
+     * <p>The default throws, so implementations that predate this method keep compiling.</p>
+     *
+     * @return the cluster health summary of the engine that answered
+     * @throws UnsupportedOperationException if the implementation does not provide it
+     */
+    default SearchClusterHealth getClusterHealthSummary() {
+        throw new UnsupportedOperationException(
+                getClass().getName() + " does not provide a cluster health summary");
+    }
 }

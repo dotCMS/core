@@ -3,11 +3,13 @@ import {
     DotActionCenterWorkflowAction,
     DotBulkActionView,
     DotCMSContentlet,
+    DotContentDriveActionableItem,
     DotContentDriveItem,
-    DotCountWorkflowAction
+    DotCountWorkflowAction,
+    PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
 
-import { isFolder } from './functions';
+import { isFolder, normalizeFolderRef } from './functions';
 import { WORKFLOW_ACTION_ID } from './workflow-actions';
 
 /**
@@ -64,11 +66,62 @@ export const PUSH_PUBLISH_ACTION_ID = 'PUSH_PUBLISH';
  */
 export const REFRESH_ACTION_ID = 'REFRESH';
 
+/**
+ * Bulk folder delete (#37063).
+ *
+ * Folder-only: deleting a contentlet is a workflow action and deleting a folder is not, so one
+ * label over two mechanisms would be two result shapes and two failure modes behind one word. The
+ * row reports how many of the selection it will act on, which is what the registry already
+ * computes in a single pass.
+ */
+export const DELETE_FOLDER_ACTION_ID = 'DELETE_FOLDER';
+
+/**
+ * Whether the author may delete this folder, as far as the row can tell.
+ *
+ * **EDIT and EDIT_PERMISSIONS**, which is what the shipped single-folder delete already gates on
+ * and what `FolderAPIImpl.delete` enforces server-side. Keeping all three in agreement is the point:
+ * a fourth opinion here would offer an action the server then refuses.
+ *
+ * Absent `permissions` reads as permitted, not refused. It means the search did not request them —
+ * distinct from an empty array, which means the author holds none — and withholding the action on
+ * missing data would hide Delete wherever a producer did not opt in (FR-005).
+ */
+export const eligibleForDelete = (item: DotContentDriveItem): boolean => {
+    const permissions = (item as { permissions?: string[] }).permissions;
+
+    // `undefined` means the search did not request them, which is NOT the same as `[]` — that means
+    // the author holds none. Treating the first as a refusal would hide Delete wherever a producer
+    // did not opt in, and the server refuses per folder regardless (FR-005).
+    if (!permissions) {
+        return true;
+    }
+
+    return (
+        permissions.includes(PERMISSIONS_TYPE.EDIT) &&
+        permissions.includes(PERMISSIONS_TYPE.EDIT_PERMISSIONS)
+    );
+};
+
+/**
+ * Duplicate the selected folders in place, backed by `_bulkduplicate`.
+ *
+ * Each duplicate lands beside its original, in the same parent, under a name the server derives, so
+ * there is nothing to configure and no destination to pick. Job-backed like {@link REFRESH_ACTION_ID}:
+ * the endpoint answers `202` and the outcome arrives by push.
+ *
+ * Folders only, and sent as site-qualified paths rather than identifiers, because that is what the
+ * endpoint takes. A contentlet in the selection is left out of the count rather than failing.
+ */
+export const DUPLICATE_ACTION_ID = 'DUPLICATE';
+
 export type DotActionCenterQuickActionId =
     | WORKFLOW_ACTION_ID
     | typeof ADD_TO_BUNDLE_ACTION_ID
     | typeof PUSH_PUBLISH_ACTION_ID
-    | typeof REFRESH_ACTION_ID;
+    | typeof REFRESH_ACTION_ID
+    | typeof DELETE_FOLDER_ACTION_ID
+    | typeof DUPLICATE_ACTION_ID;
 
 /** Quick action as rendered in the dialog (with eligibility counts). */
 export interface DotActionCenterQuickAction {
@@ -79,7 +132,8 @@ export interface DotActionCenterQuickAction {
     icon: string;
     /**
      * The ids the action will fire on. Built with {@link count} in one pass so the badge and the
-     * payload cannot diverge.
+     * payload cannot diverge. An action with a ceiling keeps every eligible id here and fires on
+     * the first of them, as many as {@link count} says.
      *
      * **Inodes for the contentlet-only actions**, which is what pins the version and therefore the
      * step a fire lands on, so one contentlet sitting on two steps contributes two entries.
@@ -88,7 +142,10 @@ export interface DotActionCenterQuickAction {
      * `executeAddToBundle` already documents on the store side.
      */
     eligibleInodes: string[];
-    /** Eligible contentlets. `0` = shown but not selectable. */
+    /**
+     * How many items one run will act on: the eligible ones, up to the action's ceiling where it
+     * has one. `0` = shown but not selectable.
+     */
     count: number;
     /**
      * Eligible items likely to fail — heads-up only; they are still fired.
@@ -137,6 +194,20 @@ export interface DotActionCenterContext {
      * until the answer arrives, rather than enabling for a moment and then retracting.
      */
     hasPushPublishEnvironments?: boolean;
+    /**
+     * Whether the author may add folders where they are browsing, which is where every duplicate
+     * lands.
+     *
+     * `undefined` reads as allowed, the same as the store's own gate: the lookup may still be in
+     * flight, and the server refuses per folder regardless.
+     */
+    canAddChildren?: boolean;
+    /**
+     * How many folders one run of a folder action may carry, as the server advertises it (#37062).
+     *
+     * `null` or absent means no ceiling is advertised, and the row counts every eligible folder.
+     */
+    folderCeilings?: { duplicate?: number | null; delete?: number | null };
 }
 
 /**
@@ -173,6 +244,17 @@ interface DotActionCenterQuickActionDef {
     /** Needs the CMS Administrator role before it can run. See {@link REFRESH_ACTION_ID}. */
     requiresAdmin?: boolean;
     /**
+     * Needs the author to be able to add folders where they are browsing, and is withheld outright
+     * when they cannot, since everything it would create lands there. See
+     * {@link DotActionCenterContext.canAddChildren}.
+     */
+    requiresAddChildren?: boolean;
+    /**
+     * The most items one run of this action may carry, read from the context, or `null` for no
+     * limit. The row's count stops there, since that is how many the run acts on.
+     */
+    ceilingOf?: (context: DotActionCenterContext) => number | null | undefined;
+    /**
      * Runs on folders as well as contentlets.
      *
      * Only for actions that send the *asset* by identifier and whose `eligibleWhen` ignores row
@@ -181,6 +263,28 @@ interface DotActionCenterQuickActionDef {
      * rather than by omission.
      */
     supportsFolders?: boolean;
+    /**
+     * Acts on folders and **only** folders.
+     *
+     * Narrower than {@link supportsFolders}, which widens an action's scope to the whole selection
+     * because it acts on contentlets *and* folders. This scopes it to the folders alone, so a
+     * selection holding no folder drops the action entirely rather than rendering it with a count
+     * of `0` — the same reasoning that drops the contentlet-only actions from a folder-only
+     * selection. A disabled Delete row over a selection of files is noise, and mildly alarming
+     * noise at that.
+     */
+    foldersOnly?: boolean;
+    /**
+     * Whether the action is offered for this selection **as a whole**.
+     *
+     * Distinct from {@link eligibleWhen}, which narrows *which items* an action counts and fires on.
+     * Some gates cannot be expressed per item without changing what gets submitted: Delete is
+     * withheld only when the author may delete **none** of the selection, and a selection they may
+     * only partly delete is still submitted whole, with the refusals reported per folder (FR-004a).
+     * Filtering those folders out per item would silently shrink a destructive action the author
+     * explicitly selected — the worse failure of the two.
+     */
+    availableWhen?: (items: DotContentDriveItem[]) => boolean;
 }
 
 /**
@@ -201,7 +305,7 @@ export const isLockedByAnotherUser = (
 /**
  * Quick actions in display order (fixed — rows never reshuffle).
  *
- * Order: Lock, Unlock, Add to Bundle, Push Publish, Refresh.
+ * Order: Lock, Unlock, Add to Bundle, Push Publish, Refresh, Duplicate.
  *
  * **Scope: the old search toolbar's bulk operations, and only those.** Publish, Unpublish, Archive,
  * Unarchive and Delete used to sit here as well, fired through
@@ -258,6 +362,41 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         supportsFolders: true
     },
     {
+        id: DELETE_FOLDER_ACTION_ID,
+        nameKey: 'content-drive.context-menu.delete-folder',
+        icon: 'delete',
+        // Folders only, and the eligibility filter is what enforces it: `supportsFolders` widens the
+        // scope to the whole selection, and this narrows it back to the folders in it. A stray file
+        // in the selection therefore does not withhold the action — the row reports how many
+        // folders it will act on, and acts on exactly those (FR-003).
+        //
+        // No folder state disqualifies a delete. Whether the author may actually delete a given
+        // folder is a permission question, answered by `eligibleForDelete` at the selection level
+        // and by the server per folder — not by row state here.
+        eligibleWhen: (item) => isFolder(item),
+        // Counts and fires on every selected folder, deletable or not — see `availableWhen`.
+        availableWhen: (items) => items.filter(isFolder).some(eligibleForDelete),
+        ceilingOf: (context) => context.folderCeilings?.delete,
+        supportsFolders: true,
+        foldersOnly: true
+    },
+    {
+        id: DUPLICATE_ACTION_ID,
+        nameKey: 'content-drive.action-center.duplicate-folder',
+        icon: 'content_copy',
+        // READ is what copying a folder needs on the folder itself, and only a folder known to
+        // carry it is counted, as the right-click menu offers it only there (FR-005c as amended).
+        // A selection with none still lists the action, at zero. Whether the author can add to
+        // the parent is a question about the browsed folder, not the row, and is answered before
+        // this list is shown at all.
+        eligibleWhen: (item) =>
+            isFolder(item) && !!item.permissions?.includes(PERMISSIONS_TYPE.READ),
+        ceilingOf: (context) => context.folderCeilings?.duplicate,
+        supportsFolders: true,
+        foldersOnly: true,
+        requiresAddChildren: true
+    },
+    {
         id: REFRESH_ACTION_ID,
         nameKey: 'Refresh',
         icon: 'refresh',
@@ -296,6 +435,40 @@ export const toDistinctIdentifiers = (items: DotContentDriveItem[]): string[] =>
     ...new Set(items.map((item) => item.identifier).filter(Boolean))
 ];
 
+/**
+ * Site-qualified paths for the folders in a selection, such as `//demo.dotcms.com/blogs/alpha/`, in
+ * the form `_bulkduplicate` takes. Contentlets are dropped.
+ *
+ * Every path ends with a slash: the endpoint resolves an asset path, and the trailing slash is what
+ * makes it name the folder rather than a file of the same name.
+ */
+export const toFolderAssetPaths = (
+    items: DotContentDriveActionableItem[],
+    hostname: string
+): string[] =>
+    items
+        .filter(isFolder)
+        .map(
+            (folder) =>
+                `//${hostname}${folder.path.endsWith('/') ? folder.path : `${folder.path}/`}`
+        );
+
+/**
+ * The distinct parents of the given folder paths, as `//hostname/path` folder refs.
+ *
+ * A duplicate lands in its original's parent, so these are the folders whose listing a finished run
+ * changes. A folder at the site root yields the site's own ref.
+ */
+export const toParentFolderRefs = (assetPaths: string[]): string[] => [
+    ...new Set(
+        assetPaths.map((assetPath) => {
+            const ref = normalizeFolderRef(assetPath);
+
+            return ref.slice(0, ref.lastIndexOf('/'));
+        })
+    )
+];
+
 /** Contentlet inodes for bulk endpoints (folders dropped). */
 export const toContentletInodes = (items: DotContentDriveItem[]): string[] =>
     excludeFolders(items).map((item) => item.inode);
@@ -319,8 +492,27 @@ export const getQuickActions = (
     const contentlets = excludeFolders(items);
 
     return QUICK_ACTIONS.flatMap((quickAction) => {
-        // Folder-capable actions see the whole selection; everything else sees contentlets only.
-        const scoped = quickAction.supportsFolders ? items : contentlets;
+        // Folder-only actions see just the folders; folder-capable ones see the whole selection;
+        // everything else sees contentlets only. The first case is what lets an action whose
+        // selection holds nothing it can act on fall out below rather than render at zero.
+        const scoped = quickAction.foldersOnly
+            ? items.filter(isFolder)
+            : quickAction.supportsFolders
+              ? items
+              : contentlets;
+
+        // Withheld when everything it creates would land where the author cannot add, which is a
+        // question about the browsed folder rather than any selected row.
+        if (quickAction.requiresAddChildren && context.canAddChildren === false) {
+            return [];
+        }
+
+        // Withheld for the selection as a whole, before any per-item counting. An action the author
+        // cannot use on anything they picked is not an action with a count of zero — it is one that
+        // does not apply, and the registry already drops those.
+        if (quickAction.availableWhen && !quickAction.availableWhen(items)) {
+            return [];
+        }
 
         // Dropped rather than shown with a count of `0`: a folder-only selection is not "no eligible
         // rows", it is an action that does not apply to what is selected, and a disabled Lock row
@@ -338,6 +530,7 @@ export const getQuickActions = (
             quickAction.supportsFolders ? item.identifier : item.inode
         );
         const { warnWhen } = quickAction;
+        const ceiling = quickAction.ceilingOf?.(context);
         const warningCount = warnWhen
             ? eligible.filter((item) => warnWhen(item, context)).length
             : 0;
@@ -347,7 +540,12 @@ export const getQuickActions = (
             name: quickAction.nameKey,
             icon: quickAction.icon,
             eligibleInodes,
-            count: eligibleInodes.length,
+            // The run carries at most the ceiling, so that is all the row may promise.
+            // `eligibleInodes` keeps every eligible item, and the preview takes the first of them.
+            count:
+                ceiling === null || ceiling === undefined
+                    ? eligibleInodes.length
+                    : Math.min(eligibleInodes.length, ceiling),
             warningCount,
             warningHint: warningCount > 0 ? quickAction.warningHint : undefined,
             comingSoon: !!quickAction.comingSoon,

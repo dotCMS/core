@@ -13,7 +13,8 @@ import {
     Injector,
     input,
     signal,
-    viewChild
+    viewChild,
+    booleanAttribute
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -31,7 +32,8 @@ import {
     DotFolderSearchResultsComponent,
     DotFolderTreeComponent,
     DotFolderNamePipe,
-    DotMessagePipe
+    DotMessagePipe,
+    DotTruncatedLabelComponent
 } from '@dotcms/ui';
 
 import { alignOverlayLeftToTrigger } from './host-folder-field-overlay.utils';
@@ -55,6 +57,7 @@ import { HostFolderFiledStore } from '../../store/host-folder-field.store';
         ScrollerModule,
         SkeletonModule,
         DotFolderTreeComponent,
+        DotTruncatedLabelComponent,
         DotFolderSearchResultsComponent,
         ButtonModule,
         TooltipModule,
@@ -87,6 +90,35 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * It is used to display the required state of the field.
      */
     $isRequired = input.required<boolean>({ alias: 'isRequired' });
+
+    /**
+     * The id the field's label points at, so the two are associated.
+     *
+     * This field has no native form control — the affordance is a button that opens a tree picker
+     * — so without an explicit id there is nothing for `<label for>` to reach, and a screen reader
+     * announces the control with no name.
+     */
+    $controlId = input<string>('', { alias: 'controlId' });
+
+    /**
+     * Whether to render this component's own trigger — the input-styled button and its
+     * copy-to-clipboard action.
+     *
+     * Set it to `false` and project a trigger through the `[hostFolderTrigger]` slot instead. The
+     * component keeps owning the browser — sites, folder tree, in-site search, Select/Cancel — and
+     * the caller decides what summons it.
+     *
+     * The seam exists because the relationship picker needs a **filter chip**, matching the Locale
+     * chip beside it, not something shaped like a form input. Restyling this trigger for that case
+     * would put picker looks inside a content-type field, and hiding its parts one input at a time
+     * (`showCopy`, then the next one) is a slope with no bottom.
+     *
+     * Defaults to `true`, so every existing call site is unchanged.
+     */
+    $showDefaultTrigger = input(true, {
+        alias: 'showDefaultTrigger',
+        transform: booleanAttribute
+    });
     /**
      * Reference to the overlay panel, used to close it programmatically after
      * committing a selection.
@@ -165,15 +197,15 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
             nodeChildren: { class: 'min-w-0 overflow-x-hidden' },
             nodeContent: isSearching
                 ? {
-                      class: 'min-w-0 max-w-full overflow-hidden !items-start',
+                      class: 'max-w-full overflow-hidden !items-start',
                       style: {
                           '--p-tree-node-gap': '1rem',
                           '--p-tree-node-padding': '0.5rem'
                       }
                   }
-                : { class: 'min-w-0 max-w-full overflow-hidden' },
+                : { class: 'max-w-full overflow-hidden' },
             nodeIcon: isSearching ? { class: 'mt-1 shrink-0 self-start' } : undefined,
-            nodeLabel: { class: 'min-w-0 flex-1 overflow-hidden leading-snug' }
+            nodeLabel: { class: 'leading-snug' }
         };
     });
 
@@ -198,6 +230,26 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
         this.handlePathToSaveChange(this.store.pathToSave);
         this.handleChangeValue(this.$value);
         this.#destroyRef.onDestroy(() => clearTimeout(this.#copyResetTimer));
+    }
+
+    /**
+     * Activates a **projected** trigger from the keyboard.
+     *
+     * Needed because a projected trigger need not be a native `<button>`. The filter chip the
+     * relationship picker projects is a `role="button"` host that turns Enter and Space into its
+     * own Angular output, and an Angular output does not dispatch a bubbling DOM click — so the
+     * wrapper's `click` listener never heard it. The chip was focusable, announced itself as a
+     * button, and did nothing on Enter while the mouse worked.
+     *
+     * `preventDefault` is what keeps this safe for the other case. On a native `<button>` the
+     * browser synthesises a click from Enter and Space, which would reach the wrapper's `click`
+     * listener and toggle the overlay a second time — opening and closing it in one keystroke.
+     * Suppressing the default stops that click being generated, so either kind of trigger
+     * activates exactly once.
+     */
+    onProjectedTriggerKeydown(event: Event): void {
+        event.preventDefault();
+        this.toggleOverlay(event);
     }
 
     /**

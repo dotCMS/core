@@ -80,10 +80,67 @@ export class ContentDriveTree {
         await responsePromise;
     }
 
+    /** The folder's row is on screen, not merely somewhere in the tree. */
+    async expectFolderInView(name: string) {
+        await expect(this.folderLabel(name)).toBeInViewport({ timeout: 10000 });
+    }
+
     async expectFolderSelected(name: string) {
         const node = this.root.locator('.p-tree-node-content.p-tree-node-selected', {
             hasText: name
         });
         await expect(node).toBeVisible({ timeout: 10000 });
+    }
+
+    /**
+     * How many rows inside the hierarchy read as selected.
+     *
+     * The two standalone entries reuse `p-tree-node-content` and `p-tree-node-selected` so they are
+     * styled like the tree they sit around, which means a document-wide count of the class answers
+     * the wrong question. Scoped to the tree, this is the assertion that the sidebar is not
+     * claiming the user is in two places at once.
+     */
+    async expectNothingSelected() {
+        // `hierarchy-scroll`, not `sidebar`: this class's root is the whole panel, and the two
+        // standalone entries deliberately reuse `p-tree-node-content` / `p-tree-node-selected` so
+        // they match the rows they sit around. Counting from the panel would therefore count the
+        // selected System Host button as a selected tree row, and the assertion would pass or fail
+        // for the wrong reason. That wrapper holds the hierarchy and nothing else.
+        await expect(
+            this.root
+                .getByTestId('hierarchy-scroll')
+                .locator('.p-tree-node-content.p-tree-node-selected')
+        ).toHaveCount(0, { timeout: 10000 });
+    }
+
+    /**
+     * The state-aware folder icon the shared tree renders on a folder row (#37362).
+     *
+     * Its `data-expanded` attribute is the assertion surface rather than the glyph class, so a
+     * change of icon set does not break these tests.
+     */
+    folderIcon(name: string): Locator {
+        return this.folderNode(name).getByTestId('tree-node-folder-icon');
+    }
+
+    async expectFolderIconVisible(name: string) {
+        await expect(this.folderIcon(name)).toBeVisible({ timeout: 15000 });
+    }
+
+    async expectFolderIconExpanded(name: string, expanded: boolean) {
+        await expect(this.folderIcon(name)).toHaveAttribute(
+            'data-expanded',
+            expanded ? 'true' : 'false'
+        );
+    }
+
+    /**
+     * Collapses an expanded folder via its toggler. No response to await — the children are
+     * already loaded, so collapsing is purely local.
+     */
+    async collapseFolder(name: string) {
+        const node = this.folderNode(name);
+        await node.waitFor({ state: 'visible', timeout: 15000 });
+        await node.locator('.p-tree-node-toggle-button').first().click();
     }
 }

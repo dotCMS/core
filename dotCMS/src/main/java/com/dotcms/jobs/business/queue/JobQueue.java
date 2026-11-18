@@ -1,6 +1,7 @@
 package com.dotcms.jobs.business.queue;
 
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobListView;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.queue.error.JobLockingException;
@@ -226,6 +227,21 @@ public interface JobQueue {
     JobPaginatedResult getAbandonedJobs(int page, int pageSize) throws JobQueueDataException;
 
     /**
+     * Retrieves one page of a job listing, optionally narrowed to one queue and to the jobs one
+     * user created. Paging and the total count reflect the narrowed listing.
+     *
+     * @param view      The listing to read, which decides the job states included
+     * @param queueName The queue to read from, or {@code null} for every queue
+     * @param ownerId   The id of the user whose jobs to include, or {@code null} for every user's
+     * @param page      The page number (for pagination).
+     * @param pageSize  The number of items per page.
+     * @return A result object containing the list of jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getJobs(JobListView view, String queueName, String ownerId, int page,
+            int pageSize) throws JobQueueDataException;
+
+    /**
      * Updates the status of a job.
      *
      * @param job The job with an updated status.
@@ -282,6 +298,22 @@ public interface JobQueue {
      *                               progress
      */
     void updateJobProgress(String jobId, float progress) throws JobQueueDataException;
+
+    /**
+     * Refreshes a job's {@code updated_at} timestamp without changing its reported progress.
+     * <p>
+     * Exists for processors whose progress can only be reported at a coarse granularity, so a unit
+     * of work that runs longer than the abandonment threshold without the reported percentage
+     * moving is not mistaken for a dead job — #37063, spec FR-024a. Deliberately a separate
+     * operation from {@link #updateJobProgress(String, float)}: that method's callers rely on its
+     * progress-changed side effects (an event reaching job watchers); this one must have none, or a
+     * client watching progress would see spurious, imprecise updates the server has no real
+     * granularity to back up.
+     *
+     * @param jobId The ID of the job to touch.
+     * @throws JobQueueDataException if there's a data storage error while touching the job
+     */
+    void touchJob(String jobId) throws JobQueueDataException;
 
     /**
      * Checks if a job has ever been in a specific state.

@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -14,20 +20,20 @@ import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store'
 
 describe('DotPublishingQueueUploadDialogComponent', () => {
     let spectator: Spectator<DotPublishingQueueUploadDialogComponent>;
-    let dialogRef: jest.Mocked<DynamicDialogRef>;
-    let service: jest.Mocked<DotPublishingQueueService>;
-    let store: jest.Mocked<{ refresh: jest.Mock }>;
+    let dialogRef: Mocked<DynamicDialogRef>;
+    let service: Mocked<DotPublishingQueueService>;
+    let store: Mocked<{ refresh: Mock }>;
 
     const createComponent = createComponentFactory({
         component: DotPublishingQueueUploadDialogComponent,
         providers: [
-            mockProvider(DotPublishingQueueStore, { refresh: jest.fn() }),
+            mockProvider(DotPublishingQueueStore, { refresh: vi.fn() }),
             mockProvider(DotPublishingQueueService, {
-                uploadBundle: jest
+                uploadBundle: vi
                     .fn()
                     .mockReturnValue(of({ bundleName: 'b.tar.gz', status: 'BUNDLE_REQUESTED' }))
             }),
-            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }
         ]
     });
@@ -38,14 +44,12 @@ describe('DotPublishingQueueUploadDialogComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
-        dialogRef = spectator.inject(DynamicDialogRef) as jest.Mocked<DynamicDialogRef>;
-        service = spectator.inject(
-            DotPublishingQueueService
-        ) as jest.Mocked<DotPublishingQueueService>;
-        store = spectator.inject(DotPublishingQueueStore) as unknown as jest.Mocked<{
-            refresh: jest.Mock;
+        dialogRef = spectator.inject(DynamicDialogRef) as Mocked<DynamicDialogRef>;
+        service = spectator.inject(DotPublishingQueueService) as Mocked<DotPublishingQueueService>;
+        store = spectator.inject(DotPublishingQueueStore) as unknown as Mocked<{
+            refresh: Mock;
         }>;
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('file selection', () => {
@@ -113,7 +117,7 @@ describe('DotPublishingQueueUploadDialogComponent', () => {
         }
 
         function submitWithError(error: HttpErrorResponse): void {
-            (service.uploadBundle as jest.Mock).mockReturnValueOnce(throwError(() => error));
+            (service.uploadBundle as Mock).mockReturnValueOnce(throwError(() => error));
             spectator.component.onFileSelect({ files: [bundleFile()] } as never);
             spectator.component.onSubmit();
         }
@@ -156,7 +160,7 @@ describe('DotPublishingQueueUploadDialogComponent', () => {
         it('clears the previous error before retrying', () => {
             submitWithError(makeError({ message: 'first error' }));
             expect(spectator.component.$errorMessage()).toBe('first error');
-            (service.uploadBundle as jest.Mock).mockReturnValueOnce(
+            (service.uploadBundle as Mock).mockReturnValueOnce(
                 of({ bundleName: 'b.tar.gz', status: 'BUNDLE_REQUESTED' })
             );
             spectator.component.onSubmit();

@@ -1,0 +1,44 @@
+import { TestBed } from '@angular/core/testing';
+
+import { DotNavLogoService } from './dot-nav-logo.service';
+
+describe('DotNavLogoService', () => {
+    let service: DotNavLogoService;
+
+    beforeEach(() => {
+        TestBed.configureTestingModule({
+            imports: [],
+            providers: []
+        });
+        service = TestBed.inject(DotNavLogoService);
+    });
+
+    it('should not set a new logo', () =>
+        new Promise<void>((done) => {
+            // The company-info payload can carry a null logo; setLogo's signature
+            // does not admit it yet, so the null path is exercised through a cast.
+            service.setLogo(null as unknown as string);
+            service.navBarLogo$.subscribe((logo) => {
+                expect(logo).toBeNull();
+                done();
+            });
+        }));
+
+    it('should set a new logo', () =>
+        new Promise<void>((done) => {
+            service.setLogo('/dA/id/asset/logo.png');
+            service.navBarLogo$.subscribe((logo) => {
+                expect(logo).toBe('url("/dA/id/asset/logo.png")');
+                done();
+            });
+        }));
+
+    it("should not set a logo if the logo string doesn't starts with /dA", () =>
+        new Promise<void>((done) => {
+            service.setLogo('FL');
+            service.navBarLogo$.subscribe((logo) => {
+                expect(logo).toBeNull();
+                done();
+            });
+        }));
+});

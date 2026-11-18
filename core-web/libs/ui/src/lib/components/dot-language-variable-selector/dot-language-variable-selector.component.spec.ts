@@ -4,8 +4,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -93,7 +94,7 @@ describe('DotLanguageVariableSelectorComponent', () => {
 
     it('should call loadSuggestions when user interacts with autocomplete', () => {
         // Directly trigger the method that Angular would call
-        const loadSuggestionsSpy = jest.spyOn(spectator.component, 'loadSuggestions');
+        const loadSuggestionsSpy = vi.spyOn(spectator.component, 'loadSuggestions');
 
         // Find and manually trigger the completeMethod event (simulates typing in autocomplete)
         const autocomplete = spectator.query(byTestId('language-variable-selector-input'));
@@ -117,7 +118,7 @@ describe('DotLanguageVariableSelectorComponent', () => {
 
     it('should emit selected language variable when user selects an option', () => {
         const mockVariable = { key: 'test-key', value: 'Test Value' };
-        const emitSpy = jest.spyOn(spectator.component.onSelectLanguageVariable, 'emit');
+        const emitSpy = vi.spyOn(spectator.component.onSelectLanguageVariable, 'emit');
 
         // Simulate user selecting an item from dropdown
         spectator.component.emitSelectLanguageVariable({

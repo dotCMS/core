@@ -1,4 +1,4 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/vitest';
 
 import { DotDialogContentComponent } from './dot-dialog-content.component';
 

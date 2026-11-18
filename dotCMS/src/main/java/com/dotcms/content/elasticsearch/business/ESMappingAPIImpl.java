@@ -5,6 +5,7 @@ import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
+import com.dotcms.content.filter.ContentFieldFilter;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.content.index.IndexMappingRestOperations;
 import com.dotcms.content.index.IndexTag;
@@ -52,7 +53,7 @@ import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.model.Field;
-import com.dotmarketing.portlets.structure.model.FieldVariable;
+import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotmarketing.portlets.structure.model.KeyValueFieldUtil;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -65,6 +66,7 @@ import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.NumberUtil;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.ThreadSafeSimpleDateFormat;
 import com.dotmarketing.util.UtilMethods;
@@ -97,6 +99,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -446,13 +449,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	}
 
 	/**
-	 * This method is the same of the toJson except that it returns directly the mlowered map.
+	 * Builds the document indexed for a contentlet, with lower-cased keys. Besides one key per property, it
+	 * holds a {@code catchall} key with every indexed value, which is what a query term without a field name
+	 * searches. The properties that the Content API masks or hides from untrusted callers are left out of
+	 * {@code catchall}, so their values cannot be found that way; see {@link ContentFieldFilter}.
 	 *
-	 * It checks first if this contentlet is already into the temporarily memory otherwise it recreate.
-	 *
-	 * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
-	 *
-	 * Jun 7, 2013 - 3:47:26 PM
+	 * @param contentlet the {@link Contentlet} to index
+	 * @return the document to index
+	 * @throws DotMappingException if the contentlet, its identifier, version, content type, site or folder
+	 *         cannot be read
 	 */
 	@CloseDBIfOpened
 	public Map<String,Object> toMap(final Contentlet contentlet) throws DotMappingException {
@@ -575,6 +580,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						" , reason: " + e.getMessage());
 			}
 
+			final Predicate<String> excludedFromCatchall = ContentFieldFilter.catchallExclusion();
 			for(final Entry<String,Object> entry : contentletMap.entrySet()){
 				final String lowerCaseKey = entry.getKey().toLowerCase();
 				Object lowerCaseValue = entry.getValue();
@@ -600,8 +606,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					}
 				}
 
-				//exclude null values and relationships because they where appended on the loadRelationships method
-				if(lowerCaseValue!=null && !(lowerCaseValue instanceof List)) {
+				//exclude null values and relationships because they where appended on the loadRelationships method,
+				//and the masked or hidden properties, which would otherwise be searchable without naming their field
+				if(lowerCaseValue!=null && !(lowerCaseValue instanceof List) && !excludedFromCatchall.test(lowerCaseKey)) {
 					sw.append(lowerCaseValue.toString()).append(' ');
 				}
 
@@ -801,12 +808,10 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 
 			Set<String> allowedFields = new HashSet<>();
 			// http://jira.dotmarketing.net/browse/DOTCMS-7243
-			final List<FieldVariable> fieldVariables = fieldAPI.getFieldVariablesForField(
-					field.inode(), APILocator.systemUser(), false);
-			for(final FieldVariable fieldVariable : fieldVariables) {
-				if(fieldVariable.getKey().equals(ESMappingConstants.DOT_INDEX_PATTERN)) {
+			for(final FieldVariable fieldVariable : field.fieldVariables()) {
+				if(fieldVariable.key().equals(ESMappingConstants.DOT_INDEX_PATTERN)) {
 
-					final String[] names = fieldVariable.getValue().split(COMMA);
+					final String[] names = fieldVariable.value().split(COMMA);
 					allowedFields        = new HashSet<>();
 					for(final String name : names) {
 						allowedFields.add(name.trim().toLowerCase());
@@ -1114,8 +1119,8 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 							.startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_FLOAT) || field
 							.getFieldContentlet()
 							.startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_INTEGER)) {
-						contentletMap.put(keyName, valueObj);
-						contentletMap.put(keyNameText, numFormatter.format(valueObj));
+						loadNumericField(contentletMap, field, structure, valueObj, keyName,
+								keyNameText, numFormatter);
 					} else {
 					    if (valueObj instanceof Date){
                             try {
@@ -1145,6 +1150,66 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 				throw new DotDataException(e.getMessage(),e);
 			}
 		}
+	}
+
+	/**
+	 * Emits a field whose <em>storage column</em> is numeric ({@code integerN} / {@code floatN}).
+	 *
+	 * <p>The column, not the field type, decides this branch — and dotCMS allows a
+	 * {@link com.dotcms.contenttype.model.field.TextField} to be backed by a numeric column, as
+	 * its own built-in types do ({@code htmlpageasset.sortOrder}). So the value in hand may be a
+	 * {@link Number} or a numeric {@link String}, and handing a String straight to
+	 * {@code DecimalFormat.format} threw, aborting the whole document (issue #37272).</p>
+	 *
+	 * <p>A value that is already a {@link Number} takes exactly the path it always took — same
+	 * object, same formatter call — so documents for correctly-stored content do not move. A
+	 * String is converted best-effort against the column's own type, so a stored {@code "54"}
+	 * produces a document identical to a natively-stored {@code 54}.</p>
+	 *
+	 * <p>When the value cannot be represented numerically, <strong>both</strong> keys are
+	 * omitted. That pairing is not a preference:</p>
+	 * <ul>
+	 *   <li>The numeric key is skipped rather than defaulted to {@code 0}, because a {@code 0} is
+	 *       indistinguishable from a genuine {@code 0} in range queries, sorts and aggregations.</li>
+	 *   <li>{@code keyNameText} must go with it. {@code toMap}'s post-processing derives
+	 *       {@code <field>_dotraw} from {@code <field>_text}, and falls back to the bare key when
+	 *       that is absent — writing the numeric key alone would therefore produce an
+	 *       <em>unpadded</em> {@code _dotraw}. Since {@code _dotraw} is a {@code keyword} and every
+	 *       sort resolves through it, the fixed-width zero padding is the only reason ordering by
+	 *       a numeric field is numeric rather than lexicographic; an unpadded entry silently
+	 *       reorders results.</li>
+	 * </ul>
+	 *
+	 * @param valueObj the raw value, a {@link Number} or {@link String}
+	 */
+	private void loadNumericField(final Map<String, Object> contentletMap, final Field field,
+			final Structure structure, final Object valueObj, final String keyName,
+			final String keyNameText, final DecimalFormat numFormatter) {
+
+		if (valueObj instanceof Number) {
+			contentletMap.put(keyName, valueObj);
+			contentletMap.put(keyNameText, numFormatter.format(valueObj));
+			return;
+		}
+
+		final boolean floatColumn = field.getFieldContentlet()
+				.startsWith(ESMappingConstants.FIELD_ELASTIC_TYPE_FLOAT);
+		final Optional<? extends Number> converted = floatColumn
+				? NumberUtil.toFloatOrEmpty(valueObj)
+				: NumberUtil.toLongOrEmpty(valueObj);
+
+		if (converted.isEmpty()) {
+			Logger.warn(ESMappingAPIImpl.class, String.format(
+					"Field '%s' of Content Type '%s' is stored in the numeric column '%s' but its "
+							+ "value is not numeric; the field is omitted from the index document "
+							+ "for this contentlet. The rest of the contentlet is indexed.",
+					field.getVelocityVarName(), structure.getVelocityVarName(),
+					field.getFieldContentlet()));
+			return;
+		}
+
+		contentletMap.put(keyName, converted.get());
+		contentletMap.put(keyNameText, numFormatter.format(converted.get()));
 	}
 
 	private boolean loadTagsField(final Contentlet contentlet,

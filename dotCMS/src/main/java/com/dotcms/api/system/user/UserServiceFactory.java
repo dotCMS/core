@@ -267,17 +267,7 @@ public class UserServiceFactory implements Serializable {
 			final int limit = toInt("limit", params, 100);
 			final String query = getMapValue(params, "query", StringUtils.EMPTY);
 			final String showUserType = params.getOrDefault("showUsers", "all");
-			
-	    String requiredRoleId=null;
-	    if("backEnd".equalsIgnoreCase(showUserType)) {
-	      requiredRoleId=APILocator.getRoleAPI().loadBackEndUserRole().getId();
-	    }else if("frontEnd".equalsIgnoreCase(showUserType)) {
-	      requiredRoleId=APILocator.getRoleAPI().loadFrontEndUserRole().getId();
-	    }
-	    
-			
-			
-			
+			final String requiredRoleId = requiredRoleIdFor(showUserType);
 			final boolean includeAnonymous = toBoolean("includeAnonymous", params, false);
 			// Defaults to "true" for backwards compatibility
 			final boolean includeDefault = toBoolean("includeDefault", params, true);
@@ -288,6 +278,36 @@ public class UserServiceFactory implements Serializable {
 				results = processUserList(query, start, limit, includeAnonymous, includeDefault, requiredRoleId);
 			}
 			return results;
+		}
+
+		/**
+		 * Resolves the {@code showUsers} filter of the legacy Users portlet into the ID of the Role every
+		 * returned User must hold: {@code backEnd}, {@code frontEnd} or {@code cmsAdmin}. Any other value,
+		 * including the default {@code all}, applies no Role filter.
+		 * <p>
+		 * These filters are open to anyone who can use the legacy Users portlet, which
+		 * {@link com.dotmarketing.portlets.user.ajax.UserAjax#getUsersList} already checks. That is a lower bar than
+		 * the {@code roleKey} / {@code roleId} filters of {@code GET /api/v1/users/filter}, which also require CMS
+		 * Administrator or the Roles portlet. The difference is intended: the legacy portlet already lets the same
+		 * Users view and edit every User's Roles, so filtering by Role there shows nothing new.
+		 *
+		 * @param showUserType The {@code showUsers} value sent by the portlet.
+		 *
+		 * @return The required Role ID, or {@code null} when no Role filter applies.
+		 *
+		 * @throws DotDataException An error occurred when loading the system Role.
+		 */
+		private static String requiredRoleIdFor(final String showUserType) throws DotDataException {
+			if ("backEnd".equalsIgnoreCase(showUserType)) {
+				return APILocator.getRoleAPI().loadBackEndUserRole().getId();
+			}
+			if ("frontEnd".equalsIgnoreCase(showUserType)) {
+				return APILocator.getRoleAPI().loadFrontEndUserRole().getId();
+			}
+			if ("cmsAdmin".equalsIgnoreCase(showUserType)) {
+				return APILocator.getRoleAPI().loadCMSAdminRole().getId();
+			}
+			return null;
 		}
 
 		@Override

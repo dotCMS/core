@@ -29,7 +29,7 @@
  *
  * QA verdict per PR (strict):
  *   - excluded:  bot / dependency-bump / release-machinery (skipped before QA check)
- *   - unlinked:  no closing-issue reference (body keyword OR Development panel)
+ *   - unlinked:  no issue link the PR gate accepts (closing or non-closing)
  *   - external:  only cross-repo closing references — QA cannot be verified
  *   - failed:    any linked issue has `QA : Failed`
  *   - passed:    every linked issue has `QA : Passed` or `QA : Not Needed`
@@ -37,7 +37,9 @@
  *
  * Linked-issue data comes from GitHub's GraphQL `closingIssuesReferences`,
  * which includes both body keywords (Closes/Fixes/Resolves) and issues
- * attached via the PR "Development" panel.
+ * attached via the PR "Development" panel. When that is empty, the PR gate's
+ * non-closing forms ("Refs #N", a "(#N)" title suffix, an issue number in the
+ * branch name) are used instead — see links.ts.
  */
 
 import * as fs from 'fs';

@@ -13,7 +13,7 @@ import {
     GOAL_TYPES,
     GOALS_METADATA_MAP
 } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotRadioCardComponent } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe, DotRadioCardComponent } from '@dotcms/ui';
 
 import {
     CONFIGURE_GOAL_TYPES,
@@ -77,6 +77,7 @@ const GOAL_TYPE_OPTIONS: GoalTypeOption[] = CONFIGURE_GOAL_TYPES.map((type) => (
         FormField,
         InputTextModule,
         SelectModule,
+        DotFieldRequiredDirective,
         DotMessagePipe,
         DotRadioCardComponent
     ],

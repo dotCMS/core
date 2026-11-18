@@ -4,7 +4,7 @@ import type { Injector } from '@angular/core';
 
 import { flattenExtensions, type AnyExtension, type Extensions } from '@tiptap/core';
 import CharacterCount from '@tiptap/extension-character-count';
-import Emoji, { emojis } from '@tiptap/extension-emoji';
+import { emojis } from '@tiptap/extension-emoji';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import Subscript from '@tiptap/extension-subscript';
@@ -15,7 +15,12 @@ import StarterKit from '@tiptap/starter-kit';
 
 import type { DotMessageService } from '@dotcms/data-access';
 
+import {
+    type MediaUploaders,
+    createAssetUploaderExtension
+} from './asset-uploader/asset-uploader.extension';
 import { createBlockGutterDragHandle } from './block-gutter.extension';
+import { createDotEmoji } from './dot-emoji.extension';
 import { IndentExtension } from './indent.extension';
 import { DotLink } from './link.extension';
 import { AIContent } from './nodes/ai-content.extension';
@@ -25,10 +30,7 @@ import { createDotContentlet } from './nodes/contentlet/contentlet.extension';
 import { GridBlock, GridColumn } from './nodes/grid.extension';
 import { DotImage } from './nodes/image.extension';
 import { UnsupportedBlock } from './nodes/unsupported-block.extension';
-import {
-    createUploadPlaceholderExtension,
-    type UploadPlaceholderMediaType
-} from './nodes/upload-placeholder.extension';
+import { type UploadPlaceholderMediaType } from './nodes/upload-placeholder.extension';
 import { Video } from './nodes/video.extension';
 import { SelectionPreserveExtension } from './selection-preserve.extension';
 import { createSlashCommandExtension } from './slash-command.extension';
@@ -40,12 +42,20 @@ import { EditorPopoverService } from '../services/editor-popover.service';
 
 import type { SlashMenuService } from '../components/slash-menu/slash-menu.service';
 
+/**
+ * Builds the editor's extension set for a field.
+ *
+ * @param uploaders How dropped and pasted files reach dotCMS; empty where the host cannot
+ * upload, in which case drops and pastes of files are ignored and pasted `data:` images are
+ * dropped as before.
+ */
 export function createEditorExtensions(
     menuService: SlashMenuService,
     allowedBlocks: string[] | undefined,
     injector: Injector,
     dotMessageService: DotMessageService,
-    remoteExtensions: AnyExtension[] = []
+    remoteExtensions: AnyExtension[] = [],
+    uploaders: MediaUploaders = {}
 ): Extensions {
     const t = (key: string, ...args: string[]) => dotMessageService.get(key, ...args);
     const uploadCopy = {
@@ -56,13 +66,16 @@ export function createEditorExtensions(
             )
     };
     /**
-     * Only gate a REGISTRATION with this if the key is selectable in Allowed Blocks — that
-     * list comes from `getEditorBlockOptions()`, which offers block nodes only. `link`,
-     * `emoji` and `youtube` are not in it, so gating them dropped the extension on every
-     * restricted field instead of restricting anything: `link` (a mark) aborted
-     * `Node.fromJSON` for the whole document, `emoji`/`youtube` resurfaced as
-     * `Unsupported block (…)`. Those three are registered unconditionally and gate their
-     * authoring paths instead (#37175).
+     * Only gate with this if the key is selectable in Allowed Blocks — that list comes from
+     * `getEditorBlockOptions()`, which offers block nodes only. `link`, `emoji` and `youtube`
+     * are not in it, so gating their REGISTRATION dropped the extension on every restricted
+     * field instead of restricting anything: `link` (a mark) aborted `Node.fromJSON` for the
+     * whole document, `emoji`/`youtube` resurfaced as `Unsupported block (…)` (#37175).
+     *
+     * The same reasoning applies to their AUTHORING paths, which #37175 left gated: a key the
+     * settings UI cannot produce is never a configuration, only a misfire. `emoji` was ungated
+     * in #37340 and `link` in #36351; both are now unconditional. `youtube` is the last of the
+     * three still gated (its "Add asset by URL" tab) — a known defect, tracked separately.
      */
     const has = (name: string): boolean => !allowedBlocks || allowedBlocks.includes(name);
 
@@ -126,12 +139,17 @@ export function createEditorExtensions(
               ]
             : []),
         ...(has('image') ? [DotImage] : []),
-        // Always registered — see `has()`. Authoring gate: toolbar button + the two flags below.
+        // Always registered — see `has()` — and never gated at all (#36351). `link` is not
+        // selectable in Allowed Blocks, so the old `has('link')` gate on the two flags below was
+        // true ONLY on an unrestricted field: restricting any block silently killed auto-linking
+        // and link-on-paste, and hid the toolbar button, with no admin having chosen it.
+        // Passed explicitly rather than left to the upstream defaults so a TipTap bump cannot
+        // reintroduce the reported defect.
         DotLink.configure({
             openOnClick: false,
             enableClickSelection: true,
-            autolink: has('link'),
-            linkOnPaste: has('link'),
+            autolink: true,
+            linkOnPaste: true,
             HTMLAttributes: {
                 rel: 'noopener noreferrer',
                 target: '_self'
@@ -158,7 +176,9 @@ export function createEditorExtensions(
         // carry `highlight` marks. Without it here TipTap aborts the whole document (#37145).
         // Styled via `.tiptap mark` in editor.component.css rather than inline HTMLAttributes.
         Highlight,
-        createUploadPlaceholderExtension(uploadCopy),
+        // Drop, paste and base64-paste uploads plus the placeholder node they share. Not behind
+        // `has(...)`: it only ever creates nodes that are in the schema.
+        createAssetUploaderExtension({ uploaders, placeholderCopy: uploadCopy }),
         // Legacy-compat only: the new editor never creates `aiContent` nodes (AI Content
         // dialog inserts the generated HTML via `commands.insertContent` so it becomes
         // normal paragraph/heading/list nodes). This registration exists so customer
@@ -166,21 +186,19 @@ export function createEditorExtensions(
         // `aiContent` block — still parses and renders. Removing it would silently drop
         // those blocks on load. See `ai-content.extension.ts` for details.
         AIContent,
-        // Always registered — see `has()`. Authoring gate: toolbar button + `enableEmoticons`.
-        // The `:` suggestion trigger is inert by design; insertion goes through the popover.
-        Emoji.configure({
+        // Always registered, and NOTHING creates an `emoji` node any more — the registration
+        // exists so stored nodes still parse, and so `:shortcode:`/`:)` can resolve a character.
+        // See `dot-emoji.extension.ts` for the full reasoning (#37340).
+        //
+        // `enableEmoticons` is no longer gated on `has('emoji')`: `emoji` is not selectable in
+        // Allowed Blocks at all (`getEditorBlockOptions()` offers block nodes only, #37175), so
+        // that gate was true ONLY on fields with no restriction — silently removing `:)` from
+        // every field that restricted anything else. Nobody configured that.
+        //
+        // The inert `suggestion` block is gone with the Suggestion plugin it configured.
+        createDotEmoji(menuService).configure({
             emojis,
-            enableEmoticons: has('emoji'),
-            suggestion: {
-                char: ':',
-                items: () => [],
-                render: () => ({
-                    onStart: () => undefined,
-                    onUpdate: () => undefined,
-                    onKeyDown: () => false,
-                    onExit: () => undefined
-                })
-            }
+            enableEmoticons: true
         }),
         SelectionPreserveExtension,
         createSlashCommandExtension(menuService)

@@ -1,4 +1,5 @@
 import { EventCreator, Events, injectDispatch } from '@ngrx/signals/events';
+import { of } from 'rxjs';
 
 import { formatDate } from '@angular/common';
 import {
@@ -15,11 +16,12 @@ import {
     untracked,
     viewChild
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
     applyEach,
     disabled,
     form,
+    FormRoot,
     max,
     maxDate,
     maxLength,
@@ -27,20 +29,27 @@ import {
     minDate,
     validate
 } from '@angular/forms/signals';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { MessageModule } from 'primeng/message';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { SkeletonModule } from 'primeng/skeleton';
 
+import { map, take } from 'rxjs/operators';
+
 import {
     DotExperimentsService,
+    DotPropertiesService,
     DotMessageDisplayService,
     DotMessageService,
     DotPagesBrowserService
 } from '@dotcms/data-access';
 import {
+    CONFIGURE_SECTION_PARAM,
+    ExperimentsConfigProperties,
+    CONFIGURE_SECTION_VARIANTS,
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
@@ -50,21 +59,30 @@ import {
     MAX_INPUT_DESCRIPTIVE_LENGTH,
     MAX_INPUT_TITLE_LENGTH
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
+import { GlobalStore } from '@dotcms/store';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import { DotExperimentsConfigureDetailsComponent } from './components/dot-experiments-configure-details/dot-experiments-configure-details.component';
-import { DotExperimentsConfigureFooterComponent } from './components/dot-experiments-configure-footer/dot-experiments-configure-footer.component';
+import {
+    DotExperimentsConfigureFooterComponent,
+    LIMITED_MODE_START_CONFIRM_KEY
+} from './components/dot-experiments-configure-footer/dot-experiments-configure-footer.component';
 import { DotExperimentsConfigureGoalComponent } from './components/dot-experiments-configure-goal/dot-experiments-configure-goal.component';
 import { DotExperimentsConfigureHeaderComponent } from './components/dot-experiments-configure-header/dot-experiments-configure-header.component';
 import { DotExperimentsConfigurePageComponent } from './components/dot-experiments-configure-page/dot-experiments-configure-page.component';
 import { DotExperimentsConfigureSchedulingComponent } from './components/dot-experiments-configure-scheduling/dot-experiments-configure-scheduling.component';
 import { DotExperimentsConfigureVariantsComponent } from './components/dot-experiments-configure-variants/dot-experiments-configure-variants.component';
 
+import { DotExperimentsRouter } from '../services/dot-experiments-router.service';
 import {
-    EXPERIMENTS_URL,
+    CONFIGURE_TITLE_KEY,
+    EXPERIMENT_ID_ROUTE_PARAM,
+    LIST_TITLE_KEY,
     MAX_TRAFFIC_ALLOCATION,
     MIN_PROGRESS_BAR_VISIBLE_MS,
     MIN_TRAFFIC_ALLOCATION,
+    NEW_EXPERIMENT_TITLE_KEY,
     SUCCESS_MESSAGE_LIFE,
     TOTAL_WEIGHT,
     WEIGHTS_TOTAL_ERROR_KIND
@@ -73,6 +91,12 @@ import { ConfigureFormModel, SchedulingDateBounds } from '../shared/models';
 import { dotExperimentsConfigureApiEvents } from '../store/dot-experiments-configure-api.events';
 import { dotExperimentsConfigurePageEvents } from '../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../store/dot-experiments-configure.store';
+import {
+    EXPERIMENTS_LIST_CRUMB_ID,
+    experimentConfigureCrumb,
+    experimentsListCrumb,
+    putCrumbOnTrail
+} from '../util/dot-experiments-breadcrumb.util';
 import {
     ConfigureFormSource,
     emptyConfigureForm,
@@ -83,12 +107,27 @@ import {
     toVariantWeightRows
 } from '../util/dot-experiments-configure-form.util';
 import { totalWeight } from '../util/dot-experiments-configure.util';
+import { listReturnParams } from '../util/dot-experiments-list.util';
 
 /** Number of card placeholders drawn while an existing experiment loads. */
 const SKELETON_CARDS = [0, 1, 2];
 
 /** Route `data` key `DotExperimentsConfigResolver` publishes the backend's duration limits under. */
 const CONFIG_ROUTE_DATA_KEY = 'config';
+/** The Variants card, as this screen addresses it — the anchor lives on the element it scrolls. */
+const VARIANTS_SECTION_SELECTOR = '[data-testid="configure-section-variants"]';
+
+/**
+ * Which experiment, in which state, the form is currently filled from — `null` for no experiment
+ * at all, which is the creation form.
+ *
+ * The status is part of the identity on purpose: it is what tells a transition's answer apart from
+ * an autosave's, and only the former may refill the form under the user. See
+ * {@link DotExperimentsConfigureComponent.hydrateFormEffect}.
+ */
+function formKeyOf(experiment: DotExperiment | null | undefined): string | null {
+    return experiment ? `${experiment.id}:${experiment.status}` : null;
+}
 
 /**
  * Shell of the Configure screen, routed on both `/experiments/new` and
@@ -117,7 +156,9 @@ const CONFIG_ROUTE_DATA_KEY = 'config';
 @Component({
     selector: 'dot-experiments-configure',
     imports: [
+        FormRoot,
         ConfirmDialogModule,
+        MessageModule,
         ProgressBarModule,
         SkeletonModule,
         DotEmptyContainerComponent,
@@ -133,17 +174,34 @@ const CONFIG_ROUTE_DATA_KEY = 'config';
     templateUrl: './dot-experiments-configure.component.html',
     styleUrl: './dot-experiments-configure.component.scss',
     providers: [
+        // Before the store: the store injects it for the post-create swap.
+        DotExperimentsRouter,
         DotExperimentsConfigureStore,
         ConfirmationService,
         DotExperimentsService,
         DotPagesBrowserService
     ],
-    host: { class: 'flex flex-col h-full min-h-0 overflow-hidden' }
+    host: {
+        class: 'flex flex-col h-full min-h-0 overflow-hidden animate-fadein animate-duration-180 animate-ease-out motion-reduce:animate-none'
+    }
 })
 export class DotExperimentsConfigureComponent {
     readonly store = inject(DotExperimentsConfigureStore);
 
     readonly CONFIRM_KEY = CONFIGURATION_CONFIRM_DIALOG_KEY;
+    readonly LIMITED_MODE_START_CONFIRM_KEY = LIMITED_MODE_START_CONFIRM_KEY;
+
+    /**
+     * Whether the install is in limited mode (`FEATURE_FLAG_EXPERIMENTS=false`).
+     * Scheduling is not allowed in limited mode — only immediate-start experiments.
+     * Resolved once per screen opening; a flag change requires a restart anyway.
+     */
+    readonly $isLimitedMode = toSignal(
+        inject(DotExperimentsService)
+            .healthCheck()
+            .pipe(map((r) => r.tier === 'limited')),
+        { initialValue: false }
+    );
 
     /**
      * Public so `experimentsUnsavedChangesGuard` can raise its prompt on the same instance that
@@ -177,6 +235,19 @@ export class DotExperimentsConfigureComponent {
     readonly $isGated = computed<boolean>(() => this.store.isNew());
 
     /**
+     * Variants are gated for one more reason than the rest of the form: a confirmed page change in
+     * flight.
+     *
+     * They are copies of the page, and the server takes `pageId` only while the variants are the
+     * control alone — so a variant created before the change lands is created under the old page,
+     * and from then on the change can never be written. The other cards do not depend on the page
+     * and stay live (#37005).
+     */
+    readonly $isVariantsGated = computed<boolean>(
+        () => this.$isGated() || this.store.pageChanging()
+    );
+
+    /**
      * Indeterminate bar under the header while a request is on the wire — the same affordance UVE
      * gives its autosave.
      *
@@ -205,23 +276,84 @@ export class DotExperimentsConfigureComponent {
         untracked(() => this.#trackSavingBar(isSaving));
     });
 
+    /**
+     * Identifier of the experiment this screen is on, or `null` while the draft has none.
+     *
+     * Read from the store first and from the address second, because the two lead by turns:
+     * creating the draft fills the store immediately and rewrites the URL right after, and a
+     * screen entered on an existing experiment has the id in the address before the load answers.
+     * One derivation, so the crumb's label and its address can never disagree about which of the
+     * screen's two states it is in.
+     */
+    readonly $experimentId = computed<string | null>(
+        () =>
+            this.store.experiment()?.id ??
+            this.#route.snapshot.paramMap.get(EXPERIMENT_ID_ROUTE_PARAM)
+    );
+
+    /**
+     * Puts this screen on the breadcrumb trail (#37005).
+     *
+     * Without it the trail ended at the list's crumb, so the shell rendered "Experiments List" as
+     * the title of a screen that is not the list — and the list, which *is* a level above, was
+     * missing from the path instead of sitting in it.
+     *
+     * The label is the screen, not the experiment: the experiment is already named right below, in
+     * the header, next to its status and its page. Naming it twice on the same screen says nothing
+     * the second time, and the crumb is the one place that has to say *where* you are — which,
+     * before the draft exists, is the New Experiment screen rather than the Configure one.
+     *
+     * An effect rather than a one-shot, because the screen changes which of those two it is
+     * without being left: creating the draft swaps `/experiments/new` for the experiment's own
+     * address. The crumb keeps one id across that swap, and `putCrumbOnTrail` rewrites the crumb
+     * already carrying it, so it does not stack a second one.
+     */
+    protected readonly syncBreadcrumbEffect = effect(() => {
+        const experimentId = this.$experimentId();
+        const label = this.#dotMessageService.get(
+            experimentId ? CONFIGURE_TITLE_KEY : NEW_EXPERIMENT_TITLE_KEY
+        );
+
+        untracked(() => this.#syncBreadcrumb(label, experimentId));
+    });
+
     readonly #route = inject(ActivatedRoute);
-    readonly #router = inject(Router);
+    /** Present only inside the UVE panel (#37478); its presence is what makes this panel-mode. */
+    readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
+    readonly #experimentsRouter = inject(DotExperimentsRouter);
     readonly #events = inject(Events);
     /** Only the weights are reported from here; everything else goes through `bindFormDiff`. */
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
     readonly #injector = inject(Injector);
     readonly #destroyRef = inject(DestroyRef);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #globalStore = inject(GlobalStore);
     readonly #locale = inject(LOCALE_ID);
 
     /** Same format the pickers' own copy uses, so the bounds read the same wherever they appear. */
     readonly #formatDate = (value: Date) => formatDate(value, 'medium', this.#locale);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
 
-    /** How long an experiment may run. Read once: a modal-free screen outlives no resolve. */
-    readonly #durationBounds = resolveDurationBounds(
-        this.#route.snapshot.data[CONFIG_ROUTE_DATA_KEY]
+    /**
+     * How long an experiment may run.
+     *
+     * The portlet's route resolves these properties before the screen exists, so it reads them
+     * once off the route data. The panel has no route to resolve them, so the screen asks for them
+     * itself — the same two keys, the same service the resolver uses. Without that it silently
+     * fell back to the 7-and-90-day defaults and offered a window the install never configured
+     * (#37478).
+     *
+     * A signal because the panel's answer arrives after construction; the portlet's is there from
+     * the first read and never changes.
+     */
+    readonly #durationBounds = toSignal(
+        this.#panel
+            ? inject(DotPropertiesService).getKeys([
+                  ExperimentsConfigProperties.EXPERIMENTS_MIN_DURATION,
+                  ExperimentsConfigProperties.EXPERIMENTS_MAX_DURATION
+              ])
+            : of(this.#route.snapshot.data[CONFIG_ROUTE_DATA_KEY]),
+        { initialValue: undefined }
     );
 
     /** "Now" for the whole session. The pickers offer nothing before it. */
@@ -239,11 +371,12 @@ export class DotExperimentsConfigureComponent {
      */
     protected readonly $schedulingBounds = computed<SchedulingDateBounds>(() => {
         const from = this.$model().scheduling.startDate?.getTime() ?? this.#now.getTime();
+        const bounds = resolveDurationBounds(this.#durationBounds());
 
         return {
             initialStartDate: this.#initialStartDate,
-            minEndDate: new Date(from + this.#durationBounds.minDuration),
-            maxEndDate: new Date(from + this.#durationBounds.maxDuration)
+            minEndDate: new Date(from + bounds.minDuration),
+            maxEndDate: new Date(from + bounds.maxDuration)
         };
     });
 
@@ -385,32 +518,39 @@ export class DotExperimentsConfigureComponent {
     };
 
     /**
-     * Which experiment's values are in the form. `null` means an empty creation form — either the
-     * screen opened on `/experiments/new`, or a URL took it back there.
+     * Which experiment's values are in the form, and in which state — see {@link formKeyOf}.
+     * `null` means an empty creation form: the screen opened on `/experiments/new`, or a URL took
+     * it back there.
      */
-    readonly #hydratedExperimentId = signal<string | null>(null);
+    readonly #hydratedFormKey = signal<string | null>(null);
 
     /**
-     * Keeps the form on whichever experiment the store is showing, filling it once per experiment.
+     * Keeps the form on whichever experiment the store is showing, filling it once per experiment
+     * *state*.
      *
-     * Keyed on the identifier rather than on the values: every autosave response replaces
-     * `experiment`, and re-reading it would drop characters typed while the PATCH was travelling.
+     * Not on the values: every autosave response replaces `experiment`, and re-reading it would
+     * drop characters typed while the PATCH was travelling. But not on the identifier alone
+     * either — a status transition is the one response that is not an autosave. The server dates
+     * the experiment as part of running it, so an experiment started with both pickers empty comes
+     * back carrying a real window, and keying on the id alone left the card locked showing the two
+     * empty pickers it was started with. Nothing can be in flight at that moment for the refill to
+     * lose: the transition is what locks the card.
      *
-     * A draft created on this screen is claimed as hydrated the moment its POST answers (see
-     * `#listenForActionSuccess`), which is what keeps this from reading it back: the form is what
-     * created it, and a goal or a schedule entered before the name is still on its way to the server.
+     * A draft created on this screen is claimed as hydrated the moment its POST answers (see the
+     * constructor), which is what keeps this from reading it back: the form is what created it, and
+     * a goal or a schedule entered before the name is still on its way to the server.
      */
     protected readonly hydrateFormEffect = effect(() => {
-        const experimentId = this.store.experiment()?.id ?? null;
+        const formKey = formKeyOf(this.store.experiment());
 
-        if (experimentId === untracked(this.#hydratedExperimentId)) {
+        if (formKey === untracked(this.#hydratedFormKey)) {
             return;
         }
 
         untracked(() => {
-            this.#hydratedExperimentId.set(experimentId);
+            this.#hydratedFormKey.set(formKey);
             this.$model.set(
-                experimentId ? toConfigureFormModel(this.#formSource()) : emptyConfigureForm()
+                formKey ? toConfigureFormModel(this.#formSource()) : emptyConfigureForm()
             );
         });
     });
@@ -455,6 +595,33 @@ export class DotExperimentsConfigureComponent {
      * `untracked` still guards the dispatch: the store re-seeds the form from every response, so a
      * binding that read anything else would turn one save into a round trip.
      */
+    /**
+     * Clears both scheduling dates when in limited mode so the autosave PATCH never persists
+     * a scheduling that would cause ExperimentsAPIImpl.emptyScheduling() to return false,
+     * which would route the experiment to SCHEDULED instead of RUNNING on _start.
+     *
+     * Only runs for DRAFT experiments: RUNNING, ENDED, and SCHEDULED experiments already have
+     * real dates committed by startLimitedScheduling(). Blanking them would hide the actual
+     * run window in the UI and — because $hasUnsavedChanges is not gated by the lock — would
+     * trigger a false "unsaved changes" prompt when the user tries to leave a read-only screen.
+     */
+    protected readonly clearSchedulingInLimitedModeEffect = effect(() => {
+        if (!this.$isLimitedMode() || this.store.$isLocked()) {
+            return;
+        }
+
+        const model = this.$model();
+
+        if (model.scheduling.startDate !== null || model.scheduling.endDate !== null) {
+            untracked(() => {
+                this.$model.update((m) => ({
+                    ...m,
+                    scheduling: { startDate: null, endDate: null }
+                }));
+            });
+        }
+    });
+
     protected readonly mirrorFormEffect = effect(() => {
         const value = this.$model();
 
@@ -472,16 +639,68 @@ export class DotExperimentsConfigureComponent {
     constructor() {
         this.#listenForActionSuccess();
         this.#scrollToFirstErrorOnFailedStart();
+        this.#scrollToRequestedSection();
 
         // The form created this draft, so it already holds it: claiming it here is what stops
         // `hydrateFormEffect` from reading the POST's answer back over what is still being typed.
         this.#events
             .on(dotExperimentsConfigureApiEvents.createSucceeded)
             .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(({ payload }) => this.#hydratedExperimentId.set(payload.id));
+            .subscribe(({ payload }) => {
+                this.#hydratedFormKey.set(formKeyOf(payload));
+
+                /**
+                 * And the screen follows the experiment it just made — a URL swap in the portlet,
+                 * a view change in the panel, decided in one place (#37478, FR-016).
+                 *
+                 * Here rather than in the store, which is where it used to live: the store would
+                 * have to inject the navigation, the navigation reaches the panel store, and
+                 * Angular reports that as a circular dependency. It also leaves the rule the rest
+                 * of this portlet already follows — stores hold state, components move between
+                 * screens — true without an exception.
+                 */
+                this.#experimentsRouter.afterCreated(payload.id);
+            });
 
         // A save that settled as the screen was left would otherwise fire into a dead component.
         this.#destroyRef.onDestroy(() => this.#cancelProgressBarHide());
+    }
+
+    /**
+     * Lands on the section the caller asked for, instead of at the top of the form (#37005).
+     *
+     * Only the variant round-trip asks: it starts and ends at the Variants card, three cards down,
+     * and returning to the top of the form loses the reader's place. Everything else &mdash; the
+     * list, creating one &mdash; wants the top, and gets it by not asking.
+     *
+     * Read once from the snapshot, and keyed on `loadSucceeded` rather than on a signal: the cards
+     * only exist once the experiment is in, so searching earlier finds nothing. Same shape, and
+     * same reason, as {@link #scrollToFirstErrorOnFailedStart}.
+     */
+    #scrollToRequestedSection(): void {
+        // Two sources, one question. The portlet is asked through `?section=`; the panel has no
+        // address to be asked in, so the round trip's return says it on the panel store instead
+        // (#37478, FR-023).
+        const requested =
+            this.#panel?.section() ??
+            this.#route.snapshot.queryParamMap.get(CONFIGURE_SECTION_PARAM);
+
+        if (requested !== CONFIGURE_SECTION_VARIANTS) {
+            return;
+        }
+
+        this.#events
+            .on(dotExperimentsConfigureApiEvents.loadSucceeded)
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() => {
+                afterNextRender(
+                    () =>
+                        this.$body()
+                            ?.nativeElement.querySelector<HTMLElement>(VARIANTS_SECTION_SELECTOR)
+                            ?.scrollIntoView({ block: 'start' }),
+                    { injector: this.#injector }
+                );
+            });
     }
 
     /**
@@ -505,6 +724,40 @@ export class DotExperimentsConfigureComponent {
                     injector: this.#injector
                 });
             });
+    }
+
+    /**
+     * Appends this screen's crumb, and the list's above it when the trail does not already carry
+     * one.
+     *
+     * The list's crumb is normally already there — it puts itself on the trail when it renders,
+     * and this screen is reached through it. It is not there on a reload of a deep link into a
+     * fresh session, and the level above still belongs in the path, so it is added rather than
+     * assumed. Guarded on the trail's contents rather than on an id match: `addNewBreadcrumb` only
+     * replaces the *last* crumb, so re-adding the list while this screen's crumb sits on top of it
+     * would append a second copy at the end.
+     *
+     * Both crumbs keep the page narrowing in their address, for the same reason the back button
+     * carries it: a return that dropped the filter would leave the screen it returns to pointing
+     * at the site-wide list.
+     */
+    #syncBreadcrumb(label: string, experimentId: string | null): void {
+        const pageFilter = listReturnParams(this.#route.snapshot.queryParams);
+        const hasListCrumb = this.#globalStore
+            .breadcrumbs()
+            .some(({ id }) => id === EXPERIMENTS_LIST_CRUMB_ID);
+
+        if (!hasListCrumb) {
+            putCrumbOnTrail(
+                this.#globalStore,
+                experimentsListCrumb(this.#dotMessageService.get(LIST_TITLE_KEY), pageFilter)
+            );
+        }
+
+        putCrumbOnTrail(
+            this.#globalStore,
+            experimentConfigureCrumb(label, experimentId, pageFilter)
+        );
     }
 
     /**
@@ -559,9 +812,14 @@ export class DotExperimentsConfigureComponent {
         firstError?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
-    /** Leaves the Configure screen for the list. */
+    /**
+     * Leaves the Configure screen for the list it was opened from, narrowing included (FR-021c).
+     *
+     * The error state's only way out, and it has the same job as the header's back arrow — so it
+     * answers with the same address. See {@link listReturnParams}.
+     */
     onBackToList(): void {
-        this.#router.navigate([EXPERIMENTS_URL]);
+        this.#experimentsRouter.toList();
     }
 
     /** What the form is filled from, and diffed against. */

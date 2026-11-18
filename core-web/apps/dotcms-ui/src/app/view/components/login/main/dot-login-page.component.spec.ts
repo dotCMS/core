@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -18,7 +19,7 @@ import { DotLoginPageStateService } from '../shared/services/dot-login-page-stat
 
 @Injectable()
 class MockLoginPageStateService {
-    get = jest.fn().mockReturnValue(of(mockLoginFormResponse));
+    get = vi.fn().mockReturnValue(of(mockLoginFormResponse));
 }
 
 describe('DotLoginPageComponent', () => {

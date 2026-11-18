@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import {
     DotFormatDateService,
@@ -32,25 +38,25 @@ const ENVIRONMENTS = [
 describe('DotWorkflowPushPublishComponent', () => {
     let spectator: Spectator<DotWorkflowPushPublishComponent>;
 
-    const getFilters = jest.fn();
-    const getTimeZones = jest.fn();
+    const getFilters = vi.fn();
+    const getTimeZones = vi.fn();
 
     const createComponent = createComponentFactory({
         component: DotWorkflowPushPublishComponent,
         providers: [
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key: string) => key)
             }),
             mockProvider(DotcmsConfigService, { getTimeZones }),
             // The embedded env selector loads its own options.
             mockProvider(PushPublishService, {
-                getEnvironments: jest.fn(() => of(ENVIRONMENTS)),
+                getEnvironments: vi.fn(() => of(ENVIRONMENTS)),
                 lastEnvironmentPushed: null
             }),
             // Formats to the `yyyy-MM-dd` / `HH-mm` pair the backend expects; stubbed so the
             // assertions are about which value is formatted, not about date-fns.
             mockProvider(DotFormatDateService, {
-                format: jest
+                format: vi
                     .fn()
                     .mockImplementation((_date: Date, pattern: string) =>
                         pattern === 'HH-mm' ? '10-30' : '2026-08-12'
@@ -62,7 +68,7 @@ describe('DotWorkflowPushPublishComponent', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         getFilters.mockReturnValue(of(FILTERS));
         getTimeZones.mockReturnValue(of(TIMEZONES));
     });
@@ -214,9 +220,9 @@ describe('DotWorkflowPushPublishComponent', () => {
         });
 
         it('should default the timezone to the browser zone when the server knows it', () => {
-            jest.spyOn(Intl, 'DateTimeFormat').mockReturnValue({
-                resolvedOptions: () => ({ timeZone: 'Europe/Madrid' })
-            } as unknown as Intl.DateTimeFormat);
+            vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+                timeZone: 'Europe/Madrid'
+            } as Intl.ResolvedDateTimeFormatOptions);
 
             spectator = createComponent();
             const values = captureValues();
@@ -227,9 +233,9 @@ describe('DotWorkflowPushPublishComponent', () => {
 
         it('should leave the timezone unset when the server does not know the browser zone', () => {
             // Better unset than a zone the backend would reject.
-            jest.spyOn(Intl, 'DateTimeFormat').mockReturnValue({
-                resolvedOptions: () => ({ timeZone: 'Mars/Olympus_Mons' })
-            } as unknown as Intl.DateTimeFormat);
+            vi.spyOn(Intl.DateTimeFormat.prototype, 'resolvedOptions').mockReturnValue({
+                timeZone: 'Mars/Olympus_Mons'
+            } as Intl.ResolvedDateTimeFormatOptions);
 
             spectator = createComponent();
             const values = captureValues();

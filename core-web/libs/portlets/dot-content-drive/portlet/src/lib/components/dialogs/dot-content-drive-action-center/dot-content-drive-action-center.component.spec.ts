@@ -1,9 +1,17 @@
-import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/vitest';
+import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
+import { Mock, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { provideHttpClient } from '@angular/common/http';
-import { signal } from '@angular/core';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { computed, signal } from '@angular/core';
+import { By } from '@angular/platform-browser';
 
 import { MessageService } from 'primeng/api';
 
@@ -23,6 +31,7 @@ import { DotBulkActionView, DotContentDriveItem, DotEnvironment } from '@dotcms/
 import { DotBrowsingService, DotWorkflowAssignCommentComponent } from '@dotcms/ui';
 import { DotcmsConfigServiceMock } from '@dotcms/utils-testing';
 
+import { DotContentDriveActionMoveTargetComponent } from './components/dot-content-drive-action-move-target/dot-content-drive-action-move-target.component';
 import { DotContentDriveActionCenterComponent } from './dot-content-drive-action-center.component';
 
 import { DotContentDriveActionExecution } from '../../../shared/models';
@@ -46,6 +55,16 @@ const contentlet = (
 
 const folder = (inode: string): DotContentDriveItem =>
     ({ type: 'folder', inode, identifier: inode }) as unknown as DotContentDriveItem;
+
+/** A folder as drive search lists it: identifier, path and the viewer's rights as role names. */
+const folderRow = (identifier: string, path: string): DotContentDriveItem =>
+    ({
+        type: 'folder',
+        inode: identifier,
+        identifier,
+        path,
+        permissions: ['READ', 'EDIT', 'CAN_ADD_CHILDREN']
+    }) as unknown as DotContentDriveItem;
 
 const BULK_ACTIONS_RESPONSE = {
     schemes: [
@@ -166,6 +185,17 @@ describe('DotContentDriveActionCenterComponent', () => {
     const mockItems = signal<DotContentDriveItem[]>([]);
     // Owned by the store now, so the dialog reads it rather than tracking its own executing flag.
     const mockActionExecution = signal<DotContentDriveActionExecution | undefined>(undefined);
+    // Separate from the run above, because they answer different questions: that one names a
+    // run when there is exactly one, this one says whether anything is in flight at all. The
+    // dialog gates on the count, so with several runs it stays gated rather than opening up.
+    const mockActiveRunCount = signal(0);
+    // How many folders one duplicate or delete may carry, as the server advertises it. `null` is no
+    // ceiling advertised, which leaves the refusing to the server.
+    const mockFolderDuplicateMaxPaths = signal<number | null>(null);
+    const mockFolderDeleteMaxPaths = signal<number | null>(null);
+    // How many of those runs lock the dialog. Follows the count above unless a test says
+    // otherwise, since only a backgrounded run tells them apart.
+    const mockBlockingRunCountOverride = signal<number | undefined>(undefined);
     // Resolved once on portlet init, so the dialog reads it rather than fetching per open. `false`
     // is both the non-admin case and the still-loading one — see `isLockedByAnotherUser`.
     const mockCurrentUserIsAdmin = signal<boolean>(false);
@@ -173,6 +203,8 @@ describe('DotContentDriveActionCenterComponent', () => {
     // gates on it too. `undefined` is "not looked up yet" and reads as disabled; the mapping from a
     // lookup (empty list, or a failure) onto this flag is asserted in `withPushPublishEnvironments`.
     const mockHasPushPublishEnvironments = signal<boolean | undefined>(undefined);
+    /** Whether the author may add folders where they are browsing; gates Duplicate (#37062). */
+    const mockCanAddChildren = signal(true);
     // Where Content Drive is browsing. Only the hostname and path matter to this dialog.
     const mockCurrentSite = signal<{ hostname: string } | undefined>({
         hostname: 'demo.dotcms.com'
@@ -181,69 +213,106 @@ describe('DotContentDriveActionCenterComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotContentDriveActionCenterComponent,
+        // The move-target picker is stubbed. Rendered for real it constructs
+        // edit-content's HostFolderFiledStore, whose init pipes DotBrowsingService —
+        // and this spec's mock of that service returns shapes the store cannot read, so
+        // the store threw inside an effect on every test. rxjs reported it
+        // asynchronously, which Jest discarded and Vitest counts as an unhandled error.
+        //
+        // Stubbing rather than completing the mock: the picker has its own spec, and
+        // teaching this one another library's store semantics was what made the
+        // difference between the seeded destination surviving and being overwritten —
+        // behaviour these tests never actually exercised, because the store had already
+        // crashed before it could emit.
+        overrideComponents: [
+            [
+                DotContentDriveActionCenterComponent,
+                {
+                    remove: { imports: [DotContentDriveActionMoveTargetComponent] },
+                    add: { imports: [MockComponent(DotContentDriveActionMoveTargetComponent)] }
+                }
+            ]
+        ],
         providers: [
+            // Paired with the testing backend: a real HttpClient in jsdom dials
+            // localhost for every relative URL and the request dies with
+            // "socket hang up", asynchronously — Jest dropped that, Vitest counts it.
             provideHttpClient(),
+            provideHttpClientTesting(),
             mockProvider(DotContentDriveStore, {
                 selectedItems: mockSelectedItems,
                 items: mockItems,
                 actionExecution: mockActionExecution,
+                activeRunCount: mockActiveRunCount,
+                folderDuplicateMaxPaths: mockFolderDuplicateMaxPaths,
+                folderDeleteMaxPaths: mockFolderDeleteMaxPaths,
+                blockingRunCount: computed(
+                    () => mockBlockingRunCountOverride() ?? mockActiveRunCount()
+                ),
                 currentUserIsAdmin: mockCurrentUserIsAdmin,
                 hasPushPublishEnvironments: mockHasPushPublishEnvironments,
+                // Duplicate gates on where its copies can land, which the store answers as
+                // `$canDuplicateHere`. The browsed folder's own answer is pinned to allowed so a
+                // component reading it instead is caught.
+                $canAddChildren: signal(true),
+                $canDuplicateHere: mockCanAddChildren,
                 // The folder being browsed, which seeds the move destination picker.
                 currentSite: mockCurrentSite,
                 path: mockPath,
-                loadItems: jest.fn(),
-                setStatus: jest.fn(),
-                setSelectedItems: jest.fn(),
-                closeDialog: jest.fn(),
-                setDialogDrillDown: jest.fn(),
-                clearDialogDrillDown: jest.fn(),
-                executeQuickAction: jest.fn(),
-                executeWorkflowAction: jest.fn(),
-                executeAddToBundle: jest.fn(),
-                executePushPublish: jest.fn(),
-                executeRefresh: jest.fn()
+                loadItems: vi.fn(),
+                setStatus: vi.fn(),
+                setSelectedItems: vi.fn(),
+                closeDialog: vi.fn(),
+                setDialogDrillDown: vi.fn(),
+                clearDialogDrillDown: vi.fn(),
+                executeQuickAction: vi.fn(),
+                executeWorkflowAction: vi.fn(),
+                executeAddToBundle: vi.fn(),
+                executePushPublish: vi.fn(),
+                executeRefresh: vi.fn(),
+                executeFolderBulkDelete: vi.fn(),
+                executeDuplicate: vi.fn()
             }),
             // The trigger toast for a backgrounded reindex goes through PrimeNG's MessageService,
             // which in the app resolves to the shell's instance so the toast outlives this dialog.
-            mockProvider(MessageService, { add: jest.fn() }),
+            mockProvider(MessageService, { add: vi.fn() }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key: string) => key)
             }),
             // Pulled in by the Content Drive grid, which the action preview renders for real.
-            mockProvider(DotLanguagesService, { get: jest.fn(() => of([])) }),
+            mockProvider(DotLanguagesService, { get: vi.fn(() => of([])) }),
             // `DotcmsConfigServiceMock` has no `getTimeZones` (it lives in a separate mock), and the
             // push publish step loads timezones on init.
             mockProvider(DotcmsConfigService, {
                 ...new DotcmsConfigServiceMock(),
-                getTimeZones: jest.fn(() => of([]))
+                getTimeZones: vi.fn(() => of([]))
             }),
             // Backs the env selector embedded in the push publish step.
             mockProvider(PushPublishService, {
                 // Reads `pushPublishEnvironments` on every call rather than being re-programmed per
-                // test: `mockProvider` builds this `jest.fn` once for the whole file, and the
+                // test: `mockProvider` builds this `vi.fn` once for the whole file, and the
                 // `afterEach` `clearAllMocks` drops any `mockReturnValue` set on it, so only the
                 // first test in a block would see one. A closure over a mutable answer is immune.
-                getEnvironments: jest.fn(() => of(pushPublishEnvironments)),
+                getEnvironments: vi.fn(() => of(pushPublishEnvironments)),
                 lastEnvironmentPushed: null
             }),
-            mockProvider(DotRolesService, { get: jest.fn(() => of([])) }),
+            mockProvider(DotRolesService, { get: vi.fn(() => of([])) }),
             mockProvider(DotFormatDateService),
             // Pulled in by the folder picker's own store, which the move configuration step renders
             // for real. Mocked rather than stubbed out with a fake child component: whether that
             // component can actually be instantiated inside this dialog is the thing worth proving.
             mockProvider(DotHttpErrorManagerService),
             // Backs the bundle step's list of the current user's unsent bundles.
-            mockProvider(AddToBundleService, { getBundles: jest.fn(() => of([])) }),
+            mockProvider(AddToBundleService, { getBundles: vi.fn(() => of([])) }),
             mockProvider(DotCurrentUserService),
             mockProvider(DotBrowsingService, {
-                getSitesTreePath: jest.fn(() => of([])),
-                getSitesPage: jest.fn(() => of({ sites: [], total: 0 })),
+                getSitesTreePath: vi.fn(() => of([])),
+                getSitesPage: vi.fn(() => of({ sites: [], total: 0 })),
                 // Returns a real node, not `null`. This is what makes the picker's
                 // `ControlValueAccessor` actually push a value outward on load — the emission that
                 // silently overwrote a chosen destination when the step was re-created. A `null` here
                 // makes the whole class of bug invisible to these tests.
-                getCurrentSiteAsTreeNodeItem: jest.fn(() =>
+                getCurrentSiteAsTreeNodeItem: vi.fn(() =>
                     of({
                         key: 'site-1',
                         label: 'demo.dotcms.com',
@@ -271,8 +340,13 @@ describe('DotContentDriveActionCenterComponent', () => {
             contentlet({ inode: 'inode-2', live: true })
         ]);
         mockActionExecution.set(undefined);
+        mockActiveRunCount.set(0);
+        mockBlockingRunCountOverride.set(undefined);
+        mockFolderDuplicateMaxPaths.set(null);
+        mockFolderDeleteMaxPaths.set(null);
         mockCurrentUserIsAdmin.set(false);
         mockHasPushPublishEnvironments.set(false);
+        mockCanAddChildren.set(true);
         pushPublishEnvironments = [];
         mockCurrentSite.set({ hostname: 'demo.dotcms.com' });
         mockPath.set('/blogs');
@@ -282,17 +356,17 @@ describe('DotContentDriveActionCenterComponent', () => {
         store = spectator.inject(DotContentDriveStore, true);
         workflowsActionsService = spectator.inject(DotWorkflowsActionsService, true);
 
-        jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
+        vi.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
             of(BULK_ACTIONS_RESPONSE)
         );
-        jest.spyOn(store, 'closeDialog');
-        jest.spyOn(store, 'loadItems');
+        vi.spyOn(store, 'closeDialog');
+        vi.spyOn(store, 'loadItems');
     });
 
     afterEach(() => {
         // The store mock is shared across tests; without this, call counts accumulate and
         // "should not have been called" assertions see calls from earlier tests.
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     /** Renders the dialog and arms the plain (no extra input) workflow action. */
@@ -452,7 +526,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should show the empty state when no scheme exposes actions', () => {
-            jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
+            vi.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
                 of({ schemes: [] })
             );
 
@@ -462,7 +536,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should show an inline error when the lookup fails', () => {
-            jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
+            vi.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
                 throwError(() => new Error('boom'))
             );
 
@@ -498,18 +572,15 @@ describe('DotContentDriveActionCenterComponent', () => {
     });
 
     describe('folders in the selection', () => {
-        it('should say which actions the folders are limited to', () => {
+        it('should not claim the folders are limited to bundling and publishing', () => {
+            // Delete and Duplicate act on folders too, so that notice would be wrong.
             mockSelectedItems.set([contentlet({ inode: 'inode-1' }), folder('folder-1')]);
 
             spectator.detectChanges();
 
-            expect(spectator.query('[data-testid="folders-limited-message"]')).toBeTruthy();
-        });
-
-        it('should not show the notice when the selection has no folders', () => {
-            spectator.detectChanges();
-
-            expect(spectator.query('[data-testid="folders-limited-message"]')).toBeFalsy();
+            expect(spectator.query('[data-testid="action-center"]')?.textContent).not.toContain(
+                'content-drive.action-center.folders-limited'
+            );
         });
 
         it('should send folders and contentlets in one Add to Bundle call', () => {
@@ -528,21 +599,6 @@ describe('DotContentDriveActionCenterComponent', () => {
                 'id-1',
                 'folder-1'
             ]);
-        });
-
-        it('should render the notice statically, with no entrance animation', () => {
-            // The notice is present the moment the dialog opens, and PrimeNG's Message animates its
-            // own height from zero over 300ms with no way to opt out through the component — which
-            // read as the notice arriving late and shoving the action list down. `no-enter-motion` is
-            // what the component's styles hook onto to suppress it.
-            mockSelectedItems.set([contentlet({ inode: 'inode-1' }), folder('folder-1')]);
-
-            spectator.detectChanges();
-
-            const notice = spectator.query('[data-testid="folders-limited-message"]');
-
-            expect(notice).toBeTruthy();
-            expect(notice?.classList.contains('no-enter-motion')).toBe(true);
         });
     });
 
@@ -666,6 +722,100 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executeQuickAction).not.toHaveBeenCalled();
         });
 
+        describe('Duplicate', () => {
+            const ALPHA = folderRow('f-alpha', '/blogs/alpha/');
+            const BETA = folderRow('f-beta', '/blogs/beta/');
+
+            beforeEach(() => {
+                mockItems.set([ALPHA, BETA]);
+                mockSelectedItems.set([ALPHA, BETA]);
+            });
+
+            it('should not offer Duplicate when the author cannot add folders where they are browsing', () => {
+                mockCanAddChildren.set(false);
+                spectator.detectChanges();
+
+                expect(spectator.query('[data-testid="quick-action-DUPLICATE"]')).toBeNull();
+            });
+
+            it('should leave out a folder the author cannot read, and submit only the others', () => {
+                const unreadable = {
+                    ...(BETA as object),
+                    permissions: ['EDIT']
+                } as unknown as DotContentDriveItem;
+                mockItems.set([ALPHA, unreadable]);
+                mockSelectedItems.set([ALPHA, unreadable]);
+
+                executeQuickAction('DUPLICATE');
+
+                expect(store.executeDuplicate).toHaveBeenCalledWith(expect.any(String), [
+                    '//demo.dotcms.com/blogs/alpha/'
+                ]);
+            });
+
+            it('should go straight to the preview, with nothing to configure and no destination', () => {
+                openQuickActionPreview('DUPLICATE');
+
+                expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+                // The configure panel stays in the page, hidden, so what proves there was nothing to
+                // configure is that it offers no Continue and holds neither destination picker.
+                expect(spectator.query('[data-testid="action-configure-continue"]')).toBeNull();
+                expect(spectator.query('[data-testid="action-configure-move-target"]')).toBeNull();
+                expect(
+                    spectator.query('[data-testid="action-configure-bundle-target"]')
+                ).toBeNull();
+            });
+
+            it("should execute through its own store method with the folders' site-qualified paths", () => {
+                executeQuickAction('DUPLICATE');
+
+                expect(store.executeDuplicate).toHaveBeenCalledWith(expect.any(String), [
+                    '//demo.dotcms.com/blogs/alpha/',
+                    '//demo.dotcms.com/blogs/beta/'
+                ]);
+                expect(store.executeQuickAction).not.toHaveBeenCalled();
+            });
+
+            it('should send only the folders left checked in the preview', () => {
+                openQuickActionPreview('DUPLICATE');
+                toggleRow(0);
+                spectator.click('[data-testid="action-preview-execute"]');
+                spectator.detectChanges();
+
+                expect(store.executeDuplicate).toHaveBeenCalledWith(expect.any(String), [
+                    '//demo.dotcms.com/blogs/beta/'
+                ]);
+            });
+
+            it('should refuse with an error instead of submitting when no site is resolved', () => {
+                // Without a site the paths would come out as `///blogs/alpha/`. Delete refuses the
+                // same case, and so must this.
+                const messageService = spectator.inject(MessageService);
+                mockCurrentSite.set(undefined);
+
+                executeQuickAction('DUPLICATE');
+
+                expect(store.executeDuplicate).not.toHaveBeenCalled();
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'error',
+                        summary: 'content-drive.dialog.duplicate-folder.no-site'
+                    })
+                );
+            });
+
+            it('should not announce a start the server can still refuse', () => {
+                // The status indicator reports the run from submission until it ends, and a
+                // refusal ends it. A toast raised here stayed on screen beside "The duplicate did
+                // not start" whenever the server refused the run.
+                const messageService = spectator.inject(MessageService);
+
+                executeQuickAction('DUPLICATE');
+
+                expect(messageService.add).not.toHaveBeenCalled();
+            });
+        });
+
         it('should execute Refresh through its own store method, not the workflow fire', () => {
             // Refresh speaks inodes like Lock and Unlock but goes to a job-backed endpoint of its
             // own, so routing it through `executeQuickAction` would fire a system action that does
@@ -687,7 +837,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.click('[data-testid="action-preview-execute"]');
             spectator.detectChanges();
 
-            const [, inodes] = (store.executeRefresh as unknown as jest.Mock).mock.calls[0];
+            const [, inodes] = (store.executeRefresh as unknown as Mock).mock.calls[0];
 
             expect(inodes).toEqual(['inode-2']);
         });
@@ -833,8 +983,11 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             executeQuickAction('LOCK');
 
-            const [, , inodes] = (store.executeQuickAction as unknown as jest.Mock).mock
-                .calls[0] as [string, string, string[]];
+            const [, , inodes] = (store.executeQuickAction as unknown as Mock).mock.calls[0] as [
+                string,
+                string,
+                string[]
+            ];
 
             expect(advertised).toBe(1);
             expect(inodes).toHaveLength(advertised);
@@ -1331,7 +1484,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             const badge = spectator.query('[data-testid="action-preview-execute"] .p-badge');
             spectator.click('[data-testid="action-preview-execute"]');
 
-            const [, , contentletIds] = (store.executeWorkflowAction as unknown as jest.Mock).mock
+            const [, , contentletIds] = (store.executeWorkflowAction as unknown as Mock).mock
                 .calls[0] as [string, string, string[]];
 
             expect(contentletIds.length).toBe(Number(badge.textContent.trim()));
@@ -1379,7 +1532,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             it('should be inert while an action is in flight', () => {
                 // Driven from store state, not a local flag: a run started before this dialog
                 // instance existed must still lock the view.
-                mockActionExecution.set({ actionName: 'Send for Review', total: 2 });
+                mockActionExecution.set({ total: 2 });
+                mockActiveRunCount.set(1);
                 spectator.detectChanges();
 
                 spectator.component['onBackToActions']();
@@ -1602,10 +1756,27 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.clearDialogDrillDown).toHaveBeenCalled();
         });
 
+        it('should stay usable while only a background run is in flight', () => {
+            // A folder duplicate is reported on the indicator but locks nothing.
+            goToConfigure();
+            chooseDestination();
+            mockActiveRunCount.set(1);
+            mockBlockingRunCountOverride.set(0);
+            spectator.detectChanges();
+
+            spectator.click(
+                spectator.query('[data-testid="action-configure-continue"] button') as HTMLElement
+            );
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+        });
+
         it('should keep the configuration step inert while an action is in flight', () => {
             goToConfigure();
             chooseDestination();
-            mockActionExecution.set({ actionName: 'Move', total: 2 });
+            mockActionExecution.set({ total: 2 });
+            mockActiveRunCount.set(1);
             spectator.detectChanges();
 
             spectator.component['onContinueFromConfigure']();
@@ -1659,7 +1830,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             ]);
 
             // Schemes are assigned per content type, so each group gets a different response.
-            jest.spyOn(workflowsActionsService, 'getBulkActions').mockImplementation((request) =>
+            vi.spyOn(workflowsActionsService, 'getBulkActions').mockImplementation((request) =>
                 of(
                     request.contentletIds?.includes('blog-1')
                         ? schemeFor('Blogs', 'copy-blog', 'Copy Blog')
@@ -1762,7 +1933,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should surface the lookup failure when any content type request fails', () => {
-            jest.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
+            vi.spyOn(workflowsActionsService, 'getBulkActions').mockReturnValue(
                 throwError(() => new HttpErrorResponse({ status: 500 }))
             );
 
@@ -1892,7 +2063,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executePushPublish).toHaveBeenCalledWith(
                 expect.any(String),
                 ['id-1', 'id-2'],
-                PUSH_PUBLISH_SETTINGS
+                PUSH_PUBLISH_SETTINGS,
+                expect.any(Array)
             );
             expect(store.closeDialog).toHaveBeenCalled();
         });
@@ -1915,7 +2087,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executePushPublish).toHaveBeenCalledWith(
                 expect.any(String),
                 ['id-drop'],
-                PUSH_PUBLISH_SETTINGS
+                PUSH_PUBLISH_SETTINGS,
+                expect.any(Array)
             );
         });
 
@@ -1940,7 +2113,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executePushPublish).toHaveBeenCalledWith(
                 expect.any(String),
                 ['id-1', 'folder-1'],
-                PUSH_PUBLISH_SETTINGS
+                PUSH_PUBLISH_SETTINGS,
+                expect.any(Array)
             );
         });
 
@@ -2021,10 +2195,12 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             spectator.click('[data-testid="action-preview-execute"]');
 
-            expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
-                'id-1',
-                'id-2'
-            ]);
+            expect(store.executeAddToBundle).toHaveBeenCalledWith(
+                expect.any(String),
+                BUNDLE,
+                ['id-1', 'id-2'],
+                expect.any(Array)
+            );
         });
 
         it('should collapse language versions of the same content into one asset', () => {
@@ -2041,9 +2217,12 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             spectator.click('[data-testid="action-preview-execute"]');
 
-            expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
-                'id-1'
-            ]);
+            expect(store.executeAddToBundle).toHaveBeenCalledWith(
+                expect.any(String),
+                BUNDLE,
+                ['id-1'],
+                expect.any(Array)
+            );
         });
 
         it('should not fire a workflow action', () => {
@@ -2082,9 +2261,12 @@ describe('DotContentDriveActionCenterComponent', () => {
             uncheckFirstRow();
             spectator.click('[data-testid="action-preview-execute"]');
 
-            expect(store.executeAddToBundle).toHaveBeenCalledWith(expect.any(String), BUNDLE, [
-                'id-2'
-            ]);
+            expect(store.executeAddToBundle).toHaveBeenCalledWith(
+                expect.any(String),
+                BUNDLE,
+                ['id-2'],
+                expect.any(Array)
+            );
         });
 
         it('should step back from the preview to the bundle step', () => {
@@ -2543,6 +2725,163 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             expect(spectator.query('[data-testid="action-center-done"]')).toBeNull();
             expect(store.closeDialog).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * Bulk folder delete's confirmation (#37063 US1, FR-007 … FR-011).
+     *
+     * Written before the action exists (T009 before T017/T018). `DotMessageService.get` is mocked to
+     * return the key, so these assert on keys rather than on English — the copy itself is reviewed at
+     * the T055 gate, but which *claims* it does and does not make is a requirement and is pinned here.
+     */
+    /**
+     * The ceiling the server advertises for one duplicate or delete (#37062). Checked before
+     * submitting so the author learns the limit where they choose the folders, not from a refusal
+     * afterwards. The server's own refusal still stands behind it.
+     */
+    describe('folder ceilings', () => {
+        // Rights for both actions: duplicate needs READ, delete EDIT and EDIT_PERMISSIONS.
+        const withAllRights = (row: DotContentDriveItem): DotContentDriveItem =>
+            ({
+                ...(row as object),
+                permissions: ['READ', 'EDIT', 'EDIT_PERMISSIONS', 'CAN_ADD_CHILDREN']
+            }) as unknown as DotContentDriveItem;
+        const ALPHA = withAllRights(folderRow('f-alpha', '/blogs/alpha/'));
+        const BETA = withAllRights(folderRow('f-beta', '/blogs/beta/'));
+
+        const executeButton = () =>
+            spectator.query<HTMLButtonElement>('[data-testid="action-preview-execute"] button');
+
+        beforeEach(() => {
+            mockItems.set([ALPHA, BETA]);
+            mockSelectedItems.set([ALPHA, BETA]);
+        });
+
+        // Read from the button's own input rather than PrimeNG's rendered badge markup, which is
+        // the library's to change.
+        const executeBadge = () =>
+            spectator.debugElement.query(By.css('[data-testid="action-preview-execute"]'))
+                ?.componentInstance?.badge;
+
+        it.each([
+            ['DUPLICATE', mockFolderDuplicateMaxPaths, 'content-drive.duplicate.over-ceiling'],
+            ['DELETE_FOLDER', mockFolderDeleteMaxPaths, 'content-drive.delete.over-ceiling']
+        ])(
+            '%s should include only as many folders as one run may carry',
+            (actionId, ceiling, key) => {
+                ceiling.set(1);
+
+                openQuickActionPreview(actionId);
+
+                // The row and the preview already say how many run. No notice on top of that.
+                expect(spectator.element.textContent).not.toContain(key);
+                // Listed, not merely pre-checked: the preview holds what this run can carry, as
+                // the other actions' previews hold what they apply to.
+                expect(previewRows()).toHaveLength(1);
+                expect(executeBadge()).toBe('1');
+                expect(executeButton()?.disabled).toBe(false);
+            }
+        );
+
+        it.each([
+            ['DUPLICATE', mockFolderDuplicateMaxPaths],
+            ['DELETE_FOLDER', mockFolderDeleteMaxPaths]
+        ])(
+            '%s should advertise on its row only as many folders as one run carries',
+            (actionId, ceiling) => {
+                ceiling.set(1);
+                spectator.detectChanges();
+
+                // The row's number is what the run will act on, as every other row's is.
+                expect(
+                    spectator.query(`[data-testid="quick-action-${actionId}"]`)?.textContent
+                ).toContain('(1)');
+            }
+        );
+
+        it('should submit only the folders it included', () => {
+            mockFolderDuplicateMaxPaths.set(1);
+
+            executeQuickAction('DUPLICATE');
+
+            expect(store.executeDuplicate).toHaveBeenCalledWith(expect.any(String), [
+                '//demo.dotcms.com/blogs/alpha/'
+            ]);
+        });
+
+        it.each([['DUPLICATE'], ['DELETE_FOLDER']])(
+            '%s should include every folder when no ceiling is advertised',
+            (actionId) => {
+                openQuickActionPreview(actionId);
+
+                expect(previewRows()).toHaveLength(2);
+                expect(executeBadge()).toBe('2');
+            }
+        );
+    });
+
+    describe('Delete confirmation (#37063)', () => {
+        const folderSelection = [
+            { type: 'folder', identifier: 'id-a', inode: 'inode-a', name: 'old-a' },
+            { type: 'folder', identifier: 'id-b', inode: 'inode-b', name: 'old-b' }
+        ] as unknown as DotContentDriveItem[];
+
+        beforeEach(() => {
+            spectator = createComponent();
+            mockSelectedItems.set(folderSelection);
+        });
+
+        it('should require a confirmation step before anything is submitted', () => {
+            openQuickActionPreview('DELETE_FOLDER');
+
+            expect(store.executeFolderBulkDelete).not.toHaveBeenCalled();
+        });
+
+        it('should say the folders AND their contents are permanently deleted', () => {
+            openQuickActionPreview('DELETE_FOLDER');
+
+            const warning = spectator.query('[data-testid="delete-warning"]');
+
+            // The single most important sentence in the feature: what makes this different from every
+            // other bulk action is that it destroys things the author never selected.
+            expect(warning?.textContent).toContain('content-drive.action-center.delete.warning');
+        });
+
+        it('should make NO claim about workflow', () => {
+            // The issue text proposed saying no workflow action fires on the contents. That is false —
+            // a content type declaring an action for the destroy system action will run it — so the copy
+            // states what is certain and asserts nothing about workflow (FR-010).
+            openQuickActionPreview('DELETE_FOLDER');
+
+            const body = spectator.query('[data-testid="delete-warning"]')?.textContent ?? '';
+
+            expect(body).not.toContain('workflow');
+        });
+
+        it('should say how many folders it is about', () => {
+            // Asserted through the message service rather than the rendered text: `get` is mocked to
+            // echo the key and drop its arguments, so the count never reaches the DOM in a spec.
+            openQuickActionPreview('DELETE_FOLDER');
+
+            expect(spectator.inject(DotMessageService).get).toHaveBeenCalledWith(
+                'content-drive.action-center.delete.warning',
+                '2'
+            );
+        });
+
+        it('should submit the selected folders when confirmed', () => {
+            executeQuickAction('DELETE_FOLDER');
+
+            expect(store.executeFolderBulkDelete).toHaveBeenCalled();
+        });
+
+        it('should submit nothing when the confirmation is dismissed', () => {
+            openQuickActionPreview('DELETE_FOLDER');
+            spectator.click('[data-testid="action-preview-back"]');
+            spectator.detectChanges();
+
+            expect(store.executeFolderBulkDelete).not.toHaveBeenCalled();
         });
     });
 });

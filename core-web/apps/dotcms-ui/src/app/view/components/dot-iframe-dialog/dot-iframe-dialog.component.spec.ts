@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -29,7 +30,7 @@ import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.s
 class TestHostComponent {
     url: string;
     header: string;
-    onBeforeClose = jest.fn();
+    onBeforeClose = vi.fn();
 }
 
 @Component({
@@ -42,13 +43,13 @@ class TestHostComponent {
 class TestHost2Component {
     url: string;
     header: string;
-    onBeforeClose = jest.fn();
+    onBeforeClose = vi.fn();
 }
 
 const fakeEvent = () => ({
     target: {
         contentWindow: {
-            focus: jest.fn()
+            focus: vi.fn()
         }
     }
 });
@@ -166,18 +167,18 @@ describe('DotIframeDialogComponent', () => {
                 let dialogDeEvents: DebugElement;
 
                 beforeEach(() => {
-                    jest.spyOn(component.beforeClose, 'emit');
-                    jest.spyOn(component.shutdown, 'emit');
-                    jest.spyOn(component.custom, 'emit');
-                    jest.spyOn(component.keyWasDown, 'emit');
-                    jest.spyOn(component.charge, 'emit');
+                    vi.spyOn(component.beforeClose, 'emit');
+                    vi.spyOn(component.shutdown, 'emit');
+                    vi.spyOn(component.custom, 'emit');
+                    vi.spyOn(component.keyWasDown, 'emit');
+                    vi.spyOn(component.charge, 'emit');
                     dialogDeEvents = de?.query(By.css('p-dialog')) ?? null;
                     if (
                         dialogDeEvents?.componentInstance &&
                         typeof (dialogDeEvents.componentInstance as { close?: () => void })
                             .close === 'function'
                     ) {
-                        jest.spyOn(
+                        vi.spyOn(
                             dialogDeEvents.componentInstance as { close: () => void },
                             'close'
                         );
@@ -257,7 +258,7 @@ describe('DotIframeDialogComponent', () => {
             component = de?.componentInstance ?? null;
             hostComponent.url = 'hello/world';
             spectator.detectChanges();
-            jest.spyOn(component.beforeClose, 'emit');
+            vi.spyOn(component.beforeClose, 'emit');
         });
 
         it('should emit beforeClose when a observer is set', () => {

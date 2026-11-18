@@ -65,16 +65,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -120,16 +115,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -170,16 +160,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -219,16 +204,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -505,6 +485,71 @@
 							"response": []
 						},
 						{
+							"name": "GivenDotAssetBehindImageField_NarrowingClauses_ShouldResolveAndWarnOverHttp",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"var jsonData = pm.response.json();",
+											"",
+											"pm.test(\"No errors\", function () {",
+											"    pm.expect(jsonData.errors, 'FAILED:[errors]').to.be.undefined;",
+											"});",
+											"",
+											"pm.test(\"The asset field resolves to the concrete type and honours matching clauses\", function () {",
+											"    var rows = jsonData.data[pm.collectionVariables.get(\"contentTypeVAR\") + \"Collection\"];",
+											"    pm.expect(rows.length, 'FAILED:[rows]').to.eql(1);",
+											"    var image = rows[0].myImage;",
+											"    pm.expect(image.__typename, 'FAILED:[__typename]').to.eql(\"DotAsset\");",
+											"    pm.expect(image.identifier, 'FAILED:[identifier]').to.eql(pm.collectionVariables.get(\"dotAssetIdentifier\"));",
+											"    pm.expect(image.asset.name, 'FAILED:[asset.name]').to.eql(\"dotcms.png\");",
+											"    pm.expect(image.fileName, 'FAILED:[fileName]').to.not.be.undefined;",
+											"});",
+											"",
+											"pm.test(\"Only the clause that matched nothing is reported in extensions.warnings\", function () {",
+											"    pm.expect(jsonData.extensions, 'FAILED:[extensions]').to.not.be.undefined;",
+											"    var warnings = jsonData.extensions.warnings;",
+											"    pm.expect(warnings.length, 'FAILED:[warnings.length]').to.eql(1);",
+											"    pm.expect(warnings[0].typeCondition, 'FAILED:[typeCondition]').to.eql(\"FileAsset\");",
+											"    pm.expect(warnings[0].path, 'FAILED:[path]').to.include(\"myImage\");",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "graphql",
+									"graphql": {
+										"query": "{\n  {{contentTypeVAR}}Collection(query: \"+identifier:{{contentIdentifier}}\") {\n    myImage {\n      __typename\n      identifier\n      ... on DotAsset { asset { name } }\n      ... on DotFileasset { fileName }\n      ... on FileAsset { title }\n    }\n  }\n}",
+										"variables": ""
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/graphql",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"graphql"
+									]
+								},
+								"description": "An Image field is typed by the DotFileasset interface (#34540). Over HTTP: the field reports the concrete type, clauses on the concrete type and on the interface both contribute data and produce no warning, and the clause on a type the asset is not is named in extensions.warnings."
+							},
+							"response": []
+						},
+						{
 							"name": "Create Page Content without Image",
 							"event": [
 								{
@@ -653,16 +698,11 @@
 							],
 							"request": {
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
+											"key": "token",
+											"value": "{{jwt}}",
 											"type": "string"
 										}
 									]
@@ -735,16 +775,11 @@
 							],
 							"request": {
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
+											"key": "token",
+											"value": "{{jwt}}",
 											"type": "string"
 										}
 									]
@@ -817,16 +852,11 @@
 							],
 							"request": {
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
+											"key": "token",
+											"value": "{{jwt}}",
 											"type": "string"
 										}
 									]
@@ -899,16 +929,11 @@
 							],
 							"request": {
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
+											"key": "token",
+											"value": "{{jwt}}",
 											"type": "string"
 										}
 									]
@@ -987,26 +1012,12 @@
 							],
 							"request": {
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "admin",
+											"key": "token",
+											"value": "{{jwt}}",
 											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "saveHelperData",
-											"type": "any"
-										},
-										{
-											"key": "showPassword",
-											"value": false,
-											"type": "boolean"
 										}
 									]
 								},
@@ -3126,7 +3137,7 @@
 							"response": []
 						},
 						{
-							"name": "Containers Property is Returned With Anon User",
+							"name": "Containers Property is Returned With Authenticated User",
 							"event": [
 								{
 									"listen": "test",
@@ -3134,7 +3145,7 @@
 										"exec": [
 											"let checker = (arr, target) => target.every(v => arr.includes(v));",
 											"",
-											"pm.test(\"'containers' includes all properties (with Anon User)\", function () {",
+											"pm.test(\"'containers' includes all properties (with Authenticated User)\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    var containers = jsonData.data.page.containers;",
 											"    var container1 = containers[0];",
@@ -3157,9 +3168,6 @@
 								}
 							},
 							"request": {
-								"auth": {
-									"type": "noauth"
-								},
 								"method": "POST",
 								"header": [
 									{
@@ -3747,29 +3755,26 @@
 						},
 						{
 							"name": "GivenRequestByURI_Page_EditMode_WithoutAuth",
+							"protocolProfileBehavior": {
+								"disableCookies": true
+							},
 							"event": [
 								{
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(200);",
+											"pm.test(\"Anonymous GraphQL requests are rejected by default\", function () {",
+											"    pm.response.to.have.status(401);",
 											"});",
 											"",
-											"pm.test(\"Response contains errors and correct error message\", function () {",
-											"    var jsonData = pm.response.json();",
-											"    console.log(jsonData)",
-											"    pm.expect(jsonData.errors, 'FAILED:[jsonData.errors]').to.be.an('array').that.is.not.empty;",
-											"",
-											"    var error = jsonData.errors[0];",
-											"    pm.expect(error.message, 'FAILED:[error.message]').to.equal(\"Exception while fetching data (/page) : Unauthorized: You do not have the necessary permissions to request this page in edit mode.\");",
-											"});",
-											"",
-											"pm.test(\"Page data is null\", function () {",
-											"    var jsonData = pm.response.json();",
-											"    pm.expect(jsonData.data.page, 'FAILED:[jsonData.data.page]').to.be.null;",
-											"});",
-											""
+											"pm.test(\"No content is returned to anonymous callers\", function () {",
+											"    const body = pm.response.text();",
+											"    // sendError may answer with a plain container error page;",
+											"    // no GraphQL payload or setting name may ever reach the caller.",
+											"    pm.expect(body).not.to.contains(\"CONTENT_APIS_ALLOW_ANONYMOUS\");",
+											"    pm.expect(body).not.to.match(/\"data\"\\s*:/);",
+											"    pm.expect(pm.response.code).to.eql(401);",
+											"});"
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -4016,6 +4021,55 @@
 							"response": []
 						},
 						{
+							"name": "Configure Analytics App (setup)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Analytics app configured successfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"siteAuth\":{\"value\":\"ci-test-site-auth\"},\"bearerToken\":{\"value\":\"ci-test-bearer-token\"},\"persistenceMode\":{\"value\":\"readwrite\"}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/apps/dotContentAnalytics-config/SYSTEM_HOST",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"apps",
+										"dotContentAnalytics-config",
+										"SYSTEM_HOST"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Start experiment",
 							"event": [
 								{
@@ -4189,6 +4243,41 @@
 								}
 							},
 							"response": []
+						},
+						{
+							"name": "Cleanup Analytics App (teardown)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Analytics app config removed\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/apps/dotContentAnalytics-config/SYSTEM_HOST",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"apps",
+										"dotContentAnalytics-config",
+										"SYSTEM_HOST"
+									]
+								}
+							},
+							"response": []
 						}
 					]
 				},
@@ -4219,7 +4308,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"siteName\":\"page.detail.host.com.{{$timestamp}}\",\n    \"variables\":[]\n}\n",
+									"raw": "{\n    \"siteName\":\"page.detail.host.com.no-experiment.{{$timestamp}}\",\n    \"variables\":[]\n}\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4562,64 +4651,64 @@
 							"response": []
 						},
 						{
-              "name": "Save Content Type Schema",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "exec": [
-                      "const contentTypeInfo = pm.collectionVariables.get(\"contentTypeInfo\");",
-                      "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
-                      "",
-                      "const entity = pm.response.json().entity;",
-                      "",
-                      "pm.test(\"Status code is 200\", function () {",
-                      "    pm.response.to.have.status(200);",
-                      "});",
-                      "",
-                      "pm.test(\"Should have the correct content type schema\", function () {",
-                      "    const schemaStr = JSON.parse(contentTypeInfo).metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
-                      "    const schema = JSON.parse(schemaStr);",
-                      "    console.log(\"hello\", schema)",
-                      "",
-                      "    pm.expect(schema.contentType).to.eql(contentTypeName);",
-                      "});"
-                    ],
-                    "type": "text/javascript",
-                    "packages": {},
-                    "requests": {}
-                  }
-                }
-              ],
-              "request": {
-                "method": "PUT",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{{contentTypeInfo}}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
-                  "host": [
-                    "{{serverURL}}"
-                  ],
-                  "path": [
-                    "api",
-                    "v1",
-                    "contenttype",
-                    "id",
-                    "{{contentTypeId}}"
-                  ]
-                }
-              },
-              "response": []
-            },
-            {
+							"name": "Save Content Type Schema",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const contentTypeInfo = pm.collectionVariables.get(\"contentTypeInfo\");",
+											"const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
+											"",
+											"const entity = pm.response.json().entity;",
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Should have the correct content type schema\", function () {",
+											"    const schemaStr = JSON.parse(contentTypeInfo).metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
+											"    const schema = JSON.parse(schemaStr);",
+											"    console.log(\"hello\", schema)",
+											"",
+											"    pm.expect(schema.contentType).to.eql(contentTypeName);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{{contentTypeInfo}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Create Test Contentlet",
 							"event": [
 								{
@@ -4867,83 +4956,83 @@
 							"response": []
 						},
 						{
-              "name": "GQL Page Contains Schemas",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "exec": [
-                      "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
-                      "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
-                      "const contentTypeInfo = pm.collectionVariables.get(\"contentTypeInfo\");",
-                      "",
-                      "pm.test(\"Status code is 200\", function () {",
-                      "    pm.response.to.have.status(200);",
-                      "});",
-                      "",
-                      "const response = pm.response.json();",
-                      "",
-                      "pm.test(\"GraphQL response has no errors\", function () {",
-                      "    pm.expect(response.errors).to.be.undefined;",
-                      "});",
-                      "",
-                      "pm.test(\"Page data exists\", function () {",
-                      "    pm.expect(response.data).to.exist;",
-                      "    pm.expect(response.data.page).to.exist;",
-                      "});",
-                      "",
-                      "pm.test(\"Validate page has the SCHEMA of the Content Type 1 \", function () {",
-                      "    const schemas = response.data.page.styleEditorSchemas;",
-                      "    pm.expect(schemas).to.exist;",
-                      "",
-                      "    // Finding the SCHEMA",
-                      "    const contentType1Schema = schemas.find(item => item.contentType === contentTypeName);",
-                      "    pm.expect(contentType1Schema).to.exist;",
-                      "    pm.expect(contentType1Schema).to.have.property(\"sections\");",
-                      "});",
-                      "",
-                      "pm.test(\"Should have the correct content type schema\", function () {",
-                      "    const schemaStr = JSON.parse(contentTypeInfo).metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
-                      "    const schema = JSON.parse(schemaStr);",
-                      "",
-                      "    pm.expect(schema.contentType).to.eql(contentTypeName);",
-                      "});"
-                    ],
-                    "type": "text/javascript",
-                    "packages": {},
-                    "requests": {}
-                  }
-                }
-              ],
-              "protocolProfileBehavior": {
-                "disabledSystemHeaders": {
-                  "user-agent": true
-                }
-              },
-              "request": {
-                "method": "POST",
-                "header": [],
-                "body": {
-                  "mode": "graphql",
-                  "graphql": {
-                    "query": "query getPageData($url: String!, $mode: String) {\n  page(url: $url, pageMode: $mode) {\n    styleEditorSchemas\n  }\n}\n",
-                    "variables": "{\n  \"url\": \"{{pageUrl}}\",\n  \"mode\": \"EDIT_MODE\"\n}"
-                  }
-                },
-                "url": {
-                  "raw": "{{serverURL}}/api/v1/graphql",
-                  "host": [
-                    "{{serverURL}}"
-                  ],
-                  "path": [
-                    "api",
-                    "v1",
-                    "graphql"
-                  ]
-                }
-              },
-              "response": []
-            },
+							"name": "GQL Page Contains Schemas",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+											"const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
+											"const contentTypeInfo = pm.collectionVariables.get(\"contentTypeInfo\");",
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"const response = pm.response.json();",
+											"",
+											"pm.test(\"GraphQL response has no errors\", function () {",
+											"    pm.expect(response.errors).to.be.undefined;",
+											"});",
+											"",
+											"pm.test(\"Page data exists\", function () {",
+											"    pm.expect(response.data).to.exist;",
+											"    pm.expect(response.data.page).to.exist;",
+											"});",
+											"",
+											"pm.test(\"Validate page has the SCHEMA of the Content Type 1 \", function () {",
+											"    const schemas = response.data.page.styleEditorSchemas;",
+											"    pm.expect(schemas).to.exist;",
+											"",
+											"    // Finding the SCHEMA",
+											"    const contentType1Schema = schemas.find(item => item.contentType === contentTypeName);",
+											"    pm.expect(contentType1Schema).to.exist;",
+											"    pm.expect(contentType1Schema).to.have.property(\"sections\");",
+											"});",
+											"",
+											"pm.test(\"Should have the correct content type schema\", function () {",
+											"    const schemaStr = JSON.parse(contentTypeInfo).metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
+											"    const schema = JSON.parse(schemaStr);",
+											"",
+											"    pm.expect(schema.contentType).to.eql(contentTypeName);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"user-agent": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "graphql",
+									"graphql": {
+										"query": "query getPageData($url: String!, $mode: String) {\n  page(url: $url, pageMode: $mode) {\n    styleEditorSchemas\n  }\n}\n",
+										"variables": "{\n  \"url\": \"{{pageUrl}}\",\n  \"mode\": \"EDIT_MODE\"\n}"
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/graphql",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"graphql"
+									]
+								}
+							},
+							"response": []
+						},
 						{
 							"name": "GivenRequestByURI_ContainerContentletsFieldContainsStyleProperties",
 							"event": [
@@ -5117,16 +5206,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -5207,16 +5291,11 @@
 					},
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -5289,16 +5368,11 @@
 					},
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -5362,16 +5436,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -5454,16 +5523,11 @@
 					},
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -5532,16 +5596,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -5614,16 +5673,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -5696,16 +5750,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -5778,16 +5827,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -5860,16 +5904,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -5942,16 +5981,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -6024,16 +6058,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -6471,16 +6500,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -6532,16 +6556,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -6709,16 +6728,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -6774,16 +6788,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -7144,16 +7153,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -7342,16 +7346,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -7403,16 +7402,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -7461,16 +7455,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -7699,16 +7688,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -7806,16 +7790,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -7888,16 +7867,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -8029,16 +8003,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -8160,26 +8129,12 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotCMS.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
@@ -8314,16 +8269,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -8454,16 +8404,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -9136,16 +9081,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -9219,26 +9159,12 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
@@ -9302,26 +9228,12 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
@@ -9493,16 +9405,11 @@
 					},
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -9574,16 +9481,11 @@
 							],
 							"request": {
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
+											"key": "token",
+											"value": "{{jwt}}",
 											"type": "string"
 										}
 									]
@@ -9716,16 +9618,11 @@
 							],
 							"request": {
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
+											"key": "token",
+											"value": "{{jwt}}",
 											"type": "string"
 										}
 									]
@@ -9854,16 +9751,11 @@
 									],
 									"request": {
 										"auth": {
-											"type": "basic",
-											"basic": [
+											"type": "bearer",
+											"bearer": [
 												{
-													"key": "password",
-													"value": "admin",
-													"type": "string"
-												},
-												{
-													"key": "username",
-													"value": "admin@dotcms.com",
+													"key": "token",
+													"value": "{{jwt}}",
 													"type": "string"
 												}
 											]
@@ -10386,16 +10278,11 @@
 									],
 									"request": {
 										"auth": {
-											"type": "basic",
-											"basic": [
+											"type": "bearer",
+											"bearer": [
 												{
-													"key": "password",
-													"value": "admin",
-													"type": "string"
-												},
-												{
-													"key": "username",
-													"value": "admin@dotcms.com",
+													"key": "token",
+													"value": "{{jwt}}",
 													"type": "string"
 												}
 											]
@@ -10926,16 +10813,11 @@
 											],
 											"request": {
 												"auth": {
-													"type": "basic",
-													"basic": [
+													"type": "bearer",
+													"bearer": [
 														{
-															"key": "password",
-															"value": "admin",
-															"type": "string"
-														},
-														{
-															"key": "username",
-															"value": "admin@dotcms.com",
+															"key": "token",
+															"value": "{{jwt}}",
 															"type": "string"
 														}
 													]
@@ -11355,16 +11237,11 @@
 									],
 									"request": {
 										"auth": {
-											"type": "basic",
-											"basic": [
+											"type": "bearer",
+											"bearer": [
 												{
-													"key": "password",
-													"value": "admin",
-													"type": "string"
-												},
-												{
-													"key": "username",
-													"value": "admin@dotcms.com",
+													"key": "token",
+													"value": "{{jwt}}",
 													"type": "string"
 												}
 											]
@@ -11790,16 +11667,11 @@
 									],
 									"request": {
 										"auth": {
-											"type": "basic",
-											"basic": [
+											"type": "bearer",
+											"bearer": [
 												{
-													"key": "password",
-													"value": "admin",
-													"type": "string"
-												},
-												{
-													"key": "username",
-													"value": "admin@dotcms.com",
+													"key": "token",
+													"value": "{{jwt}}",
 													"type": "string"
 												}
 											]
@@ -12157,26 +12029,12 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
@@ -12227,26 +12085,12 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
@@ -12357,26 +12201,12 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "saveHelperData",
-									"type": "any"
-								},
-								{
-									"key": "showPassword",
-									"value": false,
-									"type": "boolean"
 								}
 							]
 						},
@@ -12507,16 +12337,11 @@
 					},
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -12542,6 +12367,63 @@
 							]
 						},
 						"description": "In this request again we send the IntrospectionQuery paired with valid authentication credentials. In both cases the response is a 200 but this time. It comes back with data and no errors are reported."
+					},
+					"response": []
+				},
+				{
+					"name": "Introspection Query Repeating __schema Is Rejected",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Repeated __schema is rejected without running the introspection\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.errors).to.be.an(\"array\").that.is.not.empty;",
+									"    pm.expect(jsonData.errors[0].message).to.include(\"__schema\");",
+									"    pm.expect(jsonData.errors[0].extensions.classification).to.eql(\"BadFaithIntrospection\");",
+									"    pm.expect(jsonData.data == null || jsonData.data.first === undefined).to.be.true;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "graphql",
+							"graphql": {
+								"query": "query RepeatedSchema {\n  first: __schema { types { name } }\n  second: __schema { types { name } }\n}\n",
+								"variables": ""
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/graphql",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"graphql"
+							]
+						}
 					},
 					"response": []
 				},
@@ -12585,15 +12467,17 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
+									"pm.test(\"Anonymous GraphQL requests are rejected by default\", function () {",
+									"    pm.response.to.have.status(401);",
 									"});",
 									"",
-									"pm.test(\"Has Multiple validation errors \", function () {",
-									"    const jsonData = pm.response.json();    ",
-									"    console.log(jsonData.errors);  ",
-									"    pm.expect(jsonData.errors.length).greaterThan(0);",
-									"     pm.expect(jsonData.data).eqls(null);",
+									"pm.test(\"No content is returned to anonymous callers\", function () {",
+									"    const body = pm.response.text();",
+									"    // sendError may answer with a plain container error page;",
+									"    // no GraphQL payload or setting name may ever reach the caller.",
+									"    pm.expect(body).not.to.contains(\"CONTENT_APIS_ALLOW_ANONYMOUS\");",
+									"    pm.expect(body).not.to.match(/\"data\"\\s*:/);",
+									"    pm.expect(pm.response.code).to.eql(401);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -12610,7 +12494,8 @@
 						}
 					],
 					"protocolProfileBehavior": {
-						"disabledSystemHeaders": {}
+						"disabledSystemHeaders": {},
+						"disableCookies": true
 					},
 					"request": {
 						"auth": {
@@ -12673,16 +12558,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -12815,16 +12695,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -13007,16 +12882,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -14132,16 +14002,11 @@
 					],
 					"request": {
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "username",
-									"value": "admin@dotcms.com",
-									"type": "string"
-								},
-								{
-									"key": "password",
-									"value": "admin",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -14197,12 +14062,10 @@
 						"method": "PUT",
 						"header": [],
 						"url": {
-							"raw": "http://localhost:8080/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
-							"protocol": "http",
+							"raw": "{{serverURL}}/api/v1/site/switch/48190c8c-42c4-46af-8d1a-0cd5db894797",
 							"host": [
-								"localhost"
+								"{{serverURL}}"
 							],
-							"port": "8080",
 							"path": [
 								"api",
 								"v1",
@@ -14816,44 +14679,7 @@
 				"type": "text/javascript",
 				"exec": [
 					"if (!pm.environment.get('jwt')) {",
-					"    console.log(\"generating....\")",
-					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
-					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
-					"",
-					"    if (!pm.environment.get('jwt')) {",
-					"        const username = pm.environment.get(\"user\");",
-					"        const password = pm.environment.get(\"password\");",
-					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
-					"",
-					"        const requestOptions = {",
-					"            url: apiUrl,",
-					"            method: \"POST\",",
-					"            header: {",
-					"                \"accept\": \"*/*\",",
-					"                \"content-type\": \"application/json\",",
-					"                \"Authorization\": `Basic ${basicAuth}`",
-					"            },",
-					"            body: {",
-					"                mode: \"raw\",",
-					"                raw: JSON.stringify({",
-					"                    \"expirationSeconds\": 7200,",
-					"                    \"userId\": \"dotcms.org.1\",",
-					"                    \"network\": \"0.0.0.0/0\",",
-					"                    \"claims\": {\"label\": \"postman-tests\"}",
-					"                })",
-					"            }",
-					"        };",
-					"",
-					"        pm.sendRequest(requestOptions, function (err, response) {",
-					"            if (err) {",
-					"                console.log(err);",
-					"            } else {",
-					"                const jwt = response.json().entity.jwt;",
-					"                pm.environment.set('jwt', jwt);",
-					"                console.log(jwt);",
-					"            }",
-					"        });",
-					"    }",
+					"    throw new Error('Set environment jwt to a pre-issued dotCMS API token, or use the Node runner.');",
 					"}"
 				]
 			}

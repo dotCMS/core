@@ -10,13 +10,33 @@ export function isPageError(
   return Boolean(pageContent && "error" in pageContent && pageContent.error);
 }
 
-/** Best-effort extraction of an HTTP status code from an unknown error. */
-export function getErrorStatus(error: unknown): number | undefined {
-  if (typeof error === "object" && error !== null && "status" in error) {
-    return (error as { status?: number }).status;
+/** What `ErrorPage` needs from a failed page request. */
+export interface ErrorDetails {
+  status?: number;
+  /** Only set in development; production keeps the generic copy. */
+  message?: string;
+}
+
+/**
+ * Best-effort extraction of an HTTP status code and, in development only, the error message.
+ *
+ * The message is what names the actual cause (a redirect away from `dotcmsUrl`, a non-JSON
+ * response, ...), so a developer sees it without attaching a debugger. It can include URLs
+ * and server details, which is why production never receives it.
+ */
+export function getErrorDetails(error: unknown): ErrorDetails {
+  if (typeof error !== "object" || error === null) {
+    return {};
   }
 
-  return undefined;
+  const status =
+    "status" in error ? (error as { status?: number }).status : undefined;
+  const message =
+    process.env.NODE_ENV === "development" && error instanceof Error
+      ? error.message
+      : undefined;
+
+  return { status, message };
 }
 
 /** Page title with a fallback, safe to call on either response branch. */

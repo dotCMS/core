@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import type { Editor } from '@tiptap/core';
 
 import { buildContentletByTypeQuery, createSlashOverlayBlockItems } from './slash-menu-catalog';
@@ -51,7 +53,7 @@ describe('createSlashOverlayBlockItems — audio', () => {
     type Params = Parameters<typeof createSlashOverlayBlockItems>;
 
     const popovers = {} as Params[0];
-    const openAudioPicker = jest.fn();
+    const openAudioPicker = vi.fn();
     const editorModal = { openAudioPicker } as unknown as Params[1];
     const dotMessageService = { get: (key: string) => key } as unknown as Params[2];
 

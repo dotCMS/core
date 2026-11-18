@@ -1,7 +1,7 @@
-import { describe } from '@jest/globals';
 import { signalStore } from '@ngrx/signals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { describe, vi } from 'vitest';
 
 import { DotPropertiesService } from '@dotcms/data-access';
 import { FEATURE_FLAG_NOT_FOUND, FeaturedFlags } from '@dotcms/dotcms-models';
@@ -25,7 +25,7 @@ describe('withFlags', () => {
                 {
                     provide: DotPropertiesService,
                     useValue: {
-                        getFeatureFlags: jest.fn().mockReturnValue(of({ [FLAG]: true }))
+                        getFeatureFlags: vi.fn().mockReturnValue(of({ [FLAG]: true }))
                     }
                 }
             ]
@@ -48,7 +48,7 @@ describe('withFlags', () => {
     });
 
     describe('normalization', () => {
-        const propertiesServiceMock = { getFeatureFlags: jest.fn() };
+        const propertiesServiceMock = { getFeatureFlags: vi.fn() };
         const createService = createServiceFactory({
             service: flagsStore,
             providers: [{ provide: DotPropertiesService, useValue: propertiesServiceMock }]
@@ -80,7 +80,7 @@ describe('withFlags', () => {
     });
 
     describe('error handling', () => {
-        const propertiesServiceMock = { getFeatureFlags: jest.fn() };
+        const propertiesServiceMock = { getFeatureFlags: vi.fn() };
         const createService = createServiceFactory({
             service: flagsStore,
             providers: [{ provide: DotPropertiesService, useValue: propertiesServiceMock }]

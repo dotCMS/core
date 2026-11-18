@@ -23,6 +23,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -37,6 +38,7 @@ import com.liferay.portlet.PortletConfigImpl;
 import com.liferay.portlet.PortletContextImpl;
 import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -75,8 +77,17 @@ public class PortletAPIImpl implements PortletAPI {
         return hasRights;
     }
 
-    public boolean hasUserAdminRights(User user) {
-        return hasPortletRights(user, "users");
+    /**
+     * Tells whether the user can administer users: they hold the Users portlet or the old Users
+     * screen kept as {@code users-legacy}.
+     *
+     * @param user the {@link User} to check
+     * @return {@code true} when the user holds either portlet
+     */
+    @Override
+    public boolean hasUserAdminRights(final User user) {
+        return hasPortletRights(user, PortletID.USERS.toString())
+                || hasPortletRights(user, PortletID.USERS_LEGACY.toString());
     }
 
     public boolean hasContainerManagerRights(User user) {
@@ -305,6 +316,25 @@ public class PortletAPIImpl implements PortletAPI {
     @Override
     public Portlet updatePortlet(final Portlet portlet) throws DotDataException{
         return portletFac.updatePortlet(portlet);
+    }
+
+    @Override
+    public boolean isCustomContentPortlet(final Portlet portlet) {
+        if (null == portlet || null == portlet.getInitParams()
+                || !UtilMethods.isSet(portlet.getPortletId())) {
+            return false;
+        }
+        final boolean registeredInDb = DB_PORTLET_SOURCE.equals(
+                portlet.getInitParams().get(PORTLET_SOURCE_INIT_PARAM));
+        if (!registeredInDb) {
+            return false;
+        }
+        final String portletId = portlet.getPortletId();
+        final boolean declaredByProduct = Arrays.stream(PortletID.values())
+                .anyMatch(declared -> declared.toString().equals(portletId));
+        Logger.debug(this, () -> String.format("Portlet '%s' registered in db, declared by product: %s",
+                portletId, declaredByProduct));
+        return !declaredByProduct;
     }
 
 }

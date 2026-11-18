@@ -20,7 +20,13 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
 import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
-import { DotMessageSeverity, DotMessageType, DotTag } from '@dotcms/dotcms-models';
+import {
+    DotMessageSeverity,
+    DotMessageType,
+    DotTag,
+    DotTagsCreateResult,
+    DotTagsImportResult
+} from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotTagsListStore } from './store/dot-tags-list.store';
@@ -134,7 +140,7 @@ export class DotTagsListComponent {
 
         ref?.onClose.pipe(take(1)).subscribe((result) => {
             if (result) {
-                this.store.createTag(result);
+                this.store.createTag(result, (created) => this.notifyCreateResult(created));
             }
         });
     }
@@ -186,27 +192,89 @@ export class DotTagsListComponent {
             position: 'center'
         });
 
-        ref?.onClose.pipe(take(1)).subscribe((result) => {
+        ref?.onClose.pipe(take(1)).subscribe((result: DotTagsImportResult | null) => {
             if (result) {
                 this.store.loadTags();
-                const isSuccess = result.failureCount === 0;
-                this.dotMessageDisplayService.push({
-                    life: 5000,
-                    severity: isSuccess ? DotMessageSeverity.SUCCESS : DotMessageSeverity.WARNING,
-                    message: isSuccess
-                        ? this.dotMessageService.get(
-                              'tags.import.success',
-                              `${result.successCount}`
-                          )
-                        : this.dotMessageService.get(
-                              'tags.import.partial-success',
-                              `${result.successCount}`,
-                              `${result.totalRows}`,
-                              `${result.failureCount}`
-                          ),
-                    type: DotMessageType.SIMPLE_MESSAGE
-                });
+                this.notifyImportResult(result);
             }
+        });
+    }
+
+    /**
+     * Tells the user what a create request did. The backend answers 200 even when the tag
+     * already existed, so without this a duplicate submit looks like a silent no-op.
+     */
+    private notifyCreateResult({ created, duplicates }: DotTagsCreateResult): void {
+        if (created.length === 0 && duplicates.length === 0) {
+            return;
+        }
+
+        let severity = DotMessageSeverity.INFO;
+        let message: string;
+
+        if (duplicates.length === 0) {
+            severity = DotMessageSeverity.SUCCESS;
+            message = this.dotMessageService.get('tags.create.success', `${created.length}`);
+        } else if (created.length === 0) {
+            message = this.dotMessageService.get(
+                'tags.create.duplicate',
+                duplicates.map((tag) => tag.label).join(', ')
+            );
+        } else {
+            message = this.dotMessageService.get(
+                'tags.create.mixed',
+                `${created.length}`,
+                `${duplicates.length}`
+            );
+        }
+
+        this.dotMessageDisplayService.push({
+            life: 5000,
+            severity,
+            message,
+            type: DotMessageType.SIMPLE_MESSAGE
+        });
+    }
+
+    /**
+     * Shows the import outcome. If any row was skipped as a duplicate (and none failed)
+     * the toast is INFO, even when other rows were created, so skipped tags are never
+     * reported as a plain success. The total is the sum of the counts because the
+     * backend's `totalRows` includes the CSV header line.
+     */
+    private notifyImportResult({
+        successCount = 0,
+        duplicateCount = 0,
+        failureCount = 0
+    }: DotTagsImportResult): void {
+        const total = `${successCount + duplicateCount + failureCount}`;
+        let severity = DotMessageSeverity.SUCCESS;
+        let message = this.dotMessageService.get('tags.import.success', `${successCount}`);
+
+        if (failureCount > 0) {
+            severity = DotMessageSeverity.WARNING;
+            message = this.dotMessageService.get(
+                'tags.import.partial-success',
+                `${successCount}`,
+                total,
+                `${failureCount}`,
+                `${duplicateCount}`
+            );
+        } else if (duplicateCount > 0) {
+            severity = DotMessageSeverity.INFO;
+            message = this.dotMessageService.get(
+                'tags.import.with-duplicates',
+                `${successCount}`,
+                `${duplicateCount}`,
+                total
+            );
+        }
+
+        this.dotMessageDisplayService.push({
+            life: 5000,
+            severity,
+            message,
+            type: DotMessageType.SIMPLE_MESSAGE
         });
     }
 }

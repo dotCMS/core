@@ -1,5 +1,6 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { NEVER, Observable, of, throwError } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
 import {
     DotHttpErrorManagerService,
@@ -8,6 +9,7 @@ import {
     DotRoleUserResult,
     DotRolesService
 } from '@dotcms/data-access';
+import { DotMessageSeverity } from '@dotcms/dotcms-models';
 
 import { DotRolesStore } from './dot-roles.store';
 
@@ -87,46 +89,44 @@ const findRole = (nodes: DotRoleNode[], id: string): DotRoleNode | undefined => 
 describe('DotRolesStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotRolesStore>>;
     let store: InstanceType<typeof DotRolesStore>;
-    let service: jest.Mocked<DotRolesService>;
+    let service: Mocked<DotRolesService>;
 
     const createService = createServiceFactory({
         service: DotRolesStore,
         providers: [
             mockProvider(DotRolesService, {
-                getRoots: jest.fn().mockReturnValue(of(MOCK_NESTED_ROLES)),
-                getById: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
-                getUsers: jest.fn().mockReturnValue(of(MOCK_USER_FILTER_RESULTS)),
-                create: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
-                update: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
-                delete: jest
+                getRoots: vi.fn().mockReturnValue(of(MOCK_NESTED_ROLES)),
+                getById: vi.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
+                getUsers: vi.fn().mockReturnValue(of(MOCK_USER_FILTER_RESULTS)),
+                create: vi.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
+                update: vi.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
+                delete: vi
                     .fn()
                     .mockReturnValue(of({ deleted: true, roleId: 'r-eco', usersAffected: 0 })),
-                grantUser: jest.fn().mockReturnValue(
+                grantUser: vi.fn().mockReturnValue(
                     of({
                         granted: true,
                         roleId: 'r-eco',
                         user: { userId: 'u-1' }
                     })
                 ),
-                removeUsers: jest
-                    .fn()
-                    .mockReturnValue(of({ removedUserIds: ['u-1'], skipped: [] })),
-                searchTree: jest.fn().mockReturnValue(of([])),
-                getAllToolGroups: jest.fn().mockReturnValue(of([])),
-                getToolGroups: jest.fn().mockReturnValue(of([])),
-                saveToolGroups: jest.fn().mockReturnValue(of({}))
+                removeUsers: vi.fn().mockReturnValue(of({ removedUserIds: ['u-1'], skipped: [] })),
+                searchTree: vi.fn().mockReturnValue(of([])),
+                getAllToolGroups: vi.fn().mockReturnValue(of([])),
+                getToolGroups: vi.fn().mockReturnValue(of([])),
+                saveToolGroups: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotMessageDisplayService, { push: jest.fn() }),
-            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) })
+            mockProvider(DotMessageDisplayService, { push: vi.fn() }),
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) })
         ]
     });
 
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        service = spectator.inject(DotRolesService) as jest.Mocked<DotRolesService>;
-        jest.clearAllMocks();
+        service = spectator.inject(DotRolesService) as Mocked<DotRolesService>;
+        vi.clearAllMocks();
         service.getRoots.mockReturnValue(of(MOCK_NESTED_ROLES));
         service.getById.mockReturnValue(of(MOCK_ROLE_DETAIL));
         service.getUsers.mockReturnValue(of(MOCK_USER_FILTER_RESULTS));
@@ -220,7 +220,7 @@ describe('DotRolesStore', () => {
 
         it('should clear selection without loading when passed null', () => {
             store.selectRole('r-eco');
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             store.selectRole(null);
 
@@ -256,7 +256,7 @@ describe('DotRolesStore', () => {
             // only the role itself would render direct grants as the complete
             // roster — the reading an admin auditing access would trust.
             store.selectRole('r-nowhere');
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             store.loadMembers({ id: 'r-nowhere' });
 
@@ -267,7 +267,7 @@ describe('DotRolesStore', () => {
         it('should load members by role id, with no roleKey branching (#37070)', () => {
             store.loadMembers(SELECTED_ROLE);
 
-            expect(service.getUsers).toHaveBeenCalledWith('r-eco');
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', '');
             expect(store.members()).toHaveLength(2);
             expect(store.membersStatus()).toBe('LOADED');
         });
@@ -308,8 +308,8 @@ describe('DotRolesStore', () => {
             store.selectRole('r-eco');
             store.loadMembers({ id: 'r-eco' });
 
-            expect(service.getUsers).toHaveBeenCalledWith('r-eco');
-            expect(service.getUsers).toHaveBeenCalledWith('r-categories');
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', '');
+            expect(service.getUsers).toHaveBeenCalledWith('r-categories', '');
 
             const members = store.members();
             expect(members).toHaveLength(2);
@@ -346,7 +346,7 @@ describe('DotRolesStore', () => {
 
         it('allows user + tool edits on a system role — CMS Administrator is one', () => {
             // RoleHelper gates grants on `editUsers` only, and layouts on
-            // nothing at all. Blocking system roles here made the Beta stricter
+            // nothing at all. Blocking system roles here made the portlet stricter
             // than both the backend and the legacy portlet.
             select({ system: true, locked: true, editUsers: true, editLayouts: true });
 
@@ -668,7 +668,7 @@ describe('DotRolesStore', () => {
         });
 
         it('should NOT trigger server search for queries under 3 chars', () => {
-            const searchSpy = jest.spyOn(service, 'searchTree');
+            const searchSpy = vi.spyOn(service, 'searchTree');
             store.setFilter('ec');
 
             expect(searchSpy).not.toHaveBeenCalled();
@@ -685,7 +685,7 @@ describe('DotRolesStore', () => {
                     roleChildren: [{ id: 'r-eco', name: 'Eco Role', roleChildren: [] }]
                 }
             ];
-            (service.searchTree as jest.Mock).mockReturnValueOnce(of(matchedTree));
+            (service.searchTree as Mock).mockReturnValueOnce(of(matchedTree));
 
             store.setFilter('eco');
 
@@ -696,7 +696,7 @@ describe('DotRolesStore', () => {
         });
 
         it('should return an empty result when the search returns nothing', () => {
-            (service.searchTree as jest.Mock).mockReturnValueOnce(of([]));
+            (service.searchTree as Mock).mockReturnValueOnce(of([]));
 
             store.setFilter('nomatch');
 
@@ -705,7 +705,7 @@ describe('DotRolesStore', () => {
         });
 
         it('should reset to the full tree when the filter is cleared', () => {
-            (service.searchTree as jest.Mock).mockReturnValueOnce(of([{ id: 'x', name: 'x' }]));
+            (service.searchTree as Mock).mockReturnValueOnce(of([{ id: 'x', name: 'x' }]));
             store.setFilter('anything');
             expect(store.isSearching()).toBe(true);
 
@@ -728,26 +728,114 @@ describe('DotRolesStore', () => {
         });
     });
 
-    describe('selectedRoleIsParent and isSystemRole', () => {
-        it('should mark the selected role as parent when the detail has roleChildren', () => {
-            service.getById.mockReturnValueOnce(
-                of({
-                    ...MOCK_ROLE_DETAIL,
-                    roleChildren: [{ id: 'child', name: 'child' }]
-                })
+    describe('member search', () => {
+        const JANE = { userId: 'u-9', firstName: 'Jane', lastName: 'Doe', emailAddress: 'j@x' };
+
+        beforeEach(() => {
+            store.loadRootRoles();
+            store.selectRole('r-eco');
+            store.loadMembers(SELECTED_ROLE);
+            vi.clearAllMocks();
+        });
+
+        it('should send the trimmed term to every role in the ancestor chain', () => {
+            service.getUsers.mockReturnValue(of([JANE]));
+
+            store.setMembersFilter('  jane ');
+
+            expect(store.membersFilter()).toBe('jane');
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', 'jane');
+            expect(service.getUsers).toHaveBeenCalledWith('r-categories', 'jane');
+            expect(store.members().map((m) => m.userId)).toEqual(['u-9']);
+        });
+
+        it('should reload silently, keeping the current rows instead of the skeleton', () => {
+            service.getUsers.mockReturnValue(NEVER);
+
+            store.setMembersFilter('jane');
+
+            expect(store.membersStatus()).toBe('LOADED');
+            expect(store.members()).toHaveLength(2);
+        });
+
+        it('should not reload for a term it already holds', () => {
+            store.setMembersFilter('jane');
+            vi.clearAllMocks();
+
+            store.setMembersFilter('jane ');
+
+            expect(service.getUsers).not.toHaveBeenCalled();
+        });
+
+        it('should keep the full roster ids for the picker while filtered', () => {
+            service.getUsers.mockReturnValue(of([JANE]));
+
+            store.setMembersFilter('jane');
+
+            expect(store.members().map((m) => m.userId)).toEqual(['u-9']);
+            expect(store.memberIds()).toEqual(['u-1', 'u-2']);
+        });
+
+        it('should keep the header count at the full roster while filtered', () => {
+            service.getUsers.mockReturnValue(of([JANE]));
+
+            store.setMembersFilter('jane');
+
+            expect(store.members()).toHaveLength(1);
+            expect(store.memberCount()).toBe(2);
+        });
+
+        it('should not rewrite the tree badge from a filtered roster', () => {
+            const badgeBefore = findRole(store.roles(), 'r-eco')?.userCount;
+            service.getUsers.mockReturnValue(of([]));
+
+            store.setMembersFilter('nobody');
+
+            expect(findRole(store.roles(), 'r-eco')?.userCount).toBe(badgeBefore);
+        });
+
+        it('should bring the full list back when the term is cleared', () => {
+            store.setMembersFilter('jane');
+            service.getUsers.mockReturnValue(of(MOCK_USER_FILTER_RESULTS));
+
+            store.setMembersFilter('');
+
+            expect(service.getUsers).toHaveBeenLastCalledWith(expect.any(String), '');
+            expect(store.members()).toHaveLength(2);
+        });
+
+        it('should drop the term when another role is selected', () => {
+            store.setMembersFilter('jane');
+
+            store.selectRole('r-snow');
+
+            expect(store.membersFilter()).toBe('');
+        });
+
+        it('should refresh the header count after a grant made while filtered', async () => {
+            service.getUsers.mockReturnValue(of([JANE]));
+            store.setMembersFilter('jane');
+            service.getUsers.mockImplementation((_roleId: string, filter?: string) =>
+                of(filter ? [JANE] : [...MOCK_USER_FILTER_RESULTS, JANE])
             );
 
-            store.selectRole('r-eco');
+            await store.grantUserToRole('u-9');
 
-            expect(store.selectedRoleIsParent()).toBe(true);
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', 'jane');
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', '');
+            expect(store.members()).toHaveLength(1);
+            expect(store.memberCount()).toBe(3);
         });
 
-        it('should mark the selected role as leaf when the detail has no roleChildren', () => {
-            store.selectRole('r-eco');
+        it('should only reload the list after a grant made without a search', async () => {
+            await store.grantUserToRole('u-9');
 
-            expect(store.selectedRoleIsParent()).toBe(false);
+            expect(service.getUsers).toHaveBeenCalledTimes(2);
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', '');
         });
+    });
 
+    describe('isSystemRole', () => {
         it('isSystemRole should be true only for system roles', () => {
             service.getById.mockReturnValueOnce(of({ ...MOCK_ROLE_DETAIL, system: true }));
 
@@ -794,7 +882,7 @@ describe('DotRolesStore', () => {
 
         it('should POST, append the created role to the roots when parentRoleId is null', async () => {
             store.loadRootRoles();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             service.create.mockReturnValue(
                 of({ id: 'r-new-root', name: 'New Root', roleKey: 'new-root' })
             );
@@ -829,7 +917,7 @@ describe('DotRolesStore', () => {
 
         it('should splice into the parent roleChildren when the parent is loaded', async () => {
             store.loadRootRoles();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             service.create.mockReturnValue(
                 of({
                     id: 'r-eco-child',
@@ -859,7 +947,7 @@ describe('DotRolesStore', () => {
             // appeared, which read as "it worked" because the detail pane still
             // selected it. A full reload is heavier but coherent.
             store.loadRootRoles();
-            jest.clearAllMocks();
+            vi.clearAllMocks();
             service.create.mockReturnValue(
                 of({ id: 'r-deep', name: 'Deep', parent: 'r-unloaded', roleKey: 'deep' })
             );
@@ -1082,6 +1170,49 @@ describe('DotRolesStore', () => {
             const categories = store.roles().find((n) => n.id === 'r-categories');
             expect(categories?.roleChildren?.map((c) => c.id)).toContain('r-eco');
             expect(result?.deleted).toBe(false);
+        });
+
+        it('should drop the deleted role from the search results the tree is showing', async () => {
+            service.searchTree.mockReturnValueOnce(
+                of([
+                    {
+                        id: 'r-categories',
+                        name: 'Categories',
+                        roleChildren: [{ id: 'r-eco', name: 'Eco Role' }]
+                    }
+                ])
+            );
+            store.setFilter('eco');
+            await Promise.resolve();
+
+            await store.deleteRole('r-eco');
+
+            expect(findRole(store.searchResults() ?? [], 'r-eco')).toBeUndefined();
+            expect(findRole(store.roles(), 'r-eco')).toBeUndefined();
+        });
+
+        it('should warn with a toast when the backend refuses the delete', async () => {
+            const messageDisplay = spectator.inject(DotMessageDisplayService);
+            service.delete.mockReturnValueOnce(
+                of({ deleted: false, roleId: 'r-eco', usersAffected: 0 })
+            );
+
+            await store.deleteRole('r-eco');
+
+            expect(messageDisplay.push).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: DotMessageSeverity.WARNING,
+                    message: 'roles.delete.rejected'
+                })
+            );
+        });
+
+        it('should not warn when the role was deleted', async () => {
+            const messageDisplay = spectator.inject(DotMessageDisplayService);
+
+            await store.deleteRole('r-eco');
+
+            expect(messageDisplay.push).not.toHaveBeenCalled();
         });
     });
 

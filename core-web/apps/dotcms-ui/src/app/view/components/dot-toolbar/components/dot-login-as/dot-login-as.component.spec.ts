@@ -7,13 +7,15 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import {
     from as observableFrom,
     of as observableOf,
     throwError as observableThrowError
 } from 'rxjs';
+import { vi } from 'vitest';
 
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
@@ -52,7 +54,8 @@ describe('DotLoginAsComponent', () => {
         'login-as': 'login-as',
         'loginas.select.loginas.user': 'loginas.select.loginas.user',
         password: 'password',
-        'loginas.error.wrong-credentials': 'wrong password'
+        'loginas.error.wrong-credentials': 'wrong password',
+        'loginas.error.adminrequired': 'admin required'
     });
 
     const createComponent = createComponentFactory({
@@ -78,7 +81,7 @@ describe('DotLoginAsComponent', () => {
             {
                 provide: PaginatorService,
                 useValue: {
-                    getWithOffset: jest.fn().mockReturnValue(observableOf([...users])),
+                    getWithOffset: vi.fn().mockReturnValue(observableOf([...users])),
                     filter: '',
                     url: ''
                 }
@@ -148,7 +151,7 @@ describe('DotLoginAsComponent', () => {
             const testUser = mockUser();
             // Create a new spy for loginAs
             const loginServiceInstance = spectator.inject(LoginService);
-            jest.spyOn(loginServiceInstance, 'loginAs').mockReturnValue(observableOf(true));
+            vi.spyOn(loginServiceInstance, 'loginAs').mockReturnValue(observableOf(true));
 
             // Make sure goToFirstPortlet returns a promise
             dotNavigationService.goToFirstPortlet.mockReturnValue(Promise.resolve(true));
@@ -193,7 +196,7 @@ describe('DotLoginAsComponent', () => {
             // Arrange
             // Create a new spy for loginAs
             const loginServiceInstance = spectator.inject(LoginService);
-            jest.spyOn(loginServiceInstance, 'loginAs').mockReturnValue(
+            vi.spyOn(loginServiceInstance, 'loginAs').mockReturnValue(
                 observableThrowError({ message: 'Error' })
             );
 
@@ -207,8 +210,8 @@ describe('DotLoginAsComponent', () => {
             spectator.detectChanges();
 
             // Mock the passwordElem viewChild to simulate the element being available
-            const mockPasswordElement = { nativeElement: { focus: jest.fn() } };
-            jest.spyOn(component, 'passwordElem' as any).mockReturnValue(mockPasswordElement);
+            const mockPasswordElement = { nativeElement: { focus: vi.fn() } };
+            vi.spyOn(component, 'passwordElem' as any).mockReturnValue(mockPasswordElement);
 
             // Act - Submit form
             component.doLoginAs();
@@ -247,10 +250,10 @@ describe('DotLoginAsComponent', () => {
             navigationService.goToFirstPortlet.mockReturnValue(Promise.resolve(true));
 
             // Create a spy for the reload method of the location service
-            jest.spyOn(locationService, 'reload');
+            vi.spyOn(locationService, 'reload');
 
             // Create a spy for the loginAs method of the login service
-            jest.spyOn(loginService, 'loginAs').mockReturnValue(observableOf(true));
+            vi.spyOn(loginService, 'loginAs').mockReturnValue(observableOf(true));
 
             // Set up the component
             spectator.setInput('visible', true);
@@ -273,11 +276,11 @@ describe('DotLoginAsComponent', () => {
         it('should set error message signal when login fails', fakeAsync(() => {
             // Arrange
             const mockDotMessageService = spectator.inject(DotMessageService);
-            jest.spyOn(mockDotMessageService, 'get').mockReturnValue('wrong password');
+            vi.spyOn(mockDotMessageService, 'get').mockReturnValue('wrong password');
 
             // Create a new spy for loginAs
             const loginServiceInstance = spectator.inject(LoginService);
-            jest.spyOn(loginServiceInstance, 'loginAs').mockReturnValue(observableThrowError({}));
+            vi.spyOn(loginServiceInstance, 'loginAs').mockReturnValue(observableThrowError({}));
 
             // Make sure goToFirstPortlet returns a promise
             dotNavigationService.goToFirstPortlet.mockReturnValue(Promise.resolve(true));
@@ -301,6 +304,63 @@ describe('DotLoginAsComponent', () => {
             // Assert - Verify the error message signal has the correct value
             expect(component.errorMessage()).toBe('wrong password');
         }));
+
+        describe('error message selection', () => {
+            const fail = (error: unknown) => {
+                vi.spyOn(spectator.inject(DotMessageService), 'get').mockImplementation(
+                    (key: string) => key
+                );
+                vi.spyOn(spectator.inject(LoginService), 'loginAs').mockReturnValue(
+                    observableThrowError(error)
+                );
+
+                spectator.setInput('visible', true);
+                component.needPassword.set(true);
+                spectator.detectChanges();
+
+                component.form.get('loginAsUser')?.setValue(mockUser());
+                component.form.get('password')?.setValue('password');
+                component.doLoginAs();
+            };
+
+            it('should show the admin-required message when the 403 carries its error key', fakeAsync(() => {
+                fail(
+                    new HttpErrorResponse({
+                        status: 403,
+                        headers: new HttpHeaders({ 'error-key': 'loginas.error.adminrequired' })
+                    })
+                );
+                tick();
+
+                expect(component.errorMessage()).toBe('loginas.error.adminrequired');
+            }));
+
+            it('should not show the admin-required message for a 403 without its error key', fakeAsync(() => {
+                fail(new HttpErrorResponse({ status: 403 }));
+                tick();
+
+                expect(component.errorMessage()).toBe('loginas.error.wrong-credentials');
+            }));
+
+            it('should show the server message when the server returns a message key', fakeAsync(() => {
+                fail([{ errorCode: 'loginas.error.nolayouts', message: 'No tools assigned' }]);
+                tick();
+
+                expect(component.errorMessage()).toBe('No tools assigned');
+            }));
+
+            it('should keep the own-password hint when the server reports invalid credentials', fakeAsync(() => {
+                fail([
+                    {
+                        errorCode: 'loginas.error.invalidloginascredentials',
+                        message: 'The specified user or password is invalid.'
+                    }
+                ]);
+                tick();
+
+                expect(component.errorMessage()).toBe('loginas.error.wrong-credentials');
+            }));
+        });
 
         it('should render error message in DOM when errorMessage signal has value', () => {
             // Arrange
@@ -334,7 +394,7 @@ describe('DotLoginAsComponent', () => {
 
     describe('Dialog interaction', () => {
         it('should close dialog when cancel button is clicked', () => {
-            jest.spyOn(component, 'close');
+            vi.spyOn(component, 'close');
             spectator.setInput('visible', true);
             spectator.detectChanges();
 
@@ -346,7 +406,7 @@ describe('DotLoginAsComponent', () => {
 
     describe('close()', () => {
         it('should emit cancel, reset form state when visible is true', () => {
-            const cancelSpy = jest.fn();
+            const cancelSpy = vi.fn();
             spectator.output('cancel').subscribe(cancelSpy);
 
             spectator.setInput('visible', true);
@@ -365,7 +425,7 @@ describe('DotLoginAsComponent', () => {
         });
 
         it('should not emit cancel or reset state when visible is false (guard)', () => {
-            const cancelSpy = jest.fn();
+            const cancelSpy = vi.fn();
             spectator.output('cancel').subscribe(cancelSpy);
 
             spectator.setInput('visible', false);
@@ -382,7 +442,7 @@ describe('DotLoginAsComponent', () => {
         });
 
         it('should emit cancel when p-dialog emits onHide and visible is true', () => {
-            const cancelSpy = jest.fn();
+            const cancelSpy = vi.fn();
             spectator.output('cancel').subscribe(cancelSpy);
 
             spectator.setInput('visible', true);
@@ -394,7 +454,7 @@ describe('DotLoginAsComponent', () => {
         });
 
         it('should not emit cancel when p-dialog emits onHide and visible is false', () => {
-            const cancelSpy = jest.fn();
+            const cancelSpy = vi.fn();
             spectator.output('cancel').subscribe(cancelSpy);
 
             spectator.setInput('visible', false);

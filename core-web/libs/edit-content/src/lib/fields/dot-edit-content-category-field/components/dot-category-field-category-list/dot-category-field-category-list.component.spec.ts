@@ -1,5 +1,10 @@
-import { expect } from '@jest/globals';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { expect, vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -37,7 +42,7 @@ describe('DotCategoryFieldCategoryListComponent', () => {
     });
 
     afterEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
     });
 
     it('should render correct number of category columns', () => {
@@ -69,7 +74,7 @@ describe('DotCategoryFieldCategoryListComponent', () => {
     });
 
     it('should emit the correct item when clicked', () => {
-        const emitSpy = jest.spyOn(spectator.component.rowClicked, 'emit');
+        const emitSpy = vi.spyOn(spectator.component.rowClicked, 'emit');
         const items = spectator.queryAll(byTestId('category-item-wrapper'));
         spectator.click(items[0]);
 
@@ -150,7 +155,7 @@ describe('DotCategoryFieldCategoryListComponent', () => {
             spectator.setInput('breadcrumbs', []);
             spectator.detectChanges();
 
-            const emitSpy = jest.spyOn(spectator.component.rowClicked, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.rowClicked, 'emit');
             const breadcrumbs = spectator.queryAll('dot-collapse-breadcrumb .p-menuitem-link');
 
             // If breadcrumbs are found, click the first one (root)
@@ -193,7 +198,7 @@ describe('DotCategoryFieldCategoryListComponent', () => {
             spectator.setInput('breadcrumbs', CATEGORY_MOCK_TRANSFORMED);
             spectator.detectChanges();
 
-            const emitSpy = jest.spyOn(spectator.component.rowClicked, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.rowClicked, 'emit');
             const breadcrumbs = spectator.queryAll('dot-collapse-breadcrumb .p-menuitem-link');
 
             // If breadcrumbs are found in DOM, click the second one (first breadcrumb item)

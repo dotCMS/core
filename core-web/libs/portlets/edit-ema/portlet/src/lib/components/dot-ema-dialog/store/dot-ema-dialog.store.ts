@@ -8,10 +8,9 @@ import { MessageService } from 'primeng/api';
 
 import { switchMap } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotActionUrlService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSPage, DotCMSUVEAction } from '@dotcms/types';
 
-import { DotActionUrlService } from '../../../services/dot-action-url/dot-action-url.service';
 import { CONTENTLET_SELECTOR_URL, LAYOUT_URL } from '../../../shared/consts';
 import { DialogStatus, FormStatus } from '../../../shared/enums';
 import {

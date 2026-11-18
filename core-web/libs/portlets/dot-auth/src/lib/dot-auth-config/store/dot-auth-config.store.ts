@@ -10,6 +10,8 @@ import { DOT_AUTH_SYSTEM_HOST, DotAuthConfig, DotAuthUiProtocol } from '@dotcms/
 
 import {
     DEFAULT_CONFIG,
+    GOOGLE_ISSUER,
+    applyGoogleGroupsPreset,
     applyOidcDiscovery,
     applyTrustedDiscovery,
     clone,
@@ -27,6 +29,8 @@ type DotAuthConfigStatus = 'init' | 'loading' | 'loaded' | 'saving' | 'error';
 
 interface DotAuthConfigState {
     siteId: string;
+    // Hostname the server resolved for siteId; '' for SYSTEM_HOST and until loaded.
+    hostName: string;
     original: DotAuthConfig;
     draft: DotAuthConfig;
     configured: boolean;
@@ -38,17 +42,21 @@ interface DotAuthConfigState {
     // reload errored (which, per convention, still lands on status 'loaded'), so a failed
     // reload does not masquerade as a successful save with a green toast.
     reloadFailed: boolean;
+    // Set when OIDC discovery returned Google's issuer; the component offers the groups pre-fill.
+    googlePrefillPending: boolean;
 }
 
 const initialState: DotAuthConfigState = {
     siteId: DOT_AUTH_SYSTEM_HOST,
+    hostName: '',
     original: clone(DEFAULT_CONFIG),
     draft: clone(DEFAULT_CONFIG),
     configured: false,
     inherited: false,
     status: 'init',
     errors: {},
-    reloadFailed: false
+    reloadFailed: false,
+    googlePrefillPending: false
 };
 
 export const DotAuthConfigStore = signalStore(
@@ -87,6 +95,7 @@ export const DotAuthConfigStore = signalStore(
                     patchState(store, {
                         original: config,
                         draft: clone(config),
+                        hostName: view.hostName ?? '',
                         configured: view.configured,
                         inherited: view.inherited,
                         status: 'loaded',
@@ -95,7 +104,12 @@ export const DotAuthConfigStore = signalStore(
                 });
         }
 
-        function saveSso(): boolean {
+        /**
+         * @param options.regenerateKeypair set only after the admin confirmed replacing a
+         * stored SAML SP keypair; the server rejects an empty keypair on an existing config
+         * without it.
+         */
+        function saveSso(options?: { regenerateKeypair?: boolean }): boolean {
             const draft = store.draft();
             if (draft.protocol === 'none') {
                 return false;
@@ -106,8 +120,12 @@ export const DotAuthConfigStore = signalStore(
                 return false;
             }
             patchState(store, { status: 'saving', errors: {} });
+            const payload = toPayload(draft, store.siteId());
+            if (options?.regenerateKeypair && payload.protocol === 'SAML') {
+                payload.values['regenerateKeypair'] = true;
+            }
             service
-                .saveConfig(store.siteId(), toPayload(draft, store.siteId()))
+                .saveConfig(store.siteId(), payload)
                 .pipe(
                     take(1),
                     catchError((error) => {
@@ -249,9 +267,21 @@ export const DotAuthConfigStore = signalStore(
                             draft:
                                 path === 'oidc'
                                     ? applyOidcDiscovery(store.draft(), view)
-                                    : applyTrustedDiscovery(store.draft(), path, view)
+                                    : applyTrustedDiscovery(store.draft(), path, view),
+                            googlePrefillPending: path === 'oidc' && view.issuer === GOOGLE_ISSUER
                         });
                     });
+            },
+
+            applyGoogleGroupsPreset(): void {
+                patchState(store, {
+                    draft: applyGoogleGroupsPreset(store.draft()),
+                    googlePrefillPending: false
+                });
+            },
+
+            dismissGooglePrefill(): void {
+                patchState(store, { googlePrefillPending: false });
             },
 
             fetchSamlMetadata(url: string): void {

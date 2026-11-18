@@ -1,4 +1,5 @@
 import { signalMethod } from '@ngrx/signals';
+import { injectDispatch } from '@ngrx/signals/events';
 
 import { JsonPipe, NgStyle } from '@angular/common';
 import {
@@ -22,9 +23,17 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { TEMP_EMPTY_CONTENTLET_TYPE } from '@dotcms/uve/internal';
 
-import { ActionPayload, VTLFile } from '../../../shared/models';
+import { ActionPayload } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { UVE_EDIT_PANEL_TABS } from '../../../store/features/editor/models';
+import { uveContentEditorEvents } from '../dot-uve-content-editor/dot-uve-content-editor.events';
 import { ContentletArea } from '../ema-page-dropzone/types';
+
+/**
+ * An entry of the collapsed actions menu. `symbol` names its Material Symbol, which the menu's
+ * item template draws as text (PrimeNG's own `icon` only takes a class).
+ */
+type DotHoverActionMenuItem = MenuItem & { symbol?: string };
 
 /**
  * @class DotUveContentletToolsComponent
@@ -48,6 +57,7 @@ import { ContentletArea } from '../ema-page-dropzone/types';
 export class DotUveContentletToolsComponent {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #uveStore = inject(UVEStore);
+    readonly #contentEditor = injectDispatch(uveContentEditorEvents);
 
     readonly menuHover = viewChild<Menu>('menuHover');
     readonly menuHoverVTL = viewChild<Menu>('menuHoverVTL');
@@ -80,41 +90,10 @@ export class DotUveContentletToolsComponent {
     readonly showStyleEditorOption = input<boolean>(false, { alias: 'showStyleEditorOption' });
 
     /**
-     * Emitted when the user chooses to edit a VTL file associated with the current contentlet.
-     */
-    readonly editVTL = output<VTLFile>();
-    /**
-     * Emitted when the user clicks the quick-edit (sliders) button to
-     * open the side panel for inline-style edits.
-     */
-    readonly openQuickEdit = output<void>();
-    /**
-     * Emitted when the user clicks the pencil button to open the full
-     * content editor as a modal dialog. Carries the hovered contentlet's
-     * payload so the parent can act on it without writing to
-     * editorSelected — pencil
-     * is intentionally "stateless" (doesn't pin the contentlet as
-     * selected or active in the editor).
-     */
-    readonly openFullEditor = output<ActionPayload>();
-    /**
      * Emitted when the user requests deletion of the current contentlet.
      * The parent component is responsible for performing and confirming the deletion.
      */
     readonly deleteContent = output<ActionPayload>();
-    /**
-     * Emitted when the user invokes the "add content" menu.
-     * The `type` indicates what the user wants to add (content, form or widget).
-     */
-    readonly addContent = output<{
-        type: 'content' | 'form' | 'widget';
-        payload: ActionPayload;
-    }>();
-
-    /**
-     * Emitted when the contentlet is selected from the tools (for example, via a drag handle).
-     */
-    readonly selectContent = output<ActionPayload>();
 
     /**
      * Opt-in flag indicating this drag source should use the custom drag image.
@@ -131,40 +110,6 @@ export class DotUveContentletToolsComponent {
      * - `'after'`: add below
      */
     protected readonly buttonPosition = signal<'after' | 'before'>('after');
-
-    /**
-     * Helper function to compare two contentlets by their identifier and container uuid.
-     * Returns true if they represent the same contentlet in the same container instance.
-     * Accepts any record carrying a `payload` field — works for both
-     * `ContentletArea` (hover) and `SelectedContentlet` (selected).
-     */
-    isSameContentlet(
-        a: { payload?: ActionPayload } | null | undefined,
-        b: { payload?: ActionPayload } | null | undefined
-    ): boolean {
-        if (!a || !b) {
-            return false;
-        }
-
-        const id1 = a.payload?.contentlet?.identifier;
-        const id2 = b.payload?.contentlet?.identifier;
-        const containerKey1 = `${a.payload?.container?.identifier}:${a.payload?.container?.uuid}`;
-        const containerKey2 = `${b.payload?.container?.identifier}:${b.payload?.container?.uuid}`;
-
-        return id1 !== undefined && id1 === id2 && containerKey1 === containerKey2;
-    }
-
-    /**
-     * Computed property to determine if the hovered contentlet is different from the selected one.
-     */
-    readonly isHoveredDifferentFromSelected = computed(() => {
-        const hovered = this.contentletArea();
-        const selected = this.selected();
-        if (!hovered || !selected) {
-            return true;
-        }
-        return !this.isSameContentlet(hovered, selected);
-    });
 
     /**
      * Show the hover overlay whenever a contentlet is hovered. The hover
@@ -221,17 +166,56 @@ export class DotUveContentletToolsComponent {
     });
 
     /**
-     * Whether the selected container is represented by a temporary "empty" contentlet.
+     * Whether the current user holds EDIT permission on the hovered contentlet.
+     * Sourced from `data-dot-can-edit`, which the container renderer stamps on
+     * every contentlet in EDIT mode from a WRITE-level check against the
+     * contentlet instance.
+     *
+     * Fail-open by design: a missing value means allowed. Headless and
+     * SDK-rendered pages build their own wrappers and never emit the
+     * attribute, so denying on absence would grey out the toolbar on all of
+     * them.
      */
-    readonly isSelectedContainerEmpty = computed(() => {
-        return this.selectedContentContext()?.contentlet?.identifier === 'TEMP_EMPTY_CONTENTLET';
+    readonly canEditContentlet = computed(
+        () => this.contentContext()?.contentlet?.canEdit !== false
+    );
+
+    /**
+     * Tooltip key for the edit button. When the user lacks edit permission on
+     * this contentlet the tooltip explains why; otherwise it just labels the
+     * action, matching the other toolbar tooltips.
+     */
+    protected readonly editButtonTooltip = computed(() => {
+        if (!this.canEditContentlet()) {
+            return 'uve.contentlet.no.edit.permission';
+        }
+
+        return 'uve.tooltip.edit.full';
     });
 
     /**
-     * Whether there is at least one VTL file associated with the selected contentlet.
+     * Tooltip key for the quick-edit button. Shares the edit button's
+     * permission message — the quick-edit form writes the same contentlet, so
+     * the same explanation applies.
      */
-    readonly selectedHasVtlFiles = computed(() => {
-        return !!this.selectedContentContext()?.vtlFiles?.length;
+    protected readonly quickEditButtonTooltip = computed(() => {
+        if (!this.canEditContentlet()) {
+            return 'uve.contentlet.no.edit.permission';
+        }
+
+        return 'uve.tooltip.edit.quick';
+    });
+
+    /**
+     * Tooltip key for the style button. Style properties describe how this
+     * contentlet presents itself, so they follow contentlet permission.
+     */
+    protected readonly styleButtonTooltip = computed(() => {
+        if (!this.canEditContentlet()) {
+            return 'uve.contentlet.no.edit.permission';
+        }
+
+        return 'uve.tooltip.edit.style';
     });
 
     /**
@@ -250,89 +234,115 @@ export class DotUveContentletToolsComponent {
 
     /**
      * Menu items used for adding new content to the layout (content, widget, and optionally form).
-     * Items are localized and wired so that selecting them emits `addContent`.
-     * Uses selected context when available, otherwise falls back to hovered context.
+     * Items are localized and wired so that selecting one asks the content editor to add it at
+     * that position. Uses selected context when available, otherwise falls back to hovered context.
      */
     readonly menuItems = computed<MenuItem[]>(() => {
         const context = this.selected() ? this.selectedContentContext() : this.contentContext();
         return [
             {
                 label: this.#dotMessageService.get('content'),
-                command: () => this.addContent.emit({ type: 'content', payload: context })
+                command: () =>
+                    this.#contentEditor.uveAddContentRequested({ type: 'content', into: context })
             },
             {
                 label: this.#dotMessageService.get('Widget'),
-                command: () => this.addContent.emit({ type: 'widget', payload: context })
+                command: () =>
+                    this.#contentEditor.uveAddContentRequested({ type: 'widget', into: context })
             },
             {
                 label: this.#dotMessageService.get('form'),
-                command: () => this.addContent.emit({ type: 'form', payload: context })
+                command: () =>
+                    this.#contentEditor.uveAddContentRequested({ type: 'form', into: context })
             }
         ];
     });
 
     /**
-     * Menu items corresponding to the VTL files of the selected contentlet.
-     * Each item represents a file and triggers the `editVTL` output when clicked.
+     * Menu items for the VTL files of the **hovered** contentlet — the same
+     * contentlet `hasVtlFiles()` gates the `</>` button on.
+     *
+     * Hover, not selection: the button lives only in the hover toolbar, so the
+     * hovered contentlet is the only one it can belong to. Reading the selection
+     * here meant the button could be offered from one contentlet and filled from
+     * another, and the selected payload loses `vtlFiles` on every SET_BOUNDS
+     * re-anchor — so the menu opened empty after any layout shift.
+     *
+     * Choosing a file promotes the hovered contentlet to selected, so the
+     * selection border follows the contentlet whose VTL was opened. Promotion is
+     * on the command rather than the button click deliberately: opening the menu
+     * and dismissing it without picking should leave the selection alone.
+     *
+     * Returns `[]` rather than `undefined` so PrimeNG is never handed an
+     * undefined `[model]`, and so this honors its own declared return type.
      */
     readonly vtlMenuItems = computed<MenuItem[]>(() => {
-        const context = this.selected() ? this.selectedContentContext() : this.contentContext();
-        const { vtlFiles } = context ?? {};
-        return vtlFiles?.map((file) => ({
-            label: file?.name,
-            command: () => this.editVTL.emit(file)
-        }));
+        const { vtlFiles } = this.contentContext() ?? {};
+        return (
+            vtlFiles?.map((file) => ({
+                label: file?.name,
+                command: () => {
+                    this.promoteHoverToSelected();
+                    this.#contentEditor.uveEditSourceRequested(file);
+                }
+            })) ?? []
+        );
     });
 
     /**
      * Menu items for the collapsed actions toolbar (small contentlets).
-     * Mirrors the icon-row buttons one-for-one. The drag button is NOT
-     * included — it lives outside `.actions` (left-center of the border)
-     * and stays visible at all sizes. VTL is a nested submenu (PrimeNG
-     * `<p-menu>` honors `items` on a MenuItem).
+     * Mirrors the icon-row buttons one-for-one, in the same order: Edit (quick
+     * edit), Styles, Full Editor, Code, then Remove. The drag button is NOT
+     * included — it lives outside `.actions` (left-center of the border) and
+     * stays visible at all sizes. Code is a nested submenu of the
+     * contentlet's VTL files (PrimeNG `<p-menu>` honors `items` on a MenuItem).
+     * Each entry carries the toolbar button's Material Symbol as `symbol`.
      */
-    readonly actionsMenuItems = computed<MenuItem[]>(() => {
+    readonly actionsMenuItems = computed<DotHoverActionMenuItem[]>(() => {
         const context = this.contentContext();
-        const items: MenuItem[] = [];
-
-        const vtlSubmenu = this.vtlMenuItems();
-        if (vtlSubmenu?.length) {
-            items.push({
-                label: this.#dotMessageService.get('uve.tooltip.edit.vtl'),
-                icon: 'pi pi-code',
-                items: vtlSubmenu
-            });
-        }
+        const items: DotHoverActionMenuItem[] = [];
 
         items.push({
             label: this.#dotMessageService.get('uve.tooltip.edit.quick'),
-            icon: 'pi pi-bolt',
+            symbol: 'edit',
+            disabled: !this.canEditContentlet(),
             command: () => {
                 this.promoteHoverToSelected();
-                this.openQuickEdit.emit();
+                this.openQuickEdit();
             }
         });
 
         if (this.showStyleEditorOption()) {
             items.push({
                 label: this.#dotMessageService.get('uve.tooltip.edit.style'),
-                icon: 'pi pi-palette',
+                symbol: 'palette',
+                disabled: !this.canEditContentlet(),
                 command: () => {
                     this.promoteHoverToSelected();
-                    this.selectContent.emit(context);
+                    this.openStyleEditor();
                 }
             });
         }
 
         items.push({
             label: this.#dotMessageService.get('uve.tooltip.edit.full'),
-            icon: 'pi pi-pencil',
-            command: () => this.openFullEditor.emit(context)
+            symbol: 'edit_note',
+            disabled: !this.canEditContentlet(),
+            command: () => this.editContent(context)
         });
+
+        const vtlSubmenu = this.vtlMenuItems();
+        if (vtlSubmenu.length) {
+            items.push({
+                label: this.#dotMessageService.get('uve.tooltip.edit.vtl'),
+                symbol: 'code',
+                items: vtlSubmenu
+            });
+        }
 
         items.push({
             label: this.#dotMessageService.get('uve.tooltip.remove'),
-            icon: 'pi pi-times',
+            symbol: 'close',
             disabled: !this.allowContentDelete(),
             command: () => this.deleteContent.emit(context)
         });
@@ -427,35 +437,9 @@ export class DotUveContentletToolsComponent {
     });
 
     /**
-     * Describes the draggable payload for the selected contentlet controls.
-     * Returns null-like values when the source data is incomplete, allowing
-     * the template to disable the drag affordance gracefully.
-     */
-    readonly dragPayload = computed(() => {
-        const selectedContext = this.selectedContentContext();
-        const { container, contentlet } = selectedContext;
-
-        if (!contentlet) {
-            return {
-                container: null,
-                contentlet: null,
-                showLabelImage: false,
-                move: false
-            };
-        }
-
-        return {
-            container,
-            contentlet,
-            showLabelImage: true,
-            move: true
-        };
-    });
-
-    /**
-     * Drag payload for the hovered contentlet's action toolbar. Mirrors
-     * `dragPayload` but reads from the hover context so the hover toolbar's
-     * drag handle dispatches the right contentlet.
+     * Drag payload for the hovered contentlet's action toolbar — reads the
+     * hover context so the drag handle dispatches the contentlet under the
+     * pointer.
      */
     readonly hoverDragPayload = computed(() => {
         const { container, contentlet } = this.contentContext();
@@ -486,6 +470,62 @@ export class DotUveContentletToolsComponent {
 
     constructor() {
         this.hideMenusMethod(this.contentletArea);
+    }
+
+    /**
+     * Pencil: asks for the full content editor on the hovered contentlet. Sends its container
+     * along, so a contentlet on more than one page is first offered as a copy on this page only.
+     *
+     * Reads the hovered payload, NOT editorSelected — the pencil is intentionally stateless with
+     * respect to editor selection, so it does not call {@link promoteHoverToSelected}.
+     *
+     * Defense in depth for the disabled pencil: the toolbar can act from stale bounds or be
+     * driven programmatically, so the permission check must not rest on the disabled button
+     * alone. Fail-open: only an explicit `false` denies, because headless pages carry no
+     * permission.
+     */
+    protected editContent({ contentlet, container }: ActionPayload): void {
+        if (!contentlet?.inode || contentlet.canEdit === false) {
+            return;
+        }
+
+        this.#contentEditor.uveEditContentRequested({
+            contentlet,
+            forkFrom: container
+        });
+    }
+
+    /**
+     * Quick-edit button: opens the edit panel on its quick-edit tab. Runs after
+     * {@link promoteHoverToSelected}, so the panel shows the contentlet just clicked.
+     *
+     * Same defense in depth as the pencil: the button is already disabled without EDIT
+     * permission on this contentlet, but the panel must not be reachable through a stale
+     * toolbar or menu. Fail-open: only an explicit `false` denies.
+     */
+    protected openQuickEdit(): void {
+        if (this.#uveStore.editorSelected()?.payload?.contentlet?.canEdit === false) {
+            return;
+        }
+
+        this.#uveStore.setEditPanelOpen(true);
+        this.#uveStore.editorSetEditPanelTab(UVE_EDIT_PANEL_TABS.QUICK_EDIT);
+    }
+
+    /**
+     * Style button: opens the edit panel on its style tab. Runs after
+     * {@link promoteHoverToSelected}, so the panel binds to the contentlet just clicked.
+     *
+     * Same gate as the pencil and quick edit: styling changes how this contentlet presents
+     * itself, so it follows contentlet permission.
+     */
+    protected openStyleEditor(): void {
+        if (!this.#uveStore.editorCanEditSelectedContentlet()) {
+            return;
+        }
+
+        this.#uveStore.setEditPanelOpen(true);
+        this.#uveStore.editorSetEditPanelTab(UVE_EDIT_PANEL_TABS.STYLE_EDITOR);
     }
 
     /**

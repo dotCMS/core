@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, viewChild } from '@angular/core';
@@ -44,10 +46,10 @@ class TestHostComponent {
 }
 
 function mockEditorChain(editor: Editor) {
-    const runSpy = jest.fn();
-    const setLinkSpy = jest.fn().mockReturnValue({ run: runSpy });
-    const focusSpy = jest.fn().mockReturnValue({ setLink: setLinkSpy });
-    jest.spyOn(editor, 'chain').mockReturnValue({ focus: focusSpy } as never);
+    const runSpy = vi.fn();
+    const setLinkSpy = vi.fn().mockReturnValue({ run: runSpy });
+    const focusSpy = vi.fn().mockReturnValue({ setLink: setLinkSpy });
+    vi.spyOn(editor, 'chain').mockReturnValue({ focus: focusSpy } as never);
 
     return { setLinkSpy, focusSpy, runSpy };
 }
@@ -102,14 +104,14 @@ describe('DotLinkEditorPopoverComponent', () => {
     describe('addLinkToNode', () => {
         beforeEach(() => {
             const component = hostComponent.popover();
-            component['popover'] = { hide: jest.fn() } as never;
+            component['popover'] = { hide: vi.fn() } as never;
         });
 
         it('should call setLink with all accessibility attributes', () => {
             const component = hostComponent.popover();
             const editor = hostComponent.editor;
             const { setLinkSpy } = mockEditorChain(editor);
-            jest.spyOn(editor, 'isActive').mockReturnValue(false);
+            vi.spyOn(editor, 'isActive').mockReturnValue(false);
 
             component['linkTargetAttribute'].set('_self');
             component['linkTitle'].set('My Title');
@@ -131,7 +133,7 @@ describe('DotLinkEditorPopoverComponent', () => {
             const component = hostComponent.popover();
             const editor = hostComponent.editor;
             const { setLinkSpy } = mockEditorChain(editor);
-            jest.spyOn(editor, 'isActive').mockReturnValue(false);
+            vi.spyOn(editor, 'isActive').mockReturnValue(false);
 
             component['linkTitle'].set('   ');
             component['linkAriaLabel'].set('  ');
@@ -152,7 +154,7 @@ describe('DotLinkEditorPopoverComponent', () => {
     describe('saveLinkAttributes', () => {
         beforeEach(() => {
             const component = hostComponent.popover();
-            component['popover'] = { hide: jest.fn() } as never;
+            component['popover'] = { hide: vi.fn() } as never;
         });
 
         it('should save all attributes to an existing link', () => {
@@ -183,8 +185,8 @@ describe('DotLinkEditorPopoverComponent', () => {
             const component = hostComponent.popover();
             const editor = hostComponent.editor;
 
-            jest.spyOn(editor, 'isActive').mockReturnValue(true);
-            jest.spyOn(editor, 'getAttributes').mockReturnValue({
+            vi.spyOn(editor, 'isActive').mockReturnValue(true);
+            vi.spyOn(editor, 'getAttributes').mockReturnValue({
                 href: 'https://dotcms.com',
                 target: '_self',
                 title: 'My title',
@@ -205,8 +207,8 @@ describe('DotLinkEditorPopoverComponent', () => {
             const component = hostComponent.popover();
             const editor = hostComponent.editor;
 
-            jest.spyOn(editor, 'isActive').mockReturnValue(true);
-            jest.spyOn(editor, 'getAttributes').mockReturnValue({
+            vi.spyOn(editor, 'isActive').mockReturnValue(true);
+            vi.spyOn(editor, 'getAttributes').mockReturnValue({
                 href: 'https://example.com',
                 target: '_blank'
             });

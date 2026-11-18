@@ -9,26 +9,31 @@ The `dotcms-integration` module contains comprehensive integration tests that va
 ### Location
 - **Main Path**: `dotcms-integration/src/test/java`
 - **Test Runner**: Maven Failsafe plugin
-- **Framework**: JUnit 4/5 with custom base classes
-- **Environment**: Docker containers for dependencies
+- **Framework**: JUnit 4 (a small, growing set of newer tests use JUnit 5 via the `Junit5Suite*` aggregators)
+- **Environment**: PostgreSQL + Elasticsearch/OpenSearch, run via Docker Compose (`dotcms-integration/src/docker-compose/it-test`) — started/stopped by Maven profiles, not by the tests themselves
 
 ### Module Structure
 ```
 dotcms-integration/
 ├── src/test/java/
-│   ├── com/dotcms/          # Integration tests
-│   ├── com/dotmarketing/    # Legacy integration tests
-│   └── util/                # Test utilities
-├── src/test/resources/      # Test configurations
-├── docker/                  # Docker test environment
+│   ├── com/dotcms/          # Modern integration tests
+│   └── com/dotmarketing/    # Legacy integration tests
+├── src/test/resources/      # Test configurations, log4j2.xml
+├── src/docker-compose/      # Docker Compose files for the test environment
 └── pom.xml                  # Maven configuration
 ```
 
 ### Base Classes
-- **`IntegrationTestBase`**: Common setup for integration tests
-- **`BaseContainerTest`**: Docker container management
-- **`DataProviderRunner`**: Test data generation
-- **`APITestCase`**: REST API testing base
+- **`IntegrationTestBase`** (`com.dotcms.IntegrationTestBase`): the common base class for most integration tests — JUnit 4, extends `BaseMessageResources`
+- **`ContentTypeBaseTest`**, **`BaseWorkflowIntegrationTest`**: specialized subclasses of `IntegrationTestBase` for their respective areas
+- **`Junit5WeldBaseTest`** (`com.dotcms.Junit5WeldBaseTest`): a standalone JUnit 5 base class for tests that need a real Weld CDI container, used by a minority of newer tests
+
+### Test Runners (Data-Provider Parameterized Tests)
+For JUnit4 tests that need `@DataProvider`-style parameterization (from the
+`com.tngtech.junit.dataprovider` library — a real dependency declared in
+`dotcms-integration/pom.xml`), annotate the class with one of these two `@RunWith` runners:
+- **`DataProviderRunner`** (`com.tngtech.java.junit.dataprovider.DataProviderRunner`): plain data-provider-driven parameterized tests, no CDI container — **68 real usages** (`@RunWith(DataProviderRunner.class)`) in this module (e.g. `LanguageUtilTest.java`)
+- **`DataProviderWeldRunner`** (`com.dotcms.DataProviderWeldRunner`): same, but extends `DataProviderRunner` to additionally spin up a real Weld CDI container so test classes can be resolved as CDI beans — **~41 real usages**. This is a CDI-aware superset, not a replacement for the plain runner; both stay in active use for different needs.
 
 ### Naming: use the `Test` suffix, not `IT` ⚠️
 
@@ -40,34 +45,120 @@ plus `**/QuickSuite.java` and `**/OpenSearchUpgradeSuite.java` in their profiles
 is driven entirely by suite registration and never by the class-name suffix. Surefire is skipped
 in this module, so a `*Test` name here can't be mistaken for a unit test either.
 
-Match the siblings already in your package — the module is ~654 `*Test.java` to ~12 `*IT.java`.
+Match the siblings already in your package — the module is ~680 `*Test.java` to ~19 `*IT.java`.
 
 ### Registering Tests in a MainSuite (CI gate) ⚠️
 
-CI runs integration tests **only** through the JUnit `@SuiteClasses` aggregator suites
-(`MainSuite1a`, `MainSuite1b`, `MainSuite2a`, `MainSuite2b`, `MainSuite3a` in
-`dotcms-integration/src/test/java/com/dotcms/`). **A new test class that is not listed in one
-of these suites compiles fine but is silently never executed in CI** — green build, zero
-coverage. This is easy to miss because the class runs locally via `-Dit.test=MyTestClass`.
+CI runs integration tests **only** through the JUnit `@SuiteClasses` aggregator suites in
+`dotcms-integration/src/test/java/com/dotcms/`. **A new test class that is not listed in one of
+these suites compiles fine but is silently never executed in CI** — green build, zero coverage.
+This is easy to miss because the class still runs locally via `-Dit.test=MyTestClass`.
 
-When you add a new integration test class, register it:
+Placement is resolved in the order below. Steps 1 and 2 are a compatibility gate, not a
+balancing decision: those two suites are destinations by requirement and never take part in any
+runtime comparison.
 
-1. Pick a suite — group it with sibling tests in the same package. The v1 asset tests live in
-   `MainSuite2b`, so a new v2 asset test goes there too.
-2. Add **both** the `import` (in alphabetical order) and the `Foo.class,` entry inside
-   `@SuiteClasses({ ... })`.
+**1. JUnit 5 test? → `Junit5Suite1`.** A JUnit 5 class listed in a `MainSuite*` is silently
+skipped, because those suites run JUnit 4's `@SuiteClasses` runner (`Junit5Suite1`'s own Javadoc
+says so). Stop here.
 
-```java
-// MainSuite2b.java
-import com.dotcms.rest.api.v2.asset.WebAssetResourceV2IntegrationTest; // sorted with siblings
-...
-@SuiteClasses({
-    ...
-    WebAssetHelperIntegrationTest.class,
-    WebAssetResourceV2IntegrationTest.class,   // <-- register here or it won't run in CI
-    ...
-})
+**2. Needs a live OpenSearch cluster? → `OpenSearchUpgradeSuite`,** which runs under the
+`opensearch-upgrade` profile. Stop here.
+
+**3. Otherwise, measure — the suite name is a result of the measurement, never an input to it.**
+The `MainSuite*` jobs run in parallel and the PR build's wall clock is set by the slowest of
+them, so new coverage goes in whichever one currently finishes first. That suite changes as
+tests are added and removed elsewhere, so **never take a suite name from this document, from a
+nearby class, from an example, or from memory** — read the current set from disk and the current
+timings from CI:
+
+```bash
+ls dotcms-integration/src/test/java/com/dotcms/MainSuite*.java   # the set changes over time
+just suite-timings                                              # medians, fastest first
 ```
+
+`just suite-timings` samples the most recent successful PR Check runs (3 by default — pass a
+larger number for steadier medians), keeps only `MainSuite*` jobs that themselves concluded
+successfully — which is what excludes cancelled, skipped and build-cache-short-circuited jobs —
+and prints the median runtime of each suite:
+
+```
+MainSuite    median  samples   each run (min)
+2a           25.8m       3   23, 26, 27
+1a           38.5m       3   40, 39, 38
+...
+-> register new coverage in MainSuite2a (25.8 min median)
+```
+
+Register the class in the suite that last line names, and **paste that output, together with the
+sampled run links the command prints, into the PR description** so a reviewer can check the
+choice. If the command finds no runs or no timings, it says so and exits non-zero: **report that
+and ask the developer. Do not fall back to a default, to the newest suite, or to the one an
+example happens to use.**
+
+**4. A new test method added to an existing class stays with its class.** Reusing a class does
+not require moving its registration to a faster suite: the move touches two `@SuiteClasses`
+files — which everyone appends to, and which is where suite merge conflicts come from — for a
+gain nobody has measured. Only a **new class** triggers the measurement in step 3.
+
+5. **Register the class with the script. Never edit a suite list by hand, and never append to
+   the end of it:**
+
+   ```bash
+   just add-it-test MyNewFeatureIntegrationTest MainSuite2a   # simple or fully qualified class name
+   ```
+
+   `just add-it-test` (backed by `scripts/it-suites.py`) resolves the class under
+   `dotcms-integration/src/test/java` and inserts a fully qualified `com.foo.Foo.class,` entry
+   next to the existing entry with the nearest simple class name above `Foo`. The lists are
+   unsorted and are never re-sorted, so this is not an alphabetical insert, and no import is
+   added (a new import would land at the end of the import block, a second hotspot). Every entry
+   ends with a trailing comma, which Java allows in annotation arrays. It refuses a class
+   that is already registered in any suite, refuses a suite name that CI does not run, and refuses
+   a JUnit 4 test in the JUnit 5 suite (`Junit5Suite1`) or the reverse, because that would be
+   skipped silently. The framework is read from the test-annotation imports (`org.junit.Test` or
+   `org.junit.runner.*` means JUnit 4; `org.junit.jupiter.api.Test`, `ParameterizedTest`,
+   `TestFactory` or `RepeatedTest` means JUnit 5; `import org.junit.*;` counts as JUnit 4 unless
+   a Jupiter test-annotation import is also present), not from other `org.junit.jupiter` imports
+   such as `Assertions`; a class with both or neither is refused. With no suite argument it exits and asks for one; pick it with step 3.
+
+   **Why not append by hand:** an append edits the last line (to add a comma) and inserts after
+   it. Any two PRs that append to the same suite therefore conflict in the merge queue, and each
+   one after the first is bumped as unmergeable (six PRs did this to `MainSuite2a` on 2026-10-28).
+   Name-derived positions land in different places for different classes, and the trailing comma
+   means an insertion never touches a neighbouring line. Two classes whose names have no existing
+   entry between them (for example `ContentMapWidgetFieldRenderTest` and
+   `ContentRelationshipsResourceIntegrationTest`) still land in the same spot and conflict; rebase
+   and re-run the tool for the later one.
+
+   A mid-list insert also runs your test before every existing test that follows it, while an
+   append would have run it last. If a later test depends on leftover state, an order-dependent
+   failure in it can surface in your PR; that is a real ordering bug to fix, not a reason to append.
+
+   **Ordered head blocks.** Some suites open a run of entries with a comment block (for example
+   "Data-scanning tests run FIRST on purpose" in `MainSuite1a`, `MainSuite2a` and `MainSuite3a`,
+   and the reindex block in `MainSuite2b`). Those tests are first because they walk all content
+   created so far, so each leftover from an earlier test makes them slower. The tool never inserts
+   next to an entry in such a group (two or more comment lines, then entries up to the next blank
+   line), so an ordinary test cannot end up between the header and its entries. Adding a test that
+   really does a full scan or full reindex to one of these blocks is the single case where you edit
+   a suite by hand: add one fully qualified `Foo.class,` line inside the block.
+
+   **Moving a test** between suites: delete its old entry by hand (removing is safe, only inserts
+   are conflict-prone), then run `just add-it-test` for the new suite.
+
+   A CI check (`python3 scripts/it-suites.py check`, workflow `cicd_pr_it-registration.yml`)
+   fails a PR when a concrete test class with `@Test` methods under `dotcms-integration/src/test/java`
+   is in none of the suites in `.github/test-matrix.yml`. Classes that are intentionally unregistered
+   (helpers, classes run elsewhere) go in `dotcms-integration/unregistered-tests.allowlist` with a
+   reason, one per line as `fully.qualified.ClassName  # reason`; that file was seeded with the
+   classes already unregistered when the check was added, so treat each entry as a test that
+   probably never runs. `just add-it-test` removes the class's allow-list line when you register it.
+   The check also fails on an allow-list entry whose class is now registered or no longer exists,
+   so the list can only shrink. When it fails, it prints a ready-to-run `just add-it-test` line per
+   missing class. A suite that is not `MainSuite*` or `Junit5Suite*` (for example
+   `OpenSearchUpgradeSuite`) is purpose-built: the tool warns when you target one and does not list
+   it as a choice.
 
 Verify the suite still resolves the new class:
 
@@ -75,94 +166,113 @@ Verify the suite still resolves the new class:
 ./mvnw test-compile -pl :dotcms-integration -DskipTests
 ```
 
+#### When a new MainSuite is needed
+
+When `just suite-timings` shows every suite near-saturated — no compatible suite is meaningfully
+faster than the slowest — the shard set is full and a new `MainSuite` is due. The mechanical work
+is small and may be prepared in full: a new suite class in `com.dotcms`, its three lines in
+`.github/test-matrix.yml` (`name`, `test_class`, `stage_name`), and a measured slice of existing
+registrations moved into it so it starts balanced.
+
+**Propose it in its own PR, addressed to whoever owns CI, with the measured numbers attached —
+never bundled into the PR that just wanted to register a test.** Each matrix entry is one more
+parallel runner on every PR, and the same matrix is consumed by the merge queue, trunk, nightly,
+LTS and the OpenSearch phase sweep, so the cost is a job per pipeline per run. That is a
+concurrency and budget decision, not a code one. Once the new shard exists it will be the fastest
+suite, so step 3 will route new coverage into it on its own until it fills.
+
+
+### The build cache can skip the tests entirely ⚠️
+
+A second way to get a **green build that ran nothing** — distinct from the suite-registration gate
+above, and with the identical symptom.
+
+The Maven build cache can short-circuit the failsafe execution:
+
+```
+[INFO] Skipping plugin execution (cached): failsafe:integration-test
+[INFO] BUILD SUCCESS
+```
+
+`target/failsafe-reports/failsafe-summary.xml` then reads `<completed>0</completed>` and the exit
+code is **0**. Nothing ran, and nothing said so.
+
+**Disable the cache whenever you actually need the tests to execute:**
+
+```bash
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false \
+  -Dmaven.build.cache.enabled=false \
+  -Dit.test=com.dotcms.example.MyTest
+```
+
+(`just test-integration-ide` already passes this.)
+
+Two related traps in the same area:
+
+- **Select by class, not by method.** `-Dit.test=Class#method` — and the `#methodA+methodB` form —
+  have been observed selecting **nothing** on classes with a custom `@RunWith` runner. Run the
+  whole class.
+- **Use the fully-qualified class name** when the simple name is ambiguous. `MainSuite1a`, for
+  example, registers two different classes called `PublisherAPIImplTest`.
+
+**Always confirm `Tests run: N` in `dotcms-integration/target/failsafe-reports/*.txt`.** The exit
+code alone does not tell you whether anything executed.
+
 ## Testing Patterns
 
 ### Integration Test Structure
 ```java
-public class ContentTypeAPIImplTest extends IntegrationTestBase {
-    
+public class MyResourceIntegrationTest extends IntegrationTestBase {
+
     private ContentTypeAPI contentTypeAPI;
     private ContentletAPI contentletAPI;
-    
-    @Override
-    public void prepare() throws Exception {
-        super.prepare();
-        contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
+
+    @Before
+    public void setup() {
+        contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
         contentletAPI = APILocator.getContentletAPI();
     }
-    
+
     @Test
     public void testCreateContentType() throws Exception {
         // Given
-        ContentType contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.getType())
+        ContentType contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
             .name("TestContentType")
             .description("Test content type")
             .build();
-        
+
         // When
         ContentType savedContentType = contentTypeAPI.save(contentType);
-        
+
         // Then
         assertNotNull(savedContentType.id());
         assertEquals("TestContentType", savedContentType.name());
-        
+
         // Cleanup
         contentTypeAPI.delete(savedContentType);
     }
 }
 ```
 
-### Docker Environment Setup
-```java
-@TestContainers
-public class DatabaseIntegrationTest extends BaseContainerTest {
-    
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:13")
-        .withDatabaseName("dotcms_test")
-        .withUsername("dotcms")
-        .withPassword("dotcms")
-        .withExposedPorts(5432);
-    
-    @Test
-    public void testDatabaseConnection() {
-        assertTrue(postgres.isRunning());
-        
-        // Test database operations
-        DataSource dataSource = createDataSource();
-        assertNotNull(dataSource.getConnection());
-    }
-}
-```
+### REST Endpoint Testing
+REST resource integration tests exercise the resource class directly (not over HTTP), using
+`WebResource.InitBuilder` with a mocked request/response pair — the same pattern real resources
+use in production, and the one shown in
+[Security Patterns → Authentication Check Pattern](../backend/SECURITY_BACKEND.md#authentication-check-pattern):
 
-### REST API Testing
 ```java
-public class ContentResourceTest extends APITestCase {
-    
-    private static final String CONTENT_ENDPOINT = "/api/v1/content";
-    
+public class MyResourceIntegrationTest extends IntegrationTestBase {
+
     @Test
-    public void testCreateContent() throws Exception {
-        // Given
-        ContentType contentType = createTestContentType();
-        Map<String, Object> contentData = Map.of(
-            "contentType", contentType.variable(),
-            "title", "Test Content",
-            "body", "Test body content"
-        );
-        
-        // When
-        Response response = given()
-            .auth().basic(user.getEmailAddress(), password)
-            .contentType(ContentType.JSON)
-            .body(contentData)
-            .post(CONTENT_ENDPOINT);
-        
-        // Then
-        response.then()
-            .statusCode(200)
-            .body("entity.identifier", notNullValue())
-            .body("entity.title", equalTo("Test Content"));
+    public void testGetById() throws Exception {
+        HttpServletRequest request = new MockAttributeRequest(
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/myresource").request());
+        HttpServletResponse response = new MockHttpResponse().response();
+
+        MyResource resource = new MyResource();
+        Response httpResponse = resource.getById(request, response, "some-id");
+
+        assertEquals(200, httpResponse.getStatus());
     }
 }
 ```
@@ -172,34 +282,51 @@ public class ContentResourceTest extends APITestCase {
 ### 1. Content Management
 ```java
 public class ContentletAPITest extends IntegrationTestBase {
-    
+
+    private ContentletAPI contentletAPI;
+    private User systemUser;
+    private Language defaultLanguage;
+
+    @Before
+    public void setup() {
+        contentletAPI = APILocator.getContentletAPI();
+        systemUser = APILocator.systemUser();
+        defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+    }
+
     @Test
     public void testContentletLifecycle() throws Exception {
         // Create content type
         ContentType contentType = createTestContentType();
-        
+
         // Create contentlet
         Contentlet contentlet = new Contentlet();
         contentlet.setContentTypeId(contentType.id());
         contentlet.setStringProperty("title", "Test Title");
-        contentlet.setHost(defaultHost);
+        contentlet.setHost(Host.SYSTEM_HOST);
         contentlet.setLanguageId(defaultLanguage.getId());
-        
+
         // Save
         contentlet = contentletAPI.checkin(contentlet, systemUser, false);
         assertNotNull(contentlet.getIdentifier());
-        
+
         // Update
         contentlet.setStringProperty("title", "Updated Title");
         contentlet = contentletAPI.checkin(contentlet, systemUser, false);
         assertEquals("Updated Title", contentlet.getStringProperty("title"));
-        
+
         // Delete
         contentletAPI.delete(contentlet, systemUser, false);
-        
-        // Verify deletion
-        assertFalse(contentletAPI.findByIdentifier(contentlet.getIdentifier(), 
-            defaultLanguage.getId(), false, systemUser, false).isPresent());
+
+        // Verify deletion — findContentletByIdentifier throws DotContentletStateException
+        // when nothing is found; it returns a Contentlet directly, never an Optional/null
+        try {
+            contentletAPI.findContentletByIdentifier(contentlet.getIdentifier(),
+                false, defaultLanguage.getId(), systemUser, false);
+            fail("Contentlet should have been deleted");
+        } catch (DotContentletStateException expected) {
+            // expected — content no longer exists
+        }
     }
 }
 ```
@@ -207,25 +334,28 @@ public class ContentletAPITest extends IntegrationTestBase {
 ### 2. Workflow Integration
 ```java
 public class WorkflowAPITest extends IntegrationTestBase {
-    
+
+    private WorkflowAPI workflowAPI;
+    private User systemUser;
+
+    @Before
+    public void setup() {
+        workflowAPI = APILocator.getWorkflowAPI();
+        systemUser = APILocator.systemUser();
+    }
+
     @Test
-    public void testWorkflowExecution() throws Exception {
+    public void testWorkflowFiresOnCheckin() throws Exception {
         // Given
-        WorkflowScheme scheme = createTestWorkflowScheme();
-        Contentlet contentlet = createTestContentlet();
-        
-        // When
-        WorkflowAction action = workflowAPI.findAction("publish", systemUser);
-        WorkflowProcessor processor = WorkflowProcessorFactory.getInstance()
-            .getProcessor(action, contentlet);
-        
-        processor.fireWorkflow(contentlet, systemUser);
-        
+        ContentType contentType = createTestContentType();
+        Contentlet contentlet = createTestContentlet(contentType);
+
+        // When — fires the contentlet's default workflow scheme as part of checkin
+        WorkflowProcessor processor = workflowAPI.fireWorkflowPreCheckin(contentlet, systemUser);
+
         // Then
-        Contentlet updatedContentlet = contentletAPI.findContentletByIdentifier(
-            contentlet.getIdentifier(), false, defaultLanguage.getId(), systemUser, false);
-        
-        assertTrue(updatedContentlet.isLive());
+        assertNotNull(processor);
+        assertTrue(processor.getContentlet().isLive());
     }
 }
 ```
@@ -233,37 +363,37 @@ public class WorkflowAPITest extends IntegrationTestBase {
 ### 3. Database Operations
 ```java
 public class DatabaseIntegrationTest extends IntegrationTestBase {
-    
+
     @Test
     public void testDatabaseTransaction() throws Exception {
         // Given
         final String testData = "test_data_" + System.currentTimeMillis();
-        
+
         // When - Test transaction rollback
         try {
             HibernateUtil.startTransaction();
-            
+
             // Perform database operations
             DotConnect dc = new DotConnect();
             dc.setSQL("INSERT INTO test_table (data) VALUES (?)");
             dc.addParam(testData);
             dc.loadResult();
-            
+
             // Force rollback
             throw new RuntimeException("Test rollback");
-            
+
         } catch (RuntimeException e) {
             HibernateUtil.rollbackTransaction();
         } finally {
             HibernateUtil.closeSession();
         }
-        
+
         // Then - Verify rollback
         DotConnect dc = new DotConnect();
         dc.setSQL("SELECT COUNT(*) as count FROM test_table WHERE data = ?");
         dc.addParam(testData);
         Map<String, Object> result = dc.loadObjectResults().get(0);
-        
+
         assertEquals(0L, result.get("count"));
     }
 }
@@ -272,21 +402,21 @@ public class DatabaseIntegrationTest extends IntegrationTestBase {
 ### 4. Caching Integration
 ```java
 public class CacheIntegrationTest extends IntegrationTestBase {
-    
+
     @Test
     public void testCacheInvalidation() throws Exception {
         // Given
         String cacheKey = "test_cache_key";
         String testValue = "test_value";
         CacheLocator.getCacheAdministrator().put(cacheKey, testValue, "test_region");
-        
+
         // When
         Object cachedValue = CacheLocator.getCacheAdministrator().get(cacheKey, "test_region");
         assertEquals(testValue, cachedValue);
-        
+
         // Invalidate
         CacheLocator.getCacheAdministrator().flushGroup("test_region");
-        
+
         // Then
         Object invalidatedValue = CacheLocator.getCacheAdministrator().get(cacheKey, "test_region");
         assertNull(invalidatedValue);
@@ -298,71 +428,73 @@ public class CacheIntegrationTest extends IntegrationTestBase {
 
 ### Command Line Execution
 ```bash
-# Run all integration tests
-./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false
+# Run all integration tests (⚠️ 60+ min — avoid unless you mean it)
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false
 
-# Run specific test class
-./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false -Dtest=ContentTypeAPIImplTest
-
-# Run with specific environment
-./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false -Dtest.environment=postgres
-
-# Run with Docker cleanup
-./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false -Ddocker.cleanup=true
-
-# Run with debug logging
-./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false -Dlog.level=DEBUG
+# Run a specific test class or method
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=MyTestClass
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=MyTestClass#myMethod
 ```
 
-### Maven Configuration
+### Running and Debugging ITs from IntelliJ IDEA
+
+This is the recommended loop for local development — it's what backs the `just test-integration-ide` recipe referenced in the root `CLAUDE.md`.
+
+**1. One-time setup**
+Install the **Justfile** plugin for IntelliJ — it lets you run `just` recipes straight from the IDE, no terminal needed.
+
+**2. Start the test environment**
+Open the `justfile`, find the `test-integration-ide` recipe, and click the ▶ icon next to it:
+```bash
+just test-integration-ide     # Starts the Docker Compose test environment (Postgres, ES/OpenSearch) + dotCMS
+```
+Let it finish starting before continuing.
+
+**3. Run or debug a test**
+Open the integration test class you want to exercise. In the gutter next to the class name or a specific test method, click ▶ and choose:
+- **Run '\<name\>'** — just run it
+- **Debug '\<name\>'** — step through it (set a breakpoint first)
+
+**4. Stop the environment when done**
+```bash
+just test-integration-stop    # Stops the services
+```
+
+## Maven Configuration
+
+The real `maven-failsafe-plugin` config (`dotcms-integration/pom.xml`) is driven by two properties:
+- `coreit.test.skip` — gates whether integration tests run at all (must be `false` to run any)
+- `it.test.forkcount` — controls parallel JVM forks
+
 ```xml
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
     <artifactId>maven-failsafe-plugin</artifactId>
     <configuration>
-        <skipTests>${coreit.test.skip}</skipTests>
-        <!-- Discovery is by SUITE, not by class-name suffix — see "Naming" above -->
-        <includes>
-            <include>**/MainSuite1*.java</include>
-            <include>**/MainSuite2*.java</include>
-            <include>**/MainSuite3*.java</include>
-            <include>**/Junit5Suite*.java</include>
-        </includes>
-        <systemPropertyVariables>
-            <test.environment>${test.environment}</test.environment>
-            <docker.cleanup>${docker.cleanup}</docker.cleanup>
-        </systemPropertyVariables>
+        <skip>${coreit.test.skip}</skip>
+        <forkCount>${it.test.forkcount}</forkCount>
+        <reuseForks>true</reuseForks>
+        <rerunFailingTestsCount>3</rerunFailingTestsCount>
     </configuration>
 </plugin>
 ```
-
-### Docker Environment Management
-```bash
-# Start test environment
-docker-compose -f docker/docker-compose.test.yml up -d
-
-# Run tests against running environment
-./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false -Duse.running.environment=true
-
-# Cleanup test environment
-docker-compose -f docker/docker-compose.test.yml down -v
-```
+Discovery of which tests actually run is controlled by suite registration (see "Registering Tests in a MainSuite" above), not by an `<includes>` glob on individual test classes.
 
 ## Test Data Management
 
 ### Test Data Builders
 ```java
 public class TestDataBuilder {
-    
+
     public static ContentType createTestContentType() throws Exception {
-        return ContentTypeBuilder.builder(BaseContentType.CONTENT.getType())
+        return ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
             .name("TestContentType_" + System.currentTimeMillis())
             .description("Test content type")
             .host(Host.SYSTEM_HOST)
             .folder(FolderAPI.SYSTEM_FOLDER)
             .build();
     }
-    
+
     public static Contentlet createTestContentlet(ContentType contentType) throws Exception {
         Contentlet contentlet = new Contentlet();
         contentlet.setContentTypeId(contentType.id());
@@ -374,93 +506,44 @@ public class TestDataBuilder {
 }
 ```
 
-### Database Fixtures
-```java
-public class DatabaseFixtures {
-    
-    @BeforeClass
-    public static void setupTestData() throws Exception {
-        // Create test site
-        Host testSite = createTestSite();
-        
-        // Create test user
-        User testUser = createTestUser();
-        
-        // Create test content types
-        ContentType newsType = createNewsContentType();
-        ContentType pageType = createPageContentType();
-        
-        // Store in test context
-        TestContext.setTestSite(testSite);
-        TestContext.setTestUser(testUser);
-    }
-    
-    @AfterClass
-    public static void cleanupTestData() throws Exception {
-        // Clean up in reverse order
-        deleteTestContentTypes();
-        deleteTestUsers();
-        deleteTestSites();
-    }
-}
-```
-
 ## CI/CD Integration
 
-### GitHub Actions Integration
-**Workflow**: Integration tests run in `cicd_comp_test-phase.yml`
-
-**Change Detection**: Tests triggered by:
-```yaml
-backend: &backend
-  - 'dotCMS/src/main/java/**'
-  - 'dotcms-integration/**'
-  - 'pom.xml'
-  - '**/pom.xml'
-```
-
-**Execution**:
-```yaml
-- name: Run Integration Tests
-  run: |
-    ./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false
-  env:
-    MAVEN_OPTS: -Xmx4g
-    DOCKER_BUILDKIT: 1
-```
-
-### Test Environment Setup
-```yaml
-services:
-  postgres:
-    image: postgres:13
-    env:
-      POSTGRES_DB: dotcms_test
-      POSTGRES_USER: dotcms
-      POSTGRES_PASSWORD: dotcms
-    options: >-
-      --health-cmd pg_isready
-      --health-interval 10s
-      --health-timeout 5s
-      --health-retries 5
-```
+Integration tests run in `.github/workflows/cicd_comp_test-phase.yml`. The real workflow is
+more involved than a simple "run on push" job: it fans out into a matrix across the OpenSearch
+migration phases (`-Dopensearch.phase=<N>`) so the suite gets exercised against each phase of the
+[ES → OpenSearch migration](../backend/OPENSEARCH_MIGRATION.md), plus a separate
+`opensearch.upgrade.test` run. See the workflow file itself for the exact matrix/trigger
+configuration rather than relying on a simplified snippet here — it changes independently of
+this doc and is easy to let drift.
 
 ### Test Results
 - **Failsafe Reports**: `dotcms-integration/target/failsafe-reports/`
 - **JUnit XML**: `dotcms-integration/target/failsafe-reports/TEST-*.xml`
-- **Logs**: `dotcms-integration/target/logs/`
 
 ## Debugging Test Failures
 
 ### Local Debugging
 
-#### 1. Enable Debug Logging
-```bash
-# Run with debug logging
-./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false -Dlog.level=DEBUG
+#### 1. Adjust Log Levels
+For the whole test run, edit a logger's `level` in
+`dotcms-integration/src/test/resources/log4j2.xml` (e.g. bump `com.dotcms.yourpackage` to
+`DEBUG`) — there's no Maven system property shortcut for this in this module.
 
-# Enable SQL logging
-./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false -Dhibernate.show_sql=true
+For a single test, change the level at runtime with dotCMS's own `com.dotmarketing.util.Logger`
+(not `java.util.logging.Logger` — a different class with a different API):
+
+```java
+@Test
+public void testWithDebugInfo() throws Exception {
+    Logger.setLevel("com.dotcms.yourpackage", "DEBUG");
+
+    try {
+        ContentType contentType = createTestContentType();
+        Logger.debug(this, () -> "Created content type: " + contentType.id());
+    } finally {
+        Logger.setLevel("com.dotcms.yourpackage", "INFO");
+    }
+}
 ```
 
 #### 2. Docker Environment Debugging
@@ -468,58 +551,8 @@ services:
 # Check container status
 docker ps
 
-# View container logs
-docker logs dotcms-integration-postgres-1
-
-# Connect to database
-docker exec -it dotcms-integration-postgres-1 psql -U dotcms -d dotcms_test
-```
-
-#### 3. Test Isolation
-```java
-@Test
-public void testWithDebugInfo() throws Exception {
-    // Enable debug logging for specific test
-    Logger.getLogger("com.dotcms").setLevel(Level.DEBUG);
-    
-    try {
-        // Test implementation
-        ContentType contentType = createTestContentType();
-        
-        // Debug output
-        System.out.println("Created content type: " + contentType.id());
-        
-    } finally {
-        // Reset logging
-        Logger.getLogger("com.dotcms").setLevel(Level.INFO);
-    }
-}
-```
-
-### GitHub Actions Debugging
-
-#### 1. Environment Variables
-```yaml
-- name: Run Integration Tests
-  run: ./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false
-  env:
-    MAVEN_OPTS: -Xmx4g
-    DEBUG: true
-    DOCKER_BUILDKIT: 1
-    TESTCONTAINERS_RYUK_DISABLED: true
-```
-
-#### 2. Upload Test Artifacts
-```yaml
-- name: Upload Test Results
-  uses: actions/upload-artifact@v4
-  if: always()
-  with:
-    name: integration-test-results
-    path: |
-      dotcms-integration/target/failsafe-reports/
-      dotcms-integration/target/logs/
-      dotcms-integration/target/surefire-reports/
+# View container logs (container names depend on the compose project — check `docker ps` first)
+docker logs <container-name>
 ```
 
 #### 3. Common Failure Patterns
@@ -534,17 +567,18 @@ docker system prune -f
 
 # Check disk space
 df -h
+
+# Check for port conflicts (e.g. something else already bound to Postgres' port)
+netstat -tulpn | grep 5432
 ```
 
 **Database Connection Issues**:
 ```java
 @Test
-public void testDatabaseConnection() {
-    // Add connection debugging
-    DataSource dataSource = DbConnectionFactory.getDataSource();
-    try (Connection conn = dataSource.getConnection()) {
+public void testDatabaseConnection() throws Exception {
+    try (Connection conn = DbConnectionFactory.getConnection()) {
         assertTrue(conn.isValid(5));
-        
+
         // Test basic query
         try (Statement stmt = conn.createStatement()) {
             ResultSet rs = stmt.executeQuery("SELECT 1");
@@ -554,78 +588,39 @@ public void testDatabaseConnection() {
 }
 ```
 
-**Memory Issues**:
-```xml
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-failsafe-plugin</artifactId>
-    <configuration>
-        <forkCount>1</forkCount>
-        <reuseForks>false</reuseForks>
-        <argLine>-Xmx4g -XX:MaxPermSize=512m</argLine>
-    </configuration>
-</plugin>
-```
-
 ## Best Practices
 
 ### ✅ Integration Test Standards
 - **Test realistic scenarios**: Use actual services and data
-- **Manage test data**: Create and clean up test data properly
-- **Use transactions**: Wrap tests in transactions when possible
+- **Manage test data**: Create and clean up test data properly (see Test Data Builders above)
+- **Use transactions**: Wrap tests in `HibernateUtil` transactions when possible (see Database Operations above)
 - **Test edge cases**: Include error conditions and boundary cases
 - **Verify side effects**: Check that operations have expected impacts
-
-### ✅ Docker Environment Management
-```java
-@TestContainers
-public class ServiceIntegrationTest {
-    
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:13")
-        .withDatabaseName("dotcms_test")
-        .withUsername("dotcms")
-        .withPassword("dotcms")
-        .withInitScript("init-test-db.sql");
-    
-    @Container
-    static ElasticsearchContainer elasticsearch = new ElasticsearchContainer("elasticsearch:7.10.2")
-        .withEnv("discovery.type", "single-node");
-    
-    @BeforeAll
-    static void setupEnvironment() {
-        // Configure connections
-        System.setProperty("db.url", postgres.getJdbcUrl());
-        System.setProperty("es.host", elasticsearch.getHost());
-        System.setProperty("es.port", elasticsearch.getMappedPort(9200).toString());
-    }
-}
-```
 
 ### ✅ Test Data Management
 ```java
 public class TestDataManager {
-    
+
     private static final List<String> createdContentTypes = new ArrayList<>();
     private static final List<String> createdContentlets = new ArrayList<>();
-    
+
     public static ContentType createAndTrackContentType(String name) throws Exception {
-        ContentType contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.getType())
+        ContentType contentType = ContentTypeBuilder.builder(BaseContentType.CONTENT.immutableClass())
             .name(name)
             .build();
-        
-        contentType = APILocator.getContentTypeAPI(systemUser).save(contentType);
+
+        contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
         createdContentTypes.add(contentType.id());
         return contentType;
     }
-    
+
     @AfterClass
     public static void cleanupTestData() throws Exception {
         // Clean up in reverse order of creation
         for (String contentletId : Lists.reverse(createdContentlets)) {
             cleanupContentlet(contentletId);
         }
-        
+
         for (String contentTypeId : Lists.reverse(createdContentTypes)) {
             cleanupContentType(contentTypeId);
         }
@@ -633,18 +628,25 @@ public class TestDataManager {
 }
 ```
 
+### ✅ Fast vs. Comprehensive Subsets
+There's no `@Category`-based fast/slow split in this module. The real mechanism for running a
+fast subset locally is the `QuickSuite` (`**/QuickSuite.java`, activated via its own Maven
+profile) — register a fast, cheap test there in addition to its `MainSuite*` entry if it's
+meant to run in that quick subset too. Everything else runs through the full `MainSuite*`
+aggregators (see "Registering Tests in a MainSuite" above).
+
 ### ✅ Async Testing
 ```java
 @Test
 public void testAsyncOperation() throws Exception {
     // Given
     CompletableFuture<String> future = new CompletableFuture<>();
-    
+
     // When
     asyncService.processAsync(data, result -> {
         future.complete(result);
     });
-    
+
     // Then
     String result = future.get(10, TimeUnit.SECONDS);
     assertEquals("expected result", result);
@@ -653,30 +655,7 @@ public void testAsyncOperation() throws Exception {
 
 ## Common Issues and Solutions
 
-### 1. Database Connection Issues
-```java
-// Problem: Connection pool exhaustion
-// Solution: Proper connection management
-@Test
-public void testDatabaseOperations() throws Exception {
-    try (Connection conn = DbConnectionFactory.getConnection()) {
-        // Use connection
-        // Automatically closed by try-with-resources
-    }
-}
-```
-
-### 2. Docker Container Issues
-```bash
-# Problem: Container not starting
-# Solution: Check logs and configuration
-docker logs container_name
-
-# Check port conflicts
-netstat -tulpn | grep 5432
-```
-
-### 3. Test Data Conflicts
+### 1. Test Data Conflicts
 ```java
 // Problem: Tests interfering with each other
 // Solution: Use unique test data
@@ -684,18 +663,18 @@ netstat -tulpn | grep 5432
 public void testCreateUser() throws Exception {
     String uniqueEmail = "test_" + System.currentTimeMillis() + "@example.com";
     User user = createTestUser(uniqueEmail);
-    
+
     // Test operations
-    
+
     // Cleanup
-    APILocator.getUserAPI().delete(user, systemUser, false);
+    APILocator.getUserAPI().delete(user, APILocator.systemUser(), false);
 }
 ```
 
-### 4. Memory Leaks
+### 2. Cache/Session State Leaking Between Tests
 ```java
-// Problem: Memory accumulation in long-running tests
-// Solution: Explicit cleanup
+// Problem: State from a previous test leaks into the next one
+// Solution: Explicit cleanup in @After
 @After
 public void tearDown() throws Exception {
     // Clear caches
@@ -703,67 +682,20 @@ public void tearDown() throws Exception {
     
     // Close sessions
     HibernateUtil.closeSession();
-    
-    // Clear ThreadLocal variables
-    ThreadLocalManager.clearAll();
 }
-```
-
-## Performance Optimization
-
-### Parallel Test Execution
-```xml
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-failsafe-plugin</artifactId>
-    <configuration>
-        <parallel>methods</parallel>
-        <threadCount>4</threadCount>
-        <perCoreThreadCount>true</perCoreThreadCount>
-    </configuration>
-</plugin>
-```
-
-### Test Categorization
-```java
-// Fast integration tests
-@Category(FastIntegrationTest.class)
-public class ContentAPIQuickTest {
-    // Quick API tests
-}
-
-// Slow integration tests
-@Category(SlowIntegrationTest.class)
-public class FullSystemTest {
-    // Comprehensive system tests
-}
-```
-
-### Database Optimization
-```properties
-# Test database configuration
-hibernate.connection.pool_size=10
-hibernate.jdbc.batch_size=25
-hibernate.cache.use_second_level_cache=false
-hibernate.cache.use_query_cache=false
 ```
 
 ## Integration with Development Workflow
 
 ### Pre-commit Integration Tests
 ```bash
-# Run subset of integration tests before commit
-./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false -Dtest=*APITest
+# Run a name-matched subset of integration tests before commit
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=*APITest
 ```
-
-### IDE Integration
-- **IntelliJ**: Configure remote debugging for integration tests
-- **Eclipse**: Set up test configurations for different environments
-- **VS Code**: Use Java Test Runner with integration test profiles
 
 ## Location Information
 - **Test Source**: `dotcms-integration/src/test/java`
 - **Test Resources**: `dotcms-integration/src/test/resources`
 - **Test Reports**: `dotcms-integration/target/failsafe-reports/`
-- **Docker Configs**: `dotcms-integration/docker/`
+- **Docker Compose Config**: `dotcms-integration/src/docker-compose/it-test`
 - **Maven Plugin**: Failsafe plugin configuration in `dotcms-integration/pom.xml`

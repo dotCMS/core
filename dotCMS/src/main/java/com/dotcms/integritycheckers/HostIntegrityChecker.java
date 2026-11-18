@@ -270,19 +270,21 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                         " (local_identifier, remote_identifier, endpoint_id, local_working_inode, local_live_inode," +
                         " remote_working_inode, remote_live_inode, language_id, host)" +
                         " SELECT DISTINCT c.identifier as local_identifier, ht.identifier as remote_identifier," +
-                        " '" + endpointId + "', cvi.working_inode as local_working_inode," +
+                        " ?, cvi.working_inode as local_working_inode," +
                         " cvi.live_inode as local_live_inode, ht.working_inode as remote_working_inode," +
                         " ht.live_inode as remote_live_inode, c.language_id, " + coalescedHostValue + " as host" +
                         conflictSql;
                 dc.setSQL(insertStmt)
+                        .addParam(endpointId)
                         .addParam(Host.SYSTEM_HOST)
                         .loadResult();
             }
 
-            final int count = dc.getRecordCount(
-                    getIntegrityType().getResultsTableName(),
-                    "WHERE endpoint_id = '"+ endpointId + "'")
-                    .intValue();
+            // The table name comes from the integrity type; the end point id is bound.
+            final long count = ((Number) dc.setSQL("SELECT COUNT(*) AS count FROM " // nosemgrep
+                    + getIntegrityType().getResultsTableName() + " WHERE endpoint_id = ?")
+                    .addParam(endpointId)
+                    .loadObjectResults().get(0).get("count")).longValue();
             Logger.info(this, String.format("For endpoint %s the number of Host conflicts is: %d ", endpointId, count));
 
             return count > 0;
@@ -316,6 +318,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                 .addParam(endpointId);
 
         final List<Map<String, Object>> results = dc.loadObjectResults();
+        requireWellFormedIds(results, "remote_identifier", "remote_working_inode", "remote_live_inode");
         final Map<String, Integer> versionCount = new HashMap<>();
         results.forEach(result -> {
             final String oldIdentifier = (String) result.get("local_identifier");
@@ -383,6 +386,13 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                 ? Long.valueOf(((BigDecimal) row.get("language_id")).toPlainString())
                 : (Long) row.get("language_id");
 
+        // Refuse before any write: reusing an inode another contentlet row holds would point the
+        // site at that row and delete the site's own version.
+        refuseInodeInUse(remoteWorkingInode);
+        if (UtilMethods.isSet(remoteLiveInode) && !remoteLiveInode.equals(remoteWorkingInode)) {
+            refuseInodeInUse(remoteLiveInode);
+        }
+
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final HostAPI hostAPI = APILocator.getHostAPI();
         final ContentletJsonAPI contentletJsonAPI = APILocator.getContentletJsonAPI();
@@ -419,7 +429,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                     .loadResult();
         }
 
-        if (dc.getRecordCount("inode", "WHERE inode = '" + remoteWorkingInode + "'") == 0) {
+        if (!hasRows("inode", "WHERE inode = ?", remoteWorkingInode)) {
             // Insert the new Inodes records so they can be used in the contentlet
             dc.setSQL("INSERT INTO inode(inode, owner, idate, type)" +
                     " SELECT ?, owner, idate, type FROM inode i WHERE i.inode = ?")
@@ -431,7 +441,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
         if (!remoteWorkingInode.equals(remoteLiveInode)
                 && UtilMethods.isSet(remoteLiveInode)
                 && UtilMethods.isSet(localLiveInode)
-                && dc.getRecordCount("inode", "WHERE i.inode = '" + remoteLiveInode + "'") == 0) {
+                && !hasRows("inode", "WHERE inode = ?", remoteLiveInode)) {
             dc.setSQL("INSERT INTO inode(inode, owner, idate, type)" +
                     " SELECT ?, owner, idate, type FROM inode i WHERE i.inode = ?")
                     .addParam(remoteLiveInode)
@@ -530,10 +540,12 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                                     contentlet.getInode())));
 
             // Update other Contentlet languages with new Identifier
-            final String preparedSQL = String.format("UPDATE contentlet SET identifier = ?, contentlet_as_json = '%s' WHERE identifier = ? AND language_id = ? AND inode = ?", copyJson);
+            final String preparedSQL =
+                    "UPDATE contentlet SET identifier = ?, contentlet_as_json = ? WHERE identifier = ? AND language_id = ? AND inode = ?";
 
             dc.setSQL(preparedSQL);
             dc.addParam(remoteHostIdentifier);
+            dc.addJSONParam(copyJson);
             dc.addParam(localHostIdentifier);
             dc.addParam(languageId);
             dc.addParam(contentlet.getInode());
@@ -574,6 +586,21 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
 
         // Remove the Lucene index for the old page
         cleanIndex(existingWorkingHost, existingLiveHost);
+    }
+
+    /**
+     * Stops the site fix when a remote inode is already the inode of a local contentlet row, so
+     * the surrounding transaction rolls back and every local row is kept.
+     *
+     * @param remoteInode the working or live inode the remote end point uses for the site
+     * @throws DotDataException when a local contentlet row already has that inode
+     */
+    private void refuseInodeInUse(final String remoteInode) throws DotDataException {
+        if (hasRows("contentlet", "WHERE inode = ?", remoteInode)) {
+            throw new DotDataException(String.format(
+                    "Cannot move the site to remote inode '%s': a local contentlet already uses it",
+                    remoteInode));
+        }
     }
 
     /**
@@ -647,7 +674,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                                     final DotConnect dc,
                                     final String cviInodeColumn)
             throws DotDataException, DotSecurityException {
-        if (dc.getRecordCount("contentlet", "WHERE identifier = '" + newHostIdentifier + "'") > 0) {
+        if (hasRows("contentlet", "WHERE identifier = ?", newHostIdentifier)) {
             Logger.warn(this,
                     String.format(
                             "Cannot insert new host (contentlet) with inode %s since it already exists (old:%s/new:%s)",
@@ -672,14 +699,14 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
 
         final String insertHostSql = String.format(
                 "INSERT INTO contentlet(inode, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, disabled_wysiwyg, identifier, language_id, contentlet_as_json, date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25)" +
-                " SELECT ?, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, disabled_wysiwyg, ?, ?, '%s', date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25" +
+                " SELECT ?, show_on_menu, title, mod_date, mod_user, sort_order, friendly_name, structure_inode, disabled_wysiwyg, ?, ?, ?, date1, date2, date3, date4, date5, date6, date7, date8, date9, date10, date11, date12, date13, date14, date15, date16, date17, date18, date19, date20, date21, date22, date23, date24, date25, text1, text2, text3, text4, text5, text6, text7, text8, text9, text10, text11, text12, text13, text14, text15, text16, text17, text18, text19, text20, text21, text22, text23, text24, text25, text_area1, text_area2, text_area3, text_area4, text_area5, text_area6, text_area7, text_area8, text_area9, text_area10, text_area11, text_area12, text_area13, text_area14, text_area15, text_area16, text_area17, text_area18, text_area19, text_area20, text_area21, text_area22, text_area23, text_area24, text_area25, integer1, integer2, integer3, integer4, integer5, integer6, integer7, integer8, integer9, integer10, integer11, integer12, integer13, integer14, integer15, integer16, integer17, integer18, integer19, integer20, integer21, integer22, integer23, integer24, integer25, \"float1\", \"float2\", \"float3\", \"float4\", \"float5\", \"float6\", \"float7\", \"float8\", \"float9\", \"float10\", \"float11\", \"float12\", \"float13\", \"float14\", \"float15\", \"float16\", \"float17\", \"float18\", \"float19\", \"float20\", \"float21\", \"float22\", \"float23\", \"float24\", \"float25\", bool1, bool2, bool3, bool4, bool5, bool6, bool7, bool8, bool9, bool10, bool11, bool12, bool13, bool14, bool15, bool16, bool17, bool18, bool19, bool20, bool21, bool22, bool23, bool24, bool25" +
                 " FROM contentlet c INNER JOIN contentlet_version_info cvi on (c.inode = %s AND c.language_id = cvi.lang) WHERE c.identifier = ? and c.language_id = ?",
-                contentletAsJson,
                 cviInodeColumn);
         dc.setSQL(insertHostSql)
                 .addParam(inode)
                 .addParam(newHostIdentifier)
                 .addParam(languageId)
+                .addJSONParam(contentletAsJson)
                 .addParam(oldHostIdentifier)
                 .addParam(languageId)
                 .loadResult();
@@ -707,9 +734,7 @@ public class HostIntegrityChecker extends AbstractIntegrityChecker {
                                        final String newHostIdentifier,
                                        final Long languageId,
                                        final DotConnect dc) throws DotDataException {
-        if (dc.getRecordCount(
-                "contentlet_version_info",
-                "WHERE identifier = '" + newHostIdentifier + "' AND lang = " + languageId) > 0) {
+        if (hasRows("contentlet_version_info", "WHERE identifier = ? AND lang = ?", newHostIdentifier, languageId)) {
             Logger.warn(this,
                     String.format(
                             "Cannot insert new contentlet version since it already exists (old:%s/new:%s)",

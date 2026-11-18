@@ -8,6 +8,20 @@ import { map } from 'rxjs/operators';
 import { DotCMSAPIResponse } from '@dotcms/dotcms-models';
 
 /**
+ * Row-embedded role projection returned by GET /api/v1/users/filter
+ * when the caller opts in via `includeRoles=true` (#37236). Only the
+ * user's directly assigned roles are included — inherited grants and
+ * the implicit personal role are already filtered out server-side.
+ * Undefined on responses from any dotCMS version that predates the
+ * flag.
+ */
+export interface DotUserListRole {
+    id: string;
+    name: string;
+    roleKey: string;
+}
+
+/**
  * Row shape returned by GET /api/v1/users/filter — mirrors the fields
  * populated by com.liferay.portal.model.User#toMap() on the backend.
  * Kept intentionally partial: only the fields consumed by the list view
@@ -23,13 +37,28 @@ export interface DotUserListItem {
     emailAddress: string;
     gravitar: string;
     active: boolean;
-    admin: boolean;
+    /**
+     * Whether the user is a CMS Administrator. Only returned to viewers
+     * who are CMS Administrators or have access to both the Roles and
+     * Users portlets; `undefined` for anyone else.
+     */
+    admin?: boolean;
     backendUser: boolean;
     frontendUser: boolean;
     hasConsoleAccess: boolean;
     lastLoginDate: number | null;
     lastLoginIP: string | null;
     failedLoginAttempts: number | null;
+    /**
+     * Populated only when the request carried `includeRoles=true` and
+     * the backend supports the flag (#37236). `undefined` means the
+     * server did not return them for this row (typically because the
+     * viewer lacks the gate #37236 requires; the list store's 403
+     * handler retries once without the flag and leaves cells empty
+     * rather than fanning out N per-row fetches). `[]` means the row
+     * has no directly-assigned roles.
+     */
+    roles?: DotUserListRole[];
 }
 
 /**
@@ -147,10 +176,8 @@ export interface DotApiTokenCreatePayload {
 
 /**
  * Response envelope for POST /api/v1/apitoken. The `jwt` field is the
- * initial signed value returned alongside the created token record;
- * the caller can re-mint an equivalent JWT later via `getApiTokenJwt`,
- * so this is not a one-shot secret — it's just the convenient first
- * one so the UI doesn't need a second round-trip.
+ * signed value returned alongside the created token record. This is
+ * the only time it is available: it can't be retrieved again later.
  */
 export interface DotApiTokenCreateResult {
     jwt: string;
@@ -180,6 +207,18 @@ export interface DotUsersPaginatedParams {
      * uses a single value from the "Filter by" chip.
      */
     roleKey?: string;
+    /**
+     * Ask the backend to inline each row's directly assigned roles as
+     * `roles: DotUserListRole[]` (#37236). Additive — omitting the flag
+     * leaves the response byte-identical to previous versions.
+     *
+     * `includeRoles=true` requires CMS Administrator or Roles + Users
+     * portlet access. Callers without that gate get a 403 on the whole
+     * request; the list store handles that by retrying once without
+     * the flag and leaving the Roles cells empty for that viewer (no
+     * per-row `getUserRoles` fan-out).
+     */
+    includeRoles?: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -197,7 +236,8 @@ export class DotUsersService {
             ['direction', params.direction],
             ['includeanonymous', params.includeAnonymous ? 'true' : undefined],
             ['includedefault', params.includeDefault ? 'true' : undefined],
-            ['roleKey', params.roleKey]
+            ['roleKey', params.roleKey],
+            ['includeRoles', params.includeRoles ? 'true' : undefined]
         ];
 
         const httpParams = paramMap.reduce(
@@ -287,41 +327,14 @@ export class DotUsersService {
     }
 
     /**
-     * Mints a new API token for the target user. The JWT string in the
-     * response is a convenience — the tab surfaces it inline so the
-     * admin doesn't need a second call — but any later reveal minted
-     * via `getApiTokenJwt` signs an equivalent JWT over the same
-     * record. Listings only return metadata.
+     * Mints a new API token for the target user. The response carries
+     * the token's JWT, which the tab shows once; it can't be retrieved
+     * again later. Listings only return metadata.
      */
     createApiToken(payload: DotApiTokenCreatePayload): Observable<DotApiTokenCreateResult> {
         return this.#http
             .post<DotApiTokenCreateResponse>('/api/v1/apitoken', payload)
             .pipe(map((response) => response.entity));
-    }
-
-    /**
-     * Mints a fresh JWT for an existing token id. Stateless: the token
-     * record itself is unchanged and previously-issued JWTs stay valid
-     * until the token is revoked or expires — revoke is the only
-     * mechanism that kills a leaked JWT. Backend refuses this on
-     * revoked/expired tokens (400).
-     */
-    getApiTokenJwt(tokenId: string): Observable<string> {
-        return this.#http
-            .get<{ entity: { jwt: string } }>(`/api/v1/apitoken/${encodeURIComponent(tokenId)}/jwt`)
-            .pipe(
-                map((response) => {
-                    const jwt = response.entity?.jwt;
-                    // Throwing here surfaces a malformed response
-                    // through the tab's httpErrorManager instead of
-                    // leaving the reveal dialog spinning on `''`.
-                    if (typeof jwt !== 'string' || jwt.length === 0) {
-                        throw new Error('Malformed JWT response');
-                    }
-
-                    return jwt;
-                })
-            );
     }
 
     /**

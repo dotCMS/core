@@ -1,10 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { RouterStateSnapshot } from '@angular/router';
 
 import { DotRouterService, DotSystemConfigService } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
@@ -26,7 +28,7 @@ describe('DotContainerService', () => {
                 {
                     provide: DotContainersService,
                     useValue: {
-                        getById: jest.fn().mockReturnValue(
+                        getById: vi.fn().mockReturnValue(
                             of({
                                 container: {
                                     identifier: 'test-id',
@@ -48,7 +50,7 @@ describe('DotContainerService', () => {
                 },
                 {
                     provide: GlobalStore,
-                    useValue: { addNewBreadcrumb: jest.fn() }
+                    useValue: { addNewBreadcrumb: vi.fn() }
                 },
                 provideHttpClient(),
                 provideHttpClientTesting()
@@ -58,27 +60,32 @@ describe('DotContainerService', () => {
         containersService = TestBed.inject(DotContainersService);
     });
 
-    it('should return page by id from router', (done) => {
-        service
-            .resolve(
-                {
-                    paramMap: {
-                        get(param) {
-                            return param === 'inode' ? null : 'ID';
+    it('should return page by id from router', () =>
+        new Promise<void>((done) => {
+            service
+                .resolve(
+                    {
+                        paramMap: {
+                            get(param: string) {
+                                return param === 'inode' ? null : 'ID';
+                            }
                         }
+                    } as any,
+                    null as unknown as RouterStateSnapshot
+                )
+                .subscribe(
+                    (_res) => {
+                        expect(containersService.getById).toHaveBeenCalledWith(
+                            'ID',
+                            'working',
+                            true
+                        );
+                        expect(containersService.getById).toHaveBeenCalledTimes(1);
+                        done();
+                    },
+                    (_error) => {
+                        done();
                     }
-                } as any,
-                null
-            )
-            .subscribe(
-                (_res) => {
-                    expect(containersService.getById).toHaveBeenCalledWith('ID', 'working', true);
-                    expect(containersService.getById).toHaveBeenCalledTimes(1);
-                    done();
-                },
-                (_error) => {
-                    done();
-                }
-            );
-    });
+                );
+        }));
 });

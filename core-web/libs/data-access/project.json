@@ -5,17 +5,5 @@
     "sourceRoot": "libs/data-access/src",
     "prefix": "dotcms",
     "tags": [],
-    "targets": {
-        "test": {
-            "options": {
-                "passWithNoTests": false
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            }
-        }
-    }
+    "targets": {}
 }

@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { NgTemplateOutlet } from '@angular/common';
 import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
@@ -37,6 +43,7 @@ import {
     DotDialogHeaderComponent
 } from '../dot-dialog';
 import { DotToastComponent } from '../dot-toast/dot-toast.component';
+import { DotUploadTypeSelectorComponent } from '../dot-upload-type-selector/dot-upload-type-selector.component';
 
 /**
  * What every `overrideComponent({ set: { imports } })` below has to keep real.
@@ -61,7 +68,8 @@ const PICKER_REAL_IMPORTS = [
     DotDialogComponent,
     DotDialogHeaderComponent,
     DotDialogContentComponent,
-    DotDialogFooterComponent
+    DotDialogFooterComponent,
+    DotUploadTypeSelectorComponent
 ];
 
 const SITE: DotSite = {
@@ -113,7 +121,7 @@ const PINNED_FOLDER = {
 };
 
 /**
- * State is exposed as real signals, not `jest.fn()`s: the component derives `$offset` and
+ * State is exposed as real signals, not `vi.fn()`s: the component derives `$offset` and
  * `$targetFolder` with `computed`, which only recomputes when a signal dependency changes. A plain
  * mock function would memoize the first value forever.
  */
@@ -145,23 +153,23 @@ const createMockStore = () => {
         selectedAsset: signal<DotContentDriveBrowseItem | null>(null),
         $request: signal({}),
         // methods
-        initPicker: jest.fn(),
-        selectNode: jest.fn(),
-        setTreeSearch: jest.fn(),
-        expandNode: jest.fn(),
-        loadMore: jest.fn(),
-        patchFilters: jest.fn(),
-        removeFilter: jest.fn(),
-        clearFilters: jest.fn(),
-        setSearch: jest.fn(),
-        setPagination: jest.fn(),
-        setSort: jest.fn(),
-        setSelectedAsset: jest.fn(),
-        clearSelection: jest.fn(),
-        setSelectedNode: jest.fn(),
-        loadFolders: jest.fn(),
-        loadItems: jest.fn(),
-        toggleFullscreen: jest.fn(() => isFullscreen.set(!isFullscreen()))
+        initPicker: vi.fn(),
+        selectNode: vi.fn(),
+        setTreeSearch: vi.fn(),
+        expandNode: vi.fn(),
+        loadMore: vi.fn(),
+        patchFilters: vi.fn(),
+        removeFilter: vi.fn(),
+        clearFilters: vi.fn(),
+        setSearch: vi.fn(),
+        setPagination: vi.fn(),
+        setSort: vi.fn(),
+        setSelectedAsset: vi.fn(),
+        clearSelection: vi.fn(),
+        setSelectedNode: vi.fn(),
+        loadFolders: vi.fn(),
+        loadItems: vi.fn(),
+        toggleFullscreen: vi.fn(() => isFullscreen.set(!isFullscreen()))
     };
 };
 
@@ -178,16 +186,21 @@ describe('DotAssetPickerComponent', () => {
         providers: [
             mockProvider(DynamicDialogRef),
             mockProvider(DotContentletService, {
-                getContentletByInodeWithContent: jest.fn().mockReturnValue(of(HYDRATED_ASSET))
+                getContentletByInodeWithContent: vi.fn().mockReturnValue(of(HYDRATED_ASSET))
             }),
             mockProvider(DotUploadFileService, {
-                uploadFileByBaseType: jest.fn().mockReturnValue(of({ title: 'logo.png' }))
+                uploadFileByBaseType: vi.fn().mockReturnValue(of({ title: 'logo.png' }))
             }),
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
                     'dot.common.dialog.accept': 'Add',
-                    'dot.common.dialog.reject': 'Cancel'
+                    'dot.common.dialog.reject': 'Cancel',
+                    'dot.asset.picker.upload.rejected': "Can't upload this file",
+                    'dot.asset.picker.upload.rejected.detail': 'Only {0} can be uploaded here.',
+                    'dot.asset.picker.upload.types.image': 'images',
+                    'dot.asset.picker.upload.types.video': 'video files',
+                    'dot.asset.picker.upload.types.audio': 'audio files'
                 })
             },
             { provide: DynamicDialogConfig, useValue: { data: CONFIG } }
@@ -221,17 +234,15 @@ describe('DotAssetPickerComponent', () => {
         // `mockProvider` builds one mock instance for the whole describe and `clearAllMocks` only
         // clears calls, not implementations — so re-seed here or a test that overrides a return
         // value leaks into every test after it.
-        (contentletService.getContentletByInodeWithContent as jest.Mock).mockReturnValue(
+        (contentletService.getContentletByInodeWithContent as Mock).mockReturnValue(
             of(HYDRATED_ASSET)
         );
-        (uploadService.uploadFileByBaseType as jest.Mock).mockReturnValue(
-            of({ title: 'logo.png' })
-        );
+        (uploadService.uploadFileByBaseType as Mock).mockReturnValue(of({ title: 'logo.png' }));
 
         spectator.detectChanges();
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     describe('reporting failed requests', () => {
         // The store cannot toast for itself and deliberately does not inject
@@ -240,7 +251,7 @@ describe('DotAssetPickerComponent', () => {
         const messageService = () => spectator.inject(MessageService, true);
 
         it('should toast what the store says failed', () => {
-            const spyAdd = jest.spyOn(messageService(), 'add');
+            const spyAdd = vi.spyOn(messageService(), 'add');
 
             store.requestError.set({ messageKey: 'dot.asset.picker.error.assets' });
             spectator.detectChanges();
@@ -249,7 +260,7 @@ describe('DotAssetPickerComponent', () => {
         });
 
         it('should say nothing while nothing has failed', () => {
-            const spyAdd = jest.spyOn(messageService(), 'add');
+            const spyAdd = vi.spyOn(messageService(), 'add');
 
             spectator.detectChanges();
 
@@ -259,7 +270,7 @@ describe('DotAssetPickerComponent', () => {
         it('should report a second identical failure', () => {
             // Each failure is a fresh object precisely so the effect re-runs — a repeated outage
             // must not go silent just because the message is the same.
-            const spyAdd = jest.spyOn(messageService(), 'add');
+            const spyAdd = vi.spyOn(messageService(), 'add');
 
             store.requestError.set({ messageKey: 'dot.asset.picker.error.folders' });
             spectator.detectChanges();
@@ -374,7 +385,7 @@ describe('DotAssetPickerComponent', () => {
         });
 
         it('should fall back to the browsed folder when the asset has no url', () => {
-            (contentletService.getContentletByInodeWithContent as jest.Mock).mockReturnValue(
+            (contentletService.getContentletByInodeWithContent as Mock).mockReturnValue(
                 of({ inode: 'inode-1' } as DotCMSContentlet)
             );
             store.path.set('/docs/');
@@ -396,11 +407,11 @@ describe('DotAssetPickerComponent', () => {
         it('should tell the user when the asset can no longer be loaded', () => {
             // The row was fetched minutes ago — by now it can be gone or permissions can have
             // changed. Silently swallowing that left Confirm looking like it did nothing.
-            (contentletService.getContentletByInodeWithContent as jest.Mock).mockReturnValue(
+            (contentletService.getContentletByInodeWithContent as Mock).mockReturnValue(
                 throwError(() => new Error('gone'))
             );
             const messageService = spectator.inject(MessageService, true);
-            const addSpy = jest.spyOn(messageService, 'add');
+            const addSpy = vi.spyOn(messageService, 'add');
 
             spectator.click(button('asset-picker-confirm'));
 
@@ -582,7 +593,7 @@ describe('DotAssetPickerComponent', () => {
         });
 
         it('should not refresh the list when the upload fails', () => {
-            (uploadService.uploadFileByBaseType as jest.Mock).mockReturnValue(
+            (uploadService.uploadFileByBaseType as Mock).mockReturnValue(
                 throwError(() => ({ error: { errors: [{ message: 'nope' }] } }))
             );
             const files = [new File([''], 'a.png')] as unknown as FileList;
@@ -591,6 +602,206 @@ describe('DotAssetPickerComponent', () => {
             spectator.component['onRequestUpload']({ files, targetFolder: PINNED_FOLDER });
 
             expect(store.loadItems).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('upload restriction', () => {
+        const messageService = () => spectator.inject(MessageService, true);
+
+        /** `new File()` defaults `type` to `''`, which the restriction deliberately allows. */
+        const fileList = (type: string, name = 'asset.bin'): FileList => {
+            const files = [new File([''], name, { type })] as unknown as FileList;
+            Object.defineProperty(files, 'length', { value: 1 });
+
+            return files;
+        };
+
+        /** Puts the picker in a media mode, the way an Image field opens it. */
+        const restrictToImages = () => {
+            store.config.set({ ...CONFIG, mimeTypes: ['image/*'] });
+            spectator.detectChanges();
+        };
+
+        describe('in a media mode', () => {
+            beforeEach(() => restrictToImages());
+
+            it('should refuse a dropped file outside the allowed types', () => {
+                const spyAdd = vi.spyOn(messageService(), 'add');
+
+                spectator.component['onRequestUpload']({
+                    files: fileList('application/pdf', 'report.pdf'),
+                    targetFolder: PINNED_FOLDER
+                });
+
+                expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+                expect(spyAdd).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'error',
+                        detail: 'Only images can be uploaded here.'
+                    })
+                );
+            });
+
+            it('should not open the Asset/File prompt for a refused drop', () => {
+                // Without the early gate the user is asked to choose a storage type and only then
+                // told the file was never eligible.
+                spectator.component['onRequestUpload']({
+                    files: fileList('application/pdf', 'report.pdf')
+                });
+
+                expect(spectator.component.$uploadSelectorPayload()).toBeUndefined();
+                expect(spectator.component.$uploadModalVisible()).toBe(false);
+            });
+
+            it('should refuse a file chosen through the OS dialog', () => {
+                // `accept` is a hint the user can override from the dialog's own filter, so the
+                // pre-upload check has to stand on its own.
+                spectator.component.$activeSelection.set({
+                    baseType: DotCMSBaseTypesContentTypes.DOTASSET
+                });
+
+                spectator.component['onFileChange']({
+                    target: { files: fileList('application/pdf', 'report.pdf'), value: 'x' }
+                } as unknown as Event);
+
+                expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+            });
+
+            it('should refuse a file after the Asset/File prompt is answered', () => {
+                spectator.component['onUploadTypeSelected']({
+                    baseType: DotCMSBaseTypesContentTypes.DOTASSET,
+                    files: fileList('application/pdf', 'report.pdf')
+                });
+
+                expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+            });
+
+            it('should refuse a drop into a folder that pins a base type', () => {
+                // This route skips the prompt entirely — the one most easily left unguarded.
+                spectator.component['onRequestUpload']({
+                    files: fileList('audio/mpeg', 'song.mp3'),
+                    targetFolder: PINNED_FOLDER
+                });
+
+                expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+            });
+
+            it('should refuse a button upload into a folder that pins a base type', () => {
+                store.selectedNode.set({ data: PINNED_FOLDER });
+                spectator.detectChanges();
+
+                spectator.component['onUpload'](new MouseEvent('click'));
+                spectator.component['onFileChange']({
+                    target: { files: fileList('application/pdf', 'report.pdf'), value: 'x' }
+                } as unknown as Event);
+
+                expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+            });
+
+            it('should allow a file whose type the browser does not report', () => {
+                // AC-010: the server stays the authority rather than blocking a file we cannot
+                // classify.
+                spectator.component['onRequestUpload']({
+                    files: fileList('', 'mystery.dat'),
+                    targetFolder: PINNED_FOLDER
+                });
+
+                expect(uploadService.uploadFileByBaseType).toHaveBeenCalled();
+            });
+
+            it('should upload an allowed file and refresh the list with the restriction intact', () => {
+                store.$request.set({ mimeTypes: ['image/*'] });
+
+                spectator.component['onRequestUpload']({
+                    files: fileList('image/png', 'logo.png'),
+                    targetFolder: PINNED_FOLDER
+                });
+
+                expect(uploadService.uploadFileByBaseType).toHaveBeenCalled();
+                expect(store.loadItems).toHaveBeenCalledWith({ mimeTypes: ['image/*'] });
+            });
+        });
+
+        describe('the hidden file input', () => {
+            const fileInput = () =>
+                spectator.query('input[type="file"]') as HTMLInputElement | null;
+
+            it('should filter the OS dialog to the restricted family', () => {
+                restrictToImages();
+
+                expect(fileInput()?.getAttribute('accept')).toBe('image/*');
+            });
+
+            it('should carry every pattern a browse caller asked for', () => {
+                store.config.set({ ...CONFIG, mimeTypes: ['image/*', 'video/*'] });
+                spectator.detectChanges();
+
+                expect(fileInput()?.getAttribute('accept')).toBe('image/*,video/*');
+            });
+
+            it('should carry no accept attribute at all when nothing is restricted', () => {
+                // Absence, not `accept=""` — an empty value is a different thing to the browser,
+                // and a test asserting `''` would pass against a broken implementation.
+                expect(fileInput()?.hasAttribute('accept')).toBe(false);
+            });
+        });
+
+        describe('the Asset/File prompt', () => {
+            const selector = () => spectator.query(DotUploadTypeSelectorComponent);
+
+            it('should hand the restriction label to the selector in a media mode', () => {
+                restrictToImages();
+
+                spectator.component['onUpload'](new MouseEvent('click'));
+                spectator.detectChanges();
+
+                expect(selector()?.$restrictionLabel()).toBe('images');
+            });
+
+            it('should hand the selector no label when nothing is restricted', () => {
+                spectator.component['onUpload'](new MouseEvent('click'));
+                spectator.detectChanges();
+
+                expect(selector()?.$restrictionLabel()).toBe('');
+            });
+        });
+
+        describe('in the File field, which restricts nothing', () => {
+            // The over-reach guard. CONFIG carries no `mimeTypes`, exactly as a File field opens.
+            it('should upload a dropped PDF', () => {
+                const spyAdd = vi.spyOn(messageService(), 'add');
+
+                spectator.component['onRequestUpload']({
+                    files: fileList('application/pdf', 'report.pdf'),
+                    targetFolder: PINNED_FOLDER
+                });
+
+                expect(uploadService.uploadFileByBaseType).toHaveBeenCalled();
+                expect(spyAdd).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'error' })
+                );
+            });
+
+            it('should upload a PDF chosen through the OS dialog', () => {
+                spectator.component.$activeSelection.set({
+                    baseType: DotCMSBaseTypesContentTypes.DOTASSET
+                });
+
+                spectator.component['onFileChange']({
+                    target: { files: fileList('application/zip', 'bundle.zip'), value: 'x' }
+                } as unknown as Event);
+
+                expect(uploadService.uploadFileByBaseType).toHaveBeenCalled();
+            });
+
+            it('should upload a PDF after the Asset/File prompt is answered', () => {
+                spectator.component['onUploadTypeSelected']({
+                    baseType: DotCMSBaseTypesContentTypes.FILEASSET,
+                    files: fileList('application/pdf', 'report.pdf')
+                });
+
+                expect(uploadService.uploadFileByBaseType).toHaveBeenCalled();
+            });
         });
     });
 });
@@ -637,7 +848,7 @@ describe('DotAssetPickerComponent — full screen', () => {
     /** Stand-in for the PrimeNG `Dialog`, whose `maximized` flag the picker keeps in step. */
     let dialog: {
         maximized: boolean | undefined;
-        maximize: jest.Mock;
+        maximize: Mock;
         container: () => HTMLElement;
     };
 
@@ -667,7 +878,7 @@ describe('DotAssetPickerComponent — full screen', () => {
             // UNSET, like PrimeNG's own field before its maximize button is ever clicked. Starting
             // this at `false` is what hid the bug where the picker opened full screen.
             maximized: undefined,
-            maximize: jest.fn(() => (dialog.maximized = !dialog.maximized)),
+            maximize: vi.fn(() => (dialog.maximized = !dialog.maximized)),
             container: () => container
         };
 
@@ -687,7 +898,7 @@ describe('DotAssetPickerComponent — full screen', () => {
         spectator.detectChanges();
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     it('should open windowed, not full screen', () => {
         // Regression: PrimeNG leaves `maximized` unset, so a strict `!== false` fired `maximize()`

@@ -1,3 +1,5 @@
+import { MockInstance, vi } from 'vitest';
+
 import { DotCMSUVEAction } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 
@@ -5,6 +7,7 @@ import {
     addClassToEmptyContentlets,
     injectEmptyStateStyles,
     listenBlockEditorInlineEvent,
+    registerUVEEvents,
     scrollHandler,
     setClientIsReady
 } from './utils';
@@ -13,23 +16,27 @@ import { DOT_SECTION_ID_PREFIX } from '../internal/constants';
 import { onScrollToSection } from '../internal/events';
 
 describe('scrollHandler', () => {
-    let postMessageSpy: jest.SpyInstance;
+    let postMessageSpy: MockInstance;
     let destroyScrollHandler: () => void;
 
     beforeEach(() => {
-        postMessageSpy = jest.spyOn(window.parent, 'postMessage').mockImplementation(jest.fn());
+        postMessageSpy = vi.spyOn(window.parent, 'postMessage').mockImplementation(vi.fn());
     });
 
     afterEach(() => {
         destroyScrollHandler?.();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('sends IFRAME_SCROLL on window scroll', () => {
         ({ destroyScrollHandler } = scrollHandler());
         window.dispatchEvent(new Event('scroll'));
 
-        expect(postMessageSpy).toHaveBeenCalledWith({ action: DotCMSUVEAction.IFRAME_SCROLL }, '*');
+        // The page reports where it scrolled to (#38575); jsdom starts at the top.
+        expect(postMessageSpy).toHaveBeenCalledWith(
+            { action: DotCMSUVEAction.IFRAME_SCROLL, payload: { scrollY: 0 } },
+            '*'
+        );
     });
 
     it('sends IFRAME_SCROLL_END on window scrollend', () => {
@@ -40,6 +47,23 @@ describe('scrollHandler', () => {
             { action: DotCMSUVEAction.IFRAME_SCROLL_END },
             '*'
         );
+    });
+
+    // #38575: the editor shifts its drop targets by how far the page scrolled during a drag.
+    it('sends the page scrollY with IFRAME_SCROLL', () => {
+        Object.defineProperty(window, 'scrollY', { value: 840, configurable: true });
+
+        try {
+            ({ destroyScrollHandler } = scrollHandler());
+            window.dispatchEvent(new Event('scroll'));
+
+            expect(postMessageSpy).toHaveBeenCalledWith(
+                { action: DotCMSUVEAction.IFRAME_SCROLL, payload: { scrollY: 840 } },
+                '*'
+            );
+        } finally {
+            Object.defineProperty(window, 'scrollY', { value: 0, configurable: true });
+        }
     });
 
     it('removes both listeners after destroyScrollHandler is called', () => {
@@ -55,8 +79,8 @@ describe('scrollHandler', () => {
     it('binds through Zone.js native listeners when Zone is present, not the patched ones', () => {
         // Simulate a Zone.js-loaded page: expose the unpatched native methods
         // under the __zone_symbol__ keys the way Zone.js stashes them.
-        const nativeAdd = jest.fn();
-        const nativeRemove = jest.fn();
+        const nativeAdd = vi.fn();
+        const nativeRemove = vi.fn();
         const win = window as unknown as Record<string, unknown>;
 
         try {
@@ -65,7 +89,7 @@ describe('scrollHandler', () => {
             (globalThis as unknown as { Zone: unknown }).Zone = {
                 __symbol__: (name: string) => `__zone_symbol__${name}`
             };
-            const patchedAddSpy = jest.spyOn(window, 'addEventListener');
+            const patchedAddSpy = vi.spyOn(window, 'addEventListener');
 
             ({ destroyScrollHandler } = scrollHandler());
 
@@ -84,6 +108,278 @@ describe('scrollHandler', () => {
             delete win['__zone_symbol__removeEventListener'];
             delete (globalThis as unknown as { Zone?: unknown }).Zone;
         }
+    });
+});
+
+// #38575: during a drag the editor sends a scroll velocity and the page scrolls itself, every
+// frame, until told to stop. Older editors still send the one-step direction request.
+describe('registerUVEEvents scroll during a drag', () => {
+    /** The editor → page message, by its wire name, so a rename of the constant shows up here. */
+    const SCROLL_VELOCITY = 'uve-scroll-velocity';
+
+    /** One frame at 60fps, in ms. */
+    const FRAME = 1000 / 60;
+
+    let subscriptions: { unsubscribe: () => void }[];
+    let scrollBy: MockInstance;
+    let frames: Map<number, FrameRequestCallback>;
+    let lastFrameId: number;
+
+    /** Runs the frame the page asked for, at `time` ms. */
+    const runFrame = (time: number) => {
+        const pending = [...frames.values()];
+        frames.clear();
+        pending.forEach((callback) => callback(time));
+    };
+
+    /** The editor sends a message to the page. */
+    const fromEditor = (data: Record<string, unknown>) => {
+        window.dispatchEvent(new MessageEvent('message', { data }));
+    };
+
+    const scrollAtVelocity = (velocity: unknown) => fromEditor({ name: SCROLL_VELOCITY, velocity });
+
+    /** Where the page is: `scrollY`, in a 3000px document seen through an 800px viewport. */
+    const pageAt = (scrollY: number) => {
+        Object.defineProperty(window, 'scrollY', { value: scrollY, configurable: true });
+    };
+
+    /** The `top` of the last instant scroll the page made. */
+    const lastInstantScroll = (): number | undefined =>
+        scrollBy.mock.calls
+            .map(([options]) => options as ScrollToOptions)
+            .filter((options) => options?.behavior === 'instant')
+            .at(-1)?.top;
+
+    beforeEach(() => {
+        // Inside the editor: the page has a parent window, which receives what the page sends.
+        vi.spyOn(window, 'parent', 'get').mockReturnValue({
+            postMessage: vi.fn()
+        } as unknown as Window);
+        // jsdom has no layout observers; the auto-bounds channel needs them to start.
+        vi.stubGlobal(
+            'ResizeObserver',
+            class {
+                observe = vi.fn();
+                unobserve = vi.fn();
+                disconnect = vi.fn();
+            }
+        );
+
+        frames = new Map();
+        lastFrameId = 0;
+        vi.stubGlobal(
+            'requestAnimationFrame',
+            vi.fn((callback: FrameRequestCallback) => {
+                lastFrameId += 1;
+                frames.set(lastFrameId, callback);
+
+                return lastFrameId;
+            })
+        );
+        vi.stubGlobal(
+            'cancelAnimationFrame',
+            vi.fn((id: number) => frames.delete(id))
+        );
+
+        scrollBy = vi.spyOn(window, 'scrollBy').mockImplementation(vi.fn());
+        Object.defineProperty(window, 'innerHeight', { value: 800, configurable: true });
+        Object.defineProperty(document.documentElement, 'scrollHeight', {
+            value: 3000,
+            configurable: true
+        });
+        pageAt(1000);
+
+        ({ subscriptions } = registerUVEEvents());
+    });
+
+    afterEach(() => {
+        subscriptions.forEach((subscription) => subscription.unsubscribe());
+        pageAt(0);
+        delete (document.documentElement as unknown as Record<string, unknown>)['scrollHeight'];
+        vi.unstubAllGlobals();
+        vi.restoreAllMocks();
+    });
+
+    it('should scroll instantly every frame at the velocity the editor sends', () => {
+        scrollAtVelocity(12);
+
+        runFrame(1000);
+        runFrame(1000 + FRAME);
+
+        expect(scrollBy).toHaveBeenLastCalledWith(
+            expect.objectContaining({ top: expect.closeTo(12, 1), behavior: 'instant' })
+        );
+        // Still going: the page asked for the next frame.
+        expect(frames.size).toBe(1);
+    });
+
+    it('should scale each step by how long the frame took', () => {
+        scrollAtVelocity(12);
+
+        runFrame(1000);
+        runFrame(1000 + 2 * FRAME);
+
+        expect(lastInstantScroll()).toBeCloseTo(24, 0);
+    });
+
+    it('should scroll up for a negative velocity', () => {
+        scrollAtVelocity(-12);
+
+        runFrame(1000);
+        runFrame(1000 + FRAME);
+
+        expect(lastInstantScroll()).toBeCloseTo(-12, 0);
+    });
+
+    it('should stop when the editor sends a velocity of 0', () => {
+        scrollAtVelocity(12);
+        runFrame(1000);
+        runFrame(1000 + FRAME);
+        const scrollsBeforeStop = scrollBy.mock.calls.length;
+
+        scrollAtVelocity(0);
+        runFrame(1000 + 2 * FRAME);
+        runFrame(1000 + 3 * FRAME);
+
+        expect(scrollsBeforeStop).toBeGreaterThan(0);
+        expect(scrollBy).toHaveBeenCalledTimes(scrollsBeforeStop);
+    });
+
+    // The editor sends a velocity only when it changes, so the page waits at the limit instead
+    // of stopping: one that stopped would stay still if the page then grew.
+    it('should not scroll past the top of the page, and wait there', () => {
+        pageAt(0);
+
+        scrollAtVelocity(-12);
+        runFrame(1000);
+        runFrame(1000 + FRAME);
+
+        expect(scrollBy).not.toHaveBeenCalled();
+        expect(frames.size).toBe(1);
+    });
+
+    it('should not scroll past the bottom of the page, and wait there', () => {
+        pageAt(2200);
+
+        scrollAtVelocity(12);
+        runFrame(1000);
+        runFrame(1000 + FRAME);
+
+        expect(scrollBy).not.toHaveBeenCalled();
+        expect(frames.size).toBe(1);
+    });
+
+    // PR review of #38575: content that loads at the bottom makes the page longer while the
+    // pointer stays still in the edge zone.
+    it('should scroll again, one frame at a time, when the page grows at the bottom', () => {
+        pageAt(2200);
+        scrollAtVelocity(12);
+        runFrame(1000);
+        runFrame(1000 + FRAME);
+
+        Object.defineProperty(document.documentElement, 'scrollHeight', {
+            value: 4000,
+            configurable: true
+        });
+        runFrame(1000 + 10 * FRAME);
+
+        expect(lastInstantScroll()).toBeCloseTo(12, 0);
+    });
+
+    it.each([NaN, Infinity, -Infinity, '12', null])(
+        'should treat a velocity of %s as 0 and stop',
+        (velocity) => {
+            scrollAtVelocity(12);
+            runFrame(1000);
+            runFrame(1000 + FRAME);
+            const scrollsBefore = scrollBy.mock.calls.length;
+
+            scrollAtVelocity(velocity);
+            runFrame(1000 + 2 * FRAME);
+            runFrame(1000 + 3 * FRAME);
+
+            expect(scrollsBefore).toBeGreaterThan(0);
+            expect(scrollBy).toHaveBeenCalledTimes(scrollsBefore);
+        }
+    );
+
+    it.each([
+        { sent: 100, clamped: 40 },
+        { sent: -100, clamped: -40 }
+    ])(
+        'should scroll no faster than 40px per frame when the editor sends $sent',
+        ({ sent, clamped }) => {
+            scrollAtVelocity(sent);
+
+            runFrame(1000);
+            runFrame(1000 + FRAME);
+
+            expect(lastInstantScroll()).toBeCloseTo(clamped, 0);
+        }
+    );
+
+    // Review of #38575: the editor measures the drop targets' shift from the last scrollY the
+    // page reported. A report that waits for the next scroll event is a frame late, so bounds
+    // taken mid-scroll would be shifted from a stale value.
+    it('should report where the page is right after each step, in the same frame', () => {
+        const editor = window.parent.postMessage as unknown as MockInstance;
+        scrollBy.mockImplementation((options: ScrollToOptions) =>
+            pageAt(window.scrollY + (options.top ?? 0))
+        );
+        scrollAtVelocity(12);
+
+        runFrame(1000);
+        expect(editor).toHaveBeenLastCalledWith(
+            {
+                action: DotCMSUVEAction.IFRAME_SCROLL,
+                payload: { scrollY: expect.closeTo(1012, 5) }
+            },
+            '*'
+        );
+
+        runFrame(1000 + FRAME);
+        expect(editor).toHaveBeenLastCalledWith(
+            {
+                action: DotCMSUVEAction.IFRAME_SCROLL,
+                payload: { scrollY: expect.closeTo(1024, 5) }
+            },
+            '*'
+        );
+    });
+
+    it('should stop when the page stops listening to the editor', () => {
+        scrollAtVelocity(12);
+        runFrame(1000);
+        runFrame(1000 + FRAME);
+        const scrollsBefore = scrollBy.mock.calls.length;
+
+        subscriptions.forEach((subscription) => subscription.unsubscribe());
+        runFrame(1000 + 2 * FRAME);
+
+        expect(scrollsBefore).toBeGreaterThan(0);
+        expect(scrollBy).toHaveBeenCalledTimes(scrollsBefore);
+    });
+
+    describe('legacy one-step scroll request', () => {
+        const legacyScroll = (direction: 'up' | 'down') =>
+            fromEditor({ name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_INSIDE_IFRAME, direction });
+
+        it('should still scroll 120px smoothly for an editor that sends no velocity', () => {
+            legacyScroll('down');
+
+            expect(scrollBy).toHaveBeenCalledWith({ left: 0, top: 120, behavior: 'smooth' });
+        });
+
+        it('should ignore it once the editor has sent a velocity', () => {
+            scrollAtVelocity(0);
+
+            legacyScroll('down');
+
+            expect(scrollBy).not.toHaveBeenCalledWith(
+                expect.objectContaining({ behavior: 'smooth' })
+            );
+        });
     });
 });
 
@@ -121,14 +417,14 @@ describe('addClassToEmptyContentlets', () => {
 });
 
 describe('setClientIsReady', () => {
-    let postMessageSpy: jest.SpyInstance;
+    let postMessageSpy: MockInstance;
 
     beforeEach(() => {
-        postMessageSpy = jest.spyOn(window.parent, 'postMessage').mockImplementation(jest.fn());
+        postMessageSpy = vi.spyOn(window.parent, 'postMessage').mockImplementation(vi.fn());
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('sends CLIENT_READY with no payload when called without config', () => {
@@ -153,17 +449,17 @@ describe('setClientIsReady', () => {
 
 describe('listenBlockEditorInlineEvent', () => {
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         document.body.innerHTML = '';
     });
 
     it('adds a DOMContentLoaded listener when readyState is not "complete"', () => {
         Object.defineProperty(document, 'readyState', {
             configurable: true,
-            get: jest.fn().mockReturnValue('loading')
+            get: vi.fn().mockReturnValue('loading')
         });
 
-        const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+        const addEventListenerSpy = vi.spyOn(document, 'addEventListener');
         listenBlockEditorInlineEvent();
 
         expect(addEventListenerSpy).toHaveBeenCalledWith('DOMContentLoaded', expect.any(Function));
@@ -172,10 +468,10 @@ describe('listenBlockEditorInlineEvent', () => {
     it('removes the DOMContentLoaded listener via destroyListenBlockEditorInlineEvent', () => {
         Object.defineProperty(document, 'readyState', {
             configurable: true,
-            get: jest.fn().mockReturnValue('loading')
+            get: vi.fn().mockReturnValue('loading')
         });
 
-        const removeEventListenerSpy = jest.spyOn(document, 'removeEventListener');
+        const removeEventListenerSpy = vi.spyOn(document, 'removeEventListener');
         const { destroyListenBlockEditorInlineEvent } = listenBlockEditorInlineEvent();
         destroyListenBlockEditorInlineEvent();
 
@@ -188,10 +484,10 @@ describe('listenBlockEditorInlineEvent', () => {
     it('does not add a DOMContentLoaded listener when readyState is "complete"', () => {
         Object.defineProperty(document, 'readyState', {
             configurable: true,
-            get: jest.fn().mockReturnValue('complete')
+            get: vi.fn().mockReturnValue('complete')
         });
 
-        const addEventListenerSpy = jest.spyOn(document, 'addEventListener');
+        const addEventListenerSpy = vi.spyOn(document, 'addEventListener');
         listenBlockEditorInlineEvent();
 
         expect(addEventListenerSpy).not.toHaveBeenCalledWith(
@@ -203,7 +499,7 @@ describe('listenBlockEditorInlineEvent', () => {
 
 describe('injectEmptyStateStyles', () => {
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
         document.head
             .querySelectorAll('[data-dot-styles="uve-empty-state"]')
             .forEach((el) => el.remove());
@@ -240,8 +536,8 @@ describe('injectEmptyStateStyles', () => {
 
     it('uses the i18n label from localStorage when available', () => {
         localStorage.setItem(
-            'dotMessagesKeys',
-            JSON.stringify({ 'editpage.container.is.empty': 'Contenedor vacío' })
+            'dotMessagesBundle',
+            JSON.stringify({ messages: { 'editpage.container.is.empty': 'Contenedor vacío' } })
         );
 
         injectEmptyStateStyles();
@@ -253,8 +549,30 @@ describe('injectEmptyStateStyles', () => {
         expect(style.textContent).toContain("content: 'Contenedor vacío'");
     });
 
+    it('ignores old split-field caches', () => {
+        localStorage.setItem(
+            'dotMessagesKeys',
+            JSON.stringify({ 'editpage.container.is.empty': 'Legacy label' })
+        );
+        injectEmptyStateStyles();
+        expect(
+            document.head.querySelector('[data-dot-styles="uve-empty-state"]')?.textContent
+        ).toContain("content: 'Empty container'");
+    });
+
+    it('ignores non-string labels in the atomic bundle', () => {
+        localStorage.setItem(
+            'dotMessagesBundle',
+            JSON.stringify({ messages: { 'editpage.container.is.empty': 42 } })
+        );
+        injectEmptyStateStyles();
+        expect(
+            document.head.querySelector('[data-dot-styles="uve-empty-state"]')?.textContent
+        ).toContain("content: 'Empty container'");
+    });
+
     it('falls back to the default label when localStorage JSON is malformed', () => {
-        jest.spyOn(Storage.prototype, 'getItem').mockReturnValue('not-valid-json');
+        vi.spyOn(Storage.prototype, 'getItem').mockReturnValue('not-valid-json');
 
         injectEmptyStateStyles();
 
@@ -267,9 +585,11 @@ describe('injectEmptyStateStyles', () => {
 
     it('escapes CSS-breaking characters in the empty container label', () => {
         localStorage.setItem(
-            'dotMessagesKeys',
+            'dotMessagesBundle',
             JSON.stringify({
-                'editpage.container.is.empty': "Ain't \\ broken\nlabel"
+                messages: {
+                    'editpage.container.is.empty': "Ain't \\ broken\nlabel"
+                }
             })
         );
 
@@ -284,11 +604,11 @@ describe('injectEmptyStateStyles', () => {
 });
 
 describe('onScrollToSection', () => {
-    let postMessageSpy: jest.SpyInstance;
+    let postMessageSpy: MockInstance;
     let unsubscribe: () => void;
 
     beforeEach(() => {
-        postMessageSpy = jest.spyOn(window.parent, 'postMessage').mockImplementation(jest.fn());
+        postMessageSpy = vi.spyOn(window.parent, 'postMessage').mockImplementation(vi.fn());
         ({ unsubscribe } = onScrollToSection((payload) => {
             window.parent.postMessage({ action: DotCMSUVEAction.SECTION_OFFSET, payload }, '*');
         }));
@@ -297,7 +617,7 @@ describe('onScrollToSection', () => {
     afterEach(() => {
         unsubscribe();
         document.body.innerHTML = '';
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('sends SECTION_OFFSET with offsetTop when the element is found via dot-section-{n}', () => {

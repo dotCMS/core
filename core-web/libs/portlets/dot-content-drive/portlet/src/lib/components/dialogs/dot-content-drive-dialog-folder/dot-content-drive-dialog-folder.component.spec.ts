@@ -1,6 +1,11 @@
-import { describe, it, expect } from '@jest/globals';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { delay, of, throwError } from 'rxjs';
+import { Mock, Mocked, describe, expect, it, vi } from 'vitest';
 
 import { MessageService } from 'primeng/api';
 import { AutoComplete, AutoCompleteCompleteEvent } from 'primeng/autocomplete';
@@ -11,7 +16,7 @@ import { createFakeSite, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveDialogFolderComponent } from './dot-content-drive-dialog-folder.component';
 
-import { DEFAULT_FILE_ASSET_TYPES } from '../../../shared/constants';
+import { DEFAULT_FILE_ASSET_TYPES, SYSTEM_HOST_PATH } from '../../../shared/constants';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 
 const mockSite = createFakeSite({
@@ -59,26 +64,26 @@ const editableFolder = (overrides: Partial<DotContentDriveFolder> = {}): DotCont
 describe('DotContentDriveDialogFolderComponent', () => {
     let spectator: Spectator<DotContentDriveDialogFolderComponent>;
     let component: DotContentDriveDialogFolderComponent;
-    let folderService: jest.Mocked<DotFolderService>;
-    let store: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
-    let messageService: jest.Mocked<MessageService>;
+    let folderService: Mocked<DotFolderService>;
+    let store: Mocked<InstanceType<typeof DotContentDriveStore>>;
+    let messageService: Mocked<MessageService>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveDialogFolderComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
-                currentSite: jest.fn().mockReturnValue(mockSite),
-                path: jest.fn().mockReturnValue('/documents'),
-                reloadContentDrive: jest.fn(),
-                loadFolders: jest.fn(),
-                closeDialog: jest.fn()
+                currentSite: vi.fn().mockReturnValue(mockSite),
+                path: vi.fn().mockReturnValue('/documents'),
+                reloadContentDrive: vi.fn(),
+                loadFolders: vi.fn(),
+                closeDialog: vi.fn()
             }),
             mockProvider(DotFolderService, {
-                createFolder: jest.fn().mockReturnValue(of({})),
-                saveFolder: jest.fn().mockReturnValue(of({}))
+                createFolder: vi.fn().mockReturnValue(of({})),
+                saveFolder: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(MessageService, {
-                add: jest.fn()
+                add: vi.fn()
             }),
             {
                 provide: DotMessageService,
@@ -87,12 +92,20 @@ describe('DotContentDriveDialogFolderComponent', () => {
                         'Folder created successfully',
                     'content-drive.dialog.folder.message.create-error': 'Error creating folder',
                     'content-drive.dialog.folder.message.save-success': 'Folder saved successfully',
-                    'content-drive.dialog.folder.message.save-error': 'Error saving folder'
+                    'content-drive.dialog.folder.message.save-error': 'Error saving folder',
+                    // FR-028: outcomes name what ran and what it ran on. FR-030: the author sees
+                    // product copy, never the server's raw message.
+                    'content-drive.dialog.folder.message.create-success-detail': '{0} was created.',
+                    'content-drive.dialog.folder.message.save-success-detail': '{0} was saved.',
+                    'content-drive.dialog.folder.message.create-error-detail':
+                        'The folder could not be created.',
+                    'content-drive.dialog.folder.message.save-error-detail':
+                        'The folder could not be saved.'
                 })
             },
             mockProvider(DotContentTypeService, {
-                getAllContentTypes: jest.fn().mockReturnValue(of([])),
-                getContentTypes: jest.fn().mockReturnValue(of(mockFileAssetTypes))
+                getAllContentTypes: vi.fn().mockReturnValue(of([])),
+                getContentTypes: vi.fn().mockReturnValue(of(mockFileAssetTypes))
             })
         ]
     });
@@ -215,6 +228,17 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.detectChanges();
 
             expect(component.$finalPath()).toBe('//demo.dotcms.com/');
+        });
+
+        it('should not paste a location that is not a folder path into the preview', () => {
+            // System Host reaches the dialog as the location `SYSTEM_HOST`, which is a reserved
+            // word rather than a path — that is what tells it apart from a folder. Concatenated
+            // onto the hostname it produced `//demo.dotcms.comSYSTEM_HOST/`, a path that resolves
+            // to nothing, and the dialog showed it to the user as where their folder would land.
+            store.path.mockReturnValue(SYSTEM_HOST_PATH);
+            component.folderForm.get('name')?.setValue('new-folder');
+
+            expect(component.$finalPath()).toBe('//demo.dotcms.com/new-folder/');
         });
 
         it('should handle path with trailing slash', () => {
@@ -372,14 +396,14 @@ describe('DotContentDriveDialogFolderComponent', () => {
             const input = extensionsInput();
             input.value = text;
             input.dispatchEvent(new Event('input', { bubbles: true }));
-            jest.advanceTimersByTime(500);
+            vi.advanceTimersByTime(500);
             spectator.detectChanges();
 
             return input;
         };
 
-        beforeEach(() => jest.useFakeTimers());
-        afterEach(() => jest.useRealTimers());
+        beforeEach(() => vi.useFakeTimers());
+        afterEach(() => vi.useRealTimers());
 
         it('should filter file extensions on autocomplete', () => {
             const event: AutoCompleteCompleteEvent = {
@@ -475,15 +499,15 @@ describe('DotContentDriveDialogFolderComponent', () => {
             // `getContentTypes` is mocked once for the whole file, so restore it or the delayed
             // observable leaks into every test that runs after this one.
             afterEach(() => {
-                (
-                    spectator.inject(DotContentTypeService).getContentTypes as jest.Mock
-                ).mockReturnValue(of(mockFileAssetTypes));
+                (spectator.inject(DotContentTypeService).getContentTypes as Mock).mockReturnValue(
+                    of(mockFileAssetTypes)
+                );
             });
 
             const openWhileLoading = () => {
-                (
-                    spectator.inject(DotContentTypeService).getContentTypes as jest.Mock
-                ).mockReturnValue(of(mockFileAssetTypes).pipe(delay(1000)));
+                (spectator.inject(DotContentTypeService).getContentTypes as Mock).mockReturnValue(
+                    of(mockFileAssetTypes).pipe(delay(1000))
+                );
 
                 const loading = createComponent({
                     props: { folder: editableFolder({ filesMasks: '*.jpg,*.svg' }) }
@@ -536,7 +560,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 // down to whatever the active suggestion filter matched.
                 const loading = openWhileLoading();
 
-                jest.advanceTimersByTime(1000);
+                vi.advanceTimersByTime(1000);
                 loading.detectChanges();
 
                 const autoComplete = loading.query(AutoComplete) as AutoComplete;
@@ -784,7 +808,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             expect(store.closeDialog).toHaveBeenCalled();
         });
 
-        it('should show success message on successful creation', () => {
+        it('should not announce a folder the listing now shows', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
@@ -795,11 +819,9 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.click(createButton);
             spectator.detectChanges();
 
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'success',
-                summary: 'Success',
-                detail: 'Folder created successfully'
-            });
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
+            );
         });
 
         it('should show error message on creation failure', () => {
@@ -812,11 +834,15 @@ describe('DotContentDriveDialogFolderComponent', () => {
             );
             spectator.click(createButton);
 
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'error',
-                summary: 'Error creating folder',
-                detail: 'Creation failed'
-            });
+            // 'Creation failed' is the server's own `error.message`. FR-030 keeps it out of the
+            // author's view and in the logs, where support can still reach it.
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    summary: 'Error creating folder',
+                    detail: 'The folder could not be created.'
+                })
+            );
         });
     });
 
@@ -1361,7 +1387,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             expect(store.closeDialog).toHaveBeenCalled();
         });
 
-        it('should show success message on successful save', () => {
+        it('should not announce a rename the listing now shows', () => {
             const saveButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
@@ -1369,11 +1395,9 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.click(saveButton);
             spectator.detectChanges();
 
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'success',
-                summary: 'Folder saved successfully',
-                detail: undefined
-            });
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
+            );
         });
 
         it('should show error message on save failure', () => {
@@ -1386,11 +1410,14 @@ describe('DotContentDriveDialogFolderComponent', () => {
             );
             spectator.click(saveButton);
 
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'error',
-                summary: 'Error saving folder',
-                detail: 'Save failed'
-            });
+            // Second of the two raw-message leaks: 'Save failed' comes straight from the server.
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    summary: 'Error saving folder',
+                    detail: 'The folder could not be saved.'
+                })
+            );
         });
     });
 });

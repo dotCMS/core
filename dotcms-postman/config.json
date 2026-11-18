@@ -6,6 +6,7 @@
   {
     "name": "category-content",
     "collections": [
+      "ContentJsonAttributes.postman_collection",
       "Category.postman_collection",
       "ContentResourceV1.postman_collection",
       "ContentTypeResourceTests",
@@ -27,8 +28,12 @@
     ]
   },
   {
+    "name": "Experiment_Gate",
+    "collections": ["Experiment_Gate.postman_collection"]
+  },
+  {
     "name": "graphql",
-    "collections": ["GraphQLTests"]
+    "collections": ["GraphQLTests", "GraphQLTimeMachine.postman_collection"]
   },
   {
     "name": "page",
@@ -49,20 +54,25 @@
   },
   {
     "name": "workflow",
-    "collections": ["Workflow_Resource_Tests"]
+    "collections": ["Workflow_Resource_Tests", "WorkflowFirePermissionList.postman_collection"]
   },
   {
     "name": "default-split",
     "collections": [
       "ApiToken_Resource.postman_collection",
+      "Interactive_User_Resolution.postman_collection",
       "BulkRefreshResource.postman_collection",
+      "BulkUploadResource.postman_collection",
+      "FolderBulkDeleteResource.postman_collection",
+      "FolderBulkDuplicateResource.postman_collection",
       "ContentImportResource.postman_collection",
       "Manifest_Download_End_Point.postman_collection",
       "Osgi.postman_collection",
       "Page_Version_with_different_Templates.postman_collection",
       "Permission_Resource.postman_collection",
+      "MaintenanceToolsAccess.postman_collection",
       "Promote_Variant.postman_collection",
-      "Relationship_cache_in_push_publish.postman_collection",
+      "Reltionship_cache_in_push_publish.postman_collection",
       "ResourceLink.postman_collection",
       "RoleResource.postman_collection",
       "Scripting_Resource.postman_collection",

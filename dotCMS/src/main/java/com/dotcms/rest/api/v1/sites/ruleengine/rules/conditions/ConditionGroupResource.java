@@ -7,6 +7,7 @@ import com.dotcms.enterprise.rules.RulesAPI;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotmarketing.util.json.JSONException;
+import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
@@ -195,9 +196,22 @@ public class ConditionGroupResource  {
 
     }
 
+    /**
+     * Resolves the caller; only back-end users are accepted.
+     *
+     * @param request  the current request
+     * @param response the current response
+     * @return the authenticated back-end {@link User}
+     */
     @VisibleForTesting
     User getUser(final HttpServletRequest request, final HttpServletResponse response) {
-        return webResource.init(request, response, true).getUser();
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+        return initData.getUser();
     }
 
     @VisibleForTesting

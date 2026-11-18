@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -25,7 +25,7 @@ describe('DotFavoritePageService', () => {
         injector = getTestBed();
         dotESContentService = injector.inject(DotESContentService);
         dotFavoritePageService = injector.inject(DotFavoritePageService);
-        jest.spyOn(dotESContentService, 'get');
+        vi.spyOn(dotESContentService, 'get');
     });
 
     it('should get Favorite Pages based on an URL', () => {

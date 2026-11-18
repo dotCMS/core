@@ -1,4 +1,4 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 
 import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';

@@ -4,11 +4,13 @@
 package com.dotmarketing.business;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.PortletID;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 
@@ -84,7 +86,22 @@ public interface LayoutAPI {
 	 * @throws DotDataException
 	 */
 	boolean doesUserHaveAccessToPortlet(String portletId, User user) throws DotDataException;
-	
+
+	/**
+	 * Returns whether the user can administer users: they hold the Angular Users portlet ({@link PortletID#USERS})
+	 * or the old Users screen kept as {@link PortletID#USERS_LEGACY}. Both screens manage the same users, so every
+	 * gate that means "has the Users portlet" must accept either; this is the single definition of that check,
+	 * shared so the two ids never drift apart across callers.
+	 *
+	 * @param user The {@link User} to check.
+	 * @return {@code true} if the user has access to the Users portlet under either id.
+	 * @throws DotDataException An error occurred when resolving the user's portlet access.
+	 */
+	default boolean doesUserHaveAccessToUsersPortlet(final User user) throws DotDataException {
+		return doesUserHaveAccessToPortlet(PortletID.USERS.toString(), user)
+				|| doesUserHaveAccessToPortlet(PortletID.USERS_LEGACY.toString(), user);
+	}
+
 	/**
 	 * Retrieves all layouts in the system
 	 * @author David H Torres
@@ -122,10 +139,29 @@ public interface LayoutAPI {
 	String GETTING_STARTED_LAYOUT_NAME = "Getting Started";
 
 	/**
-	 * returns or create the getting started layout
-	 * @return
+	 * Resolves the product's Getting Started section: by {@link #GETTING_STARTED_LAYOUT_ID}; if no
+	 * section has that id, by {@link #GETTING_STARTED_LAYOUT_NAME}, adopting that section as it is;
+	 * and only when neither exists, creates it with its default name, icon, position and welcome
+	 * tool. A resolved section that holds no tools gets the welcome tool back. The name, icon and
+	 * position of an existing section are never rewritten.
+	 *
+	 * @return the Getting Started section, with its tools populated
 	 */
     Layout findGettingStartedLayout();
+
+	/**
+	 * Rewrites the navigation position of several sections in one transaction: either every
+	 * position is written or none is. Evicts each section from the layout cache and notifies open
+	 * sessions once.
+	 *
+	 * @param tabOrderByLayoutId the new position of each section, keyed by section id; every id
+	 *                           must name an existing section
+	 * @throws DotDataException if an id names no section or the write fails; nothing is written
+	 */
+	default void setTabOrders(final Map<String, Integer> tabOrderByLayoutId) throws DotDataException {
+		// Default so implementations outside core (OSGi plugins) keep compiling; core overrides it.
+		throw new UnsupportedOperationException("setTabOrders is not supported by " + getClass().getName());
+	}
 
     /**
      * Adds a layout to a user (using the user's role)

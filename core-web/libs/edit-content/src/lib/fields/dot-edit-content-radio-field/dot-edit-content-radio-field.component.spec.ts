@@ -376,3 +376,138 @@ describe('DotEditContentRadioFieldComponent', () => {
         });
     });
 });
+
+/**
+ * T-03 — option rows use the global `.form-radio` (AC-109).
+ *
+ * `.form .form-radio { @apply flex flex-row items-center gap-2 }` computes identically to the
+ * hand-rolled `flex items-center gap-2` it replaces — `flex-row` is the default for
+ * `display: flex` — so this is a zero-delta swap on the ROW.
+ *
+ * It is not zero-delta on the option LABELS, and that is the point: `.form .form-radio label`
+ * additionally applies `text-sm font-normal`, which is a DESCENDANT selector and so reaches them
+ * where they already sit, with no restructuring. Option labels go 14px/400 -> 12.25px/400, which
+ * is the one accepted delta that #37460's measured-impact table does not list (research R3).
+ */
+describe('DotEditContentRadioFieldComponent — option rows', () => {
+    let spectator: SpectatorHost<DotEditContentRadioFieldComponent, MockFormComponent>;
+
+    const createHost = createHostFactory({
+        component: DotEditContentRadioFieldComponent,
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
+        detectChanges: false
+    });
+
+    beforeEach(() => {
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-radio-field [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [RADIO_FIELD_TEXT_MOCK.variable]: new FormControl(null)
+                    }),
+                    field: RADIO_FIELD_TEXT_MOCK,
+                    contentlet: createFakeContentlet({ [RADIO_FIELD_TEXT_MOCK.variable]: null })
+                }
+            }
+        );
+        spectator.detectChanges();
+    });
+
+    it('should wrap each option in a .form-radio row', () => {
+        expect(spectator.queryAll('.form-radio').length).toBeGreaterThan(0);
+    });
+
+    it('should not hand-roll the layout the global class already provides', () => {
+        expect(spectator.query('.flex.items-center.gap-2')).toBeNull();
+    });
+
+    it('should not use the .form-checkbox variant', () => {
+        expect(spectator.query('.form-checkbox')).toBeNull();
+    });
+
+    it('should keep each option label inside its row so the descendant rule reaches it', () => {
+        const row = spectator.query('.form-radio');
+
+        expect(row).toBeTruthy();
+        expect(row?.querySelector('label')).toBeTruthy();
+    });
+});
+
+/**
+ * AC-209 — naming and requiredness for an option group.
+ *
+ * A set of options has no single control to carry `for` / `aria-required`: the field's value is the
+ * selection, not any one input. The group itself becomes the named widget, and because a `<div>` is
+ * not a labelable element, it is named with `aria-labelledby` rather than the label's `for`.
+ */
+describe('DotEditContentRadioFieldComponent — option group semantics (AC-209)', () => {
+    let spectator: SpectatorHost<DotEditContentRadioFieldComponent, MockFormComponent>;
+
+    const createHost = createHostFactory({
+        component: DotEditContentRadioFieldComponent,
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
+        detectChanges: false
+    });
+
+    const render = (required: boolean) => {
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-radio-field [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [RADIO_FIELD_TEXT_MOCK.variable]: new FormControl(null)
+                    }),
+                    field: { ...RADIO_FIELD_TEXT_MOCK, required },
+                    contentlet: createFakeContentlet({ [RADIO_FIELD_TEXT_MOCK.variable]: null })
+                }
+            }
+        );
+        spectator.detectChanges();
+    };
+
+    it('should expose the options as a radiogroup', () => {
+        render(true);
+
+        expect(spectator.query('[role="radiogroup"]')).toBeTruthy();
+    });
+
+    it('should name the group from the field label', () => {
+        render(true);
+
+        const group = spectator.query('[role="radiogroup"]');
+
+        expect(group).toBeTruthy();
+        expect(group?.getAttribute('aria-labelledby')).toBe(
+            'label-' + RADIO_FIELD_TEXT_MOCK.variable
+        );
+        expect(spectator.query('label[dotCardFieldLabel]')?.id).toBe(
+            'label-' + RADIO_FIELD_TEXT_MOCK.variable
+        );
+    });
+
+    it('should mark the group required, a role ARIA defines aria-required on', () => {
+        render(true);
+
+        const group = spectator.query('[role="radiogroup"]');
+
+        expect(group).toBeTruthy();
+        expect(group?.getAttribute('aria-required')).toBe('true');
+    });
+
+    it('should not mark the group when the field is not required', () => {
+        render(false);
+
+        // toBeTruthy first: with `?.` alone a missing group would satisfy toBeNull vacuously.
+        const group = spectator.query('[role="radiogroup"]');
+
+        expect(group).toBeTruthy();
+        expect(group?.getAttribute('aria-required')).toBeNull();
+    });
+});

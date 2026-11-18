@@ -1,9 +1,16 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of, Subject, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ConfirmationService } from 'primeng/api';
+import { Dialog } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
@@ -35,11 +42,9 @@ const MESSAGES = {
     'users.dialog.tokens.create-mode-hint': 'Save the user first.',
     'users.dialog.tokens.reveal.title': 'API token',
     'users.dialog.tokens.reveal.description': 'copy me',
-    'users.dialog.tokens.reveal.loading': 'loading',
-    'users.dialog.tokens.reveal.close': 'Close',
+    'users.dialog.tokens.reveal.accept': 'Accept',
     'users.dialog.tokens.reveal.copy': 'Copy',
-    'users.dialog.tokens.reveal.copied': 'Copied!',
-    'users.dialog.tokens.row.reveal-hint': 'Click to reveal the JWT'
+    'users.dialog.tokens.reveal.copied': 'Copied!'
 };
 
 function tokenFactory(overrides: Partial<DotApiToken> = {}): DotApiToken {
@@ -81,20 +86,19 @@ describe('DotUsersApiTokensTabComponent', () => {
         providers: [
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
             mockProvider(DotUsersService, {
-                getApiTokens: jest.fn().mockReturnValue(of([])),
-                getApiTokenJwt: jest.fn().mockReturnValue(of('jwt-value')),
-                revokeApiToken: jest.fn().mockReturnValue(of({}))
+                getApiTokens: vi.fn().mockReturnValue(of([])),
+                revokeApiToken: vi.fn().mockReturnValue(of({}))
             }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() })
         ]
     });
 
     beforeEach(() => {
-        // mockProvider's jest.fn() instances are created once by the
+        // mockProvider's vi.fn() instances are created once by the
         // factory and persist across tests. `clearAllMocks` clears
         // call history without touching the default `mockReturnValue`
         // implementations set at factory time.
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('create mode (no userId)', () => {
@@ -121,10 +125,10 @@ describe('DotUsersApiTokensTabComponent', () => {
             // p-confirmDialog subscription the tab template embeds.
             dialogService = spectator.fixture.debugElement.injector.get(DialogService);
             confirmationService = spectator.fixture.debugElement.injector.get(ConfirmationService);
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: of(undefined)
             } as never);
-            jest.spyOn(confirmationService, 'confirm').mockReturnValue(confirmationService);
+            vi.spyOn(confirmationService, 'confirm').mockReturnValue(confirmationService);
         });
 
         it('should fetch tokens on init with showRevoked=false', () => {
@@ -139,7 +143,7 @@ describe('DotUsersApiTokensTabComponent', () => {
         });
 
         it('should label an expired-but-not-revoked row as Expired (not Revoked)', () => {
-            (usersService.getApiTokens as jest.Mock).mockReturnValueOnce(
+            (usersService.getApiTokens as Mock).mockReturnValueOnce(
                 of([tokenFactory({ id: 'tok-exp', expired: true, valid: false })])
             );
             spectator.component['onShowRevokedChange'](true);
@@ -150,7 +154,7 @@ describe('DotUsersApiTokensTabComponent', () => {
         });
 
         it('should label a revoked row as Revoked', () => {
-            (usersService.getApiTokens as jest.Mock).mockReturnValueOnce(
+            (usersService.getApiTokens as Mock).mockReturnValueOnce(
                 of([tokenFactory({ id: 'tok-rev', revoked: true, valid: false })])
             );
             spectator.component['onShowRevokedChange'](true);
@@ -160,9 +164,30 @@ describe('DotUsersApiTokensTabComponent', () => {
             expect(pill?.textContent?.trim()).toBe('Revoked');
         });
 
+        it('should render the empty state outside the table so it can fill the tab', () => {
+            const state = spectator.query(byTestId('users-api-tokens-state'));
+            const table = spectator.query(byTestId('users-api-tokens-table'));
+
+            expect(state).toBeTruthy();
+            expect(state?.className).toContain('flex-1');
+            expect(state?.className).toContain('items-center');
+            expect(state?.className).toContain('justify-center');
+            expect(table?.contains(state as Node)).toBe(false);
+            expect(state?.querySelector('[data-testid="users-api-tokens-empty"]')).toBeTruthy();
+        });
+
+        it('should not render the empty state when the user has tokens', () => {
+            (usersService.getApiTokens as Mock).mockReturnValueOnce(of([tokenFactory()]));
+            spectator.component['onShowRevokedChange'](true);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('users-api-tokens-state'))).toBeFalsy();
+            expect(spectator.query(byTestId('users-api-tokens-row-tok-1'))).toBeTruthy();
+        });
+
         it('should render the error state with Retry when the fetch fails', () => {
             const error = new Error('boom');
-            (usersService.getApiTokens as jest.Mock).mockReturnValueOnce(throwError(() => error));
+            (usersService.getApiTokens as Mock).mockReturnValueOnce(throwError(() => error));
             spectator.component['onShowRevokedChange'](true);
             spectator.detectChanges();
 
@@ -181,64 +206,29 @@ describe('DotUsersApiTokensTabComponent', () => {
             spectator.component['onShowRevokedChange'](true);
             spectator.detectChanges();
 
+            // Standard empty-state shape now renders an icon glyph + copy —
+            // scoped to the paragraph so the assertion isn't dependent on
+            // the material symbol text leaking into `textContent`.
             const empty = spectator.query(byTestId('users-api-tokens-empty'));
-            expect(empty?.textContent?.trim()).toBe('This user has no API tokens.');
+            const copy = empty?.querySelector('p');
+            expect(copy?.textContent?.trim()).toBe('This user has no API tokens.');
         });
 
-        it('should reveal the JWT on row click for a valid row', () => {
-            const token = tokenFactory();
-            spectator.component['onRowClick'](token);
-            expect(usersService.getApiTokenJwt).toHaveBeenCalledWith('tok-1');
-            expect(spectator.component['$revealVisible']()).toBe(true);
-            expect(spectator.component['$revealJwt']()).toBe('jwt-value');
-        });
+        it('should not open the JWT dialog when a valid row is clicked', () => {
+            (usersService.getApiTokens as Mock).mockReturnValueOnce(of([tokenFactory()]));
+            spectator.component['onShowRevokedChange'](true);
+            spectator.detectChanges();
 
-        it('should ignore row clicks on inactive rows', () => {
-            spectator.component['onRowClick'](tokenFactory({ revoked: true, valid: false }));
-            expect(usersService.getApiTokenJwt).not.toHaveBeenCalled();
-        });
+            const row = spectator.query(byTestId('users-api-tokens-row-tok-1')) as HTMLElement;
+            expect(row.getAttribute('role')).toBeNull();
+            expect(row.getAttribute('tabindex')).toBeNull();
 
-        it('should reveal on Enter and Space for valid rows and ignore other keys', () => {
-            const token = tokenFactory();
-            const enter = new KeyboardEvent('keydown', { key: 'Enter' });
-            const space = new KeyboardEvent('keydown', { key: ' ' });
-            const tab = new KeyboardEvent('keydown', { key: 'Tab' });
-            const enterPreventSpy = jest.spyOn(enter, 'preventDefault');
-            const spacePreventSpy = jest.spyOn(space, 'preventDefault');
-
-            spectator.component['onRowKeydown'](token, enter);
-            expect(usersService.getApiTokenJwt).toHaveBeenCalledTimes(1);
-            expect(enterPreventSpy).toHaveBeenCalled();
-
-            spectator.component['onRowKeydown'](token, space);
-            expect(usersService.getApiTokenJwt).toHaveBeenCalledTimes(2);
-            expect(spacePreventSpy).toHaveBeenCalled();
-
-            spectator.component['onRowKeydown'](token, tab);
-            expect(usersService.getApiTokenJwt).toHaveBeenCalledTimes(2);
-        });
-
-        it('should ignore keydown reveal on inactive rows', () => {
-            const enter = new KeyboardEvent('keydown', { key: 'Enter' });
-            spectator.component['onRowKeydown'](
-                tokenFactory({ expired: true, valid: false }),
-                enter
-            );
-            expect(usersService.getApiTokenJwt).not.toHaveBeenCalled();
-        });
-
-        it('should surface a reveal error through httpErrorManager and hide the dialog', () => {
-            const error = new Error('malformed');
-            (usersService.getApiTokenJwt as jest.Mock).mockReturnValueOnce(throwError(() => error));
-
-            spectator.component['reveal']('tok-1');
-
-            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(error);
+            spectator.click(row);
             expect(spectator.component['$revealVisible']()).toBe(false);
         });
 
         it('should stopPropagation on the Revoke button and open the confirmation', () => {
-            const stopPropagation = jest.fn();
+            const stopPropagation = vi.fn();
             const token = tokenFactory();
             spectator.component['revoke'](token, { stopPropagation } as unknown as MouseEvent);
 
@@ -248,7 +238,7 @@ describe('DotUsersApiTokensTabComponent', () => {
 
         it('should refetch after the request dialog closes with a new token', () => {
             const closeSubject = new Subject<{ jwt: string; token: DotApiToken }>();
-            (dialogService.open as jest.Mock).mockReturnValueOnce({
+            (dialogService.open as Mock).mockReturnValueOnce({
                 onClose: closeSubject.asObservable()
             });
 
@@ -261,6 +251,14 @@ describe('DotUsersApiTokensTabComponent', () => {
             expect(usersService.getApiTokens).toHaveBeenCalledTimes(2);
             expect(spectator.component['$revealVisible']()).toBe(true);
             expect(spectator.component['$revealJwt']()).toBe('new-jwt');
+        });
+
+        it('should not let Escape or the X dismiss the reveal dialog, only Accept', () => {
+            const dialog = spectator.queryAll(Dialog).find((d) => d.header === 'API token');
+
+            expect(dialog).toBeDefined();
+            expect(dialog?.closable).toBe(false);
+            expect(dialog?.closeOnEscape).toBe(false);
         });
     });
 });

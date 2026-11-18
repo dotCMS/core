@@ -1,5 +1,6 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { BehaviorSubject } from 'rxjs';
+import { vi } from 'vitest';
 
 import { BreakpointObserver, Breakpoints, BreakpointState } from '@angular/cdk/layout';
 
@@ -60,8 +61,8 @@ const setBreakpointMatch = (partial: Record<string, boolean>): void => {
 };
 
 const breakpointObserverMock: Pick<BreakpointObserver, 'observe' | 'isMatched'> = {
-    observe: jest.fn(() => breakpointState$.asObservable()),
-    isMatched: jest.fn((query: string | readonly string[]) => {
+    observe: vi.fn(() => breakpointState$.asObservable()),
+    isMatched: vi.fn((query: string | readonly string[]) => {
         const key = typeof query === 'string' ? query : query[0];
 
         return !!breakpointMatchMap[key];
@@ -204,7 +205,7 @@ describe('DotWorkflowActionsComponent', () => {
             spectator.setInput('actions', mockWorkflowsActionsWithMove);
             spectator.detectChanges();
 
-            const spy = jest.spyOn(spectator.component.actionFired, 'emit');
+            const spy = vi.spyOn(spectator.component.actionFired, 'emit');
             const menu = spectator.query(Menu);
             menu.model[0].command({});
 
@@ -219,7 +220,7 @@ describe('DotWorkflowActionsComponent', () => {
         });
 
         it('should emit the action when an inline button is clicked', () => {
-            const spy = jest.spyOn(spectator.component.actionFired, 'emit');
+            const spy = vi.spyOn(spectator.component.actionFired, 'emit');
             const action = mockWorkflowsActions[0];
             const btn = spectator
                 .query(byTestId(`action-button-${action.id}`))
@@ -432,7 +433,7 @@ describe('DotWorkflowActionsComponent', () => {
             spectator.setInput('actions', mockWorkflowsActions);
             spectator.detectChanges();
 
-            const spy = jest.spyOn(spectator.component.actionFired, 'emit');
+            const spy = vi.spyOn(spectator.component.actionFired, 'emit');
             const action = mockWorkflowsActions[1];
             const btn = spectator
                 .query(byTestId(`action-button-${action.id}`))
@@ -481,7 +482,7 @@ describe('DotWorkflowActionsComponent', () => {
             spectator.setInput('actions', mockWorkflowsActions);
             spectator.detectChanges();
 
-            const spy = jest.spyOn(spectator.component.actionFired, 'emit');
+            const spy = vi.spyOn(spectator.component.actionFired, 'emit');
             const [splitButton] = spectator.queryAll(SplitButton);
             splitButton.onClick.emit({});
 
@@ -492,7 +493,7 @@ describe('DotWorkflowActionsComponent', () => {
             spectator.setInput('actions', mockWorkflowsActions);
             spectator.detectChanges();
 
-            const spy = jest.spyOn(spectator.component.actionFired, 'emit');
+            const spy = vi.spyOn(spectator.component.actionFired, 'emit');
             const [splitButton] = spectator.queryAll(SplitButton);
             splitButton.model[0].command({});
 

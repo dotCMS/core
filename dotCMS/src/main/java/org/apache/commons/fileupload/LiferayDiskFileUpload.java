@@ -23,7 +23,6 @@
 package org.apache.commons.fileupload;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -65,20 +64,6 @@ public class LiferayDiskFileUpload extends ServletFileUpload {
 		return super.parseRequest(new LiferayServletRequest(req));
 	}
 
-	protected FileItem createItem(Map headers, boolean formField)
-		throws FileUploadException {
-
-		LiferayFileItem item =
-			(LiferayFileItem)super.createItem(headers, formField);
-
-		String fileName = item.getFileName();
-
-		if (fileName != null) {
-			_ses.setAttribute(LiferayDiskFileUpload.FILE_NAME, fileName);
-		}
-
-		return item;
-	}
 
 	private HttpServletRequest _req;
 	private HttpSession _ses;

@@ -13,6 +13,7 @@ import static com.dotmarketing.util.UtilMethods.isSet;
 import static java.util.Collections.emptyMap;
 
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.api.v1.apps.view.SecretView.SecretViewSerializer;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.LicenseValiditySupplier;
@@ -20,6 +21,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -55,6 +57,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -64,6 +67,13 @@ import java.util.stream.Stream;
  */
 public class AppsAPIImpl implements AppsAPI {
 
+    /**
+     * Keys of apps that dotCMS no longer ships. Settings saved for one of them stay in the secrets
+     * store and in exports taken before the app was removed; see {@link #isRetiredApp(String)}.
+     * {@code dotema-config} is Edit Mode Anywhere.
+     */
+    private static final Set<String> RETIRED_APP_KEYS = Set.of("dotema-config");
+
     private final LayoutAPI layoutAPI;
     private final HostAPI hostAPI;
     private final SecretsStore secretsStore;
@@ -71,6 +81,12 @@ public class AppsAPIImpl implements AppsAPI {
     private final LocalSystemEventsAPI localSystemEventsAPI;
     private final LicenseValiditySupplier licenseValiditySupplier;
     private final AppDescriptorHelper appDescriptorHelper;
+
+    /**
+     * Caller classes already logged as relying on
+     * {@link FeatureFlagName#FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION}.
+     */
+    private static final Set<String> delegatedCallersLogged = ConcurrentHashMap.newKeySet();
 
     @VisibleForTesting
     public AppsAPIImpl(final LayoutAPI layoutAPI, final HostAPI hostAPI,
@@ -104,6 +120,53 @@ public class AppsAPIImpl implements AppsAPI {
     private boolean userDoesNotHaveAccess(final User user) throws DotDataException {
         return !user.isAdmin() && !layoutAPI
                 .doesUserHaveAccessToPortlet(APPS_PORTLET_ID, user);
+    }
+
+    /**
+     * Apps configuration is an administrator setting, like Maintenance and other instance-level
+     * settings: changing an app's secrets (save or delete), reading their values, uploading an app
+     * descriptor and removing an app require a CMS administrator or the system user. Listing app
+     * keys and descriptors keeps the {@link #userDoesNotHaveAccess(User)} rule, administrator or
+     * Apps portlet, so the Apps portlet can still show which sites are configured.
+     * <p>
+     * When {@link FeatureFlagName#FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION} is {@code true},
+     * users with the Apps portlet are
+     * also allowed, and each caller class that relies on it is logged once at WARN. Otherwise a
+     * refusal is logged at WARN with the app key and the user id.
+     *
+     * @param user   the acting user
+     * @param appKey the app whose configuration is being accessed, used only for logging
+     * @param change {@code true} for a save, delete, descriptor upload or app removal,
+     *               {@code false} for a read of values
+     * @return {@code true} when the user may not perform the operation
+     */
+    private boolean userCannotManageAppConfiguration(final User user, final String appKey,
+            final boolean change) throws DotDataException {
+        if (user.isAdmin() || UserAPI.SYSTEM_USER_ID.equals(user.getUserId())) {
+            return false;
+        }
+        if (Config.getBooleanProperty(
+                FeatureFlagName.FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION, false)) {
+            if (userDoesNotHaveAccess(user)) {
+                return true;
+            }
+            final String caller = StackWalker.getInstance()
+                    .walk(frames -> frames.map(StackWalker.StackFrame::getClassName)
+                            .filter(name -> !name.equals(AppsAPIImpl.class.getName()))
+                            .findFirst())
+                    .orElse(StringPool.BLANK);
+            if (delegatedCallersLogged.add(change + StringPool.COLON + caller)) {
+                Logger.warn(AppsAPIImpl.class, String.format(
+                        "Apps configuration %s by a non-administrator allowed by %s; this setting is deprecated and will be removed (caller %s)",
+                        change ? "change" : "read",
+                        FeatureFlagName.FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION, caller));
+            }
+            return false;
+        }
+        Logger.warn(AppsAPIImpl.class, String.format(
+                "Apps configuration for app '%s' can only be %s by an administrator (user %s)",
+                appKey, change ? "changed" : "read", user.getUserId()));
+        return true;
     }
 
     @Override
@@ -216,10 +279,28 @@ public class AppsAPIImpl implements AppsAPI {
         if(!licenseValiditySupplier.hasValidLicense()){
             throw new InvalidLicenseException("Apps requires of an enterprise level license.");
         }
-        if (userDoesNotHaveAccess(user)) {
+        if (userCannotManageAppConfiguration(user, key, false)) {
             throw new DotSecurityException(String.format(
                     "Invalid secret access attempt on `%s` performed by user with id `%s` and host `%s` ",
                     key, user.getUserId(), host.getIdentifier()));
+        }
+        return resolveSecrets(key, fallbackOnSystemHost, host);
+    }
+
+    /**
+     * Reads an app's current secrets for a write that has already passed
+     * {@link #throwIfUserCannotWrite(String, String, User)}, so the user rule is not evaluated a
+     * second time as a read.
+     *
+     * @param key                  the app key
+     * @param fallbackOnSystemHost whether the System Host tiers participate
+     * @param host                 the site being resolved
+     * @return the merged {@link AppSecrets}, or {@link Optional#empty()} when nothing resolves
+     */
+    private Optional<AppSecrets> readSecretsAfterWriteCheck(final String key,
+            final boolean fallbackOnSystemHost, final Host host) throws DotDataException {
+        if(!licenseValiditySupplier.hasValidLicense()){
+            throw new InvalidLicenseException("Apps requires of an enterprise level license.");
         }
         return resolveSecrets(key, fallbackOnSystemHost, host);
     }
@@ -431,9 +512,8 @@ public class AppsAPIImpl implements AppsAPI {
                         String.format("Error getting secret from `%s` ", key), e);
             } catch (DotRuntimeException e) {
                 // Since issue #36724 an unreadable store raises instead of silently wiping itself.
-                // That must degrade here: EMAWebInterceptor reaches this method on every /api/*
-                // request and the interceptor chain does not guard it, so raising returns a 500 for
-                // the whole API.
+                // That must degrade here: request paths reach this method (the Apps listing, the SAML
+                // configuration check), so raising turns an unreadable store into a 500 for them.
                 //
                 // Matched on the CAUSE CHAIN rather than the thrown type. SecretsStoreUnreadableException
                 // does not survive the journey: there are nine `catch (Exception e) { throw new
@@ -457,8 +537,7 @@ public class AppsAPIImpl implements AppsAPI {
                 // here, because appKeysByHost() raises while being evaluated as this method's own
                 // argument -- before this catch is ever reached.
                 // debug, not error, and deliberately so. This fires once per site per call, and
-                // EMAWebInterceptor.existsConfiguration reaches this method on every /api/* request
-                // -- measured at 32 ERROR lines from 16 requests on a two-site instance. Because the
+                // request paths call this method repeatedly. Because the
                 // condition persists until an operator fixes it, logging at ERROR here reproduces
                 // exactly the flood this PR throttles inside the helper: an actionable message
                 // repeated thousands of times stops being actionable.
@@ -482,7 +561,8 @@ public class AppsAPIImpl implements AppsAPI {
     public void deleteSecret(final String key, final Set<String> propOrSecretName,
             final Host host, final User user)
             throws DotDataException, DotSecurityException {
-        final Optional<AppSecrets> secretsForService = getSecrets(key, host, user);
+        throwIfUserCannotWrite(key, host.getIdentifier(), user);
+        final Optional<AppSecrets> secretsForService = readSecretsAfterWriteCheck(key, false, host);
         if (secretsForService.isPresent()) {
             final AppSecrets.Builder builder = new AppSecrets.Builder();
             final AppSecrets serviceSecrets = secretsForService.get();
@@ -499,7 +579,7 @@ public class AppsAPIImpl implements AppsAPI {
                 }
                 builder.withSecret(entry.getKey(), entry.getValue());
             }
-            saveSecrets(builder.withKey(key).build(), host, user);
+            writeSecrets(builder.withKey(key).build(), host.getIdentifier(), user);
         } else {
             throw new DotDataException(
                     String.format("Unable to find secret-property named `%s` for service `%s` .",
@@ -514,8 +594,8 @@ public class AppsAPIImpl implements AppsAPI {
     public void saveSecret(final String key, final Tuple2<String, Secret> keyAndSecret,
             final Host host, final User user)
             throws DotDataException, DotSecurityException {
-
-        final Optional<AppSecrets> secretsForService = getSecrets(key, host, user);
+        throwIfUserCannotWrite(key, host.getIdentifier(), user);
+        final Optional<AppSecrets> secretsForService = readSecretsAfterWriteCheck(key, false, host);
         if (secretsForService.isPresent()) {
             //The secret already exists and wee need to update one specific entry they rest should be copy as they are
             final AppSecrets serviceSecrets = secretsForService.get();
@@ -533,12 +613,12 @@ public class AppsAPIImpl implements AppsAPI {
             //finally override or add the new value.
             builder.withSecret(keyAndSecret._1, keyAndSecret._2);
 
-            saveSecrets(builder.withKey(key).build(), host, user);
+            writeSecrets(builder.withKey(key).build(), host.getIdentifier(), user);
         } else {
             //The secret is brand new . We need to create a whole new one.
             final AppSecrets.Builder builder = new AppSecrets.Builder();
             builder.withSecret(keyAndSecret._1, keyAndSecret._2);
-            saveSecrets(builder.withKey(key).build(), host, user);
+            writeSecrets(builder.withKey(key).build(), host.getIdentifier(), user);
         }
     }
 
@@ -551,15 +631,24 @@ public class AppsAPIImpl implements AppsAPI {
     @Override
     public void saveSecrets(final AppSecrets secretsIn, final String hostIdentifier, final User user)
             throws DotDataException, DotSecurityException {
-        if (userDoesNotHaveAccess(user)) {
-            throw new DotSecurityException(String.format(
-                    "Invalid secret update attempt on `%s` performed by user with id `%s` and host `%s` ",
-                    secretsIn.getKey(), user.getUserId(), hostIdentifier));
-        }
+        throwIfUserCannotWrite(secretsIn.getKey(), hostIdentifier, user);
+        writeSecrets(secretsIn, hostIdentifier, user);
+    }
 
+    /**
+     * Stores an app's secrets for a site, keeping hidden values the caller did not change, and
+     * broadcasts the save event. Callers must have run
+     * {@link #throwIfUserCannotWrite(String, String, User)} first.
+     *
+     * @param secretsIn      the secrets to store
+     * @param hostIdentifier the site the secrets belong to
+     * @param user           the acting user, used for the site lookup and the save event
+     */
+    private void writeSecrets(final AppSecrets secretsIn, final String hostIdentifier,
+            final User user) throws DotDataException, DotSecurityException {
         final String internalKey = internalKey(secretsIn.getKey(), hostIdentifier);
-        Host host = APILocator.getHostAPI().find(hostIdentifier, user, true);
-        Optional<AppSecrets> existingAppSecrets = getSecrets(secretsIn.getKey(), false, host, user);
+        Host host = hostAPI.find(hostIdentifier, user, true);
+        Optional<AppSecrets> existingAppSecrets = readSecretsAfterWriteCheck(secretsIn.getKey(), false, host);
         AppSecrets secretsToSave = maintainHiddenValues(secretsIn, existingAppSecrets);
         secretsStore.deleteValue(internalKey);
         if (!secretsToSave.getSecrets().isEmpty()) {
@@ -705,10 +794,15 @@ public class AppsAPIImpl implements AppsAPI {
                 : Optional.of(appDescriptorMeta);
     }
 
+    /**
+     * Writes an uploaded app descriptor into the user apps directory. Uploading a descriptor is a
+     * change to Apps configuration, so it follows
+     * {@link #userCannotManageAppConfiguration(User, String, boolean)} before any file is read.
+     */
     @Override
     public AppDescriptor createAppDescriptor(final File file,
             final User user) throws DotDataException, AlreadyExistException, DotSecurityException {
-        if (userDoesNotHaveAccess(user)) {
+        if (userCannotManageAppConfiguration(user, file.getName(), true)) {
             throw new DotSecurityException(String.format(
                     "Invalid attempt to create an app descriptor performed by user with id `%s`.",
                     user.getUserId()));
@@ -740,11 +834,17 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
 
+    /**
+     * Deletes the app's configuration on every site and, when asked, its descriptor file. Removing
+     * an app is a change to Apps configuration, so it follows
+     * {@link #userCannotManageAppConfiguration(User, String, boolean)} once, before any lookup, and
+     * the per-site deletes below do not evaluate it again.
+     */
     @Override
     public void removeApp(final String key, final User user,
             final boolean removeDescriptor)
             throws DotSecurityException, DotDataException {
-        if (userDoesNotHaveAccess(user)) {
+        if (userCannotManageAppConfiguration(user, key, true)) {
             throw new DotSecurityException(String.format(
                     "Invalid attempt to delete an App descriptor performed by user with id `%s`.",
                     user.getUserId()));
@@ -763,7 +863,7 @@ public class AppsAPIImpl implements AppsAPI {
                 //Now we need to verify the service-key has a configuration for this host.
                 if(appKeys.contains(appKeyLC)){
                     //And if it does we attempt to delete all the secrets.
-                    deleteSecrets(key, hostId, user);
+                    secretsStore.deleteValue(internalKey(key, hostId));
                 }
             }
             if(removeDescriptor) {
@@ -775,12 +875,25 @@ public class AppsAPIImpl implements AppsAPI {
 
     private void deleteSecrets(final String key, final String siteIdentifier, final User user)
             throws DotDataException, DotSecurityException {
-        if (userDoesNotHaveAccess(user)) {
+        throwIfUserCannotWrite(key, siteIdentifier, user);
+        secretsStore.deleteValue(internalKey(key, siteIdentifier));
+    }
+
+    /**
+     * Refuses a secret save or delete unless
+     * {@link #userCannotManageAppConfiguration(User, String, boolean)} allows it.
+     *
+     * @param key            the app key
+     * @param hostIdentifier the site the secrets belong to
+     * @param user           the acting user
+     * @throws DotSecurityException when the user may not write the app's secrets
+     */
+    private void throwIfUserCannotWrite(final String key, final String hostIdentifier,
+            final User user) throws DotDataException, DotSecurityException {
+        if (userCannotManageAppConfiguration(user, key, true)) {
             throw new DotSecurityException(String.format(
-                    "Invalid service delete attempt on `%s` for host `%s` performed by user with id `%s`",
-                    key, siteIdentifier, user.getUserId()));
-        } else {
-            secretsStore.deleteValue(internalKey(key, siteIdentifier));
+                    "Invalid secret update attempt on `%s` performed by user with id `%s` and host `%s` ",
+                    key, user.getUserId(), hostIdentifier));
         }
     }
 
@@ -857,7 +970,9 @@ public class AppsAPIImpl implements AppsAPI {
         final boolean hasConfigurations = !filterSitesForAppKey(appKey, List.of(site.getIdentifier()),
                 user).isEmpty();
         if (hasConfigurations) {
-            final Optional<AppSecrets> secretsOptional = getSecrets(appKey, site, user);
+            // Warnings only name required params that have no value, so they follow the listing
+            // rule (checked by filterSitesForAppKey above) rather than the rule for reading values.
+            final Optional<AppSecrets> secretsOptional = resolveSecrets(appKey, false, site);
             if (secretsOptional.isPresent()) {
                 final Map<String, List<String>> warnings = new HashMap<>();
                 final AppSecrets appSecrets = secretsOptional.get();
@@ -916,6 +1031,20 @@ public class AppsAPIImpl implements AppsAPI {
         }
 
         return false;
+    }
+
+    /**
+     * Tells whether settings stored under an app key belong to an app dotCMS no longer ships: the
+     * key is one of {@link #RETIRED_APP_KEYS} and no descriptor for it is installed. An instance
+     * that installs its own app under one of those keys keeps it, and its settings are handled
+     * like any other app's.
+     *
+     * @param appKey the app key, in any case
+     * @return {@code true} when the settings are left over from a removed app
+     */
+    private boolean isRetiredApp(final String appKey) {
+        final String appKeyLC = appKey.toLowerCase();
+        return RETIRED_APP_KEYS.contains(appKeyLC) && !getAppDescriptorMap().containsKey(appKeyLC);
     }
 
     private void invalidateCache() {
@@ -995,12 +1124,18 @@ public class AppsAPIImpl implements AppsAPI {
 
 
     /**
-     * constructs the Import export object
-     * @param paramAppKeysBySite selection
-     * @param user user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * Collects the stored settings to write into an export file, for each selected app on each
+     * selected site. Apps provisioned only from environment variables have nothing stored and are
+     * skipped, and so are settings left over from an app dotCMS no longer ships
+     * ({@link #isRetiredApp(String)}).
+     *
+     * @param paramAppKeysBySite the app keys to export, by site identifier
+     * @param user               the exporting user, used to look up the sites
+     * @return the settings to export, by site identifier
+     * @throws DotDataException     if the settings cannot be read
+     * @throws DotSecurityException if a site cannot be read
+     * @throws IllegalArgumentException if nothing is stored, a site does not exist, or the
+     *                                  selection leaves nothing to export
      */
     private AppsSecretsImportExport collectSecretsForExport(final Map<String, Set<String>> paramAppKeysBySite, final User user)
             throws DotDataException, DotSecurityException {
@@ -1018,6 +1153,12 @@ public class AppsAPIImpl implements AppsAPI {
                 final Set<String> appKeysBySiteId = paramAppKeysBySite.get(siteId);
                 if (isSet(appKeysBySiteId)) {
                     for (final String appKey : appKeysBySiteId) {
+                        if (isRetiredApp(appKey)) {
+                            Logger.info(AppsAPIImpl.class, () -> String.format(
+                                    "Leaving settings for `%s` on site `%s` out of the export: dotCMS no longer ships this app.",
+                                    appKey, site.getIdentifier()));
+                            continue;
+                        }
                         // Export persisted secrets only. Read the stored blob directly rather than
                         // through getSecrets(), which (since #35859) overlays env-var tiers onto the
                         // result. Env overrides belong to the target environment, not the export, and a
@@ -1055,13 +1196,18 @@ public class AppsAPIImpl implements AppsAPI {
 
     /**
      * {@inheritDoc}
-     * @param incomingFile encrypted file
-     * @param key security key
-     * @param user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws IOException
+     * <p>Settings for an app dotCMS no longer ships (see {@link #isRetiredApp(String)}) are skipped
+     * with a warning. Any other entry that cannot be imported (an unknown site, an app with no local
+     * descriptor, empty or invalid settings) stops the import, unless
+     * {@code APPS_IMPORT_FAIL_SILENTLY} is on, in which case it is skipped too.</p>
+     *
+     * @param incomingFile the encrypted export file
+     * @param key          the key the file was encrypted with
+     * @param user         the importing user, who must be an administrator
+     * @return the number of app settings saved
+     * @throws DotDataException     if the settings cannot be read or saved
+     * @throws DotSecurityException if the user is not an administrator
+     * @throws IOException          if the file cannot be read
      */
     public int importSecretsAndSave(final Path incomingFile, final Key key, final User user)
             throws DotDataException, DotSecurityException, IOException {
@@ -1099,6 +1245,12 @@ public class AppsAPIImpl implements AppsAPI {
                 final Optional<AppDescriptor> appDescriptor = getAppDescriptor(appSecrets.getKey(),
                         user);
                 if (appDescriptor.isEmpty()) {
+                    if (isRetiredApp(appSecrets.getKey())) {
+                        Logger.warn(AppsAPIImpl.class, () -> String.format(
+                                "Skipping settings for `%s` on site `%s`: dotCMS no longer ships this app.",
+                                appSecrets.getKey(), siteId));
+                        continue;
+                    }
                     if (failSilently) {
                         Logger.warn(AppsAPIImpl.class, () -> String
                                 .format("No App Descriptor `%s` was found locally.",

@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -61,14 +67,14 @@ describe('DotUsersRequestTokenDialogComponent', () => {
         providers: [
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
             mockProvider(DotUsersService, {
-                createApiToken: jest.fn().mockReturnValue(of(CREATE_RESULT))
+                createApiToken: vi.fn().mockReturnValue(of(CREATE_RESULT))
             }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() })
         ]
     });
 
     beforeEach(() => {
-        dialogRef = { close: jest.fn() } as unknown as DynamicDialogRef;
+        dialogRef = { close: vi.fn() } as unknown as DynamicDialogRef;
         spectator = createComponent({
             providers: [
                 { provide: DynamicDialogRef, useValue: dialogRef },
@@ -114,7 +120,7 @@ describe('DotUsersRequestTokenDialogComponent', () => {
         // difference would drift by the runner's offset. 10 full days
         // minus 12 hours = 9.5 days worth of seconds.
         const nowMs = new Date(2030, 5, 1, 12, 0, 0).getTime();
-        jest.spyOn(Date, 'now').mockReturnValue(nowMs);
+        vi.spyOn(Date, 'now').mockReturnValue(nowMs);
 
         spectator.component.form.patchValue({
             label: '  ci  ',
@@ -132,12 +138,12 @@ describe('DotUsersRequestTokenDialogComponent', () => {
             claims: { label: 'ci' }
         });
 
-        (Date.now as jest.Mock).mockRestore();
+        (Date.now as Mock).mockRestore();
     });
 
     it('should surface the HTTP error through httpErrorManager and stop submitting', () => {
         const error = new Error('boom');
-        (usersService.createApiToken as jest.Mock).mockReturnValueOnce(throwError(() => error));
+        (usersService.createApiToken as Mock).mockReturnValueOnce(throwError(() => error));
 
         spectator.component.form.patchValue({ label: 'ci' });
         spectator.detectChanges();

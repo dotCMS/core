@@ -1,5 +1,11 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { ActivatedRoute } from '@angular/router';
 
@@ -21,7 +27,7 @@ describe('DotVelocityPlaygroundShellComponent', () => {
                 }
             ]
         ],
-        providers: [mockProvider(DotMessageService, { get: jest.fn().mockReturnValue('') })]
+        providers: [mockProvider(DotMessageService, { get: vi.fn().mockReturnValue('') })]
     });
 
     const setup = (isEnterprise: boolean): Spectator<DotVelocityPlaygroundShellComponent> =>

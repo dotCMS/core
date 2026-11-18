@@ -29,7 +29,7 @@ import com.dotcms.content.elasticsearch.business.event.ContentletDeletedEvent;
 import com.dotcms.cube.CubeJSClient;
 import com.dotcms.cube.CubeJSClientFactory;
 import com.dotcms.cube.CubeJSQuery;
-import com.dotcms.cube.CubeJSResultSet;
+import com.dotcms.cube.AnalyticsResultSet;
 import com.dotcms.enterprise.rules.RulesAPI;
 import com.dotcms.experiments.business.result.*;
 import com.dotcms.exception.NotAllowedException;
@@ -98,6 +98,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<SystemTableUpdatedKeyEvent> {
@@ -123,7 +124,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
     final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
     final HTMLPageAssetAPI pageAssetAPI = APILocator.getHTMLPageAssetAPI();
     final BayesianAPI bayesianAPI = APILocator.getBayesianAPI();
-    final CubeJSClientFactory cubeJSClientFactory = FactoryLocator.getCubeJSClientFactory();
 
     private final AtomicInteger maxDuration = new AtomicInteger(resolveMaxDuration());
     private final AtomicInteger defaultDuration = new AtomicInteger(resolveDefaultDuration());
@@ -167,6 +167,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         return experimentsLookbackWindow.get();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>The experiment's targeting rule is saved after the experiment itself, because the rule's
+     * permission check resolves the experiment as the rule's parent.</p>
+     */
     @Override
     @WrapInTransaction
     public Experiment save(final Experiment experiment, final User user) throws
@@ -196,10 +201,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             MetricsUtil.INSTANCE.validateGoals(goals);
         }
 
-        if(experiment.targetingConditions().isPresent()) {
-            saveTargetingConditions(experiment, user);
-        }
-
         Experiment experimentToSave = builder.build();
 
         Optional<Experiment> existingExperiment = find(experimentToSave.id().get(), user);
@@ -219,6 +220,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         }
 
         factory.save(experimentToSave);
+
+        // targeting rules are saved once the experiment row exists
+        if(experiment.targetingConditions().isPresent()) {
+            saveTargetingConditions(experiment, user);
+        }
 
         Logger.info(this, "Saving experiment with id: " + experimentToSave.id().get() + ", and status:"
         + experimentToSave.status());
@@ -308,11 +314,19 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                                 createAndSaveCondition(user, experimentRule, targetingCondition)));
     }
 
-    private void createAndSaveCondition(User user, Rule experimentRule,
-            TargetingCondition targetingCondition) {
-        Condition condition = targetingCondition.id().isPresent()
-            ? Try.of(()->rulesAPI.getConditionById(targetingCondition.id().get(), user, false))
-                .getOrElseThrow(()->new IllegalArgumentException("Invalid targeting Condition Id provided. Id: " + targetingCondition.id().get()))
+    /**
+     * Saves one targeting condition of the experiment's rule. A condition sent with an id must be
+     * one of that rule's own conditions; it is changed on a copy, so the stored condition only
+     * changes when the save succeeds.
+     *
+     * @param user               the user saving the experiment
+     * @param experimentRule     the experiment's targeting rule
+     * @param targetingCondition the targeting condition to save
+     */
+    private void createAndSaveCondition(final User user, final Rule experimentRule,
+            final TargetingCondition targetingCondition) {
+        final Condition condition = targetingCondition.id().isPresent()
+            ? copyOfExperimentCondition(user, experimentRule, targetingCondition.id().get())
             : createCondition(experimentRule);
 
         condition.setOperator(targetingCondition.operator());
@@ -325,6 +339,27 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         Try.run(()->rulesAPI.saveCondition(condition, user, false))
                 .getOrElseThrow(()->new DotStateException("Error saving Condition: "
                         + condition.getConditionletId()));
+    }
+
+    /**
+     * Returns a copy of the experiment rule's condition with the given id.
+     *
+     * @param user           the user saving the experiment
+     * @param experimentRule the experiment's targeting rule
+     * @param conditionId    the id of the condition to update
+     * @return a copy of the stored condition
+     * @throws IllegalArgumentException when the id is not one of the experiment rule's conditions
+     */
+    private Condition copyOfExperimentCondition(final User user, final Rule experimentRule,
+            final String conditionId) {
+        final Condition stored = Try.of(() -> rulesAPI.getConditionById(conditionId, user, false))
+                .getOrNull();
+        final boolean experimentCondition = stored != null && experimentRule.getGroups().stream()
+                .anyMatch(group -> group.getId().equals(stored.getConditionGroup()));
+        if (!experimentCondition) {
+            throw new IllegalArgumentException("Invalid targeting Condition Id provided. Id: " + conditionId);
+        }
+        return (Condition) SerializationUtils.clone(stored);
     }
 
     private Condition createCondition(final Rule experimentRule) {
@@ -517,6 +552,16 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
     }
 
     @Override
+    @CloseDBIfOpened
+    public boolean isFreeSlotUsed() throws DotDataException {
+        if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
+            throw new IllegalStateException(
+                    "isFreeSlotUsed() must only be called in limited mode (FEATURE_FLAG_EXPERIMENTS=false)");
+        }
+        return factory.countByStatuses(Set.of(RUNNING, SCHEDULED, ENDED)) > 0;
+    }
+
+    @Override
     @WrapInTransaction
     public Experiment start(String experimentId, User user)
             throws DotDataException, DotSecurityException {
@@ -576,10 +621,24 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                         DotStateException.class);
             }
 
+            // In limited mode, acquire the transaction-scoped advisory lock and re-check the
+            // free slot. The lock must be taken here — inside @WrapInTransaction — so it is held
+            // until the transaction commits, closing the TOCTOU gap between the pre-check in
+            // ExperimentLimitedModeGate and the actual save. Callers that only need a read
+            // (healthcheck, the gate pre-check) call isFreeSlotUsed() directly without the lock.
+            if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
+                factory.acquireFreeSlotLock();
+            }
+            if (!ConfigExperimentUtil.INSTANCE.isExperimentEnabled() && isFreeSlotUsed()) {
+                throw new FreeSlotOccupiedException();
+            }
+
             Experiment toReturn;
 
             if (emptyScheduling(persistedExperiment)) {
-                final Scheduling scheduling = startNowScheduling();
+                final Scheduling scheduling = ConfigExperimentUtil.INSTANCE.isExperimentEnabled()
+                        ? startNowScheduling()
+                        : startLimitedScheduling();
                 final Experiment experimentToSave = persistedExperiment.withScheduling(scheduling)
                         .withStatus(RUNNING);
                 validateNoConflictsWithScheduledExperiments(experimentToSave, user);
@@ -1275,8 +1334,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
     @Override
     public boolean isAnyExperimentRunning(final Host host) throws DotDataException {
-        return ConfigExperimentUtil.INSTANCE.isExperimentEnabled() &&
-                !APILocator.getExperimentsAPI().getRunningExperiments(host).isEmpty();
+        // Do not gate on isExperimentEnabled() — limited-mode experiments are RUNNING in the DB
+        // and must be served to visitors exactly like full-mode experiments. The natural empty
+        // result from getRunningExperiments() acts as the short-circuit when none are running.
+        return !APILocator.getExperimentsAPI().getRunningExperiments(host).isEmpty();
     }
 
     /**
@@ -1303,13 +1364,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             RESULTS_QUERY_VALID_STATUSES.contains(experimentFromDataBase.status()),
             "The Experiment must be RUNNING or ENDED to get results");
 
-        final CubeJSResultSet totalSessions = getTotalSessions(experimentFromDataBase, user);
-        final CubeJSResultSet summarize = getSummary(experimentFromDataBase, user);
+        final AnalyticsResultSet totalSessions = getTotalSessions(experimentFromDataBase, user);
+        final AnalyticsResultSet summarize = getSummary(experimentFromDataBase, user);
         return getResults(experimentFromDataBase, totalSessions, summarize);
     }
 
-    private ExperimentResults getResults(final Experiment experiment, final CubeJSResultSet totalSessions,
-                                         final CubeJSResultSet summarize) {
+    private ExperimentResults getResults(final Experiment experiment, final AnalyticsResultSet totalSessions,
+                                         final AnalyticsResultSet summarize) {
 
         final Goals goals = experiment.goals()
                 .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
@@ -1427,17 +1488,13 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         return bayesianAPI.doBayesian(bayesianInput);
     }
 
-    public CubeJSResultSet getSummary(final Experiment experiment,
+    public AnalyticsResultSet getSummary(final Experiment experiment,
                                              final User user) throws DotDataException, DotSecurityException {
-        final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
-        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE.createWithDayGranularity(experiment);
-        return cubeClient.send(cubeJSQuery);
+        return ExperimentResultsQueryFactory.INSTANCE.executeByDay(experiment, user);
     }
 
-    public CubeJSResultSet getTotalSessions(final Experiment experiment, final User user) throws DotDataException, DotSecurityException {
-        final CubeJSClient cubeClient = cubeJSClientFactory.create(user);
-        final CubeJSQuery cubeJSQuery = ExperimentResultsQueryFactory.INSTANCE.create(experiment);
-        return cubeClient.send(cubeJSQuery);
+    public AnalyticsResultSet getTotalSessions(final Experiment experiment, final User user) throws DotDataException, DotSecurityException {
+        return ExperimentResultsQueryFactory.INSTANCE.executeAggregate(experiment, user);
     }
 
     @Override
@@ -1652,6 +1709,19 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                 .build();
     }
 
+    /**
+     * Builds an immediate-start scheduling capped at the limited-mode maximum duration.
+     * Used instead of {@link #startNowScheduling()} when {@code FEATURE_FLAG_EXPERIMENTS=false}
+     * so that a free experiment cannot run longer than the allowed cap.
+     */
+    private static Scheduling startLimitedScheduling() {
+        final Instant now = Instant.now().plus(1, ChronoUnit.MINUTES);
+        return Scheduling.builder()
+                .startDate(now)
+                .endDate(ExperimentLimitedModeGate.defaultEndDate(now))
+                .build();
+    }
+
     private boolean hasAtLeastOneVariant(final Experiment experiment) {
         return experiment.trafficProportion().variants().size()>1;
     }
@@ -1707,7 +1777,10 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                     .orElseThrow(() -> new IllegalStateException("Invalid Scheduling. Start date is missing"));
             DotPreconditions.checkState(startDate.isAfter(now), "Invalid Scheduling. Start date is in the past");
 
-            toReturn = scheduling.withEndDate(startDate.plus(defaultDuration.get(), ChronoUnit.DAYS));
+            final long durationDays = ConfigExperimentUtil.INSTANCE.isExperimentEnabled()
+                    ? defaultDuration.get()
+                    : ExperimentLimitedModeGate.MAX_DAYS;
+            toReturn = scheduling.withEndDate(startDate.plus(durationDays, ChronoUnit.DAYS));
         } else if (scheduling.startDate().isEmpty() && scheduling.endDate().isPresent()) {
             final Instant endDate = scheduling
                     .endDate()

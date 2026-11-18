@@ -11,9 +11,7 @@ import {
     DotLanguagesService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotLanguage, ESContent } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
-
-import { SubscriptionSlot } from './subscription-slot';
+import { GlobalStore, SubscriptionSlot } from '@dotcms/store';
 
 import { StudioPageRow } from '../models/accessibility-studio.models';
 

@@ -9,7 +9,6 @@ import {
     DotContentTypeService,
     DotWorkflowActionsFireService,
     DotTagsService,
-    DotContentletService,
     DotSiteService
 } from '@dotcms/data-access';
 import {
@@ -32,11 +31,11 @@ import {
     DotContentReference,
     DotPushPublishHistoryItem
 } from '../models/dot-edit-content.model';
+import { attachOrderedFields, parsePreservingKeyOrder } from '../utils/key-value-order.util';
 
 @Injectable()
 export class DotEditContentService {
     readonly #dotContentTypeService = inject(DotContentTypeService);
-    readonly #dotContentletService = inject(DotContentletService);
     readonly #dotBrowsingService = inject(DotBrowsingService);
     readonly #dotTagsService = inject(DotTagsService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
@@ -67,9 +66,28 @@ export class DotEditContentService {
             httpParams = httpParams.set('depth', depth);
         }
 
-        return this.#dotContentletService
-            .getContentletByInode(id, httpParams)
-            .pipe(map((contentlet) => contentlet));
+        // Read as text and parse here, rather than through `DotContentletService`: a
+        // Key/Value field's key order is only recoverable from the raw response, and
+        // `HttpClient` would have parsed it away before any code could look.
+        //
+        // The contentlet itself is handed back untouched — the recovered copy rides
+        // along under a separate key, for the Key/Value resolver alone to read. This
+        // method serves every field type, so nothing here may reshape a field.
+        return this.#http
+            .get(`/api/v1/content/${id}`, { params: httpParams, responseType: 'text' })
+            .pipe(
+                map((raw) => {
+                    const { entity } = JSON.parse(raw) as DotCMSAPIResponse<DotCMSContentlet>;
+                    const ordered = parsePreservingKeyOrder(raw) as {
+                        entity?: Record<string, unknown>;
+                    };
+
+                    return attachOrderedFields(
+                        entity as unknown as Record<string, unknown>,
+                        ordered?.entity
+                    ) as unknown as DotCMSContentlet;
+                })
+            );
     }
 
     /**

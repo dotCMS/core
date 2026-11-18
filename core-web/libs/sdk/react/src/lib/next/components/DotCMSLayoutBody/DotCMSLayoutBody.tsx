@@ -57,11 +57,19 @@ export interface DotCMSLayoutBodyProps<
  * @returns {JSX.Element} The rendered DotCMS page body or an error message if the layout body is missing.
  *
  */
+/**
+ * Hoisted so the defaults keep a stable identity across renders. As inline `= {}` defaults
+ * they produced a fresh object on every render, which invalidated the page context's useMemo
+ * and re-rendered every container and contentlet in the tree.
+ */
+const NO_COMPONENTS: DotCMSLayoutBodyProps['components'] = {};
+const NO_SLOTS: NonNullable<DotCMSLayoutBodyProps['slots']> = {};
+
 export const DotCMSLayoutBody = ({
     page,
-    components = {},
+    components = NO_COMPONENTS,
     mode = 'production',
-    slots = {}
+    slots = NO_SLOTS
 }: DotCMSLayoutBodyProps) => {
     const dotCMSPageBody = page?.layout?.body;
 

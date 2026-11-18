@@ -1,6 +1,7 @@
-import { jest } from '@jest/globals';
-import { createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/jest';
+import { createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/vitest';
 import { BehaviorSubject, of } from 'rxjs';
+import { Editor } from 'tinymce';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -54,9 +55,38 @@ describe('DotWysiwygTinymceComponent', () => {
         componentProviders: [
             mockProvider(DotWysiwygPluginService),
             mockProvider(DotWysiwygTinymceService, {
-                getProps: jest.fn().mockReturnValue(of(mockSystemWideConfig))
+                getProps: vi.fn().mockReturnValue(of(mockSystemWideConfig))
             })
         ]
+    });
+
+    /**
+     * AC-209 — a third-party editor owns its DOM, so `<label for>` cannot reach inside it. Both
+     * editors expose a documented option for the accessible name of their own surface, which is
+     * where the field name belongs: otherwise the control announces itself generically, or with no
+     * name at all.
+     */
+    it('should name the editor iframe from the field so it is not announced unnamed', () => {
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-wysiwyg-tinymce [field]="field" [hasError]="hasError" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({ [WYSIWYG_MOCK.variable]: new FormControl() }),
+                    field: WYSIWYG_MOCK,
+                    hasError: false
+                }
+            }
+        );
+        spectator.detectChanges();
+
+        const config = spectator.component.$editorConfig();
+
+        // Two surfaces: the body inside the iframe, announced once inside the editing area, and
+        // the frame itself, announced on the way in. TinyMCE hardcodes the latter otherwise.
+        expect(config.iframe_aria_text).toBe(WYSIWYG_MOCK.name);
+        expect(config.iframe_attrs).toEqual({ title: WYSIWYG_MOCK.name });
     });
 
     it('should initialize editor with correct configuration', () => {
@@ -82,7 +112,9 @@ describe('DotWysiwygTinymceComponent', () => {
         const expectedConfiguration = {
             ...DEFAULT_TINYMCE_CONFIG,
             ...mockSystemWideConfig,
-            setup: (editor) => dotWysiwygPluginService.initializePlugins(editor)
+            iframe_aria_text: WYSIWYG_MOCK.name,
+            iframe_attrs: { title: WYSIWYG_MOCK.name },
+            setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
         };
 
         spectator.detectChanges();
@@ -111,7 +143,7 @@ describe('DotWysiwygTinymceComponent', () => {
                 },
                 providers: [
                     mockProvider(DotWysiwygTinymceService, {
-                        getProps: jest.fn().mockReturnValue(propsSubject)
+                        getProps: vi.fn().mockReturnValue(propsSubject)
                     })
                 ]
             }
@@ -125,7 +157,10 @@ describe('DotWysiwygTinymceComponent', () => {
             JSON.stringify({
                 ...DEFAULT_TINYMCE_CONFIG,
                 ...mockSystemWideConfig,
-                setup: (editor) => dotWysiwygPluginService.initializePlugins(editor)
+                // TinyMCE renders into an iframe; this is its own option for that iframe's name.
+                iframe_aria_text: WYSIWYG_MOCK.name,
+                iframe_attrs: { title: WYSIWYG_MOCK.name },
+                setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
 
@@ -137,7 +172,10 @@ describe('DotWysiwygTinymceComponent', () => {
             JSON.stringify({
                 ...DEFAULT_TINYMCE_CONFIG,
                 ...newSystemWideConfig,
-                setup: (editor) => dotWysiwygPluginService.initializePlugins(editor)
+                // TinyMCE renders into an iframe; this is its own option for that iframe's name.
+                iframe_aria_text: WYSIWYG_MOCK.name,
+                iframe_attrs: { title: WYSIWYG_MOCK.name },
+                setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
     }));
@@ -180,8 +218,74 @@ describe('DotWysiwygTinymceComponent', () => {
                 ...DEFAULT_TINYMCE_CONFIG,
                 ...mockSystemWideConfig,
                 ...{ toolbar1: 'undo redo' },
-                setup: (editor) => dotWysiwygPluginService.initializePlugins(editor)
+                // TinyMCE renders into an iframe; this is its own option for that iframe's name.
+                iframe_aria_text: WYSIWYG_MOCK.name,
+                iframe_attrs: { title: WYSIWYG_MOCK.name },
+                setup: (editor: Editor) => dotWysiwygPluginService.initializePlugins(editor)
             })
         );
+    });
+
+    describe('browse buttons in the image and link dialogs', () => {
+        const filePickerCallback = vi.fn();
+
+        /** Renders the field with `tinymceprops`, and the plugin service offering the picker. */
+        const renderWithFilePicker = (tinymceprops?: string) => {
+            const field = tinymceprops
+                ? {
+                      ...WYSIWYG_MOCK,
+                      fieldVariables: [
+                          {
+                              clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                              fieldId: '1',
+                              id: '1',
+                              key: 'tinymceprops',
+                              value: tinymceprops
+                          }
+                      ]
+                  }
+                : WYSIWYG_MOCK;
+
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-wysiwyg-tinymce [field]="field" [hasError]="hasError" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({ [field.variable]: new FormControl() }),
+                        field,
+                        hasError: false
+                    }
+                }
+            );
+
+            // `$editorConfig` is computed on first read, so the stub only has to be in place
+            // before change detection.
+            vi.mocked(
+                spectator.inject(DotWysiwygPluginService, true).filePickerOptions
+            ).mockReturnValue({
+                file_picker_types: 'file image',
+                file_picker_callback: filePickerCallback
+            });
+            spectator.detectChanges();
+
+            return spectator.component.$editorConfig();
+        };
+
+        it('should hand TinyMCE the picker callback from the plugin service', () => {
+            const config = renderWithFilePicker();
+
+            expect(config.file_picker_types).toBe('file image');
+            expect(config.file_picker_callback).toBe(filePickerCallback);
+        });
+
+        it('should let the system-wide and field configs narrow which dialogs get a button', () => {
+            // Image dialog only — a customer who does not want editors browsing for links.
+            const config = renderWithFilePicker('{ "file_picker_types": "image" }');
+
+            expect(config.file_picker_types).toBe('image');
+            // A JSON config cannot carry a function, so the callback always survives the merge.
+            expect(config.file_picker_callback).toBe(filePickerCallback);
+        });
     });
 });

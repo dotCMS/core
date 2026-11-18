@@ -1,4 +1,5 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotSessionstorageService } from './dot-session-storage.service';
 
@@ -51,7 +52,7 @@ describe('DotSessionstorageService', () => {
 
     describe('removeItem', () => {
         beforeEach(() => {
-            jest.spyOn(Storage.prototype, 'removeItem');
+            vi.spyOn(Storage.prototype, 'removeItem');
         });
 
         it('should remove', () => {
@@ -62,7 +63,7 @@ describe('DotSessionstorageService', () => {
 
     describe('clear', () => {
         beforeEach(() => {
-            jest.spyOn(Storage.prototype, 'clear');
+            vi.spyOn(Storage.prototype, 'clear');
         });
 
         it('should clean', () => {

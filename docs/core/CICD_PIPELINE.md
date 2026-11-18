@@ -100,6 +100,7 @@ permissions:
 **Purpose**: Orchestrates various test suites
 
 **Key Features**:
+- Takes the matrix from [`cicd_comp_test-matrix.yml`](.github/workflows/cicd_comp_test-matrix.yml), which callers run beside the build so it is off the critical path
 - JVM unit tests with Java 21
 - Integration tests with `-Pcoreit` profile
 - Frontend tests using Nx and pnpm
@@ -158,79 +159,73 @@ run: |
 ## Change Detection System
 
 ### Filter Configuration (`.github/filters.yaml`)
-```yaml
-# Backend changes
-backend: &backend
-  - 'dotCMS/src/main/java/**'
-  - 'src/main/java/**'
-  - 'pom.xml'
-  - 'bom/**/pom.xml'
-  - '**/pom.xml'
 
-# Frontend changes
-frontend: &frontend
-  - 'core-web/**'
-  - 'package.json'
-  - 'pnpm-lock.yaml'
-  - '.nvmrc'
+`.github/filters.yaml` defines **15 filters**. Read the file rather than trusting a copy — the
+patterns move as the module layout does. The ones that gate work:
 
-# CLI changes
-cli: &cli
-  - 'tools/dotcms-cli/**'
-  - 'cli/**'
+| Filter | Gates |
+|---|---|
+| `build` | whether a build runs at all |
+| `backend` | integration and Postman suites |
+| `jvm_unit_test` | the JVM unit-test job |
+| `frontend` | frontend build and tests |
+| `cli` | CLI build and tests |
+| `sdk_libs`, `sdk_package_shapes` | SDK builds and the package-shape validation |
+| `examples` | example apps |
+| `full_build_test` | forces the full path; anchored into **both** `backend` and `frontend` |
+| `area_backend`, `area_frontend`, `area_cli`, `area_sdk`, `area_documentation`, `area_cicd` | PR area labels, not test selection — mapped to label names in `.github/area-labels.yml` and applied by `cicd_comp_pr-area-labeler.yml` |
 
-# Test-specific changes
-test: &test
-  - 'dotcms-integration/**'
-  - 'src/test/java/**'
-  - '**/src/test/**'
+Two things about these are easy to get wrong:
 
-# Full build triggers
-full_build_test: &full_build_test
-  - '.github/workflows/**'
-  - '.github/actions/**'
-  - 'docker/**'
-  - 'Dockerfile'
-  - '.sdkmanrc'
-
-# Combine filters for complex logic
-backend_with_full: &backend_with_full
-  - *backend
-  - *full_build_test
-
-frontend_with_full: &frontend_with_full
-  - *frontend
-  - *full_build_test
-```
+- **`backend` is not "Java source changed".** It matches CI's own definition of what needs backend
+  verification — `bom/**`, `build-parent/**`, `core-web/pom.xml`, `dotcms-postman/**`,
+  `e2e/**`, the component workflows themselves, and non-CSS/JS webapp resources.
+- **`full_build_test` is small and anchored, not a trigger list.** It is `.sdkmanrc` and the two
+  `.nvmrc` files, pulled into **both** `backend` (`filters.yaml:40`) and `frontend`
+  (`filters.yaml:45`) via a YAML anchor. So changing a toolchain pin matches `backend` directly —
+  and therefore `jvm_unit_test` and `build`, which include it — not only the frontend path.
 
 ### Change Detection Usage
+
+Filters are evaluated **once**, in the `changes` job of `cicd_comp_initialize-phase.yml`
+(`dorny/paths-filter`, pinned by SHA, reading `.github/filters.yaml`). Individual workflows do not
+run paths-filter themselves — they read the result.
+
+That job exposes two workflow outputs:
+
+- `filters` — a JSON object of every filter result, read with `fromJSON()`
+- `changes` — a JSON array of the filter names that matched, used for PR area labelling
+
+Downstream jobs gate on the JSON object. Real examples from `cicd_1-pr.yml`:
+
 ```yaml
-jobs:
-  detect-changes:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: .github/filters.yaml
-          
-  backend-tests:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.backend == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run backend tests
-        run: ./mvnw test
-        
-  frontend-tests:
-    needs: detect-changes
-    if: needs.detect-changes.outputs.frontend == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Run frontend tests
-        run: cd core-web && pnpm nx run dotcms-ui:test
+  # Build only when the build filter matched and no reusable artifact was found
+  if: fromJSON(needs.initialize.outputs.filters).build == 'true'
+      && needs.initialize.outputs.found_artifacts == 'false'
+
+  # Test matrix inputs (the `test-matrix` job, cicd_comp_test-matrix.yml) — note several suites gate on the same backend filter
+  with:
+    jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
+    integration:   ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
+    postman:       ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
 ```
+
+Change detection can be switched off per-run: `initialize-phase` takes a `change-detection` input,
+and `enabled` is what makes the checkout and paths-filter steps run at all.
+
+Which suites run inside the test phase is a separate question, answered by
+`.github/test-matrix.yml` — see [Integration Tests](../testing/INTEGRATION_TESTS.md) and
+[Backend Unit Tests](../testing/BACKEND_UNIT_TESTS.md).
+
+A test type runs only when the caller passes its selector (`jvm_unit_test`, `cli`, `frontend`,
+`postman`, `integration`, `e2e`, the `condition_input` of each type in
+`test-matrix.yml`) as `true` to `cicd_comp_test-matrix.yml`. `run-all-tests` does **not** switch
+on a selector the caller leaves out: a `workflow_call` boolean that is not passed arrives as
+`false`, which cannot be told apart from an explicit `false`, and a `false` selector turns its
+type off. So a caller that wants everything (the nightly, a trunk dispatch) passes every selector
+it wants as `true`. What `run-all-tests: true` adds is a guarantee: if the matrix comes out empty,
+the matrix job fails instead of the run silently testing nothing, which is how the nightly ran
+zero tests for weeks (#38336).
 
 ## Artifact Management
 
@@ -240,7 +235,7 @@ jobs:
 - name: Upload Build Artifacts
   uses: actions/upload-artifact@v4
   with:
-    name: maven-artifacts-${{ github.run_id }}
+    name: maven-repo
     path: |
       target/
       dotCMS/target/
@@ -253,7 +248,7 @@ jobs:
 - name: Download Build Artifacts
   uses: actions/download-artifact@v4
   with:
-    name: maven-artifacts-${{ needs.initialize.outputs.artifact-run-id }}
+    name: maven-repo
     path: ./
 ```
 
@@ -285,6 +280,41 @@ jobs:
     cache: 'pnpm'
     cache-dependency-path: 'core-web/pnpm-lock.yaml'
 ```
+
+### Nx Remote Cache
+
+Maven invokes Nx for frontend builds and tests. The shared build/test workflows use:
+
+- Organization/repository variable `NX_SELF_HOSTED_REMOTE_CACHE_SERVER`: the HTTPS cache server URL.
+- Organization/repository secret `NX_SELF_HOSTED_REMOTE_CACHE_ACCESS_TOKEN`: its writer access token.
+- Repository variable `NX_SELF_HOSTED_REMOTE_CACHE_READ_SERVER`: `https://nx-cache-read.dotcms.dev`, the public GET-only endpoint for PRs (including forks). No secret is needed.
+
+Organization settings must grant this repository access to both. The token is explicitly forwarded
+through reusable workflow calls, not placed in Maven arguments or committed files.
+
+Remote reads and writes are enabled for merge-queue builds, trunk runs on `main`/`master`, nightly
+runs from `main`, and LTS runs on protected `release-*` branches. Only the frontend test matrix job
+receives the credentials. Feature-branch dispatches and arbitrary-ref deployment/release workflows
+receive no token. PR frontend builds/tests use only the public reader URL; the reusable workflows
+explicitly clear the writer token even if a caller accidentally supplies it. No secret is added to PR callers.
+
+Caddy allows only cache GETs on the reader and injects backend authentication privately. Writes are
+blocked at Caddy with **403**, including requests supplying valid writer credentials. Nx 23.3.1 treats
+PUT 403 as a benign read-only result; PUT 405 fails cache-miss builds. Cached artifacts and terminal
+output are publicly readable by known/derived hash: never cache secrets or private output. The owner
+approved this public-read posture. Storage remains private and only trusted workflows populate it.
+
+Missing writer URL/token disables the shared HTTP cache for trusted jobs; missing reader URL disables
+it for PR jobs, with no fallback to writer credentials. The build workflow passes the URL through
+`maven-job`'s `nx-remote-cache-server` input, selected at Maven execution time; an empty input preserves
+the existing artifact-backed localhost cache when available. Builds with `save-nx-cache=true` prefer
+localhost so main's push and scheduled nightly keep refreshing that fallback. Other builds prefer the
+shared server. Frontend test jobs do not start the localhost server.
+Set `BUILD_CACHE_DISABLED=true` to disable Maven's remote cache and the shared Nx HTTP cache, including
+PR reads. The `CI : No Build Cache` PR label also disables the shared Nx HTTP cache for that PR's builds
+and frontend tests. The pre-existing localhost build cache and Nx's local cache are unchanged.
+
+Workflow wiring regression checks: `bash .github/workflows/tests/nx-remote-cache.test.sh`.
 
 ### Docker Cache
 ```yaml
@@ -377,7 +407,7 @@ git log --oneline -5  # Check recent commits
 - name: Debug Artifacts
   run: |
     echo "Artifact run ID: ${{ needs.initialize.outputs.artifact-run-id }}"
-    echo "Expected artifact: maven-artifacts-${{ github.run_id }}"
+    echo "Expected artifact: maven-repo"
 ```
 
 **Solution:**
@@ -437,7 +467,7 @@ build:
 ## Development Patterns
 
 ### Adding New Tests
-1. **Update Test Phase**: Modify `cicd_comp_test-phase.yml`
+1. **Update Test Phase**: Modify `cicd_comp_test-phase.yml` (or `.github/test-matrix.yml` for which suites run)
 2. **Add Change Detection**: Update `.github/filters.yaml`
 3. **Test Locally**: Validate changes work as expected
 

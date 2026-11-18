@@ -7,6 +7,16 @@ TRACKS = ("latest", "standard", "trailing")
 _TAINT_SUFFIX = "_tainted"
 _HOLD_SUFFIX = "_hold"
 
+TAINT_TITLE_MARKER = "⚠️ TAINTED "
+
+
+def taint_title(title: str) -> str:
+    return title if title.startswith(TAINT_TITLE_MARKER) else TAINT_TITLE_MARKER + title
+
+
+def untaint_title(title: str) -> str:
+    return title.removeprefix(TAINT_TITLE_MARKER)
+
 
 def taint_tag(version: str) -> str:
     return f"{version}{_TAINT_SUFFIX}"

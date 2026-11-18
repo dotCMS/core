@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       sdkman_java_version:
-        description: 'SDKMAN version string run "sdk list java" for options'
+        description: 'SDKMAN version string run "sdk list java" for options. Docker tags cannot contain +, so the image tag replaces + with - (e.g. 25.0.4+1-ms -> 25.0.4-1-ms)'
         required: true
       image_suffix:
         description: 'append suffix to image tag (can be empty)'
@@ -49,12 +49,20 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Compute Docker Tag
+        id: docker-tag
+        run: |
+          # Docker tags cannot contain '+' - convert SDKMAN's '+' to '-'
+          # (e.g. 25.0.4+1-ms -> 25.0.4-1-ms). The raw input is still passed to the
+          # build (sdk install java) via build-args below.
+          TAG="$(echo '${{ inputs.sdkman_java_version }}' | tr '+' '-')"
+          echo "tag=${TAG}" >> "$GITHUB_OUTPUT"
       - name: Build and push
         uses: docker/build-push-action@v6.15.0
         with:
           context: ./docker/java-base
           push: ${{ github.event.inputs.push }}
-          tags: dotcms/java-base:${{ github.event.inputs.sdkman_java_version }}${{ github.event.inputs.image_suffix }}
+          tags: dotcms/java-base:${{ steps.docker-tag.outputs.tag }}${{ github.event.inputs.image_suffix }}
           platforms: ${{ env.PLATFORMS }}
           build-args:
             SDKMAN_JAVA_VERSION=${{ github.event.inputs.sdkman_java_version }}

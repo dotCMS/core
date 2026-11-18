@@ -1,6 +1,7 @@
 import { Dispatcher, EventCreator, provideDispatcher } from '@ngrx/signals/events';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { NEVER, of, throwError } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -10,7 +11,8 @@ import { ActivatedRoute, Params, provideRouter } from '@angular/router';
 import {
     DotContentSearchService,
     DotExperimentsService,
-    DotHttpErrorManagerService
+    DotHttpErrorManagerService,
+    ExperimentsHealthResponse
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -21,12 +23,14 @@ import {
     HealthStatusTypes,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
 
 import { dotExperimentsListPageEvents } from './dot-experiments-list-page.events';
 import { DotExperimentsListStore } from './dot-experiments-list.store';
 
 import {
+    DEFAULT_EXPERIMENTS_LIST_DIRECTION,
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
     DEFAULT_EXPERIMENTS_LIST_GOALS,
     DEFAULT_EXPERIMENTS_LIST_PAGE,
@@ -34,6 +38,7 @@ import {
     DEFAULT_EXPERIMENTS_LIST_STATUSES,
     PAGE_LOOKUP_LANGUAGE_HEADROOM
 } from '../shared/constants';
+import { DotExperimentsListViewState } from '../shared/models';
 
 const CURRENT_SITE_ID = 'site-1';
 const OTHER_SITE_ID = 'site-2';
@@ -41,6 +46,7 @@ const OTHER_SITE_ID = 'site-2';
 const buildExperiment = (experiment: Partial<DotExperiment>): DotExperiment => ({
     id: 'exp-id',
     pageId: 'page-1',
+    createdBy: 'dotcms.org.1',
     name: 'Experiment',
     description: 'An experiment',
     status: DotExperimentStatus.DRAFT,
@@ -75,6 +81,7 @@ const EXPERIMENT_DRAFT = buildExperiment({
 const EXPERIMENT_RUNNING = buildExperiment({
     id: 'exp-running',
     pageId: 'page-2',
+    createdBy: 'dotcms.org.2',
     name: 'Beta rollout',
     description: 'Pricing page headline',
     status: DotExperimentStatus.RUNNING,
@@ -117,6 +124,39 @@ const EXPERIMENTS: DotExperiment[] = [
     EXPERIMENT_ORPHAN
 ];
 
+/**
+ * The list's URL-backed view state at its defaults, as `parseViewState` reads a bare address.
+ *
+ * `hydratedFromUrl` takes the whole state, so a test that wants one field of it says so against
+ * this rather than restating the other eight.
+ */
+const VIEW_STATE_DEFAULTS: DotExperimentsListViewState = {
+    filter: '',
+    selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
+    selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+    selectedCreators: [],
+    scheduleFrom: null,
+    scheduleTo: null,
+    page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+    perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
+    orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
+    direction: DEFAULT_EXPERIMENTS_LIST_DIRECTION,
+    selectedPageId: null,
+    selectedPageUrl: null,
+    languageId: null
+};
+
+/** The page the editor is standing on when the panel is open. */
+const PANEL_PAGE_ID = 'page-1';
+
+/**
+ * What `getAll(pageId)` returns: the server has already narrowed to the page, so the client has
+ * nothing left to narrow by. Deliberately includes the experiment whose page the bulk lookup never
+ * resolves — in panel mode there is no bulk lookup, so `pageInfoByPageId` stays empty and a list
+ * that still narrowed by site would render this as "no experiments on this page".
+ */
+const PAGE_EXPERIMENTS: DotExperiment[] = [EXPERIMENT_DRAFT, EXPERIMENT_ARCHIVED];
+
 const PAGE_SEARCH_RESULT = {
     jsonObjectView: {
         contentlets: [
@@ -127,22 +167,48 @@ const PAGE_SEARCH_RESULT = {
     }
 };
 
+/** Builds a minimal ExperimentsHealthResponse for test stubs. */
+function healthResponse(
+    health: HealthStatusTypes = HealthStatusTypes.OK,
+    tier: 'full' | 'limited' = 'full',
+    freeExperimentUsed: boolean | null = null,
+    warning?: 'analytics_disabled'
+): ExperimentsHealthResponse {
+    return { health, tier, freeExperimentUsed, warning };
+}
+
 describe('DotExperimentsListStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotExperimentsListStore>>;
     let store: InstanceType<typeof DotExperimentsListStore>;
     let dispatcher: Dispatcher;
-    let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
+    let httpErrorManager: Mocked<DotHttpErrorManagerService>;
 
-    const healthCheck = jest.fn();
-    const getAllUnfiltered = jest.fn();
-    const archive = jest.fn();
-    const remove = jest.fn();
-    const stop = jest.fn();
-    const cancelSchedule = jest.fn();
-    const contentSearchGet = jest.fn();
-    const locationSubscribe = jest.fn();
-    const locationGo = jest.fn();
-    const locationPath = jest.fn();
+    /**
+     * Narrows the list to a page the way the app does: through the address.
+     *
+     * The narrowing has one writer left — `hydratedFromUrl`. There is no event for it any more:
+     * the chip that used to set and clear it is gone, and nothing on the screen replaced it
+     * (#37005).
+     */
+    const hydrateWithPage = (pageId: string | null) =>
+        dispatcher.dispatch(
+            dotExperimentsListPageEvents.hydratedFromUrl({
+                ...VIEW_STATE_DEFAULTS,
+                selectedPageId: pageId
+            })
+        );
+
+    const healthCheck = vi.fn();
+    const getAllUnfiltered = vi.fn();
+    const getAll = vi.fn();
+    const archive = vi.fn();
+    const remove = vi.fn();
+    const stop = vi.fn();
+    const cancelSchedule = vi.fn();
+    const contentSearchGet = vi.fn();
+    const locationSubscribe = vi.fn();
+    const locationGo = vi.fn();
+    const locationPath = vi.fn();
 
     let currentSiteId: WritableSignal<string | null>;
     let queryParams: Params;
@@ -156,6 +222,7 @@ describe('DotExperimentsListStore', () => {
             mockProvider(DotExperimentsService, {
                 healthCheck,
                 getAllUnfiltered,
+                getAll,
                 archive,
                 delete: remove,
                 stop,
@@ -200,23 +267,24 @@ describe('DotExperimentsListStore', () => {
         dispatcher = spectator.inject(Dispatcher);
         httpErrorManager = spectator.inject(
             DotHttpErrorManagerService
-        ) as jest.Mocked<DotHttpErrorManagerService>;
+        ) as Mocked<DotHttpErrorManagerService>;
         spectator.flushEffects();
     };
 
     const httpError = (status: number) => new HttpErrorResponse({ status });
 
     beforeEach(() => {
-        jest.resetAllMocks();
+        vi.resetAllMocks();
 
-        healthCheck.mockReturnValue(of(HealthStatusTypes.OK));
+        healthCheck.mockReturnValue(of(healthResponse()));
         getAllUnfiltered.mockReturnValue(of(EXPERIMENTS));
+        getAll.mockReturnValue(of(PAGE_EXPERIMENTS));
         contentSearchGet.mockReturnValue(of(PAGE_SEARCH_RESULT));
         archive.mockReturnValue(of({}));
         remove.mockReturnValue(of({}));
         stop.mockReturnValue(of({}));
         cancelSchedule.mockReturnValue(of({}));
-        locationSubscribe.mockReturnValue({ unsubscribe: jest.fn() });
+        locationSubscribe.mockReturnValue({ unsubscribe: vi.fn() });
         // Whatever the effect computes will differ from this, so a write always happens unless
         // a test says otherwise.
         locationPath.mockReturnValue('/stale');
@@ -236,7 +304,9 @@ describe('DotExperimentsListStore', () => {
             initStore();
 
             expect(contentSearchGet).toHaveBeenCalledWith({
-                query: '+contentType:htmlpageasset +working:true +identifier:(page-1 page-2 page-3 page-orphan)',
+                // No content-type filter: the picker offers URL-mapped content as experiment
+                // pages, and this is the query that has to read them back (#37005).
+                query: '+working:true +identifier:(page-1 page-2 page-3 page-orphan)',
                 // Not the page count: ES holds a document per identifier *and* language, so a
                 // page-count limit truncated the response on any multilingual site.
                 limit: 4 * PAGE_LOOKUP_LANGUAGE_HEADROOM
@@ -244,7 +314,7 @@ describe('DotExperimentsListStore', () => {
         });
 
         it('should warn when the lookup does not cover every page asked for', () => {
-            const warn = jest.spyOn(console, 'warn').mockImplementation();
+            const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
             // page-2, page-3 and page-orphan are requested but absent from the response.
             contentSearchGet.mockReturnValue(
                 of({
@@ -305,11 +375,78 @@ describe('DotExperimentsListStore', () => {
             expect(contentSearchGet).not.toHaveBeenCalled();
             expect(store.status()).toBe(ComponentStatus.LOADED);
         });
+
+        /**
+         * The filtered page resolves too, whether or not it has experiments (#37005, FR-021c).
+         *
+         * The lookup is keyed on the pageIds the experiments carry, so a page arriving from UVE
+         * with none of its own was never asked for — and the screen has no url for it. Everything
+         * the page filter renders is built from that url: the chip's label, the empty state's
+         * copy, and the link back to the editor. Without it the chip claimed the page was gone
+         * and the back-link vanished, on the one page where creating the first experiment is the
+         * whole point of the visit.
+         */
+        describe('with a page filter', () => {
+            beforeEach(() => {
+                queryParams = { pageId: 'page-unused' };
+            });
+
+            it('should resolve the filtered page alongside the experiments own pages', () => {
+                initStore();
+
+                expect(contentSearchGet).toHaveBeenCalledWith({
+                    query: '+working:true +identifier:(page-1 page-2 page-3 page-orphan page-unused)',
+                    limit: 5 * PAGE_LOOKUP_LANGUAGE_HEADROOM
+                });
+            });
+
+            it('should not ask for it twice when an experiment already uses it', () => {
+                queryParams = { pageId: 'page-1' };
+
+                initStore();
+
+                expect(contentSearchGet).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        query: '+working:true +identifier:(page-1 page-2 page-3 page-orphan)'
+                    })
+                );
+            });
+
+            it('should still run the lookup when the site has no experiments at all', () => {
+                // Otherwise the first experiment on a page is created from a screen that cannot
+                // name the page it is about.
+                getAllUnfiltered.mockReturnValue(of([]));
+
+                initStore();
+
+                expect(contentSearchGet).toHaveBeenCalledWith({
+                    query: '+working:true +identifier:(page-unused)',
+                    limit: PAGE_LOOKUP_LANGUAGE_HEADROOM
+                });
+            });
+
+            it('should not count the filtered page in the shortfall warning', () => {
+                // The warning is about experiments being hidden by a page that would not resolve.
+                // An unresolvable *filtered* page hides none — a genuinely deleted page is the one
+                // case the chip's fallback copy is for — so counting it would inflate a number
+                // whose whole job is to say how much of the list is missing.
+                const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+                initStore();
+
+                // `page-orphan` is the fixture's real shortfall; `page-unused` is the filter.
+                expect(warn).toHaveBeenCalledWith(
+                    expect.stringContaining('resolved 3 of 4 pages'),
+                    ['page-orphan']
+                );
+                warn.mockRestore();
+            });
+        });
     });
 
     describe('analytics health gate', () => {
         it('should check the analytics health before requesting the list', () => {
-            const dispatchSpy = jest.spyOn(Dispatcher.prototype, 'dispatch');
+            const dispatchSpy = vi.spyOn(Dispatcher.prototype, 'dispatch');
 
             initStore();
 
@@ -336,7 +473,7 @@ describe('DotExperimentsListStore', () => {
         it.each([HealthStatusTypes.NOT_CONFIGURED, HealthStatusTypes.CONFIGURATION_ERROR])(
             'should flag %s as misconfigured and never query the experiments',
             (healthStatus) => {
-                healthCheck.mockReturnValue(of(healthStatus));
+                healthCheck.mockReturnValue(of(healthResponse(healthStatus)));
 
                 initStore();
 
@@ -370,6 +507,67 @@ describe('DotExperimentsListStore', () => {
             expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
             expect(getAllUnfiltered).not.toHaveBeenCalled();
         });
+
+        describe('limited-mode computed signals (isLimitedMode, isSlotUsed, showAnalyticsWarning)', () => {
+            it('should report isLimitedMode=false when tier=FULL', () => {
+                healthCheck.mockReturnValue(of(healthResponse(HealthStatusTypes.OK, 'full')));
+                initStore();
+                expect(store.isLimitedMode()).toBe(false);
+            });
+
+            it('should report isLimitedMode=true when tier=LIMITED', () => {
+                healthCheck.mockReturnValue(
+                    of(healthResponse(HealthStatusTypes.OK, 'limited', false))
+                );
+                initStore();
+                expect(store.isLimitedMode()).toBe(true);
+            });
+
+            it('should report isSlotUsed=false when freeExperimentUsed=false', () => {
+                healthCheck.mockReturnValue(
+                    of(healthResponse(HealthStatusTypes.OK, 'limited', false))
+                );
+                initStore();
+                expect(store.isSlotUsed()).toBe(false);
+            });
+
+            it('should report isSlotUsed=true when freeExperimentUsed=true', () => {
+                healthCheck.mockReturnValue(
+                    of(healthResponse(HealthStatusTypes.OK, 'limited', true))
+                );
+                initStore();
+                expect(store.isSlotUsed()).toBe(true);
+            });
+
+            it('should report showAnalyticsWarning=false when App is configured', () => {
+                healthCheck.mockReturnValue(of(healthResponse(HealthStatusTypes.OK, 'full')));
+                initStore();
+                expect(store.showAnalyticsWarning()).toBe(false);
+            });
+
+            it('should report showAnalyticsWarning=true when App not configured', () => {
+                healthCheck.mockReturnValue(
+                    of(
+                        healthResponse(
+                            HealthStatusTypes.NOT_CONFIGURED,
+                            'limited',
+                            false,
+                            'analytics_disabled'
+                        )
+                    )
+                );
+                initStore();
+                expect(store.showAnalyticsWarning()).toBe(true);
+            });
+
+            it('should report all signals as falsy while health check is pending', () => {
+                healthCheck.mockReturnValue(NEVER);
+                initStore();
+                expect(store.isLimitedMode()).toBe(false);
+                expect(store.isSlotUsed()).toBe(false);
+                expect(store.showAnalyticsWarning()).toBe(false);
+            });
+        });
     });
 
     describe('load failure', () => {
@@ -401,7 +599,7 @@ describe('DotExperimentsListStore', () => {
         interface CrudCase {
             action: string;
             requested: EventCreator<string, DotExperiment>;
-            serviceCall: jest.Mock;
+            serviceCall: Mock;
         }
 
         const CRUD_CASES: CrudCase[] = [
@@ -480,6 +678,184 @@ describe('DotExperimentsListStore', () => {
             currentSiteId.set(null);
 
             expect(store.siteScopedExperiments()).toEqual([]);
+        });
+    });
+
+    /**
+     * The page filter (#37005, US3, FR-021a-c, SC-009).
+     *
+     * With the entry-point switch on, the UVE Experiments item lands here already narrowed to the
+     * page the editor came from. The narrowing is by `pageId` **equality**, sits between the site
+     * scoping and the status/goal counts, and is clearable back to the full site-wide list.
+     */
+    describe('page filter', () => {
+        beforeEach(() => initStore());
+
+        it('should show every experiment when no page filter is set', () => {
+            expect(store.pageAssetFilteredExperiments()).toEqual(store.searchedExperiments());
+        });
+
+        // FR-021b, many: `page-1` carries a draft and an archived experiment. Both belong to the
+        // page, so both survive this stage — the status selection is a later, separate narrowing.
+        it('should keep every experiment on the filtered page', () => {
+            hydrateWithPage('page-1');
+
+            expect(store.pageAssetFilteredExperiments()).toEqual([
+                EXPERIMENT_DRAFT,
+                EXPERIMENT_ARCHIVED
+            ]);
+        });
+
+        // FR-021b, one.
+        it('should keep a single experiment when the page has one', () => {
+            hydrateWithPage('page-2');
+
+            expect(store.pageAssetFilteredExperiments()).toEqual([EXPERIMENT_RUNNING]);
+        });
+
+        // FR-021b, zero. Distinct from "no filter": an empty result is a real answer here.
+        it('should keep nothing when the page has no experiments', () => {
+            hydrateWithPage('page-with-none');
+
+            expect(store.pageAssetFilteredExperiments()).toEqual([]);
+        });
+
+        it('should be cleared by a null page, revealing the full site-wide list', () => {
+            hydrateWithPage('page-2');
+            expect(store.pageAssetFilteredExperiments()).toEqual([EXPERIMENT_RUNNING]);
+
+            hydrateWithPage(null);
+
+            expect(store.pageAssetFilteredExperiments()).toEqual(store.searchedExperiments());
+        });
+
+        // Site scoping comes first, so a page on another site cannot be filtered *into* the list.
+        it('should not resurrect a page from another site', () => {
+            hydrateWithPage('page-3');
+
+            expect(store.pageAssetFilteredExperiments()).toEqual([]);
+        });
+
+        /**
+         * The same narrowing spelled the way the Universal Visual Editor spells a page. `?url=` is
+         * the shape of every UVE address, and one pasted into the list used to be ignored — a
+         * request for one page answered with every experiment on the site.
+         */
+        describe('by path', () => {
+            const hydrateWithPath = (pageUrl: string | null) =>
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.hydratedFromUrl({
+                        ...VIEW_STATE_DEFAULTS,
+                        selectedPageUrl: pageUrl
+                    })
+                );
+
+            it('should keep the experiments of the page at that path', () => {
+                hydrateWithPath('/checkout');
+
+                expect(store.pageAssetFilteredExperiments()).toEqual([EXPERIMENT_RUNNING]);
+            });
+
+            // The point of the change: not widening. A path nothing resolves to narrows to
+            // nothing, which is what lets the empty state say so.
+            it('should keep nothing when no page has that path', () => {
+                hydrateWithPath('/asdasd');
+
+                expect(store.pageAssetFilteredExperiments()).toEqual([]);
+            });
+
+            it('should accept a path spelled without its leading slash', () => {
+                hydrateWithPath('checkout');
+
+                expect(store.pageAssetFilteredExperiments()).toEqual([EXPERIMENT_RUNNING]);
+            });
+
+            // Site scoping still comes first, exactly as it does for the identifier.
+            it('should not resurrect a page from another site', () => {
+                hydrateWithPath('/remote');
+
+                expect(store.pageAssetFilteredExperiments()).toEqual([]);
+            });
+
+            it('should be dropped by filtersCleared, revealing the site-wide list', () => {
+                hydrateWithPath('/asdasd');
+                expect(store.pageAssetFilteredExperiments()).toEqual([]);
+
+                dispatcher.dispatch(dotExperimentsListPageEvents.filtersCleared());
+
+                expect(store.pageAssetFilteredExperiments()).toEqual(store.searchedExperiments());
+            });
+        });
+
+        // Same rule as every other filter here: a narrowing that could leave the current page
+        // empty has to send the user back to page 1.
+        it('should reset paging when the page filter changes', () => {
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.pageChanged({
+                    page: 3,
+                    perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE
+                })
+            );
+            expect(store.page()).toBe(3);
+
+            hydrateWithPage('page-1');
+
+            expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+        });
+
+        // The chip counts describe the narrowed set, which only holds if the page filter is
+        // applied before they are computed.
+        it('should narrow the status counts to the filtered page', () => {
+            hydrateWithPage('page-2');
+
+            expect(store.statusCounts()[DotExperimentStatus.RUNNING]).toBe(1);
+            expect(store.statusCounts()[DotExperimentStatus.DRAFT]).toBe(0);
+        });
+    });
+
+    /**
+     * The case that separates this filter from the free-text one.
+     *
+     * `/about` is a prefix of `/about-us`, and the text filter matches the Page column as a
+     * substring — so pre-filling it with the path would have shown both. Equality on `pageId`
+     * shows one. Without this test the cheaper implementation looks correct, and it only fails
+     * on sites where one path prefixes another.
+     *
+     * Its own `describe` with its own `beforeEach`, for two reasons. The dataset is local
+     * rather than added to the shared fixtures, which are read by tests that would have their
+     * counts shifted by it. And `createService()` returns the same DI instance when called
+     * twice inside one test, so re-mocking mid-test and calling `initStore()` again is a
+     * no-op — the arrangement has to be in place before the store is built.
+     */
+    describe("a page whose path is a prefix of another page's", () => {
+        const onAbout = buildExperiment({ id: 'exp-about', pageId: 'page-about' });
+        const onAboutUs = buildExperiment({ id: 'exp-about-us', pageId: 'page-about-us' });
+
+        beforeEach(() => {
+            getAllUnfiltered.mockReturnValue(of([onAbout, onAboutUs]));
+            contentSearchGet.mockReturnValue(
+                of({
+                    jsonObjectView: {
+                        contentlets: [
+                            buildPageContentlet('page-about', '/about', CURRENT_SITE_ID),
+                            buildPageContentlet('page-about-us', '/about-us', CURRENT_SITE_ID)
+                        ]
+                    }
+                })
+            );
+            initStore();
+        });
+
+        it('should not match the page whose path merely starts with the same text', () => {
+            hydrateWithPage('page-about');
+
+            expect(store.pageAssetFilteredExperiments()).toEqual([onAbout]);
+        });
+
+        it('should still match the longer path when that is the one filtered to', () => {
+            hydrateWithPage('page-about-us');
+
+            expect(store.pageAssetFilteredExperiments()).toEqual([onAboutUs]);
         });
     });
 
@@ -749,7 +1125,7 @@ describe('DotExperimentsListStore', () => {
 
         it('should hydrate before the first fetch is requested', () => {
             queryParams = { page: '3' };
-            const dispatchSpy = jest.spyOn(Dispatcher.prototype, 'dispatch');
+            const dispatchSpy = vi.spyOn(Dispatcher.prototype, 'dispatch');
 
             initStore();
 
@@ -801,7 +1177,7 @@ describe('DotExperimentsListStore', () => {
 
     describe('site switch while analytics is misconfigured', () => {
         it('should not request the list', () => {
-            healthCheck.mockReturnValue(of(HealthStatusTypes.NOT_CONFIGURED));
+            healthCheck.mockReturnValue(of(healthResponse(HealthStatusTypes.NOT_CONFIGURED)));
             initStore();
 
             expect(getAllUnfiltered).not.toHaveBeenCalled();
@@ -1024,6 +1400,692 @@ describe('DotExperimentsListStore', () => {
             dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('page-9'));
 
             expect(store.searchedExperiments().map(({ id }) => id)).toEqual(['exp-x']);
+        });
+    });
+    /**
+     * T021/T022 — the list store inside the UVE panel (#37478).
+     *
+     * Panel mode is the presence of `DotExperimentsPanelStore`, nothing else: the portlet never
+     * provides it, the UVE shell always does. The tests below are written as the **absence** of
+     * behaviour on purpose. Every one of these four concerns already works, so a happy-path
+     * assertion passes whether or not the branch exists; what has to be proved is that the
+     * address-bound half of this store goes quiet when it is rendered beside a page it does not
+     * own.
+     */
+    describe('creator filter (#37307)', () => {
+        it('should show every experiment while no creator is selected', () => {
+            initStore();
+
+            expect(store.selectedCreators()).toEqual([]);
+            expect(store.filteredExperiments().map(({ id }) => id)).toEqual(
+                store.goalFilteredExperiments().map(({ id }) => id)
+            );
+        });
+
+        it('should keep only the experiments created by the selected user', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+
+            expect(store.filteredExperiments().map(({ id }) => id)).toEqual(['exp-draft']);
+        });
+
+        it('should widen to either creator when two are selected (OR within the filter)', () => {
+            initStore();
+
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1', 'dotcms.org.2'])
+            );
+
+            expect(
+                store
+                    .filteredExperiments()
+                    .map(({ id }) => id)
+                    .sort()
+            ).toEqual(['exp-draft', 'exp-running']);
+        });
+
+        it('should narrow together with the other filters (AND across filters)', () => {
+            initStore();
+
+            // Creator 1 owns the draft; asking for RUNNING as well leaves nothing, which is the
+            // conjunction and not an accident of either filter on its own.
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.RUNNING])
+            );
+
+            expect(store.filteredExperiments()).toEqual([]);
+        });
+
+        it('should simply not match an experiment whose creator is no longer a user', () => {
+            initStore();
+
+            // A selection nobody in the loaded set was created by. The filter must empty the list
+            // rather than throw or fall back to showing everything.
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['deleted.user.id']));
+
+            expect(store.filteredExperiments()).toEqual([]);
+            expect(store.totalRecords()).toBe(0);
+        });
+
+        it('should return to the first page when the selection changes', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 2, perPage: 20 }));
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+
+            expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+        });
+
+        it('should leave the status and goal counts untouched (FR-050)', () => {
+            initStore();
+
+            const statusCountsBefore = { ...store.statusCounts() };
+            const goalCountsBefore = { ...store.goalCounts() };
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+
+            // The counts describe the set the chips are offered against, which is snapshotted
+            // before any selection narrowing — so picking a creator must not move the numbers
+            // beside the statuses and goals the user has not picked.
+            expect(store.statusCounts()).toEqual(statusCountsBefore);
+            expect(store.goalCounts()).toEqual(goalCountsBefore);
+        });
+    });
+
+    describe('schedule filter (#37307)', () => {
+        /** Epoch of a local calendar day at a given hour, which is what the payload carries. */
+        const instantOn = (year: number, month: number, day: number, hour = 12) =>
+            new Date(year, month - 1, day, hour).getTime();
+
+        const scheduled = (id: string, startDate: number | null): DotExperiment =>
+            buildExperiment({
+                id,
+                pageId: 'page-1',
+                name: id,
+                scheduling: { startDate, endDate: null }
+            });
+
+        /** No `scheduling` object at all: a draft nobody has dated yet. */
+        const NO_SCHEDULE = buildExperiment({
+            id: 'no-schedule',
+            pageId: 'page-1',
+            name: 'no-schedule',
+            scheduling: null
+        });
+
+        /** A `scheduling` object carrying no start: the other shape of "not scheduled" (FR-022). */
+        const NO_START = scheduled('no-start', null);
+
+        const ids = () =>
+            store
+                .filteredExperiments()
+                .map(({ id }) => id)
+                .sort();
+
+        const loadScheduled = (experiments: DotExperiment[]) => {
+            getAllUnfiltered.mockReturnValue(of([...experiments, NO_SCHEDULE, NO_START]));
+            initStore();
+        };
+
+        const pick = (from: string | null, to: string | null) =>
+            dispatcher.dispatch(dotExperimentsListPageEvents.scheduleChanged({ from, to }));
+
+        it('should show every experiment while no period is picked', () => {
+            loadScheduled([scheduled('old', instantOn(2020, 1, 1))]);
+
+            expect(store.scheduleFrom()).toBeNull();
+            expect(store.scheduleTo()).toBeNull();
+            expect(ids()).toEqual(['no-schedule', 'no-start', 'old']);
+        });
+
+        /**
+         * FR-020, FR-021. Both bounds inclusive and covering whole days, which is the difference
+         * between a filter picked as dates and the instants it compares: a start at nine in the
+         * morning on the closing day is inside the period, and midnight on the day after is not.
+         */
+        it('should include an experiment scheduled on either bound', () => {
+            loadScheduled([
+                scheduled('on-from', instantOn(2026, 6, 1, 9)),
+                scheduled('on-to', instantOn(2026, 6, 30, 23)),
+                scheduled('day-before', instantOn(2026, 5, 31, 23)),
+                scheduled('day-after', instantOn(2026, 7, 1, 0))
+            ]);
+
+            pick('2026-06-01', '2026-06-30');
+
+            expect(ids()).toEqual(['on-from', 'on-to']);
+        });
+
+        it('should match a period of a single day at any hour of it', () => {
+            // The case that fails outright if the bounds are taken as midnight-to-midnight.
+            loadScheduled([
+                scheduled('early', instantOn(2026, 6, 15, 0)),
+                scheduled('late', instantOn(2026, 6, 15, 23)),
+                scheduled('next-day', instantOn(2026, 6, 16, 0))
+            ]);
+
+            pick('2026-06-15', '2026-06-15');
+
+            expect(ids()).toEqual(['early', 'late']);
+        });
+
+        /**
+         * FR-020. An open upper bound is what the calendar produces after the first click, and it
+         * is a useful filter on its own — an experiment scheduled but not yet started is the one a
+         * user asking "what is coming" most wants to see.
+         */
+        it('should constrain only one side when a bound is left open', () => {
+            loadScheduled([
+                scheduled('before', instantOn(2026, 5, 1)),
+                scheduled('after', instantOn(2026, 7, 1)),
+                scheduled('far-future', instantOn(2030, 1, 1))
+            ]);
+
+            pick('2026-06-01', null);
+
+            expect(ids()).toEqual(['after', 'far-future']);
+        });
+
+        it('should constrain only the upper side when the lower bound is open', () => {
+            loadScheduled([
+                scheduled('before', instantOn(2026, 5, 1)),
+                scheduled('after', instantOn(2026, 7, 1))
+            ]);
+
+            pick(null, '2026-06-01');
+
+            expect(ids()).toEqual(['before']);
+        });
+
+        it('should exclude both shapes of "not scheduled" while a period is in force', () => {
+            // FR-022, and the two shapes are not interchangeable: `scheduling` may be absent
+            // altogether, or present carrying a null `startDate`. Reading `startDate` off the
+            // first shape throws; treating the second as scheduled lets it through every period.
+            loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+            pick('2026-06-01', '2026-06-30');
+
+            expect(ids()).not.toContain('no-schedule');
+            expect(ids()).not.toContain('no-start');
+            expect(ids()).toEqual(['inside']);
+        });
+
+        it('should bring the unscheduled back when the period is cleared', () => {
+            loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+            pick('2026-06-01', '2026-06-30');
+            pick(null, null);
+
+            expect(ids()).toEqual(['inside', 'no-schedule', 'no-start']);
+        });
+
+        describe('an inverted range (FR-021a)', () => {
+            it('should report itself as unusable', () => {
+                loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+                pick('2026-06-30', '2026-06-01');
+
+                expect(store.isScheduleRangeUnusable()).toBe(true);
+            });
+
+            it('should not be applied, so the table is not silently emptied', () => {
+                // It matches nothing by construction. Applied, the screen would read as a site
+                // with no experiments scheduled then, and the reason would be invisible.
+                loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+                pick('2026-06-30', '2026-06-01');
+
+                expect(ids()).toEqual(['inside', 'no-schedule', 'no-start']);
+            });
+
+            it('should report a usable period as usable', () => {
+                loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+                pick('2026-06-01', '2026-06-30');
+
+                expect(store.isScheduleRangeUnusable()).toBe(false);
+            });
+
+            it('should not call a single bound inverted', () => {
+                loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+                pick('2026-06-30', null);
+
+                expect(store.isScheduleRangeUnusable()).toBe(false);
+            });
+        });
+
+        it('should narrow together with the other filters (AND across filters)', () => {
+            loadScheduled([
+                scheduled('june-draft', instantOn(2026, 6, 15)),
+                {
+                    ...scheduled('june-running', instantOn(2026, 6, 15)),
+                    status: DotExperimentStatus.RUNNING
+                }
+            ]);
+
+            pick('2026-06-01', '2026-06-30');
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.RUNNING])
+            );
+
+            expect(ids()).toEqual(['june-running']);
+        });
+
+        it('should leave the status and goal counts untouched (FR-027, FR-050)', () => {
+            loadScheduled([scheduled('old', instantOn(2020, 1, 1))]);
+
+            const statusCountsBefore = { ...store.statusCounts() };
+            const goalCountsBefore = { ...store.goalCounts() };
+
+            pick('2026-06-01', '2026-06-30');
+
+            // The counts describe the set the chips are offered against, snapshotted before any
+            // selection narrowing — so picking a period must not move the numbers beside the
+            // statuses and goals the user has not chosen.
+            expect(store.statusCounts()).toEqual(statusCountsBefore);
+            expect(store.goalCounts()).toEqual(goalCountsBefore);
+        });
+
+        it('should return to the first page when the period changes', () => {
+            loadScheduled([scheduled('inside', instantOn(2026, 6, 15))]);
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 2, perPage: 20 }));
+            pick('2026-06-01', '2026-06-30');
+
+            expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+        });
+    });
+
+    describe('clearing every filter at once', () => {
+        /**
+         * The no-results state's way out is one intent, so it is one event. The point of the
+         * single transition is that nothing downstream ever sees a half-cleared view state: the
+         * row set and the address are both derived from state, and four dispatches would derive
+         * them four times from four different partial answers.
+         */
+        it('should widen every narrowing the screen can set', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('nothing-matches'));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.SCHEDULED])
+            );
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.BOUNCE_RATE])
+            );
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.scheduleChanged({
+                    from: '2026-06-01',
+                    to: '2026-06-30'
+                })
+            );
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.filtersCleared());
+
+            expect(store.filter()).toBe('');
+            expect(store.selectedStatuses()).toEqual([]);
+            expect(store.selectedGoals()).toEqual([]);
+            expect(store.selectedCreators()).toEqual([]);
+            expect(store.scheduleFrom()).toBeNull();
+            expect(store.scheduleTo()).toBeNull();
+        });
+
+        it('should return to the first page', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 3, perPage: 20 }));
+            dispatcher.dispatch(dotExperimentsListPageEvents.filtersCleared());
+
+            expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+        });
+
+        /**
+         * `languageId` exists only to return the editor to the version of the narrowed page they
+         * came from, so it is meaningless once that page is no longer the scope — and leaving it
+         * behind would put a stale language in the address.
+         */
+        it('should drop the page narrowing and its return context', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.filtersCleared());
+
+            expect(store.selectedPageId()).toBeNull();
+            expect(store.selectedPageUrl()).toBeNull();
+            expect(store.languageId()).toBeNull();
+        });
+
+        /**
+         * #37307. The panel re-scope resets the view state by naming each field, so a narrowing
+         * added later is only reset if someone remembers to add it — `selectedCreators` was
+         * missed exactly that way. Carrying it across would answer the new page's question with
+         * the creator the user picked on the page they left.
+         */
+        it('should also clear a creator selection when the panel re-scopes', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.scheduleChanged({
+                    from: '2026-06-01',
+                    to: '2026-06-30'
+                })
+            );
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.scopedToPage({ pageId: PANEL_PAGE_ID, languageId: 1 })
+            );
+
+            expect(store.selectedCreators()).toEqual([]);
+            expect(store.scheduleFrom()).toBeNull();
+            expect(store.scheduleTo()).toBeNull();
+        });
+    });
+
+    /**
+     * The filter bar's Clear all is a different button from the empty state's, and it is on
+     * screen while the list is *working*. Sharing `filtersCleared` with the dead-end button
+     * made it widen a page narrowing the user never set and cannot restore.
+     */
+    describe('clearing only what the chips own', () => {
+        it('should widen every narrowing a chip or the search box can set', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('nothing-matches'));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.SCHEDULED])
+            );
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.BOUNCE_RATE])
+            );
+            dispatcher.dispatch(dotExperimentsListPageEvents.creatorsChanged(['dotcms.org.1']));
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.scheduleChanged({
+                    from: '2026-06-01',
+                    to: '2026-06-30'
+                })
+            );
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.chipFiltersCleared());
+
+            expect(store.filter()).toBe('');
+            expect(store.selectedStatuses()).toEqual([]);
+            expect(store.selectedGoals()).toEqual([]);
+            expect(store.selectedCreators()).toEqual([]);
+            expect(store.scheduleFrom()).toBeNull();
+            expect(store.scheduleTo()).toBeNull();
+        });
+
+        it('should return to the first page', () => {
+            initStore();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageChanged({ page: 3, perPage: 20 }));
+            dispatcher.dispatch(dotExperimentsListPageEvents.chipFiltersCleared());
+
+            expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+        });
+
+        const hydrateNarrowedPage = () =>
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.hydratedFromUrl({
+                    ...VIEW_STATE_DEFAULTS,
+                    selectedPageId: 'page-1',
+                    selectedPageUrl: '/blog/post',
+                    languageId: 2
+                })
+            );
+
+        /**
+         * The whole reason this event exists. `pageId` is the scope the screen itself hands out
+         * and takes back — `pageFilterParams` writes it on all four ways out of the list and
+         * `listReturnParams` reads it on the way back — so a toolbar button visible whenever any
+         * chip is set must not drop it. Clearing a scope that *matched nothing* is still offered,
+         * by the empty state's own button (`filtersCleared`).
+         */
+        it('should keep the page scope and its return context', () => {
+            initStore();
+
+            hydrateNarrowedPage();
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.SCHEDULED])
+            );
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.chipFiltersCleared());
+
+            expect(store.selectedPageId()).toBe('page-1');
+            expect(store.languageId()).toBe(2);
+            expect(store.selectedStatuses()).toEqual([]);
+        });
+
+        /**
+         * The path narrowing is not the same thing, despite sitting beside it in state. Nothing in
+         * the app writes `?url=` — it only ever arrives typed or pasted, and is then echoed back
+         * on every change — so it is a filter the user applied, not a scope handed down. Keeping
+         * it here would leave it unremovable: the empty state's button is the only other way out
+         * and it appears only once the path matches nothing.
+         */
+        it('should widen a page path the address brought', () => {
+            initStore();
+
+            hydrateNarrowedPage();
+
+            dispatcher.dispatch(dotExperimentsListPageEvents.chipFiltersCleared());
+
+            expect(store.selectedPageUrl()).toBeNull();
+        });
+    });
+
+    describe('panel mode (#37478)', () => {
+        let panelPageId: WritableSignal<string | null>;
+        let panelLanguageId: WritableSignal<number | null>;
+
+        beforeEach(() => {
+            panelPageId = signal<string | null>(PANEL_PAGE_ID);
+            panelLanguageId = signal<number | null>(1);
+            // The editor's address is never empty: it carries the page's url, its language and
+            // whatever view settings UVE persists. If the store still hydrates from the route in
+            // panel mode, it reads the editor's params as its own view state — so the fixture
+            // has to look like a real editor address, not a bare one.
+            queryParams = {
+                url: '/blog/post',
+                language_id: '2',
+                filter: 'from-the-editor-address',
+                page: '3'
+            };
+        });
+
+        const initPanelStore = () => {
+            spectator = createService({
+                providers: [
+                    {
+                        provide: DotExperimentsPanelStore,
+                        useValue: {
+                            pageId: panelPageId,
+                            languageId: panelLanguageId
+                        }
+                    }
+                ]
+            });
+            store = spectator.service;
+            dispatcher = spectator.inject(Dispatcher);
+            spectator.flushEffects();
+        };
+
+        describe('the address is not its own', () => {
+            it('should not hydrate its view state from the route', () => {
+                initPanelStore();
+
+                expect(store.filter()).toBe('');
+                expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+            });
+
+            it('should not subscribe to Location for popstate', () => {
+                initPanelStore();
+
+                expect(locationSubscribe).not.toHaveBeenCalled();
+            });
+
+            /**
+             * The one that would be invisible in the editor until someone pressed Back. Every
+             * view-state change is dispatched here, because a mirror that writes on *any* of them
+             * is a mirror that writes.
+             */
+            it('should write nothing to the address on any view-state change', () => {
+                initPanelStore();
+                locationGo.mockClear();
+
+                dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('alpha'));
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.RUNNING])
+                );
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.BOUNCE_RATE])
+                );
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.pageChanged({ page: 2, perPage: 20 })
+                );
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.sortChanged({
+                        orderBy: 'name',
+                        direction: 'ASC'
+                    })
+                );
+                spectator.flushEffects();
+
+                expect(locationGo).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('what it asks the server for', () => {
+            it('should request only this page and never the unfiltered list', () => {
+                initPanelStore();
+
+                expect(getAll).toHaveBeenCalledWith(PANEL_PAGE_ID);
+                expect(getAllUnfiltered).not.toHaveBeenCalled();
+            });
+
+            /**
+             * The bulk lookup exists to give the Page column its url and the site filter its host.
+             * The panel drops the column (FR-009) and cannot use the filter (below), so the
+             * request has no consumer left — and it is the most expensive thing this store does.
+             */
+            it('should skip the bulk page lookup', () => {
+                initPanelStore();
+
+                expect(contentSearchGet).not.toHaveBeenCalled();
+            });
+
+            it('should still wait for the analytics health gate before fetching', () => {
+                healthCheck.mockReturnValue(NEVER);
+
+                initPanelStore();
+
+                expect(getAll).not.toHaveBeenCalled();
+            });
+        });
+
+        /**
+         * T022 — the trap in research §1.4, and the reason this is its own test.
+         *
+         * `siteScopedExperiments` fails closed: an experiment whose `pageId` is absent from
+         * `pageInfoByPageId` is dropped. In panel mode nothing ever fills that map, so leaving the
+         * narrowing in place would empty the list — and an empty list reads as "this page has no
+         * experiments", which is exactly the misreport FR-029 and SC-008 exist to prevent. The
+         * narrowing must be **bypassed**, not merely left unfed.
+         */
+        it('should list the page experiments even though nothing resolves their site', () => {
+            initPanelStore();
+
+            expect(store.pageInfoByPageId()).toEqual({});
+            expect(store.siteScopedExperiments().map(({ id }) => id)).toEqual([
+                EXPERIMENT_DRAFT.id,
+                EXPERIMENT_ARCHIVED.id
+            ]);
+        });
+
+        describe('following the editor', () => {
+            /**
+             * FR-034b. The editor navigated to another page, so every answer on screen describes a
+             * page that is no longer there. Narrowing kept across that change silently describes
+             * the new page's experiments with the old page's question.
+             */
+            it('should reset the whole view state and refetch when the editor changes page', () => {
+                initPanelStore();
+                dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('alpha'));
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.statusesChanged([DotExperimentStatus.RUNNING])
+                );
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.goalsChanged([GOAL_TYPES.BOUNCE_RATE])
+                );
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.pageChanged({ page: 4, perPage: 20 })
+                );
+                dispatcher.dispatch(
+                    dotExperimentsListPageEvents.sortChanged({ orderBy: 'name', direction: 'ASC' })
+                );
+                getAll.mockClear();
+
+                panelPageId.set('page-2');
+                spectator.flushEffects();
+
+                expect(store.filter()).toBe('');
+                expect(store.selectedStatuses()).toEqual(DEFAULT_EXPERIMENTS_LIST_STATUSES);
+                expect(store.selectedGoals()).toEqual(DEFAULT_EXPERIMENTS_LIST_GOALS);
+                expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+                expect(store.perPage()).toBe(DEFAULT_EXPERIMENTS_LIST_PER_PAGE);
+                expect(store.orderBy()).toBe(DEFAULT_EXPERIMENTS_LIST_ORDER_BY);
+                expect(store.direction()).toBe(DEFAULT_EXPERIMENTS_LIST_DIRECTION);
+                expect(getAll).toHaveBeenCalledWith('page-2');
+            });
+
+            /**
+             * FR-034a / D10. An experiment belongs to a page, not to a language version of one, so
+             * the same request would come back with the same answer. The language is return
+             * context for the variant round trip and nothing else — refetching on it would be
+             * wasted, and resetting on it would throw away the editor's place for no change.
+             */
+            it('should ignore a language change entirely', () => {
+                initPanelStore();
+                dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('alpha'));
+                getAll.mockClear();
+
+                panelLanguageId.set(2);
+                spectator.flushEffects();
+
+                expect(getAll).not.toHaveBeenCalled();
+                expect(store.filter()).toBe('alpha');
+            });
+        });
+    });
+
+    /**
+     * FR-042. The portlet is not a second consumer of a shared branch — it is the behaviour that
+     * already shipped, and every one of the four concerns the panel switches off must still fire
+     * here. Without this the panel branch could be made to pass by removing the behaviour outright.
+     */
+    describe('portlet mode keeps every address-bound concern (FR-042)', () => {
+        it('should hydrate, subscribe, write and narrow by site exactly as before', () => {
+            queryParams = { filter: 'from-url', page: '2' };
+
+            initStore();
+
+            expect(store.filter()).toBe('from-url');
+            expect(locationSubscribe).toHaveBeenCalled();
+            expect(getAllUnfiltered).toHaveBeenCalledTimes(1);
+            expect(contentSearchGet).toHaveBeenCalled();
+
+            locationGo.mockClear();
+            dispatcher.dispatch(dotExperimentsListPageEvents.filterChanged('beta'));
+            spectator.flushEffects();
+
+            expect(locationGo).toHaveBeenCalled();
+            // Site narrowing still drops the experiment living on another site's page.
+            expect(store.siteScopedExperiments().map(({ id }) => id)).not.toContain(
+                EXPERIMENT_OTHER_SITE.id
+            );
         });
     });
 });

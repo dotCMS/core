@@ -34,6 +34,7 @@
 <%@ page import="com.dotmarketing.portlets.browser.BrowserUtil" %>
 <%@ page import="com.dotmarketing.portlets.folders.model.Folder" %>
 <%@ page import="com.dotcms.contenttype.transform.field.LegacyFieldTransformer" %>
+<%@ page import="com.dotcms.contenttype.transform.field.FieldVariableTransformer" %>
 <%@ page import="static com.dotmarketing.portlets.contentlet.business.ContentletAPI.dnsRegEx" %>
 <%@ page import="io.vavr.control.Try" %>
 <%@ page import="com.dotcms.contenttype.model.field.HostFolderField" %>
@@ -41,8 +42,9 @@
 <%@ page import="com.dotcms.contenttype.model.field.JSONField" %>
 <%@ page import="org.apache.commons.lang.StringEscapeUtils" %>
 <%@ page import="com.fasterxml.jackson.databind.ObjectMapper" %>
-<%@ page import="com.fasterxml.jackson.datatype.jdk8.Jdk8Module" %>
+<%@ page import="com.dotcms.rest.api.v1.DotObjectMapperProvider" %>
 <%@ page import="com.dotmarketing.util.ConfigUtils" %>
+<%@ page import="com.liferay.util.Xss" %>
 
 
 <%
@@ -54,8 +56,8 @@
     final com.dotcms.contenttype.model.field.Field newField = LegacyFieldTransformer.from(field);
 
     Object value = (Object) request.getAttribute("value");
-    ObjectMapper mapper = new ObjectMapper(); // Create an ObjectMapper instance
-    mapper.registerModule(new Jdk8Module());
+    // Its output is written inside script elements below, so it uses the mapper whose text can sit there
+    final ObjectMapper mapper = DotObjectMapperProvider.getInstance().getScriptEmbeddableObjectMapper();
     String hint = UtilMethods.isSet(field.getHint()) ? field.getHint() : null;
     boolean isReadOnly = field.isReadOnly();
     String defaultValue = field.getDefaultValue() != null ? field
@@ -242,7 +244,7 @@
                 Logger.error(this.getClass(), e.getMessage());
             }
 
-            List<FieldVariable> acceptTypes = APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+            List<FieldVariable> acceptTypes = new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
             String fieldVariablesContent = StringEscapeUtils.escapeJavaScript(mapper.writeValueAsString(acceptTypes));
             String blockEditorTag = ConfigUtils.isFeatureFlagOn("FEATURE_FLAG_NEW_BLOCK_EDITOR")
                     ? "dotcms-block-editor"
@@ -343,7 +345,7 @@
                 textValue = textValue.replaceAll("<", "&lt;");
                 textValue = textValue.replaceAll(">", "&gt;");
             }
-            List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
+            List<FieldVariable> fieldVariables=new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
             for(FieldVariable fv : fieldVariables){
                 if(fv.getKey().equals( com.dotmarketing.util.WebKeys.TEXT_EDITOR)){
                     keyValue = fv.getValue();
@@ -473,7 +475,7 @@
 
                 boolean dragAndDrop = true;
 
-                List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
+                List<FieldVariable> fieldVariables=new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
                     for(FieldVariable fv : fieldVariables){
                         if (fv.getKey().equals("dragAndDrop")) {
                             dragAndDrop = !"false".equalsIgnoreCase(fv.getValue());
@@ -735,7 +737,7 @@
                     Logger.error(this.getClass(), e.getMessage());
                 }
 
-                List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+                List<FieldVariable> acceptTypes=new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
                 String fieldVariablesContent = mapper.writeValueAsString(acceptTypes); // Field Variables
 
                 for(FieldVariable fv : acceptTypes){
@@ -802,14 +804,34 @@
                      * This is a workaround to get the contentlet from the API
                      * because there is no way to get the same contentlet the AP retreive from the dwr call.
                      */
-                    fetch('/api/v1/content/<%=inode%>', {
-                        method: 'GET',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        }
-                    })
-                    .then(response => response.json())
-                    .then(({ entity: contentlet }) => {
+                    const inode = "<%=inode%>";
+
+                    /*
+                     * When creating content there is no inode yet, and '/api/v1/content/' matches no
+                     * route, so the request can only ever 404. Skip it entirely rather than handle the
+                     * failure: the body of that 404 is not reliably JSON (it varies with page mode and
+                     * the SIMPLE_ERROR_PAGES_FOR_BACKEND setting), so parsing it is what used to leave
+                     * the field spinning forever.
+                     */
+                    const contentletPromise = inode
+                        ? fetch('/api/v1/content/' + inode, {
+                              method: 'GET',
+                              headers: {
+                                  'Content-Type': 'application/json'
+                              }
+                          })
+                          .then(response => {
+                              if (!response.ok) {
+                                  throw new Error('HTTP ' + response.status);
+                              }
+
+                              return response.json();
+                          })
+                          .then(({ entity }) => entity)
+                        : Promise.resolve({});
+
+                    contentletPromise
+                    .then((contentlet) => {
                         const field = document.querySelector('#binary-field-input-<%=field.getFieldContentlet()%>ValueField');
                         const variable = "<%=field.getVelocityVarName()%>";
 
@@ -817,14 +839,14 @@
                         try {
                             fieldData = {
                                 ...(<%=jsonField%>),
-                                hint: '<%=hint%>',
+                                hint: '<%=Xss.encodeForJavaScript(hint)%>',
                                 variable,
                                 fieldVariables: <%=fieldVariablesContent%>
                             }
                         } catch (error) {
                             fieldData = {
                                  ...(<%=jsonField%>),
-                                 hint: '<%=hint%>',
+                                 hint: '<%=Xss.encodeForJavaScript(hint)%>',
                                  variable
                             }
                             console.warn('Error parsing the field variables', error);
@@ -886,8 +908,11 @@
                             imageEditor.execute();
                         });
                     })
-                    .catch(() => {
-                        binaryFieldContainer.innerHTMl = '<div class="callOutBox">Error loading the binary field</div>';
+                    .catch((error) => {
+                        // Logged on purpose: this field failing silently is what made the
+                        // original defect so expensive to diagnose on customer environments.
+                        console.error('Error loading the binary field', error);
+                        binaryFieldContainer.innerHTML = '<div class="callOutBox">Error loading the binary field</div>';
                     })
                 })();
             </script>
@@ -1007,7 +1032,7 @@
     <%
        String maxFileLength="-1";
        String accept="*/*";
-       List<FieldVariable> acceptTypes=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, false);
+       List<FieldVariable> acceptTypes=new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
        for(FieldVariable fv : acceptTypes){
            if("accept".equalsIgnoreCase(fv.getKey())){
                accept = fv.getValue();
@@ -1416,7 +1441,7 @@
 
                        if(add) {
                        %>
-            addSelectedCat<%=counter%>("<%= cat.getInode() %>", "<%= cat.getCategoryName() %>");
+            addSelectedCat<%=counter%>("<%= cat.getInode() %>", <%= com.dotmarketing.util.json.JSONObject.quote(cat.getCategoryName()) %>);
             <%}
          }
        }
@@ -1512,7 +1537,7 @@
         keyValueDataRaw.append("}");
         dotKeyValueDataRaw.append("}");
 
-        List<FieldVariable> fieldVariables=APILocator.getFieldAPI().getFieldVariablesForField(field.getInode(), user, true);
+        List<FieldVariable> fieldVariables=new FieldVariableTransformer(LegacyFieldTransformer.from(field).fieldVariables()).oldFieldList();
         String whiteListKeyValues = "";
         for(FieldVariable fv : fieldVariables) {
             if (fv.getKey().equals("whiteList")) {
@@ -1593,11 +1618,11 @@
 
             // Escape chars and set value to hidden input
             var dotKeyValueHiddenIput = document.getElementById('<%=field.getVelocityVarName()%>');
-            dotKeyValueHiddenIput.value = formatToJsonData(escapeQuoteAndBackSlash("<%=keyValueDataRaw%>"));
+            dotKeyValueHiddenIput.value = formatToJsonData(escapeQuoteAndBackSlash("<%=Xss.encodeForJavaScript(keyValueDataRaw.toString())%>"));
 
             var dotKeyValue = document.querySelector('#<%=field.getVelocityVarName()%>KeyValue');
             dotKeyValue.uniqueKeys = "true";
-            dotKeyValue.value = "<%=dotKeyValueDataRaw.toString()%>";
+            dotKeyValue.value = "<%=Xss.encodeForJavaScript(dotKeyValueDataRaw.toString())%>";
             dotKeyValue.disabled = '<%=field.isReadOnly()%>';
             dotKeyValue.whiteList = '<%=whiteListKeyValues%>';
             dotKeyValue.formKeyLabel = '<%= LanguageUtil.get(pageContext, "Key") %>'

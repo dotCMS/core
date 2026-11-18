@@ -1,5 +1,5 @@
-import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 
@@ -20,11 +20,11 @@ describe('UveIframeMessengerService', () => {
 
         // Create a mock iframe window with postMessage spy
         mockIframeWindow = {
-            postMessage: jest.fn()
+            postMessage: vi.fn()
         } as unknown as Window;
 
         // Mock console.warn to avoid noise in tests
-        jest.spyOn(console, 'warn').mockImplementation(jest.fn());
+        vi.spyOn(console, 'warn').mockImplementation(vi.fn());
     });
 
     describe('setIframeWindow and getIframeWindow', () => {
@@ -146,6 +146,36 @@ describe('UveIframeMessengerService', () => {
                 {
                     name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_INSIDE_IFRAME,
                     direction: 'down'
+                },
+                '*'
+            );
+        });
+    });
+
+    // #38575: during a drag the page scrolls itself at the velocity the editor sends.
+    describe('scrollAtVelocity', () => {
+        it.each([12, -40, 0])('should ask the page to scroll at %d px per frame', (velocity) => {
+            service.setIframeWindow(mockIframeWindow);
+
+            service.scrollAtVelocity(velocity);
+
+            expect(mockIframeWindow.postMessage).toHaveBeenCalledWith(
+                { name: 'uve-scroll-velocity', velocity },
+                '*'
+            );
+        });
+    });
+
+    describe('scrollToSection', () => {
+        it('should ask the page to scroll to the section with that index', () => {
+            service.setIframeWindow(mockIframeWindow);
+
+            service.scrollToSection(2);
+
+            expect(mockIframeWindow.postMessage).toHaveBeenCalledWith(
+                {
+                    name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_TO_SECTION,
+                    sectionIndex: 2
                 },
                 '*'
             );

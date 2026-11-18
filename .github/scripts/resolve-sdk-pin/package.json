@@ -1,0 +1,14 @@
+{
+  "name": "@dotcms/resolve-sdk-pin",
+  "version": "1.0.0",
+  "description": "Resolves which @dotcms/* version a release branch's example apps must be pinned to, and refuses rather than guesses when it cannot",
+  "private": true,
+  "main": "resolve.js",
+  "bin": "cli.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}

@@ -470,8 +470,9 @@ public class FolderAPIImpl implements FolderAPI  {
 
 			// recursivily delete
 			for (Folder childFolder : folderChildren) {
-				// sub deletes use system user - if a user has rights to parent
-				// permission (checked above) they can delete to children
+				// sub deletes use the same calling user, not a system user - each subfolder
+				// re-checks that user's own EDIT/EDIT_PERMISSIONS rights (see the top of this
+				// method), never inherited implicitly from the parent's own check
 				if (Logger.isDebugEnabled(getClass())) {
 					Logger.debug(getClass(), "Deleting the folder " + childFolder.getPath());
 				}
@@ -1080,11 +1081,17 @@ public class FolderAPIImpl implements FolderAPI  {
 		return folderFactory.getSubFoldersTitleSort(folder);
 	}
 
+	/**
+	 * Moves a folder, with everything it contains, under another folder. The user needs READ and
+	 * EDIT permission on the folder being moved and CAN_ADD_CHILDREN permission on the new parent.
+	 *
+	 * @return {@code false} if the new parent already contains a folder with the same name
+	 * @throws DotSecurityException if the user lacks one of the permissions above
+	 */
+	@Override
 	@WrapInTransaction
 	public boolean move(Folder folderToMove, Folder newParentFolder,User user,boolean respectFrontEndPermissions)throws DotDataException, DotSecurityException {
-		if (!permissionAPI.doesUserHavePermission(folderToMove, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to read Folder " + folderToMove.getPath());
-		}
+		checkCanMove(folderToMove, user, respectFrontEndPermissions);
 
 		if (!permissionAPI.doesUserHavePermission(newParentFolder, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
 			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to add to Folder " + newParentFolder.getName());
@@ -1104,16 +1111,21 @@ public class FolderAPIImpl implements FolderAPI  {
 		return newFolder.isPresent();
 	}
 
+	/**
+	 * Moves a folder, with everything it contains, to the root of a site. The user needs READ and
+	 * EDIT permission on the folder being moved and CAN_ADD_CHILDREN permission on the site.
+	 *
+	 * @return {@code false} if the site root already contains a folder with the same name
+	 * @throws DotSecurityException if the user lacks one of the permissions above
+	 */
+	@Override
 	@WrapInTransaction
 	public boolean move(final Folder folderToMove,
 						final Host newParentHost,
 						final User user,
 						final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
 
-		if (!permissionAPI.doesUserHavePermission(folderToMove, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
-
-			throw new DotSecurityException("User " + (user.getUserId() != null?user.getUserId():BLANK) + " does not have permission to read Folder " + folderToMove.getPath());
-		}
+		checkCanMove(folderToMove, user, respectFrontEndPermissions);
 
 		if (!permissionAPI.doesUserHavePermission(newParentHost, PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontEndPermissions)) {
 
@@ -1131,6 +1143,25 @@ public class FolderAPIImpl implements FolderAPI  {
 		}
 
 		return newFolder.isPresent();
+	}
+
+	/**
+	 * Checks that the user may move the given folder: READ and EDIT permission on it are required.
+	 *
+	 * @throws DotDataException if the permissions cannot be loaded
+	 * @throws DotSecurityException if the user lacks READ or EDIT permission on the folder
+	 */
+	private void checkCanMove(final Folder folderToMove, final User user,
+			final boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException {
+		final String userId = user.getUserId() != null ? user.getUserId() : BLANK;
+		if (!permissionAPI.doesUserHavePermission(folderToMove, PermissionAPI.PERMISSION_READ, user, respectFrontEndPermissions)) {
+			throw new DotSecurityException("User " + userId + " does not have permission to read Folder " + folderToMove.getPath());
+		}
+		if (!permissionAPI.doesUserHavePermission(folderToMove, PermissionAPI.PERMISSION_EDIT, user, respectFrontEndPermissions)) {
+			Logger.warn(this, "FolderAPI.move: user " + userId + " cannot move folder "
+					+ folderToMove.getPath() + " because EDIT permission on the folder is required");
+			throw new DotSecurityException("User " + userId + " does not have permission to edit Folder " + folderToMove.getPath());
+		}
 	}
 
 	@Override

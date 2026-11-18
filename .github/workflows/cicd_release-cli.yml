@@ -170,12 +170,13 @@ jobs:
           digest-mismatch: error
           path: ${{ github.workspace }}/artifacts
           pattern: cli-artifacts-*
+      # JReleaser creates the GitHub release (jreleaser.yml no longer has an
+      # Artifactory uploader). The CLI artifacts — runner jar and native zips —
+      # are published to the S3 repository by the step below.
       - uses: ./.github/actions/core-cicd/maven-job
         env:
           JRELEASER_GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           JRELEASER_PROJECT_VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
-          JRELEASER_ARTIFACTORY_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
-          JRELEASER_ARTIFACTORY_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
           JRELEASER_DRY_RUN: ${{ github.event.inputs.dry-run || 'false' }}
         with:
           cleanup-runner: true
@@ -184,6 +185,46 @@ jobs:
           maven-args: "-Prelease validate -DartifactsDir=artifacts -Dm2Dir=$HOME/.m2/repository -Djreleaser.git.root.search=true -pl :dotcms-cli-parent -Dmaven.plugin.validation=VERBOSE"
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
           version: ${{ needs.precheck.outputs.RELEASE_VERSION }}
+
+      # The runner jar is consumed by tools/dotcms-cli/action; the native zips
+      # are the CLI distributions previously uploaded to Artifactory. Publish
+      # both to the S3 repository at the same com/dotcms/dotcms-cli/<v>/ path.
+      # The maven-job above restored maven-repo into ~/.m2 and downloaded
+      # cli-artifacts-* into ./artifacts.
+      # Run even if JReleaser fails: S3 is now the authoritative location.
+      # Skipped for dry-runs so a workflow_dispatch with dry-run=true never
+      # writes to the public repo. Fails if the runner jar is missing.
+      - name: 'Publish CLI artifacts to S3'
+        if: always() && github.event.inputs.dry-run != 'true'
+        env:
+          MAVEN_BUNNY_RW_USERNAME: ${{ secrets.MAVEN_BUNNY_RW_USERNAME }}
+          MAVEN_BUNNY_RW_PASSWORD: ${{ secrets.MAVEN_BUNNY_RW_PASSWORD }}
+          MAVEN_S3_ENDPOINT: ${{ vars.MAVEN_S3_ENDPOINT }}
+          MAVEN_S3_REGION: ${{ vars.MAVEN_S3_REGION }}
+          MAVEN_S3_BUCKET: ${{ vars.MAVEN_S3_BUCKET }}
+          MAVEN_S3_PREFIX: ${{ vars.MAVEN_S3_PREFIX }}
+          MAVEN_S3_PUBLIC_URL: ${{ vars.MAVEN_S3_PUBLIC_URL }}
+          VERSION: ${{ needs.precheck.outputs.RELEASE_VERSION }}
+        run: |
+          echo "::group::Publish CLI artifacts to S3"
+          JAR="$HOME/.m2/repository/com/dotcms/dotcms-cli/${VERSION}/dotcms-cli-${VERSION}-runner.jar"
+          if [[ ! -f "$JAR" ]]; then
+            echo "::error::CLI runner jar not found at ${JAR}"
+            exit 1
+          fi
+          ./.github/scripts/publish-to-s3/publish.sh file \
+            --source "$JAR" \
+            --key "com/dotcms/dotcms-cli/${VERSION}/dotcms-cli-${VERSION}-runner.jar"
+
+          shopt -s nullglob
+          for zip in artifacts/cli-artifacts-*/*.zip; do
+            base="$(basename "$zip")"
+            echo "::notice::Publishing ${base}"
+            ./.github/scripts/publish-to-s3/publish.sh file \
+              --source "$zip" \
+              --key "com/dotcms/dotcms-cli/${VERSION}/${base}"
+          done
+          echo "::endgroup::"
 
   # Publish NPM package
   publish-npm-package:

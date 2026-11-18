@@ -1,12 +1,17 @@
 package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.company.CompanyLogoPath;
+import com.dotcms.rest.api.v1.asset.bulkdelete.FolderBulkDeleteHelper;
+import com.dotcms.rest.api.v1.asset.bulkduplicate.FolderBulkDuplicateHelper;
+import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadHelper;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.license.LicenseManager;
+import com.dotcms.util.LanguageBundleVersion;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
@@ -66,9 +71,17 @@ public class ConfigurationHelper implements Serializable {
 	public static final String DISPLAY_SERVER_ID = "displayServerId";
 	public static final String LEVEL_NAME = "levelName";
 	public static final String LICENSE_LEVEL = "level";
+	public static final String BULK_UPLOAD = "bulkUpload";
+	public static final String BULK_UPLOAD_MAX_FILES = "maxFiles";
+	public static final String BULK_UPLOAD_MAX_TOTAL_BYTES = "maxTotalBytes";
+	public static final String FOLDER_BULK_DELETE = "folderBulkDelete";
+	public static final String FOLDER_BULK_DELETE_MAX_PATHS = "maxPaths";
+	public static final String FOLDER_BULK_DUPLICATE = "folderBulkDuplicate";
+	public static final String FOLDER_BULK_DUPLICATE_MAX_PATHS = "maxPaths";
 	public static final String RELEASE_INFO = "releaseInfo";
 	public static final String VERSION = "version";
 	public static final String BUILD_DATE = "buildDate";
+	public static final String LANGUAGE_BUNDLE_VERSION = "languageBundleVersion";
 	public static final String EMAIL_REGEX = "emailRegex";
 	public static final String BACKGROUND_COLOR = "background";
 	public static final String PRIMARY_COLOR = "primary";
@@ -80,6 +93,7 @@ public class ConfigurationHelper implements Serializable {
 	public static final String CLUSTER = "cluster";
 	public static final String CLUSTER_ID = "clusterId";
 	public static final String KEY_DIGEST = "companyKeyDigest";
+	public static final String HEARTBEAT_ENABLED = "heartbeatEnabled";
 	public static final String LOGOS = "logos";
 	public static final String LOGIN_SCREEN_LOGO = "loginScreen";
 	public static final String NAV_BAR_LOGO = "navBar";
@@ -110,10 +124,10 @@ public class ConfigurationHelper implements Serializable {
 		String primaryColor = "NA";
 		String secondaryColor = "NA";
 		String loginScreenLogo = Try.of(() -> APILocator.getCompanyAPI().getDefaultCompany().getCity()).getOrElse("NA");
-		loginScreenLogo = UtilMethods.isSet(loginScreenLogo) && loginScreenLogo.startsWith("/dA") ? loginScreenLogo : "NA";
+		loginScreenLogo = CompanyLogoPath.forwardPath(loginScreenLogo).orElse("NA");
 		String navBarLogo = Try.of(() -> APILocator.getCompanyAPI().getDefaultCompany().getState()).getOrElse("NA");
-		navBarLogo = LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level &&
-				UtilMethods.isSet(navBarLogo) && navBarLogo.startsWith("/dA") ? navBarLogo : "NA";
+		navBarLogo = LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level
+				? CompanyLogoPath.forwardPath(navBarLogo).orElse("NA") : "NA";
 
 	    try {
 			backgroundColor = APILocator.getCompanyAPI().getDefaultCompany().getSize();
@@ -166,6 +180,45 @@ public class ConfigurationHelper implements Serializable {
 						LOGIN_SCREEN_LOGO,loginScreenLogo,
 						NAV_BAR_LOGO,navBarLogo
 				)
+		));
+
+		map.put(LANGUAGE_BUNDLE_VERSION, LanguageBundleVersion.get());
+
+		// The bulk upload ceilings, so the client can name the limit instead of saying
+		// "fewer". Two things follow from a number the author can read: a refusal becomes one
+		// informed retry rather than a descending series of guesses, and the client can stop an
+		// over-ceiling batch IN THE FILE CHOOSER instead of uploading gigabytes to be told no —
+		// which is the courtesy check the contract already describes and which could not be built
+		// while the value was unreachable.
+		// Read through BulkUploadHelper's own constants rather than repeating the keys and
+		// defaults: a value advertised here that disagrees with the one enforced there would be
+		// worse than not advertising it at all — the client would refuse batches the server
+		// accepts, or pass batches it refuses.
+		map.put(BULK_UPLOAD, Map.of(
+				BULK_UPLOAD_MAX_FILES,
+				Config.getIntProperty(BulkUploadHelper.MAX_FILES_KEY,
+						BulkUploadHelper.DEFAULT_MAX_FILES),
+				BULK_UPLOAD_MAX_TOTAL_BYTES,
+				Config.getLongProperty(BulkUploadHelper.MAX_TOTAL_BYTES_KEY,
+						BulkUploadHelper.DEFAULT_MAX_TOTAL_BYTES)
+		));
+
+		// The bulk folder delete ceiling (#37063, FR-038), same reasoning as the bulk upload
+		// block above: read through FolderBulkDeleteHelper's own constants rather than repeating
+		// the key/default, so an advertised value can never disagree with the one enforced there.
+		map.put(FOLDER_BULK_DELETE, Map.of(
+				FOLDER_BULK_DELETE_MAX_PATHS,
+				Config.getIntProperty(FolderBulkDeleteHelper.MAX_PATHS_KEY,
+						FolderBulkDeleteHelper.DEFAULT_MAX_PATHS)
+		));
+
+		// The bulk folder duplicate ceiling (#37062), advertised the same way and for the same
+		// reason: read through FolderBulkDuplicateHelper's own constants, so the value a client
+		// sees can never disagree with the one the endpoint enforces.
+		map.put(FOLDER_BULK_DUPLICATE, Map.of(
+				FOLDER_BULK_DUPLICATE_MAX_PATHS,
+				Config.getIntProperty(FolderBulkDuplicateHelper.MAX_PATHS_KEY,
+						FolderBulkDuplicateHelper.DEFAULT_MAX_PATHS)
 		));
 
 	    map.put(LANGUAGES, APILocator.getLanguageAPI().getLanguages());
@@ -256,17 +309,21 @@ public class ConfigurationHelper implements Serializable {
 	}
 
 	/**
-	 * We only need to show the Key if's an authenticated user
-	 * Since it's kind of sensitive.
-	 * @param user
-	 * @return
+	 * Builds the {@code cluster} section of the app configuration. Everyone gets the cluster id.
+	 * Authenticated back-end users also get the company key digest, which is sensitive, and
+	 * whether the server heartbeat is enabled ({@code ENABLE_SERVER_HEARTBEAT}), which the
+	 * Network portlet uses to decide whether it can show server status.
+	 *
+	 * @param user the current user, or {@code null}
+	 * @return the cluster section
 	 */
-	Map<String,String> clusterMap(final User user){
+	Map<String,Object> clusterMap(final User user){
 		final boolean validAuthenticatedUser = null != user && !user.isAnonymousUser() && user.isBackendUser();
-		final Map<String,String> clusterMap = new HashMap<>();
+		final Map<String,Object> clusterMap = new HashMap<>();
 		 if(validAuthenticatedUser){
 			 clusterMap.put(CLUSTER_ID, getClusterId());
 			 clusterMap.put(KEY_DIGEST, keyDigest());
+			 clusterMap.put(HEARTBEAT_ENABLED, Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true));
 		 } else {
 			 clusterMap.put(
 					 CLUSTER_ID, getClusterId()

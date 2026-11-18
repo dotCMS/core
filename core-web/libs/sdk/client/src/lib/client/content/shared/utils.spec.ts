@@ -1,5 +1,3 @@
-/// <reference types="jest" />
-
 import {
     buildConhostWithSystemHost,
     sanitizeQueryForContentType,

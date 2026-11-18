@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { Component, Input } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
@@ -26,8 +27,8 @@ export class DotCMSBlockEditorRendererCustomComponent {
     @Input() node: BlockEditorNode | undefined;
 }
 
-jest.mock('@dotcms/uve', () => ({
-    getUVEState: jest.fn()
+vi.mock('@dotcms/uve', () => ({
+    getUVEState: vi.fn()
 }));
 
 /** Wraps `content` in a valid `doc` node so the native component renders it. */
@@ -37,7 +38,7 @@ const doc = (content: BlockEditorNode[]): BlockEditorNode => ({
 });
 
 describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () => {
-    const getUVEStateMock = getUVEState as jest.Mock;
+    const getUVEStateMock = getUVEState as Mock;
 
     let spectator: Spectator<DotCMSBlockEditorRendererNativeComponent>;
     const createComponent = createComponentFactory({
@@ -50,7 +51,7 @@ describe('DotCMSBlockEditorRendererNativeComponent — semantic dispatch', () =>
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     const render = (content: BlockEditorNode[]) => {

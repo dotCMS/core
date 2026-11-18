@@ -1,6 +1,6 @@
-import { expect, it, describe, beforeEach } from '@jest/globals';
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mocked, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { DotAppsService, DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus, dialogAction, DotApp, DotAppsSite } from '@dotcms/dotcms-models';
@@ -27,7 +27,7 @@ const mockSite: DotAppsSite = {
 
 describe('DotAppsImportExportDialogStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotAppsImportExportDialogStore>>;
-    let dotAppsService: jest.Mocked<DotAppsService>;
+    let dotAppsService: Mocked<DotAppsService>;
 
     const createService = createServiceFactory({
         service: DotAppsImportExportDialogStore,
@@ -35,8 +35,8 @@ describe('DotAppsImportExportDialogStore', () => {
             {
                 provide: DotAppsService,
                 useValue: {
-                    exportConfiguration: jest.fn(),
-                    importConfiguration: jest.fn()
+                    exportConfiguration: vi.fn(),
+                    importConfiguration: vi.fn()
                 }
             },
             {
@@ -50,7 +50,7 @@ describe('DotAppsImportExportDialogStore', () => {
 
     beforeEach(() => {
         spectator = createService();
-        dotAppsService = spectator.inject(DotAppsService) as jest.Mocked<DotAppsService>;
+        dotAppsService = spectator.inject(DotAppsService) as Mocked<DotAppsService>;
     });
 
     describe('Initial State', () => {
@@ -272,7 +272,7 @@ describe('DotAppsImportExportDialogStore', () => {
         });
 
         it('should emit on importSuccess$ when import succeeds', () => {
-            const successSpy = jest.fn();
+            const successSpy = vi.fn();
             spectator.service.importSuccess$.subscribe(successSpy);
 
             spectator.service.openImport();
@@ -287,7 +287,7 @@ describe('DotAppsImportExportDialogStore', () => {
         });
 
         it('should NOT emit on importSuccess$ when import fails', () => {
-            const successSpy = jest.fn();
+            const successSpy = vi.fn();
             spectator.service.importSuccess$.subscribe(successSpy);
 
             spectator.service.openImport();

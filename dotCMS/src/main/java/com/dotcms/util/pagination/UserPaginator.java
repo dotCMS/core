@@ -1,15 +1,19 @@
 package com.dotcms.util.pagination;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.api.v1.system.role.SmallRoleView;
 import com.dotcms.rest.api.v1.user.UserResourceHelper;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -19,6 +23,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -31,7 +37,17 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
 
     private final UserAPI userAPI;
     private final RoleAPI roleAPI;
+    private final Supplier<LayoutAPI> layoutAPI;
     private final UserResourceHelper helper = UserResourceHelper.getInstance();
+
+    /**
+     * Keys of the user data map that every caller receives for each listed user: enough to identify the user and
+     * display it (pickers, filters, assignment lists). The remaining keys of {@link User#toMap()} -- account state
+     * such as last login, failed attempts, flags and dates -- are only included for callers who can administer
+     * users (see {@link #canReadFullProfile(User)}).
+     */
+    public static final Set<String> DIRECTORY_KEYS = Set.of("userId", "id", "firstName", "lastName", "fullName",
+            "name", "emailAddress", "emailaddress", "gravitar", "type");
 
     public static final String QUERY_PARAM = "query";
     public static final String INCLUDE_ANONYMOUS = "includeanonymous";
@@ -40,17 +56,62 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
     public static final String PERMISSION_PARAM = "permission";
     public static final String ROLES_PARAM = "roles";
     public static final String ROLE_KEY_PARAM = "roleKey";
+    public static final String ROLE_ID_PARAM = "roleId";
     public static final String REMOVE_CURRENT_USER_PARAM = "removeCurrentUser";
     public static final String REQUEST_PASSWORD_PARAM = "requestPassword";
+    /** Opt-in flag: when {@code true}, every item carries a {@link #ROLES_PARAM} list of its direct roles. */
+    public static final String INCLUDE_ROLES_PARAM = "includeRoles";
 
     @VisibleForTesting
-    public UserPaginator(UserAPI userApi, RoleAPI roleAPI){
+    public UserPaginator(final UserAPI userApi, final RoleAPI roleAPI) {
+        this(userApi, roleAPI, APILocator::getLayoutAPI);
+    }
+
+    /**
+     * Creates a paginator with every collaborator supplied by the caller.
+     *
+     * @param userApi   The {@link UserAPI} that lists and counts users.
+     * @param roleAPI   The {@link RoleAPI} that resolves roles.
+     * @param layoutAPI Supplies the {@link LayoutAPI} used to tell whether the calling user can administer users;
+     *                  resolved lazily so that callers who are CMS Administrators never need it.
+     */
+    @VisibleForTesting
+    public UserPaginator(final UserAPI userApi, final RoleAPI roleAPI, final Supplier<LayoutAPI> layoutAPI) {
         this.userAPI = userApi;
         this.roleAPI = roleAPI;
+        this.layoutAPI = layoutAPI;
     }
 
     public UserPaginator(){
         this(APILocator.getUserAPI(), APILocator.getRoleAPI());
+    }
+
+    /**
+     * Tells whether the calling user receives the full data map of every listed user, or only the
+     * {@link #DIRECTORY_KEYS}. The full profile goes to CMS Administrators and to users with access to the Users
+     * portlet, the portlet that displays the account-state fields; both the Angular {@link PortletID#USERS} id and
+     * the old screen's {@link PortletID#USERS_LEGACY} id count, so a user-manager on either screen sees the full list.
+     * <p>This matches the legacy Users-portlet DWR calls, which gate on the Users portlet alone. It is, by design, a
+     * lower bar than the one the single-user endpoints in {@code UserResource} ({@code findUserById}, the
+     * {@code includeRoles} option) apply -- those also require the Roles portlet -- so a caller holding the Users
+     * portlet but not the Roles portlet sees the full list here, yet cannot read an individual user there.</p>
+     * <p>CMS Administrators short-circuit before the {@link LayoutAPI} supplier is ever resolved; only non-admin
+     * callers trigger a portlet lookup.</p>
+     *
+     * @param caller The user requesting the list; {@code null} is treated as a caller without privileges.
+     *
+     * @return {@code true} if every key of {@link User#toMap()} is returned for each listed user.
+     *
+     * @throws DotDataException An error occurred when resolving the caller's portlet access.
+     */
+    private boolean canReadFullProfile(final User caller) throws DotDataException {
+        if (null == caller) {
+            return false;
+        }
+        if (caller.isAdmin()) {
+            return true;
+        }
+        return this.layoutAPI.get().doesUserHaveAccessToUsersPortlet(caller);
     }
 
     /**
@@ -75,11 +136,16 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
         try {
             final List<Role> roles = (List<Role>) extraParams.get(ROLES_PARAM);
             final UserAPI.FilteringParams filteringParams = new UserAPI.FilteringParams.Builder().build(extraParams);
-            final List<Map<String, Object>> usersMap;
+            final boolean includeRoles = (boolean) extraParams.getOrDefault(INCLUDE_ROLES_PARAM, false);
+            final String usersRootRoleId = includeRoles ? this.usersRootRoleId() : null;
+            final boolean fullProfile = this.canReadFullProfile(user);
+            final List<Map<String, Object>> usersMap = new ArrayList<>();
             if (UtilMethods.isSet(extraParams.get(ASSET_INODE_PARAM)) && UtilMethods.isSet(extraParams.get(PERMISSION_PARAM))) {
                 final List<User> userList = helper.getUsersByAssetAndPermissionType(filter, offset, limit,
                         extraParams.get(ASSET_INODE_PARAM).toString(), extraParams.get(PERMISSION_PARAM).toString());
-                usersMap = userList.stream().map(this::userToMap).collect(Collectors.toList());
+                for (final User userItem : userList) {
+                    usersMap.add(this.toItem(userItem, null, includeRoles, usersRootRoleId, fullProfile));
+                }
             } else {
                 final List<User> users = userAPI.getUsersByName(filter, roles, offset, limit, filteringParams);
                 if ((boolean) CollectionsUtils.getMapValue(extraParams, REMOVE_CURRENT_USER_PARAM, false)) {
@@ -88,8 +154,9 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
                 }
                 final List<String> adminRoleIds = (boolean) extraParams.getOrDefault(REQUEST_PASSWORD_PARAM, false) ?
                                                      collectAdminRolesIfAny() : new ArrayList<>();
-                usersMap =
-                        users.stream().map(userItem -> this.addRequestPasswordAttr(userItem, adminRoleIds)).collect(Collectors.toList());
+                for (final User userItem : users) {
+                    usersMap.add(this.toItem(userItem, adminRoleIds, includeRoles, usersRootRoleId, fullProfile));
+                }
             }
             final PaginatedArrayList<Map<String, Object>> result = new PaginatedArrayList<>();
             result.addAll(usersMap);
@@ -130,14 +197,79 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
     }
 
     /**
-     * Utility method that transforms a {@link User} object into its data map.
+     * Builds the paginated item for a User: its data map, the optional {@link #REQUEST_PASSWORD_PARAM} flag and,
+     * when requested, its direct Roles under the {@link #ROLES_PARAM} key. Role loading is deliberately kept out of
+     * {@link #addRequestPasswordAttr(User, List)} so that a role-lookup failure surfaces as an error instead of
+     * silently turning the item into an empty map.
      *
-     * @param user The {@link User} object.
+     * @param user            The {@link User} being transformed.
+     * @param adminRoleIds    The optional CMS Administrator Role IDs used to compute {@link #REQUEST_PASSWORD_PARAM}.
+     * @param includeRoles    If {@code true}, the item carries the User's direct Roles.
+     * @param usersRootRoleId The ID of the {@code cms_users} root Role, used to leave personal Roles out; may be
+     *                        {@code null}, in which case no Role is excluded.
+     * @param fullProfile     If {@code false}, the item keeps only the {@link #DIRECTORY_KEYS} of the User's data
+     *                        map (plus {@link #REQUEST_PASSWORD_PARAM} when computed).
      *
-     * @return The {@link Map} containing the User data.
+     * @return The item {@link Map}.
+     *
+     * @throws DotDataException An error occurred when loading the User's Roles.
      */
-    private Map<String, Object> userToMap(final User user) {
-        return addRequestPasswordAttr(user, null);
+    private Map<String, Object> toItem(final User user, final List<String> adminRoleIds, final boolean includeRoles,
+                                       final String usersRootRoleId, final boolean fullProfile) throws DotDataException {
+        final Map<String, Object> userMap = this.addRequestPasswordAttr(user, adminRoleIds);
+        if (!fullProfile && !userMap.isEmpty()) {
+            userMap.keySet().removeIf(key -> !DIRECTORY_KEYS.contains(key) && !REQUEST_PASSWORD_PARAM.equals(key));
+        }
+        if (includeRoles && !userMap.isEmpty()) {
+            userMap.put(ROLES_PARAM, this.directRolesOf(user, usersRootRoleId));
+        }
+        return userMap;
+    }
+
+    /**
+     * Returns the Roles the given User holds <b>directly</b> -- i.e., rows in {@code users_cms_roles} -- as minimal
+     * {@link SmallRoleView}s. Roles reached through the hierarchy (children of a held Role) are excluded, and so is
+     * the User's own personal Role, mirroring the legacy Users portlet Roles tab ({@code UserAjax#getUserRoles}).
+     * <p>Personal Roles are recognized the way the legacy code did -- their ID-based {@code DBFQN} hangs under the
+     * {@code cms_users} root Role -- rather than through {@link Role#isUser()}, whose name-based {@code FQN} check
+     * would also swallow any ordinary root Role whose name happens to start with {@code "User"}.</p>
+     *
+     * @param user            The {@link User}.
+     * @param usersRootRoleId The ID of the {@code cms_users} root Role, or {@code null} to skip the exclusion.
+     *
+     * @return The list of direct Roles, possibly empty.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private List<SmallRoleView> directRolesOf(final User user, final String usersRootRoleId) throws DotDataException {
+        return this.roleAPI.loadRolesForUser(user.getUserId(), false).stream()
+                .filter(role -> !isPersonalRole(role, usersRootRoleId))
+                .map(role -> new SmallRoleView(role.getName(), role.getId(), role.getRoleKey(), false))
+                .collect(Collectors.toList());
+    }
+
+    private static boolean isPersonalRole(final Role role, final String usersRootRoleId) {
+        return UtilMethods.isSet(usersRootRoleId) && UtilMethods.isSet(role.getDBFQN())
+                && role.getDBFQN().contains(usersRootRoleId);
+    }
+
+    /**
+     * Resolves the ID of the {@code cms_users} root Role every personal Role hangs from. It is a system Role that is
+     * always present; should it be missing, a warning is logged and {@code null} is returned so the roles list is
+     * still produced, just without the personal-Role exclusion.
+     *
+     * @return The root Role ID, or {@code null} if it cannot be resolved.
+     *
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private String usersRootRoleId() throws DotDataException {
+        final Role usersRoot = this.roleAPI.loadRoleByKey(RoleAPI.USERS_ROOT_ROLE_KEY);
+        if (null == usersRoot || !UtilMethods.isSet(usersRoot.getId())) {
+            Logger.warn(this, "Users root role '" + RoleAPI.USERS_ROOT_ROLE_KEY
+                    + "' not found; personal roles will not be excluded from the users list");
+            return null;
+        }
+        return usersRoot.getId();
     }
 
     /**

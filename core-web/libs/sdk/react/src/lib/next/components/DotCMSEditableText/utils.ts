@@ -1,10 +1,10 @@
-import { IAllProps } from '@tinymce/tinymce-react';
-
 import { DotCMSBasicContentlet } from '@dotcms/types';
 import {
     __BASE_TINYMCE_CONFIG_WITH_NO_DEFAULT__,
     __DEFAULT_TINYMCE_CONFIG__
 } from '@dotcms/uve/internal';
+
+import type { IAllProps } from '@tinymce/tinymce-react';
 export type DOT_EDITABLE_TEXT_FORMAT = 'html' | 'text';
 
 export type DOT_EDITABLE_TEXT_MODE = 'minimal' | 'full' | 'plain';
@@ -39,9 +39,10 @@ export interface DotCMSEditableTextProps<T extends DotCMSBasicContentlet> {
     contentlet: T;
 }
 
+// The GPL license is set via the Editor's `licenseKey` prop, not here: the
+// tinymce-react integration forbids `license_key` inside `init`.
 const DEFAULT_TINYMCE_CONFIG: IAllProps['init'] = {
-    ...__DEFAULT_TINYMCE_CONFIG__,
-    licenseKey: 'gpl' // Using self-hosted license key
+    ...__DEFAULT_TINYMCE_CONFIG__
 };
 
 export const TINYMCE_CONFIG: {

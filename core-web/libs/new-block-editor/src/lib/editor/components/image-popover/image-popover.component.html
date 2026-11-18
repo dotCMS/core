@@ -21,10 +21,10 @@
 
             <div class="flex flex-col gap-1">
                 <label for="edit-img-title" class="text-sm font-medium text-gray-700">
-                    {{ 'dot.block.editor.dialog.image-properties.field.tooltip.label' | dm }}
+                    {{ 'dot.block.editor.dialog.image-properties.field.title.label' | dm }}
                 </label>
                 <p id="edit-img-title-hint" class="-mt-0.5 text-xs text-gray-400">
-                    {{ 'dot.block.editor.dialog.image-properties.field.tooltip.hint' | dm }}
+                    {{ 'dot.block.editor.dialog.image-properties.field.title.hint' | dm }}
                 </p>
                 <input
                     pInputText
@@ -32,7 +32,7 @@
                     type="text"
                     [formControl]="form.controls.title"
                     [placeholder]="
-                        'dot.block.editor.dialog.image-properties.field.tooltip.placeholder' | dm
+                        'dot.block.editor.dialog.image-properties.field.title.placeholder' | dm
                     "
                     aria-describedby="edit-img-title-hint"
                     class="w-full rounded-sm border border-gray-300 px-3 py-1.5 text-sm focus:border-indigo-500 focus:outline-none" />

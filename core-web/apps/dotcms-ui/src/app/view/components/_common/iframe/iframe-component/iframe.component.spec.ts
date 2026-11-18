@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { Subject } from 'rxjs';
+import { vi } from 'vitest';
 
-import { Component, DebugElement } from '@angular/core';
+import { Component, DebugElement, ElementRef } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -47,7 +48,7 @@ describe('IframeComponent', () => {
 
     let eventSubjects: Record<string, Subject<unknown>> = {};
     const mockDotEventsSocket = {
-        on: jest.fn((eventType: string) => {
+        on: vi.fn((eventType: string) => {
             if (!eventSubjects[eventType]) {
                 eventSubjects[eventType] = new Subject<unknown>();
             }
@@ -93,7 +94,7 @@ describe('IframeComponent', () => {
         dotIframeService = TestBed.inject(DotIframeService);
         dotUiColorsService = TestBed.inject(DotUiColorsService);
         dotRouterService = TestBed.inject(DotRouterService);
-        jest.spyOn(dotUiColorsService, 'setColors');
+        vi.spyOn(dotUiColorsService, 'setColors');
 
         fixture.componentRef.setInput('isLoading', false);
         comp.src = 'etc/etc?hello=world';
@@ -105,20 +106,20 @@ describe('IframeComponent', () => {
         beforeEach(() => {
             comp.iframeElement.nativeElement = {
                 location: {
-                    reload: jest.fn()
+                    reload: vi.fn()
                 },
                 contentWindow: {
-                    postMessage: jest.fn(),
+                    postMessage: vi.fn(),
                     document: {
                         body: {
                             innerHTML: '<html></html>'
                         },
                         querySelector: () => fakeHtmlEl,
-                        addEventListener: jest.fn(),
-                        removeEventListener: jest.fn()
+                        addEventListener: vi.fn(),
+                        removeEventListener: vi.fn()
                     },
-                    addEventListener: jest.fn(),
-                    removeEventListener: jest.fn()
+                    addEventListener: vi.fn(),
+                    removeEventListener: vi.fn()
                 }
             };
         });
@@ -155,7 +156,7 @@ describe('IframeComponent', () => {
                     }
                 },
                 location: {
-                    reload: jest.fn()
+                    reload: vi.fn()
                 }
             }
         };
@@ -169,7 +170,7 @@ describe('IframeComponent', () => {
     it('should call function in the iframe window', () => {
         comp.iframeElement.nativeElement = {
             contentWindow: {
-                fakeFunction: jest.fn(),
+                fakeFunction: vi.fn(),
                 document: {
                     body: {
                         innerHTML: '<html></html>'
@@ -201,6 +202,13 @@ describe('IframeComponent', () => {
         expect<any>(dotUiColorsService.setColors).toHaveBeenCalledWith(fakeHtmlEl);
     });
 
+    it('should ignore a colors reload while no iframe is rendered', () => {
+        comp.iframeElement = new ElementRef({ contentWindow: null });
+
+        expect(() => dotIframeService.reloadColors()).not.toThrow();
+        expect(dotUiColorsService.setColors).not.toHaveBeenCalled();
+    });
+
     describe('bind iframe events', () => {
         beforeEach(() => {
             comp.iframeElement.nativeElement = {
@@ -210,11 +218,11 @@ describe('IframeComponent', () => {
                             innerHTML: '<html></html>'
                         },
                         querySelector: () => fakeHtmlEl,
-                        addEventListener: jest.fn(),
-                        removeEventListener: jest.fn()
+                        addEventListener: vi.fn(),
+                        removeEventListener: vi.fn()
                     },
-                    addEventListener: jest.fn(),
-                    removeEventListener: jest.fn()
+                    addEventListener: vi.fn(),
+                    removeEventListener: vi.fn()
                 }
             };
         });
@@ -289,7 +297,7 @@ describe('IframeComponent', () => {
 
         it('should hide on click and call hide event', fakeAsync(() => {
             comp.showOverlay = true;
-            jest.spyOn(iframeOverlayService, 'hide');
+            vi.spyOn(iframeOverlayService, 'hide');
             fixture.detectChanges();
             let dotOverlayMask = de.query(By.css('dot-overlay-mask'));
             dotOverlayMask.triggerEventHandler('click', {});
@@ -305,7 +313,7 @@ describe('IframeComponent', () => {
     it('should refresh OSGI Plugis list on OSGI_BUNDLES_LOADED websocket event', fakeAsync(() => {
         comp.iframeElement.nativeElement = {
             contentWindow: {
-                getBundlesData: jest.fn(),
+                getBundlesData: vi.fn(),
                 document: {
                     body: {
                         innerHTML: '<html></html>'

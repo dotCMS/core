@@ -10,6 +10,7 @@ import {
     Component,
     Input,
     OnDestroy,
+    effect,
     inject
 } from '@angular/core';
 import { AbstractControl, UntypedFormControl, ValidationErrors } from '@angular/forms';
@@ -32,6 +33,11 @@ const NG_DEFAULT_VALIDATORS_ERRORS_MSG: Record<DefaultsNGValidatorsTypes, string
 @Component({
     selector: 'dot-field-validation-message',
     templateUrl: './dot-field-validation-message.component.html',
+    // The host must not be a box of its own: inside a `.field` (flex column, gap-1) an empty host
+    // still takes a flex slot, so a field that merely *can* show an error sat 3.5px lower than one
+    // that cannot. `contents` makes the `<small>` the flex item and leaves nothing behind when
+    // there is no error to show.
+    styles: ':host { display: contents; }',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [DotMessagePipe]
 })
@@ -80,6 +86,16 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
         }
     }
 
+    constructor() {
+        effect(() => {
+            this.dotMessageService.loadedBundleRevision?.();
+            if (this._field) {
+                this.errorMsg = this.getErrors(this._field.errors);
+                this.cd.markForCheck();
+            }
+        });
+    }
+
     ngOnDestroy(): void {
         this.destroy$.next(true);
         this.destroy$.complete();
@@ -92,8 +108,8 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
      * @param {ValidationErrors} errors
      * @private
      */
-    private getErrors(errors: ValidationErrors) {
-        let errorMsgs = [];
+    private getErrors(errors: ValidationErrors | null): string {
+        let errorMsgs: string[] = [];
         if (errors) {
             errorMsgs = [
                 ...this.getMsgDefaultValidators(errors),
@@ -101,7 +117,7 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
             ];
         }
 
-        return this.defaultMessage ? this.defaultMessage : errorMsgs.slice(0, 1)[0];
+        return this.defaultMessage || errorMsgs[0] || '';
     }
 
     private getMsgDefaultValidators(errors: ValidationErrors) {

@@ -153,6 +153,12 @@ import org.mockito.invocation.InvocationOnMock;
 @ApplicationScoped
 @RunWith(JUnit4WeldRunner.class)
 public class PageResourceTest {
+
+    /** A method, not a field: this class is a CDI bean, and Weld rejects public fields on normal-scoped beans. */
+    @org.junit.Rule
+    public com.dotcms.junit.SystemUserScopeRule systemUserScope() {
+        return new com.dotcms.junit.SystemUserScopeRule();
+    }
     private ContentletAPI esapi;
     private PageResource pageResource;
     private PageResource pageResourceWithHelper;
@@ -730,7 +736,7 @@ public class PageResourceTest {
 
     /**
      * methodToTest {@link PageResource#getPersonalizedPersonasOnPage(HttpServletRequest, HttpServletResponse, String, int, int, String, String, String, String, Boolean)}
-     * Given Scenario: Resuqest persona list with a limited user
+     * Given Scenario: Request the persona list with a limited user that can READ the site holding the page
      * ExpectedResult: Should respect front end roles when the parameter is set to true and not respect it when the
      * parameter is set to false
      */
@@ -748,6 +754,7 @@ public class PageResourceTest {
 
         final User user = new UserDataGen().nextPersisted();
         when(initDataObject.getUser()).thenReturn(user);
+        PageRenderTestUtil.grantPageReadOnSite(host, user);
 
         final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(1, host);
         final HTMLPageAsset pagetest = pageRenderTest.getPage();
@@ -860,6 +867,68 @@ public class PageResourceTest {
      * @throws DotSecurityException
      * @throws DotDataException
      */
+    /**
+     * Method to test: {@link PageResource#loadJson(HttpServletRequest, HttpServletResponse, String,
+     * String, String, String, String, String, String)}
+     * <p>
+     * Given Scenario: A page with content is requested as JSON.
+     * <p>
+     * Expected Result: Every contentlet in the response carries a {@code canEdit} flag whose value
+     * matches an independent permission check for the requesting user. Headless editors have no
+     * rendered markup to read {@code data-dot-can-edit} from, so this field is the only way they can
+     * gate the edit affordances -- see issue #37376.
+     */
+    @Test
+    public void test_loadJson_exposes_contentlet_edit_permission()
+            throws DotDataException, DotSecurityException {
+
+        final PageRenderTestUtil.PageRenderTest pageRenderTest =
+                PageRenderTestUtil.createPage(1, host);
+        final HTMLPageAsset page = pageRenderTest.getPage();
+
+        // createPage() only wires up the containers; content has to be placed
+        // explicitly, otherwise the assertion loop below has nothing to iterate.
+        pageRenderTest.addContent(pageRenderTest.getFirstContainer());
+
+        when(request.getRequestURI()).thenReturn(page.getURI());
+
+        final Response response = pageResource.loadJson(request, this.response, page.getURI(),
+                null, null, null, "1", null, null);
+
+        RestUtilTest.verifySuccessResponse(response);
+
+        final PageView pageView =
+                (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+
+        int assertedContentlets = 0;
+
+        for (final ContainerRaw containerRaw : pageView.getContainers()) {
+            for (final List<Contentlet> contentlets : containerRaw.getContentlets().values()) {
+                for (final Contentlet contentlet : contentlets) {
+
+                    final Object canEdit = contentlet.getMap().get("canEdit");
+
+                    assertNotNull("Contentlet " + contentlet.getIdentifier()
+                            + " must expose a canEdit flag", canEdit);
+
+                    // Compare against an independent check rather than a literal, so the test
+                    // fails if the value is ever hardcoded instead of derived.
+                    final boolean expected = APILocator.getPermissionAPI()
+                            .doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE,
+                                    user);
+
+                    assertEquals("canEdit must reflect the requesting user's WRITE permission on "
+                            + contentlet.getIdentifier(), expected, canEdit);
+
+                    assertedContentlets++;
+                }
+            }
+        }
+
+        assertTrue("The fixture must place at least one contentlet on the page, otherwise this "
+                + "test asserts nothing", assertedContentlets > 0);
+    }
+
     @Test
     public void testRender() throws DotDataException, DotSecurityException {
 

@@ -1,5 +1,6 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -90,7 +91,7 @@ describe('DotNavItemComponent', () => {
     let subNavDe: DebugElement;
 
     beforeAll(() => {
-        Element.prototype.getClientRects = jest.fn(
+        Element.prototype.getClientRects = vi.fn(
             () =>
                 [
                     {
@@ -105,7 +106,7 @@ describe('DotNavItemComponent', () => {
                     }
                 ] as unknown as DOMRectList
         );
-        Element.prototype.getBoundingClientRect = jest.fn(
+        Element.prototype.getBoundingClientRect = vi.fn(
             () =>
                 ({
                     bottom: 1000,
@@ -183,7 +184,7 @@ describe('DotNavItemComponent', () => {
 
     it('should emit menuClick when nav__item is clicked', () => {
         const mainArea = spectator.query(byTestId('nav-item-main'));
-        jest.spyOn(component.menuClick, 'emit');
+        vi.spyOn(component.menuClick, 'emit');
         (mainArea as HTMLElement)?.click();
         expect(component.menuClick.emit).toHaveBeenCalledTimes(1);
     });
@@ -198,7 +199,7 @@ describe('DotNavItemComponent', () => {
 
         it('should emit menuClick when clicking on the main area (first 2/3)', () => {
             const mainArea = spectator.query(byTestId('nav-item-main')) as HTMLElement;
-            jest.spyOn(component.menuClick, 'emit');
+            vi.spyOn(component.menuClick, 'emit');
             mainArea?.click();
             spectator.detectChanges();
             expect(component.menuClick.emit).toHaveBeenCalledTimes(1);
@@ -210,7 +211,7 @@ describe('DotNavItemComponent', () => {
 
         it('should emit menuClick with toggleOnly flag when clicking on toggle area (last 1/3)', () => {
             const toggleArea = spectator.query(byTestId('nav-item-toggle')) as HTMLElement;
-            jest.spyOn(component.menuClick, 'emit');
+            vi.spyOn(component.menuClick, 'emit');
             toggleArea?.click();
             spectator.detectChanges();
             expect(component.menuClick.emit).toHaveBeenCalledTimes(1);
@@ -223,7 +224,7 @@ describe('DotNavItemComponent', () => {
 
         it('should emit menuClick without toggleOnly flag when clicking on main area', () => {
             const mainArea = spectator.query(byTestId('nav-item-main')) as HTMLElement;
-            jest.spyOn(component.menuClick, 'emit');
+            vi.spyOn(component.menuClick, 'emit');
             mainArea?.click();
             spectator.detectChanges();
             expect(component.menuClick.emit).toHaveBeenCalledWith(
@@ -234,7 +235,7 @@ describe('DotNavItemComponent', () => {
         it('should stop propagation when clicking toggle area', () => {
             const toggleArea = spectator.query(byTestId('nav-item-toggle')) as HTMLElement;
             const event = new MouseEvent('click', { bubbles: true });
-            jest.spyOn(event, 'stopPropagation');
+            vi.spyOn(event, 'stopPropagation');
             toggleArea?.dispatchEvent(event);
             expect(event.stopPropagation).toHaveBeenCalled();
         });
@@ -260,7 +261,7 @@ describe('DotNavItemComponent', () => {
             const subNav = spectator.debugElement.query(By.css('dot-sub-nav'))
                 ?.componentInstance as DotSubNavComponent;
             const mockRect = { bottom: 2000, height: 200, top: 1800 };
-            jest.spyOn(subNav?.ul?.nativeElement, 'getClientRects').mockReturnValue([mockRect]);
+            vi.spyOn(subNav?.ul?.nativeElement, 'getClientRects').mockReturnValue([mockRect]);
             Object.defineProperty(window, 'innerHeight', {
                 writable: true,
                 configurable: true,
@@ -287,7 +288,7 @@ describe('DotNavItemComponent', () => {
             const subNav = spectator.debugElement.query(By.css('dot-sub-nav'));
             const subNavComp = subNav?.componentInstance as DotSubNavComponent;
             const mockRect = { bottom: 2000, height: 200, top: 1800 };
-            jest.spyOn(subNavComp?.ul?.nativeElement, 'getClientRects').mockReturnValue([mockRect]);
+            vi.spyOn(subNavComp?.ul?.nativeElement, 'getClientRects').mockReturnValue([mockRect]);
             Object.defineProperty(window, 'innerHeight', {
                 writable: true,
                 configurable: true,
@@ -332,7 +333,7 @@ describe('DotNavItemComponent', () => {
         });
 
         it('should emit itemClick on dot-sub-nav itemClick', () => {
-            jest.spyOn(component.itemClick, 'emit');
+            vi.spyOn(component.itemClick, 'emit');
             (subNavDe?.componentInstance as DotSubNavComponent)?.itemClick?.emit({
                 originalEvent: new MouseEvent('click'),
                 data: defaultMenu.menuItems[0]

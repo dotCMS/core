@@ -2,23 +2,33 @@ import { patchState, signalState } from '@ngrx/signals';
 
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import {
+    afterEveryRender,
+    afterNextRender,
     AfterViewInit,
     ChangeDetectionStrategy,
     Component,
     computed,
+    contentChild,
     effect,
+    ElementRef,
     inject,
+    Injector,
     input,
+    linkedSignal,
+    NgZone,
     OnDestroy,
     OnInit,
     output,
     Renderer2,
     signal,
+    TemplateRef,
+    untracked,
     viewChild
 } from '@angular/core';
 
 import { LazyLoadEvent, SortEvent } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { Paginator, PaginatorModule, PaginatorState } from 'primeng/paginator';
 import { SkeletonModule } from 'primeng/skeleton';
 import { Table, TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -31,7 +41,8 @@ import {
     DotContentDriveBrowseItem,
     DotContentDriveItem,
     DotContentDrivePaginateEvent,
-    DotLanguage
+    DotLanguage,
+    isActionableBrowseItem
 } from '@dotcms/dotcms-models';
 
 import {
@@ -40,10 +51,14 @@ import {
     HEADER_COLUMNS,
     rescaleToWidthBudget
 } from './constants';
+import { columnCountFromTops, GRID_MOVE_KEYS, nextGridIndex } from './grid-navigation';
 import {
     DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
+    DOT_FOLDER_LIST_VIEW_LAYOUT,
+    DotFolderListViewCardContext,
     DotFolderListViewColumn,
     DotFolderListViewColumnField,
+    DotFolderListViewLayout,
     DotFolderListViewSelectionMode
 } from './models';
 
@@ -58,8 +73,48 @@ import { SYSTEM_HOST_ID } from '../dot-folder-tree/constants';
  * Canonical position of the "type" column. Extra columns follow it, in the header and in the body
  * alike — read from the constant rather than hardcoded so the two cannot drift.
  */
+/**
+ * Marks a row the table considers selectable. Set by PrimeNG's selectable-row directive, and the only
+ * reliable way to enumerate rendered rows in the order the keyboard walks them.
+ *
+ * ⚠️ PrimeNG sets this **statically** (`'attr.data-p-selectable-row': 'true'`), with no reference to
+ * `pSelectableRowDisabled`, so it matches disabled rows as well as enabled ones. Harmless while
+ * disabling is all-or-nothing, because the roving tab-stop write has its own `interactive` check. The
+ * day per-row unselectable state arrives, this selector will hand a disabled row a `tabIndex` of 0
+ * and include it in the arrow walk, and `interactive` cannot help because it is a whole-listing flag.
+ * Filtering on a `:not(...)` selector will not work either — PrimeNG emits no disabled attribute — so
+ * whoever adds per-row disabling has to reflect it themselves.
+ */
+const SELECTABLE_ROW_SELECTOR = '[data-p-selectable-row="true"]';
+
+/**
+ * Why focus landed on a row, which decides what the focus handler does with the selection anchor.
+ *
+ * - `anchor`   — ordinary movement or a plain click: the anchor follows focus.
+ * - `range`    — a Shift-modified arrow: the anchor stays put and the range is built here, because
+ *                the table owns the arrow handler and this component has nowhere else to hook it.
+ * - `preserve` — a Shift-click: the anchor stays put but the range is left to the click handler,
+ *                which has the clicked row's index directly.
+ */
+type DotRowFocusIntent = 'anchor' | 'range' | 'preserve';
+
+/**
+ * Keys that only modify another keystroke. A browser sends a keydown for these on their own, before
+ * the key they modify, and that press must not be mistaken for the start of a new gesture.
+ */
+const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Meta', 'Alt']);
+
 const TYPE_COLUMN_ORDER =
     HEADER_COLUMNS.find((column) => column.field === 'contentType')?.order ?? Infinity;
+
+/** The smallest page, and the page size when the caller does not set one. */
+const MIN_ROWS_PER_PAGE = 20;
+
+/** The grid layout's cards, in reading order. */
+const CARD_SELECTOR = '[data-testid="grid-card"]';
+
+/** Gives each listing's cards ids no other listing on the page can share. */
+let nextListingId = 0;
 
 @Component({
     selector: 'dot-folder-list-view',
@@ -70,6 +125,7 @@ const TYPE_COLUMN_ORDER =
         DotContentThumbnailComponent,
         DotMessagePipe,
         DotRelativeDatePipe,
+        PaginatorModule,
         SkeletonModule,
         TableModule,
         DotLocaleTagPipe,
@@ -83,9 +139,60 @@ const TYPE_COLUMN_ORDER =
 })
 export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly renderer = inject(Renderer2);
+    // Typed at the injection point rather than cast at each use. `inject(ElementRef)` alone infers
+    // `ElementRef<any>`, which is what forced a cast on the host element below. PrimeNG's `Table.el`
+    // still needs one — that type is not ours to fix.
+    readonly #hostElement = inject<ElementRef<HTMLElement>>(ElementRef);
+    readonly #zone = inject(NgZone);
+    readonly #injector = inject(Injector);
     private readonly dotLanguagesService = inject(DotLanguagesService);
 
     dataTable = viewChild<Table>('dataTable');
+
+    /**
+     * Rows per page. Unbound, the listing pages by {@link MIN_ROWS_PER_PAGE} as it always has.
+     *
+     * Content Drive binds its stored page size here: switching layout rebuilds the table (#37930),
+     * and the rebuilt table must show the page size the user picked, not the default. Changing it
+     * in the paginator still reports through `paginate`, as before.
+     *
+     * @alias rows
+     */
+    $rows = input<number>(MIN_ROWS_PER_PAGE, { alias: 'rows' });
+
+    /**
+     * How the listing is drawn: `table` (the default, rows and columns) or `grid` (one card per
+     * item, drawn by the caller's `<ng-template #card>`; see {@link DotFolderListViewCardContext}).
+     *
+     * Both layouts share one selection, one anchor and tab stop, one page lock, one drag and drop,
+     * so switching keeps the user's place. The grid is opt-in: only Content Drive sets it (#37930).
+     *
+     * @alias layout
+     */
+    $layout = input<DotFolderListViewLayout>(DOT_FOLDER_LIST_VIEW_LAYOUT.TABLE, {
+        alias: 'layout'
+    });
+
+    /**
+     * The column the results are sorted by, as the caller holds it. Shown by the table's sort
+     * indicator; seeded only for a lazy table, where the server sorts.
+     *
+     * Bound so a table rebuilt by a layout switch shows the caller's sort rather than the default.
+     *
+     * @alias sortField
+     */
+    $sortField = input<string>('modDate', { alias: 'sortField' });
+
+    /**
+     * The sort direction: `1` ascending, `-1` descending.
+     *
+     * @alias sortOrder
+     */
+    $sortOrder = input<number>(-1, { alias: 'sortOrder' });
+
+    /** The caller's card, for the grid layout. */
+    protected readonly $cardTemplate =
+        contentChild<TemplateRef<DotFolderListViewCardContext>>('card');
 
     /**
      * A signal that takes an array of DotContentDriveItem objects.
@@ -292,6 +399,43 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     protected readonly $lockedByOthersSet = computed(() => new Set(this.$lockedByOthers()));
 
     /**
+     * Rows the caller will not accept, by `dataKey`. Rendered greyed out with their control
+     * disabled, exactly as `disabled` renders the whole table.
+     *
+     * The row is still **listed**: it exists, and hiding it would leave the user hunting for
+     * content they can see elsewhere. What it must not do is look pickable. Without this the
+     * control still toggles on click while the caller silently drops the pick — the user sees a
+     * selected row, confirms, and gets nothing back, with nothing on screen explaining why.
+     *
+     * Why the caller decides: the reason a row is refused is never the table's to know. For the
+     * relationship picker it is a child already claimed by another parent through a one-to-one or
+     * one-to-many relationship, which takes a query over every parent of the type to determine.
+     *
+     * @type {InputSignal<string[]>}
+     * @alias unselectable
+     */
+    $unselectable = input<string[]>([], { alias: 'unselectable' });
+
+    /** Refused keys as a set — one lookup per row instead of a scan. */
+    protected readonly $unselectableSet = computed(() => new Set(this.$unselectable()));
+
+    /**
+     * Inodes an operation is currently running on.
+     *
+     * The listing's own `loading` state means "the whole listing is being fetched"; this is the
+     * narrower statement, that *these rows* are busy. Keyed by **inode**, not identifier, because a
+     * multi-language view legitimately shows one identifier on several rows and marking by
+     * identifier would mark siblings nothing is happening to.
+     *
+     * @type {InputSignal<string[]>}
+     * @alias busyRows
+     */
+    readonly $busyRows = input<string[]>([], { alias: 'busyRows' });
+
+    /** Busy inodes as a set — one lookup per row instead of a scan. */
+    protected readonly $busyRowsSet = computed(() => new Set(this.$busyRows()));
+
+    /**
      * Caller-owned checked set — makes the table **controlled**: it renders this and only reports
      * changes through `selectionChange`, never applying them itself. Omit for the uncontrolled
      * table, which keeps its own set and clears it whenever `items` changes.
@@ -338,8 +482,8 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         this.#internalSelection.set(this.#asSelectedArray(selection));
     }
 
-    readonly MIN_ROWS_PER_PAGE = 20;
-    protected readonly rowsPerPageOptions = [this.MIN_ROWS_PER_PAGE, 40, 60];
+    readonly MIN_ROWS_PER_PAGE = MIN_ROWS_PER_PAGE;
+    protected readonly rowsPerPageOptions = [MIN_ROWS_PER_PAGE, 40, 60];
 
     /**
      * Extra columns after de-duplication by `field` key: drops any that collide with a fixed column
@@ -518,7 +662,85 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         this.$lazy() ? this.$totalItems() : this.$items().length
     );
 
-    readonly $loadingRows = signal<number[]>(Array.from({ length: this.MIN_ROWS_PER_PAGE }));
+    /** One placeholder per result the coming page will hold. */
+    readonly $loadingRows = linkedSignal<number[]>(() => Array.from({ length: this.$rows() }));
+
+    /**
+     * The paginator's lock and its Previous/Next state, shared by the table's paginator and the
+     * grid's. One lock for both layouts, so neither can drift from the other (#37930).
+     */
+    protected readonly $paginatorPt = computed(() => {
+        // Take the paginator out of play while a search is in flight, so the controls cannot be
+        // clicked into queueing more searches.
+        //
+        // Reacts to `#pageChangeAccepted`, not just `$loading()`: that flag closes the same
+        // microtask gap `onPage` guards against (see its doc comment) -- without it here too, the
+        // lockout only starts once `$loading()` catches up, leaving that same gap open at the DOM
+        // level. A second real mouse click landing in that window reaches PrimeNG's own paginator
+        // button, which mutates its internal current-page state (`_first`) synchronously on click
+        // regardless of what `onPage` does with the event. `onPage`'s guard blocks the resulting
+        // duplicate request, but PrimeNG's internal page pointer is left desynced from `$offset()`
+        // -- `onFirstChange` cannot correct it in that case because it resets `first` back to a
+        // value Angular already considers unchanged, so the correction never reaches the child
+        // paginator (found in review, issue #37212 QA follow-up #1: Previous/Next disabled state
+        // stops matching which page is actually displayed after a fast click on the other control).
+        const locked = this.$loading() || this.#pageChangeAccepted();
+
+        // Mirrors PrimeNG Paginator's own isFirstPage()/isLastPage()/empty() (primeng-paginator.mjs)
+        // exactly, off this component's own reactive state, so `prev`/`next` below can supply a
+        // `disabled` value on *every* render -- locked or not -- rather than omitting the key when
+        // unlocked and leaving PrimeNG's own `[disabled]="isFirstPage() || empty()"` binding to
+        // cover that case.
+        //
+        // That omission was itself a bug (found in review, issue #37212 QA follow-up #4): PrimeNG's
+        // template binding only re-writes the DOM property when its OWN evaluated boolean differs
+        // from the value Angular last recorded for it. `pBind`'s effect (see the `prev`/`next`
+        // comment below) writes `disabled` imperatively, outside that bookkeeping -- so once it had
+        // forced `disabled = true` while locked, unlocking at a page where `isFirstPage()` was
+        // already `false` before AND after (any page that is not page 1, i.e. most navigation)
+        // left Angular's evaluated value unchanged across the whole transition. Angular therefore
+        // never re-wrote the property, and Previous/Next stayed stuck disabled after loading
+        // finished on every page but the first. Reading `$offset()`/`$recordCount()`/the current
+        // `rows` here and computing the boundary ourselves means `prev`/`next` always carry a
+        // concrete boolean, so `pBind` is the only thing ever writing `disabled` -- no second,
+        // independently-dirty-checked writer left to fall out of sync with it.
+        //
+        // `$recordCount()`, not `$totalItems()` directly: a non-lazy caller has no reason to bind
+        // `totalItems` (it holds every row already), which would otherwise read as 0 here and mark
+        // the paginator permanently `empty()`. `$recordCount()` already carries the right fallback
+        // to `$items().length` for that case -- see its own doc comment.
+        //
+        // The table's own `rows` first: a caller that leaves `rows` unbound still pages by whatever
+        // the table's rows-per-page picker last set.
+        const rows = this.dataTable()?.rows ?? this.$rows();
+        const totalItems = this.$recordCount();
+        const pageCount = Math.ceil(totalItems / rows);
+        const isEmpty = pageCount === 0;
+        const page = Math.floor(this.$offset() / rows);
+        const isFirstPage = page === 0;
+        const isLastPage = page === pageCount - 1;
+
+        // `root` (not a bare top-level `class`) targets the paginator's own host element -- every
+        // PrimeNG v21 component's pt object is itself a map of named sections, and `root` is the
+        // section for the component's own top-level node. `pointer-events-none` there still
+        // protects the rows-per-page dropdown (a plain CSS lockout is good enough for it, and it is
+        // a more complex nested component to risk a `disabled` pass-through into).
+        //
+        // `prev`/`next` set a real `disabled` on the actual buttons, unconditionally (see the
+        // boundary computation above for why this is now always supplied rather than only while
+        // locked). A real `disabled` is stronger than a CSS-only lockout for two reasons
+        // `pointer-events-none` cannot cover on its own: keyboard activation (Enter/Space still
+        // reaches a `pointer-events: none` button) and assistive tech (a screen reader still
+        // announces it as enabled). Verified against the installed PrimeNG 21.1.3: `Paginator`'s
+        // `prev`/`next` buttons bind `[pBind]="ptm('prev'/'next')"` alongside their own
+        // `[disabled]="isFirstPage() || empty()"` -- `pBind`'s effect (from the shared `Bind`
+        // directive) writes the DOM property after the template's own binding runs, so it wins.
+        return {
+            root: { class: locked ? 'pointer-events-none opacity-60' : '' },
+            prev: { disabled: locked || isFirstPage || isEmpty },
+            next: { disabled: locked || isLastPage || isEmpty }
+        };
+    });
 
     /**
      * Computed pass-through configuration for empty table.
@@ -527,12 +749,13 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         const extras = this.$sizedExtraColumns();
 
         return {
-            // Take the paginator out of play while a search is in flight, so the controls cannot be
-            // clicked into queueing more searches. `pointer-events-none` covers the rows-per-page
-            // dropdown too, which triggers a fetch of its own.
-            paginator: {
-                class: this.$loading() ? 'pointer-events-none opacity-60' : ''
-            },
+            // `p-table`'s own pt section for its paginator sub-component is `pcPaginator`, not
+            // `paginator` -- an unrecognized section key is silently ignored, so an earlier version
+            // of this lockout (`paginator: { class: ... }`) never reached the DOM at all: the
+            // computed object looked right in isolation, but the rendered `.p-paginator` carried
+            // neither the class nor a disabled button (issue #37212 QA follow-up #2, confirmed
+            // against `primeng/fesm2022/primeng-table.mjs`'s own `[pt]="ptm('pcPaginator')"`).
+            pcPaginator: this.$paginatorPt(),
             table: {
                 style: {
                     'table-layout': 'fixed',
@@ -544,6 +767,10 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
                     }),
                     ...(this.$items().length === 0 && { height: '100%', width: '100%' })
                 }
+                // No `aria-multiselectable` here, deliberately, and no `role="grid"` either. See
+                // `aria-selected` on the row in the template for the whole of the reasoning; the
+                // short version is that `aria-multiselectable` is not a supported property of
+                // `role="table"`, so setting it is wiring that only looks connected.
             }
         };
     });
@@ -602,6 +829,401 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         this.$items();
         this.selectedItems = this.$selectionMode() === 'multiple' ? [] : null;
     });
+
+    /**
+     * Roving tab stop for keyboard navigation (issue #32591).
+     *
+     * PrimeNG decides which rows are tabbable by comparing the table's own selection anchor against
+     * each row's index, so *pointing the anchor at a row is what makes that row the single tab stop*.
+     * This drives that input rather than overriding `setRowTabIndex`, so a PrimeNG upgrade cannot
+     * silently revert us the way an override on the same attribute could.
+     *
+     * Without it the listing is not reliably reachable at all: with no row index bound the comparison
+     * was `undefined === undefined`, making every row a tab stop (a full-page tab trap), and after a
+     * sort it became `null === undefined`, making *no* row reachable. Both were measured.
+     *
+     * The anchor is cleared by the table on sort and on the value/pagination reset, so re-seeding is
+     * keyed off the rendered rows rather than done once.
+     *
+     * A listing that cannot be interacted with gets no tab stop at all: `null` matches no row index,
+     * which is exactly the state the table itself uses to mean "nothing anchored".
+     */
+    #seedRovingTabStop(): void {
+        effect(() => {
+            // Every dependency is read up front: a guard placed before a read would drop that signal as
+            // a dependency and the tab stop would stop being re-seeded when it changed.
+            this.$items();
+            this.$disabled();
+            this.$readOnly();
+            this.$offset();
+
+            // The active row goes back to the top with the anchor. These two must not drift: the write
+            // below looks for `index === activeIndex` among the *new* rows, so an active index left
+            // pointing past the end of a shorter list matches nothing and leaves every row at -1, which
+            // is the listing being keyboard-unreachable all over again. Reachable by focusing a row far
+            // down and then filtering or searching so fewer results come back.
+            //
+            // Untracked: the seed also reads the table, and a layout switch that rebuilds the table
+            // must keep the user's place, not send it back to the top (#37930). The effect below
+            // seeds a table that appears.
+            untracked(() => {
+                this.$activeRowIndex.set(0);
+                this.#gridAnchor = null;
+                this.#seedTabStop();
+            });
+        });
+
+        // A table that appears (on load, or when the layout switches back to it) gets an anchor
+        // before anything is clicked. `#keepPlaceAcrossLayouts` then moves it to where the user was.
+        effect(() => {
+            if (this.dataTable()) {
+                untracked(() => this.#seedTabStop());
+            }
+        });
+    }
+
+    /**
+     * Keys of the currently selected rows, for the row's `aria-selected`.
+     *
+     * A set rather than an `includes` scan so the template does not run an O(n) lookup per row on
+     * every change detection pass. Keyed the same way the table is (`dataKey`), so a listing keyed on
+     * `inode` distinguishes language versions of one identifier exactly as its checkboxes do.
+     */
+    protected readonly $selectedKeys = computed(() => {
+        const key = this.$dataKey();
+
+        return new Set(
+            this.#asSelectedArray(this.selectedItems).map((item) => item[key as keyof typeof item])
+        );
+    });
+
+    /**
+     * Index of the row that is currently the keyboard tab stop, relative to the rendered page.
+     * Kept in step with the table's anchor so a range extends from where focus actually is.
+     */
+    protected readonly $activeRowIndex = signal(0);
+
+    /**
+     * Applies the roving tab stop to the rendered rows.
+     *
+     * Written directly to the DOM after every render rather than bound in the template, because the
+     * table declares its own `tabindex` host binding on the same row and a template binding loses to
+     * it. That was measured: adding `[attr.tabindex]` to the row changed nothing at all.
+     *
+     * Driving the table's anchor instead — the original plan — gets most of the way but cannot reach
+     * two states, both measured:
+     *   - a single-selection listing has an empty selection permanently, and the table short-circuits
+     *     to "every row is tabbable" whenever the selection is empty, before it ever consults the
+     *     anchor;
+     *   - the table clears its anchor at the *end* of a sort, after the sort event this component
+     *     listens to has already fired, so re-seeding from `onSort` is immediately overwritten.
+     *
+     * A post-render write is not the same thing as a competing binding: it is the last write in the
+     * frame, so there is nothing to lose a race against. The anchor is still driven alongside it,
+     * because that is what ranges extend from.
+     *
+     * **`afterEveryRender`, not `afterRenderEffect`, and that is deliberate.** The reactive form only
+     * re-runs when the signals it reads change, and the case this exists for changes none of them: a
+     * column sort leaves `$activeRowIndex`, `$disabled` and `$readOnly` untouched while the table
+     * nulls its own anchor and rewrites every row to `-1`. The write has to reassert unconditionally
+     * or the listing goes back to being keyboard-unreachable after a sort. Tried and measured: the
+     * swap turns that test red on its own.
+     */
+    #applyRovingTabStop(): void {
+        afterEveryRender({
+            write: () => {
+                const table = this.dataTable();
+
+                if (!table) {
+                    return;
+                }
+
+                const interactive = !this.$disabled() && !this.$readOnly();
+                const activeIndex = this.$activeRowIndex();
+                // `el` is typed `ElementRef<any>`, so the host element is narrowed here rather than
+                // passing a type argument to a call on `any`, which the compiler rejects.
+                const host = table.el.nativeElement as HTMLElement;
+                const rows = Array.from(
+                    host.querySelectorAll<HTMLElement>(SELECTABLE_ROW_SELECTOR)
+                );
+
+                // Clamped as a second guarantee: even if the active index and the rendered rows were to
+                // drift, the listing keeps exactly one tab stop rather than losing all of them.
+                const safeIndex = Math.min(activeIndex, Math.max(rows.length - 1, 0));
+
+                rows.forEach((row, index) => {
+                    const tabIndex = interactive && index === safeIndex ? 0 : -1;
+
+                    // Guarded so a render that changed nothing does not dirty the DOM.
+                    if (row.tabIndex !== tabIndex) {
+                        row.tabIndex = tabIndex;
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Points the table's anchor at the first row. Distinct from the tab stop above: the anchor is
+     * what a range extends *from*, and keeping the two in step is what makes shift-extension start
+     * where the user's focus actually is.
+     */
+    #seedTabStop(): void {
+        const table = this.dataTable();
+
+        if (!table) {
+            return;
+        }
+
+        const interactive = !this.$disabled() && !this.$readOnly();
+
+        table.anchorRowIndex = interactive && this.$items().length ? this.$offset() : null;
+    }
+
+    /**
+     * Keeps the tab stop on whichever row the user actually moved to.
+     *
+     * Bound once on the table rather than per row: `focusin` bubbles, and this resolves the row from
+     * the event target anyway, so one listener does the work of twenty.
+     *
+     * PrimeNG's arrow handlers move DOM focus but never touch the anchor, so without this the tab
+     * stop would stay pinned to the first row while focus walked away from it, and tabbing out and
+     * back would jump the user to the top of the listing.
+     *
+     * Moving the anchor with plain focus is also the correct selection semantic: a range extends from
+     * the last row the user arrived at deliberately. Shift-modified movement must *not* land here,
+     * which is why this reads the row from the event rather than being called by the arrow handler.
+     */
+    protected onRowFocus(event: FocusEvent): void {
+        // Consumed here so it only ever applies to the one focus move that set it.
+        const intent = this.#focusIntent;
+        this.#focusIntent = 'anchor';
+
+        const table = this.dataTable();
+        const row = (event.target as HTMLElement | null)?.closest<HTMLElement>(
+            SELECTABLE_ROW_SELECTOR
+        );
+
+        if (!table || !row) {
+            return;
+        }
+
+        const index = this.#rowElements().indexOf(row);
+
+        if (index === -1) {
+            return;
+        }
+
+        this.$activeRowIndex.set(index);
+
+        // Both non-default intents leave the anchor alone — that is the whole difference between
+        // extending a range and moving through the listing. They differ only in who emits: an arrow
+        // has no handler of its own, so the range is built here; a Shift-click has one, and building
+        // it here too would emit the same range twice.
+        if (intent === 'range') {
+            this.#extendSelectionTo(index);
+
+            return;
+        }
+
+        if (intent === 'preserve') {
+            return;
+        }
+
+        table.anchorRowIndex = this.$offset() + index;
+    }
+
+    /**
+     * Whether the focus move now in flight came from a Shift-modified arrow.
+     *
+     * Recorded on keydown and read on the focus that follows, because the arrow handler that
+     * actually moves focus belongs to the table, not to this component, and a `FocusEvent` carries
+     * no modifier state of its own.
+     *
+     * Set from a **capture-phase** listener on this component's host, not a template binding on the
+     * row. Measured: the table's own row keydown handler runs before a template binding on the same
+     * row, so by the time a bubble-phase handler saw the key the focus had already moved and the
+     * anchor had already been reset. Capture is the only phase that reliably runs first.
+     */
+    #focusIntent: DotRowFocusIntent = 'anchor';
+
+    #trackFocusIntent(): void {
+        // Attached straight away rather than in `afterNextRender`: the host element exists before the
+        // instance does, so deferring a render cycle bought nothing but indirection.
+        //
+        // Outside the Angular zone deliberately. This app is still zone-based, so a listener
+        // registered from inside it is patched and every keydown and mousedown in the listing would
+        // schedule a change detection pass. Both handlers write plain, non-reactive class fields
+        // (`#focusIntent`, `#rangeBase`), so not one of those passes would be needed — and each would
+        // re-run the roving tab-stop write below it. The `(focusin)` template binding stays in the
+        // zone, which is correct: that one does write a signal.
+        const host = this.#hostElement.nativeElement;
+
+        this.#zone.runOutsideAngular(() => {
+            host.addEventListener('keydown', this.#onKeydownCapture, true);
+            host.addEventListener('mousedown', this.#onMousedownCapture, true);
+        });
+
+        // Removed in `ngOnDestroy` alongside the scroll listener, so this class keeps a single
+        // teardown path rather than splitting cleanup across two mechanisms.
+        this.#captureHost = host;
+    }
+
+    /** Host the capture listeners are bound to, held so `ngOnDestroy` can detach them. */
+    #captureHost?: HTMLElement;
+
+    constructor() {
+        // Both register render-phase work whose only purpose is the side effect, so they are called
+        // rather than assigned: a private field nothing reads is exactly what the lint rule is for.
+        this.#seedRovingTabStop();
+        this.#keepPlaceAcrossLayouts();
+        this.#applyRovingTabStop();
+        this.#trackFocusIntent();
+
+        // Hands the local page-change guard back to `$loading()` the moment the store's own status
+        // catches up with the click that set it (found in review, issue #37212).
+        effect(() => {
+            if (this.$loading()) {
+                this.#pageChangeAccepted.set(false);
+            }
+        });
+    }
+
+    readonly #onKeydownCapture = (event: KeyboardEvent): void => {
+        // Pressing a modifier is not a gesture, it is the *start* of one, and the browser sends a
+        // keydown for it before the arrow. Treating it as an ordinary key reset the range base, so
+        // the next arrow re-captured a base that already contained the range and shrinking the range
+        // could never unselect anything. Reported from the browser; the tests could not see it until
+        // they sent the Shift keydown too.
+        // The grid layout tracks its own gestures, in `onGridKeydown` and `onCardCheckboxClick`.
+        if (MODIFIER_KEYS.has(event.key) || this.#isGrid()) {
+            return;
+        }
+
+        const isArrow = event.code === 'ArrowDown' || event.code === 'ArrowUp';
+        const extending = isArrow && event.shiftKey;
+
+        this.#focusIntent = extending ? 'range' : 'anchor';
+        this.#trackRangeBase(extending);
+    };
+
+    /**
+     * The selection as it stood before the current Shift gesture began.
+     *
+     * A range *extends* the selection, it does not become it: rows picked before the gesture started
+     * have to survive it. Recomputing every step as `base ∪ range` rather than accumulating is what
+     * lets the range shrink back toward the anchor without stranding the rows it passed over.
+     *
+     * `null` means no gesture is in progress; the next Shift keystroke or click captures it.
+     */
+    #rangeBase: DotContentDriveBrowseItem[] | null = null;
+
+    #trackRangeBase(extending: boolean): void {
+        if (!extending) {
+            this.#rangeBase = null;
+
+            return;
+        }
+
+        this.#rangeBase ??= this.#asSelectedArray(this.selectedItems);
+    }
+
+    /**
+     * A Shift-click focuses the row before its click handler runs, and that focus would otherwise
+     * re-anchor onto the very row the range is meant to extend *to* — collapsing every Shift-click
+     * range to a single row. Recorded on mousedown, which precedes focus, so the focus handler knows
+     * to leave the anchor alone and let the click handler do the extending.
+     */
+    readonly #onMousedownCapture = (event: MouseEvent): void => {
+        if (this.#isGrid()) {
+            return;
+        }
+
+        this.#focusIntent = event.shiftKey ? 'preserve' : 'anchor';
+        this.#trackRangeBase(event.shiftKey);
+    };
+
+    /**
+     * Shift-click on a row's checkbox extends the range, exactly as Shift+Arrow does.
+     *
+     * Bound on the checkbox rather than the row because the checkbox cell stops propagation, so the
+     * table's own range path is unreachable from here. A plain click is left entirely alone: the
+     * checkbox toggles as it always has, and the row it lands on becomes the new anchor.
+     */
+    protected onCheckboxClick(event: MouseEvent, rowIndex: number): void {
+        // This cell has always swallowed its clicks so the row underneath does not select as well.
+        // That behaviour is unchanged and must stay ahead of the shift check.
+        event.stopPropagation();
+
+        const pageIndex = rowIndex - this.$offset();
+
+        // With nothing selected there is no range to extend from. The anchor at this point is only
+        // the seeded tab stop, which is a keyboard-focus concern and not somewhere the user chose,
+        // so extending from it would select rows they never pointed at. Treated as a plain click:
+        // this row is selected and becomes the anchor for the next Shift-click.
+        const hasSelection = this.#asSelectedArray(this.selectedItems).length > 0;
+
+        if (!event.shiftKey || !hasSelection) {
+            // A plain click re-anchors, the same way a plain arrow does, so the next Shift-click
+            // extends from the row the user last chose deliberately rather than from wherever the
+            // anchor happened to be seeded.
+            this.$activeRowIndex.set(pageIndex);
+
+            const table = this.dataTable();
+
+            if (table) {
+                table.anchorRowIndex = rowIndex;
+            }
+
+            return;
+        }
+
+        // Stops the checkbox from also toggling: the range decides what is selected, and letting the
+        // toggle run afterwards would flip the clicked row straight back off.
+        event.preventDefault();
+
+        this.$activeRowIndex.set(pageIndex);
+        this.#extendSelectionTo(pageIndex);
+    }
+
+    /** Rendered rows, in the order the keyboard walks them. */
+    #rowElements(): HTMLElement[] {
+        const host = this.dataTable()?.el.nativeElement as HTMLElement | undefined;
+
+        return host ? Array.from(host.querySelectorAll<HTMLElement>(SELECTABLE_ROW_SELECTOR)) : [];
+    }
+
+    /**
+     * Selects everything between the anchor and `index` inclusive.
+     *
+     * Emitted through `onSelectionChange` like every other selection change rather than written onto
+     * the table directly — the controlled-selection effect re-asserts the parent's value over
+     * anything written behind its back, so a direct write would be silently reverted.
+     */
+    #extendSelectionTo(index: number): void {
+        // Ranges are a multiple-selection idea, and an inert listing has no selection to extend.
+        if (this.$disabled() || this.$readOnly() || this.$selectionMode() !== 'multiple') {
+            return;
+        }
+
+        const anchor = this.#anchorIndex() ?? index;
+        const start = Math.min(anchor, index);
+        const end = Math.max(anchor, index);
+        // A busy item cannot be selected, so a range passes over it.
+        const range = this.$items()
+            .slice(start, end + 1)
+            .filter((item) => !this.isBusy(item));
+
+        // Rows picked before this gesture began are kept, minus any the range now covers, so a row
+        // cannot appear twice and shrinking the range cannot strand what it passed over.
+        const key = this.$dataKey();
+        const inRange = new Set(range.map((item) => item[key as keyof typeof item]));
+        const kept = (this.#rangeBase ?? []).filter(
+            (item) => !inRange.has(item[key as keyof typeof item])
+        );
+
+        this.onSelectionChange([...kept, ...range]);
+    }
 
     /**
      * Bound scroll handler to ensure the same reference is used for add/remove event listener
@@ -705,6 +1327,11 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * Initializes the component after the view has been initialized
      */
     ngAfterViewInit(): void {
+        this.#listenToTableScroll();
+    }
+
+    /** Reports the table body's scrolling. Run again whenever a layout switch rebuilds the table. */
+    #listenToTableScroll(): void {
         const tableBody = this.getTableBody();
 
         if (tableBody) {
@@ -720,6 +1347,11 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         if (tableBody) {
             tableBody.removeEventListener('scroll', this.boundScrollHandler);
         }
+
+        // The two capture listeners from `#trackFocusIntent`. Both are attached outside the Angular
+        // zone and neither is bound through the template, so nothing detaches them for us.
+        this.#captureHost?.removeEventListener('keydown', this.#onKeydownCapture, true);
+        this.#captureHost?.removeEventListener('mousedown', this.#onMousedownCapture, true);
     }
 
     /**
@@ -750,13 +1382,33 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
 
         // A menu link carries no workflow state, so every action the menu offers is meaningless for
         // one. Content Drive never lists links, so this only ever fires in the asset picker.
-        if (!isActionable(contentlet)) {
+        if (!isActionableBrowseItem(contentlet)) {
             return;
         }
 
         event.preventDefault();
         this.rightClick.emit({ event, contentlet });
     }
+
+    /**
+     * True from the moment a page-change click is accepted until `$loading()` first reflects it.
+     *
+     * `$loading()` mirrors the caller's request lifecycle one round trip away: this component emits
+     * `paginate`, the caller patches its store, and only once that store's own reactive pipeline
+     * reacts does `loading` flip to `true` and propagate back down here as an input. That round
+     * trip is at least one microtask, and during it `$loading()` still reads `false` — so a second
+     * click in that gap (a fast double click, or two rapid keyboard activations) would sail past the
+     * `$loading()` guard below and queue a second request the first click already started (found in
+     * review, issue #37212). This flag closes exactly that gap; once `$loading()` catches up (see the
+     * constructor's effect), that guard alone is sufficient for the rest of the request's lifetime.
+     *
+     * A signal, not a plain field, so `$ptConfig` can also gate the paginator's CSS lockout on it
+     * (issue #37212 QA follow-up) -- the JS guard below stopping a duplicate *request* was never the
+     * whole story; the DOM buttons themselves must be unclickable for that same window; otherwise a
+     * fast second click reaches PrimeNG's own paginator before `$loading()` catches up and mutates
+     * its internal current-page state, which nothing then corrects (see `$ptConfig`'s comment).
+     */
+    #pageChangeAccepted = signal(false);
 
     /**
      * Handles pagination events from the PrimeNG Table
@@ -769,14 +1421,17 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             return;
         }
 
-        // A search is already in flight. The paginator stays mounted while the rows are replaced by
-        // skeletons, so without this every further click fires another search for a page the user
-        // cannot see yet, and the last response to arrive wins regardless of which page was asked
-        // for last. The controls are also visually disabled via `$ptConfig`, but this is the part
-        // that has to hold: a keyboard activation or a fast double click does not wait for CSS.
-        if (this.$loading()) {
+        // A search is already in flight, or one was just accepted and the caller's `loading` has not
+        // caught up yet (see `#pageChangeAccepted`). The paginator stays mounted while the rows are
+        // replaced by skeletons, so without this every further click fires another search for a page
+        // the user cannot see yet, and the last response to arrive wins regardless of which page was
+        // asked for last. The controls are also visually disabled via `$ptConfig`, but this is the
+        // part that has to hold: a keyboard activation or a fast double click does not wait for CSS.
+        if (this.$loading() || this.#pageChangeAccepted()) {
             return;
         }
+
+        this.#pageChangeAccepted.set(true);
 
         const page = event.first && event.rows ? Math.floor(event.first / event.rows) + 1 : 1;
         this.paginate.emit({ ...event, page });
@@ -804,6 +1459,11 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @param event The sort event containing sort field and order
      */
     onSort(event: SortEvent) {
+        // The table clears its anchor on every sort, which takes the single tab stop with it and
+        // leaves the listing unreachable by keyboard until something is clicked. Re-seeding here
+        // rather than in `$seedRovingTabStop` because a client-side sort reorders the rendered rows
+        // without changing the `items` input, so the effect never re-runs.
+        this.#seedTabStop();
         this.sort.emit(event);
     }
 
@@ -811,10 +1471,19 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * Handles double click on a content item
      * @param contentlet The content item that was double clicked
      */
-    onDoubleClick(contentlet: DotContentDriveBrowseItem) {
+    onDoubleClick(contentlet: DotContentDriveBrowseItem, event?: MouseEvent) {
         // Guarded here rather than per template binding: the row's dblclick, the title and the
         // thumbnail all land on this, and opening an item from a dialog would navigate away from it.
         if (this.$readOnly()) {
+            return;
+        }
+
+        // Shift belongs to the selection, so nothing carrying it opens anything. Without this a
+        // second click inside a Shift range, or a stray double, opened the item and took the
+        // author out of the listing — losing the selection they were partway through building.
+        // The event is optional because callers that have no gesture to judge (the context menu's
+        // own open action) legitimately pass none.
+        if (event?.shiftKey) {
             return;
         }
 
@@ -836,7 +1505,16 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             return;
         }
 
-        this.onDoubleClick(contentlet);
+        // Shift never opens, so by the rule above there is nothing to swallow the click for, and
+        // it has to reach the row that does the selecting. Ahead of the swallow rather than inside
+        // `onDoubleClick`: that one only decides whether to open, and returning from it while the
+        // `stopPropagation()` below still ran left the title a dead spot where the gesture neither
+        // opened the item nor extended the selection it belongs to.
+        if ((event as MouseEvent).shiftKey) {
+            return;
+        }
+
+        this.onDoubleClick(contentlet, event as MouseEvent);
         event.stopPropagation();
     }
 
@@ -852,24 +1530,23 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             return;
         }
 
-        if (!event.dataTransfer) return;
+        if (!event.dataTransfer || this.isBusy(contentlet)) return;
 
         event.stopPropagation();
 
         // Set dragging state to true
         patchState(this.state, { isDragging: true });
 
-        // Check if the dragged item is in the current selection
+        // Check if the dragged item is in the current selection. By `dataKey`, so dragging one
+        // language version never carries a selected sibling's selection along.
         const selected = this.#asSelectedArray(this.selectedItems);
-        const isDraggingSelectedItem = selected.some(
-            (item) => item.identifier === contentlet.identifier
-        );
+        const isDraggingSelectedItem = this.$selectedKeys().has(this.keyOf(contentlet));
 
         // Determine which items are being dragged. Menu links are filtered out: they have no
         // permissions and nowhere to be moved to, so they are never part of a drag payload.
         const itemsToDrag = (
             isDraggingSelectedItem && selected.length > 0 ? selected : [contentlet]
-        ).filter(isActionable);
+        ).filter(isActionableBrowseItem);
 
         if (!itemsToDrag.length) {
             return;
@@ -894,12 +1571,35 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @param targetItem The content item being dragged over
      */
     onDragOver(event: DragEvent, targetItem: DotContentDriveBrowseItem) {
-        // Only handle internal drags (item to item)
+        // Only internal drags (item to item), and only over a folder: that is the one place a drop
+        // does anything. Accepting it anywhere else showed a "move" cursor and a highlight for a
+        // drop that was then silently ignored.
         const isInternalDrag = event.dataTransfer?.types.includes(DOT_DRAG_ITEM);
-        if (isInternalDrag) {
-            event.preventDefault();
-            patchState(this.state, { dragOverRowId: targetItem.identifier });
+
+        if (!isInternalDrag || !this.#isFolder(targetItem)) {
+            return;
         }
+
+        event.preventDefault();
+        patchState(this.state, { dragOverRowId: this.keyOf(targetItem) });
+    }
+
+    /**
+     * Clears the drop highlight when a drag leaves the item. A move onto one of the item's own
+     * children also fires `dragleave`, and is ignored.
+     *
+     * @param event The drag leave.
+     * @param targetItem The item the drag left.
+     */
+    onDragLeave(event: DragEvent, targetItem: DotContentDriveBrowseItem) {
+        const from = event.currentTarget as Node | null;
+        const to = event.relatedTarget as Node | null;
+
+        if ((to && from?.contains(to)) || this.state.dragOverRowId() !== this.keyOf(targetItem)) {
+            return;
+        }
+
+        patchState(this.state, { dragOverRowId: null });
     }
 
     /**
@@ -922,7 +1622,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         event.stopPropagation();
         patchState(this.state, { dragOverRowId: null });
 
-        if (!isActionable(targetItem)) {
+        if (!isActionableBrowseItem(targetItem)) {
             return;
         }
 
@@ -952,16 +1652,21 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         this.renderer.addClass(container, 'drag-image-container');
 
         items.forEach((item, idx) => {
-            if (!item?.identifier) {
+            const key = this.keyOf(item);
+
+            if (!key) {
                 return;
             }
 
-            // Find the thumbnail element
+            // Find the thumbnail element: the row's thumbnail, or the card's `data-drag-preview`.
+            // Looked up by `dataKey` within this listing, so a language version finds its own
+            // picture and not a sibling's that shares its identifier.
             // Note: Using querySelector here as Renderer2 doesn't provide query methods
             // This is acceptable since drag operations are client-side only
-            const thumbnail = document.querySelector(
-                `[data-table-id="${item.identifier}"]`
-            ) as HTMLElement;
+            const marked = this.#hostElement.nativeElement.querySelector<HTMLElement>(
+                `[data-drag-key="${key}"]`
+            );
+            const thumbnail = marked?.querySelector<HTMLElement>('[data-drag-preview]') ?? marked;
 
             if (!thumbnail) {
                 return;
@@ -1010,6 +1715,378 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         return container;
     }
 
+    /** Prefix for the ids the grid's cards are labelled and described by. */
+    readonly #listingId = `dot-folder-list-view-${nextListingId++}`;
+
+    /** Whether the grid layout is showing. Without a card template there is nothing to draw it with. */
+    protected readonly $isGrid = computed(
+        () => this.$layout() === DOT_FOLDER_LIST_VIEW_LAYOUT.GRID && !!this.$cardTemplate()
+    );
+
+    #isGrid(): boolean {
+        return this.$isGrid();
+    }
+
+    /**
+     * Where a grid range extends from, by position on the page. The table keeps its own anchor on
+     * PrimeNG's table (`anchorRowIndex`); this is the grid's, handed across on a layout switch.
+     */
+    #gridAnchor: number | null = null;
+
+    /** The card that holds the grid's tab stop: none in an inert listing, never past the last card. */
+    protected readonly $gridTabStop = computed(() =>
+        this.$disabled() || this.$readOnly()
+            ? -1
+            : Math.min(this.$activeRowIndex(), this.$items().length - 1)
+    );
+
+    /** What each card template is handed. Rebuilt when the page, the selection or a state changes. */
+    protected readonly $cardContexts = computed<DotFolderListViewCardContext[]>(() => {
+        const selectedKeys = this.$selectedKeys();
+        const dragOverKey = this.state.dragOverRowId();
+        const languagesMap = this.state.languagesMap();
+        const readOnly = this.$readOnly() || !this.$showActions();
+
+        return this.$items().map((item, index) => ({
+            $implicit: item,
+            id: `${this.#listingId}-${index}`,
+            selected: selectedKeys.has(this.keyOf(item)),
+            busy: this.isBusy(item),
+            dragOver: dragOverKey === this.keyOf(item),
+            readOnly,
+            languagesMap,
+            toggle: (event: MouseEvent) => this.onCardCheckboxClick(event, index),
+            open: (event: MouseEvent) => this.onCardOpen(item, event),
+            menu: (event: MouseEvent) => this.onContextMenu(event, item)
+        }));
+    });
+
+    /** The grid's paginator, put back in step when it moved on a page change that was refused. */
+    protected readonly gridPaginator = viewChild(Paginator);
+
+    /**
+     * The item's key, by `dataKey`.
+     *
+     * @param item A listed item.
+     */
+    protected keyOf(item: DotContentDriveBrowseItem): string {
+        return item[this.$dataKey() as keyof DotContentDriveBrowseItem] as string;
+    }
+
+    /**
+     * Whether an operation is running on the item. Either key, as the row's busy marker reads it.
+     *
+     * @param item A listed item.
+     */
+    protected isBusy(item: DotContentDriveBrowseItem): boolean {
+        const busy = this.$busyRowsSet();
+
+        return busy.has(item.inode) || busy.has(item.identifier);
+    }
+
+    #isFolder(item: DotContentDriveBrowseItem): boolean {
+        return (item as { type?: string }).type === 'folder';
+    }
+
+    /** The table's anchor or the grid's, by position on the page; `null` when there is none. */
+    #anchorIndex(): number | null {
+        if (this.#isGrid()) {
+            return this.#gridAnchor;
+        }
+
+        const table = this.dataTable();
+
+        if (!table) {
+            return null;
+        }
+
+        const offset = this.$offset();
+
+        return (table.anchorRowIndex ?? offset) - offset;
+    }
+
+    /**
+     * Carries the user's place from one layout to the other (#37930, US7 #12): the item with the
+     * tab stop and the range anchor stay where they were, and the item is scrolled into view. The
+     * tab stop is one index both layouts read, so only the anchor has to be handed across.
+     */
+    #keepPlaceAcrossLayouts(): void {
+        let wasGrid: boolean | undefined;
+
+        effect(() => {
+            const isGrid = this.$isGrid();
+
+            untracked(() => {
+                if (wasGrid === undefined || wasGrid === isGrid) {
+                    wasGrid = isGrid;
+
+                    return;
+                }
+
+                wasGrid = isGrid;
+                this.#rangeBase = null;
+
+                if (isGrid) {
+                    // Read off the table before the switch takes it away.
+                    const table = this.dataTable();
+                    this.#gridAnchor =
+                        table?.anchorRowIndex != null
+                            ? table.anchorRowIndex - this.$offset()
+                            : this.$activeRowIndex();
+                }
+
+                const gridAnchor = this.#gridAnchor;
+
+                afterNextRender(
+                    () => {
+                        const table = this.dataTable();
+
+                        if (!isGrid && table) {
+                            const interactive = !this.$disabled() && !this.$readOnly();
+                            table.anchorRowIndex = interactive
+                                ? this.$offset() + (gridAnchor ?? this.$activeRowIndex())
+                                : null;
+                            this.#listenToTableScroll();
+                        }
+
+                        this.#activeElement()?.scrollIntoView({ block: 'nearest' });
+                    },
+                    { injector: this.#injector }
+                );
+            });
+        });
+    }
+
+    /** The row or card holding the tab stop. */
+    #activeElement(): HTMLElement | undefined {
+        return this.#isGrid()
+            ? this.#cards()[this.$gridTabStop()]
+            : this.#rowElements()[this.$activeRowIndex()];
+    }
+
+    /** The rendered cards, in reading order. */
+    #cards(): HTMLElement[] {
+        return Array.from(
+            this.#hostElement.nativeElement.querySelectorAll<HTMLElement>(CARD_SELECTOR)
+        );
+    }
+
+    /**
+     * How many cards fit in a row right now, measured from the rendered cards. Public so tests,
+     * which have no layout engine, can stand in for it.
+     */
+    measureColumnCount(): number {
+        return columnCountFromTops(this.#cards().map((card) => card.offsetTop));
+    }
+
+    /**
+     * Keeps the grid's tab stop on the card that took focus, by mouse or keyboard.
+     *
+     * @param index The card's position on the page.
+     */
+    protected onCardFocus(index: number): void {
+        this.$activeRowIndex.set(index);
+    }
+
+    /**
+     * Opens a card's item, as a double-click opens a row's. Never a busy one.
+     *
+     * @param item The card's item.
+     * @param event The click.
+     */
+    protected onCardOpen(item: DotContentDriveBrowseItem, event: MouseEvent): void {
+        if (this.isBusy(item)) {
+            return;
+        }
+
+        this.onDoubleClick(item, event);
+    }
+
+    /**
+     * A click on a card's checkbox: a plain one adds or removes the item, a Shift one selects the
+     * range from the anchor. With nothing selected there is no range to extend, so Shift acts as a
+     * plain click, as it does on a row's checkbox.
+     *
+     * @param event The click.
+     * @param index The card's position on the page.
+     */
+    protected onCardCheckboxClick(event: MouseEvent, index: number): void {
+        const item = this.$items()[index];
+
+        if (!item || !this.#canSelect(item)) {
+            return;
+        }
+
+        this.$activeRowIndex.set(index);
+        const selected = this.#asSelectedArray(this.selectedItems);
+
+        if (event.shiftKey && selected.length) {
+            this.#rangeBase ??= selected;
+            this.#extendSelectionTo(index);
+
+            return;
+        }
+
+        this.#rangeBase = null;
+        this.#gridAnchor = index;
+        this.#toggle(item);
+    }
+
+    /**
+     * The grid's keyboard (US7): Left and Right move one card in reading order, Up and Down a row,
+     * Home and End to the ends; with Shift they extend the selection from the anchor. Enter and
+     * Space toggle the focused card, and Shift+F10 or the ContextMenu key opens its actions. Busy
+     * cards are passed over.
+     *
+     * @param event A keydown inside the grid.
+     */
+    protected onGridKeydown(event: KeyboardEvent): void {
+        if (this.$disabled() || this.$readOnly() || MODIFIER_KEYS.has(event.key)) {
+            return;
+        }
+
+        const card = (event.target as HTMLElement | null)?.closest<HTMLElement>(CARD_SELECTOR);
+        const index = card ? this.#cards().indexOf(card) : -1;
+
+        if (index === -1) {
+            return;
+        }
+
+        const items = this.$items();
+
+        if (GRID_MOVE_KEYS.has(event.key)) {
+            // The arrows would otherwise scroll the listing (FR-032).
+            event.preventDefault();
+
+            if (event.shiftKey) {
+                this.#rangeBase ??= this.#asSelectedArray(this.selectedItems);
+                this.#gridAnchor ??= index;
+            } else {
+                this.#rangeBase = null;
+            }
+
+            const next = nextGridIndex({
+                index,
+                key: event.key,
+                columns: this.measureColumnCount(),
+                count: items.length,
+                isSkipped: (candidate) => !this.#canSelect(items[candidate])
+            });
+
+            if (next === index) {
+                return;
+            }
+
+            this.#cards()[next]?.focus();
+            this.$activeRowIndex.set(next);
+
+            if (event.shiftKey) {
+                this.#extendSelectionTo(next);
+            } else {
+                this.#gridAnchor = next;
+            }
+
+            return;
+        }
+
+        if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+
+            if (!this.#canSelect(items[index])) {
+                return;
+            }
+
+            this.#rangeBase = null;
+            this.#gridAnchor = index;
+            this.#toggle(items[index]);
+
+            return;
+        }
+
+        if (event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey)) {
+            event.preventDefault();
+            this.#openMenuFromKeyboard(index);
+        }
+    }
+
+    /**
+     * A page change from the grid's paginator, reported like the table's. A refused one (a page is
+     * already loading) puts the paginator back on the page showing.
+     *
+     * @param state The paginator's new state.
+     */
+    protected onGridPageChange(state: PaginatorState): void {
+        if (this.$loading() || this.#pageChangeAccepted()) {
+            this.#resetGridPaginator();
+
+            return;
+        }
+
+        this.onPage({ first: state.first ?? 0, rows: state.rows ?? this.$rows() });
+    }
+
+    #resetGridPaginator(): void {
+        const paginator = this.gridPaginator();
+
+        if (!paginator) {
+            return;
+        }
+
+        paginator.first = this.$offset();
+        paginator.updatePageLinks();
+        paginator.updatePaginatorState();
+    }
+
+    #canSelect(item: DotContentDriveBrowseItem | undefined): boolean {
+        return (
+            !!item &&
+            !this.$disabled() &&
+            !this.isBusy(item) &&
+            !this.$unselectableSet().has(this.keyOf(item))
+        );
+    }
+
+    /** Adds the item to the selection, or takes it out if it is there. */
+    #toggle(item: DotContentDriveBrowseItem): void {
+        const key = this.keyOf(item);
+        const isSelected = this.$selectedKeys().has(key);
+
+        if (this.$selectionMode() !== 'multiple') {
+            this.onSelectionChange(isSelected ? null : item);
+
+            return;
+        }
+
+        const selected = this.#asSelectedArray(this.selectedItems);
+
+        this.onSelectionChange(
+            isSelected ? selected.filter((entry) => this.keyOf(entry) !== key) : [...selected, item]
+        );
+    }
+
+    /**
+     * Opens the actions menu for the focused card. The menu places itself at a pointer position, so
+     * one is made up at the card's top-left corner, where the keyboard user's attention already is.
+     */
+    #openMenuFromKeyboard(index: number): void {
+        const card = this.#cards()[index];
+        const item = this.$items()[index];
+
+        if (!card || !item) {
+            return;
+        }
+
+        const rect = card.getBoundingClientRect();
+        const event = new MouseEvent('contextmenu', {
+            clientX: rect.left + 16,
+            clientY: rect.top + 16,
+            bubbles: true,
+            cancelable: true
+        });
+
+        this.onContextMenu(event, item);
+    }
+
     /**
      * Handles first change event from the PrimeNG Table
      * Basically primeNG Table handles the change of the first on every OnChange
@@ -1034,16 +2111,4 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             dataTable.first = this.$offset();
         }
     }
-}
-
-/**
- * Whether a row is something the shared folder actions can act on.
- *
- * Everything except a menu link: links have no workflow state, no permissions of their own and no
- * editor to open, so they are displayed and selectable but never actionable.
- */
-function isActionable(item: DotContentDriveBrowseItem): item is DotContentDriveItem {
-    const row = item as { type?: string; extension?: string };
-
-    return row.type !== 'link' && row.extension !== 'link';
 }

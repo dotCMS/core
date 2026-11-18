@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { JsonPipe } from '@angular/common';
 import { Component, inject } from '@angular/core';
@@ -21,7 +22,7 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 const mockDotWorkflowService = {
-    get: jest.fn().mockReturnValue(of(structuredClone(mockWorkflows)))
+    get: vi.fn().mockReturnValue(of(structuredClone(mockWorkflows)))
 };
 
 @Component({
@@ -63,7 +64,7 @@ describe('DotWorkflowsSelectorFieldComponent', () => {
         beforeEach(() => {
             mockDotWorkflowService.get.mockClear();
             spectator = createComponent();
-            jest.spyOn(spectator.component, 'propagateChange');
+            vi.spyOn(spectator.component, 'propagateChange');
         });
 
         describe('no params', () => {

@@ -8,13 +8,18 @@ import com.dotcms.cost.RequestCostReportTest;
 import com.dotcms.jitsu.validators.AnalyticsValidatorUtilTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.publisher.business.PublisherQueueJobTest;
+import com.dotcms.rest.api.v1.drive.ContentDriveBrowseScopeTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveFieldFilterTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveHelperContentletAPIComparisonTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveKeywordSearchTest;
+import com.dotcms.rest.api.v1.drive.ContentDriveLargeCandidateSetTest;
+import com.dotcms.rest.api.v1.drive.ContentDriveLiteralTextSearchTest;
+import com.dotcms.rest.api.v1.drive.ContentDriveSearchScopeTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveLinksTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowArchiveStepTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowFilterTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveStatusFilterTest;
+import com.dotcms.rest.api.v1.layout.LayoutResourceIntegrationTest;
 import com.dotcms.rest.api.v1.system.cache.CacheResourceIntegrationTest;
 import com.dotcms.rest.api.v1.system.role.RoleResourceIntegrationTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
@@ -38,6 +43,7 @@ import com.dotmarketing.business.SecondaryCategoryPermissionTest;
 import com.dotmarketing.db.InodeExistenceCheckIntegrationTest;
 import com.dotmarketing.factories.TreeFactoryTest;
 import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPathTest;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerPermissionInheritanceTest;
 import com.dotmarketing.portlets.contentlet.action.ImportContentletsActionSmokeTest;
 import com.dotmarketing.portlets.rules.RuleAPITest;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
@@ -49,14 +55,22 @@ import com.dotmarketing.startup.runonce.Task260206AddUsagePortletToMenuTest;
 import com.dotmarketing.startup.runonce.Task260320AddPluginsPortletToMenuTest;
 import com.dotmarketing.startup.runonce.Task260407AddBaseTypeColumnToIdentifierTest;
 import com.dotmarketing.startup.runonce.Task260505AddPluginsPortletToMenuTest;
+import com.dotcms.job.system.event.SystemEventsClusterDeliveryIntegrationTest;
+import com.dotcms.job.system.event.SystemEventsCursorIntegrationTest;
+import com.dotcms.job.system.event.SystemEventsJobDelegateIntegrationTest;
+import com.dotcms.job.system.event.SystemEventsReconciliationIntegrationTest;
+import com.dotcms.job.system.event.SystemEventsRetentionIntegrationTest;
 import com.dotmarketing.startup.runonce.Task260615AlterClusterIdLengthTest;
+import com.dotmarketing.startup.runonce.Task260826CreateSystemEventCursorTableTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
 
 @RunWith(MainBaseSuite.class)
 @Suite.SuiteClasses({
     RuleAPITest.class,
+    com.dotcms.variant.business.web.CurrentVariantWebInterceptorTest.class,
         DeterministicIdentifierAPITest.class,
+    com.dotcms.graphql.datafetcher.ContentletDataFetcherTest.class,
         CountPagesWithAllEndedExperimentsMetricTypeTest.class,
         CountPagesWithArchivedExperimentsMetricTypeTest.class,
         CountPagesWithDraftExperimentsMetricTypeTest.class,
@@ -70,17 +84,25 @@ import org.junit.runners.Suite;
         MetricTimeoutTest.class,
         Task230630CreateRunningIdsExperimentFieldIntegrationTest.class,
         TotalSizeOfFilesPerThemeMetricTypeTest.class,
+        com.dotmarketing.startup.runonce.Task261112WidenSiteSearchAuditTextColumnsTest.class,
         TimeMachineUtilTest.class,
         Task250604UpdateFolderInodesTest.class,
+        com.dotcms.rendering.js.FileJavascriptReaderTest.class,
         FixTask00090RecreateMissingFoldersInParentPathTest.class,
         AnalyticsValidatorUtilTest.class,
         Task250826AddIndexesToUniqueFieldsTableTest.class,
         SecondaryCategoryPermissionTest.class,
         RequestCostReportTest.class,
         OpenAIVisionAPIImplTest.class,
+        com.dotcms.rest.api.v1.container.ContainerResourceCallerPermissionTest.class,
+        com.dotcms.rest.api.v1.container.ContainerResourceContentReadAccessTest.class,
+        ContentDriveBrowseScopeTest.class,
         ContentDriveFieldFilterTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,
         ContentDriveKeywordSearchTest.class,
+        ContentDriveLargeCandidateSetTest.class,
+        ContentDriveLiteralTextSearchTest.class,
+        ContentDriveSearchScopeTest.class,
         ContentDriveLinksTest.class,
         ContentDriveWorkflowArchiveStepTest.class,
         ContentDriveWorkflowFilterTest.class,
@@ -90,6 +112,7 @@ import org.junit.runners.Suite;
         com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.class,
         com.dotcms.browser.BrowserAPITest.class,
         com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategyMatchingTest.class,
+    com.dotmarketing.portlets.contentlet.action.ContentImportAccessTest.class,
         com.dotcms.contenttype.test.ContentResourceTest.class,
         com.dotmarketing.portlets.htmlpages.business.render.HTMLPageAssetRenderedAPIImplIntegrationTest.class,
         com.dotcms.contenttype.business.ContentTypeDestroyAPIImplTest.class,
@@ -105,13 +128,36 @@ import org.junit.runners.Suite;
         Task260615AlterClusterIdLengthTest.class,
         ImportContentletsActionSmokeTest.class,
         TreeFactoryTest.class,
+    com.dotmarketing.portlets.user.ajax.UserAjaxHasUserRolesIntegrationTest.class,
+    com.dotcms.rest.api.v1.user.UserResourcePasswordIntegrationTest.class,
+    com.dotmarketing.portlets.workflows.action.WorkflowTaskAccessTest.class,
+    com.dotcms.rendering.velocity.viewtools.XsltToolTest.class,
+    com.dotmarketing.portlets.htmlpageasset.business.render.page.PageViewSerializerRelatedContentTest.class,
         PublisherQueueJobTest.class,
         ContentToStringUtilTest.class,
+    com.dotcms.enterprise.publishing.remote.BundleTrustedListRoundTripTest.class,
+    com.dotcms.rest.CMSConfigResourceIntegrationTest.class,
         CacheResourceIntegrationTest.class,
+    com.dotmarketing.portlets.contentlet.action.ImportContentletsActionTest.class,
         InodeExistenceCheckIntegrationTest.class,
         SecretsStoreWipeRegressionTest.class,
         SecretsStoreConcurrentWriteRaceTest.class,
+    com.dotcms.rest.api.v1.system.role.RoleResourceCheckRolesIntegrationTest.class,
         RoleResourceIntegrationTest.class,
+    com.dotmarketing.portlets.workflows.action.EditWorkflowTaskActionTest.class,
+        FileAssetContainerPermissionInheritanceTest.class,
+
+        // System event delivery in a cluster (issue #36827). The migration runs first so the
+        // cursor table exists before anything reads it.
+        Task260826CreateSystemEventCursorTableTest.class,
+        SystemEventsCursorIntegrationTest.class,
+        SystemEventsJobDelegateIntegrationTest.class,
+        SystemEventsClusterDeliveryIntegrationTest.class,
+        SystemEventsReconciliationIntegrationTest.class,
+        SystemEventsRetentionIntegrationTest.class,
+        com.dotcms.rest.api.v1.portlet.PortletResourceIntegrationTest.class,
+        LayoutResourceIntegrationTest.class,
+        com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class,
 })
 
 public class MainSuite3a {

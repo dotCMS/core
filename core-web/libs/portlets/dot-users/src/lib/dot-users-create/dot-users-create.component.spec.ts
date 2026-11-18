@@ -1,9 +1,16 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { Password } from 'primeng/password';
 
 import {
     DotHttpErrorManagerService,
@@ -35,14 +42,11 @@ const MESSAGES = {
     'users.dialog.tabs.roles': 'Roles',
     'users.dialog.tabs.permissions': 'Permissions',
     'users.dialog.tabs.api-tokens': 'API Tokens',
-    'users.dialog.new-user': 'New User',
-    'users.dialog.untitled-user': 'Untitled User',
-    'users.dialog.status.active': 'Active',
-    'users.dialog.status.inactive': 'Inactive',
     'users.dialog.save': 'Save Changes',
     'users.dialog.create': 'Create User',
     'users.dialog.delete.button': 'Delete User',
     'users.dialog.delete-confirm.header': 'Delete user',
+    'users.dialog.warning.form-errors': 'Please fill in all required fields.',
     'users.cancel': 'Cancel'
 };
 
@@ -56,10 +60,10 @@ describe('DotUsersCreateComponent', () => {
         providers: [
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
             mockProvider(DotUsersService, {
-                getUser: jest.fn().mockReturnValue(of(MOCK_USER_DETAIL)),
-                getGettingStartedState: jest.fn().mockReturnValue(of(false)),
-                setGettingStarted: jest.fn().mockReturnValue(of({})),
-                getUsersPaginated: jest.fn().mockReturnValue(
+                getUser: vi.fn().mockReturnValue(of(MOCK_USER_DETAIL)),
+                getGettingStartedState: vi.fn().mockReturnValue(of(false)),
+                setGettingStarted: vi.fn().mockReturnValue(of({})),
+                getUsersPaginated: vi.fn().mockReturnValue(
                     of({
                         entity: [],
                         errors: [],
@@ -69,29 +73,28 @@ describe('DotUsersCreateComponent', () => {
                         pagination: { currentPage: 1, perPage: 10, totalEntries: 0 }
                     })
                 ),
-                getApiTokens: jest.fn().mockReturnValue(of([])),
-                getApiTokenJwt: jest.fn().mockReturnValue(of('mock-jwt')),
-                createApiToken: jest.fn(),
-                revokeApiToken: jest.fn(),
-                deleteApiToken: jest.fn()
+                getApiTokens: vi.fn().mockReturnValue(of([])),
+                createApiToken: vi.fn(),
+                revokeApiToken: vi.fn(),
+                deleteApiToken: vi.fn()
             }),
             mockProvider(DotRolesService, {
-                getForUser: jest.fn().mockReturnValue(
+                getForUser: vi.fn().mockReturnValue(
                     of([
                         { id: 'role-back', name: 'Back End', roleKey: 'DOTCMS_BACK_END_USER' },
                         { id: 'role-personal', name: 'Personal', roleKey: 'user-42' }
                     ])
                 ),
-                getRoots: jest.fn().mockReturnValue(of([])),
-                getById: jest.fn()
+                getRoots: vi.fn().mockReturnValue(of([])),
+                getById: vi.fn()
             }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() })
         ]
     });
 
     describe('create mode', () => {
         beforeEach(() => {
-            dialogRef = { close: jest.fn() } as unknown as DynamicDialogRef;
+            dialogRef = { close: vi.fn() } as unknown as DynamicDialogRef;
             spectator = createComponent({
                 providers: [
                     { provide: DynamicDialogRef, useValue: dialogRef },
@@ -107,17 +110,47 @@ describe('DotUsersCreateComponent', () => {
             expect(spectator.query(byTestId('users-dialog-tab-api-tokens'))).toBeTruthy();
         });
 
-        it('should NOT render the status chip in the header when no user is provided', () => {
-            expect(spectator.query(byTestId('users-dialog-header-status'))).toBeFalsy();
-        });
-
-        it('should show NU as the initials placeholder', () => {
-            expect(spectator.component.$initials()).toBe('NU');
-        });
-
         it('should mark password as required in create mode', () => {
             const password = spectator.component.form.controls.account.controls.password;
             expect(password.hasError('required')).toBe(true);
+        });
+
+        it('should refuse a password shorter than 15 characters', () => {
+            const password = spectator.component.form.controls.account.controls.password;
+            password.setValue('Aa1!bcdefghijk');
+
+            expect(password.hasError('minlength')).toBe(true);
+        });
+
+        it('should refuse a password longer than 64 characters', () => {
+            const password = spectator.component.form.controls.account.controls.password;
+            password.setValue('Aa1!' + 'x'.repeat(61));
+
+            expect(password.hasError('maxlength')).toBe(true);
+        });
+
+        it('should refuse a 15-character password that lacks a character class', () => {
+            const password = spectator.component.form.controls.account.controls.password;
+            password.setValue('Aa1bcdefghijklm');
+
+            expect(password.hasError('passwordComplexity')).toBe(true);
+        });
+
+        it('should accept a password of 15 and of 64 characters with all four classes', () => {
+            const password = spectator.component.form.controls.account.controls.password;
+
+            password.setValue('Aa1!bcdefghijkl');
+            expect(password.errors).toBeNull();
+
+            password.setValue('Aa1!' + 'x'.repeat(60));
+            expect(password.errors).toBeNull();
+        });
+
+        it('should not show a password strength meter on any password field', () => {
+            const passwords = spectator.queryAll(Password);
+
+            expect(passwords.length).toBeGreaterThan(0);
+            passwords.forEach((field) => expect(field.feedback).toBe(false));
         });
 
         it('should not close on save when the form is invalid', () => {
@@ -130,14 +163,41 @@ describe('DotUsersCreateComponent', () => {
             expect(spectator.component.form.controls.account.controls.firstName.touched).toBe(true);
         });
 
+        it('should surface the footer warning banner after an invalid Save click', () => {
+            spectator.click(saveButton(spectator));
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('users-dialog-warning'))).toBeTruthy();
+            expect(spectator.component['$formWarning']()).toBe('users.dialog.warning.form-errors');
+        });
+
+        it('should hide the footer warning once the form becomes valid', () => {
+            spectator.click(saveButton(spectator));
+            expect(spectator.component['$formWarning']()).toBe('users.dialog.warning.form-errors');
+
+            spectator.component.form.patchValue({
+                account: {
+                    firstName: 'Ada',
+                    lastName: 'Lovelace',
+                    email: 'ada@dotcms.com',
+                    password: 'Xy7#abcdefghijklm',
+                    confirmPassword: 'Xy7#abcdefghijklm'
+                }
+            });
+            spectator.detectChanges();
+
+            expect(spectator.component['$formWarning']()).toBeNull();
+            expect(spectator.query(byTestId('users-dialog-warning'))).toBeNull();
+        });
+
         it('should close with the form value on save when valid', () => {
             spectator.component.form.patchValue({
                 account: {
                     firstName: 'Ada',
                     lastName: 'Lovelace',
                     email: 'ada@dotcms.com',
-                    password: 'Xy7#abcdef',
-                    confirmPassword: 'Xy7#abcdef'
+                    password: 'Xy7#abcdefghijklm',
+                    confirmPassword: 'Xy7#abcdefghijklm'
                 }
             });
             spectator.detectChanges();
@@ -146,6 +206,29 @@ describe('DotUsersCreateComponent', () => {
 
             expect(dialogRef.close).toHaveBeenCalledWith(
                 expect.objectContaining({ action: 'save' })
+            );
+        });
+
+        it('should send the password exactly as typed, spaces included', () => {
+            const typed = ' Xy7#abcdefghijk ';
+            spectator.component.form.patchValue({
+                account: {
+                    firstName: 'Ada',
+                    lastName: 'Lovelace',
+                    email: 'ada@dotcms.com',
+                    password: typed,
+                    confirmPassword: typed
+                }
+            });
+            spectator.detectChanges();
+
+            spectator.click(saveButton(spectator));
+
+            expect(dialogRef.close).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    action: 'save',
+                    payload: expect.objectContaining({ password: typed })
+                })
             );
         });
 
@@ -181,7 +264,7 @@ describe('DotUsersCreateComponent', () => {
 
     describe('edit mode', () => {
         beforeEach(() => {
-            dialogRef = { close: jest.fn() } as unknown as DynamicDialogRef;
+            dialogRef = { close: vi.fn() } as unknown as DynamicDialogRef;
             spectator = createComponent({
                 providers: [
                     { provide: DynamicDialogRef, useValue: dialogRef },
@@ -238,10 +321,6 @@ describe('DotUsersCreateComponent', () => {
             expect(account.active).toBe(true);
         });
 
-        it('should render the status chip in the header', () => {
-            expect(spectator.query(byTestId('users-dialog-header-status'))).toBeTruthy();
-        });
-
         it('should NOT mark password as required in edit mode', () => {
             const password = spectator.component.form.controls.account.controls.password;
             expect(password.hasError('required')).toBe(false);
@@ -253,22 +332,6 @@ describe('DotUsersCreateComponent', () => {
             expect(access.backend).toBe(true);
             expect(access.cmsAdmin).toBe(false);
             expect(access.frontend).toBe(false);
-        });
-
-        it('should derive canLoginToAdmin from CMS Admin or Back-end toggles', () => {
-            const access = spectator.component.form.controls.access.controls;
-
-            // Loaded user has DOTCMS_BACK_END_USER → chip shows.
-            expect(spectator.component.$canLoginToAdmin()).toBe(true);
-
-            access.backend.setValue(false);
-            expect(spectator.component.$canLoginToAdmin()).toBe(false);
-
-            access.cmsAdmin.setValue(true);
-            expect(spectator.component.$canLoginToAdmin()).toBe(true);
-
-            access.cmsAdmin.setValue(false);
-            expect(spectator.component.$canLoginToAdmin()).toBe(false);
         });
 
         it('should merge access toggles into `roles` and drop the personal role on save', () => {
@@ -295,10 +358,62 @@ describe('DotUsersCreateComponent', () => {
                 })
             );
 
-            const call = (dialogRef.close as jest.Mock).mock.calls[0][0] as {
+            const call = (dialogRef.close as Mock).mock.calls[0][0] as {
                 payload: { roles: string[] };
             };
             expect(call.payload.roles).not.toContain('user-42');
+        });
+
+        it('should hand the three access-role keys to the shuttle as `excludedRoleKeys`', () => {
+            // The bug Adrian flagged (#37457) is only preventable when
+            // the shuttle cannot emit access-role IDs in the first
+            // place — the shell has no full role catalog to resolve
+            // arbitrary IDs back to keys, so a defensive shell-only
+            // strip cannot cover the case. The template exposes
+            // `ACCESS_ROLE_KEYS_LIST` for the tab's `excludedRoleKeys`
+            // input; verifying that alias is present is the smallest
+            // check that pins the guarantee in place.
+            const list = spectator.component['ACCESS_ROLE_KEYS_LIST'];
+            expect(list).toEqual([
+                'CMS Administrator',
+                'DOTCMS_BACK_END_USER',
+                'DOTCMS_FRONT_END_USER'
+            ]);
+        });
+
+        it('should drop initial-fetch access-role IDs from the shuttle seed', () => {
+            // Belt-and-suspenders: if a user was already a Back-end
+            // User (the mock has `DOTCMS_BACK_END_USER` on them), the
+            // shuttle seed excludes that id so the Granted panel does
+            // not show a role that the tab would then filter out of
+            // Available — which would read as a stuck row the user
+            // can't move.
+            expect(spectator.component['initialGrantedRoleIds']()).not.toContain('role-back');
+            expect(spectator.component['initialGrantedRoleIds']()).toContain('role-personal');
+        });
+
+        it('should send exactly one identifier per access role even if the shuttle also carries the id', () => {
+            // The pair (id from the shuttle + key added by the toggle)
+            // would otherwise land as two entries for the same role.
+            // The shell's strip catches the initial-fetch id; the tab's
+            // `excludedRoleKeys` handling catches the rest. Either way
+            // the payload contains the key exactly once.
+            spectator.component['onGrantedRolesChange'](['role-back']);
+            spectator.component.form.controls.access.patchValue({
+                cmsAdmin: false,
+                backend: true, // key `DOTCMS_BACK_END_USER` added by toggle
+                frontend: false
+            });
+            spectator.detectChanges();
+            spectator.click(saveButton(spectator));
+
+            const call = (dialogRef.close as Mock).mock.calls[0][0] as {
+                payload: { roles: string[] };
+            };
+            const backendEntries = call.payload.roles.filter(
+                (id) => id === 'role-back' || id === 'DOTCMS_BACK_END_USER'
+            );
+            expect(backendEntries).toEqual(['DOTCMS_BACK_END_USER']);
         });
 
         it('should send an empty `roles: []` when the Roles tab clears every grant and access toggles are off', () => {
@@ -313,7 +428,7 @@ describe('DotUsersCreateComponent', () => {
             spectator.detectChanges();
             spectator.click(saveButton(spectator));
 
-            const call = (dialogRef.close as jest.Mock).mock.calls[0][0] as {
+            const call = (dialogRef.close as Mock).mock.calls[0][0] as {
                 payload: { roles: string[] };
             };
             // Backend fix #37109 lets us send `roles: []` to actually

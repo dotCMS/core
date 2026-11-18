@@ -60,6 +60,7 @@ import { FallbackComponent } from '../fallback-component/fallback-component.comp
         '[attr.data-dot-container]': '$isDevMode() ? getContainerAttribute() : null',
         '[attr.data-dot-on-number-of-pages]':
             "$dotAttributes()['data-dot-on-number-of-pages'] ?? null",
+        '[attr.data-dot-can-edit]': "$dotAttributes()['data-dot-can-edit'] ?? null",
         '[attr.data-dot-style-properties]': "$dotAttributes()['data-dot-style-properties'] ?? null",
         '[style]': '$style()'
     },

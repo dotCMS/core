@@ -1,6 +1,13 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
+import { signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 
 import { TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/tree';
@@ -22,12 +29,13 @@ import { createFakeSite } from '@dotcms/utils-testing';
 
 import { DotContentDriveSidebarComponent } from './dot-content-drive-sidebar.component';
 
+import { SYSTEM_HOST } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { createSiteNode } from '../../utils/tree-folder.utils';
 
 describe('DotContentDriveSidebarComponent', () => {
     let spectator: Spectator<DotContentDriveSidebarComponent>;
-    let contentDriveStore: jest.Mocked<InstanceType<typeof DotContentDriveStore>>;
+    let contentDriveStore: Mocked<InstanceType<typeof DotContentDriveStore>>;
 
     const mockSiteDetails = {
         hostname: 'demo.dotcms.com',
@@ -98,48 +106,67 @@ describe('DotContentDriveSidebarComponent', () => {
         }
     ];
 
+    // A real signal, not a vi.fn: the row's selected state is read in an OnPush template, so it
+    // only re-renders when a signal it reads is invalidated. Same pattern the toolbar spec uses.
+    const allSiteContentSelected = signal(false);
+    const systemHostSelected = signal(false);
+    // Drives the System Host row's drop gate the way the store's own lookup would.
+    const systemHostCanAddChildren = signal<boolean | undefined>(true);
+    // And whether the row is offered at all. True unless the server refused the lookup outright.
+    const systemHostCanRead = signal(true);
+
     const createComponent = createComponentFactory({
         component: DotContentDriveSidebarComponent,
         imports: [DotTreeFolderComponent],
         providers: [
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(mockSiteDetails)
+                siteDetails: vi.fn().mockReturnValue(mockSiteDetails)
             }),
             mockProvider(DotContentDriveStore, {
-                initContentDrive: jest.fn(),
-                currentSite: jest.fn().mockReturnValue(mockSiteDetails),
-                isTreeExpanded: jest.fn().mockReturnValue(true),
-                removeFilter: jest.fn(),
-                getFilterValue: jest.fn(),
-                setIsTreeExpanded: jest.fn(),
-                path: jest.fn().mockReturnValue('/test/path'),
-                setItems: jest.fn(),
-                setStatus: jest.fn(),
-                setPagination: jest.fn(),
-                setSort: jest.fn(),
-                patchFilters: jest.fn(),
-                setPath: jest.fn(),
-                contextMenu: jest.fn().mockReturnValue(null),
-                folders: jest.fn().mockReturnValue(mockTreeNodes),
-                selectedNode: jest.fn().mockReturnValue(mockTreeNodes[1]),
-                sidebarLoading: jest.fn().mockReturnValue(false),
-                loadFolders: jest.fn(),
-                loadChildFolders: jest.fn(),
-                patchContextMenu: jest.fn(),
-                updateFolders: jest.fn(),
-                setSelectedNode: jest.fn()
+                initContentDrive: vi.fn(),
+                allBusyRows: vi.fn().mockReturnValue(['inode-a', 'id-a']),
+                systemHostCanAddChildren: systemHostCanAddChildren,
+                systemHostCanRead: systemHostCanRead,
+                currentSite: vi.fn().mockReturnValue(mockSiteDetails),
+                isTreeExpanded: vi.fn().mockReturnValue(true),
+                removeFilter: vi.fn(),
+                getFilterValue: vi.fn(),
+                setIsTreeExpanded: vi.fn(),
+                path: vi.fn().mockReturnValue('/test/path'),
+                setItems: vi.fn(),
+                setStatus: vi.fn(),
+                setPagination: vi.fn(),
+                setSort: vi.fn(),
+                patchFilters: vi.fn(),
+                setPath: vi.fn(),
+                contextMenu: vi.fn().mockReturnValue(null),
+                folders: vi.fn().mockReturnValue(mockTreeNodes),
+                selectedNode: vi.fn().mockReturnValue(mockTreeNodes[1]),
+                sidebarLoading: vi.fn().mockReturnValue(false),
+                loadFolders: vi.fn(),
+                loadChildFolders: vi.fn(),
+                patchContextMenu: vi.fn(),
+                updateFolders: vi.fn(),
+                setSelectedNode: vi.fn(),
+                selectAllSiteContent: vi.fn(),
+                selectSystemHost: vi.fn(),
+                $allSiteContentSelected: allSiteContentSelected,
+                $systemHostSelected: systemHostSelected
             }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: vi.fn().mockImplementation((key: string) => key)
             })
         ]
     });
 
     beforeEach(() => {
+        allSiteContentSelected.set(false);
+        systemHostSelected.set(false);
+
         spectator = createComponent({
             providers: [
                 mockProvider(DotFolderService, {
-                    getFolders: jest.fn().mockReturnValue(of(mockFolders))
+                    getFolders: vi.fn().mockReturnValue(of(mockFolders))
                 })
             ]
         });
@@ -147,6 +174,268 @@ describe('DotContentDriveSidebarComponent', () => {
         contentDriveStore = spectator.inject(DotContentDriveStore, true);
 
         spectator.detectChanges();
+    });
+
+    describe('all site content', () => {
+        const row = () => spectator.query(byTestId('all-site-content'));
+
+        it('should offer a row above the hierarchy', () => {
+            expect(row()).toBeTruthy();
+        });
+
+        it('should ask the store for all site content when the row is chosen', () => {
+            spectator.click(byTestId('all-site-content'));
+
+            expect(contentDriveStore.selectAllSiteContent).toHaveBeenCalled();
+        });
+
+        it('should be reachable by keyboard, not only by pointer', () => {
+            // The hierarchy beside it is a tree with its own arrow-key handling, so this row has to
+            // carry its own semantics rather than inheriting the tree's.
+            expect(row()?.tagName.toLowerCase()).toBe('button');
+        });
+
+        it('should not read as current while a folder is being browsed', () => {
+            // The default mock browses '/test/path'.
+            expect(row()?.getAttribute('aria-current')).toBeNull();
+        });
+
+        it('should read as current when the drive carries no location', () => {
+            // `aria-current`, not `aria-selected`: the latter is only meaningful on roles like
+            // option, tab or treeitem, and on a button it is dropped from the accessibility tree
+            // outright — which is how this was caught, as a row that announced nothing and looked
+            // identical whether or not it was the view you were on.
+            allSiteContentSelected.set(true);
+
+            spectator.detectChanges();
+
+            expect(row()?.getAttribute('aria-current')).toBe('true');
+        });
+    });
+
+    describe('reading System Host', () => {
+        afterEach(() => systemHostCanRead.set(true));
+
+        it('should offer the entry to a user who may read System Host', () => {
+            expect(spectator.query(byTestId('system-host'))).toBeTruthy();
+        });
+
+        it('should offer no entry at all to a user who may not', () => {
+            // Hidden rather than disabled: a control with nothing to decide should not be sitting
+            // there, which is the call this feature already made about the toggle. The URL is
+            // gated in the store, because hiding a button stops nobody who has a link.
+            systemHostCanRead.set(false);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('system-host'))).toBeNull();
+        });
+    });
+
+    describe('drag and drop onto the sidebar entries', () => {
+        const dragWith = (row: Element | null, files: File[]) => {
+            // This environment neither populates `files` from `items.add` nor carries a
+            // `dataTransfer` through the DragEvent constructor, and the component forks on
+            // `files.length` -- so it is attached to the event itself.
+            const fileList = {
+                ...files,
+                length: files.length,
+                item: (i: number) => files[i] ?? null
+            } as unknown as FileList;
+            const fire = (type: string) => {
+                const event = new DragEvent(type, { bubbles: true, cancelable: true });
+                Object.defineProperty(event, 'dataTransfer', {
+                    value: { files: fileList },
+                    configurable: true
+                });
+
+                return row?.dispatchEvent(event);
+            };
+            fire('dragenter');
+            // A row that accepts a drop cancels dragover; anything else declines it.
+            const offered = fire('dragover') === false;
+            fire('drop');
+            spectator.detectChanges();
+
+            return offered;
+        };
+        const png = () => new File(['x'], 'a.png', { type: 'image/png' });
+
+        beforeEach(() => systemHostCanAddChildren.set(true));
+
+        describe('the System Host entry', () => {
+            it('should upload files dropped on it, targeting System Host', () => {
+                const uploads: DotContentDriveUploadFiles[] = [];
+                spectator
+                    .output<DotContentDriveUploadFiles>('uploadFiles')
+                    .subscribe((e) => uploads.push(e));
+
+                dragWith(spectator.query(byTestId('system-host')), [png()]);
+
+                expect(uploads.length).toBe(1);
+                expect(uploads[0].targetFolder?.id).toBe(SYSTEM_HOST.identifier);
+            });
+
+            it('should move content dropped on it, targeting System Host', () => {
+                const moves: DotContentDriveMoveItems[] = [];
+                spectator
+                    .output<DotContentDriveMoveItems>('moveItems')
+                    .subscribe((e) => moves.push(e));
+
+                dragWith(spectator.query(byTestId('system-host')), []);
+
+                expect(moves.length).toBe(1);
+                expect(moves[0].targetFolder?.id).toBe(SYSTEM_HOST.identifier);
+            });
+
+            it('should offer itself as a drop target while the user may add to System Host', () => {
+                expect(dragWith(spectator.query(byTestId('system-host')), [png()])).toBe(true);
+            });
+
+            it('should not offer itself when the user may not add to System Host', () => {
+                // The spec refuses the target outright rather than accepting and then failing:
+                // a drop that is going to be rejected should never look available.
+                systemHostCanAddChildren.set(false);
+                spectator.detectChanges();
+
+                const moves: DotContentDriveMoveItems[] = [];
+                spectator
+                    .output<DotContentDriveMoveItems>('moveItems')
+                    .subscribe((e) => moves.push(e));
+
+                expect(dragWith(spectator.query(byTestId('system-host')), [])).toBe(false);
+                expect(moves.length).toBe(0);
+            });
+        });
+
+        describe('the All Site Content entry', () => {
+            it('should never be a drop target, for files or for content', () => {
+                // Files dropped on the LISTING in this scope are accepted; the entry itself is
+                // not a destination, because the site row beneath it already means the site root.
+                const uploads: DotContentDriveUploadFiles[] = [];
+                const moves: DotContentDriveMoveItems[] = [];
+                spectator
+                    .output<DotContentDriveUploadFiles>('uploadFiles')
+                    .subscribe((e) => uploads.push(e));
+                spectator
+                    .output<DotContentDriveMoveItems>('moveItems')
+                    .subscribe((e) => moves.push(e));
+
+                expect(dragWith(spectator.query(byTestId('all-site-content')), [png()])).toBe(
+                    false
+                );
+                expect(dragWith(spectator.query(byTestId('all-site-content')), [])).toBe(false);
+                expect(uploads.length).toBe(0);
+                expect(moves.length).toBe(0);
+            });
+
+            it('should look refused while a drag is over it, rather than inert', () => {
+                // A gesture that simply does nothing reads as a broken UI.
+                const row = spectator.query(byTestId('all-site-content'));
+                const dt = new DataTransfer();
+                row?.dispatchEvent(
+                    new DragEvent('dragenter', {
+                        bubbles: true,
+                        cancelable: true,
+                        dataTransfer: dt
+                    })
+                );
+                spectator.detectChanges();
+
+                expect(row?.getAttribute('aria-disabled')).toBe('true');
+            });
+        });
+    });
+
+    describe('System Host', () => {
+        const row = () => spectator.query(byTestId('system-host'));
+
+        it('should offer a row below the hierarchy', () => {
+            expect(row()).toBeTruthy();
+        });
+
+        it('should sit after the hierarchy in document order', () => {
+            // Below the tree, not above it: System Host belongs to no site, so it reads as the
+            // other place you can be rather than as part of this site's structure.
+            const hierarchy = spectator.query(byTestId('hierarchy-scroll'));
+            expect(hierarchy).toBeTruthy();
+
+            expect(
+                (hierarchy as Node).compareDocumentPosition(row() as Node) &
+                    Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+        });
+
+        // A valid drop target that never changes while a drag is over it reads as one that will
+        // refuse the drop. The tree marks its own active target, and the all-site-content row
+        // marks itself as refusing, so this row was the only one in the column giving the author
+        // nothing back. Asserted on the state attribute rather than the class, so the test says
+        // what the row IS rather than how it happens to be painted.
+        it('should mark itself while a drag is over it', () => {
+            const dragTo = (type: string) =>
+                row()?.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true }));
+
+            dragTo('dragenter');
+            spectator.detectChanges();
+
+            expect(row()?.getAttribute('data-drag-over')).toBe('true');
+        });
+
+        it('should stop marking itself once the drag leaves', () => {
+            const dragTo = (type: string) =>
+                row()?.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true }));
+
+            dragTo('dragenter');
+            spectator.detectChanges();
+            dragTo('dragleave');
+            spectator.detectChanges();
+
+            expect(row()?.getAttribute('data-drag-over')).toBeNull();
+        });
+
+        // The mark has to clear on drop as well as on leave: a drop fires no dragleave, so a row
+        // that only listened for the latter would stay highlighted after the item had landed.
+        it('should stop marking itself once the item is dropped', () => {
+            const dragTo = (type: string) =>
+                row()?.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true }));
+
+            dragTo('dragenter');
+            spectator.detectChanges();
+            dragTo('drop');
+            spectator.detectChanges();
+
+            expect(row()?.getAttribute('data-drag-over')).toBeNull();
+        });
+
+        // Nothing to accept means nothing to advertise.
+        it('should not mark itself when it cannot accept children', () => {
+            systemHostCanAddChildren.set(false);
+            const dragTo = (type: string) =>
+                row()?.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true }));
+
+            dragTo('dragenter');
+            spectator.detectChanges();
+
+            expect(row()?.getAttribute('data-drag-over')).toBeNull();
+        });
+
+        it('should ask the store for System Host when the row is chosen', () => {
+            spectator.click(byTestId('system-host'));
+
+            expect(contentDriveStore.selectSystemHost).toHaveBeenCalled();
+        });
+
+        it('should be reachable by keyboard, not only by pointer', () => {
+            expect(row()?.tagName.toLowerCase()).toBe('button');
+        });
+
+        it('should read as current only while System Host is what is being shown', () => {
+            expect(row()?.getAttribute('aria-current')).toBeNull();
+
+            systemHostSelected.set(true);
+            spectator.detectChanges();
+
+            expect(row()?.getAttribute('aria-current')).toBe('true');
+        });
     });
 
     describe('HTML Rendering', () => {
@@ -281,7 +570,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
             it('should set node expanded to true if it already has children or is leaf', () => {
                 // Reset the mock to clear any calls from component initialization
-                jest.clearAllMocks();
+                vi.clearAllMocks();
 
                 const nodeWithChildren: DotFolderTreeNodeItem = {
                     key: 'parent-folder',
@@ -901,7 +1190,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
         it('should not load folders when currentSite is null', () => {
             // Clear any previous calls
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Set currentSite to null - the effect should return early
             contentDriveStore.currentSite.mockReturnValue(null);
@@ -931,12 +1220,12 @@ describe('DotContentDriveSidebarComponent', () => {
             leaf: false
         };
 
-        let scrollIntoView: jest.Mock;
+        let scrollIntoView: Mock;
 
         beforeEach(() => {
-            scrollIntoView = jest.fn();
+            scrollIntoView = vi.fn();
             const treeFolder = spectator.query(DotTreeFolderComponent);
-            jest.spyOn(treeFolder.elementRef.nativeElement, 'querySelector').mockReturnValue({
+            vi.spyOn(treeFolder!.elementRef.nativeElement, 'querySelector').mockReturnValue({
                 scrollIntoView
             } as unknown as Element);
         });
@@ -952,6 +1241,23 @@ describe('DotContentDriveSidebarComponent', () => {
                 behavior: 'instant',
                 block: 'center'
             });
+        });
+
+        it('should not scroll on load when the selection is the site root', () => {
+            // The site row is the tree's first row, so there is nothing to bring into view. The
+            // reveal centred it anyway, and in Firefox-based browsers that left the tree scrolled
+            // to its middle with the selected root out of sight.
+            contentDriveStore.selectedNode.mockReturnValue({
+                key: 'site-root',
+                label: 'demo.dotcms.com',
+                data: { id: 'site-id', hostname: 'demo.dotcms.com', path: '', type: 'folder' },
+                leaf: false
+            });
+
+            spectator.component.revealSelectedNodeOnLoad(false);
+            spectator.detectChanges();
+
+            expect(scrollIntoView).not.toHaveBeenCalled();
         });
 
         it('should not scroll while the tree is still loading', () => {
@@ -994,8 +1300,137 @@ describe('DotContentDriveSidebarComponent', () => {
     });
 
     describe('handleSelectedNodeFromTable', () => {
+        /** The mock tree with `/documents/images/` loaded under `/documents/`. */
+        const treeWithImagesLoaded = (): DotFolderTreeNodeItem[] =>
+            mockTreeNodes.map((node) =>
+                node.data?.path === '/documents/'
+                    ? {
+                          ...node,
+                          children: [
+                              {
+                                  key: 'images-node',
+                                  label: '/documents/images/',
+                                  data: {
+                                      id: 'images-node',
+                                      hostname: 'demo.dotcms.com',
+                                      path: '/documents/images/',
+                                      type: 'folder'
+                                  },
+                                  leaf: true
+                              }
+                          ]
+                      }
+                    : node
+            );
+
+        it('should leave loading the branch to the store when the folder is not in the tree yet', () => {
+            // The store loads the missing levels into the tree on screen. Walking them here too
+            // fetched the same levels twice, and whichever answer landed last dropped the other.
+            const recursiveExpandSpy = vi.spyOn(spectator.component, 'recursiveExpandOneNode');
+            contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+
+            spectator.component.handleSelectedNodeFromTable({
+                key: 'table-node',
+                label: '/documents/images/',
+                data: {
+                    id: 'table-node',
+                    hostname: 'demo.dotcms.com',
+                    path: '/documents/images/',
+                    type: 'folder',
+                    fromTable: true
+                },
+                leaf: false
+            });
+
+            expect(recursiveExpandSpy).not.toHaveBeenCalled();
+            expect(contentDriveStore.loadChildFolders).not.toHaveBeenCalled();
+        });
+
+        describe('once the store has loaded the branch of a folder opened from the table', () => {
+            const standIn: DotFolderTreeNodeItem = {
+                key: 'table-node',
+                label: '/documents/images/',
+                data: {
+                    id: 'table-node',
+                    hostname: 'demo.dotcms.com',
+                    path: '/documents/images/',
+                    type: 'folder',
+                    fromTable: true
+                },
+                leaf: false
+            };
+
+            const spyOnScroll = () => {
+                const scrollIntoView = vi.fn();
+                const nativeElement =
+                    spectator.query(DotTreeFolderComponent)?.elementRef.nativeElement;
+                vi.spyOn(nativeElement, 'querySelector').mockReturnValue({
+                    scrollIntoView
+                } as unknown as HTMLElement);
+
+                return scrollIntoView;
+            };
+
+            it('should scroll the tree to it once the tree holds it', () => {
+                // Its row does not exist while the branch loads, so the scroll waits for the tree
+                // to gain the folder's node. The selection does not change when that happens: the
+                // stand-in the table selected stays selected.
+                const scrollIntoView = spyOnScroll();
+                contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+
+                spectator.component.handleSelectedNodeFromTable(standIn);
+                spectator.component.revealLoadedFolder(treeWithImagesLoaded());
+                spectator.detectChanges();
+
+                expect(scrollIntoView).toHaveBeenCalledWith({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            });
+
+            it('should scroll only once, not every time the tree changes afterwards', () => {
+                const scrollIntoView = spyOnScroll();
+                contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+
+                spectator.component.handleSelectedNodeFromTable(standIn);
+                spectator.component.revealLoadedFolder(treeWithImagesLoaded());
+                spectator.detectChanges();
+                spectator.component.revealLoadedFolder(treeWithImagesLoaded());
+                spectator.detectChanges();
+
+                expect(scrollIntoView).toHaveBeenCalledTimes(1);
+            });
+
+            it('should not scroll once the author has selected another folder in the tree', () => {
+                // Its branch can arrive after the author has moved on; pulling the tree back to
+                // it then would undo the choice they just made.
+                const scrollIntoView = spyOnScroll();
+                contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+
+                spectator.component.handleSelectedNodeFromTable(standIn);
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeSelect', {
+                    originalEvent: new Event('click'),
+                    node: mockTreeNodes[1]
+                });
+                spectator.component.revealLoadedFolder(treeWithImagesLoaded());
+                spectator.detectChanges();
+
+                expect(scrollIntoView).not.toHaveBeenCalled();
+            });
+
+            it('should not scroll when no folder was opened from the table', () => {
+                // A tree click is already under the pointer.
+                const scrollIntoView = spyOnScroll();
+
+                spectator.component.revealLoadedFolder(treeWithImagesLoaded());
+                spectator.detectChanges();
+
+                expect(scrollIntoView).not.toHaveBeenCalled();
+            });
+        });
+
         it('should handle selectedNode with fromTable flag', () => {
-            const mockScrollIntoView = jest.fn();
+            const mockScrollIntoView = vi.fn();
             // Create a proper mock element that extends HTMLElement
             const mockElement = {
                 scrollIntoView: mockScrollIntoView
@@ -1006,10 +1441,10 @@ describe('DotContentDriveSidebarComponent', () => {
             const nativeElement = treeFolderComponent?.elementRef.nativeElement;
 
             // Mock querySelector to return the mock element
-            jest.spyOn(nativeElement, 'querySelector').mockReturnValue(mockElement);
+            vi.spyOn(nativeElement, 'querySelector').mockReturnValue(mockElement);
 
             // Spy on the recursiveExpandOneNode method
-            const recursiveExpandSpy = jest.spyOn(spectator.component, 'recursiveExpandOneNode');
+            const recursiveExpandSpy = vi.spyOn(spectator.component, 'recursiveExpandOneNode');
 
             const nodeFromTable: DotFolderTreeNodeItem = {
                 key: 'table-node',
@@ -1024,10 +1459,9 @@ describe('DotContentDriveSidebarComponent', () => {
                 leaf: false
             };
 
-            // Setup folders - mockTreeNodes already includes a node with path '/documents/' (folder-1)
-            // The path '/documents/images/' split and filtered gives ['documents', 'images']
-            // slice(0, -1) removes the last segment, so it becomes ['documents']
-            contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+            // The folder is already in the tree, under `/documents/`, so only its ancestors need
+            // opening. The path '/documents/images/' gives the ancestor segments ['documents'].
+            contentDriveStore.folders.mockReturnValue(treeWithImagesLoaded());
             contentDriveStore.loadChildFolders.mockReturnValue(
                 of({ folders: [], totalEntries: 0 })
             );
@@ -1067,13 +1501,13 @@ describe('DotContentDriveSidebarComponent', () => {
             const nativeElement = treeFolderComponent?.elementRef.nativeElement;
 
             if (nativeElement) {
-                jest.spyOn(nativeElement, 'querySelector').mockReturnValue(null);
+                vi.spyOn(nativeElement, 'querySelector').mockReturnValue(null);
             }
 
             // Spy on the recursiveExpandOneNode method
-            const recursiveExpandSpy = jest.spyOn(spectator.component, 'recursiveExpandOneNode');
+            const recursiveExpandSpy = vi.spyOn(spectator.component, 'recursiveExpandOneNode');
 
-            contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+            contentDriveStore.folders.mockReturnValue(treeWithImagesLoaded());
             contentDriveStore.loadChildFolders.mockReturnValue(
                 of({ folders: [], totalEntries: 0 })
             );
@@ -1101,10 +1535,10 @@ describe('DotContentDriveSidebarComponent', () => {
                 leaf: false
             };
 
-            const recursiveExpandSpy = jest.spyOn(spectator.component, 'recursiveExpandOneNode');
+            const recursiveExpandSpy = vi.spyOn(spectator.component, 'recursiveExpandOneNode');
             const treeFolderComponent = spectator.query(DotTreeFolderComponent);
             const nativeElement = treeFolderComponent?.elementRef.nativeElement;
-            const querySelectorSpy = jest.spyOn(nativeElement, 'querySelector');
+            const querySelectorSpy = vi.spyOn(nativeElement, 'querySelector');
 
             // Call the method with a node that doesn't have fromTable flag
             spectator.component.handleSelectedNodeFromTable(nodeWithoutFromTable);
@@ -1127,7 +1561,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
     describe('recursiveExpandOneNode', () => {
         it('should recursively expand nodes based on path segments', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             const testFolders: DotFolderTreeNodeItem[] = [
                 {
@@ -1161,7 +1595,7 @@ describe('DotContentDriveSidebarComponent', () => {
         });
 
         it('should return early when segments array is empty', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             spectator.component.recursiveExpandOneNode([], mockTreeNodes);
 
@@ -1169,7 +1603,7 @@ describe('DotContentDriveSidebarComponent', () => {
         });
 
         it('should return early when no matching node is found', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             // Try to find a node with path containing 'nonexistent'
             spectator.component.recursiveExpandOneNode(['nonexistent'], mockTreeNodes);
@@ -1178,7 +1612,7 @@ describe('DotContentDriveSidebarComponent', () => {
         });
 
         it('should recursively expand nested path segments', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             const nestedFolders: DotFolderTreeNodeItem[] = [
                 {
@@ -1229,7 +1663,7 @@ describe('DotContentDriveSidebarComponent', () => {
 
     describe('Edge Cases', () => {
         it('should handle onNodeExpand when node is already a leaf', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             const leafNode: DotFolderTreeNodeItem = {
                 key: 'leaf-folder',
@@ -1256,7 +1690,7 @@ describe('DotContentDriveSidebarComponent', () => {
         });
 
         it('should handle onNodeExpand when node already has children', () => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
 
             const nodeWithChildren: DotFolderTreeNodeItem = {
                 key: 'parent-folder',
@@ -1286,10 +1720,10 @@ describe('DotContentDriveSidebarComponent', () => {
 
     describe('right-click context menu', () => {
         beforeEach(() => {
-            // The store mock is built once by the component factory, so its jest.fn call counts
+            // The store mock is built once by the component factory, so its vi.fn call counts
             // accumulate across tests in this file. Clear them (implementations are preserved) and
             // restore the default lookup so each case starts from a known state.
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         const buildFolderData = (permissions?: PermissionType[]): DotFolderTreeNodeContentData => ({
@@ -1366,6 +1800,24 @@ describe('DotContentDriveSidebarComponent', () => {
             expect(contentDriveStore.patchContextMenu).toHaveBeenCalledWith(
                 expect.objectContaining({ triggeredEvent: event })
             );
+        });
+    });
+
+    /**
+     * In-flight folders reach the tree from the SAME store signal the grid marks rows from
+     * (#37063 US2, T024).
+     *
+     * Two sources would drift, and the drift shows as a folder inert in one surface and usable in
+     * the other — which is worse than marking neither, because it teaches the author that the
+     * marking cannot be trusted.
+     */
+    describe('in-flight folders (#37063)', () => {
+        it('should hand the store’s merged busy rows to the tree', () => {
+            spectator.detectChanges();
+
+            const tree = spectator.query(DotTreeFolderComponent);
+
+            expect(tree?.$inFlightKeys()).toEqual(['inode-a', 'id-a']);
         });
     });
 });

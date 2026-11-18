@@ -1,223 +1,50 @@
 ---
-globs: core-web/apps/dotcms-ui-e2e/**/*.spec.ts
+description: "Playwright E2E tests for the dotCMS admin UI. Use when editing specs, page objects or helpers under core-web/apps/dotcms-ui-e2e."
+globs: core-web/apps/dotcms-ui-e2e/**/*.ts
 alwaysApply: false
 ---
 
-# Page Object Model (POM) Conventions for dotCMS E2E Tests
+# E2E Tests (`core-web/apps/dotcms-ui-e2e`)
 
-## Overview
+**Source of truth: `core-web/apps/dotcms-ui-e2e/AGENTS.md`.** It says so itself, and
+`docs/testing/E2E_TESTS.md` points there too. Read it before writing a spec — it carries the real
+layout, the Dojo iframe handling, the REST setup modules and a list of gotchas that cost hours if
+missed. This rule is a reminder, not a second copy.
 
-This project follows the **Page Object Model (POM)** pattern for all E2E tests. This ensures maintainability, reusability, and clear separation of concerns.
+For running the suite and CI parity: `@docs/testing/E2E_TESTS.md`.
 
-## Directory Structure
+## Locators — in this order
 
-```
-src/
-├── pages/           # Page Objects (one class per page)
-│   ├── login.page.ts
-│   ├── dashboard.page.ts
-│   └── content.page.ts
-├── components/      # Reusable UI components
-│   ├── sideMenu.component.ts
-│   ├── header.component.ts
-│   └── modal.component.ts
-├── tests/          # Test files that use Page Objects
-│   ├── login/
-│   ├── content/
-│   └── navigation/
-├── utils/          # Shared utilities and helpers
-│   └── utils.ts
-└── config/         # Configuration files
-    └── environments.ts
-```
+1. `getByRole` → 2. `getByTestId` → 3. `getByLabel` → 4. CSS **only** inside the Dojo iframe.
 
-## POM Rules
+`getByRole` comes first, and CSS is legitimate in the legacy Dojo portlets where `data-testid` does
+not exist — reach for `getLegacyFrame(page)` from `@utils/iframe` there. Unsure about a selector?
+Run codegen before guessing.
 
-### 1. Page Objects
+Avoid `#dijit_*` ids, `.locator('button')` where `getByRole('button')` works, and `isVisible()` as a
+wait — use `waitFor` or `expect().toBeVisible`.
 
-- **One class per page** - Each page has its own Page Object class
-- **Encapsulate all page interactions** - All `page.fill()`, `page.click()`, etc. should be in Page Objects
-- **Return meaningful data** - Methods should return relevant information when needed
-- **Handle environment differences** - Page Objects should adapt to different environments (dev/ci)
-- **ALWAYS use data-testid selectors** - Use `page.getByTestId()` instead of `page.locator()` with CSS selectors
+## Test data
 
-### 2. Components
+Create it through the **REST API**, never through the UI during setup. Helpers live in
+`src/requests/`; search there before writing a new one, and put multi-step orchestration in
+`src/fixtures/`. Assume an empty starter: create in `beforeEach`, delete in `afterEach`, unique
+names.
 
-- **Reusable UI elements** - Components that appear across multiple pages
-- **Self-contained logic** - Each component manages its own state and interactions
-- **Composable** - Components can be used within Page Objects
-- **ALWAYS use data-testid selectors** - Use `page.getByTestId()` for all element interactions
+## Two traps worth carrying inline
 
-### 3. Tests
+- **`waitForResponse` goes before the click** that triggers the request, not after.
+- **`page.on('dialog', ...)` goes before the click** too. Playwright auto-dismisses native dialogs,
+  so a handler attached afterwards sees nothing and the test hangs to timeout instead of failing
+  usefully.
 
-- **Use Page Objects only** - Never interact directly with the DOM in tests
-- **Descriptive test names** - Clear, readable test descriptions
-- **One test per scenario** - Each test should verify one specific behavior
-- **Use test data files** - Centralize test data in separate files
+## Environment
 
-## Selector Rules
+`CURRENT_ENV=ci` changes the login path and stops Playwright starting its own server on :4200. To
+run against a container: `E2E_BASE_URL=http://localhost:<port> CURRENT_ENV=ci`.
 
-### ✅ ALWAYS Use data-testid
+## On-demand
 
-```typescript
-// CORRECT - Use data-testid selectors
-await this.page.getByTestId("userNameInput").click();
-await this.page.getByTestId("userNameInput").fill(username);
-await this.page.getByTestId("password").fill(password);
-await this.page.getByTestId("submitButton").click();
-```
-
-### ❌ NEVER Use CSS selectors
-
-```typescript
-// WRONG - Don't use CSS selectors
-await this.page.locator('input[id="userId"]').fill(username);
-await this.page.locator('button[id="loginButton"]').click();
-await this.page.locator(".login-form input").fill(username);
-```
-
-### Why data-testid?
-
-1. **More stable** - Not affected by CSS class changes or styling updates
-2. **More specific** - Designed specifically for testing
-3. **Better performance** - Playwright's `getByTestId()` is optimized
-4. **Clearer intent** - Makes it obvious the element is for testing
-
-## Code Examples
-
-### ✅ Correct POM Implementation
-
-```typescript
-// pages/login.page.ts
-export class LoginPage {
-  constructor(private page: Page) {}
-
-  async login(username: string, password: string): Promise<void> {
-    const currentEnv = process.env["CURRENT_ENV"] || "dev";
-    const loginUrl =
-      currentEnv === "ci" ? "/login/" : "/dotAdmin/#/public/login";
-
-    await this.page.goto(loginUrl);
-    await this.page.waitForLoadState();
-
-    // Use data-testid selectors
-    await this.page.getByTestId("userNameInput").click();
-    await this.page.getByTestId("userNameInput").fill(username);
-    await this.page.getByTestId("userNameInput").press("Tab");
-    await this.page.getByTestId("password").fill(password);
-    await this.page.getByTestId("submitButton").click();
-  }
-
-  async isLoggedIn(): Promise<boolean> {
-    const currentUrl = this.page.url();
-    return (
-      !currentUrl.includes("/login/") && !currentUrl.includes("/public/login")
-    );
-  }
-}
-
-// tests/login/login.spec.ts
-test("User can login with valid credentials", async ({ page }) => {
-  const loginPage = new LoginPage(page);
-
-  await loginPage.login("admin@dotcms.com", "admin");
-
-  expect(await loginPage.isLoggedIn()).toBe(true);
-});
-```
-
-### ❌ Incorrect Implementation
-
-```typescript
-// DON'T DO THIS - Direct DOM interaction in tests
-test("User can login", async ({ page }) => {
-  await page.goto("/login/");
-  await page.fill('input[id="userId"]', "admin@dotcms.com");
-  await page.fill('input[id="password"]', "admin");
-  await page.click('button[id="loginButton"]');
-});
-
-// DON'T DO THIS - Using CSS selectors in Page Objects
-export class LoginPage {
-  async login(username: string, password: string) {
-    await this.page.locator('input[id="userId"]').fill(username);
-    await this.page.locator('input[id="password"]').fill(password);
-    await this.page.locator('button[id="loginButton"]').click();
-  }
-}
-```
-
-## Environment Handling
-
-### Page Objects should handle environment differences:
-
-```typescript
-export class LoginPage {
-  private getLoginUrl(): string {
-    const currentEnv = process.env["CURRENT_ENV"] || "dev";
-    return currentEnv === "ci" ? "/login/" : "/dotAdmin/#/public/login";
-  }
-}
-```
-
-## Test Data Management
-
-### Centralize test data:
-
-```typescript
-// tests/login/credentialsData.ts
-export const validCredentials = [
-  { username: "admin@dotcms.com", password: "admin" },
-  { username: "test@dotcms.com", password: "test" },
-];
-
-export const invalidCredentials = [
-  { username: "wrong@dotcms.com", password: "wrong" },
-];
-```
-
-## Naming Conventions
-
-- **Page Objects**: `[PageName].page.ts` (e.g., `login.page.ts`)
-- **Components**: `[ComponentName].component.ts` (e.g., `sideMenu.component.ts`)
-- **Test Files**: `[FeatureName].spec.ts` (e.g., `login.spec.ts`)
-- **Test Data**: `[FeatureName]Data.ts` (e.g., `credentialsData.ts`)
-
-## Best Practices
-
-1. **Keep Page Objects focused** - Each Page Object should handle one page only
-2. **Use meaningful method names** - `login()`, `navigateToContent()`, `verifyUserIsLoggedIn()`
-3. **Handle waits properly** - Use appropriate waits in Page Objects
-4. **Return useful data** - Methods should return information that tests need
-5. **Keep tests simple** - Tests should be easy to read and understand
-6. **Use TypeScript** - Leverage type safety for better maintainability
-7. **ALWAYS use data-testid** - Never use CSS selectors, always use `page.getByTestId()`
-
-## Migration Guidelines
-
-When migrating tests from Maven E2E:
-
-1. **Identify pages** - Create Page Objects for each page
-2. **Extract components** - Identify reusable UI components
-3. **Centralize data** - Move test data to dedicated files
-4. **Update tests** - Refactor tests to use Page Objects
-5. **Handle environments** - Ensure Page Objects work in both dev and ci modes
-6. **Convert selectors** - Replace all CSS selectors with data-testid selectors
-
-## Using Playwright Codegen
-
-When using Playwright's codegen to generate tests:
-
-1. **Run codegen**: `npx playwright codegen http://localhost:8080/dotAdmin/#/public/login`
-2. **Copy the generated selectors** - Use the `getByTestId()` calls from codegen
-3. **Update Page Objects** - Replace old selectors with the new data-testid selectors
-4. **Test the changes** - Verify the new selectors work correctly
-
----
-
-**Remember**:
-
-- Always use Page Objects for E2E tests
-- Never interact directly with the DOM in test files
-- ALWAYS use `data-testid` selectors with `page.getByTestId()`
-- Never use CSS selectors like `page.locator('input[id="..."]')`
+- `@docs/testing/E2E_TESTS.md` — running the suite, CI parity, sharding
+- `core-web/apps/dotcms-ui-e2e/AGENTS.md` — conventions, Dojo, REST setup, gotchas
+- `core-web/apps/dotcms-ui-e2e/README.md` — local loop, Docker, Playwright UI mode

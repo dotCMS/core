@@ -1,6 +1,11 @@
-import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { By } from '@angular/platform-browser';
@@ -19,12 +24,12 @@ import { mockItems } from './mocks';
 
 // Mock DragEvent since it's not available in Jest environment
 class DragEventMock extends Event {
-    override preventDefault = jest.fn();
-    override stopPropagation = jest.fn();
+    override preventDefault = vi.fn();
+    override stopPropagation = vi.fn();
     dataTransfer: {
         effectAllowed?: string;
-        setData?: ReturnType<typeof jest.fn>;
-        setDragImage?: ReturnType<typeof jest.fn>;
+        setData?: ReturnType<typeof vi.fn>;
+        setDragImage?: ReturnType<typeof vi.fn>;
         types?: string[];
         files?: FileList | File[];
     } | null = null;
@@ -33,8 +38,8 @@ class DragEventMock extends Event {
         super(type);
         this.dataTransfer = {
             effectAllowed: '',
-            setData: jest.fn(),
-            setDragImage: jest.fn(),
+            setData: vi.fn(),
+            setDragImage: vi.fn(),
             types: [],
             files: []
         };
@@ -107,13 +112,14 @@ describe('DotFolderListViewComponent', () => {
                     Archived: 'Archived',
                     Revision: 'Revision',
                     Draft: 'Draft',
-                    New: 'New'
+                    New: 'New',
+                    'content-drive.list-view.edited-by.unknown': 'Unknown user'
                 })
             },
             mockProvider(DotcmsConfigService, new DotcmsConfigServiceMock()),
             mockProvider(DotFormatDateService),
             mockProvider(DotLanguagesService, {
-                get: jest.fn(() => of(mockLanguages))
+                get: vi.fn(() => of(mockLanguages))
             }),
             provideHttpClient()
         ],
@@ -182,7 +188,7 @@ describe('DotFolderListViewComponent', () => {
         it('should emit selectionChange event when selection changes', () => {
             spectator.setInput('items', mockItems);
 
-            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
             const table = spectator.debugElement.query(By.css('[data-testId="table"]'));
 
             spectator.triggerEventHandler(table, 'selectionChange', mockItems);
@@ -191,7 +197,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should emit paginate event when page changes', () => {
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
             const table = spectator.debugElement.query(By.css('[data-testId="table"]'));
 
             spectator.setInput('loading', false);
@@ -202,7 +208,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should emit sort event when sort changes', () => {
-            const sortSpy = jest.spyOn(spectator.component.sort, 'emit');
+            const sortSpy = vi.spyOn(spectator.component.sort, 'emit');
             const table = spectator.debugElement.query(By.css('[data-testId="table"]'));
 
             spectator.triggerEventHandler(table, 'onSort', { field: 'title', order: 1 });
@@ -277,7 +283,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('totalItems', 50); // Enable pagination
             spectator.detectChanges();
 
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
             const mockEvent = { first: 20, rows: 20 };
             spectator.component.onPage(mockEvent);
             spectator.detectChanges();
@@ -325,6 +331,133 @@ describe('DotFolderListViewComponent', () => {
      * share an identifier and differ only by inode — and inodes are what bulk actions fire on. A
      * caller that acts per variant has to be able to key on `inode` instead.
      */
+    /**
+     * Which rows an operation is currently running on. Narrower than `loading`, which says the whole
+     * listing is being fetched.
+     */
+    describe('edited by', () => {
+        it("should name an unknown editor in the product's words, in the cell and on hover", () => {
+            // Not the English literal: the fallback is user-facing text like any other.
+            spectator.setInput('items', [{ ...mockItems[0], modUserName: undefined }]);
+            spectator.detectChanges();
+
+            const cell = spectator.query(byTestId('item-mod-user-name'));
+
+            expect(cell?.textContent?.trim()).toBe('Unknown user');
+            expect(cell?.getAttribute('title')).toBe('Unknown user');
+        });
+    });
+
+    describe('busyRows', () => {
+        const busyItem = { ...mockItems[0], inode: 'busy-inode' };
+
+        beforeEach(() => {
+            spectator.setInput('items', [busyItem]);
+            spectator.setInput('loading', false);
+        });
+
+        it('should leave rows unmarked when nothing is running', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('row-busy'))).toBeFalsy();
+        });
+
+        it('should mark a row whose inode is running', () => {
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('row-busy'))).toBeTruthy();
+        });
+
+        it('should mark a row named by its identifier rather than its inode', () => {
+            // The sidebar tree's `isNodeInFlight` matches on either key, and the two surfaces are
+            // meant to give one answer (FR-014). A run registers both because the search service
+            // only backfills `inode` from `identifier` when the API returned none — so a producer
+            // that sends only the identifier would otherwise mark the folder in the tree and leave
+            // it live here.
+            spectator.setInput('busyRows', [busyItem.identifier]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('row-busy'))).toBeTruthy();
+        });
+
+        it('should keep a busy row readable rather than replacing it', () => {
+            // The whole point. Swapping it for a skeleton would repeat, one row at a time, the bug
+            // this feature removes: the row the author wants to watch is the one that vanishes.
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-title-text'))).toBeTruthy();
+            expect(spectator.query(byTestId('loading-row'))).toBeFalsy();
+        });
+
+        it('should keep the title cell’s shape when a row is busy', () => {
+            // Regression: the marker first *replaced* the thumbnail's container rather than its
+            // contents. That container is the title cell's first grid column and it is sized, so
+            // removing it collapsed the column and the row visibly lost its layout. Counting the
+            // cell's direct children pins the grid's shape without asserting any styling.
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            // The box must survive, with the marker inside it. Counting the cell's children does
+            // NOT catch this - the broken version still rendered exactly one element there, just
+            // an unsized one - which is why this asserts the container itself is still present.
+            const box = spectator.query(byTestId('item-thumbnail-box'));
+
+            expect(box).toBeTruthy();
+            expect(box?.querySelector('[data-testid="row-busy"]')).toBeTruthy();
+        });
+
+        it('should report a busy row to assistive technology', () => {
+            // #37063 FR-014a. The marking is conveyed by reduced opacity and disabled pointer
+            // events, both of which reach one sense only. For an operation that permanently
+            // destroys things, an author who cannot see the marking must still be told the row is
+            // busy before they act on it.
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-row'))?.getAttribute('aria-busy')).toBe('true');
+        });
+
+        it('should not report an untouched row as busy', () => {
+            spectator.setInput('busyRows', ['some-other-inode']);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-row'))?.getAttribute('aria-busy')).toBeNull();
+        });
+
+        it('should leave rows the operation is not touching alone', () => {
+            spectator.setInput('busyRows', ['some-other-inode']);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('row-busy'))).toBeFalsy();
+        });
+
+        it('should stop a busy row being selected into another action', () => {
+            // Asserted through the output rather than the checkbox's markup: what matters is that
+            // the row cannot join a second action while the first is still running on it.
+            const selectionChange = vi.fn();
+
+            spectator.output('selectionChange').subscribe(selectionChange);
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            spectator.click(spectator.query(byTestId('item-checkbox')));
+            spectator.detectChanges();
+
+            expect(selectionChange).not.toHaveBeenCalled();
+        });
+
+        it('should not announce each row it marks', () => {
+            // The toolbar indicator is the polite live region for a run. A row marker that also
+            // announced would repeat the same news once per row.
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('row-busy'))?.getAttribute('aria-live')).toBe('off');
+        });
+    });
+
     describe('dataKey', () => {
         const variantA = { ...mockItems[0], identifier: 'shared-id', inode: 'inode-en' };
         const variantB = { ...mockItems[0], identifier: 'shared-id', inode: 'inode-es' };
@@ -356,6 +489,57 @@ describe('DotFolderListViewComponent', () => {
 
             expect(table.isSelected(variantA)).toBe(true);
             expect(table.isSelected(variantB)).toBe(false);
+        });
+    });
+
+    /**
+     * Rows the caller will not accept.
+     *
+     * The bug this exists for: refusing the pick only in the caller's handler leaves the control
+     * toggling under the cursor. The user checks a row, sees it checked, confirms — and nothing is
+     * added, with no message. So the assertions here are on what the row **renders**, not on the
+     * set the component holds.
+     */
+    describe('unselectable', () => {
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('unselectable', [mockItems[0].identifier]);
+            spectator.detectChanges();
+        });
+
+        it('should disable the control of a refused row only', () => {
+            const controls = spectator.queryAll('[data-testId="item-checkbox"] input');
+
+            expect(controls.length).toBeGreaterThan(1);
+            expect((controls[0] as HTMLInputElement).disabled).toBe(true);
+            expect((controls[1] as HTMLInputElement).disabled).toBe(false);
+        });
+
+        it('should mark the refused row aria-disabled and leave the others alone', () => {
+            const rows = spectator.queryAll('[data-testId="item-row"]');
+
+            expect(rows[0].getAttribute('aria-disabled')).toBe('true');
+            expect(rows[1].getAttribute('aria-disabled')).toBeNull();
+        });
+
+        it('should still render the refused row — it exists, it is just not pickable', () => {
+            expect(spectator.queryAll('[data-testId="item-row"]').length).toBe(mockItems.length);
+        });
+
+        it('should refuse the row to the table itself, so a range cannot sweep it in', () => {
+            // `pSelectableRowDisabled` is what keeps shift-click and the table's own range
+            // shortcuts off the row. Without it the control looks disabled and a range still
+            // selects it.
+            expect(spectator.queryAll('[data-testId="item-row"]')[0]).toHaveClass('opacity-50');
+        });
+
+        it('should leave every row selectable when nothing is refused', () => {
+            spectator.setInput('unselectable', []);
+            spectator.detectChanges();
+
+            const controls = spectator.queryAll('[data-testId="item-checkbox"] input');
+
+            expect(controls.every((c) => !(c as HTMLInputElement).disabled)).toBe(true);
         });
     });
 
@@ -474,7 +658,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('lazy', false);
             spectator.setInput('loading', false);
             spectator.detectChanges();
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
 
             spectator.click('.p-paginator-next');
             spectator.detectChanges();
@@ -487,7 +671,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('totalItems', 100);
             spectator.setInput('loading', false);
             spectator.detectChanges();
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
 
             spectator.component.onPage({ first: 20, rows: 20 });
 
@@ -502,7 +686,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('totalItems', 100);
             spectator.setInput('loading', true);
             spectator.detectChanges();
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
 
             spectator.component.onPage({ first: 20, rows: 20 });
 
@@ -514,7 +698,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('totalItems', 100);
             spectator.setInput('loading', true);
             spectator.detectChanges();
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
 
             spectator.setInput('loading', false);
             spectator.detectChanges();
@@ -523,25 +707,210 @@ describe('DotFolderListViewComponent', () => {
             expect(paginateSpy).toHaveBeenCalledWith({ first: 20, rows: 20, page: 2 });
         });
 
+        it('should not fire a second request from a rapid second click before loading catches up', () => {
+            // `loading` only flips to `true` after this component's `paginate` output round-trips
+            // through the caller's store, at least one microtask away. A second `onPage` call in
+            // that gap must not slip past the `$loading()` guard the way a real fast double click
+            // would (issue #37212) -- exercised here without advancing the input at all, which is
+            // the whole point: this proves the guard does not depend on `loading` having caught up.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
+
+            spectator.component.onPage({ first: 20, rows: 20 });
+            spectator.component.onPage({ first: 20, rows: 20 });
+
+            expect(paginateSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('should accept a new page change once loading reflects the first one', () => {
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
+
+            spectator.component.onPage({ first: 20, rows: 20 });
+
+            // The caller's store has now caught up and reflects the in-flight request.
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            // The caller's store has settled -- the local guard must have been released by the
+            // `loading` transition above, not still be holding from the first click.
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            spectator.component.onPage({ first: 40, rows: 20 });
+
+            expect(paginateSpy).toHaveBeenCalledTimes(2);
+        });
+
         it('should take the paginator out of play while loading', () => {
             spectator.setInput('items', manyItems);
             spectator.setInput('totalItems', 100);
             spectator.setInput('loading', true);
             spectator.detectChanges();
 
-            expect(spectator.query('.p-paginator-next')).toBeTruthy();
-            expect(spectator.component.$ptConfig().paginator.class).toContain(
+            expect(spectator.component.$ptConfig().pcPaginator.root.class).toContain(
                 'pointer-events-none'
             );
+            // Real DOM assertions, not just the computed pt object: issue #37212 QA follow-up #2
+            // found that `paginator` is not a section PrimeNG's `p-table` recognizes for its
+            // paginator sub-component (the real key is `pcPaginator`), so an earlier version of
+            // this lockout never reached the rendered DOM even though the computed object above
+            // looked correct -- CI stayed green because nothing here checked the actual button.
+            const nextBtn = spectator.query('.p-paginator-next') as HTMLButtonElement;
+            const prevBtn = spectator.query('.p-paginator-prev') as HTMLButtonElement;
+            expect(nextBtn).toBeTruthy();
+            expect(prevBtn.disabled).toBe(true);
+            expect(nextBtn.disabled).toBe(true);
         });
 
         it('should leave the paginator usable once loading finishes', () => {
+            // Offset 20 of 100 (a mid-list page, neither first nor last) rather than the default
+            // 0: at offset 0 PrimeNG's own `isFirstPage()` natively disables Previous, which would
+            // make this assertion pass for the wrong reason. This test is about our lockout getting
+            // out of the way when unlocked, not about PrimeNG's boundary logic (found in review,
+            // issue #37212 QA follow-up #3 -- `disabled: locked || undefined` used to leave a
+            // `disabled: undefined` key behind when unlocked, and `Bind`'s effect treats that as
+            // "clear the attribute", which overrode PrimeNG's own `isFirstPage()`/`isLastPage()`
+            // disabling on every unlocked render, at every page, not just the boundaries).
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('offset', 20);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(spectator.component.$ptConfig().pcPaginator.root.class).toBe('');
+            const prevBtn = spectator.query('.p-paginator-prev') as HTMLButtonElement;
+            const nextBtn = spectator.query('.p-paginator-next') as HTMLButtonElement;
+            expect(prevBtn.disabled).toBe(false);
+            expect(nextBtn.disabled).toBe(false);
+        });
+
+        it('should disable Previous at the first page once unlocked', () => {
+            // Two regressions this pins, in sequence. First (QA follow-up #3): `disabled: locked ||
+            // undefined` still wrote a `disabled` key (value `undefined`) into the pt object when
+            // unlocked. `Bind`'s effect iterates every present key, including ones whose value is
+            // `undefined`, and clears the DOM attribute for it -- forcing the property to `false`
+            // regardless of what PrimeNG's own `[disabled]="isFirstPage() || empty()"` binding had
+            // just set, so Previous stayed clickable at offset 0.
+            //
+            // The fix for that (omit the key entirely when unlocked, leaving PrimeNG's own binding
+            // in sole control) carried a second regression (QA follow-up #4, see the dedicated
+            // transition test below): Angular's template binding only re-writes a property when its
+            // own evaluated boolean differs from the value it last recorded, so once `pBind` forced
+            // `disabled = true` while locked, unlocking anywhere `isFirstPage()` was already `false`
+            // both before and after (any page but the first) left Previous stuck disabled forever.
+            //
+            // `prev`/`next` now compute the boundary themselves on every render, locked or not, so
+            // there is exactly one writer of `disabled` and it is never omitted -- this test just
+            // confirms the boundary computation itself is still correct after that change.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('offset', 0);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            const prevBtn = spectator.query('.p-paginator-prev') as HTMLButtonElement;
+            expect(prevBtn.disabled).toBe(true);
+        });
+
+        it('should release Previous/Next after a loading transition that leaves the page unchanged', () => {
+            // Issue #37212 QA follow-up #4: a real `loading: true -> false` transition at the SAME
+            // offset (the common case -- offset updates together with `loading` turning true, so by
+            // the time it turns back off the offset has already been sitting at its new value for
+            // the whole request) used to leave Previous/Next stuck disabled on every page but the
+            // first, because nothing but `pBind`'s own forced write was mutating the property and
+            // omitting the key on unlock relied on PrimeNG's own binding to notice a change that, at
+            // a mid-list page, never happened. Computing the boundary ourselves on every render
+            // means `pBind` is exercised on the unlock render too, so this releases correctly.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('offset', 20);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            const prevBtn = () => spectator.query('.p-paginator-prev') as HTMLButtonElement;
+            const nextBtn = () => spectator.query('.p-paginator-next') as HTMLButtonElement;
+            expect(prevBtn().disabled).toBe(true);
+            expect(nextBtn().disabled).toBe(true);
+
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(prevBtn().disabled).toBe(false);
+            expect(nextBtn().disabled).toBe(false);
+        });
+
+        it('should take the paginator out of play as soon as a click is accepted, before loading catches up', () => {
+            // Issue #37212 QA follow-up #1: `$ptConfig` used to react only to `$loading()`, which
+            // still reads `false` for at least one microtask after a click is accepted (see
+            // `onPage`'s `#pageChangeAccepted` doc comment). A real second mouse click landing in
+            // that gap is not stopped by CSS yet, so it reaches PrimeNG's own paginator button,
+            // which mutates its internal current-page pointer synchronously regardless of what
+            // `onPage` does with the event -- `onPage`'s guard blocks the resulting duplicate
+            // request, but the paginator's Previous/Next disabled state is left desynced from the
+            // page actually on screen (this is the failure Rafael's QA pass reported: only one
+            // control looked disabled, and the other navigated to the wrong page). Gating
+            // `$ptConfig` on `#pageChangeAccepted` too closes the gap at the DOM level instead of
+            // trying to correct it after the fact.
             spectator.setInput('items', manyItems);
             spectator.setInput('totalItems', 100);
             spectator.setInput('loading', false);
             spectator.detectChanges();
 
-            expect(spectator.component.$ptConfig().paginator.class).toBe('');
+            spectator.component.onPage({ first: 20, rows: 20 });
+            spectator.detectChanges();
+
+            // `loading` is still `false` here -- the caller's store has not round-tripped yet.
+            expect(spectator.component.$loading()).toBe(false);
+            expect(spectator.component.$ptConfig().pcPaginator.root.class).toContain(
+                'pointer-events-none'
+            );
+            const prevBtn = spectator.query('.p-paginator-prev') as HTMLButtonElement;
+            const nextBtn = spectator.query('.p-paginator-next') as HTMLButtonElement;
+            expect(prevBtn.disabled).toBe(true);
+            expect(nextBtn.disabled).toBe(true);
+        });
+
+        it('should ignore a real click on Previous while a page is loading, via PrimeNG DOM events, not just the programmatic onPage() call', () => {
+            // Issue #37212 QA follow-up #2, Rafael's exact repro: click Next, then click Previous
+            // while the page is still loading. Dispatches real clicks on the rendered PrimeNG
+            // buttons (`.click()`), which exercises PrimeNG's own `changePage`/`onPageChange` chain
+            // end to end -- calling `onPage()` directly, as the other tests in this suite do, never
+            // reaches PrimeNG's internal button state at all, which is exactly why this class of
+            // bug shipped green.
+            spectator.setInput('items', manyItems);
+            spectator.setInput('totalItems', 100);
+            spectator.setInput('offset', 0);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
+
+            const nextBtn = () => spectator.query('.p-paginator-next') as HTMLButtonElement;
+            const prevBtn = () => spectator.query('.p-paginator-prev') as HTMLButtonElement;
+
+            spectator.click(nextBtn());
+            spectator.detectChanges();
+            expect(paginateSpy).toHaveBeenCalledTimes(1);
+
+            // The caller's store round-trips: offset advances, loading flips true, as the real
+            // shell does synchronously inside `onPaginate`.
+            spectator.setInput('offset', 20);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            expect(prevBtn().disabled).toBe(true);
+            expect(nextBtn().disabled).toBe(true);
+
+            spectator.click(prevBtn());
+            spectator.detectChanges();
+
+            expect(paginateSpy).toHaveBeenCalledTimes(1);
         });
 
         it('should not fetch languages when the locale column is hidden', () => {
@@ -625,7 +994,7 @@ describe('DotFolderListViewComponent', () => {
 
         it('should select a row by clicking it when not disabled', () => {
             spectator.detectChanges();
-            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
 
             spectator.click(byTestId('item-row'));
 
@@ -637,7 +1006,7 @@ describe('DotFolderListViewComponent', () => {
             // leave a way straight around the freeze.
             spectator.setInput('disabled', true);
             spectator.detectChanges();
-            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
 
             spectator.click(byTestId('item-row'));
 
@@ -903,7 +1272,7 @@ describe('DotFolderListViewComponent', () => {
         it('should not emit sort when a header is clicked while readOnly', () => {
             spectator.setInput('readOnly', true);
             spectator.detectChanges();
-            const sortSpy = jest.spyOn(spectator.component.sort, 'emit');
+            const sortSpy = vi.spyOn(spectator.component.sort, 'emit');
 
             spectator.click(spectator.queryAll('thead th')[1]);
 
@@ -985,7 +1354,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('totalItems', 50);
             spectator.detectChanges();
 
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
             spectator.component.onPage({ first: 0, rows: 20 });
 
             // first=0 is falsy → page defaults to 1
@@ -996,7 +1365,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('totalItems', 50);
             spectator.detectChanges();
 
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
             spectator.component.onPage({ first: 20, rows: 20 });
 
             expect(paginateSpy).toHaveBeenCalledWith({ first: 20, rows: 20, page: 2 });
@@ -1006,7 +1375,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('totalItems', 80);
             spectator.detectChanges();
 
-            const paginateSpy = jest.spyOn(spectator.component.paginate, 'emit');
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
             spectator.component.onPage({ first: 40, rows: 20 });
 
             expect(paginateSpy).toHaveBeenCalledWith({ first: 40, rows: 20, page: 3 });
@@ -1136,6 +1505,13 @@ describe('DotFolderListViewComponent', () => {
             const modUserName = 'modUserName' in firstItem ? firstItem.modUserName : 'Unknown';
 
             expect(modUserNameColumn.textContent.trim()).toBe(modUserName);
+        });
+
+        it('should offer the full editor name on hover, since a long one is clipped to the column', () => {
+            const modUserNameColumn = spectator.query(byTestId('item-mod-user-name'));
+            const modUserName = 'modUserName' in firstItem ? firstItem.modUserName : 'Unknown';
+
+            expect(modUserNameColumn?.getAttribute('title')).toBe(modUserName);
         });
 
         it('should have a mod date column', () => {
@@ -1352,7 +1728,7 @@ describe('DotFolderListViewComponent', () => {
 
             it('should not emit dragStart when a drag is started anyway', () => {
                 // The attribute only stops the user; the handler has to stop everything else.
-                const dragStartSpy = jest.spyOn(spectator.component.dragStart, 'emit');
+                const dragStartSpy = vi.spyOn(spectator.component.dragStart, 'emit');
 
                 spectator.component.onDragStart(createDragStartEvent(), mockItems[0]);
 
@@ -1364,7 +1740,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should not emit rightClick on context menu', () => {
-                const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+                const rightClickSpy = vi.spyOn(spectator.component.rightClick, 'emit');
 
                 spectator.dispatchFakeEvent(spectator.query(byTestId('item-row')), 'contextmenu');
 
@@ -1372,7 +1748,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should not emit doubleClick on a double click', () => {
-                const doubleClickSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+                const doubleClickSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
 
                 spectator.dispatchFakeEvent(spectator.query(byTestId('item-row')), 'dblclick');
 
@@ -1382,7 +1758,7 @@ describe('DotFolderListViewComponent', () => {
             it('should not open the item when its title is clicked', () => {
                 // The title and thumbnail carry their own click-to-open handlers, separate from the
                 // row's dblclick — both have to go or the dialog navigates out from under itself.
-                const doubleClickSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+                const doubleClickSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
 
                 spectator.click(byTestId('item-title-text'));
 
@@ -1400,7 +1776,7 @@ describe('DotFolderListViewComponent', () => {
                 // status badge can silently drop that row from what Execute fires — with nothing
                 // suggesting the row was clickable. The table this replaced toggled on the checkbox
                 // alone.
-                const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+                const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
 
                 spectator.click(spectator.query(byTestId('item-status')));
 
@@ -1548,7 +1924,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should emit rightClick when folder row is right clicked', () => {
-                const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+                const rightClickSpy = vi.spyOn(spectator.component.rightClick, 'emit');
                 const row = spectator.query(byTestId('item-row'));
 
                 spectator.dispatchFakeEvent(row, 'contextmenu');
@@ -1560,7 +1936,7 @@ describe('DotFolderListViewComponent', () => {
             });
 
             it('should emit rightClick when folder kebab menu button is clicked', () => {
-                const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+                const rightClickSpy = vi.spyOn(spectator.component.rightClick, 'emit');
                 const kebabButton = spectator.debugElement.query(
                     By.css('[data-testId="kebab-menu-button"]')
                 );
@@ -1685,7 +2061,7 @@ describe('DotFolderListViewComponent', () => {
             it('should emit selectionChange without taking ownership of the set', () => {
                 // Controlled means the parent decides: this reports the user's intent and waits to
                 // be told the new set, rather than applying it locally and drifting from the parent.
-                const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+                const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
 
                 spectator.setInput('selection', [firstItem]);
                 spectator.detectChanges();
@@ -1733,7 +2109,7 @@ describe('DotFolderListViewComponent', () => {
                 // `onDragStart` reads the effective selection; it must see the caller's, not a
                 // stale internal one. (The preview sets `readOnly`, but the input pair is
                 // independent of that and the grid should stay coherent either way.)
-                const dragStartSpy = jest.spyOn(spectator.component.dragStart, 'emit');
+                const dragStartSpy = vi.spyOn(spectator.component.dragStart, 'emit');
 
                 spectator.setInput('selection', [firstItem, secondItem]);
                 spectator.detectChanges();
@@ -1767,7 +2143,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('items', mockItems);
             spectator.detectChanges();
 
-            const selectionChangeSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
             const table = spectator.debugElement.query(By.css('[data-testId="table"]'));
 
             spectator.triggerEventHandler(table, 'selectionChange', mockItems[0]);
@@ -1829,7 +2205,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('showActions', false);
             spectator.detectChanges();
 
-            const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+            const rightClickSpy = vi.spyOn(spectator.component.rightClick, 'emit');
             const event = new MouseEvent('contextmenu', { cancelable: true });
 
             spectator.component.onContextMenu(event, mockItems[0]);
@@ -1842,18 +2218,23 @@ describe('DotFolderListViewComponent', () => {
     describe('Drag Events', () => {
         const firstItem = mockItems[0];
         const secondItem = mockItems[1];
-        let dragStartSpy: ReturnType<typeof jest.spyOn>;
+        // Only a folder takes a drop, so the drag-over and drop tests drag over folders.
+        const folderItems = mockItems.map(
+            (item) => ({ ...item, type: 'folder' }) as unknown as DotContentDriveItem
+        );
+        const [firstFolder, secondFolder] = folderItems;
+        let dragStartSpy: ReturnType<typeof vi.spyOn>;
 
         beforeEach(() => {
             spectator.setInput('items', mockItems);
             spectator.setInput('loading', false);
             spectator.detectChanges();
 
-            dragStartSpy = jest.spyOn(spectator.component.dragStart, 'emit');
+            dragStartSpy = vi.spyOn(spectator.component.dragStart, 'emit');
         });
 
         afterEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         describe('onDragStart', () => {
@@ -1927,7 +2308,7 @@ describe('DotFolderListViewComponent', () => {
 
         describe('onDragEnd', () => {
             it('should emit dragEnd with void', () => {
-                const dragEndSpy = jest.spyOn(spectator.component.dragEnd, 'emit');
+                const dragEndSpy = vi.spyOn(spectator.component.dragEnd, 'emit');
 
                 spectator.component.onDragEnd();
 
@@ -2067,20 +2448,43 @@ describe('DotFolderListViewComponent', () => {
 
         describe('onDragOver', () => {
             beforeEach(() => {
-                spectator.setInput('items', mockItems);
+                spectator.setInput('items', folderItems);
                 spectator.setInput('loading', false);
                 spectator.detectChanges();
+            });
+
+            it('should neither accept nor highlight a drag over a content row', () => {
+                spectator.setInput('items', mockItems);
+                spectator.detectChanges();
+                const dragOverEvent = createDragOverEvent();
+                const preventDefaultSpy = vi.spyOn(dragOverEvent, 'preventDefault');
+
+                spectator.query(byTestId('item-row'))?.dispatchEvent(dragOverEvent);
+
+                expect(spectator.component.state.dragOverRowId()).toBeNull();
+                expect(preventDefaultSpy).not.toHaveBeenCalled();
+            });
+
+            it('should clear the highlight when the drag leaves the row', () => {
+                const row = spectator.query(byTestId('item-row')) as HTMLElement;
+
+                row.dispatchEvent(createDragOverEvent());
+                expect(spectator.component.state.dragOverRowId()).toBe(firstFolder.identifier);
+
+                row.dispatchEvent(new DragEvent('dragleave'));
+
+                expect(spectator.component.state.dragOverRowId()).toBeNull();
             });
 
             it('should set dragOverRowId when dragging over a row with internal drag', () => {
                 const row = spectator.query(byTestId('item-row')) as HTMLElement;
                 const dragOverEvent = createDragOverEvent();
-                const preventDefaultSpy = jest.spyOn(dragOverEvent, 'preventDefault');
+                const preventDefaultSpy = vi.spyOn(dragOverEvent, 'preventDefault');
 
                 row.dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
 
-                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(firstFolder.identifier);
                 expect(preventDefaultSpy).toHaveBeenCalled();
             });
 
@@ -2116,7 +2520,7 @@ describe('DotFolderListViewComponent', () => {
                 row.dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
 
-                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(firstFolder.identifier);
             });
 
             it('should update dragOverRowId when dragging over different rows', () => {
@@ -2128,27 +2532,27 @@ describe('DotFolderListViewComponent', () => {
                 spectator.detectChanges();
 
                 // dragOverRowId should be set to the second item
-                expect(spectator.component.state.dragOverRowId()).toBe(secondItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(secondFolder.identifier);
             });
         });
 
         describe('onDrop', () => {
             beforeEach(() => {
-                spectator.setInput('items', mockItems);
+                spectator.setInput('items', folderItems);
                 spectator.setInput('loading', false);
                 spectator.detectChanges();
             });
 
             it('should clear dragOverRowId when dropping on a row with internal drag', () => {
                 const row = spectator.query(byTestId('item-row')) as HTMLElement;
-                const dropSpy = jest.spyOn(spectator.component.drop, 'emit');
+                const dropSpy = vi.spyOn(spectator.component.drop, 'emit');
                 const dropEvent = new DragEvent('drop');
                 Object.defineProperty(dropEvent, 'dataTransfer', {
                     value: {
                         types: [DOT_DRAG_ITEM],
                         files: [],
-                        preventDefault: jest.fn(),
-                        stopPropagation: jest.fn()
+                        preventDefault: vi.fn(),
+                        stopPropagation: vi.fn()
                     },
                     writable: true
                 });
@@ -2157,19 +2561,19 @@ describe('DotFolderListViewComponent', () => {
                 const dragOverEvent = createDragOverEvent();
                 row.dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
-                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(firstFolder.identifier);
 
                 // Now drop
                 row.dispatchEvent(dropEvent);
                 spectator.detectChanges();
 
                 expect(spectator.component.state.dragOverRowId()).toBeNull();
-                expect(dropSpy).toHaveBeenCalledWith(firstItem);
+                expect(dropSpy).toHaveBeenCalledWith(firstFolder);
             });
 
             it('should not handle file drops and let them bubble up', () => {
                 const row = spectator.query(byTestId('item-row')) as HTMLElement;
-                const dropSpy = jest.spyOn(spectator.component.drop, 'emit');
+                const dropSpy = vi.spyOn(spectator.component.drop, 'emit');
                 const mockFile = new File(['test'], 'test.jpg', { type: 'image/jpeg' });
                 const dropEvent = new DragEvent('drop');
                 Object.defineProperty(dropEvent, 'dataTransfer', {
@@ -2188,7 +2592,7 @@ describe('DotFolderListViewComponent', () => {
 
             it('should not handle drops that are not internal drags', () => {
                 const row = spectator.query(byTestId('item-row')) as HTMLElement;
-                const dropSpy = jest.spyOn(spectator.component.drop, 'emit');
+                const dropSpy = vi.spyOn(spectator.component.drop, 'emit');
                 const dropEvent = new DragEvent('drop');
                 Object.defineProperty(dropEvent, 'dataTransfer', {
                     value: {
@@ -2211,8 +2615,8 @@ describe('DotFolderListViewComponent', () => {
                     value: {
                         types: [DOT_DRAG_ITEM],
                         files: [],
-                        preventDefault: jest.fn(),
-                        stopPropagation: jest.fn()
+                        preventDefault: vi.fn(),
+                        stopPropagation: vi.fn()
                     },
                     writable: true
                 });
@@ -2231,7 +2635,7 @@ describe('DotFolderListViewComponent', () => {
 
         describe('onDragEnd', () => {
             beforeEach(() => {
-                spectator.setInput('items', mockItems);
+                spectator.setInput('items', folderItems);
                 spectator.setInput('loading', false);
                 spectator.detectChanges();
             });
@@ -2243,7 +2647,7 @@ describe('DotFolderListViewComponent', () => {
                 // Set dragOverRowId first
                 row.dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
-                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(firstFolder.identifier);
 
                 // End drag
                 spectator.dispatchFakeEvent(row, 'dragend');
@@ -2266,7 +2670,7 @@ describe('DotFolderListViewComponent', () => {
                 spectator.detectChanges();
 
                 expect(spectator.component.state.isDragging()).toBe(true);
-                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(firstFolder.identifier);
 
                 // End drag
                 spectator.dispatchFakeEvent(row, 'dragend');
@@ -2279,7 +2683,7 @@ describe('DotFolderListViewComponent', () => {
 
         describe('dragOverRowId state management', () => {
             beforeEach(() => {
-                spectator.setInput('items', mockItems);
+                spectator.setInput('items', folderItems);
                 spectator.setInput('loading', false);
                 spectator.detectChanges();
             });
@@ -2295,12 +2699,12 @@ describe('DotFolderListViewComponent', () => {
                 // Drag over first item
                 rows[0].dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
-                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(firstFolder.identifier);
 
                 // Drag over second item
                 rows[1].dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
-                expect(spectator.component.state.dragOverRowId()).toBe(secondItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(secondFolder.identifier);
             });
 
             it('should reflect dragOverRowId state changes immediately', () => {
@@ -2314,7 +2718,7 @@ describe('DotFolderListViewComponent', () => {
                 row.dispatchEvent(dragOverEvent);
                 spectator.detectChanges();
 
-                expect(spectator.component.state.dragOverRowId()).toBe(firstItem.identifier);
+                expect(spectator.component.state.dragOverRowId()).toBe(firstFolder.identifier);
             });
         });
     });
@@ -2327,7 +2731,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should emit rightClick event when row is right clicked', () => {
-            const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+            const rightClickSpy = vi.spyOn(spectator.component.rightClick, 'emit');
             const row = spectator.query(byTestId('item-row'));
 
             spectator.dispatchFakeEvent(row, 'contextmenu');
@@ -2339,7 +2743,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should prevent default when context menu is triggered', () => {
-            const mockEvent = { preventDefault: jest.fn() } as unknown as Event;
+            const mockEvent = { preventDefault: vi.fn() } as unknown as Event;
 
             spectator.component.onContextMenu(mockEvent, mockItems[0]);
 
@@ -2347,7 +2751,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should emit rightClick event when kebab menu button is clicked', () => {
-            const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+            const rightClickSpy = vi.spyOn(spectator.component.rightClick, 'emit');
             const kebabButton = spectator.debugElement.query(
                 By.css('[data-testId="kebab-menu-button"]')
             );
@@ -2362,7 +2766,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should call onContextMenu with correct item when kebab menu button is clicked', () => {
-            const onContextMenuSpy = jest.spyOn(spectator.component, 'onContextMenu');
+            const onContextMenuSpy = vi.spyOn(spectator.component, 'onContextMenu');
             const kebabButton = spectator.debugElement.query(
                 By.css('[data-testId="kebab-menu-button"]')
             );
@@ -2374,7 +2778,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should emit rightClick with correct item for different rows', () => {
-            const rightClickSpy = jest.spyOn(spectator.component.rightClick, 'emit');
+            const rightClickSpy = vi.spyOn(spectator.component.rightClick, 'emit');
             const rows = spectator.queryAll(byTestId('item-row'));
 
             // Right click on second row
@@ -2395,7 +2799,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should emit doubleClick event when row is double clicked', () => {
-            const doubleClickSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+            const doubleClickSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
             const row = spectator.query(byTestId('item-row'));
 
             spectator.dispatchFakeEvent(row, 'dblclick');
@@ -2403,8 +2807,59 @@ describe('DotFolderListViewComponent', () => {
             expect(doubleClickSpy).toHaveBeenCalledWith(mockItems[0]);
         });
 
+        it('should not open the item when the row is double clicked with Shift held', () => {
+            // Shift is a selection modifier, so every gesture carrying it belongs to the selection
+            // and none of them opens anything. Reported from QA on #32591: a second click landing
+            // inside a Shift range, or a stray double, took the author out of the listing entirely,
+            // and opening a dialog drops the selection they were halfway through building.
+            const doubleClickSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
+            const row = spectator.query(byTestId('item-row'));
+
+            row.dispatchEvent(new MouseEvent('dblclick', { shiftKey: true, bubbles: true }));
+            spectator.detectChanges();
+
+            expect(doubleClickSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not open the item when its title is clicked with Shift held', () => {
+            // The title and the thumbnail carry their own open handlers rather than relying on the
+            // row's, so the guard has to hold on all three or the modifier only works in some parts
+            // of the row.
+            const emitSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
+            const titleText = spectator.query(byTestId('item-title-text'));
+
+            titleText.dispatchEvent(new MouseEvent('click', { shiftKey: true, bubbles: true }));
+            spectator.detectChanges();
+
+            expect(emitSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not open the item when its thumbnail is clicked with Shift held', () => {
+            // The third open affordance. It routes through the same handler as the title, but a
+            // guard that covered only the two the report mentioned would leave this one opening.
+            const emitSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
+            const thumbnail = spectator.query(byTestId('contentlet-thumbnail'));
+
+            thumbnail.dispatchEvent(new MouseEvent('click', { shiftKey: true, bubbles: true }));
+            spectator.detectChanges();
+
+            expect(emitSpy).not.toHaveBeenCalled();
+        });
+
+        it('should still open the item on a plain double click', () => {
+            // The guard is about the modifier, not the gesture: without this the fix could pass by
+            // disabling opening altogether.
+            const doubleClickSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
+            const row = spectator.query(byTestId('item-row'));
+
+            row.dispatchEvent(new MouseEvent('dblclick', { shiftKey: false, bubbles: true }));
+            spectator.detectChanges();
+
+            expect(doubleClickSpy).toHaveBeenCalledWith(mockItems[0]);
+        });
+
         it('should emit doubleClick event when thumbnail is clicked', () => {
-            const emitSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
             const thumbnail = spectator.query(byTestId('contentlet-thumbnail'));
 
             spectator.click(thumbnail);
@@ -2413,7 +2868,7 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should emit doubleClick event when title text is clicked', () => {
-            const emitSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
             const titleText = spectator.query(byTestId('item-title-text'));
 
             spectator.click(titleText);
@@ -2421,10 +2876,29 @@ describe('DotFolderListViewComponent', () => {
             expect(emitSpy).toHaveBeenCalledWith(mockItems[0]);
         });
 
+        it('should let a Shift title click through so the row still selects', () => {
+            // The swallow exists to stop the row selecting *on the way out* of an open. A Shift
+            // click does not open, so there is nothing to swallow it for, and stopping it there
+            // made the title a dead spot: the gesture neither opened the item nor extended the
+            // selection it belongs to. Asserted on the row rather than on the spy, because what
+            // matters is that the click reaches the element that does the selecting.
+            const row = spectator.query(byTestId('item-row'));
+            const titleText = spectator.query(byTestId('item-title-text'));
+            let reachedRow = false;
+
+            row.addEventListener('click', () => (reachedRow = true));
+            titleText.dispatchEvent(
+                new MouseEvent('click', { shiftKey: true, bubbles: true, cancelable: true })
+            );
+            spectator.detectChanges();
+
+            expect(reachedRow).toBe(true);
+        });
+
         it('should swallow the title click so the row is not selected underneath', () => {
             // Content Drive's title is an "open" affordance, distinct from selecting the row.
             const event = new MouseEvent('click', { bubbles: true, cancelable: true });
-            const stopPropagation = jest.spyOn(event, 'stopPropagation');
+            const stopPropagation = vi.spyOn(event, 'stopPropagation');
 
             spectator.component.onTitleClick(event, mockItems[0]);
 
@@ -2447,7 +2921,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('titleOpensItem', false);
             spectator.detectChanges();
 
-            const emitSpy = jest.spyOn(spectator.component.doubleClick, 'emit');
+            const emitSpy = vi.spyOn(spectator.component.doubleClick, 'emit');
             spectator.click(spectator.query(byTestId('item-title-text')));
 
             expect(emitSpy).not.toHaveBeenCalled();
@@ -2460,7 +2934,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             const event = new MouseEvent('click', { bubbles: true, cancelable: true });
-            const stopPropagation = jest.spyOn(event, 'stopPropagation');
+            const stopPropagation = vi.spyOn(event, 'stopPropagation');
 
             spectator.component.onTitleClick(event, mockItems[0]);
 
@@ -2472,7 +2946,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.setInput('selectionMode', 'single');
             spectator.detectChanges();
 
-            const selectionSpy = jest.spyOn(spectator.component.selectionChange, 'emit');
+            const selectionSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
             spectator.click(spectator.query(byTestId('item-title-text')));
 
             expect(selectionSpy).toHaveBeenCalledWith([mockItems[0]]);
@@ -2487,11 +2961,11 @@ describe('DotFolderListViewComponent', () => {
         });
 
         afterEach(() => {
-            jest.clearAllMocks();
+            vi.clearAllMocks();
         });
 
         it('should emit scroll event when table body is scrolled', () => {
-            const scrollSpy = jest.spyOn(spectator.component.scroll, 'emit');
+            const scrollSpy = vi.spyOn(spectator.component.scroll, 'emit');
             const tableBody = spectator.query('.p-datatable-table-container') as HTMLElement;
 
             const scrollEvent = new Event('scroll');
@@ -2502,14 +2976,14 @@ describe('DotFolderListViewComponent', () => {
 
         it('should add scroll event listener on ngAfterViewInit and emit scroll events', () => {
             const tableBody = spectator.query('.p-datatable-table-container') as HTMLElement;
-            const addListenerSpy = jest.spyOn(tableBody, 'addEventListener');
+            const addListenerSpy = vi.spyOn(tableBody, 'addEventListener');
 
             spectator.component.ngAfterViewInit();
 
             expect(addListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
 
             // Verify the listener emits scroll events
-            const scrollSpy = jest.spyOn(spectator.component.scroll, 'emit');
+            const scrollSpy = vi.spyOn(spectator.component.scroll, 'emit');
             const scrollEvent = new Event('scroll');
             tableBody.dispatchEvent(scrollEvent);
 
@@ -2518,14 +2992,14 @@ describe('DotFolderListViewComponent', () => {
 
         it('should remove scroll event listener on ngOnDestroy and stop emitting', () => {
             const tableBody = spectator.query('.p-datatable-table-container') as HTMLElement;
-            const removeListenerSpy = jest.spyOn(tableBody, 'removeEventListener');
+            const removeListenerSpy = vi.spyOn(tableBody, 'removeEventListener');
 
             spectator.component.ngOnDestroy();
 
             expect(removeListenerSpy).toHaveBeenCalledWith('scroll', expect.any(Function));
 
             // Verify scroll events are no longer emitted after destroy
-            const scrollSpy = jest.spyOn(spectator.component.scroll, 'emit');
+            const scrollSpy = vi.spyOn(spectator.component.scroll, 'emit');
             const scrollEvent = new Event('scroll');
             tableBody.dispatchEvent(scrollEvent);
 
@@ -2977,6 +3451,546 @@ describe('DotFolderListViewComponent', () => {
 
             expect(rendered[0]).toContain('a-older');
             expect(rendered[1]).toContain('z-newer');
+        });
+    });
+
+    // -----------------------------------------------------------------------------------------
+    // US2 (issue #32591) — Shift+Arrow extends a contiguous selection from the anchor.
+    //
+    // The anchor is the substance here. A plain arrow moves focus *and* the anchor; Shift+Arrow moves
+    // focus and leaves the anchor put. Shrink-back and extend-through-the-anchor then fall out of
+    // that one rule rather than needing special cases.
+    // -----------------------------------------------------------------------------------------
+    describe('US2 — Shift+Arrow range selection', () => {
+        const rowsOf = () => spectator.queryAll<HTMLTableRowElement>(byTestId('item-row'));
+
+        /**
+         * Moves focus with a real keydown, the way the table's own arrow handler is driven.
+         *
+         * Holding Shift sends a keydown for the Shift key itself before the arrow, because that is
+         * what a browser does and the component sees every keydown. Omitting it made these tests
+         * pass against behaviour that was broken in the browser.
+         */
+        const arrow = (from: number, direction: 'ArrowDown' | 'ArrowUp', shiftKey = false) => {
+            const row = rowsOf()[from];
+            row.focus();
+
+            if (shiftKey) {
+                row.dispatchEvent(
+                    new KeyboardEvent('keydown', {
+                        code: 'ShiftLeft',
+                        key: 'Shift',
+                        shiftKey: true,
+                        bubbles: true
+                    })
+                );
+            }
+
+            row.dispatchEvent(
+                new KeyboardEvent('keydown', { code: direction, shiftKey, bubbles: true })
+            );
+            spectator.detectChanges();
+        };
+
+        const spyOnSelection = () => vi.spyOn(spectator.component.selectionChange, 'emit');
+
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+        });
+
+        it('should extend the selection to the newly focused row', () => {
+            const spy = spyOnSelection();
+
+            arrow(0, 'ArrowDown', true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[0], mockItems[1]]);
+        });
+
+        it('should keep extending as the arrow is held', () => {
+            const spy = spyOnSelection();
+
+            arrow(0, 'ArrowDown', true);
+            arrow(1, 'ArrowDown', true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[0], mockItems[1], mockItems[2]]);
+        });
+
+        it('should shrink back toward the anchor rather than growing the other way', () => {
+            const spy = spyOnSelection();
+
+            arrow(0, 'ArrowDown', true);
+            arrow(1, 'ArrowDown', true);
+            arrow(2, 'ArrowUp', true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[0], mockItems[1]]);
+        });
+
+        it('should extend the other way once it passes through the anchor', () => {
+            const spy = spyOnSelection();
+
+            arrow(2, 'ArrowUp', true);
+            arrow(1, 'ArrowUp', true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[0], mockItems[1], mockItems[2]]);
+        });
+
+        it('should not extend when the arrow is pressed without shift', () => {
+            const spy = spyOnSelection();
+
+            arrow(0, 'ArrowDown');
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('should re-anchor after a plain arrow, so the next range starts from there', () => {
+            arrow(0, 'ArrowDown');
+            const spy = spyOnSelection();
+
+            arrow(1, 'ArrowDown', true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[1], mockItems[2]]);
+        });
+
+        it('should leave the selection alone at the last row of the page', () => {
+            const spy = spyOnSelection();
+
+            arrow(mockItems.length - 1, 'ArrowDown', true);
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+
+        it('should never paginate from a range', () => {
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
+
+            arrow(mockItems.length - 1, 'ArrowDown', true);
+
+            expect(paginateSpy).not.toHaveBeenCalled();
+        });
+
+        // A range extends the selection, it does not become the selection. Rows picked before the
+        // gesture started have to survive it.
+        it('should add to an existing selection rather than replacing it', () => {
+            spectator.setInput('selection', [mockItems[4]]);
+            spectator.detectChanges();
+            const spy = spyOnSelection();
+
+            arrow(0, 'ArrowDown', true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[4], mockItems[0], mockItems[1]]);
+        });
+
+        it('should still shrink the range without disturbing the rows selected before it', () => {
+            spectator.setInput('selection', [mockItems[4]]);
+            spectator.detectChanges();
+            const spy = spyOnSelection();
+
+            arrow(0, 'ArrowDown', true);
+            arrow(1, 'ArrowDown', true);
+            arrow(2, 'ArrowUp', true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[4], mockItems[0], mockItems[1]]);
+        });
+
+        it('should not extend a range while the listing is read-only', () => {
+            spectator.setInput('readOnly', true);
+            spectator.detectChanges();
+            const spy = spyOnSelection();
+
+            arrow(0, 'ArrowDown', true);
+
+            expect(spy).not.toHaveBeenCalled();
+        });
+    });
+
+    // -----------------------------------------------------------------------------------------
+    // US4 (issue #32591) — Shift-clicking a checkbox extends the same range Shift+Arrow does.
+    //
+    // The checkbox cell stops propagation, so the row's own click handler never sees this event and
+    // the table's range path is unreachable from here. The handler sits on the checkbox for that
+    // reason, and reuses the anchor-and-extend logic rather than repeating it.
+    // -----------------------------------------------------------------------------------------
+    describe('US4 — Shift+click range selection', () => {
+        const checkboxAt = (index: number) =>
+            spectator.queryAll(byTestId('item-checkbox'))[index].querySelector('input');
+
+        // `mousedown` then `click`, in that order, because that is what a browser sends and the
+        // component reads the modifier from the mousedown — it is the last thing that happens before
+        // the row takes focus, which is what has to be told to leave the anchor alone.
+        const clickCheckbox = (index: number, shiftKey = false) => {
+            const input = checkboxAt(index);
+            // `cancelable` matters: a constructed MouseEvent defaults to false, which silently makes
+            // `preventDefault()` a no-op and lets the checkbox toggle on top of the range. Real
+            // browser clicks are cancelable.
+            input.dispatchEvent(
+                new MouseEvent('mousedown', { shiftKey, bubbles: true, cancelable: true })
+            );
+            input.dispatchEvent(
+                new MouseEvent('click', { shiftKey, bubbles: true, cancelable: true })
+            );
+            spectator.detectChanges();
+        };
+
+        const spyOnSelection = () => vi.spyOn(spectator.component.selectionChange, 'emit');
+
+        beforeEach(() => {
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+        });
+
+        it('should select every row between the anchor and a checkbox clicked below it', () => {
+            clickCheckbox(1);
+            const spy = spyOnSelection();
+
+            clickCheckbox(3, true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[1], mockItems[2], mockItems[3]]);
+        });
+
+        it('should extend upward when the clicked checkbox is above the anchor', () => {
+            clickCheckbox(3);
+            const spy = spyOnSelection();
+
+            clickCheckbox(1, true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[1], mockItems[2], mockItems[3]]);
+        });
+
+        it('should anchor on the clicked row when nothing is selected yet', () => {
+            const spy = spyOnSelection();
+
+            clickCheckbox(2, true);
+
+            expect(spy).toHaveBeenLastCalledWith([mockItems[2]]);
+        });
+
+        it('should leave a plain checkbox click alone', () => {
+            clickCheckbox(1);
+            const spy = spyOnSelection();
+
+            clickCheckbox(3);
+
+            expect(spy).not.toHaveBeenLastCalledWith([mockItems[1], mockItems[2], mockItems[3]]);
+        });
+    });
+
+    // -----------------------------------------------------------------------------------------
+    // T003 probe (issue #32591) — characterises the controlled-selection round trip that
+    // Shift+Arrow range selection has to survive. This is the one part of the keybindings feature
+    // that was not proved out during investigation, so it is written before any implementation.
+    //
+    // The loop: the parent owns `selection`, this component re-asserts the effective selection onto
+    // the table through `$syncTableSelection`, and the table sets `preventSelectionSetterPropagation`
+    // while it emits. A range handler that wrote to the table directly would be overwritten by that
+    // effect, so a range has to travel out through `selectionChange` and back in through `selection`
+    // like every other selection change.
+    // -----------------------------------------------------------------------------------------
+    describe('Keyboard range selection round trip (T003 probe)', () => {
+        const getTable = () => spectator.query(Table);
+
+        const rowsOf = () => spectator.queryAll<HTMLTableRowElement>(byTestId('item-row'));
+
+        /**
+         * Extends a range the way a user does: focus the anchor row, hold Shift, step with the
+         * arrow keys. This drives the shipped `#extendSelectionTo`.
+         *
+         * It used to call PrimeNG's `table.selectRange()` directly, which was right when written —
+         * the probe deliberately predates the handler — but stopped testing this feature the moment
+         * the handler landed, because the shipped path never calls `selectRange`. The round-trip
+         * assertions below would have passed with the range logic wholly regressed.
+         */
+        const extendRange = (anchorIndex: number, toIndex: number) => {
+            const direction = toIndex > anchorIndex ? 'ArrowDown' : 'ArrowUp';
+            const step = toIndex > anchorIndex ? 1 : -1;
+
+            rowsOf()[anchorIndex].focus();
+            spectator.detectChanges();
+
+            // A browser sends a keydown for Shift itself before the first arrow, and the component
+            // sees every keydown. Omitting it hid a real bug once already.
+            rowsOf()[anchorIndex].dispatchEvent(
+                new KeyboardEvent('keydown', {
+                    code: 'ShiftLeft',
+                    key: 'Shift',
+                    shiftKey: true,
+                    bubbles: true
+                })
+            );
+
+            for (let index = anchorIndex; index !== toIndex; index += step) {
+                rowsOf()[index].dispatchEvent(
+                    new KeyboardEvent('keydown', { code: direction, shiftKey: true, bubbles: true })
+                );
+                spectator.detectChanges();
+            }
+        };
+
+        it('should emit the whole range through selectionChange when a range is extended', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('selection', [mockItems[0]]);
+            spectator.detectChanges();
+
+            const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
+
+            extendRange(0, 2);
+
+            expect(selectionChangeSpy).toHaveBeenCalledWith([
+                mockItems[0],
+                mockItems[1],
+                mockItems[2]
+            ]);
+        });
+
+        it('should keep the rendered selection matching a range the parent echoes back', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('selection', [mockItems[0]]);
+            spectator.detectChanges();
+
+            extendRange(0, 2);
+
+            // A controlled parent (the Content Drive store) receives the emission and pushes it back
+            // down. This is the step `preventSelectionSetterPropagation` can swallow.
+            const echoed = [mockItems[0], mockItems[1], mockItems[2]];
+            spectator.setInput('selection', echoed);
+            spectator.detectChanges();
+
+            expect(spectator.component.selectedItems).toEqual(echoed);
+            expect(getTable().selection).toEqual(echoed);
+        });
+
+        it('should let a parent that narrows the range win over what the table computed', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('selection', [mockItems[0]]);
+            spectator.detectChanges();
+
+            extendRange(0, 2);
+
+            // What the table shows has to be what the parent holds, not what the table last computed.
+            const narrowed = [mockItems[0], mockItems[1]];
+            spectator.setInput('selection', narrowed);
+            spectator.detectChanges();
+
+            expect(getTable().selection).toEqual(narrowed);
+        });
+    });
+
+    // -----------------------------------------------------------------------------------------
+    // US1 (issue #32591) — keyboard reachability and movement.
+    //
+    // Two of these describe defects rather than new behaviour: on load every row is a tab stop (a
+    // 20-stop tab trap), and after a column sort no row is reachable at all. Both come from the
+    // underlying table comparing its selection anchor against a row index this component never
+    // supplied, so the comparison is `undefined === undefined` before a sort and `null === undefined`
+    // after one.
+    //
+    // The contract asserted here is a roving tab stop: exactly one row is tabbable at a time and it
+    // follows focus. `tabindex` is asserted directly because it *is* the observable contract of a
+    // roving tab stop, not styling.
+    // -----------------------------------------------------------------------------------------
+    describe('US1 — keyboard reachability and movement', () => {
+        const rowsOf = () => spectator.queryAll<HTMLTableRowElement>(byTestId('item-row'));
+        const tabIndexes = () => rowsOf().map((row) => row.getAttribute('tabindex'));
+        const tabStopCount = () => tabIndexes().filter((value) => value === '0').length;
+        const focusedRowIndex = () => rowsOf().findIndex((row) => row === document.activeElement);
+
+        /** Dispatches a real keydown on a row. The table switches on `code`, so it must be set. */
+        const pressOnRow = (index: number, code: string, init: KeyboardEventInit = {}) => {
+            const row = rowsOf()[index];
+            row.focus();
+            row.dispatchEvent(new KeyboardEvent('keydown', { code, bubbles: true, ...init }));
+            spectator.detectChanges();
+        };
+
+        const renderRows = () => {
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+        };
+
+        // T005
+        it('should expose exactly one row as a tab stop on load', () => {
+            renderRows();
+
+            expect(rowsOf().length).toBe(mockItems.length);
+            expect(tabStopCount()).toBe(1);
+        });
+
+        // T006 — the defect: sorting currently leaves every row unreachable.
+        it('should still expose one tab stop after a column is sorted', () => {
+            renderRows();
+
+            spectator.click(spectator.queryAll(byTestId('header-column-sortable'))[0]);
+            spectator.detectChanges();
+
+            expect(tabStopCount()).toBe(1);
+        });
+
+        // Review finding: T007 misses this because it never moves focus first, so index 0 still
+        // exists in the shorter list. Focus a row further down and the active index outlives the row
+        // it pointed at, matching nothing and taking every tab stop with it. Real trigger: click or
+        // focus a row down the listing, then search or filter so fewer results come back.
+        it('should keep a tab stop when the list shrinks under the focused row', () => {
+            renderRows();
+            pressOnRow(3, 'ArrowDown');
+
+            expect(tabStopCount()).toBe(1);
+
+            spectator.setInput('items', [mockItems[0], mockItems[1]]);
+            spectator.detectChanges();
+
+            expect(tabStopCount()).toBe(1);
+        });
+
+        // T007
+        it('should still expose one tab stop after a new page of rows arrives', () => {
+            renderRows();
+
+            spectator.setInput('items', [mockItems[2], mockItems[3]]);
+            spectator.detectChanges();
+
+            expect(tabStopCount()).toBe(1);
+        });
+
+        // T008
+        it('should move focus down a row and carry the tab stop with it', () => {
+            renderRows();
+
+            pressOnRow(0, 'ArrowDown');
+
+            expect(focusedRowIndex()).toBe(1);
+            expect(tabStopCount()).toBe(1);
+            expect(tabIndexes()[1]).toBe('0');
+        });
+
+        it('should move focus up a row', () => {
+            renderRows();
+
+            pressOnRow(1, 'ArrowUp');
+
+            expect(focusedRowIndex()).toBe(0);
+        });
+
+        it('should not change the selection when moving focus', () => {
+            renderRows();
+            const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
+
+            pressOnRow(0, 'ArrowDown');
+
+            expect(selectionChangeSpy).not.toHaveBeenCalled();
+        });
+
+        // T009
+        it('should keep focus on the last row rather than paginating', () => {
+            renderRows();
+            const paginateSpy = vi.spyOn(spectator.component.paginate, 'emit');
+            const lastIndex = mockItems.length - 1;
+
+            pressOnRow(lastIndex, 'ArrowDown');
+
+            expect(focusedRowIndex()).toBe(lastIndex);
+            expect(paginateSpy).not.toHaveBeenCalled();
+        });
+
+        it('should keep focus on the first row when moving up from it', () => {
+            renderRows();
+
+            pressOnRow(0, 'ArrowUp');
+
+            expect(focusedRowIndex()).toBe(0);
+        });
+
+        // T010 — the rule is about whatever the listing marks unselectable, not a named condition.
+        // Trunk only marks rows unselectable in bulk; a per-row state will make this observable
+        // row-by-row without the behaviour itself changing.
+        it('should offer no keyboard tab stop while the listing is disabled', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+
+            expect(tabStopCount()).toBe(0);
+        });
+
+        // T011
+        it('should offer no keyboard tab stop while the listing is read-only', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('readOnly', true);
+            spectator.detectChanges();
+
+            expect(tabStopCount()).toBe(0);
+        });
+
+        it('should not change the selection from the keyboard while read-only', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('readOnly', true);
+            spectator.detectChanges();
+            const selectionChangeSpy = vi.spyOn(spectator.component.selectionChange, 'emit');
+
+            pressOnRow(0, 'ArrowDown');
+
+            expect(selectionChangeSpy).not.toHaveBeenCalled();
+        });
+
+        // Review finding: the rows take focus and ranges extend, but nothing told assistive
+        // technology what was selected. `aria-selected` is a partial measure without `role="grid"`
+        // (deliberately out of scope, it brings the full grid keyboard contract — see the row block
+        // in the template and #37439), but it is the difference between a screen-reader user
+        // hearing nothing and hearing the state change.
+        it('should mark selected rows for assistive technology', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('selection', [mockItems[1], mockItems[2]]);
+            spectator.detectChanges();
+
+            const selected = rowsOf().map((row) => row.getAttribute('aria-selected'));
+
+            expect(selected).toEqual(['false', 'true', 'true', 'false', 'false']);
+        });
+
+        // Pins the half-wiring back out. `aria-multiselectable` is not a supported property of
+        // `role="table"`, which is the role PrimeNG renders and the one this listing keeps, so
+        // setting it announces nothing and reads to the next person like the ARIA work is finished.
+        // It belongs with the rest of the grid contract in #37439, not on its own.
+        it('should not claim selection semantics its container role cannot carry', () => {
+            spectator.setInput('items', mockItems);
+            spectator.detectChanges();
+
+            const table = spectator.query('[data-testId="table"] table');
+
+            expect(table).not.toHaveAttribute('role', 'grid');
+            expect(table?.hasAttribute('aria-multiselectable')).toBe(false);
+        });
+
+        // T012 — the single-selection consumer (the asset selection dialog) shares this component.
+        //
+        // It does NOT get the roving tab stop, and that is a recorded scope decision rather than a
+        // defect: the underlying table short-circuits to "every row is tabbable" whenever the
+        // selection is empty, which is the permanent resting state of a single-selection list, so the
+        // anchor this component drives is never consulted. Confirmed structural, not a timing
+        // artifact, by letting a second render settle.
+        //
+        // What this test guards is that the row-index binding did not *change* that consumer. The
+        // asserted value is today's behaviour on trunk, so if someone later makes single-selection
+        // focusable properly, this test fails and points them here rather than silently passing.
+        // That work is tracked in #37441 — update this test, do not delete it.
+        it('should leave single-selection tab behaviour exactly as it was', () => {
+            spectator.setInput('items', mockItems);
+            spectator.setInput('selectionMode', 'single');
+            spectator.detectChanges();
+
+            expect(tabStopCount()).toBe(mockItems.length);
+        });
+    });
+
+    describe('rows (#37930)', () => {
+        // The Drive's grid has its own paginator, and a page size picked there has to show here too
+        // when the user switches back. Unbound, the table keeps today's 20.
+        it('should page by 20 when no rows are given', () => {
+            expect(spectator.component.dataTable()?.rows).toBe(20);
+        });
+
+        it('should page by the rows it is given', () => {
+            spectator.setInput('rows', 40);
+            spectator.detectChanges();
+
+            expect(spectator.component.dataTable()?.rows).toBe(40);
         });
     });
 });

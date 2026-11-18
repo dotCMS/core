@@ -201,6 +201,7 @@
                     <dot-auth-oidc-connection
                         [oidc]="store.draft().oidc"
                         [callbackUrl]="store.draft().callbackUrl"
+                        [siteHostname]="store.hostName()"
                         [errors]="store.errors()"
                         (fieldChange)="onOidcChange($event)"
                         (discover)="onDiscoverOidc()" />
@@ -224,6 +225,7 @@
                                 syncKey="syncOnLogin"
                                 [showSync]="false"
                                 [showGroupSecurity]="true"
+                                [showEmailLinking]="true"
                                 (fieldChange)="onProvisioningChange('oidc', $event)" />
                         </div>
                     </div>

@@ -63,6 +63,7 @@ export interface DotAuthConfigValues {
     buildRolesStrategy?: string;
     callbackUrl?: string;
     autoProvision?: boolean;
+    trustEmailWithoutVerifiedClaim?: boolean;
 }
 
 export type DotAuthSignatureValidation = 'none' | 'response' | 'assertion' | 'responseandassertion';
@@ -82,6 +83,7 @@ export interface DotAuthSamlConfigValues {
     idpName?: string;
     sPIssuerURL?: string;
     sPEndpointHostname?: string;
+    additionalAcsUrls?: string;
     signatureValidationType?: DotAuthSignatureValidation;
     idPMetadataFile?: string;
     publicCert?: string;
@@ -100,6 +102,7 @@ export const DOT_AUTH_SAML_DECLARED_KEYS = [
     'idpName',
     'sPIssuerURL',
     'sPEndpointHostname',
+    'additionalAcsUrls',
     'signatureValidationType',
     'idPMetadataFile',
     'publicCert',
@@ -144,6 +147,8 @@ export interface DotAuthHeadlessValues {
 export type DotAuthConfigView =
     | {
           hostId: string;
+          /** Site hostname; absent for SYSTEM_HOST. Drives the predicted OAuth redirect URI. */
+          hostName?: string;
           protocol: 'OAUTH';
           configured: boolean;
           inherited: boolean;
@@ -152,6 +157,7 @@ export type DotAuthConfigView =
       }
     | {
           hostId: string;
+          hostName?: string;
           protocol: 'SAML';
           configured: boolean;
           inherited: boolean;
@@ -183,6 +189,12 @@ export interface DotAuthProvisioningConfig {
     defaultRoles: string[];
     roleBehavior: DotAuthRoleBehavior;
     groupMappings: DotAuthGroupMapping[];
+    /**
+     * OIDC only. Link a sign-in to an existing dotCMS user by email when the IdP sends no
+     * `email_verified` claim. Default false: a verified email always links, an absent claim
+     * links only with this on, and `email_verified=false` never links.
+     */
+    trustEmailWithoutVerifiedClaim?: boolean;
     /**
      * OIDC only. Pass unmapped IdP group names through as dotCMS role keys.
      * Default false (closed): only groups with an explicit groupMappings entry
@@ -238,6 +250,8 @@ export interface DotAuthSamlUiConfig extends DotAuthProvisioningConfig {
     idpName: string;
     /** SP endpoint hostname (drives SP entity/ACS URLs) — not edited in the UI, but must round-trip so a save never blanks it. */
     spEndpointHostname: string;
+    /** Comma-separated extra ACS URLs the SAML runtime accepts as Destination/Recipient (exact match). */
+    additionalAcsUrls: string;
     metadataUrl: string;
     entityId: string;
     ssoUrl: string;

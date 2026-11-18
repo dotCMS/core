@@ -1,3 +1,5 @@
+import { MockedFunction, vi } from 'vitest';
+
 import {
     checkFlagExperimentAlreadyChecked,
     getDataExperimentAttributes,
@@ -81,14 +83,14 @@ describe('Utility ', () => {
     describe('SessionStorage EXPERIMENT_ALREADY_CHECKED_KEY handle', () => {
         Object.defineProperty(window, 'sessionStorage', {
             value: {
-                setItem: jest.fn(),
-                getItem: jest.fn()
+                setItem: vi.fn(),
+                getItem: vi.fn()
             },
             writable: true
         });
 
         describe('checkFlagExperimentAlreadyChecked', () => {
-            const getItemMock = window.sessionStorage.getItem as jest.MockedFunction<
+            const getItemMock = window.sessionStorage.getItem as MockedFunction<
                 typeof window.sessionStorage.getItem
             >;
 

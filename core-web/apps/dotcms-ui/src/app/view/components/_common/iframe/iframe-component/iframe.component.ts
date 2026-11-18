@@ -243,8 +243,14 @@ export class IframeComponent implements OnInit, OnDestroy {
         return this.iframeElement && this.iframeElement.nativeElement.contentWindow;
     }
 
-    private getIframeDocument(): Document {
-        return this.getIframeWindow().document;
+    /**
+     * The document loaded in the iframe.
+     *
+     * @returns `null` while no iframe is rendered, e.g. when another screen asks every iframe to
+     * re-apply the theme colors.
+     */
+    private getIframeDocument(): Document | null {
+        return this.getIframeWindow()?.document ?? null;
     }
 
     private getIframeLocation(): Location {

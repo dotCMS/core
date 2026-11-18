@@ -1,5 +1,6 @@
-import { createDirectiveFactory, SpectatorDirective } from '@openng/spectator/jest';
+import { createDirectiveFactory, SpectatorDirective } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -72,7 +73,7 @@ describe('DotSiteSelectorDirective', () => {
         let getSitesSpy;
 
         beforeEach(() => {
-            getSitesSpy = jest
+            getSitesSpy = vi
                 .spyOn(dotSiteService, 'getSites')
                 .mockReturnValue(of({ sites: mockSites, pagination: mockPagination }));
         });
@@ -102,7 +103,7 @@ describe('DotSiteSelectorDirective', () => {
 
     describe('Listen login-as/logout-as events', () => {
         it('should send notification when login-as/logout-as', fakeAsync(() => {
-            const getSitesSpy = jest
+            const getSitesSpy = vi
                 .spyOn(dotSiteService, 'getSites')
                 .mockReturnValue(of({ sites: mockSites, pagination: mockPagination }));
             spectator.detectChanges();

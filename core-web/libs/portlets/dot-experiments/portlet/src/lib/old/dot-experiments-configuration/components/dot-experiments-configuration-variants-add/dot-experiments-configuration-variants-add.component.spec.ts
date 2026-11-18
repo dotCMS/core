@@ -4,9 +4,10 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { ActivatedRoute } from '@angular/router';
 
@@ -22,7 +23,7 @@ import { ACTIVE_ROUTE_MOCK_CONFIG } from '@dotcms/utils-testing';
 
 import { DotExperimentsConfigurationVariantsAddComponent } from './dot-experiments-configuration-variants-add.component';
 
-import { DotExperimentsReportsChartComponent } from '../../../dot-experiments-reports/components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
+import { DotExperimentsReportsChartComponent } from '../../../../shared/ui/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-configuration-store';
 
 describe('DotExperimentsConfigurationVariantsAddComponent', () => {
@@ -76,7 +77,7 @@ describe('DotExperimentsConfigurationVariantsAddComponent', () => {
     });
 
     it('should saveForm when form is valid', async () => {
-        jest.spyOn(store, 'addVariant');
+        vi.spyOn(store, 'addVariant');
 
         const formValues = {
             name: 'name'

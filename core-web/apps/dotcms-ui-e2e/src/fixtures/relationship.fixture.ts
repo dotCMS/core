@@ -39,72 +39,66 @@ function authHeaders() {
 async function fireContentlet(
     request: APIRequestContext,
     contentType: string,
-    fields: Record<string, unknown>
+    fields: Record<string, unknown>,
+    waitForIndex = true
 ): Promise<TestContentlet> {
     const response = await request.put(
-        '/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR',
+        `/api/v1/workflow/actions/default/fire/PUBLISH${waitForIndex ? '?indexPolicy=WAIT_FOR' : ''}`,
         {
             data: { contentlet: { contentType, ...fields } },
             headers: authHeaders()
         }
     );
-    expect(response.status()).toBe(200);
+    expect(response.status(), await response.text()).toBe(200);
     const data = await response.json();
     return data.entity as TestContentlet;
 }
 
-interface BulkPublishResponseBody {
-    entity?: {
-        results?: Record<string, unknown>[];
-        summary?: { failCount?: number; successCount?: number };
-    };
-}
+/**
+ * How many single publishes {@link fireContentlets} keeps in flight at once: enough to overlap the
+ * server's per-save work, few enough to leave the instance's 15 database connections for the other
+ * worker.
+ */
+const PUBLISH_CONCURRENCY = 4;
 
 /**
- * Parses bulk PUBLISH response. Results are ordered by `title` because the API
- * completes futures in non-deterministic order.
+ * Publishes one contentlet per request, a few at a time, rather than in one bulk request.
+ *
+ * The bulk endpoint runs every item through one server-wide queue of two threads, shared by every
+ * request on the instance. A test's handful of items then waits behind whatever another worker has
+ * queued there — "Dialog Content Listing" queues fifteen — and on CI that pushed `beforeEach` hooks
+ * past the test timeout. A single publish runs on its own request thread.
+ *
+ * @param waitForIndex Whether to publish with `indexPolicy=WAIT_FOR`.
+ *
+ *   Defaults to `true`, which is what a test needs when the content has to be **findable** — any
+ *   test that searches for it, the picker included.
+ *
+ *   Pass `false` when the test only reads the content back through a contentlet it is related to.
+ *   The related-content list is resolved from the parent through `?depth=2`, straight out of the
+ *   database, so waiting on the index there buys nothing and costs a round of indexing per row. At
+ *   41 rows that was the difference between a test that fits in CI and one that does not.
  */
-function parseBulkPublishContentlets(
-    data: BulkPublishResponseBody,
-    expectedCount: number
-): TestContentlet[] {
-    const summary = data.entity?.summary;
-    expect(summary?.failCount ?? 0, `bulk publish failures: ${JSON.stringify(summary)}`).toBe(0);
-    expect(summary?.successCount).toBe(expectedCount);
-    const results = data.entity?.results ?? [];
-    expect(results).toHaveLength(expectedCount);
-    const contentlets: TestContentlet[] = [];
-    for (const entry of results) {
-        const payload = Object.values(entry)[0];
-        expect(
-            payload != null && typeof payload === 'object',
-            'bulk result entry missing contentlet'
-        ).toBe(true);
-        contentlets.push(payload as TestContentlet);
-    }
-    contentlets.sort((a, b) =>
-        String(a.title).localeCompare(String(b.title), undefined, { numeric: true })
-    );
-    return contentlets;
-}
-
 async function fireContentlets(
     request: APIRequestContext,
     contentType: string,
-    fieldsList: Record<string, unknown>[]
+    fieldsList: Record<string, unknown>[],
+    waitForIndex = true
 ): Promise<TestContentlet[]> {
-    const items = fieldsList.map((fields) => ({ contentType, ...fields }));
-    const response = await request.post(
-        '/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR',
-        {
-            data: { contentlets: items },
-            headers: { ...authHeaders(), 'Content-Type': 'application/json' }
+    const pending = [...fieldsList];
+    const contentlets: TestContentlet[] = [];
+    const publishNext = async (): Promise<void> => {
+        for (let fields = pending.shift(); fields; fields = pending.shift()) {
+            contentlets.push(await fireContentlet(request, contentType, fields, waitForIndex));
         }
+    };
+
+    await Promise.all(Array.from({ length: PUBLISH_CONCURRENCY }, publishNext));
+
+    // Ordered by `title`, as callers rely on: the publishes complete in no particular order.
+    return contentlets.sort((a, b) =>
+        String(a.title).localeCompare(String(b.title), undefined, { numeric: true })
     );
-    const bodyText = await response.text();
-    expect(response.status(), bodyText).toBe(200);
-    const data = JSON.parse(bodyText) as BulkPublishResponseBody;
-    return parseBulkPublishContentlets(data, items.length);
 }
 
 async function fireContentletWithRelationship(
@@ -271,7 +265,8 @@ export const test = base.extend<{
         /** Bulk create; returned array sorted by `title` (API completion order is not guaranteed). */
         createContentlets: (
             ct: string,
-            fieldsList: Record<string, unknown>[]
+            fieldsList: Record<string, unknown>[],
+            waitForIndex?: boolean
         ) => Promise<TestContentlet[]>;
         createContentletWithRelationship: (
             ct: string,
@@ -303,7 +298,8 @@ export const test = base.extend<{
             createContentType: (payload) => createFakeContentType(request, payload),
             deleteContentType: (id) => deleteContentType(request, id),
             createContentlet: (ct, fields) => fireContentlet(request, ct, fields),
-            createContentlets: (ct, fieldsList) => fireContentlets(request, ct, fieldsList),
+            createContentlets: (ct, fieldsList, waitForIndex) =>
+                fireContentlets(request, ct, fieldsList, waitForIndex),
             createContentletWithRelationship: (ct, fields, rels) =>
                 fireContentletWithRelationship(request, ct, fields, rels),
             enableNewEditor: (ctVar) => enableNewEditor(request, ctVar),

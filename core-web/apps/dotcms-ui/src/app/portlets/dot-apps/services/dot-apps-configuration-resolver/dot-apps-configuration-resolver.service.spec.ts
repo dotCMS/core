@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -84,7 +85,7 @@ describe('DotAppsConfigurationResolver', () => {
         };
 
         activatedRouteSnapshotMock.paramMap = createMockParamMap({ appKey: '123' });
-        jest.spyOn(dotAppsServices, 'getConfigurationList').mockReturnValue(of(response));
+        vi.spyOn(dotAppsServices, 'getConfigurationList').mockReturnValue(of(response));
 
         dotAppsConfigurationResolver
             .resolve(activatedRouteSnapshotMock)

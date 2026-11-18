@@ -8,9 +8,9 @@ import {
 import { RouterOutlet } from '@angular/router';
 
 import { DotContentCompareDialogComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotSidePanelOutletComponent } from '@dotcms/ui';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotAlertConfirmComponent } from '../_common/dot-alert-confirm/dot-alert-confirm';
 import { DotDownloadBundleDialogComponent } from '../_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
 import { DotGenerateSecurePasswordComponent } from '../_common/dot-generate-secure-password/dot-generate-secure-password.component';
 import { DotPushPublishDialogComponent } from '../_common/dot-push-publish-dialog/dot-push-publish-dialog.component';
@@ -34,12 +34,12 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
         DotNavigationComponent,
         DotToolbarComponent,
         DotLargeMessageDisplayComponent,
-        DotAlertConfirmComponent,
         DotPushPublishDialogComponent,
         DotDownloadBundleDialogComponent,
         DotWizardComponent,
         DotGenerateSecurePasswordComponent,
-        DotContentCompareDialogComponent
+        DotContentCompareDialogComponent,
+        DotSidePanelOutletComponent
     ]
 })
 export class MainComponentLegacyComponent implements OnInit {

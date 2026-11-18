@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { vi } from 'vitest';
+
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, forwardRef, Input, Output } from '@angular/core';
@@ -135,7 +137,7 @@ describe('DotTemplateAdvancedComponent', () => {
         const code = de.query(By.css('dot-textarea-content'));
         code.triggerEventHandler('monacoInit', {
             name: 'testEditor',
-            editor: { executeEdits: jest.fn(), getSelection: () => 100 }
+            editor: { executeEdits: vi.fn(), getSelection: () => 100 }
         });
     });
 
@@ -181,14 +183,14 @@ describe('DotTemplateAdvancedComponent', () => {
 
     describe('events', () => {
         it('should emit updateTemplate event when the form changes', () => {
-            const updateTemplate = jest.spyOn(component.updateTemplate, 'emit');
+            const updateTemplate = vi.spyOn(component.updateTemplate, 'emit');
             component.form.get('body').setValue('<body></body>');
 
             expect<any>(updateTemplate).toHaveBeenCalledWith({ body: '<body></body>' });
         });
 
         it('should have form and fields', () => {
-            jest.spyOn(Date, 'now').mockReturnValue(1111111);
+            vi.spyOn(Date, 'now').mockReturnValue(1111111);
             const container = de.query(By.css('dot-container-selector'));
 
             container.triggerEventHandler('swap', {

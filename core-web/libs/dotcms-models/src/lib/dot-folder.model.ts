@@ -74,6 +74,28 @@ export interface DotFolderEntity {
 }
 
 /**
+ * A folder as `GET /api/v1/folder/{folderId}` returns it: the serialized `Folder` bean. It carries
+ * no permissions (those getters are `@JsonIgnore`), so a caller that needs them asks
+ * `GET /api/v1/permissions/{assetId}` separately.
+ */
+export interface DotFolderBean {
+    identifier: string;
+    inode: string;
+    /** The folder's own name (last path segment). */
+    name: string;
+    title: string;
+    /** The folder's full path inside its site, e.g. `/blog/`. */
+    path: string;
+    hostId: string;
+    sortOrder: number;
+    showOnMenu: boolean;
+    /** Comma-separated file-name masks allowed in the folder. */
+    filesMasks: string;
+    defaultFileType: string;
+    defaultBaseType?: string | null;
+}
+
+/**
  * Result item returned by the unified folder search endpoint (`GET /api/v1/folder/search`).
  * Unlike {@link DotFolder}, the folder's own `name` and its parent `path` are exposed
  * separately, and `siteId`/hostname are not included (the search is scoped by `siteId`).
