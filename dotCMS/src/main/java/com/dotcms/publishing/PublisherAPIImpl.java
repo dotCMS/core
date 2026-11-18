@@ -38,6 +38,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.locks.ReentrantLock;
@@ -422,6 +423,17 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
                 this.filterList.stream().filter(filter -> filterKey.equalsIgnoreCase(filter.getKey())).findFirst().orElse(defaultFilter);
     }
 
+    /**
+     * Builds the runtime filter for a bundle from the Push Publishing filter YAML the bundle was
+     * created with. The relationship depth comes from {@code relationshipsDepth} when the filter
+     * sets it, and otherwise from {@code relationshipsSecondLevel} (2 when true, 1 when false),
+     * so filters written before {@code relationshipsDepth} existed behave exactly as before.
+     *
+     * @param bundleId The ID of the bundle being generated.
+     * @return The {@link PublisherFilter} to apply while collecting the bundle's dependencies.
+     * @throws DotDataException     If the bundle cannot be read.
+     * @throws DotSecurityException If an exclude query cannot be run.
+     */
     @SuppressWarnings("unchecked")
     @CloseDBIfOpened
     @Override
@@ -429,9 +441,17 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
 
         final String filterKey = APILocator.getBundleAPI().getBundleById(bundleId).getFilterKey();
         final FilterDescriptor filterDescriptor = this.getFilterDescriptorByKey(filterKey);
-        final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(filterKey, (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.DEPENDENCIES_KEY,true),
-                (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.RELATIONSHIPS_KEY,true),
-                (Boolean)filterDescriptor.getFilters().getOrDefault(FilterDescriptor.RELATIONSHIPS_SECOND_LEVEL_KEY,false));
+        final Map<String, Object> filters = filterDescriptor.getFilters();
+        final boolean relationshipsSecondLevel =
+                (Boolean) filters.getOrDefault(FilterDescriptor.RELATIONSHIPS_SECOND_LEVEL_KEY, false);
+        // An explicit relationshipsDepth wins; otherwise keep the depth implied by relationshipsSecondLevel
+        final int relationshipsDepth = filters.containsKey(FilterDescriptor.RELATIONSHIPS_DEPTH_KEY)
+                ? ((Number) filters.get(FilterDescriptor.RELATIONSHIPS_DEPTH_KEY)).intValue()
+                : (relationshipsSecondLevel ? 2 : 1);
+        final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(filterKey,
+                (Boolean) filters.getOrDefault(FilterDescriptor.DEPENDENCIES_KEY, true),
+                (Boolean) filters.getOrDefault(FilterDescriptor.RELATIONSHIPS_KEY, true),
+                relationshipsSecondLevel, relationshipsDepth);
 
         if(filterDescriptor.getFilters().containsKey(FilterDescriptor.EXCLUDE_CLASSES_KEY)){
             List.class.cast(filterDescriptor.getFilters().get(FilterDescriptor.EXCLUDE_CLASSES_KEY)).forEach(type -> publisherFilter.addTypeToExcludeClassesSet(type.toString()));
