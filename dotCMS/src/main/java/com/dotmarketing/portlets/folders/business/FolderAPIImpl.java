@@ -729,8 +729,33 @@ public class FolderAPIImpl implements FolderAPI  {
 
 
 	@WrapInTransaction
+	@Override
 	public Folder createFolders(String path, Host host, User user, boolean respectFrontEndPermissions) throws
 			DotSecurityException, DotDataException {
+		return createFolders(path, host, user, respectFrontEndPermissions, folder -> { });
+	}
+
+	/**
+	 * Returns the folder at the given path, creating every missing folder on the way, and tells
+	 * {@code onCreated} about each folder it creates, parents included. Folders that already exist
+	 * are reused and not reported.
+	 *
+	 * @param path                       the folder path, such as {@code /a/b}
+	 * @param host                       the site the folders belong to
+	 * @param user                       the user creating the folders
+	 * @param respectFrontEndPermissions whether front-end roles are taken into account
+	 * @param onCreated                  called once for each folder this method creates
+	 *
+	 * @return the folder at the end of the path
+	 *
+	 * @throws DotSecurityException the user may not create the folders
+	 * @throws DotDataException     an error occurred when interacting with the database
+	 */
+	@WrapInTransaction
+	@Override
+	public Folder createFolders(final String path, final Host host, final User user,
+			final boolean respectFrontEndPermissions, final Consumer<Folder> onCreated)
+			throws DotSecurityException, DotDataException {
 
 		if(!UtilMethods.isSet(host)){
 			throw new IllegalArgumentException("Host is not set");
@@ -771,6 +796,7 @@ public class FolderAPIImpl implements FolderAPI  {
 				}
 
 				save(folder,  user,  respectFrontEndPermissions);
+				onCreated.accept(folder);
 			}
 			parent = folder;
 		}

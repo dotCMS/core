@@ -1101,8 +1101,10 @@ public class HostAssetsJobImpl extends ParentProxy{
 					.format("---> Folder `%s` has been copied already. ", sourceFolder.getPath()));
 			return folderMappingsBySourceId.get(sourceFolder.getInode()).destinationFolder;
 		}
-		final Folder newFolder = this.createFoldersAndTrack(
-				APILocator.getIdentifierAPI().find(sourceFolder.getIdentifier()).getPath(), destinationSite);
+		final Folder newFolder = this.folderAPI.createFolders(
+				APILocator.getIdentifierAPI().find(sourceFolder.getIdentifier()).getPath(), destinationSite,
+				this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES,
+				created -> this.foldersCreatedByThisCopy.add(created.getInode()));
 		newFolder.setTitle(sourceFolder.getTitle());
 		if (sourceFolder.isShowOnMenu()) {
 			newFolder.setSortOrder(sourceFolder.getSortOrder());
@@ -1114,47 +1116,6 @@ public class HostAssetsJobImpl extends ParentProxy{
 		}
 		folderMappingsBySourceId.put(sourceFolder.getInode(), new FolderMapping(sourceFolder, newFolder));
 		return newFolder;
-	}
-
-	/**
-	 * Creates every missing folder of the given path in the destination site, the same way
-	 * {@link com.dotmarketing.portlets.folders.business.FolderAPI#createFolders} does, and records
-	 * the folders it actually created, parents included, in {@link #foldersCreatedByThisCopy}.
-	 * Folders that already existed at those paths are returned or passed through unchanged.
-	 *
-	 * @param path            the folder path to create, such as {@code /a/b}
-	 * @param destinationSite the site to create it in
-	 *
-	 * @return the folder at the end of the path
-	 *
-	 * @throws DotDataException     An error occurred when interacting with the database.
-	 * @throws DotSecurityException An internal permission error occurred.
-	 */
-	private Folder createFoldersAndTrack(final String path, final Host destinationSite)
-			throws DotDataException, DotSecurityException {
-		final List<String> missingPaths = new ArrayList<>();
-		final StringBuilder prefix = new StringBuilder("/");
-		for (final String name : path.split("/")) {
-			if (UtilMethods.isNotSet(name)) {
-				continue;
-			}
-			prefix.append(name).append('/');
-			final Folder existing = this.folderAPI.findFolderByPath(prefix.toString(), destinationSite,
-					this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
-			if (null == existing || !InodeUtils.isSet(existing.getInode())) {
-				missingPaths.add(prefix.toString());
-			}
-		}
-		final Folder folder = this.folderAPI.createFolders(path, destinationSite, this.SYSTEM_USER,
-				DONT_RESPECT_FRONTEND_ROLES);
-		for (final String missingPath : missingPaths) {
-			final Folder created = this.folderAPI.findFolderByPath(missingPath, destinationSite,
-					this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
-			if (null != created && InodeUtils.isSet(created.getInode())) {
-				this.foldersCreatedByThisCopy.add(created.getInode());
-			}
-		}
-		return folder;
 	}
 
 	/**

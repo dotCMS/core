@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -340,6 +341,25 @@ import java.util.function.Predicate;
 	 */
 	Folder createFolders(String path, Host host, User user, boolean respectFrontEndPermissions)
 			throws DotSecurityException, DotDataException;
+
+	/**
+	 * Returns the folder at the given path, creating every missing folder on the way, and tells
+	 * {@code onCreated} about each folder it creates, parents included. Folders that already exist
+	 * are reused and not reported.
+	 *
+	 * @param path                       the folder path, such as {@code /a/b}
+	 * @param host                       the site the folders belong to
+	 * @param user                       the user creating the folders
+	 * @param respectFrontEndPermissions whether front-end roles are taken into account
+	 * @param onCreated                  called once for each folder this method creates
+	 *
+	 * @return the folder at the end of the path
+	 *
+	 * @throws DotSecurityException the user may not create the folders
+	 * @throws DotDataException     an error occurred when interacting with the database
+	 */
+	Folder createFolders(String path, Host host, User user, boolean respectFrontEndPermissions,
+			Consumer<Folder> onCreated) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Pulls a complete list of all folders on a host
