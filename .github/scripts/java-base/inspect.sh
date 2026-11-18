@@ -26,7 +26,12 @@ case "$status" in
         ;;
     "$HTTP_OK")
         # Reject malformed responses instead of mistaking them for an incomplete image.
-        jq -e '.images | type == "array"' "$response" >/dev/null
+        if ! jq -e '.images | type == "array" and all(.[];
+            type == "object" and (.os | type == "string") and (.architecture | type == "string"))' \
+            "$response" >/dev/null; then
+            echo '::error::Malformed Java-base registry response; refusing to assume absence.' >&2
+            exit 1
+        fi
         if jq -e 'any(.images[]; .os == "linux" and .architecture == "amd64") and
                   any(.images[]; .os == "linux" and .architecture == "arm64")' "$response" >/dev/null; then
             echo "Java-base $tag is available for linux/amd64 and linux/arm64."
