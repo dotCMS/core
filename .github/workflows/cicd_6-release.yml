@@ -18,7 +18,7 @@
 #
 
 name: '-6 Release Process'
-run-name: "Release ${{ inputs.release_version }}${{ inputs.java-version && format(' [{0}]', inputs.java-version) || '' }}"
+run-name: "Release ${{ inputs.release_version }}${{ (inputs.artifact-suffix || inputs.java-version) && format(' [{0}]', inputs.artifact-suffix || inputs.java-version) || '' }}"
 
 on:
   workflow_dispatch:
@@ -154,17 +154,24 @@ jobs:
           # after deployment succeeds. Use the deployment job's actual result.
           RUNS=$(gh api --paginate "repos/${REPO}/actions/workflows/cicd_6-release.yml/runs?branch=main&per_page=100" \
             --jq '.workflow_runs[] | [.display_title, .id] | @tsv')
-          CANDIDATES=$(printf '%s\n' "${RUNS}" | awk '$1 == "Release" && $2 ~ /^[0-9][0-9]\.[0-9][0-9]\.[0-9][0-9]-[0-9][0-9]?$/ { print $2, $NF }' \
+          CANDIDATES=$(printf '%s\n' "${RUNS}" | awk '$1 == "Release" && $2 ~ /^[0-9][0-9]\.[0-9][0-9]\.[0-9][0-9]-[0-9][0-9]?$/ { print $2, $NF, (NF > 3 ? "variant" : "default") }' \
             | sort -k1,1Vr)
           PREV_TAG=""
-          while read -r version run_id; do
+          PREV_MAVEN_PUBLISHED=false
+          while read -r version run_id flavor; do
             [[ -n "${run_id}" && "${run_id}" != "${GITHUB_RUN_ID}" ]] || continue
-            deployed=$(gh api --paginate "repos/${REPO}/actions/runs/${run_id}/jobs?filter=all&per_page=100" \
-              --jq '.jobs[] | select(.name == "Deployment / deployment" and .conclusion == "success") | .id')
-            if [[ -n "${deployed}" ]]; then
-              PREV_TAG="v${version}"
-              break
+            jobs=$(gh api --paginate "repos/${REPO}/actions/runs/${run_id}/jobs?filter=all&per_page=100" \
+              --jq '.jobs[] | select(.name == "Deployment / deployment" or .name == "Release / Release Artifacts")')
+            deployed=$(jq -rs 'any(.[]; .name == "Deployment / deployment" and .conclusion == "success")' <<< "${jobs}")
+            if [[ "${deployed}" != "true" ]]; then
+              continue
             fi
+            PREV_TAG="v${version}"
+            if [[ "${flavor}" == "default" ]]; then
+              PREV_MAVEN_PUBLISHED=$(jq -rs 'any(.[]; .name == "Release / Release Artifacts" and
+                any(.steps[]; .name == "Publish Release Artifacts to S3" and .conclusion == "success"))' <<< "${jobs}")
+            fi
+            break
           done <<< "${CANDIDATES}"
           if [[ -z "${PREV_TAG}" ]]; then
             echo "::error::No successfully deployed standard release found; cannot verify SDK compatibility."
@@ -180,7 +187,8 @@ jobs:
           fi
           RANGE="repos/${REPO}/compare/${PREV_COMMIT}...${RELEASE_COMMIT}"
           STATUS=$(gh api "${RANGE}?per_page=1" --jq '.status')
-          if [[ "${SDK_BUMP_MODE}" == "auto" && ( "${STATUS}" == "behind" || "${STATUS}" == "identical" ) ]]; then
+          if [[ "${SDK_BUMP_MODE}" == "auto" && "${PREV_MAVEN_PUBLISHED}" == "true" \
+                && ( "${STATUS}" == "behind" || "${STATUS}" == "identical" ) ]]; then
             echo "already_shipped=true" >> "${GITHUB_OUTPUT}"
             echo "The approved commit is already in ${PREV_TAG}; no release needed." >> "${GITHUB_STEP_SUMMARY}"
             exit 0

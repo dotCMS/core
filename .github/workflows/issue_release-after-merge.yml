@@ -156,6 +156,7 @@ jobs:
             -f ref=main \
             -f "inputs[release_version]=${NEXT_VERSION}" \
             -f "inputs[release_commit]=${MERGE_COMMIT}" \
+            -f 'inputs[update_github_labels]=false' \
             -f 'inputs[sdk_bump_mode]=auto')
           RUN_ID=$(jq -er '.workflow_run_id' <<< "${DISPATCH}")
           RUN_URL=$(jq -er '.html_url' <<< "${DISPATCH}")
