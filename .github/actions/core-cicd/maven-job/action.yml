@@ -714,12 +714,65 @@ runs:
           echo "Error: .sdkmanrc file not found and no java-version override provided"
           exit 1
         fi
+        if [[ ! "$SDKMAN_JAVA_VERSION" =~ ^[0-9][A-Za-z0-9.+_-]*-[A-Za-z0-9]+$ || ${#SDKMAN_JAVA_VERSION} -gt 128 ]]; then
+          echo "::error::Invalid SDKMAN Java identifier"
+          exit 1
+        fi
         # This value is used as the dotcms/java-base docker tag (FROM dotcms/java-base:<tag>),
         # which cannot contain '+' - convert SDKMAN's '+' to '-' (e.g. 25.0.4+1-ms -> 25.0.4-1-ms)
         SDKMAN_JAVA_VERSION="${SDKMAN_JAVA_VERSION//+/-}"
         echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> "$GITHUB_ENV"
         # Keep the publisher on the build checkout's Java version, including PR merge refs.
         printf '%s\n' "${SDKMAN_JAVA_VERSION}" > dotCMS/target/docker-java-version
+
+    # Publication runs independently in trusted pull_request_target code, without
+    # giving this PR-controlled job registry credentials. Maven has only archived the image so far.
+    - name: Wait for changed Java-base image
+      if: ${{ github.event_name == 'pull_request' && inputs.generate-docker == 'true' && inputs.generate-test-image == 'true' && inputs.java-version == '' }}
+      shell: bash
+      env:
+        INTERNAL_PR: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+      run: |
+        set -euo pipefail
+        # Compare the whole PR against the merge checkout's first parent, not its latest commit.
+        if ! git rev-parse --verify --quiet HEAD^2 >/dev/null; then
+          echo '::error::Java-base preparation requires a PR merge checkout with fetch-depth >= 2.'
+          exit 1
+        fi
+        changed=0
+        git diff --quiet HEAD^1 HEAD -- .sdkmanrc || changed=$?
+        if [ "$changed" -eq 0 ]; then
+          # shortcut: inherited stack pins rely on parent publication; rerun if it races.
+          exit 0
+        fi
+        if [ "$changed" -ne 1 ]; then
+          exit "$changed"
+        fi
+
+        readonly MISSING=3
+        readonly WAIT_SECONDS=5400
+        readonly POLL_SECONDS=30
+        deadline=$((SECONDS + WAIT_SECONDS))
+        while true; do
+          status=0
+          bash .github/scripts/java-base/inspect.sh "$SDKMAN_JAVA_VERSION" || status=$?
+          if [ "$status" -eq 0 ]; then
+            break
+          fi
+          if [ "$status" -ne "$MISSING" ]; then
+            exit "$status"
+          fi
+          if [ "$INTERNAL_PR" != 'true' ]; then
+            echo '::error::A maintainer must publish this Java-base version; fork PRs cannot publish images.'
+            exit 1
+          fi
+          if [ "$SECONDS" -ge "$deadline" ]; then
+            echo "::error::Timed out waiting for dotcms/java-base:$SDKMAN_JAVA_VERSION. Check the Build SDKMan Base Java Image workflow; rerun it manually if needed."
+            exit 1
+          fi
+          echo 'Waiting for trusted Java-base publication before building the test image.'
+          sleep "$POLL_SECONDS"
+        done
 
     # The test image is built and saved in the background while the artifacts below
     # upload: the build and `docker save` are CPU and disk work, the uploads are

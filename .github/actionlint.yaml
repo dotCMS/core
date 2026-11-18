@@ -17,6 +17,10 @@ paths:
     ignore:
       - '^unexpected key "queue" for "concurrency" section[.]'
 
+  .github/workflows/cicd_manual_build-java-base.yml:
+    ignore:
+      - '^unexpected key "queue" for "concurrency" section[.]'
+
   .github/workflows/issue_release-after-merge.yml:
     ignore:
       - '^unexpected key "queue" for "concurrency" section[.]'
