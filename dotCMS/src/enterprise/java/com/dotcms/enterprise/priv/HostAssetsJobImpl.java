@@ -124,6 +124,11 @@ public class HostAssetsJobImpl extends ParentProxy{
 	private final User SYSTEM_USER;
 	private final Host SYSTEM_HOST;
 	private final Folder SYSTEM_FOLDER;
+	/**
+	 * Inodes of the folders the destination site already had before this copy started. Their
+	 * permissions are left as they are.
+	 */
+	private Set<String> existingDestinationFolderInodes = Set.of();
 
 	/**
 	 * This feature flag allows you to enable/disable copying Content Types when you copy a Site.
@@ -295,6 +300,9 @@ public class HostAssetsJobImpl extends ParentProxy{
 	private void copySiteAssets(final Host sourceSite, final Host destinationSite, final HostCopyOptions copyOptions) throws DotDataException, DotContentletStateException, DotSecurityException {
 		try {
 			HibernateUtil.startTransaction();
+			this.existingDestinationFolderInodes = this.folderAPI
+					.findSubFoldersRecursively(destinationSite, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES)
+					.stream().map(Folder::getInode).collect(Collectors.toSet());
 			// Global Vars
 			double progressIncrement;
 			double currentProgress;
@@ -1075,9 +1083,10 @@ public class HostAssetsJobImpl extends ParentProxy{
 	 * If the folder already exist this method will skip copying it and will still return the
 	 * folder object that was copied.
 	 * <p>
-	 * The new folder gets the source folder's own permissions, the same way copied templates,
-	 * containers, menu links and contentlets do. A folder with no permissions of its own keeps
-	 * inheriting from its parent in the new site.
+	 * A folder this copy creates gets the source folder's own permissions, the same way copied
+	 * templates, containers, menu links and contentlets do. A folder with no permissions of its own
+	 * keeps inheriting from its parent in the new site. A folder the destination site already had
+	 * before the copy started keeps its own permissions.
 	 *
 	 * @param sourceFolder             Source original site folder
 	 * @param destinationSite          Target site folder
@@ -1102,7 +1111,9 @@ public class HostAssetsJobImpl extends ParentProxy{
 			newFolder.setShowOnMenu(true);
 		}
 		this.folderAPI.save(newFolder, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
-		APILocator.getPermissionAPI().copyPermissions(sourceFolder, newFolder);
+		if (!this.existingDestinationFolderInodes.contains(newFolder.getInode())) {
+			APILocator.getPermissionAPI().copyPermissions(sourceFolder, newFolder);
+		}
 		folderMappingsBySourceId.put(sourceFolder.getInode(), new FolderMapping(sourceFolder, newFolder));
 		return newFolder;
 	}

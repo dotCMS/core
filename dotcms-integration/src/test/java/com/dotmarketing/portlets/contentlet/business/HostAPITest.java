@@ -2050,6 +2050,80 @@ public class HostAPITest extends IntegrationTestBase  {
     }
 
     /**
+     * Method to test: the Site Copy job ({@link HostAssetsJobProxy}) when it copies folders into a
+     * site that already has a folder at the same path.
+     * Given: a source folder whose own permissions are for an owner role, and a folder at the same
+     * path in the destination site whose own permissions give a second role READ.
+     * Expected: the destination folder keeps its own permissions; the copy does not replace them
+     * with the source folder's.
+     */
+    @Test
+    public void copySite_existingDestinationFolderKeepsItsPermissions() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        Host sourceSite = null;
+        Host destinationSite = null;
+        Role ownerRole = null;
+        Role role = null;
+        User user = null;
+        try {
+            ownerRole = new RoleDataGen().nextPersisted();
+            role = new RoleDataGen().nextPersisted();
+            user = new UserDataGen().roles(role).nextPersisted();
+            final String folderName = "shared" + System.currentTimeMillis();
+
+            sourceSite = new SiteDataGen().nextPersisted();
+            final Folder sourceFolder = new FolderDataGen().site(sourceSite).name(folderName)
+                    .nextPersisted();
+            permissionAPI.save(List.of(
+                    new Permission(sourceFolder.getPermissionId(), ownerRole.getId(),
+                            PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true)),
+                    sourceFolder, systemUser, false);
+
+            destinationSite = createSite("copy" + System.currentTimeMillis() + ".dotcms.com",
+                    systemUser);
+            final Folder destinationFolder = new FolderDataGen().site(destinationSite)
+                    .name(folderName).nextPersisted();
+            permissionAPI.save(List.of(
+                    new Permission(destinationFolder.getPermissionId(), role.getId(),
+                            PermissionAPI.PERMISSION_READ, true)),
+                    destinationFolder, systemUser, false);
+
+            runSiteCopyJob(sourceSite, destinationSite, user,
+                    new HostCopyOptions(false, true, false, false, false, false, false));
+
+            final Folder afterCopy = APILocator.getFolderAPI().findFolderByPath(
+                    destinationFolder.getPath(), destinationSite, systemUser, false);
+            assertEquals(destinationFolder.getInode(), afterCopy.getInode());
+            assertTrue("A folder that was already in the destination keeps its permissions",
+                    permissionAPI.doesUserHavePermission(afterCopy,
+                            PermissionAPI.PERMISSION_READ, user, false));
+            assertEquals(1, permissionAPI.getPermissions(afterCopy, true, true).size());
+            assertEquals(role.getId(),
+                    permissionAPI.getPermissions(afterCopy, true, true).get(0).getRoleId());
+        } finally {
+            if (destinationSite != null) {
+                archiveHost(destinationSite, systemUser);
+                deleteHost(destinationSite, systemUser);
+            }
+            if (sourceSite != null) {
+                unpublishHost(sourceSite, systemUser);
+                archiveHost(sourceSite, systemUser);
+                deleteHost(sourceSite, systemUser);
+            }
+            if (user != null) {
+                UserDataGen.remove(user);
+            }
+            if (role != null) {
+                RoleDataGen.remove(role);
+            }
+            if (ownerRole != null) {
+                RoleDataGen.remove(ownerRole);
+            }
+        }
+    }
+
+    /**
      * Runs the Site Copy job synchronously, the way Quartz would, for the given sites and options.
      *
      * @param sourceSite      the site to copy from
