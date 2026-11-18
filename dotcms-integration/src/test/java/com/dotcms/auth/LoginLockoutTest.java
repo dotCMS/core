@@ -389,8 +389,8 @@ public class LoginLockoutTest {
     /**
      * Given: the default configuration, where the account-wide limit is off
      * When: two addresses each use up their attempts
-     * Then: only those addresses are locked out; nothing is counted account-wide, and an address that never
-     *       failed still gets in
+     * Then: only those addresses are locked out; nothing is counted toward the account-wide lock, the
+     *       account's pacing count is still kept, and an address that never failed still gets in
      */
     @Test
     public void test_account_wide_limit_is_off_by_default() throws Exception {
@@ -402,10 +402,12 @@ public class LoginLockoutTest {
             failLogins(user, LIMIT);
             assertTrue(lockedFrom(user, ADDRESS));
             assertTrue(lockedFrom(user, OTHER_ADDRESS));
-            // The account's own failures are counted whatever the limit is, because the pacing needs a
-            // number no change of address can reset; only the lock is left to the limit.
-            assertEquals(0L, ((Number) lockoutRows(user).get(LoginLockout.ACCOUNT_WIDE).get("locked_until"))
-                    .longValue());
+            assertFalse(lockoutRows(user).containsKey(LoginLockout.ACCOUNT_WIDE));
+            // The pacing count is kept whatever the limit is, in a row of its own that locks nothing
+            final Map<String, Object> pacingRow = lockoutRows(user).get(LoginLockout.ACCOUNT_PACING);
+            assertNotNull("the pacing count must be kept with the account-wide limit off", pacingRow);
+            assertEquals(2 * LIMIT, ((Number) pacingRow.get("failures")).intValue());
+            assertEquals(0L, ((Number) pacingRow.get("locked_until")).longValue());
 
             from(THIRD_ADDRESS);
             assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
@@ -1403,11 +1405,13 @@ public class LoginLockoutTest {
             from(OTHER_ADDRESS);
             failLogins(user, 1);
 
-            final Map<String, Object> accountRow = lockoutRows(user).get(LoginLockout.ACCOUNT_WIDE);
-            assertNotNull("the account's own failures must be counted with the limit off", accountRow);
-            assertEquals(3, ((Number) accountRow.get("failures")).intValue());
+            final Map<String, Object> pacingRow = lockoutRows(user).get(LoginLockout.ACCOUNT_PACING);
+            assertNotNull("the account's own failures must be counted with the limit off", pacingRow);
+            assertEquals(3, ((Number) pacingRow.get("failures")).intValue());
             assertEquals("counting the account's failures must not lock it",
-                    0L, ((Number) accountRow.get("locked_until")).longValue());
+                    0L, ((Number) pacingRow.get("locked_until")).longValue());
+            assertFalse("the pacing count must not touch the account-wide lock row",
+                    lockoutRows(user).containsKey(LoginLockout.ACCOUNT_WIDE));
             from(THIRD_ADDRESS);
             assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
         } finally {
@@ -1426,10 +1430,12 @@ public class LoginLockoutTest {
         final User user = newUser();
         try {
             failLogins(user, 3);
-            assertEquals(3, LoginLockout.getInstance().accountFailures(user.getUserId()));
+            assertEquals(3, LoginLockout.getInstance()
+                    .accountFailures(user.getUserId(), LoginLockout.clientAddress()));
 
             assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
-            assertEquals(0, LoginLockout.getInstance().accountFailures(user.getUserId()));
+            assertEquals(0, LoginLockout.getInstance()
+                    .accountFailures(user.getUserId(), LoginLockout.clientAddress()));
 
             from(OTHER_ADDRESS);
             final LoginLockout.Attempt attempt = LoginLockout.getInstance()
@@ -1438,6 +1444,98 @@ public class LoginLockoutTest {
             assertEquals("a typo after a successful login must be paced as a first failure",
                     1, LoginLockout.getInstance().pacingSeed(attempt));
         } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an account-wide limit of 8, and failures spread over several addresses
+     * When: the owner logs in successfully in the middle of the run
+     * Then: the account is still locked once the limit is reached, because the pacing count a successful
+     *       login clears is a different count from the one the account-wide lock is decided on
+     */
+    @Test
+    public void test_a_successful_login_does_not_hold_off_the_account_wide_lock() throws Exception {
+        final int accountLimitBefore = LoginLockout.accountMaxFailures();
+        Config.setProperty(LoginLockout.LOCKOUT_ACCOUNT_MAX_FAILURES, 8);
+        final User user = newUser();
+        try {
+            failLogins(user, 4);
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
+            assertFalse("a successful login must not lock the account", lockedFrom(user, THIRD_ADDRESS));
+
+            from(OTHER_ADDRESS);
+            failLogins(user, 4);
+            assertTrue("the account-wide count must survive the successful login",
+                    LoginLockout.getInstance().isLocked(user.getUserId()));
+        } finally {
+            Config.setProperty(LoginLockout.LOCKOUT_ACCOUNT_MAX_FAILURES, accountLimitBefore);
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: a mounted drive retrying a stale password over WebDAV, which the class counts apart from
+     *        other logins
+     * When: the owner mistypes once in the browser
+     * Then: that attempt is paced as a first failure, so a drive nobody noticed cannot slow its owner down
+     *       everywhere else
+     */
+    @Test
+    public void test_webdav_failures_do_not_pace_a_browser_login() throws Exception {
+        final User user = newUser();
+        try {
+            for (int i = 0; i < 4; i++) {
+                assertFalse(webdavLogin(user, "wrong-webdav-" + i));
+            }
+            assertEquals(4, LoginLockout.getInstance()
+                    .accountFailures(user.getUserId(), webdav(ADDRESS)));
+
+            from(OTHER_ADDRESS);
+            final LoginLockout.Attempt attempt = LoginLockout.getInstance()
+                    .begin(user.getUserId(), LoginLockout.clientAddress());
+            LoginLockout.getInstance().failed(attempt);
+            assertEquals("a stale WebDAV mount must not pace the owner's browser login",
+                    1, LoginLockout.getInstance().pacingSeed(attempt));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: a half-second delay per paced attempt, and failures arriving from a different address every time
+     * When: six wrong passwords are tried against one account, one per address
+     * Then: the wait a failed login actually serves keeps growing even though no address ever fails twice,
+     *       and stops growing at the cap of {@code (auth.max.failures.limit - 1)} half-seconds. This is the
+     *       whole point of counting the account's own failures, measured on the real login flow rather than
+     *       on the seed, so a cap or a wiring mistake between the two cannot hide
+     */
+    @Test
+    public void test_the_served_delay_grows_across_addresses_and_stops_at_the_cap() throws Exception {
+        final Object strategyBefore = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true);
+        Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "TIME_MILLS:500");
+        final User user = newUser();
+        try {
+            final List<Long> elapsed = new ArrayList<>();
+            for (int i = 0; i < 6; i++) {
+                from("198.51.100." + (60 + i));
+                final long began = System.currentTimeMillis();
+                assertEquals(Authenticator.FAILURE, login(user, "wrong-from-a-new-address-" + i));
+                elapsed.add(System.currentTimeMillis() - began);
+            }
+
+            // Each address fails once, so without the account's own count every one of these would serve the
+            // same single half-second. Capped at LIMIT - 1 = 4, the longest any of them may serve is 2s.
+            assertTrue("first attempt of " + elapsed + "ms should serve about one half-second",
+                    elapsed.get(0) < 1_000L);
+            assertTrue("fourth attempt of " + elapsed + "ms should serve the capped 2s, not a flat 0.5s",
+                    elapsed.get(3) >= 1_500L);
+            assertTrue("sixth attempt of " + elapsed + "ms should still be capped, not growing with the count",
+                    elapsed.get(5) < 3_500L);
+        } finally {
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, false);
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, strategyBefore);
             cleanUp(user);
         }
     }
