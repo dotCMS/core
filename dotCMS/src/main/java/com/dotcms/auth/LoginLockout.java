@@ -158,6 +158,14 @@ public final class LoginLockout {
             "SELECT COALESCE(SUM(failures), 0) AS total FROM login_lockout WHERE source = ? AND window_start >= ?";
 
     /**
+     * Reads the failures recorded for one account across every source, counting only a row still within the
+     * window. Parameters: user, account-wide source, window cutoff.
+     */
+    private static final String ACCOUNT_FAILURES_SQL =
+            "SELECT COALESCE(SUM(failures), 0) AS total FROM login_lockout WHERE user_id = ? AND source = ?"
+                    + " AND window_start >= ?";
+
+    /**
      * Lock state of one account as seen from one source.
      */
     public enum Status {
@@ -470,14 +478,18 @@ public final class LoginLockout {
 
     /**
      * Records a successful password login from the given source that was checked outside {@link #begin}
-     * (for example by LDAP): earlier attempts from the source no longer count. A lock in force stays.
+     * (for example by LDAP): earlier attempts from the source no longer count, and neither do the account's
+     * own failures, which pace the delay ({@link #accountFailures}). Whoever just proved the password should
+     * not keep paying for the typing that came before it, and an attacker able to clear this has the password
+     * already. A lock in force stays: both statements leave a locked row alone.
      */
     @CloseDBIfOpened
     public void succeeded(final String userId, final String source) {
         try {
-            new DotConnect().setSQL(CLEAR_SOURCE_SQL)
-                    .addParam(userId).addParam(source).addParam(clock.getAsLong())
-                    .loadResult();
+            final long now = clock.getAsLong();
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect.setSQL(CLEAR_SOURCE_SQL).addParam(userId).addParam(source).addParam(now).loadResult();
+            dotConnect.setSQL(CLEAR_SOURCE_SQL).addParam(userId).addParam(ACCOUNT_WIDE).addParam(now).loadResult();
         } catch (final DotDataException | RuntimeException e) {
             Logger.error(this, "Unable to clear login lockout state for user " + userId + ": " + e.getMessage(), e);
         }
@@ -517,10 +529,12 @@ public final class LoginLockout {
             if (attempt.number >= maxFailures()) {
                 lock(attempt.userId, attempt.source, attempt.number);
             }
-            final int accountMax = accountMaxFailures();
-            if (!attempt.refused && accountMax > 0) {
+            if (!attempt.refused) {
+                // Counted whatever the limit is: the pacing needs a count of the account's own failures that
+                // no change of source can reset, and only the lock is left to the configured limit.
                 final int accountFailures = ((Number) count(attempt.userId, ACCOUNT_WIDE).get("failures")).intValue();
-                if (accountFailures >= accountMax) {
+                final int accountMax = accountMaxFailures();
+                if (accountMax > 0 && accountFailures >= accountMax) {
                     lock(attempt.userId, ACCOUNT_WIDE, accountFailures);
                 }
             }
@@ -669,9 +683,37 @@ public final class LoginLockout {
         if (attempt.isLockedOut()) {
             return maxFailures();
         }
-        return UNKNOWN_SOURCE.equals(attempt.source)
+        final int seed = UNKNOWN_SOURCE.equals(attempt.source)
                 ? attempt.number
                 : Math.max(attempt.number, sourceFailures(attempt.source));
+        return Math.max(seed, accountFailures(attempt.userId));
+    }
+
+    /**
+     * Recent failures for one account from every source together, within the counting window right now. This
+     * is the one count an attacker cannot reset: the two counts above are both kept per source, so a request
+     * that arrives under a source of its own -- a forged {@code X-Forwarded-For} is enough, since the source
+     * is the address the request appears to come from -- starts both of them over at 1. Counting the account's
+     * own failures as well means the delay keeps rising for the account under attack however the attempts are
+     * spread. Used only to pace the login delay ({@link #pacingSeed}), never to decide a lockout, which is
+     * left to {@link #accountMaxFailures()}.
+     *
+     * @param userId the account the failed login was aimed at
+     * @return the failures recorded for the account in the window, or 0 on a database error
+     */
+    @CloseDBIfOpened
+    public int accountFailures(final String userId) {
+        try {
+            final long windowCutoff = clock.getAsLong() - TimeUnit.SECONDS.toMillis(windowSeconds());
+            final List<Map<String, Object>> rows = new DotConnect()
+                    .setSQL(ACCOUNT_FAILURES_SQL)
+                    .addParam(userId).addParam(ACCOUNT_WIDE).addParam(windowCutoff)
+                    .loadObjectResults();
+            return ((Number) rows.get(0).get("total")).intValue();
+        } catch (final DotDataException | RuntimeException e) {
+            Logger.error(this, "Unable to read account failures for " + userId + ": " + e.getMessage(), e);
+            return 0;
+        }
     }
 
     /**

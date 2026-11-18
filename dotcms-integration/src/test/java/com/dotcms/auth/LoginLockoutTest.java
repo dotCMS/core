@@ -402,7 +402,10 @@ public class LoginLockoutTest {
             failLogins(user, LIMIT);
             assertTrue(lockedFrom(user, ADDRESS));
             assertTrue(lockedFrom(user, OTHER_ADDRESS));
-            assertFalse(lockoutRows(user).containsKey(LoginLockout.ACCOUNT_WIDE));
+            // The account's own failures are counted whatever the limit is, because the pacing needs a
+            // number no change of address can reset; only the lock is left to the limit.
+            assertEquals(0L, ((Number) lockoutRows(user).get(LoginLockout.ACCOUNT_WIDE).get("locked_until"))
+                    .longValue());
 
             from(THIRD_ADDRESS);
             assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
@@ -1352,6 +1355,89 @@ public class LoginLockoutTest {
             Config.setProperty(LoginLockout.LOCKOUT_ENABLED, enabledBefore);
             Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, false);
             Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, strategyBefore);
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an account that has failed once from each of several different addresses
+     * When: one more attempt arrives from an address that has never been seen before
+     * Then: it is paced by the account's own run of failures and not by the single failure its address
+     *       carries, so changing address on every attempt cannot hold them all at the first-failure pace
+     */
+    @Test
+    public void test_pacing_escalates_although_the_address_changes_every_attempt() throws Exception {
+        final User user = newUser();
+        try {
+            final String[] addresses = {"198.51.100.41", "198.51.100.42", "198.51.100.43"};
+            for (final String address : addresses) {
+                from(address);
+                failLogins(user, 1);
+            }
+
+            from("198.51.100.44");
+            final LoginLockout.Attempt attempt = LoginLockout.getInstance()
+                    .begin(user.getUserId(), LoginLockout.clientAddress());
+            // Same order the login flow uses: the failure is recorded before the delay is worked out
+            LoginLockout.getInstance().failed(attempt);
+            assertEquals("the address itself has only ever failed once", 1, attempt.number());
+            assertEquals("a never-seen address must still be paced by the account's own failures",
+                    addresses.length + 1, LoginLockout.getInstance().pacingSeed(attempt));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: the account-wide limit left off, which is the default
+     * When: the account fails logins from two different addresses
+     * Then: the account's own failures are still counted, so the pacing has a number that no change of
+     *       address can reset, even though nothing locks the account
+     */
+    @Test
+    public void test_account_failures_are_counted_even_with_the_account_limit_off() throws Exception {
+        assertEquals(0, LoginLockout.accountMaxFailures());
+        final User user = newUser();
+        try {
+            failLogins(user, 2);
+            from(OTHER_ADDRESS);
+            failLogins(user, 1);
+
+            final Map<String, Object> accountRow = lockoutRows(user).get(LoginLockout.ACCOUNT_WIDE);
+            assertNotNull("the account's own failures must be counted with the limit off", accountRow);
+            assertEquals(3, ((Number) accountRow.get("failures")).intValue());
+            assertEquals("counting the account's failures must not lock it",
+                    0L, ((Number) accountRow.get("locked_until")).longValue());
+            from(THIRD_ADDRESS);
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an account whose owner mistyped the password a few times and then got it right
+     * When: they mistype once more later
+     * Then: that attempt is paced as a first failure again, so proving the password clears the account's
+     *       own run of failures and the owner does not keep paying for the typing that came before it
+     */
+    @Test
+    public void test_a_right_password_clears_the_account_failures_that_pace_the_delay() throws Exception {
+        final User user = newUser();
+        try {
+            failLogins(user, 3);
+            assertEquals(3, LoginLockout.getInstance().accountFailures(user.getUserId()));
+
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
+            assertEquals(0, LoginLockout.getInstance().accountFailures(user.getUserId()));
+
+            from(OTHER_ADDRESS);
+            final LoginLockout.Attempt attempt = LoginLockout.getInstance()
+                    .begin(user.getUserId(), LoginLockout.clientAddress());
+            LoginLockout.getInstance().failed(attempt);
+            assertEquals("a typo after a successful login must be paced as a first failure",
+                    1, LoginLockout.getInstance().pacingSeed(attempt));
+        } finally {
             cleanUp(user);
         }
     }
