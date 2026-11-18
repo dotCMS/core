@@ -276,8 +276,13 @@ jobs:
             exit 1
           fi
 
-          remote=$(git ls-remote --heads https://github.com/dotCMS/core.git "${release_branch}" | wc -l | tr -d '[:space:]')
-          if [[ "${remote}" == '1' ]]; then
+          existing_refs=$(git ls-remote --refs origin "refs/heads/${release_branch}" "refs/tags/v${release_version}")
+          if [[ "${SDK_BUMP_MODE}" == "auto" && -n "${existing_refs}" ]]; then
+            echo "::error::${release_version} already has a release branch or tag. Retry to allocate a new version."
+            exit 1
+          fi
+
+          if [[ "${existing_refs}" == *$'\t'"refs/heads/${release_branch}"* ]]; then
             echo "Release branch ${release_branch} already exists, removing it"
             git push origin ":${release_branch}"
           fi
@@ -387,7 +392,12 @@ jobs:
 
           git status
           git commit -a -m "🏁 Publishing release version [${release_version}]"
-          git push origin "${release_branch}"
+          if [[ "${SDK_BUMP_MODE}" == "auto" ]]; then
+            # Require the branch to still be absent at push time.
+            git push --force-with-lease="refs/heads/${release_branch}:" origin "${release_branch}"
+          else
+            git push origin "${release_branch}"
+          fi
 
           release_commit=$(git log -1 --pretty=%H)
           echo "release_commit=${release_commit}" >> "$GITHUB_OUTPUT"

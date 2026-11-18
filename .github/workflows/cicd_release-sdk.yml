@@ -101,9 +101,11 @@ jobs:
             echo "::warning::This is an LTS release ($TAG_NAME). SDK publish will be skipped — LTS SDK publish policy is a separate, not-yet-decided follow-up (ADR-0019)."
           fi
 
-          echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
-          echo "REF=$REF" >> "$GITHUB_OUTPUT"
-          echo "IS_LTS=$IS_LTS" >> "$GITHUB_OUTPUT"
+          {
+            echo "RELEASE_VERSION=$RELEASE_VERSION"
+            echo "REF=$REF"
+            echo "IS_LTS=$IS_LTS"
+          } >> "$GITHUB_OUTPUT"
 
   # Runs only when precheck itself fails (bad version format, unexpected script error).
   # publish depends on precheck, so it never starts in that case — meaning publish's own
@@ -143,6 +145,7 @@ jobs:
       # The composite action re-checks-out internally at the correct ref for the actual
       # build/publish; this checkout only needs to make the action definition resolvable.
       - name: 'Checkout'
+        id: sdk-source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ needs.precheck.outputs.REF }}
@@ -164,10 +167,15 @@ jobs:
           (github.event_name == 'release' || github.event.inputs.dry-run != 'true')
         uses: ./.github/actions/core-cicd/deployment/deploy-javascript-sdk
         with:
-          ref: ${{ needs.precheck.outputs.REF }}
+          ref: ${{ steps.sdk-source.outputs.commit }}
           version: ${{ needs.precheck.outputs.RELEASE_VERSION }}
           npm-token: ${{ secrets.NPM_ORG_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # A successful manual dry run must not be mistaken for publication.
+      - name: SDK publication receipt (${{ steps.sdk-source.outputs.commit }})
+        if: steps.deploy-javascript-sdk.outputs.published == 'true'
+        run: echo 'SDK publication confirmed'
 
       - name: 'Slack Notification (SDK release announcement)'
         if: success() && steps.deploy-javascript-sdk.outputs.published == 'true'
