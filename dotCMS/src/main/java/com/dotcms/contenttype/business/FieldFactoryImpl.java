@@ -91,7 +91,10 @@ public class FieldFactoryImpl implements FieldFactory {
           Contentlet.OWNER_USER_NAME_KEY.toLowerCase(),
           Contentlet.CREATION_DATE_KEY.toLowerCase(),
           Contentlet.PUBLISH_USER_KEY.toLowerCase(),
-          Contentlet.PUBLISH_USER_NAME_KEY.toLowerCase()
+          Contentlet.PUBLISH_USER_NAME_KEY.toLowerCase(),
+          // A field named "Sort Order" would otherwise get this variable and collide with the
+          // contentlet's own sort order: the content saves once, then fails to save again.
+          Contentlet.SORT_ORDER_KEY.toLowerCase()
   );
 
   final FieldSql sql;
