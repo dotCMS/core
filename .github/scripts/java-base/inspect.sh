@@ -13,9 +13,12 @@ fi
 
 response=$(mktemp)
 trap 'rm -f "$response"' EXIT
-status=$(curl --silent --show-error --location --retry 3 --retry-delay 5 \
+if ! status=$(curl --silent --show-error --location --retry 3 --retry-delay 5 \
     --connect-timeout 15 --max-time 60 --output "$response" --write-out '%{http_code}' \
-    "https://hub.docker.com/v2/repositories/dotcms/java-base/tags/$tag")
+    "https://hub.docker.com/v2/repositories/dotcms/java-base/tags/$tag"); then
+    echo '::error::Java-base lookup transport failed; refusing to assume absence.' >&2
+    exit 1
+fi
 case "$status" in
     "$HTTP_NOT_FOUND")
         echo "Java-base $tag is missing."

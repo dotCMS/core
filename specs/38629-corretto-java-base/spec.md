@@ -93,7 +93,7 @@ required architectures.
   be reused without rebuilding or publication.
 - **FR-006**: If the image or either required architecture is absent, an authorized
   run MUST build/push a complete image and confirm availability before continuing.
-- **FR-007**: Publication MUST use trusted base/default-branch workflow code and
+- **FR-007**: Publication MUST use trusted default-branch workflow code and
   Java-base build context, never PR-supplied scripts, Dockerfiles or artifacts.
   Publishing credentials MUST NOT be exposed to PR-controlled execution or forks.
 - **FR-008**: Invalid input, inspection errors other than confirmed absence, and

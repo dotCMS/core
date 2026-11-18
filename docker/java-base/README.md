@@ -5,7 +5,7 @@ This Dockerfile builds the base container woth java that will be used to build a
 ### CI preparation
 
 The default JDK is Corretto `25.0.5.1.2-amzn`. The **Build SDKMan Base Java Image**
-workflow also handles PR changes to `.sdkmanrc`, using trusted base-branch code.
+workflow also handles PR changes to `.sdkmanrc`, using trusted default-branch code.
 Unchanged `.sdkmanrc` skips the workflow entirely: no runner or API calls.
 For those PRs, the CI build only checks its local Git diff; no registry inspection.
 It reuses an image containing Linux amd64 and arm64, or publishes both architectures
@@ -21,6 +21,8 @@ before relying on the new PR trigger, which becomes active after merge.
 If preparation fails, inspect that workflow and rerun it manually; CI stops waiting
 after 90 minutes without starting the dependent image build.
 Manual dispatch retains its suffix, architecture and push controls.
+Stacked PRs inheriting a parent's Java change still skip preparation when their own
+`.sdkmanrc` is unchanged; rerun a racing child build after the parent publishes.
 
 ### Building Multiarch
 To enable "multiarch" building, you need to use `docker buildx` and have defined a new builder (you might need to enable "experimental" features in order to enable `docker buildx`). If you have `buildx` installed, you can see what buildx builders you have available by doing a `ls`:

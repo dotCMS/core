@@ -1,7 +1,7 @@
 name: Build SDKMan Base Java Image
 run-name: Base Image for ${{ inputs.sdkman_java_version || format('PR {0}', github.event.pull_request.number) }} by @${{ github.actor }}
 on:
-  # Trusted base-branch code handles publication; PR content is read only as data.
+  # Trusted default-branch code handles publication; PR content is read only as data.
   pull_request_target:
     branches: [main, master]
     paths: ['.sdkmanrc']
@@ -104,7 +104,7 @@ jobs:
       - name: Checkout trusted build definition
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.event.pull_request.base.sha || github.sha }}
+          ref: ${{ github.event_name == 'pull_request_target' && github.event.repository.default_branch || github.sha }}
           persist-credentials: false
 
       - name: Check existing Java-base image

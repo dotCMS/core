@@ -735,10 +735,14 @@ runs:
       run: |
         set -euo pipefail
         # Compare the whole PR against the merge checkout's first parent, not its latest commit.
-        git rev-parse --verify HEAD^2 >/dev/null
+        if ! git rev-parse --verify --quiet HEAD^2 >/dev/null; then
+          echo '::error::Java-base preparation requires a PR merge checkout with fetch-depth >= 2.'
+          exit 1
+        fi
         changed=0
         git diff --quiet HEAD^1 HEAD -- .sdkmanrc || changed=$?
         if [ "$changed" -eq 0 ]; then
+          # shortcut: inherited stack pins rely on parent publication; rerun if it races.
           exit 0
         fi
         if [ "$changed" -ne 1 ]; then
