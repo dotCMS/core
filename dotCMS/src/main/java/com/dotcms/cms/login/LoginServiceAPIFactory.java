@@ -63,6 +63,7 @@ import io.vavr.Lazy;
 import java.io.Serializable;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Duration;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -362,7 +363,9 @@ public class LoginServiceAPIFactory implements Serializable {
          * Executes the authentication process for the specified User ID. Several session-related
          * parameters are loaded as well. Additionally, users/developers can run their own Pre- and
          * Post-Login code, if necessary. A user logging in for the first time gets a login token id
-         * through {@link UserAPI#invalidateLoginTokens(String)} before the login JWT is issued.
+         * through {@link UserAPI#invalidateLoginTokens(String)} before the login JWT is issued. The
+         * session stores the user id as it is in the user record, not as it was typed, so every
+         * later reader of the session matches it to the same user.
          *
          * @param userId     The ID of the user to authenticate.
          * @param rememberMe This parameter is no longer useful.
@@ -402,7 +405,8 @@ public class LoginServiceAPIFactory implements Serializable {
             user.setFailedLoginAttempts(0);
             user.setLastLoginIP(request.getRemoteAddr());
             userAPI.save(user, userAPI.getSystemUser(), RESPECT_FRONT_END_ROLES);
-            session.setAttribute(WebKeys.USER_ID, userId);
+            // the id as stored, not as typed: the login name may differ in case or spacing
+            session.setAttribute(WebKeys.USER_ID, user.getUserId());
             this.loadSiteIntoSession(request, user);
 
             session.removeAttribute("_failedLoginName");
@@ -607,29 +611,54 @@ public class LoginServiceAPIFactory implements Serializable {
 
 
 
+        /**
+         * Sets the login token cookie. With "remember me" the cookie is persistent and its token
+         * lasts {@link LoginServiceAPI#JSON_WEB_TOKEN_DAYS_MAX_AGE} days; otherwise it is a
+         * browser-session cookie holding a session login token (see
+         * {@link #setSessionLoginTokenCookie}).
+         */
         @Override
         public void doRememberMe(final HttpServletRequest req,
                                  final HttpServletResponse res,
                                  final User user,
                                  final boolean rememberMe) {
 
-
-            if(!rememberMe && !SET_JWT_SESSION_COOKIE.get()) {
+            if (!rememberMe) {
+                this.issueSessionLoginToken(req, res, user, user.getRememberMeToken());
                 return;
             }
 
-            // if rememberMe is false, the cookie will be created just for the session.
-            int cookieMaxAge = rememberMe ? JWT_TOKEN_MAX_AGE_DAYS.get() : 0;
-
-            // token is valid for one day
-            int tokenMaxAge = rememberMe ? JWT_TOKEN_MAX_AGE_DAYS.get() : 1;
-
-            final String rememberMeToken = this.jsonWebTokenUtils.createUserToken(user, tokenMaxAge);
-            createJsonWebTokenCookie(req, res, rememberMeToken, Optional.of(cookieMaxAge));
+            clearSessionLoginTokenRenewal(req);
+            final int maxAgeDays = JWT_TOKEN_MAX_AGE_DAYS.get();
+            final String rememberMeToken = this.jsonWebTokenUtils.createUserToken(user, maxAgeDays);
+            createJsonWebTokenCookie(req, res, rememberMeToken, Optional.of(maxAgeDays));
 
         } // doRememberMe.
 
+        /**
+         * Sets a session login token cookie carrying the given token id. With session cookies
+         * turned off ({@code SET_JWT_SESSION_COOKIE=false}) no cookie is set and any pending
+         * renewal is removed, since nothing is left to renew.
+         */
+        @Override
+        public void issueSessionLoginToken(final HttpServletRequest req,
+                                           final HttpServletResponse res,
+                                           final User user,
+                                           final String tokenId) {
 
+            if (SET_JWT_SESSION_COOKIE.get()) {
+                this.setSessionLoginTokenCookie(req, res, user, tokenId);
+            } else {
+                clearSessionLoginTokenRenewal(req);
+            }
+        }
+
+        /**
+         * Sets the login token cookie for the given number of days, capped at
+         * {@link LoginServiceAPI#JSON_WEB_TOKEN_DAYS_MAX_AGE}. When the result is a browser-session
+         * cookie (one day or less, or persistent cookies turned off) it holds a session login
+         * token instead (see {@link #setSessionLoginTokenCookie}).
+         */
         @Override
         public void doRememberMe(final HttpServletRequest req,
                                  final HttpServletResponse res,
@@ -640,6 +669,11 @@ public class LoginServiceAPIFactory implements Serializable {
             final int cookieMaxAge = SET_JWT_SESSION_COOKIE.get() == true && maxAge>1 ? maxAge : 0;
             try {
 
+                if (cookieMaxAge == 0) {
+                    this.setSessionLoginTokenCookie(req, res, user, user.getRememberMeToken());
+                    return;
+                }
+                clearSessionLoginTokenRenewal(req);
                 final String rememberMeToken = this.jsonWebTokenUtils.createUserToken(user, tokenMaxAge);
                 createJsonWebTokenCookie(req, res, rememberMeToken, Optional.of(cookieMaxAge));
             } catch (Exception e) {
@@ -647,6 +681,46 @@ public class LoginServiceAPIFactory implements Serializable {
                 Logger.debug(this, e.getMessage(), e);
             }
         } // doRememberMe.
+
+        /**
+         * Sets a browser-session login cookie whose token expires after
+         * {@link LoginServiceAPI#JSON_WEB_TOKEN_SESSION_MAX_AGE_MINUTES} minutes, and records on the
+         * HTTP session the time, half way through that lifetime, after which a back-end request
+         * renews it (see {@code DefaultAutoLoginWebInterceptor}). With session cookies turned off
+         * ({@code SET_JWT_SESSION_COOKIE=false}) a renewal could issue nothing, so none is
+         * scheduled and the cookie, set here by a plugin login, lasts its one lifetime.
+         */
+        private void setSessionLoginTokenCookie(final HttpServletRequest req,
+                                                final HttpServletResponse res,
+                                                final User user,
+                                                final String tokenId) {
+
+            final Duration lifetime = LoginServiceAPI.sessionLoginTokenLifetime();
+            final String sessionToken = this.jsonWebTokenUtils.createSessionLoginToken(user, tokenId, lifetime);
+            createJsonWebTokenCookie(req, res, sessionToken, Optional.of(0));
+
+            if (!SET_JWT_SESSION_COOKIE.get()) {
+                clearSessionLoginTokenRenewal(req);
+                return;
+            }
+            final HttpSession session = req.getSession(false);
+            if (null != session) {
+                session.setAttribute(SESSION_LOGIN_TOKEN_RENEW_AT,
+                        System.currentTimeMillis() + lifetime.toMillis() / 2);
+            }
+        }
+
+        /**
+         * Removes any pending session login token renewal, so a persistent "remember me" cookie
+         * set on this session is never replaced by a renewed session cookie.
+         */
+        private static void clearSessionLoginTokenRenewal(final HttpServletRequest req) {
+
+            final HttpSession session = req.getSession(false);
+            if (null != session) {
+                session.removeAttribute(SESSION_LOGIN_TOKEN_RENEW_AT);
+            }
+        }
 
         @CloseDBIfOpened
         @Override

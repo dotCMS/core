@@ -5,6 +5,7 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
@@ -463,7 +464,8 @@ public class TagAPIImpl implements TagAPI {
      *   <li>The tag has no contentlet associations (orphan tag)</li>
      *   <li>The user has EDIT permission on ALL associated contentlets</li>
      * </ul>
-     * User ownership records (fieldVarName=null) are ignored as they represent tag ownership, not content tagging.</p>
+     * Associations whose inode isn't a contentlet are ignored, such as user profile tags, which store the user id as
+     * their inode and field.</p>
      *
      * @param user  the user requesting deletion
      * @param tagId the tag ID to check
@@ -480,8 +482,8 @@ public class TagAPIImpl implements TagAPI {
 
         final List<TagInode> associations = tagFactory.getTagInodesByTagId(tagId);
 
-        // Filter to contentlet associations only (fieldVarName != null)
-        // User ownership records have null fieldVarName and should be ignored
+        // Keep associations that name a field. User profile tags also name one (the user id), so
+        // they are kept here and skipped below, when no contentlet is found for their inode
         final List<TagInode> contentletAssociations = associations.stream()
                 .filter(ti -> UtilMethods.isSet(ti.getFieldVarName()))
                 .collect(Collectors.toList());
@@ -728,30 +730,9 @@ public class TagAPIImpl implements TagAPI {
         tagFactory.deleteTagInodesByInode(inode);
     }
 
-    @CloseDBIfOpened
     @Override
     public boolean canDeleteTagInodesByInode(final User user, final String inode) throws DotDataException {
-        if (user.isAdmin() || user.getUserId().equals(APILocator.systemUser().getUserId())) {
-            return true;
-        }
-
-        final Contentlet contentlet;
-        try {
-            contentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
-        } catch (final DotSecurityException e) {
-            // Not expected with the system user; deny rather than guess
-            Logger.warn(this, String.format("Could not load inode '%s' to check its tags: %s",
-                    inode, e.getMessage()));
-            return false;
-        }
-        if (contentlet == null) {
-            Logger.debug(this, () -> String.format(
-                    "Inode '%s' is not a contentlet, only admins can remove its tags", inode));
-            return false;
-        }
-
-        return APILocator.getPermissionAPI()
-                .doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user);
+        return canEditTagInodes(user, inode);
     }
 
     @WrapInTransaction
@@ -764,6 +745,103 @@ public class TagAPIImpl implements TagAPI {
         }
         deleteTagInodesByInode(inode);
         return true;
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public boolean canEditUserTags(final User user, final String userId) throws DotDataException {
+        if (isAdminOrSystemUser(user) || user.getUserId().equals(userId)) {
+            return true;
+        }
+        // The Users portlets cover user profiles only, so the id must belong to a user
+        return isUserId(userId) && APILocator.getLayoutAPI().doesUserHaveAccessToUsersPortlet(user);
+    }
+
+    @Override
+    public boolean canEditTagInodes(final User user, final String inode) throws DotDataException {
+        return canAccessTagInodes(user, inode, PermissionAPI.PERMISSION_EDIT);
+    }
+
+    @Override
+    public boolean canReadTagInodes(final User user, final String inode) throws DotDataException {
+        return canAccessTagInodes(user, inode, PermissionAPI.PERMISSION_READ);
+    }
+
+    /**
+     * Checks if a user can work with the Tags of an inode. A contentlet needs the given permission
+     * on it, a user id follows {@link #canEditUserTags(User, String)}, and anything else is limited
+     * to admin and system users.
+     *
+     * @param user       the {@link User} making the request
+     * @param inode      inode whose Tags are read or changed
+     * @param permission the {@link PermissionAPI} permission a contentlet inode needs
+     * @return true if the user can work with the Tags of the inode, false otherwise
+     * @throws DotDataException if there's a data access error
+     */
+    @CloseDBIfOpened
+    private boolean canAccessTagInodes(final User user, final String inode, final int permission)
+            throws DotDataException {
+        if (isAdminOrSystemUser(user)) {
+            return true;
+        }
+        if (!UtilMethods.isSet(inode)) {
+            return false;
+        }
+
+        final Contentlet contentlet;
+        try {
+            contentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+        } catch (final DotSecurityException e) {
+            // Not expected with the system user; deny rather than guess
+            Logger.warn(this, String.format("Could not load inode '%s' to check its tags: %s",
+                    inode, e.getMessage()));
+            return false;
+        }
+        if (contentlet != null) {
+            return APILocator.getPermissionAPI().doesUserHavePermission(contentlet, permission, user);
+        }
+
+        // User profile tags are stored with the user id as their inode
+        if (isUserId(inode)) {
+            return canEditUserTags(user, inode);
+        }
+
+        Logger.debug(this, () -> String.format(
+                "Inode '%s' is neither a contentlet nor a user, only admin and system users can use its tags", inode));
+        return false;
+    }
+
+    /**
+     * Tells whether the given id belongs to an existing user.
+     *
+     * @param userId the id to look up
+     * @return true if a user with that id exists, false otherwise
+     * @throws DotDataException if the user can't be loaded
+     */
+    private boolean isUserId(final String userId) throws DotDataException {
+        if (!UtilMethods.isSet(userId)) {
+            return false;
+        }
+        try {
+            return APILocator.getUserAPI().loadUserById(userId, APILocator.systemUser(), false) != null;
+        } catch (final NoSuchUserException e) {
+            return false;
+        } catch (final DotSecurityException e) {
+            // Not expected with the system user; deny rather than guess
+            Logger.warn(this, String.format("Could not load user '%s' to check its tags: %s",
+                    userId, e.getMessage()));
+            return false;
+        }
+    }
+
+    /**
+     * Tells whether the user is an admin or the system user, who can work with any Tag.
+     *
+     * @param user the {@link User} to check
+     * @return true for admin and system users
+     */
+    private boolean isAdminOrSystemUser(final User user) {
+        return user.isAdmin() || user.getUserId().equals(APILocator.systemUser().getUserId());
     }
 
     @WrapInTransaction

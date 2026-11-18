@@ -1,6 +1,7 @@
 package com.dotmarketing.business.ajax;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.AdditionalMatchers.and;
 import static org.mockito.ArgumentMatchers.any;
@@ -28,9 +29,13 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.Test;
 import org.junit.function.ThrowingRunnable;
@@ -50,6 +55,22 @@ public class RoleAjaxTest {
         // initialized in a unit environment ("No Company!").
         return new RoleAjax(mock(SystemEventsAPI.class), mock(PortletAPI.class),
                 mock(UserWebAPI.class));
+    }
+
+    /**
+     * Creating, editing, deleting, locking and unlocking roles, and creating layouts, are served
+     * by the /v1/roles and /v1/layouts REST endpoints. DWR publishes every public method of the
+     * class, so none of these may remain on it.
+     */
+    @Test
+    public void roleAndLayoutWritesAreNotPublishedThroughDwr() {
+        final Set<String> published = Arrays.stream(RoleAjax.class.getMethods())
+                .map(Method::getName)
+                .collect(Collectors.toSet());
+        for (final String moved : List.of("addNewRole", "updateRole", "deleteRole", "lockRole",
+                "unlockRole", "addNewLayout")) {
+            assertFalse(moved + " is still published by RoleAjax", published.contains(moved));
+        }
     }
 
     @Test

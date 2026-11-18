@@ -203,7 +203,9 @@ public class IndexStartupValidator {
         } catch (Exception e) {
             throw new DotRuntimeException(
                     "OpenSearch cluster is not reachable: " + e.getMessage()
-                    + ". Check OS_ENDPOINTS configuration.", e);
+                    + ". Check OS_ENDPOINTS configuration. For https endpoints, the server certificate"
+                    + " must be trusted: set OS_TLS_CA_CERT to the PEM file of the CA that signed it, or"
+                    + " set OS_TLS_CERT_REQUIRED=false to skip certificate and hostname verification.", e);
         }
     }
 

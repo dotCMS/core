@@ -13,15 +13,22 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 import com.dotcms.Junit5WeldBaseTest;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.field.LineDividerField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.jobs.business.job.Job;
 import com.dotcms.jobs.business.job.JobView;
 import com.dotcms.jobs.business.job.JobViewPaginatedResult;
 import com.dotcms.jobs.business.util.JobUtil;
+import com.dotcms.mock.request.FakeHttpRequest;
+import com.dotcms.mock.request.MockHeaderRequest;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityJobStatusView;
 import com.dotcms.rest.ResponseEntityView;
@@ -29,11 +36,15 @@ import com.dotcms.rest.api.v1.job.SSEMonitorUtil;
 import com.dotcms.rest.exception.ValidationException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.WebKeys;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.portal.model.User;
@@ -73,12 +84,18 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
     private static Language defaultLanguage;
 
     private static final String IMPORT_QUEUE_NAME = "importContentlets";
+    private static final String RESTRICTED_FIELD_VAR = "restrictedTemplateMarker";
+    private static final String NON_IMPORTABLE_FIELD_VAR = "restrictedTemplateDivider";
     private static final String CMD_PUBLISH = Constants.PUBLISH;
     private static final String CMD_PREVIEW = Constants.PREVIEW;
 
     private static File csvFile;
     private static ContentType contentType;
     private static String fieldId;
+
+    private static ContentType restrictedContentType;
+    private static User readerUser;
+    private static User strangerUser;
 
     @Inject
     ContentImportHelper contentImportHelper;
@@ -101,6 +118,8 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         fieldId = contentType.fields().get(0).id();
         assert fieldId != null;
         csvFile = createTestCsvFile();
+
+        prepareTemplateFixture();
     }
 
     @BeforeEach
@@ -116,6 +135,15 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
         }
         // Clean up the test content type
         ContentTypeDataGen.remove(contentType);
+        if (restrictedContentType != null) {
+            ContentTypeDataGen.remove(restrictedContentType);
+        }
+        if (readerUser != null) {
+            UserDataGen.remove(readerUser, true);
+        }
+        if (strangerUser != null) {
+            UserDataGen.remove(strangerUser, true);
+        }
     }
 
 
@@ -770,5 +798,158 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
      */
     private void assertBadRequestResponse(Response importContentResponse) {
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), importContentResponse.getStatus(), "Expected BAD_REQUEST status");
+    }
+
+    /**
+     * Scenario: a back-end user who holds READ on the Content Type asks for its CSV template.
+     * <p>
+     * Expected result: the template comes back as a CSV attachment, with the variable name of the
+     * type's field on the header line and a sample row underneath, and it is the same template the
+     * administrator gets.
+     * </p>
+     */
+    @Test
+    @Order(101)
+    void test_download_template_for_a_readable_content_type() throws Exception {
+        final Response templateResponse = importResource.downloadTemplate(
+                mockRequestFor(readerUser), response, restrictedContentType.id());
+
+        assertEquals(Response.Status.OK.getStatusCode(), templateResponse.getStatus());
+        assertEquals("attachment; filename=\"CSV_Template.csv\"",
+                templateResponse.getHeaderString("Content-Disposition"));
+
+        final String template = (String) templateResponse.getEntity();
+        final String[] lines = template.split("\n");
+        assertEquals(2, lines.length, "The template is a header line and a sample row");
+        assertTrue(lines[0].contains(RESTRICTED_FIELD_VAR),
+                "The header line names every importable field: " + lines[0]);
+        assertFalse(lines[0].contains(NON_IMPORTABLE_FIELD_VAR),
+                "A field a CSV row cannot set is left out of the template: " + lines[0]);
+        assertFalse(lines[0].endsWith(","),
+                "A type ending in a non-importable field leaves no empty column: " + lines[0]);
+        assertFalse(lines[1].endsWith(","),
+                "The sample row leaves no empty column either: " + lines[1]);
+        assertEquals(lines[0].split(",").length, lines[1].split(",").length,
+                "The sample row has one value per header column");
+
+        final Response adminResponse = importResource.downloadTemplate(
+                mockRequestFor(adminUser), response, restrictedContentType.id());
+        assertEquals(template, adminResponse.getEntity(),
+                "A user who may read the type gets the same template as an administrator");
+    }
+
+    /**
+     * Scenario: a back-end user who holds nothing on the Content Type asks for its CSV template.
+     * <p>
+     * Expected result: the request is refused, so the type's field names are not disclosed to a
+     * user who cannot read the type itself.
+     * </p>
+     */
+    @Test
+    @Order(102)
+    void test_download_template_for_a_content_type_the_user_cannot_read() {
+        assertThrows(DotSecurityException.class, () -> importResource.downloadTemplate(
+                mockRequestFor(strangerUser), response, restrictedContentType.id()));
+    }
+
+    /**
+     * Scenario: the variable name of the Content Type is given instead of its id.
+     * <p>
+     * Expected result: the same template, since the endpoint accepts either.
+     * </p>
+     */
+    @Test
+    @Order(103)
+    void test_download_template_by_content_type_variable() throws Exception {
+        final Response templateResponse = importResource.downloadTemplate(
+                mockRequestFor(readerUser), response, restrictedContentType.variable());
+
+        assertEquals(Response.Status.OK.getStatusCode(), templateResponse.getStatus());
+        assertTrue(((String) templateResponse.getEntity()).contains(RESTRICTED_FIELD_VAR));
+    }
+
+    /**
+     * Scenario: a Content Type that does not exist is asked for.
+     * <p>
+     * Expected result: a not-found failure rather than a template.
+     * </p>
+     */
+    @Test
+    @Order(104)
+    void test_download_template_for_a_missing_content_type() {
+        assertThrows(NotFoundInDbException.class, () -> importResource.downloadTemplate(
+                mockRequestFor(adminUser), response, "nonExistingContentType"));
+    }
+
+    /**
+     * Scenario: no Content Type is given at all.
+     * <p>
+     * Expected result: the request is rejected as a bad request.
+     * </p>
+     */
+    @Test
+    @Order(105)
+    void test_download_template_without_a_content_type() {
+        assertThrows(IllegalArgumentException.class, () -> importResource.downloadTemplate(
+                mockRequestFor(adminUser), response, null));
+    }
+
+    /**
+     * Creates the Content Type the template tests read, a back-end user allowed to read it, and a
+     * back-end user who is not.
+     *
+     * <p>The grant is made on the type itself, which stops it inheriting from the site and is what
+     * makes the second user a genuine "no permission" case; the assertions below state that
+     * premise rather than trusting it, since a type that still inherited would let both users
+     * through and the refusal test would pass without proving anything.</p>
+     */
+    private static void prepareTemplateFixture() throws Exception {
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+
+        // The divider goes last on purpose: a field a CSV row cannot set must be left out of the
+        // template, and the old code decided its separators from the unfiltered list, so a type
+        // ending in one used to emit a trailing empty column.
+        restrictedContentType = new ContentTypeDataGen()
+                .baseContentType(BaseContentType.CONTENT)
+                .field(new FieldDataGen().velocityVarName(RESTRICTED_FIELD_VAR)
+                        .sortOrder(1).next())
+                .field(new FieldDataGen().velocityVarName(NON_IMPORTABLE_FIELD_VAR)
+                        .type(LineDividerField.class).sortOrder(2).next())
+                .nextPersisted();
+
+        readerUser = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+        strangerUser = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+
+        permissionAPI.save(new Permission(restrictedContentType.getPermissionId(),
+                        APILocator.getRoleAPI().getUserRole(readerUser).getId(),
+                        PermissionAPI.PERMISSION_READ, true),
+                restrictedContentType, APILocator.systemUser(), false);
+
+        assertTrue(permissionAPI.doesUserHavePermission(restrictedContentType,
+                        PermissionAPI.PERMISSION_READ, readerUser, false),
+                "The fixture needs a user who may read the Content Type");
+        assertFalse(permissionAPI.doesUserHavePermission(restrictedContentType,
+                        PermissionAPI.PERMISSION_READ, strangerUser, false),
+                "The fixture needs a user who may not read the Content Type, or the refusal "
+                        + "test proves nothing");
+    }
+
+    /**
+     * Builds a request carrying the given user, so each test can call the endpoint as somebody in
+     * particular.
+     *
+     * @param user the {@link User} the request is made by
+     * @return the request
+     */
+    private static HttpServletRequest mockRequestFor(final User user) {
+        final HttpServletRequest userRequest = new MockSessionRequest(
+                new MockHeaderRequest(
+                        new FakeHttpRequest(defaultSite.getHostname(), "/").request(),
+                        "referer", "https://" + defaultSite.getHostname() + "/fakeRefer")
+                        .request());
+        userRequest.setAttribute(WebKeys.CMS_USER, user);
+        userRequest.getSession().setAttribute(WebKeys.CMS_USER, user);
+        userRequest.setAttribute(com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+        return userRequest;
     }
 }

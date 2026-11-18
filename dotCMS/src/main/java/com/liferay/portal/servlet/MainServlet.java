@@ -28,6 +28,7 @@ import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.ActionServlet;
 import com.dotcms.repackage.org.apache.struts.tiles.TilesUtilImpl;
+import com.dotcms.security.ContentSecurityPolicyUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -234,7 +235,20 @@ public class MainServlet extends ActionServlet {
     super.service(req, res);
   }
 
+  /**
+   * Serves a portal request under {@code /c}. Every response this servlet produces is back-end
+   * content, so the back-end Content-Security-Policy is written first. Site pages under a root
+   * folder named {@code c} never get here, because {@code CMSFilter} serves them before this servlet.
+   *
+   * @param req the current request
+   * @param res the current response
+   * @throws IOException      if writing the response fails
+   * @throws ServletException if the portal request processor fails
+   */
+  @Override
   public void service(HttpServletRequest req, HttpServletResponse res) throws IOException, ServletException {
+
+    ContentSecurityPolicyUtil.addBackendHeader(res);
 
     if (!PortalInstances.matches()) {
       String html = ContentUtil.get("messages/en_US/init.html");

@@ -5,7 +5,9 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.BasicAuthentication;
+import com.dotcms.auth.InteractiveUserPolicy;
 import com.dotcms.auth.LoginLockout;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.bradmcevoy.http.CollectionResource;
@@ -171,7 +173,9 @@ public class DotWebdavHelper {
 	 * Checks the credentials a WebDAV client sent and returns the matching user, under the shared
 	 * Basic authentication policy ({@code ALLOW_BASIC_AUTH}). In token-only mode the credential must
 	 * be an API token and the stored password is not consulted. When passwords are allowed, the
-	 * password is checked against the one stored in dotCMS, or accepted as an API token.
+	 * password is checked against the one stored in dotCMS, or accepted as an API token. Every
+	 * decision taken on a token is written to the security log by
+	 * {@link #logTokenAuthentication}; the credential itself never is.
 	 *
 	 * @param username the login sent by the client: an email address or a user id, depending on
 	 *                 the company's authentication type
@@ -191,8 +195,15 @@ public class DotWebdavHelper {
 		if (mode == BasicAuthentication.Mode.JWT_TOKEN) {
 			final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 			final String ipAddress = request != null ? request.getRemoteAddr() : null;
-			return BasicAuthentication.authenticateApiToken(username, passwd, ipAddress)
-					.orElseThrow(() -> new DotSecurityException("Invalid API token credentials"));
+			final BasicAuthentication.ApiTokenAuthentication outcome =
+					BasicAuthentication.authenticateApiTokenDetailed(username, passwd, ipAddress);
+			final User tokenUser = outcome.user().orElse(null);
+			final boolean eligible = tokenUser != null && InteractiveUserPolicy.isEligible(tokenUser);
+			logTokenAuthentication(mode, eligible ? tokenUser : null,
+					eligible ? null : outcome.rejection().orElse(BasicAuthentication.Rejection.INELIGIBLE_ACCOUNT),
+					outcome.token().orElse(null), username, ipAddress);
+			return requireInteractive(outcome.user()
+					.orElseThrow(() -> new DotSecurityException("Invalid API token credentials")));
 		}
 
 		final Company company = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
@@ -217,16 +228,119 @@ public class DotWebdavHelper {
 			throw new DotSecurityException("The user's passwords didn't match");
 		}
 
+		return requireInteractive(user);
+	}
+
+	/**
+	 * Refuses an account that cannot be used as the identity of a client request (the built-in
+	 * system account), so a token or password for it does not open WebDAV.
+	 *
+	 * @param user the account the credentials resolved to
+	 * @return the same account when it is eligible
+	 * @throws DotSecurityException if the account is not eligible for interactive use
+	 */
+	private User requireInteractive(final User user) throws DotSecurityException {
+		if (InteractiveUserPolicy.refuseIfNotEligible(user,
+				HttpServletRequestThreadLocal.INSTANCE.getRequest(), null) == null) {
+			throw new DotSecurityException("User not eligible for interactive use");
+		}
 		return user;
 	}
 
+	/**
+	 * Legacy-mode alternative to the stored password: accepts the Basic-auth password when it is an
+	 * API token the token API validates and whose owner is the named user. It runs only in
+	 * {@link BasicAuthentication.Mode#ALL}, after the stored password has failed. A password that does
+	 * not parse as a token is a failed password login, not a token decision: it is refused silently
+	 * here and left to the lockout and to the token API's own parse-failure line. When a token was
+	 * parsed, the decision is written to the security log in the same form as in token mode: accepted,
+	 * or refused because the token is not an API token (a browser login token is never a WebDAV
+	 * credential, in either mode), because the API token belongs to another account, or because the
+	 * account may not act as a client identity (the caller still refuses it afterwards). The token
+	 * value is never written. The login the client sent is not available here, so the line's login
+	 * field carries the id of the account that login already resolved to. Because a matching token is
+	 * not a password guess, the lockout accepts it while the source is locked and hands the attempt
+	 * back, so an accepted line can appear for a locked-out source.
+	 *
+	 * @param jsonWebToken the Basic-auth password, possibly a token
+	 * @param user         the {@link User} the Basic-auth login resolved to
+	 * @return {@code true} only when the password is a valid API token belonging to {@code user}
+	 */
 	private boolean tryMatchJsonWebToken (final String jsonWebToken, final User user) {
 
 		final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 		final String ipAddress           = null != request? request.getRemoteAddr(): null;
 		final Optional<JWToken> tokenOpt = APILocator.getApiTokenAPI().fromJwt(jsonWebToken.trim(), ipAddress);
 
-		return tokenOpt.isPresent() && tokenOpt.get().getUserId().equals(user.getUserId());
+		if (tokenOpt.isEmpty()) {
+			return false;
+		}
+		final JWToken token     = tokenOpt.get();
+		final boolean apiToken  = token instanceof ApiToken;
+		final boolean matched   = apiToken && token.getUserId().equals(user.getUserId());
+		final BasicAuthentication.Rejection rejection;
+		if (!apiToken) {
+			rejection = BasicAuthentication.Rejection.WRONG_TOKEN_TYPE;
+		} else if (!matched) {
+			rejection = BasicAuthentication.Rejection.OWNER_MISMATCH;
+		} else {
+			rejection = InteractiveUserPolicy.isEligible(user) ? null
+					: BasicAuthentication.Rejection.INELIGIBLE_ACCOUNT;
+		}
+		logTokenAuthentication(BasicAuthentication.Mode.ALL, rejection == null ? user : null, rejection,
+				token, user.getUserId(), ipAddress);
+
+		return matched;
+	}
+
+	/** Longest client-sent login name reproduced in an audit line; the rest is cut off. */
+	private static final int MAX_AUDITED_LOGIN_LENGTH = 100;
+
+	/**
+	 * Writes the audit line for a decision taken on a token sent as the WebDAV password: accepted at
+	 * INFO, rejected at WARN with the reason. The line names the mode, the login the client sent, the
+	 * account it resolved to when accepted, the token type, and the token id for an API token (the
+	 * id is the token's database key, listed in the API Tokens tool; a login token's id and subject
+	 * are left out because they are token material). The credential itself is never written. A token
+	 * of an account that {@link InteractiveUserPolicy} will refuse is reported here as rejected
+	 * ({@code INELIGIBLE_ACCOUNT}), never as accepted; the policy then writes its own refusal line
+	 * when the caller applies it.
+	 *
+	 * @param mode           the Basic-auth mode the decision was taken in
+	 * @param user           the {@link User} the token authenticated, or {@code null} when rejected
+	 * @param rejection      why the token was refused, or {@code null} when accepted
+	 * @param token          the parsed {@link JWToken}, or {@code null} when the credential was not one
+	 * @param requestedLogin the login name the client sent; client input, so control characters are
+	 *                       stripped and the value is cut to {@value #MAX_AUDITED_LOGIN_LENGTH} characters
+	 * @param ipAddress      the client address, or {@code null} when no request is bound to the thread
+	 */
+	private static void logTokenAuthentication(final BasicAuthentication.Mode mode, final User user,
+			final BasicAuthentication.Rejection rejection, final JWToken token,
+			final String requestedLogin, final String ipAddress) {
+
+		final boolean accepted = user != null;
+		final String login = stripLogControls(requestedLogin);
+		final StringBuilder line = new StringBuilder("WebDAV token authentication ")
+				.append(accepted ? "accepted" : "rejected (" + rejection + ")")
+				.append(": mode ").append(mode)
+				.append(", login ").append(login.length() > MAX_AUDITED_LOGIN_LENGTH
+						? login.substring(0, MAX_AUDITED_LOGIN_LENGTH) + "..." : login);
+		if (accepted) {
+			line.append(", user ").append(user.getUserId());
+		}
+		if (token != null) {
+			line.append(", tokenType ").append(token.getTokenType());
+			if (token instanceof ApiToken) {
+				line.append(", tokenId ").append(token.getId());
+			}
+		}
+		line.append(", from ").append(UtilMethods.isSet(ipAddress) ? ipAddress : "unknown");
+
+		if (accepted) {
+			SecurityLogger.logInfo(DotWebdavHelper.class, line.toString());
+		} else {
+			SecurityLogger.logWarn(DotWebdavHelper.class, line.toString());
+		}
 	}
 
 	public boolean isFolder(String uriAux, User user) throws IOException {

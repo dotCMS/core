@@ -1,5 +1,6 @@
 package com.dotcms.ai.api;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.ai.listener.OpenAIImageTaggingContentListener;
 import com.dotcms.ai.util.AIUtil;
 import com.dotcms.ai.util.VelocityContextFactory;
@@ -221,11 +222,13 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
     public Optional<Tuple2<String, List<String>>> readImageTagsAndDescription(File imageFile) {
 
         String parsedPrompt = Try.of(() -> {
-            final Context ctx = VelocityContextFactory.getMockContext();
-            ctx.put("visionModel", getAiVisionModel(Host.SYSTEM_HOST));
-            ctx.put("maxTokens", getAiVisionMaxTokens(Host.SYSTEM_HOST));
-            ctx.put("base64Image", base64EncodeImage(imageFile));
-            return VelocityUtil.eval(getAiVisionPrompt(Host.SYSTEM_HOST), ctx);
+            try (SystemUserScope ignored = SystemUserScope.open()) {
+                final Context ctx = VelocityContextFactory.getMockContext();
+                ctx.put("visionModel", getAiVisionModel(Host.SYSTEM_HOST));
+                ctx.put("maxTokens", getAiVisionMaxTokens(Host.SYSTEM_HOST));
+                ctx.put("base64Image", base64EncodeImage(imageFile));
+                return VelocityUtil.eval(getAiVisionPrompt(Host.SYSTEM_HOST), ctx);
+            }
         }).getOrNull();
         if (parsedPrompt == null) {
             return Optional.empty();
@@ -294,12 +297,19 @@ public class OpenAIVisionAPIImpl implements AIVisionAPI {
             return Optional.empty();
         }
 
-        final Context ctx = VelocityContextFactory.getMockContext(contentlet, APILocator.systemUser());
-        ctx.put("visionModel", getAiVisionModel(contentlet.getHost()));
-        ctx.put("maxTokens", getAiVisionMaxTokens(contentlet.getHost()));
-        ctx.put("base64Image", base64EncodeImage(fileToProcess.get()));
+        final String visionModel = getAiVisionModel(contentlet.getHost());
+        final String maxTokens = getAiVisionMaxTokens(contentlet.getHost());
+        final String base64Image = base64EncodeImage(fileToProcess.get());
 
-        final String prompt = Try.of(() -> VelocityUtil.eval(getAiVisionPrompt(contentlet.getHost()), ctx))
+        final String prompt = Try.of(() -> {
+                    try (SystemUserScope ignored = SystemUserScope.open()) {
+                        final Context ctx = VelocityContextFactory.getMockContext(contentlet, APILocator.systemUser());
+                        ctx.put("visionModel", visionModel);
+                        ctx.put("maxTokens", maxTokens);
+                        ctx.put("base64Image", base64Image);
+                        return VelocityUtil.eval(getAiVisionPrompt(contentlet.getHost()), ctx);
+                    }
+                })
                 .onFailure(e -> Logger.warnAndDebug(OpenAIVisionAPIImpl.class, e)).getOrNull();
         if (prompt == null) {
             return Optional.empty();

@@ -38,11 +38,21 @@ public class PortletSaxHandler<T> extends DefaultHandler {
         }
     }
 
+    /**
+     * Collects element text. The parser hands it over already decoded, so it is escaped again
+     * before it goes into the rebuilt {@code <portlet>} element: a display name such as
+     * {@code Roles & Tools} would otherwise put a raw {@code &} in that element, which then
+     * fails to parse and the portlet is dropped.
+     *
+     * @param ch     the characters from the XML document
+     * @param start  the start position in the array
+     * @param length the number of characters to read from the array
+     */
     @Override
     public void characters(char[] ch, int start, int length) {
         currentValue.append(ch, start, length);
         if (isPortlet) {
-            portletElement.append(ch, start, length);
+            appendEscaped(portletElement, ch, start, length, false);
         }
     }
 
@@ -54,12 +64,56 @@ public class PortletSaxHandler<T> extends DefaultHandler {
         handleEndElement(qName);
     }
 
+    /**
+     * Writes a start tag into the rebuilt {@code <portlet>} element. Attribute values arrive
+     * decoded, so they are escaped again, quotes included since the value sits inside double
+     * quotes.
+     *
+     * @param qName      the element name
+     * @param attributes the element's attributes
+     */
     private void appendStartElement(String qName, Attributes attributes) {
         portletElement.append("<").append(qName);
         for (int i = 0; i < attributes.getLength(); i++) {
-            portletElement.append(" ").append(attributes.getQName(i)).append("=\"").append(attributes.getValue(i)).append("\"");
+            final String value = attributes.getValue(i);
+            portletElement.append(" ").append(attributes.getQName(i)).append("=\"");
+            appendEscaped(portletElement, value.toCharArray(), 0, value.length(), true);
+            portletElement.append("\"");
         }
         portletElement.append(">");
+    }
+
+    /**
+     * Appends characters with the XML special characters replaced by their entities:
+     * {@code &}, {@code <} and {@code >} always, and {@code "} when the text is an attribute value.
+     *
+     * @param target    the builder to append to
+     * @param ch        the characters to append
+     * @param start     the start position in the array
+     * @param length    the number of characters to append
+     * @param attribute {@code true} when the characters are a double-quoted attribute value
+     */
+    private static void appendEscaped(final StringBuilder target, final char[] ch, final int start,
+            final int length, final boolean attribute) {
+        for (int i = start; i < start + length; i++) {
+            final char c = ch[i];
+            switch (c) {
+                case '&':
+                    target.append("&amp;");
+                    break;
+                case '<':
+                    target.append("&lt;");
+                    break;
+                case '>':
+                    target.append("&gt;");
+                    break;
+                case '"':
+                    target.append(attribute ? "&quot;" : "\"");
+                    break;
+                default:
+                    target.append(c);
+            }
+        }
     }
 
     private void handleEndElement(String qName) {

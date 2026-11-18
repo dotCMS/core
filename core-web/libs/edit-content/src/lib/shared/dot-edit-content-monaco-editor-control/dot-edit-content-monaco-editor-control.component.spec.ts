@@ -31,6 +31,7 @@ export class MockFormComponent {
     field: DotCMSContentTypeField;
     forceLanguage?: AvailableLanguageMonaco;
     hasError: boolean;
+    syntaxErrorsBlockSave = false;
 }
 
 describe('DotEditContentMonacoEditorControlComponent', () => {
@@ -47,7 +48,7 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
     beforeEach(() => {
         spectator = createHost(
             `<form [formGroup]="formGroup">
-                <dot-edit-content-monaco-editor-control [hasError]="hasError" [field]="field" [forceLanguage]="forceLanguage" />
+                <dot-edit-content-monaco-editor-control [hasError]="hasError" [field]="field" [forceLanguage]="forceLanguage" [syntaxErrorsBlockSave]="syntaxErrorsBlockSave" />
             </form>`,
             {
                 hostProps: {
@@ -181,5 +182,40 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
         spectator.detectChanges();
 
         expect(component.$monacoOptions().ariaLabel).toBe(WYSIWYG_MOCK.name);
+    });
+
+    /**
+     * Issue #37996 — the Monaco wrapper registers itself as a form validator and fails the control
+     * whenever the editor shows any marker. Detection can pick the wrong language (Markdown prose
+     * that says "class name" reads as JavaScript), so the wrong checker's squiggles blocked Save
+     * on a field with no required flag and no regex. The shared mock reports one marker on load.
+     */
+    describe('editor syntax markers', () => {
+        const control = () => spectator.hostComponent.formGroup.get(WYSIWYG_MOCK.variable);
+
+        it('should not invalidate the field when the editor reports syntax errors', () => {
+            spectator.detectChanges();
+
+            expect(control()?.errors).toBeNull();
+            expect(control()?.valid).toBe(true);
+        });
+
+        it('should keep syntax errors as a validation error when syntaxErrorsBlockSave is set', () => {
+            spectator.hostComponent.syntaxErrorsBlockSave = true;
+            spectator.detectChanges();
+
+            expect(control()?.errors).toEqual({ monaco: { value: ['Simulated error'] } });
+        });
+
+        it('should honor a change to syntaxErrorsBlockSave made after the editor starts', () => {
+            spectator.detectChanges();
+            expect(control()?.errors).toBeNull();
+
+            spectator.hostComponent.syntaxErrorsBlockSave = true;
+            spectator.detectChanges();
+            control()?.updateValueAndValidity();
+
+            expect(control()?.errors).toEqual({ monaco: { value: ['Simulated error'] } });
+        });
     });
 });

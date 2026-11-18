@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.system;
 
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
+import com.dotcms.company.CompanyLogoPath;
 import com.dotcms.rest.api.v1.asset.bulkdelete.FolderBulkDeleteHelper;
 import com.dotcms.rest.api.v1.asset.bulkduplicate.FolderBulkDuplicateHelper;
 import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadHelper;
@@ -123,10 +124,10 @@ public class ConfigurationHelper implements Serializable {
 		String primaryColor = "NA";
 		String secondaryColor = "NA";
 		String loginScreenLogo = Try.of(() -> APILocator.getCompanyAPI().getDefaultCompany().getCity()).getOrElse("NA");
-		loginScreenLogo = UtilMethods.isSet(loginScreenLogo) && loginScreenLogo.startsWith("/dA") ? loginScreenLogo : "NA";
+		loginScreenLogo = CompanyLogoPath.forwardPath(loginScreenLogo).orElse("NA");
 		String navBarLogo = Try.of(() -> APILocator.getCompanyAPI().getDefaultCompany().getState()).getOrElse("NA");
-		navBarLogo = LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level &&
-				UtilMethods.isSet(navBarLogo) && navBarLogo.startsWith("/dA") ? navBarLogo : "NA";
+		navBarLogo = LicenseUtil.getLevel() > LicenseLevel.COMMUNITY.level
+				? CompanyLogoPath.forwardPath(navBarLogo).orElse("NA") : "NA";
 
 	    try {
 			backgroundColor = APILocator.getCompanyAPI().getDefaultCompany().getSize();

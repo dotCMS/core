@@ -4652,9 +4652,10 @@ paths:
         \ resolution: (1) look up by bundleId, (2) if not found, look up unsent bundles\
         \ by bundleName, (3) if still not found, auto-create a new bundle. A non-matching\
         \ bundleId does NOT return 404 — it falls through to name lookup and then\
-        \ auto-creation. Assets already in the bundle are silently skipped (idempotent).\
-        \ Individual asset failures (e.g., no publish permission) are reported in\
-        \ the errors list as human-readable strings, not as HTTP errors."
+        \ auto-creation. A bundleId that belongs to another user returns 403 unless\
+        \ the caller is a CMS Administrator. Assets already in the bundle are silently\
+        \ skipped (idempotent). Individual asset failures (e.g., no publish permission)\
+        \ are reported in the errors list as human-readable strings, not as HTTP errors."
       operationId: addAssetsToBundle
       requestBody:
         content:
@@ -4681,7 +4682,7 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: Forbidden - the bundle belongs to another user
         "404":
           content:
             application/json: {}
@@ -4700,9 +4701,9 @@ paths:
       - Publishing
   /v1/bundles/{bundleId}/assets:
     delete:
-      description: Removes one or more assets from an unpushed bundle. Each asset
-        is processed independently with per-asset results. Assets not found in the
-        bundle return success=false.
+      description: Removes one or more assets from an unpushed bundle. Only the bundle
+        owner or a CMS Administrator may remove assets. Each asset is processed independently
+        with per-asset results. Assets not found in the bundle return success=false.
       operationId: removeAssetsFromBundle
       parameters:
       - description: Bundle identifier
@@ -4737,7 +4738,7 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: Forbidden - the bundle belongs to another user
         "404":
           content:
             application/json: {}
@@ -6877,6 +6878,44 @@ paths:
           description: "Internal Server Error: An unexpected error occurred during\
             \ job creation or processing."
       summary: Imports content from a CSV file
+      tags:
+      - Content Import
+      - Content
+  /v1/content/_import/_template:
+    get:
+      description: "Returns a CSV file with one header line naming every field an\
+        \ import row can set, and one sample row showing the format each of those\
+        \ columns takes. Requires READ permission on the Content Type."
+      operationId: downloadContentImportTemplate
+      parameters:
+      - description: The id or the variable name of the Content Type
+        in: query
+        name: contentType
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            text/csv:
+              example: |-
+                title,body
+                "XXX","XXX"
+              schema:
+                type: string
+                description: "A header line of field variable names, and a sample\
+                  \ row."
+          description: "The CSV template, as a file attachment."
+        "400":
+          description: "Bad Request: No Content Type was given."
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: User does not have READ permission on the Content\
+            \ Type."
+        "404":
+          description: "Not Found: The Content Type could not be found."
+      summary: Downloads the CSV template of a Content Type
       tags:
       - Content Import
       - Content
@@ -12596,7 +12635,7 @@ paths:
         \ the ordered ids of its tools and one localized title per tool id, aligned\
         \ with portletIds. Sections holding tools the tools catalog hides are still\
         \ returned as stored. Requires an authenticated back-end user with access\
-        \ to the tools or tools-beta portlet, or the CMS Administrator role."
+        \ to the tools portlet, or the CMS Administrator role."
       operationId: listNavigationSections
       responses:
         "200":
@@ -12608,8 +12647,8 @@ paths:
         "401":
           content:
             application/json: {}
-          description: "Unauthorized - authentication required, or the caller holds\
-            \ neither the tools nor the tools-beta portlet and is not a CMS Administrator"
+          description: "Unauthorized - authentication required, or the caller does\
+            \ not hold the tools portlet and is not a CMS Administrator"
         "500":
           content:
             application/json: {}
@@ -12618,18 +12657,22 @@ paths:
       tags:
       - Administration
     post:
-      description: "Creates a section from a name and an icon. The new section is\
-        \ placed after every existing section and holds no tools. The name is trimmed,\
-        \ must be present, at most 255 characters and unique among sections; the icon\
-        \ is at most 255 characters and may be empty. Requires a CMS Administrator\
-        \ who also holds the tools or tools-beta portlet."
+      description: "Creates a section from a name and an icon. Unless tabOrder is\
+        \ sent, the new section is placed after every existing section; unless portletIds\
+        \ is sent, it holds no tools. The section, its position and its tools are\
+        \ saved in one transaction, so a failed create leaves nothing behind. The\
+        \ name is trimmed, must be present, at most 255 characters and unique among\
+        \ sections; the icon is at most 255 characters and may be empty; the tool\
+        \ ids follow the same rules as setting a section's tools. Requires a CMS Administrator\
+        \ who also holds the tools portlet."
       operationId: createNavigationSection
       requestBody:
         content:
           application/json:
             schema:
               $ref: "#/components/schemas/SectionForm"
-        description: Name and icon of the new section
+        description: "Name and icon of the new section, optionally its position and\
+          \ tools"
         required: true
       responses:
         "200":
@@ -12641,13 +12684,12 @@ paths:
         "400":
           content:
             application/json: {}
-          description: "Bad request - blank or over-long name, over-long icon, or\
-            \ duplicate name"
+          description: "Bad request - blank or over-long name, over-long icon, duplicate\
+            \ name, or an unknown, repeated or disallowed tool id"
         "401":
           content:
             application/json: {}
-          description: "Unauthorized - authentication required, or no tools / tools-beta\
-            \ portlet"
+          description: "Unauthorized - authentication required, or no tools portlet"
         "403":
           content:
             application/json: {}
@@ -12666,7 +12708,7 @@ paths:
         \ once; a missing, unknown or repeated id is rejected and no position changes.\
         \ Positions are written strictly increasing in the order sent, in one transaction,\
         \ and open sessions receive a single refresh. Requires a CMS Administrator\
-        \ who also holds the tools or tools-beta portlet."
+        \ who also holds the tools portlet."
       operationId: reorderNavigationSections
       requestBody:
         content:
@@ -12690,8 +12732,7 @@ paths:
         "401":
           content:
             application/json: {}
-          description: "Unauthorized - authentication required, or no tools / tools-beta\
-            \ portlet"
+          description: "Unauthorized - authentication required, or no tools portlet"
         "403":
           content:
             application/json: {}
@@ -12709,7 +12750,7 @@ paths:
         \ role or a user, so users who reached a tool only through this section lose\
         \ it from their menu. The Getting Started section cannot be deleted. Returns\
         \ the remaining sections in navigation order. Requires a CMS Administrator\
-        \ who also holds the tools or tools-beta portlet."
+        \ who also holds the tools portlet."
       operationId: deleteNavigationSection
       parameters:
       - description: Navigation section id
@@ -12732,8 +12773,7 @@ paths:
         "401":
           content:
             application/json: {}
-          description: "Unauthorized - authentication required, or no tools / tools-beta\
-            \ portlet"
+          description: "Unauthorized - authentication required, or no tools portlet"
         "403":
           content:
             application/json: {}
@@ -12750,10 +12790,10 @@ paths:
       tags:
       - Administration
     put:
-      description: Changes a section's name and icon together; its position and its
-        tools are untouched. Same name and icon rules as create. Getting Started may
-        be renamed and re-iconed. Requires a CMS Administrator who also holds the
-        tools or tools-beta portlet.
+      description: "Changes a section's name and icon together; its position and its\
+        \ tools are untouched, and sending tabOrder or portletIds is refused. Same\
+        \ name and icon rules as create. Getting Started may be renamed and re-iconed.\
+        \ Requires a CMS Administrator who also holds the tools portlet."
       operationId: updateNavigationSection
       parameters:
       - description: Navigation section id
@@ -12779,13 +12819,12 @@ paths:
         "400":
           content:
             application/json: {}
-          description: "Bad request - blank or over-long name, over-long icon, or\
-            \ duplicate name"
+          description: "Bad request - blank or over-long name, over-long icon, duplicate\
+            \ name, or a position or tools sent"
         "401":
           content:
             application/json: {}
-          description: "Unauthorized - authentication required, or no tools / tools-beta\
-            \ portlet"
+          description: "Unauthorized - authentication required, or no tools portlet"
         "403":
           content:
             application/json: {}
@@ -12809,7 +12848,7 @@ paths:
         \ once; otherwise the request is rejected naming the id and the section is\
         \ unchanged. Registered tools the tools catalog hides are accepted. An empty\
         \ list is accepted for every section except Getting Started. Requires a CMS\
-        \ Administrator who also holds the tools or tools-beta portlet."
+        \ Administrator who also holds the tools portlet."
       operationId: setNavigationSectionTools
       parameters:
       - description: Navigation section id
@@ -12840,8 +12879,7 @@ paths:
         "401":
           content:
             application/json: {}
-          description: "Unauthorized - authentication required, or no tools / tools-beta\
-            \ portlet"
+          description: "Unauthorized - authentication required, or no tools portlet"
         "403":
           content:
             application/json: {}
@@ -13252,8 +13290,9 @@ paths:
   /v1/maintenance/_sessions:
     delete:
       description: "Walks every active HTTP session tracked by SessionMonitor, skips\
-        \ the caller's own session, and invalidates the rest. Returns the count of\
-        \ invalidated sessions."
+        \ the caller's own session, and invalidates the rest. The login tokens of\
+        \ every user whose session was invalidated are invalidated as well, so those\
+        \ clients must log in again. Returns the count of invalidated sessions."
       operationId: killAllSessions
       responses:
         "200":
@@ -13301,10 +13340,12 @@ paths:
       - Maintenance
   /v1/maintenance/_sessions/{token}:
     delete:
-      description: Invalidates the session whose HMAC-obfuscated token is supplied.
-        The caller's own session cannot be invalidated this way. The CSRF secret must
-        have been issued by GET /v1/maintenance/_sessions within the last 15 minutes
-        — otherwise this endpoint returns 403 and the client must re-list to refresh.
+      description: "Invalidates the session whose HMAC-obfuscated token is supplied.\
+        \ The login tokens issued to the session's user are invalidated as well, so\
+        \ that user's clients must log in again. The caller's own session cannot be\
+        \ invalidated this way. The CSRF secret must have been issued by GET /v1/maintenance/_sessions\
+        \ within the last 15 minutes — otherwise this endpoint returns 403 and the\
+        \ client must re-list to refresh."
       operationId: killSession
       parameters:
       - description: HMAC-obfuscated session token returned by GET /_sessions
@@ -13323,7 +13364,9 @@ paths:
         "400":
           content:
             application/json: {}
-          description: Bad request - attempting to invalidate caller's own session
+          description: "Bad request - attempting to invalidate caller's own session,\
+            \ or the login tokens of the session's user could not be invalidated (the\
+            \ session is left untouched)"
         "401":
           content:
             application/json: {}
@@ -15474,7 +15517,7 @@ paths:
         \ is on. Sorted by title ignoring letter case. Each row carries the id, the\
         \ localized title and an isCustom flag that is true only for tools an admin\
         \ created through New Tool. Requires an authenticated back-end user with access\
-        \ to the tools or tools-beta portlet, or the CMS Administrator role."
+        \ to the tools portlet, or the CMS Administrator role."
       operationId: getToolsCatalog
       responses:
         "200":
@@ -15487,8 +15530,7 @@ paths:
           content:
             application/json: {}
           description: "Unauthorized - no authenticated back-end user, or the caller\
-            \ holds neither the tools nor the tools-beta portlet and is not a CMS\
-            \ Administrator"
+            \ does not hold the tools portlet and is not a CMS Administrator"
       summary: List the tools that can be placed in a navigation section
       tags:
       - Portlets
@@ -15496,7 +15538,7 @@ paths:
     post:
       description: "Creates a custom content tool that lists the given base types\
         \ and/or content types. Requires an authenticated back-end user with access\
-        \ to the roles, tools or tools-beta portlet, or the CMS Administrator role."
+        \ to the roles, roles-legacy or tools portlet, or the CMS Administrator role."
       operationId: saveNew
       requestBody:
         content:
@@ -15519,8 +15561,8 @@ paths:
           content:
             application/json: {}
           description: "Unauthorized - no authenticated back-end user, or the caller\
-            \ holds none of the roles, tools or tools-beta portlets and is not a CMS\
-            \ Administrator"
+            \ holds none of the roles, roles-legacy or tools portlets and is not a\
+            \ CMS Administrator"
       summary: Create a custom content tool
       tags:
       - Portlets
@@ -15529,7 +15571,7 @@ paths:
         \ of an existing custom content tool. Refuses, with 404 and no change, an\
         \ id that is not a custom content tool: tools shipped with the product cannot\
         \ be rewritten this way. Requires an authenticated back-end user with access\
-        \ to the roles, tools or tools-beta portlet, or the CMS Administrator role."
+        \ to the roles, roles-legacy or tools portlet, or the CMS Administrator role."
       operationId: updatePortlet
       requestBody:
         content:
@@ -15547,8 +15589,8 @@ paths:
           content:
             application/json: {}
           description: "Unauthorized - no authenticated back-end user, or the caller\
-            \ holds none of the roles, tools or tools-beta portlets and is not a CMS\
-            \ Administrator"
+            \ holds none of the roles, roles-legacy or tools portlets and is not a\
+            \ CMS Administrator"
         "404":
           content:
             application/json: {}
@@ -15563,7 +15605,7 @@ paths:
         \ section that contained it. Refuses, with 404 and no change, any id that\
         \ is not a custom content tool: tools shipped with the product cannot be removed\
         \ this way. Requires an authenticated back-end user with access to the roles,\
-        \ tools or tools-beta portlet, or the CMS Administrator role."
+        \ roles-legacy or tools portlet, or the CMS Administrator role."
       operationId: deleteCustomPortlet
       parameters:
       - description: "Stored id of the custom tool, c_ prefix included"
@@ -15583,8 +15625,8 @@ paths:
           content:
             application/json: {}
           description: "Unauthorized - no authenticated back-end user, or the caller\
-            \ holds none of the roles, tools or tools-beta portlets and is not a CMS\
-            \ Administrator"
+            \ holds none of the roles, roles-legacy or tools portlets and is not a\
+            \ CMS Administrator"
         "404":
           content:
             application/json: {}
@@ -15595,8 +15637,8 @@ paths:
     get:
       description: "Returns the editable configuration of a custom content tool: id,\
         \ name, base types, content types and data view mode. Requires an authenticated\
-        \ back-end user with access to the tools or tools-beta portlet, or the CMS\
-        \ Administrator role."
+        \ back-end user with access to the tools portlet, or the CMS Administrator\
+        \ role."
       operationId: getCustomTool
       parameters:
       - description: "Stored id of the custom tool, c_ prefix included"
@@ -15616,8 +15658,7 @@ paths:
           content:
             application/json: {}
           description: "Unauthorized - no authenticated back-end user, or the caller\
-            \ holds neither the tools nor the tools-beta portlet and is not a CMS\
-            \ Administrator"
+            \ does not hold the tools portlet and is not a CMS Administrator"
         "404":
           content:
             application/json: {}
@@ -16376,6 +16417,11 @@ paths:
           content:
             application/json: {}
           description: Forbidden - admin permissions required
+        "409":
+          content:
+            application/json: {}
+          description: "Conflict - duplicate role key, or duplicate role name under\
+            \ the same parent"
       summary: Create new role
       tags:
       - Roles
@@ -16773,6 +16819,74 @@ paths:
           description: "Conflict - duplicate role key, or duplicate role name under\
             \ the same parent"
       summary: Update a role
+      tags:
+      - Roles
+  /v1/roles/{roleid}/_lock:
+    put:
+      description: Locks a role. A locked role cannot be updated or deleted until
+        it is unlocked. Locking a role that is already locked changes nothing.
+      operationId: lockRole
+      parameters:
+      - description: Id of the role to lock
+        in: path
+        name: roleid
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleDetailView"
+          description: Role locked
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin permissions required
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+      summary: Lock a role
+      tags:
+      - Roles
+  /v1/roles/{roleid}/_unlock:
+    put:
+      description: Unlocks a role so it can be updated and deleted again. Unlocking
+        a role that is not locked changes nothing.
+      operationId: unlockRole
+      parameters:
+      - description: Id of the role to unlock
+        in: path
+        name: roleid
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleDetailView"
+          description: Role unlocked
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin permissions required
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+      summary: Unlock a role
       tags:
       - Roles
   /v1/roles/{roleid}/rolehierarchyanduserroles:
@@ -18222,7 +18336,9 @@ paths:
     post:
       description: "Saves or updates the value of a key in the system table. The change\
         \ is applied cluster wide: every node is notified and re-resolves the key,\
-        \ so the request does not need to be repeated against each node."
+        \ so the request does not need to be repeated against each node. Keys the\
+        \ server reads from the environment or the properties file only are refused\
+        \ with a 400, since a value stored for them would have no effect."
       operationId: save
       requestBody:
         content:
@@ -18246,7 +18362,9 @@ paths:
       description: "Updates the value of an existing key in the system table, or returns\
         \ a 404 if the key does not exist. The change is applied cluster wide: every\
         \ node is notified and re-resolves the key, so the request does not need to\
-        \ be repeated against each node."
+        \ be repeated against each node. Keys the server reads from the environment\
+        \ or the properties file only are refused with a 400, since a value stored\
+        \ for them would have no effect."
       operationId: update_8
       requestBody:
         content:
@@ -18549,8 +18667,9 @@ paths:
       - Tag (v1)
     get:
       deprecated: true
-      description: Retrieves all tag-inode associations for a given inode. This endpoint
-        is deprecated - use v2 TagResource instead.
+      description: "Retrieves all tag-inode associations for a given inode. Needs\
+        \ READ permission on the content; for a user id, the same access as reading\
+        \ that user's tags. This endpoint is deprecated - use v2 TagResource instead."
       operationId: findTagsByInodeV1
       parameters:
       - description: Inode identifier to retrieve associated tags for
@@ -18566,6 +18685,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagInodesView"
           description: Tag-inode associations retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the user's access could not be resolved
         "401":
           content:
             application/json: {}
@@ -18573,7 +18696,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: "Forbidden - no access to the Tags portlet, or no READ permission\
+            \ on the inode"
         "404":
           content:
             application/json: {}
@@ -18631,9 +18755,10 @@ paths:
   /v1/tags/user/{userId}:
     get:
       deprecated: true
-      description: Retrieves all tags owned by a given user. Returns tags that were
-        assigned an owner during creation. This endpoint is deprecated - use v2 TagResource
-        instead.
+      description: "Retrieves all tags owned by a given user. Returns tags that were\
+        \ assigned an owner during creation. Available to the user themselves, admins,\
+        \ and users with access to a Users portlet. This endpoint is deprecated -\
+        \ use v2 TagResource instead."
       operationId: getTagsByUserIdV1
       parameters:
       - description: User identifier to retrieve owned tags for
@@ -18649,6 +18774,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagsView"
           description: Tags retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the user's access could not be resolved
         "401":
           content:
             application/json: {}
@@ -18656,7 +18785,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: "Forbidden - no access to the Tags portlet, or not allowed\
+            \ to see this user's tags"
         "404":
           content:
             application/json: {}
@@ -18794,7 +18924,7 @@ paths:
   /v1/temp/byUrl:
     post:
       description: |-
-        Downloads a file from the specified remote URL and stores it as a temporary resource. The temporary file can then be referenced when creating content. The URL must pass validation to prevent SSRF attacks. Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property.
+        Downloads a file from the specified remote URL and stores it as a temporary resource. The temporary file can then be referenced when creating content. The URL must pass validation to prevent SSRF attacks. Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property, and TEMP_RESOURCE_BY_URL_ADMIN_ONLY restricts downloads by URL to administrators. The stored file name's extension must be on TEMP_RESOURCE_BY_URL_ALLOWED_EXTENSIONS (by default images, SVG and PDF) and the content the remote server returns must match it; otherwise the call returns 400.
 
         **Use this endpoint to supply files for binary and image fields** (`ImmutableBinaryField`, `ImmutableImageField`) when a file is already accessible by URL. Send `{"remoteUrl": "https://example.com/image.jpg"}` and pass `tempFiles[0].id` (e.g. `"temp_5311313004"`) as the field value in the workflow fire endpoint. See `PUT /api/v1/workflow/actions/default/fire/{systemAction}` for the full pattern.
       operationId: createTempFileFromUrl
@@ -18825,9 +18955,12 @@ paths:
                 $ref: "#/components/schemas/TempFilesView"
           description: Temporary file created from URL successfully
         "400":
-          description: "Invalid URL, missing URL, or invalid origin/referer"
+          description: "Invalid URL, missing URL, invalid origin/referer, file extension\
+            \ not allowed, or content that does not match the file name's extension"
         "401":
           description: Authentication required (when anonymous access is disabled)
+        "403":
+          description: Downloads by URL are restricted to administrators (TEMP_RESOURCE_BY_URL_ADMIN_ONLY)
         "404":
           description: Temp file resource is not enabled
       summary: Create temporary file from a remote URL
@@ -24322,7 +24455,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - User does not have access to Tags portlet
+          description: "Forbidden - User does not have access to Tags portlet, or\
+            \ cannot add tags to the given owner"
         "500":
           content:
             application/json: {}
@@ -24493,8 +24627,9 @@ paths:
       tags:
       - Tags
     get:
-      description: Retrieves all tags associated with a given inode. Returns tag-inode
-        relationships for the specified content.
+      description: "Retrieves all tags associated with a given inode. Returns tag-inode\
+        \ relationships for the specified content. Needs READ permission on the content;\
+        \ for a user id, the same access as reading that user's tags."
       operationId: getTagsByInode
       parameters:
       - description: Inode to retrieve tags for
@@ -24510,6 +24645,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagInodesMapView"
           description: Tags retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the user's access could not be resolved
         "401":
           content:
             application/json: {}
@@ -24517,7 +24656,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions to access tags
+          description: "Forbidden - no access to the Tags portlet, or no READ permission\
+            \ on the inode"
         "404":
           content:
             application/json: {}
@@ -24580,8 +24720,9 @@ paths:
       - Tags
   /v2/tags/user/{userId}:
     get:
-      description: Retrieves all tags owned by a specific user. Returns tags that
-        were explicitly linked to the user during creation.
+      description: "Retrieves all tags owned by a specific user. Returns tags that\
+        \ were explicitly linked to the user during creation. Available to the user\
+        \ themselves, admins, and users with access to a Users portlet."
       operationId: getTagsByUserId
       parameters:
       - description: User ID to retrieve tags for
@@ -24597,6 +24738,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagMapView"
           description: User tags retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the user's access could not be resolved
         "401":
           content:
             application/json: {}
@@ -24604,7 +24749,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions to access tags
+          description: "Forbidden - no access to the Tags portlet, or not allowed\
+            \ to see this user's tags"
         "404":
           content:
             application/json: {}
@@ -24660,7 +24806,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - User does not have access to Tags portlet
+          description: "Forbidden - User does not have access to Tags portlet, or\
+            \ cannot edit all the content that carries the tag"
         "404":
           content:
             application/json: {}
@@ -39592,6 +39739,20 @@ components:
           type: string
           description: "Section name, unique among sections, at most 255 characters"
           example: Marketing
+        portletIds:
+          type: array
+          description: "Create only: tool (portlet) ids the section holds, in order;\
+            \ defaults to none"
+          items:
+            type: string
+            description: "Create only: tool (portlet) ids the section holds, in order;\
+              \ defaults to none"
+        tabOrder:
+          type: integer
+          format: int32
+          description: "Create only: position of the section in the navigation; defaults\
+            \ to after every existing section"
+          example: 3
       required:
       - name
     SectionOrderForm:
