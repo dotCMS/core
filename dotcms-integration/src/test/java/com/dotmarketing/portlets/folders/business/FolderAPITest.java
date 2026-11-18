@@ -2165,16 +2165,19 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 	public void createFolders_reportsOnlyTheFoldersItCreates() throws Exception {
 		final String base = "/createReport" + System.currentTimeMillis();
 		final Folder existing = folderAPI.createFolders(base, host, user, false);
-		final List<Folder> created = new ArrayList<>();
+		try {
+			final List<Folder> created = new ArrayList<>();
 
-		final Folder leaf = folderAPI.createFolders(base + "/a/b", host, user, false, created::add);
+			final Folder leaf = folderAPI.createFolders(base + "/a/b", host, user, false, created::add);
 
-		assertEquals(2, created.size());
-		assertEquals(base + "/a/", created.get(0).getPath());
-		assertEquals(base + "/a/b/", created.get(1).getPath());
-		assertEquals(leaf.getInode(), created.get(1).getInode());
-		assertFalse(created.stream().anyMatch(folder -> folder.getInode().equals(existing.getInode())));
-		folderAPI.delete(existing, user, false);
+			assertEquals(2, created.size());
+			assertEquals(base + "/a/", created.get(0).getPath());
+			assertEquals(base + "/a/b/", created.get(1).getPath());
+			assertEquals(leaf.getInode(), created.get(1).getInode());
+			assertFalse(created.stream().anyMatch(folder -> folder.getInode().equals(existing.getInode())));
+		} finally {
+			folderAPI.delete(existing, user, false);
+		}
 	}
 
 }

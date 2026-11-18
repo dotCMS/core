@@ -34,6 +34,7 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.SiteCreatedEvent;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.db.HibernateUtil;
@@ -128,6 +129,11 @@ public class HostAssetsJobImpl extends ParentProxy{
 	/**
 	 * Inodes of the folders this copy created in the destination site. Only these get the source
 	 * folder's permissions; folders that were already there keep their own.
+	 * <p>
+	 * It has to outlive a single {@link #copyFolder} call: copying a container-as-file creates its
+	 * parent folders (such as {@code /application}) as a side effect, and those parents only reach
+	 * {@link #copyFolder} later, in the folder sweep, where {@code createFolders} returns them as
+	 * existing folders. Without this record they would never get their source permissions.
 	 */
 	private final Set<String> foldersCreatedByThisCopy = new HashSet<>();
 
@@ -1111,8 +1117,10 @@ public class HostAssetsJobImpl extends ParentProxy{
 			newFolder.setShowOnMenu(true);
 		}
 		this.folderAPI.save(newFolder, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
-		if (this.foldersCreatedByThisCopy.contains(newFolder.getInode())) {
-			APILocator.getPermissionAPI().copyPermissions(sourceFolder, newFolder);
+		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+		if (this.foldersCreatedByThisCopy.contains(newFolder.getInode())
+				&& !permissionAPI.isInheritingPermissions(sourceFolder)) {
+			permissionAPI.copyPermissions(sourceFolder, newFolder);
 		}
 		folderMappingsBySourceId.put(sourceFolder.getInode(), new FolderMapping(sourceFolder, newFolder));
 		return newFolder;

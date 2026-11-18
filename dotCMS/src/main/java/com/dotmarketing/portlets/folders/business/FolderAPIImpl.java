@@ -744,7 +744,10 @@ public class FolderAPIImpl implements FolderAPI  {
 	 * @param host                       the site the folders belong to
 	 * @param user                       the user creating the folders
 	 * @param respectFrontEndPermissions whether front-end roles are taken into account
-	 * @param onCreated                  called once for each folder this method creates
+	 * @param onCreated                  called once for each folder this method creates, inside
+	 *                                   this method's transaction: an exception it throws aborts the
+	 *                                   whole path, and a later rollback removes the folders it was
+	 *                                   given
 	 *
 	 * @return the folder at the end of the path
 	 *

@@ -351,6 +351,15 @@ import java.util.function.Predicate;
 	 * @param host                       the site the folders belong to
 	 * @param user                       the user creating the folders
 	 * @param respectFrontEndPermissions whether front-end roles are taken into account
+	 * <p>
+	 * {@code onCreated} runs inside the same transaction as the folder creation: an exception it
+	 * throws aborts the whole path, and if the transaction is later rolled back the folders it was
+	 * given no longer exist.
+	 * <p>
+	 * The default implementation creates the folders through
+	 * {@link #createFolders(String, Host, User, boolean)} and reports none of them; implementations
+	 * that can report each insert override it.
+	 *
 	 * @param onCreated                  called once for each folder this method creates
 	 *
 	 * @return the folder at the end of the path
@@ -358,8 +367,11 @@ import java.util.function.Predicate;
 	 * @throws DotSecurityException the user may not create the folders
 	 * @throws DotDataException     an error occurred when interacting with the database
 	 */
-	Folder createFolders(String path, Host host, User user, boolean respectFrontEndPermissions,
-			Consumer<Folder> onCreated) throws DotSecurityException, DotDataException;
+	default Folder createFolders(final String path, final Host host, final User user,
+			final boolean respectFrontEndPermissions, final Consumer<Folder> onCreated)
+			throws DotSecurityException, DotDataException {
+		return createFolders(path, host, user, respectFrontEndPermissions);
+	}
 
 	/**
 	 * Pulls a complete list of all folders on a host

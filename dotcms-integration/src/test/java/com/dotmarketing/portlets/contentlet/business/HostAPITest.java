@@ -10,6 +10,10 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
@@ -2030,8 +2034,12 @@ public class HostAPITest extends IntegrationTestBase  {
             assertTrue("A copied folder without permissions of its own uses the new site's",
                     permissionAPI.doesUserHavePermission(copiedInheriting,
                             PermissionAPI.PERMISSION_READ, user, false));
-            assertEquals(permissionAPI.getPermissions(folderWithPermissions, true, true).size(),
-                    permissionAPI.getPermissions(copiedWithPermissions, true, true).size());
+            final List<Permission> copiedPermissions =
+                    permissionAPI.getPermissions(copiedWithPermissions, true, true);
+            assertEquals(1, copiedPermissions.size());
+            assertEquals(ownerRole.getId(), copiedPermissions.get(0).getRoleId());
+            assertEquals(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT,
+                    copiedPermissions.get(0).getPermission());
             final Folder copiedChild = APILocator.getFolderAPI().findFolderByPath(
                     childFolder.getPath(), destinationSite, systemUser, false);
             assertFalse("A copied child folder takes its permissions from its copied parent",
@@ -2134,6 +2142,91 @@ public class HostAPITest extends IntegrationTestBase  {
     }
 
     /**
+     * Method to test: the Site Copy job ({@link HostAssetsJobProxy}) when templates, containers and
+     * folders are copied together.
+     * Given: a source site with a container-as-file under {@code /application/containers}, used by a
+     * template, where {@code /application} has permissions of its own for an owner role.
+     * Expected: copying the container creates {@code /application} in the destination as a parent
+     * folder, and when the folder sweep reaches {@code /application} later it still gets the
+     * source folder's permissions, so a role that can read the destination's folders cannot read it.
+     */
+    @Test
+    public void copySite_parentFolderCreatedByContainerCopyKeepsItsPermissions() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        Host sourceSite = null;
+        Host destinationSite = null;
+        Role ownerRole = null;
+        Role role = null;
+        User user = null;
+        try {
+            ownerRole = new RoleDataGen().nextPersisted();
+            role = new RoleDataGen().nextPersisted();
+            user = new UserDataGen().roles(role).nextPersisted();
+            sourceSite = new SiteDataGen().nextPersisted();
+            final FileAssetContainer persisted = new ContainerAsFileDataGen().host(sourceSite)
+                    .folderName("box" + System.currentTimeMillis()).nextPersisted();
+            final FileAssetContainer container = (FileAssetContainer) APILocator.getContainerAPI()
+                    .find(persisted.getInode(), systemUser, false);
+            new TemplateDataGen().site(sourceSite).drawed(true)
+                    .withContainer(FileAssetContainerUtil.getInstance().getFullPath(container), "1")
+                    .nextPersisted();
+            final Folder application = APILocator.getFolderAPI().findFolderByPath(
+                    "/application/", sourceSite, systemUser, false);
+            permissionAPI.save(List.of(
+                    new Permission(application.getPermissionId(), ownerRole.getId(),
+                            PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true),
+                    new Permission(Folder.class.getCanonicalName(),
+                            application.getPermissionId(), ownerRole.getId(),
+                            PermissionAPI.PERMISSION_READ, true)),
+                    application, systemUser, false);
+
+            destinationSite = createSite("copy" + System.currentTimeMillis() + ".dotcms.com",
+                    systemUser);
+            permissionAPI.save(List.of(
+                    new Permission(destinationSite.getPermissionId(), role.getId(),
+                            PermissionAPI.PERMISSION_READ, true),
+                    new Permission(Folder.class.getCanonicalName(),
+                            destinationSite.getPermissionId(), role.getId(),
+                            PermissionAPI.PERMISSION_READ, true)),
+                    destinationSite, systemUser, false);
+
+            runSiteCopyJob(sourceSite, destinationSite, user,
+                    new HostCopyOptions(true, true, false, false, false, false, false));
+
+            final Folder copiedApplication = APILocator.getFolderAPI().findFolderByPath(
+                    "/application/", destinationSite, systemUser, false);
+            assertNotNull(copiedApplication.getInode());
+            final List<Permission> copiedPermissions =
+                    permissionAPI.getPermissions(copiedApplication, true, true);
+            assertEquals(1, copiedPermissions.size());
+            assertEquals(ownerRole.getId(), copiedPermissions.get(0).getRoleId());
+            assertFalse("The parent folder created by the container copy has its source permissions",
+                    permissionAPI.doesUserHavePermission(copiedApplication,
+                            PermissionAPI.PERMISSION_READ, user, false));
+        } finally {
+            if (destinationSite != null) {
+                archiveHost(destinationSite, systemUser);
+                deleteHost(destinationSite, systemUser);
+            }
+            if (sourceSite != null) {
+                unpublishHost(sourceSite, systemUser);
+                archiveHost(sourceSite, systemUser);
+                deleteHost(sourceSite, systemUser);
+            }
+            if (user != null) {
+                UserDataGen.remove(user);
+            }
+            if (role != null) {
+                RoleDataGen.remove(role);
+            }
+            if (ownerRole != null) {
+                RoleDataGen.remove(ownerRole);
+            }
+        }
+    }
+
+    /**
      * Runs the Site Copy job synchronously, the way Quartz would, for the given sites and options.
      *
      * @param sourceSite      the site to copy from
@@ -2160,6 +2253,8 @@ public class HostAPITest extends IntegrationTestBase  {
         final HostAssetsJobProxy hostAssetsJobProxy = Mockito.spy(new HostAssetsJobProxy());
         doReturn(dataMap).when(hostAssetsJobProxy).getExecutionData(trigger);
         hostAssetsJobProxy.execute(jobExecutionContext);
+        // The job writes permission rows directly; the tests check permissions right after it, so
+        // drop any cached permission lookups made before the copy.
         CacheLocator.getPermissionCache().clearCache();
     }
 
