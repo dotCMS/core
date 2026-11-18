@@ -30,6 +30,9 @@ inputs:
     description: 'npm dist-tag to publish under (e.g. latest, next)'
     required: false
     default: 'latest'
+  verify-existing:
+    description: 'Verify existing package integrity before treating it as published'
+    default: 'false'
   npm-token:
     description: 'NPM token'
     required: true
@@ -193,6 +196,7 @@ runs:
         RELEASE_VERSION: ${{ steps.update-versions.outputs.normalized_version }}
         NPM_AUTH_TOKEN: ${{ inputs.npm-token }}
         NPM_TAG: ${{ inputs.npm-tag }}
+        VERIFY_EXISTING: ${{ inputs.verify-existing }}
       run: |
         set -euo pipefail
         echo "::group::Publishing SDK packages"
@@ -223,6 +227,14 @@ runs:
           # the release. Treat "already published" as success so a re-run can finish the
           # remaining packages instead of getting stuck.
           if npm view "${PKG_NAME}@${RELEASE_VERSION}" version >/dev/null 2>&1; then
+            if [[ "$VERIFY_EXISTING" == "true" ]]; then
+              published_integrity=$(npm view "${PKG_NAME}@${RELEASE_VERSION}" dist.integrity)
+              built_integrity=$(npm pack --dry-run --json | jq -er '.[0].integrity')
+              if [[ "$published_integrity" != "$built_integrity" ]]; then
+                echo "::error::Published ${PKG_NAME}@${RELEASE_VERSION} differs from this build."
+                exit 1
+              fi
+            fi
             echo "  ⏭️  ${PKG_NAME}@${RELEASE_VERSION} already published — skipping (idempotent re-run)"
           else
             echo "  🚀 Publishing: ${PKG_NAME}@${RELEASE_VERSION} (tag: ${NPM_TAG})"

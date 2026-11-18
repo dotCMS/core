@@ -34,6 +34,10 @@ on:
         description: 'Branch/tag to build from (defaults to main). Set to v<version> to rebuild the exact commit of a past release.'
         required: false
         default: 'main'
+      recovery:
+        description: 'Publish missing versions to sdk-recovery without changing npm latest; set ref to v<version>.'
+        type: boolean
+        default: false
       dry-run:
         description: 'Dry run (skip the actual npm publish)'
         default: 'false'
@@ -60,6 +64,8 @@ jobs:
     steps:
       - name: 'Set release version'
         id: version
+        env:
+          RECOVERY: ${{ inputs.recovery }}
         run: |
           set -euo pipefail
           TAG_NAME=""
@@ -79,6 +85,11 @@ jobs:
               echo "::error::Invalid version format: '$RELEASE_VERSION'. Expected yy.mm.dd-## or yy.mm.dd_lts_v## (matching the dotCMS release tag format)."
               exit 1
             fi
+          fi
+
+          if [[ "$RECOVERY" == 'true' && "$REF" != "v$RELEASE_VERSION" ]]; then
+            echo "::error::Recovery must build from the exact release tag v$RELEASE_VERSION."
+            exit 1
           fi
 
           # Case-insensitive substring match on whichever string carries the LTS marker
@@ -169,6 +180,8 @@ jobs:
         with:
           ref: ${{ steps.sdk-source.outputs.commit }}
           version: ${{ needs.precheck.outputs.RELEASE_VERSION }}
+          npm-tag: ${{ inputs.recovery && 'sdk-recovery' || 'latest' }}
+          verify-existing: 'true'
           npm-token: ${{ secrets.NPM_ORG_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 

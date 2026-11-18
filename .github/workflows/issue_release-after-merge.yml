@@ -126,9 +126,7 @@ jobs:
           done
           echo "Highest counter among queued/in-flight releases for ${TODAY}: ${RUNNING_COUNTER}"
 
-          # 3) Next version = max(tag, in-flight) + 1, verified against the remote so
-          #    we never hand release-prepare (which force-overwrites colliding tags/
-          #    branches) a version that already exists.
+          # 3) Skip tags and branches, including branches left by failed cuts.
           COUNTER=$(( LAST_TAG_COUNTER > RUNNING_COUNTER ? LAST_TAG_COUNTER : RUNNING_COUNTER ))
           while true; do
             COUNTER=$(( COUNTER + 1 ))
@@ -137,11 +135,11 @@ jobs:
               exit 1
             fi
             NEXT_VERSION=$(printf '%s-%02d' "${TODAY}" "${COUNTER}")
-            CANDIDATE_TAG=$(git ls-remote --tags --refs origin "refs/tags/v${NEXT_VERSION}")
-            if [ -z "${CANDIDATE_TAG}" ]; then
+            CANDIDATE_REFS=$(git ls-remote --refs origin "refs/tags/v${NEXT_VERSION}" "refs/heads/release-${NEXT_VERSION}")
+            if [ -z "${CANDIDATE_REFS}" ]; then
               break
             fi
-            echo "Tag v${NEXT_VERSION} already exists (raced with another cut) — incrementing."
+            echo "Version ${NEXT_VERSION} already has a release ref — incrementing."
           done
           echo "Next release version: ${NEXT_VERSION}"
 
