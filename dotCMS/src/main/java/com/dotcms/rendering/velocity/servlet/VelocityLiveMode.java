@@ -6,6 +6,7 @@ import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.filters.DotHttpHeaderSecurityFilter;
 import com.dotcms.rendering.util.HtmlMinifier;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
@@ -333,6 +334,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
      * @param page
      */
     private void addHeaders(IHTMLPage page) {
+        DotHttpHeaderSecurityFilter.setCdnTag(response, page.getIdentifier());
 
         if (response.getHeader("Cache-Control") == null) {
             // set cache control headers based on page cache

@@ -3,6 +3,7 @@ package com.dotcms.filters;
 import com.dotcms.security.ContentSecurityPolicyUtil;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import java.io.IOException;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -12,6 +13,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.catalina.filters.HttpHeaderSecurityFilter;
+import org.apache.tomcat.util.http.parser.HttpParser;
 
 /**
  * Tomcat's {@link HttpHeaderSecurityFilter} with the HSTS ({@code Strict-Transport-Security})
@@ -41,6 +43,32 @@ public class DotHttpHeaderSecurityFilter extends HttpHeaderSecurityFilter {
 
     /** One year, in seconds. */
     public static final int DEFAULT_HSTS_MAX_AGE_SECONDS = 31536000;
+
+    private static final String CDN_TAG_HEADER_PROPERTY = "cdn.tag.header";
+    private static final String DEFAULT_CDN_TAG_HEADER = "cdn-tag";
+    private static final String CDN_TAG_DISABLED = "NONE";
+
+    /**
+     * Tags a delivered page or file with its stable identifier, not its version inode.
+     * Delivery calls this after access checks, once the identifier is known.
+     * Use {@value #CDN_TAG_DISABLED} to suppress the header. A blank or invalid name falls back
+     * to {@value #DEFAULT_CDN_TAG_HEADER}.
+     *
+     * @param response the response serving the resource
+     * @param identifier the resource identifier, or null for a file without one
+     */
+    public static void setCdnTag(final HttpServletResponse response, final String identifier) {
+        if (!UtilMethods.isSet(identifier)) {
+            return;
+        }
+
+        final String header = Config.getStringProperty(CDN_TAG_HEADER_PROPERTY, DEFAULT_CDN_TAG_HEADER);
+        if (CDN_TAG_DISABLED.equalsIgnoreCase(header)) {
+            return;
+        }
+
+        response.setHeader(HttpParser.isToken(header) ? header : DEFAULT_CDN_TAG_HEADER, identifier);
+    }
 
     /**
      * Applies the configured HSTS {@code max-age} and then lets Tomcat apply the init-params

@@ -5,6 +5,7 @@ import static com.dotmarketing.image.focalpoint.FocalPointAPIImpl.TMP;
 import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
 import static com.liferay.util.HttpHeaders.EXPIRES;
 
+import com.dotcms.filters.DotHttpHeaderSecurityFilter;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.storage.FileMetadataAPI;
@@ -250,6 +251,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			final PageMode mode = PageMode.get(req);
 
 			String downloadName = "file_asset";
+			String servedIdentifier = null;
 			final long lang = WebAPILocator.getLanguageWebAPI().getLanguage(req).getId();
 
 			if (isContent){
@@ -380,6 +382,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					return;
 				}
 
+				servedIdentifier = content.getIdentifier();
 			}
 
 			// if this is file uploaded by the tempResource
@@ -479,6 +482,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				mimeType = "application/octet-stream";
 			}
 
+			DotHttpHeaderSecurityFilter.setCdnTag(resp, servedIdentifier);
 			resp.setHeader("Content-Disposition", "inline; filename=\"" + UtilMethods.encodeURL(downloadName) + "\"" );
 			resp.setHeader("Content-Length", String.valueOf(_fileLength));
 
