@@ -4,13 +4,15 @@ import { makeTools } from './tools';
 
 import type {
     AssertionResult,
+    CleanupScript,
     CleanupStep,
     CostModelAssumptions,
     CustomAssertion,
     HttpGetAssertion,
     RunResult,
     RunTaskOptions,
-    TaskResult
+    TaskResult,
+    TaskVars
 } from './types';
 
 // ── Pricing (claude-sonnet-4-5, $/MTok) ──────────────────────────────────────
@@ -28,14 +30,98 @@ function estimateCost(inputTokens: number, outputTokens: number): number {
     );
 }
 
+// ── Task scripts and {{vars}} ─────────────────────────────────────────────────
+
+/** Replaces `{{name}}` with the run's value. An unknown name is left as written. */
+export function interpolate(text: string, vars: TaskVars): string {
+    return text.replace(/\{\{\s*([A-Za-z0-9_]+)\s*\}\}/g, (match, name: string) =>
+        name in vars ? vars[name] : match
+    );
+}
+
+interface ScriptGlobals {
+    trace?: RunResult;
+    url: string;
+    token: string;
+    vars: TaskVars;
+    run: number;
+}
+
+/** Runs a task's inline JavaScript (setup, custom assertion, cleanup script) with a deadline. */
+async function runScript(
+    script: string,
+    globals: ScriptGlobals,
+    timeoutMs: number
+): Promise<unknown> {
+    const fn = new Function(
+        'trace',
+        'url',
+        'token',
+        'fetch',
+        'vars',
+        'run',
+        `return (async () => { ${script} })()`
+    );
+
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_, reject) => {
+        timer = setTimeout(
+            () => reject(new Error(`Script timed out after ${timeoutMs / 1000}s`)),
+            timeoutMs
+        );
+    });
+
+    try {
+        return await Promise.race([
+            fn(
+                globals.trace,
+                globals.url,
+                globals.token,
+                globalThis.fetch,
+                globals.vars,
+                globals.run
+            ) as Promise<unknown>,
+            timeout
+        ]);
+    } finally {
+        clearTimeout(timer);
+    }
+}
+
+const SETUP_TIMEOUT_MS = 60_000;
+const CLEANUP_SCRIPT_TIMEOUT_MS = 60_000;
+
+/** Runs the task's `setup` and returns its values as strings. Throws when setup fails. */
+async function runSetup(
+    script: string,
+    run: number,
+    dotcmsUrl: string,
+    authToken: string
+): Promise<TaskVars> {
+    const result = await runScript(
+        script,
+        { url: dotcmsUrl, token: authToken, vars: {}, run },
+        SETUP_TIMEOUT_MS
+    );
+    if (result === undefined || result === null) return {};
+    if (typeof result !== 'object' || Array.isArray(result)) {
+        throw new Error('setup must return an object of values (or nothing)');
+    }
+    return Object.fromEntries(
+        Object.entries(result as Record<string, unknown>).map(([k, v]) => [k, String(v)])
+    );
+}
+
 // ── HTTP GET assertion ────────────────────────────────────────────────────────
 
 async function runHttpGetAssertion(
     assertion: HttpGetAssertion,
+    vars: TaskVars,
     dotcmsUrl: string,
     authToken: string
 ): Promise<AssertionResult> {
-    const url = new URL(assertion.path, dotcmsUrl).toString();
+    const path = interpolate(assertion.path, vars);
+    const url = new URL(path, dotcmsUrl).toString();
     const expected = assertion.expect === 'ok' ? 200 : assertion.expect;
     let status: number | undefined;
     let responseBody: unknown;
@@ -56,16 +142,16 @@ async function runHttpGetAssertion(
         return {
             passed,
             type: 'http_get',
-            description: `GET ${assertion.path} → expect ${assertion.expect}`,
-            details: { path: assertion.path, status, response_body: responseBody, expected }
+            description: `GET ${path} → expect ${assertion.expect}`,
+            details: { path, status, response_body: responseBody, expected }
         };
     } catch (err) {
         return {
             passed: false,
             type: 'http_get',
-            description: `GET ${assertion.path} → expect ${assertion.expect}`,
+            description: `GET ${path} → expect ${assertion.expect}`,
             details: {
-                path: assertion.path,
+                path,
                 status,
                 response_body: responseBody,
                 expected,
@@ -78,6 +164,9 @@ async function runHttpGetAssertion(
 // ── Custom assertion ──────────────────────────────────────────────────────────
 
 const CUSTOM_TIMEOUT_MS = 10_000;
+const MAX_CUSTOM_TIMEOUT_MS = 120_000;
+
+const DEFAULT_MAX_STEPS = 10;
 
 async function runCustomAssertion(
     assertion: CustomAssertion,
@@ -85,25 +174,12 @@ async function runCustomAssertion(
     dotcmsUrl: string,
     authToken: string
 ): Promise<AssertionResult> {
-    const ctx = { trace: run, url: dotcmsUrl, token: authToken };
-
     try {
-        const fn = new Function(
-            'trace',
-            'url',
-            'token',
-            'fetch',
-            `return (async () => { ${assertion.script} })()`
+        const result = await runScript(
+            assertion.script,
+            { trace: run, url: dotcmsUrl, token: authToken, vars: run.vars, run: run.run_index },
+            Math.min(assertion.timeout_ms ?? CUSTOM_TIMEOUT_MS, MAX_CUSTOM_TIMEOUT_MS)
         );
-
-        const timeout = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('Assertion timed out after 10s')), CUSTOM_TIMEOUT_MS)
-        );
-
-        const result = await Promise.race([
-            fn(ctx.trace, ctx.url, ctx.token, globalThis.fetch) as Promise<unknown>,
-            timeout
-        ]);
 
         return {
             passed: !!result,
@@ -124,12 +200,30 @@ async function runCustomAssertion(
 // ── Cleanup ───────────────────────────────────────────────────────────────────
 
 async function runCleanup(
-    steps: CleanupStep[],
+    steps: (CleanupStep | CleanupScript)[],
+    vars: TaskVars,
+    run: number,
     dotcmsUrl: string,
     authToken: string
 ): Promise<void> {
     for (const step of steps) {
-        const url = new URL(step.path, dotcmsUrl).toString();
+        if ('script' in step) {
+            try {
+                await runScript(
+                    step.script,
+                    { url: dotcmsUrl, token: authToken, vars, run },
+                    CLEANUP_SCRIPT_TIMEOUT_MS
+                );
+            } catch (err) {
+                console.warn(
+                    `  [cleanup] script → error: ${err instanceof Error ? err.message : String(err)} (ignored)`
+                );
+            }
+            continue;
+        }
+
+        const path = interpolate(step.path, vars);
+        const url = new URL(path, dotcmsUrl).toString();
         try {
             const response = await fetch(url, {
                 method: step.method.toUpperCase(),
@@ -141,13 +235,11 @@ async function runCleanup(
                 ...(step.body ? { body: JSON.stringify(step.body) } : {})
             });
             if (!response.ok) {
-                console.warn(
-                    `  [cleanup] ${step.method} ${step.path} → ${response.status} (ignored)`
-                );
+                console.warn(`  [cleanup] ${step.method} ${path} → ${response.status} (ignored)`);
             }
         } catch (err) {
             console.warn(
-                `  [cleanup] ${step.method} ${step.path} → error: ${err instanceof Error ? err.message : String(err)} (ignored)`
+                `  [cleanup] ${step.method} ${path} → error: ${err instanceof Error ? err.message : String(err)} (ignored)`
             );
         }
     }
@@ -158,7 +250,9 @@ async function runCleanup(
 async function executeRun(index: number, options: RunTaskOptions): Promise<RunResult> {
     const { task, model, dotcmsUrl, authToken } = options;
     const start = Date.now();
+    const cleanupSteps = task.cleanup ?? [];
 
+    let vars: TaskVars = {};
     let partialRun: Omit<RunResult, 'assertions' | 'passed'> = {
         run_index: index,
         steps: [],
@@ -166,17 +260,39 @@ async function executeRun(index: number, options: RunTaskOptions): Promise<RunRe
         finish_reason: 'error',
         input_tokens: 0,
         output_tokens: 0,
-        duration_ms: 0
+        duration_ms: 0,
+        vars
     };
+
+    const failed = async (stage: string, err: unknown): Promise<RunResult> => {
+        const run: RunResult = {
+            ...partialRun,
+            duration_ms: Date.now() - start,
+            assertions: [],
+            passed: false,
+            error: `${stage}: ${err instanceof Error ? err.message : String(err)}`
+        };
+        await runCleanup(cleanupSteps, vars, index, dotcmsUrl, authToken);
+        return run;
+    };
+
+    if (task.setup) {
+        try {
+            vars = await runSetup(task.setup, index, dotcmsUrl, authToken);
+            partialRun = { ...partialRun, vars };
+        } catch (err) {
+            return failed('setup', err);
+        }
+    }
 
     try {
         const tools = makeTools(dotcmsUrl, authToken);
         // nosemgrep: detect-vercelai -- internal LLM eval harness (ai-evals), not shipped runtime code; Vercel AI SDK usage is intentional
         const { text, steps, finishReason, usage } = await generateText({
             model,
-            prompt: task.prompt,
+            prompt: interpolate(task.prompt, vars),
             tools,
-            stopWhen: stepCountIs(10)
+            stopWhen: stepCountIs(task.max_steps ?? DEFAULT_MAX_STEPS)
         });
 
         partialRun = {
@@ -186,25 +302,18 @@ async function executeRun(index: number, options: RunTaskOptions): Promise<RunRe
             finish_reason: finishReason,
             input_tokens: usage.inputTokens ?? 0,
             output_tokens: usage.outputTokens ?? 0,
-            duration_ms: Date.now() - start
+            duration_ms: Date.now() - start,
+            vars
         };
     } catch (err) {
-        const run: RunResult = {
-            ...partialRun,
-            duration_ms: Date.now() - start,
-            assertions: [],
-            passed: false,
-            error: err instanceof Error ? err.message : String(err)
-        };
-        await runCleanup(task.cleanup ?? [], dotcmsUrl, authToken);
-        return run;
+        return failed('model', err);
     }
 
     // Run assertions
     const assertions: AssertionResult[] = [];
     for (const assertion of task.assertions) {
         if (assertion.type === 'http_get') {
-            assertions.push(await runHttpGetAssertion(assertion, dotcmsUrl, authToken));
+            assertions.push(await runHttpGetAssertion(assertion, vars, dotcmsUrl, authToken));
         } else if (assertion.type === 'custom') {
             assertions.push(
                 await runCustomAssertion(
@@ -218,7 +327,7 @@ async function executeRun(index: number, options: RunTaskOptions): Promise<RunRe
     }
 
     // Best-effort cleanup
-    await runCleanup(task.cleanup ?? [], dotcmsUrl, authToken);
+    await runCleanup(cleanupSteps, vars, index, dotcmsUrl, authToken);
 
     const passed = assertions.every((a) => a.passed);
     return { ...partialRun, assertions, passed };
