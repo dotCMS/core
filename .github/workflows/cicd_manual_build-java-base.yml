@@ -4,6 +4,7 @@ on:
   # Trusted base-branch code handles publication; PR content is read only as data.
   pull_request_target:
     branches: [main, master]
+    paths: ['.sdkmanrc']
     types: [opened, synchronize, reopened]
   workflow_dispatch:
     inputs:

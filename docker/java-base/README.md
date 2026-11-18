@@ -6,6 +6,8 @@ This Dockerfile builds the base container woth java that will be used to build a
 
 The default JDK is Corretto `25.0.5.1.2-amzn`. The **Build SDKMan Base Java Image**
 workflow also handles PR changes to `.sdkmanrc`, using trusted base-branch code.
+Unchanged `.sdkmanrc` skips the workflow entirely: no runner or API calls.
+For those PRs, the CI build only checks its local Git diff; no registry inspection.
 It reuses an image containing Linux amd64 and arm64, or publishes both architectures
 if either is missing. Registry errors fail instead of being treated as missing images.
 
