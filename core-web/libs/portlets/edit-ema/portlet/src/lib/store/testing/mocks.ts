@@ -21,6 +21,7 @@ export const BASE_UVE_STATE: UVEState = {
     workflowLockIsLoading: false,
     editorDragItem: null,
     editorBounds: [],
+    editorScrollY: 0,
     editorState: EDITOR_STATE.IDLE,
     editorContentArea: null,
     editorSelected: null,

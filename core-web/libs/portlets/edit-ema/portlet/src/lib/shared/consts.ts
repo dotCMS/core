@@ -33,6 +33,22 @@ export const VIEW_CONTENT_CALLBACK_FUNCTION = 'angularWorkflowEventCallback';
 
 export const IFRAME_SCROLL_ZONE = 100;
 
+/**
+ * The page's scroll speed during a drag, in px per 60fps frame, by how deep the pointer is in the
+ * edge zone: `MIN` just inside the zone, rising on a quadratic ease to `MAX` at the edge. `MAX`
+ * matches the cap `@dotcms/uve` applies to the velocity it receives.
+ */
+export const IFRAME_SCROLL_VELOCITY = {
+    MIN: 2,
+    MAX: 40
+} as const;
+
+/**
+ * The least time (ms) between two one-step scroll requests sent for pages on an older
+ * `@dotcms/uve`, which scroll 120px smoothly on each and ignore the velocity.
+ */
+export const IFRAME_LEGACY_SCROLL_THROTTLE_MS = 250;
+
 export const CONTENTLET_CONTROLS_DRAG_ORIGIN = 'contentlet-controls';
 
 /**

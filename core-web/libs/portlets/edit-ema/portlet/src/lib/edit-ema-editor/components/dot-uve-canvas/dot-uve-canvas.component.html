@@ -51,6 +51,7 @@
                 }
                 @if (!$showLockOverlay() && dropzone) {
                     <dot-ema-page-dropzone
+                        (dropTargetChange)="onDropTargetChange($event)"
                         [containers]="dropzone.bounds"
                         [dragItem]="dropzone.dragItem"
                         [zoomLevel]="uveStore.$viewZoomFactor()"
