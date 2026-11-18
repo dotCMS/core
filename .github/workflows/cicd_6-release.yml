@@ -91,6 +91,7 @@ jobs:
   verify-branch:
     name: Verify Branch
     outputs:
+      already_shipped: ${{ steps.sdk-policy.outputs.already_shipped }}
       sdk_bump: ${{ steps.sdk-policy.outputs.bump }}
       previous_standard_tag: ${{ steps.sdk-policy.outputs.previous_tag }}
       release_commit: ${{ steps.sdk-policy.outputs.release_commit }}
@@ -170,12 +171,6 @@ jobs:
             exit 1
           fi
 
-          newest=$(printf '%s\n' "${PREV_TAG}" "${THIS_TAG}" | sort -V | tail -1)
-          if [[ "${newest}" != "${THIS_TAG}" || "${PREV_TAG}" == "${THIS_TAG}" ]]; then
-            echo "::error::${THIS_TAG} must be newer than the last deployed version ${PREV_TAG}."
-            exit 1
-          fi
-
           # Release preparation adds one synthetic commit. Compare its source
           # parent to the exact commit we will build, not to the moving main tip.
           PREV_COMMIT=$(gh api "repos/${REPO}/commits/${PREV_TAG}" --jq '.parents[0].sha')
@@ -185,8 +180,19 @@ jobs:
           fi
           RANGE="repos/${REPO}/compare/${PREV_COMMIT}...${RELEASE_COMMIT}"
           STATUS=$(gh api "${RANGE}?per_page=1" --jq '.status')
+          if [[ "${SDK_BUMP_MODE}" == "auto" && ( "${STATUS}" == "behind" || "${STATUS}" == "identical" ) ]]; then
+            echo "already_shipped=true" >> "${GITHUB_OUTPUT}"
+            echo "The approved commit is already in ${PREV_TAG}; no release needed." >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
           if [[ "${STATUS}" != "ahead" && "${STATUS}" != "identical" ]]; then
             echo "::error::The selected commit does not include the last deployed release ${PREV_TAG}."
+            exit 1
+          fi
+
+          newest=$(printf '%s\n' "${PREV_TAG}" "${THIS_TAG}" | sort -V | tail -1)
+          if [[ "${newest}" != "${THIS_TAG}" || "${PREV_TAG}" == "${THIS_TAG}" ]]; then
+            echo "::error::${THIS_TAG} must be newer than the last deployed version ${PREV_TAG}."
             exit 1
           fi
           echo "previous_tag=${PREV_TAG}" >> "${GITHUB_OUTPUT}"
@@ -258,6 +264,7 @@ jobs:
   initialize:
     name: Initialize
     needs: [ verify-branch ]
+    if: needs.verify-branch.outputs.already_shipped != 'true'
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
     # Release builds everything - no change detection needed
     with:
@@ -267,12 +274,14 @@ jobs:
   release-prepare:
     name: Release Prepare
     needs: [ verify-branch, initialize ]
+    if: needs.verify-branch.outputs.already_shipped != 'true'
     uses: ./.github/workflows/cicd_comp_release-prepare-phase.yml
     with:
       release_version: ${{ github.event.inputs.release_version }}
       release_commit: ${{ needs.verify-branch.outputs.release_commit }}
       bump_min_sdk_version: ${{ needs.verify-branch.outputs.sdk_bump == 'true' }}
       previous_standard_tag: ${{ needs.verify-branch.outputs.previous_standard_tag }}
+      sdk_bump_mode: ${{ inputs.sdk_bump_mode }}
     secrets:
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
       CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
@@ -281,7 +290,7 @@ jobs:
   build:
     name: Build
     needs: [ release-prepare, initialize ]
-    if: always() && !failure() && !cancelled()
+    if: always() && !failure() && !cancelled() && needs.release-prepare.result == 'success'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
     with:
       core-build: true
@@ -309,7 +318,7 @@ jobs:
   deployment:
     name: Deployment
     needs: [ release-prepare, initialize, build ]
-    if: always() && !failure() && !cancelled()
+    if: always() && !failure() && !cancelled() && needs.release-prepare.result == 'success'
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
       environment: 'release'
@@ -555,7 +564,7 @@ jobs:
   release:
     name: Release
     needs: [ release-prepare, initialize, build, deployment ]
-    if: always() && !failure() && !cancelled()
+    if: always() && !failure() && !cancelled() && needs.release-prepare.result == 'success'
     uses: ./.github/workflows/cicd_comp_release-phase.yml
     with:
       release_version: ${{ needs.release-prepare.outputs.release_version }}
@@ -640,8 +649,8 @@ jobs:
   # Finalize - standard finalization phase (required for phase pattern)
   finalize:
     name: Finalize
-    if: always()
-    needs: [ initialize, build, deployment, release, bump-min-sdk-version ]
+    if: always() && needs.verify-branch.outputs.already_shipped != 'true'
+    needs: [ verify-branch, initialize, build, deployment, release, bump-min-sdk-version ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ github.run_id }}
@@ -651,8 +660,8 @@ jobs:
   report:
     name: Report
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    needs: [ release-prepare, deployment, release, finalize ]
-    if: always()
+    needs: [ verify-branch, release-prepare, deployment, release, finalize ]
+    if: always() && needs.verify-branch.outputs.already_shipped != 'true'
     steps:
       - name: Checkout core
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

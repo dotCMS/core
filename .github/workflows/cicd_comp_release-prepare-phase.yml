@@ -30,6 +30,10 @@ on:
         required: false
         type: string
         default: ''
+      sdk_bump_mode:
+        description: 'Whether a pinned release may inherit the shipped SDK floor'
+        type: string
+        default: manual
       previous_standard_tag:
         description: 'Last successfully deployed standard release tag'
         type: string
@@ -227,7 +231,9 @@ jobs:
           TARGET_COMMIT: ${{ steps.set-version.outputs.release_commit }}
           TARGET_VERSION: ${{ steps.set-version.outputs.release_version }}
           PREVIOUS_STANDARD_TAG: ${{ inputs.previous_standard_tag }}
+          SDK_BUMP_MODE: ${{ inputs.sdk_bump_mode }}
           BUMP_MIN_SDK: ${{ inputs.bump_min_sdk_version }}
+          IS_LTS: ${{ steps.set-version.outputs.is_lts }}
         run: |
           set -eo pipefail
           release_commit="${TARGET_COMMIT}"
@@ -243,19 +249,31 @@ jobs:
           release_branch="release-${release_version}"
 
           MIN_SDK_FILE="dotCMS/src/main/java/com/dotcms/rest/config/MinSdkVersion.java"
+          target_floor=""
+          if [[ "${BUMP_MIN_SDK}" == "true" && "${IS_LTS}" != "true" ]]; then
+            target_floor="${release_version}"
+          fi
           if [[ -n "${PREVIOUS_STANDARD_TAG}" ]]; then
             git fetch --no-tags --depth=1 origin "refs/tags/${PREVIOUS_STANDARD_TAG}"
             previous_floor=$(git show "FETCH_HEAD:${MIN_SDK_FILE}" | grep -oP '(?<=VALUE = ")[^"]+')
-            if [[ "${BUMP_MIN_SDK}" == "true" ]]; then
-              next_floor="${release_version}"
-            else
+            next_floor="${target_floor}"
+            if [[ -z "${next_floor}" ]]; then
               next_floor=$(grep -oP '(?<=VALUE = ")[^"]+' "${MIN_SDK_FILE}")
             fi
             lowest_floor=$(printf '%s\n' "${previous_floor}" "${next_floor}" | sort -V | head -1)
             if [[ "${lowest_floor}" != "${previous_floor}" ]]; then
-              echo "::error::Refusing to lower the SDK compatibility floor from ${previous_floor} to ${next_floor}. Merge the previous SDK floor bump before releasing."
-              exit 1
+              if [[ "${SDK_BUMP_MODE}" != "auto" || -n "${target_floor}" ]]; then
+                echo "::error::Refusing to lower SDK floor ${previous_floor} to ${next_floor}. Merge the previous SDK floor bump before releasing."
+                exit 1
+              fi
+              # A pinned snapshot cannot pick up a later floor-bump PR on main.
+              target_floor="${previous_floor}"
             fi
+          fi
+
+          if [[ -n "${target_floor}" && ! "${target_floor}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+)?$ ]]; then
+            echo "::error::Invalid SDK floor: ${target_floor}"
+            exit 1
           fi
 
           remote=$(git ls-remote --heads https://github.com/dotCMS/core.git "${release_branch}" | wc -l | tr -d '[:space:]')
@@ -287,22 +305,21 @@ jobs:
           # moment IT ships, not starting with some future release. This only ever lives on
           # this disposable release branch (never merged to main), so a downstream
           # build/deployment failure still can't leave main advertising a floor for a
-          # version that never actually shipped. Persisting the bump forward to main, so
-          # future releases inherit it, is still handled separately by the post-success
-          # bump-min-sdk-version job in cicd_6-release.yml.
-          if [[ "${BUMP_MIN_SDK}" == "true" && "${{ steps.set-version.outputs.is_lts }}" != "true" ]]; then
-            sed -i "s/VALUE = \"[^\"]*\"/VALUE = \"${release_version}\"/" "${MIN_SDK_FILE}"
+          # version that never actually shipped. Pinned auto-releases can also
+          # inherit the already-shipped floor; only a new bump needs a PR to main.
+          if [[ -n "${target_floor}" ]]; then
+            sed -i "s/VALUE = \"[^\"]*\"/VALUE = \"${target_floor}\"/" "${MIN_SDK_FILE}"
 
             # Verify the substitution actually landed, same guard as the post-release bump
             # job — if the VALUE = "..." literal is ever reformatted, fail loudly instead of
             # silently shipping a release that doesn't actually advertise the new floor.
             NEW_MIN_SDK_VALUE=$(grep -oP '(?<=VALUE = ")[^"]+' "${MIN_SDK_FILE}")
-            if [ "${NEW_MIN_SDK_VALUE}" != "${release_version}" ]; then
-              echo "::error::Failed to bump MinSdkVersion.VALUE on the release branch — expected '${release_version}' but found '${NEW_MIN_SDK_VALUE}'. The VALUE = \"...\" literal in ${MIN_SDK_FILE} may have been reformatted."
+            if [ "${NEW_MIN_SDK_VALUE}" != "${target_floor}" ]; then
+              echo "::error::Expected SDK floor ${target_floor}, got ${NEW_MIN_SDK_VALUE}."
               exit 1
             fi
 
-            echo "MinSdkVersion.VALUE bumped to ${release_version} on the release branch"
+            echo "MinSdkVersion.VALUE set to ${target_floor} on the release branch"
             git add "${MIN_SDK_FILE}"
           fi
 
