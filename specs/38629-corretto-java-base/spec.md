@@ -4,13 +4,13 @@
 
 **Created**: 2026-11-18
 
-**Status**: Draft — awaiting approval before implementation
+**Status**: Implementation — expedited security-incident response
 
 **Type**: New Feature
 
 **Issue**: [Adopt Corretto Java 25 and prepare missing Java-base images (#38629)](https://github.com/dotCMS/core/issues/38629)
 
-**Input**: Update dotCMS to the latest Corretto Java 25. When a PR changes `.sdkmanrc`, check for the corresponding Java-base image and build/push it if needed before building the test image. Create the issue/spec first. Do not add tests; the existing CI suite validates the result.
+**Input**: Update dotCMS to the latest Corretto Java 25. When a PR changes `.sdkmanrc`, check for the corresponding Java-base image and build/push it if needed before building the test image. The developer identified a security incident and requested immediate implementation in the same PR, without a separate spec-approval gate. Do not add tests; the existing CI suite validates the result.
 
 ## User Scenarios & Testing
 
@@ -130,7 +130,7 @@ required architectures.
   compatibility is validated by the existing suite; it is not assumed from the major version.
 - **Known related decisions**: The previous Java update is tracked in #38572.
   Immutable base references and lifecycle management remain separate work (#34782).
-  Relevant architectural decisions must be consulted during planning, after approval.
+  Existing SDKMAN selection and registry-secret boundaries remain unchanged.
 
 ## Assumptions
 
@@ -148,5 +148,6 @@ required architectures.
 - Scheduled SDKMAN upgrades, scheduled base rebuilds, digest pinning, base-content
   rebuilds unrelated to `.sdkmanrc`, Java-version override redesign, and unrelated
   Docker/security changes are out of scope.
-- This PR contains only the specification. Implementation waits for its approval;
-  first-rollout readiness must be established before relying on the new automation.
+- For this security incident, specification and implementation ship in one PR at
+  the developer's explicit request. Bootstrap the first Corretto base using the
+  existing trusted manual workflow; automatic PR preparation starts after merge.
