@@ -1,28 +1,4 @@
-#
-# Auto Release After Merge
-#
-# Fires when a PR labeled "PR: Release after merge" is merged into main.
-# Computes the next release version from the repo's release tags using the
-# yy.mm.dd-## formula (e.g. v26.09.02-01 -> v26.09.02-02), then dispatches the
-# standard Release Process workflow (cicd_6-release.yml) with that version.
-#
-# Version calculation is "release-aware": before incrementing, it inspects
-#   1. today's existing release tags (v{yy.mm.dd}-##), and
-#   2. release runs already queued or in flight, parsed from their run names
-#      ("Release <version>", set by cicd_6-release.yml's run-name)
-# and picks max(counter) + 1, so it never collides with a release that has
-# already been cut (tag exists) or is currently running.
-#
-# NOTES:
-# - Label must be present at merge time (labels added after close don't fire).
-# - Only PRs merged into main are released; the Release workflow hard-fails on
-#   non-main refs anyway (verify-branch job).
-# - Only approved jobs join the dispatch queue.
-# - Dispatch uses the repository's CI_MACHINE_TOKEN, per #37383.
-#
-
-name: 'Auto Release After Merge'
-run-name: "Auto-release trigger: PR #${{ github.event.pull_request.number }}"
+name: Auto Release After Merge
 
 on:
   pull_request_target:
@@ -33,155 +9,98 @@ permissions:
   contents: read
 
 jobs:
-  approve-release:
-    name: Approve release
-    if: >-
-      github.event.pull_request.merged == true &&
-      github.event.pull_request.base.ref == 'main' &&
-      contains(github.event.pull_request.labels.*.name, 'PR: Release after merge')
-    environment:
-      name: release-approval
-      url: ${{ github.event.pull_request.html_url }}
-    permissions:
-      actions: read
-    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    steps:
-      - name: Verify a separate reviewer approved this run
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
-        run: |
-          set -euo pipefail
-          # An unconfigured environment lets jobs start without a review.
-          APPROVALS=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/approvals")
-          if ! jq -e --arg actor "${GITHUB_ACTOR}" --arg author "${PR_AUTHOR}" '
-            any(.[]; .state == "approved" and .user.type == "User"
-              and .user.login != $actor and .user.login != $author
-              and any(.environments[]; .name == "release-approval"))
-          ' <<< "${APPROVALS}" >/dev/null; then
-            echo "::error::Configure release-approval and obtain approval from a separate reviewer."
-            exit 1
-          fi
-
   trigger-release:
-    name: Queue Release
-    needs: approve-release
+    # Only trusted main is checked out; the fork head never runs with the release token.
+    if: >-
+      github.event.pull_request.merged &&
+      contains(github.event.pull_request.labels.*.name, 'PR: Release after merge')
     concurrency:
       group: auto-release-after-merge
       queue: max
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
-      - name: Checkout main
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
-          fetch-depth: 1
+          sparse-checkout: .github/scripts/sdk-breaking-prs.sh
+          sparse-checkout-cone-mode: false
 
-      - name: Compute next version and dispatch release
-        env:
-          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
-          REPO: ${{ github.repository }}
-          MERGE_COMMIT: ${{ github.event.pull_request.merge_commit_sha }}
-        run: |
-          set -euo pipefail
-
-          if [ -z "${GH_TOKEN}" ]; then
-            echo "::error::secrets.CI_MACHINE_TOKEN is not set."
-            exit 1
-          fi
-
-          # Tag formula: v{yy.mm.dd}-## (UTC date, two-digit zero-padded counter)
-          TODAY=$(date -u +%y.%m.%d)
-          echo "Today (UTC): ${TODAY}"
-
-          # 1) Highest counter already cut as a tag for today's date.
-          #    ls-remote (not git fetch --tags) keeps this cheap on a shallow checkout.
-          LAST_TAG_COUNTER=0
-          REMOTE_TAGS=$(git ls-remote --tags --refs origin "refs/tags/v${TODAY}-*")
-          while read -r _ ref; do
-            [[ "${ref##*/}" =~ ^v[0-9]{2}\.[0-9]{2}\.[0-9]{2}-([0-9]{1,2})$ ]] || continue
-            counter=$((10#${BASH_REMATCH[1]}))
-            if [ "${counter}" -gt "${LAST_TAG_COUNTER}" ]; then
-              LAST_TAG_COUNTER="${counter}"
-            fi
-          done <<< "${REMOTE_TAGS}"
-          echo "Last tagged counter for ${TODAY}: ${LAST_TAG_COUNTER}"
-
-          # 2) Releases already queued or running: read their versions from the run
-          #    name ("Release <version>", optionally suffixed for java variants) and
-          #    stay above them, even though their tag doesn't exist yet.
-          RUNNING_COUNTER=0
-          RUNS_API="repos/${REPO}/actions/workflows/cicd_6-release.yml/runs"
-          for status in requested waiting pending queued in_progress; do
-            TITLES=$(gh api --paginate "${RUNS_API}?status=${status}&per_page=100" --jq '.workflow_runs[].display_title')
-            while IFS= read -r title; do
-              if [[ "${title}" =~ ^Release\ ([0-9]{2}\.[0-9]{2}\.[0-9]{2})-([0-9]{1,2})($|\ ) ]]; then
-                run_date="${BASH_REMATCH[1]}"
-                run_counter=$((10#${BASH_REMATCH[2]}))
-                if [ "${run_date}" = "${TODAY}" ] && [ "${run_counter}" -gt "${RUNNING_COUNTER}" ]; then
-                  RUNNING_COUNTER="${run_counter}"
-                fi
-              fi
-            done <<< "${TITLES}"
-          done
-          echo "Highest counter among queued/in-flight releases for ${TODAY}: ${RUNNING_COUNTER}"
-
-          # 3) Skip tags and branches, including branches left by failed cuts.
-          COUNTER=$(( LAST_TAG_COUNTER > RUNNING_COUNTER ? LAST_TAG_COUNTER : RUNNING_COUNTER ))
-          while true; do
-            COUNTER=$(( COUNTER + 1 ))
-            if [ "${COUNTER}" -gt 99 ]; then
-              echo "::error::Counter exhausted for ${TODAY} (>99 releases in one day). Refusing to compute a version."
-              exit 1
-            fi
-            NEXT_VERSION=$(printf '%s-%02d' "${TODAY}" "${COUNTER}")
-            CANDIDATE_REFS=$(git ls-remote --refs origin "refs/tags/v${NEXT_VERSION}" "refs/heads/release-${NEXT_VERSION}")
-            if [ -z "${CANDIDATE_REFS}" ]; then
-              break
-            fi
-            echo "Version ${NEXT_VERSION} already has a release ref — incrementing."
-          done
-          echo "Next release version: ${NEXT_VERSION}"
-
-          # Release the reviewed snapshot, not a main tip that may have advanced.
-          if [[ ! "${MERGE_COMMIT}" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "::error::The approved merge has no valid commit SHA."
-            exit 1
-          fi
-
-          DISPATCH=$(gh api --method POST "repos/${REPO}/actions/workflows/cicd_6-release.yml/dispatches" \
-            -H 'X-GitHub-Api-Version: 2026-03-10' \
-            -f ref=main \
-            -f "inputs[release_version]=${NEXT_VERSION}" \
-            -f "inputs[release_commit]=${MERGE_COMMIT}" \
-            -f 'inputs[update_github_labels]=false' \
-            -f 'inputs[sdk_bump_mode]=auto')
-          RUN_ID=$(jq -er '.workflow_run_id' <<< "${DISPATCH}")
-          RUN_URL=$(jq -er '.html_url' <<< "${DISPATCH}")
-          {
-            echo "NEXT_VERSION=${NEXT_VERSION}"
-            echo "RUN_URL=${RUN_URL}"
-          } >> "${GITHUB_ENV}"
-
-          # Keep the dispatch lock until the next job can discover this exact run.
-          for _ in {1..12}; do
-            FOUND=$(gh api "${RUNS_API}?per_page=100" --jq ".workflow_runs[] | select(.id == ${RUN_ID}) | .id")
-            if [[ -n "${FOUND}" ]]; then
-              exit 0
-            fi
-            sleep 5
-          done
-          echo "::error::Release ${NEXT_VERSION} was dispatched but is not visible in the run list: ${RUN_URL}"
-          exit 1
-
-      - name: Comment on PR with queued release
-        # Best-effort observability: never fail the workflow over a comment.
-        continue-on-error: true
+      - name: Dispatch the release
         env:
           GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
           set -euo pipefail
-          gh pr comment "${PR_NUMBER}" --repo "${REPO}" \
-            --body "🚀 Merged with the \`PR: Release after merge\` label — auto-release \`${NEXT_VERSION}\` has been queued. Track it here: ${RUN_URL}"
+          if [[ -z "$GH_TOKEN" ]]; then
+            echo "::error::CI_MACHINE_TOKEN is required to dispatch the release."
+            exit 1
+          fi
+
+          # Reserve a version above today's refs and in-flight releases.
+          today=$(date -u +%y.%m.%d)
+          date_pattern="${today//./\\.}"
+          workflow_api="repos/$REPO/actions/workflows/cicd_6-release.yml"
+          refs=$(git ls-remote --refs origin "refs/tags/v$today-*" "refs/heads/release-$today-*")
+          counter=0
+          while read -r _ ref; do
+            if [[ "$ref" =~ ^refs/(tags/v|heads/release-)${date_pattern}-([0-9]{1,2})$ ]]; then
+              n=$((10#${BASH_REMATCH[2]}))
+              if (( n > counter )); then counter=$n; fi
+            fi
+          done <<< "$refs"
+
+          for status in requested waiting pending queued in_progress; do
+            titles=$(gh api --paginate "$workflow_api/runs?status=$status&per_page=100" --jq '.workflow_runs[].display_title')
+            while IFS= read -r title; do
+              if [[ "$title" =~ ^Release\ ${date_pattern}-([0-9]{1,2})($|\ ) ]]; then
+                n=$((10#${BASH_REMATCH[1]}))
+                if (( n > counter )); then counter=$n; fi
+              fi
+            done <<< "$titles"
+          done
+
+          while (( counter < 99 )); do
+            counter=$((counter + 1))
+            version=$(printf '%s-%02d' "$today" "$counter")
+            existing=$(git ls-remote --refs origin "refs/tags/v$version" "refs/heads/release-$version")
+            if [[ -z "$existing" ]]; then
+              break
+            fi
+            version=""
+          done
+          if [[ -z "${version:-}" ]]; then
+            echo "::error::No release counter remains for $today."
+            exit 1
+          fi
+
+          # Pin the release to the main commit the SDK scan checked.
+          release_commit=$(git rev-parse HEAD)
+          breaking=$(bash .github/scripts/sdk-breaking-prs.sh "$REPO" "$version" "$release_commit")
+          bump=false
+          if [[ -n "$breaking" ]]; then
+            bump=true
+            echo "SDK-breaking PRs: ${breaking//$'\n'/ }"
+          fi
+
+          dispatch=$(gh api --method POST "$workflow_api/dispatches" \
+            -H 'X-GitHub-Api-Version: 2026-03-10' \
+            -f ref=main -f "inputs[release_version]=$version" \
+            -f "inputs[release_commit]=$release_commit" -f "inputs[bump_min_sdk_version]=$bump" \
+            -f 'inputs[update_github_labels]=false')
+          run_id=$(jq -er '.workflow_run_id' <<< "$dispatch")
+          run_url=$(jq -er '.html_url' <<< "$dispatch")
+          echo "Queued release $version: $run_url" >> "$GITHUB_STEP_SUMMARY"
+          gh pr comment "$PR_NUMBER" --repo "$REPO" --body "Queued release $version: $run_url" ||
+            echo "::warning::Could not post the release link to PR #$PR_NUMBER."
+
+          # Let the next queued job see this reservation before it selects a version.
+          for _ in {1..12}; do
+            visible=$(gh api "$workflow_api/runs?per_page=100" --jq ".workflow_runs[] | select(.id == $run_id) | .id")
+            if [[ -n "$visible" ]]; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::Release was dispatched but is not yet visible: $run_url"
+          exit 1

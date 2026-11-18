@@ -18,7 +18,7 @@
 #
 
 name: '-6 Release Process'
-run-name: "Release ${{ inputs.release_version }}${{ (inputs.artifact-suffix || inputs.java-version) && format(' [{0}]', inputs.artifact-suffix || inputs.java-version) || '' }}"
+run-name: "Release ${{ inputs.release_version }}${{ inputs.java-version && format(' [{0}]', inputs.java-version) || '' }}"
 
 on:
   workflow_dispatch:
@@ -64,15 +64,6 @@ on:
         type: boolean
         default: false
         required: false
-      confirm_bootstrap:
-        description: 'Manual recovery only: confirm no standard Docker image has ever shipped.'
-        type: boolean
-        default: false
-      sdk_bump_mode:
-        description: 'Use auto to detect SDK-breaking PRs in this release. Manual uses the checkbox above.'
-        type: choice
-        options: [manual, auto]
-        default: manual
       java-version:
         description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open). Compiler release auto-defaults to Java major version.'
         type: string
@@ -84,21 +75,16 @@ on:
         required: false
         default: ''
 
-# Keep the shipped baseline stable through deployment. LTS releases are independent.
+# No concurrency control - releases should complete without interruption
 concurrency:
-  group: release-${{ contains(inputs.release_version, '_lts_') && inputs.release_version || 'standard' }}
-  queue: max
+  group: release-${{ github.event.inputs.release_version }}
+  cancel-in-progress: false
 
 jobs:
   # Enforce that releases are only ever cut from main. The workflow_dispatch
   # branch selector cannot be hidden, so we fail fast on any non-main ref.
   verify-branch:
     name: Verify Branch
-    outputs:
-      already_shipped: ${{ steps.sdk-policy.outputs.already_shipped }}
-      sdk_bump: ${{ steps.sdk-policy.outputs.bump }}
-      previous_standard_tag: ${{ steps.sdk-policy.outputs.previous_tag }}
-      release_commit: ${{ steps.sdk-policy.outputs.release_commit }}
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: Fail if not triggered from main
@@ -119,206 +105,35 @@ jobs:
             exit 1
           fi
 
-      # Closes the "forgot to check" gap for MinSdkVersion (see #36698): if a PR merged since
-      # the last standard release carries an SDK-breaking-change label but this run left
-      # bump_min_sdk_version false, fail loudly here rather than silently under-reporting the
-      # compatibility floor after the release ships. Read-only (no mutation), so it's safe to
-      # run before release-prepare even exists — deliberately plain `gh`/bash, not the
-      # release-qa-status TS tool, since we only need a label check, not QA-verdict aggregation.
-      - name: Resolve SDK compatibility for the release
-        id: sdk-policy
+      - name: Checkout SDK label scanner
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github/scripts/sdk-breaking-prs.sh
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+
+      - name: Validate bump_min_sdk_version against merged PR labels
         env:
           GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
           REPO: ${{ github.repository }}
           RELEASE_VERSION: ${{ github.event.inputs.release_version }}
+          RELEASE_COMMIT: ${{ inputs.release_commit }}
           BUMP_MIN_SDK_VERSION: ${{ github.event.inputs.bump_min_sdk_version }}
-          SDK_BUMP_MODE: ${{ inputs.sdk_bump_mode }}
-          CONFIRM_BOOTSTRAP: ${{ inputs.confirm_bootstrap }}
-          REQUESTED_COMMIT: ${{ inputs.release_commit }}
         run: |
           set -euo pipefail
-          if [[ -n "${REQUESTED_COMMIT}" && ! "${REQUESTED_COMMIT}" =~ ^[0-9a-f]{7,40}$ ]]; then
-            echo "::error::release_commit must be a Git commit SHA."
-            exit 1
-          fi
 
-          # Preserve the requirement to supply a commit for existing LTS lines.
-          if [[ ! "${RELEASE_VERSION}" =~ ^[0-9]{2}\.[0-9]{2}\.[0-9]{2}-[0-9]{1,2}$ ]]; then
-            {
-              echo "release_commit=${REQUESTED_COMMIT}"
-              echo "bump=false"
-            } >> "${GITHUB_OUTPUT}"
+          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]{2}\.[0-9]{2}\.[0-9]{2}-[0-9]{1,2}$ ]]; then
+            echo "Non-standard release $RELEASE_VERSION — skipping SDK breaking-change validation."
             exit 0
           fi
 
-          RELEASE_COMMIT="${REQUESTED_COMMIT:-${GITHUB_SHA}}"
-          echo "release_commit=${RELEASE_COMMIT}" >> "${GITHUB_OUTPUT}"
-          THIS_TAG="v${RELEASE_VERSION}"
-
-          # A release/tag is created before deployment, and later jobs can fail
-          # after deployment succeeds. Use the deployment job's actual result.
-          RUNS=$(gh api --paginate "repos/${REPO}/actions/workflows/cicd_6-release.yml/runs?branch=main&per_page=100" \
-            --jq '.workflow_runs[] | [.display_title, .id] | @tsv')
-          CANDIDATES=$(printf '%s\n' "${RUNS}" | awk '$1 == "Release" && $2 ~ /^[0-9][0-9]\.[0-9][0-9]\.[0-9][0-9]-[0-9][0-9]?$/ { print $2, $NF, (NF > 3 ? "variant" : "default") }' \
-            | sort -k1,1Vr)
-          PREV_TAG=""
-          sdk_retry_tag=""
-          docker_retry_tag=""
-          later_promotion=false
-          while read -r version run_id flavor; do
-            [[ -n "${run_id}" && "${run_id}" != "${GITHUB_RUN_ID}" && "${flavor}" == "default" ]] || continue
-            jobs=$(gh api --paginate "repos/${REPO}/actions/runs/${run_id}/jobs?filter=all&per_page=100" \
-              --jq '.jobs[] | select(.name == "Deployment / deployment" or .name == "Release / Release Artifacts" or .name == "Promote latest tag")')
-            primary_pushed=$(jq -rs 'any(.[]; .name == "Deployment / deployment" and
-              (if any(.steps[]; .name == "Primary Docker image pushed") then
-                any(.steps[]; .name == "Primary Docker image pushed" and .conclusion == "success")
-              else .conclusion == "success" end))' <<< "${jobs}")
-            [[ "${primary_pushed}" == "true" ]] || continue
-
-            tag="v${version}"
-            tag_commit=$(gh api "repos/${REPO}/commits/${tag}")
-            # Prepare appends one commit to the source. Compare the actual sources.
-            source_sha=$(jq -er '.parents[0].sha' <<< "${tag_commit}")
-            if [[ ! "${source_sha}" =~ ^[0-9a-f]{40}$ ]]; then
-              echo "::error::Could not resolve the source commit for ${tag}."
-              exit 1
-            fi
-            candidate_range="repos/${REPO}/compare/${source_sha}...${RELEASE_COMMIT}"
-            candidate_status=$(gh api "${candidate_range}?per_page=1" --jq '.status')
-            if [[ -z "${PREV_TAG}" ]]; then
-              PREV_TAG="${tag}"
-              RANGE="${candidate_range}"
-              STATUS="${candidate_status}"
-              if [[ "${SDK_BUMP_MODE}" != "auto" || ( "${STATUS}" != "behind" && "${STATUS}" != "identical" ) ]]; then
-                break
-              fi
-            fi
-
-            promoted=$(jq -rs 'any(.[]; .name == "Promote latest tag" and .conclusion == "success")' <<< "${jobs}")
-            if [[ "${promoted}" == "true" ]]; then
-              later_promotion=true
-            fi
-            [[ "${candidate_status}" == "behind" || "${candidate_status}" == "identical" ]] || continue
-            promotion_failed=$(jq -rs 'any(.[]; .name == "Promote latest tag" and
-              (.conclusion == "failure" or .conclusion == "cancelled" or .conclusion == "timed_out"))' <<< "${jobs}")
-            if [[ "${later_promotion}" != "true" && "${promotion_failed}" == "true" ]]; then
-              docker_retry_tag="${docker_retry_tag:-${tag}}"
-              continue
-            fi
-            # A partial Docker deployment can set the floor but is not a complete release.
-            fully_deployed=$(jq -rs 'any(.[]; .name == "Deployment / deployment" and .conclusion == "success")' <<< "${jobs}")
-            [[ "${fully_deployed}" == "true" ]] || continue
-            maven_published=$(jq -rs 'any(.[]; .name == "Release / Release Artifacts" and
-              any(.steps[]; .name == "Publish Release Artifacts to S3" and .conclusion == "success"))' <<< "${jobs}")
-            [[ "${maven_published}" == "true" ]] || continue
-
-            tag_sha=$(jq -er '.sha' <<< "${tag_commit}")
-            sdk_api="repos/${REPO}/actions/workflows/cicd_release-sdk.yml/runs"
-            sdk_runs=$(gh api --paginate "${sdk_api}?branch=${tag}&event=release&per_page=100" \
-              --jq '.workflow_runs[] | [.head_sha, .id] | @tsv')
-            manual_runs=$(gh api --paginate "${sdk_api}?branch=main&event=workflow_dispatch&per_page=100" \
-              --jq ".workflow_runs[] | select(.display_title == \"SDK Release ${version}\") | .id")
-
-            while read -r sdk_sha sdk_run; do
-              [[ -n "${sdk_run}" && ( "${sdk_sha}" == "${tag_sha}" || "${sdk_sha}" == "manual" ) ]] || continue
-              sdk_steps=$(gh api --paginate "repos/${REPO}/actions/runs/${sdk_run}/jobs?filter=all&per_page=100" \
-                --jq '.jobs[] | select(.name == "Publish SDK Packages") | .steps[]')
-              published=$(jq -rs --arg receipt "SDK stable publication receipt (${tag_sha})" '. as $steps |
-                any($steps[]; .name == $receipt and .conclusion == "success")' <<< "${sdk_steps}")
-              # Old release-event runs did not emit receipts; manual recovery never uses this fallback.
-              if [[ "${sdk_sha}" != "manual" && "${published}" != "true" ]]; then
-                published=$(jq -rs 'if any(.[]; .name | startswith("SDK stable publication receipt")) then false
-                  else any(.[]; .name == "Publish SDK packages to NPM" and .conclusion == "success") end' <<< "${sdk_steps}")
-              fi
-              if [[ "${published}" == "true" ]]; then
-                echo "already_shipped=true" >> "${GITHUB_OUTPUT}"
-                echo "The approved commit is already in ${tag}; no release needed." >> "${GITHUB_STEP_SUMMARY}"
-                exit 0
-              fi
-            done <<< "$(printf '%s\n' "${sdk_runs}"; awk 'NF { print "manual", $1 }' <<< "${manual_runs}")"
-            sdk_retry_tag="${sdk_retry_tag:-${tag}}"
-          done <<< "${CANDIDATES}"
-
-          if [[ -z "${PREV_TAG}" ]]; then
-            if [[ "${SDK_BUMP_MODE}" == "manual" ]]; then
-              STANDARD_TAGS=$(git ls-remote --tags --refs "${GITHUB_SERVER_URL}/${REPO}.git" 'refs/tags/v*-*')
-              if [[ "${CONFIRM_BOOTSTRAP}" == "true" ]] ||
-                 ! grep -qE 'refs/tags/v[0-9]{2}\.[0-9]{2}\.[0-9]{2}-[0-9]{1,2}$' <<< "${STANDARD_TAGS}"; then
-                echo "bump=${BUMP_MIN_SDK_VERSION}" >> "${GITHUB_OUTPUT}"
-                exit 0
-              fi
-            fi
-            echo "::error::No pushed standard release image found. For manual bootstrap recovery, verify that no standard image has shipped before setting confirm_bootstrap."
+          breaking=$(bash .github/scripts/sdk-breaking-prs.sh "$REPO" "$RELEASE_VERSION" "${RELEASE_COMMIT:-$GITHUB_SHA}")
+          if [[ -n "$breaking" && "$BUMP_MIN_SDK_VERSION" != "true" ]]; then
+            echo "::error::SDK-breaking PRs found: ${breaking//$'\n'/ }. Rerun with bump_min_sdk_version=true."
             exit 1
           fi
-          if [[ -n "${docker_retry_tag}" ]]; then
-            echo "::error::Docker latest promotion failed for ${docker_retry_tag}. Complete or supersede the promotion, then retry."
-            exit 1
-          fi
-          if [[ -n "${sdk_retry_tag}" ]]; then
-            echo "::error::npm publication is not confirmed for ${sdk_retry_tag}. Use Release - SDK recovery for version ${sdk_retry_tag#v} and ref ${sdk_retry_tag}. Confirm npm latest covers that version before retrying."
-            exit 1
-          fi
-          if [[ "${STATUS}" != "ahead" && "${STATUS}" != "identical" ]]; then
-            echo "::error::The selected commit does not include the last deployed release ${PREV_TAG}."
-            exit 1
-          fi
-
-          newest=$(printf '%s\n' "${PREV_TAG}" "${THIS_TAG}" | sort -V | tail -1)
-          if [[ "${newest}" != "${THIS_TAG}" || "${PREV_TAG}" == "${THIS_TAG}" ]]; then
-            echo "::error::${THIS_TAG} must be newer than the last deployed version ${PREV_TAG}."
-            exit 1
-          fi
-          echo "previous_tag=${PREV_TAG}" >> "${GITHUB_OUTPUT}"
-
-          # Resolve each commit to its merged PR via GitHub's commits→PRs association API
-          # rather than parsing the commit subject for a trailing "(#N)". That regex only
-          # matched squash-merge subjects; merge-commit subjects ("Merge pull request #N
-          # from …") don't end in "(#N)", so once squash merges were disabled on this repo
-          # (dotCMS/private-issues#673) the regex silently found zero PRs and this gate
-          # always passed. The API resolves off git's actual PR-merge metadata, not the
-          # subject's text shape, so it stays correct under squash, merge, or rebase.
-          COMMIT_SHAS=$(gh api "${RANGE}?per_page=100" --paginate --jq '.commits[].sha')
-
-          # Fix for PR #37219 review feedback (sfreudenthaler + Claude bot, High): a bare
-          # `2>/dev/null || true` here would make a genuine API failure (rate limit,
-          # transient 5xx, network blip) indistinguishable from "this commit has no PR" —
-          # silently dropping that commit's PR from the count re-introduces the same
-          # silent-pass failure this gate exists to prevent. So each lookup is checked
-          # explicitly: a real failure fails the step loudly and by name, instead of being
-          # swallowed like a normal empty result.
-          PR_NUMBERS_FILE=$(mktemp)
-          for sha in ${COMMIT_SHAS}; do
-            if ! gh api "repos/${REPO}/commits/${sha}/pulls" --jq '.[] | select(.merged_at != null and .base.ref == "main") | .number' >> "${PR_NUMBERS_FILE}"; then
-              echo "::error::Failed to look up the PR(s) associated with commit ${sha} (repos/${REPO}/commits/${sha}/pulls) — likely a transient GitHub API error or rate limit, not the absence of a PR. Re-run the release; if this keeps failing, check GitHub API status/rate limits before assuming this commit has no associated PR."
-              exit 1
-            fi
-          done
-          PR_NUMBERS=$(sort -un "${PR_NUMBERS_FILE}")
-          rm -f "${PR_NUMBERS_FILE}"
-
-          BREAKING_PRS=()
-          for pr in ${PR_NUMBERS}; do
-            LABELS=$(gh pr view "${pr}" --repo "${REPO}" --json labels --jq '.labels[].name')
-            if echo "${LABELS}" | grep -qxF 'SDK Breaking Change'; then
-              BREAKING_PRS+=("#${pr}")
-            fi
-          done
-
-          if [[ "${SDK_BUMP_MODE}" == "auto" ]]; then
-            BUMP_MIN_SDK_VERSION=false
-            if (( ${#BREAKING_PRS[@]} > 0 )); then
-              BUMP_MIN_SDK_VERSION=true
-            fi
-          fi
-
-          if [ "${#BREAKING_PRS[@]}" -gt 0 ] && [ "${BUMP_MIN_SDK_VERSION}" != "true" ]; then
-            echo "::error::This release (${THIS_TAG}) includes PR(s) labeled 'SDK Breaking Change' (${BREAKING_PRS[*]}) since ${PREV_TAG}, but 'bump_min_sdk_version' was left false. Re-run with bump_min_sdk_version=true, or remove the label from those PRs first if none of them actually break SDK compatibility."
-            exit 1
-          fi
-
-          if [[ "${SDK_BUMP_MODE}" != "auto" && "${#BREAKING_PRS[@]}" -eq 0 && "${BUMP_MIN_SDK_VERSION}" == "true" ]]; then
-            echo "::warning::bump_min_sdk_version=true but no merged PR since ${PREV_TAG} carries an SDK-breaking label. Proceeding, since a human explicitly opted in — but double-check this is intentional."
+          if [[ -z "$breaking" && "$BUMP_MIN_SDK_VERSION" == "true" ]]; then
+            echo "::warning::No SDK-breaking PRs found. Proceeding with the requested SDK bump."
           fi
 
           # Non-fatal nudge: a stale, unmerged bump PR from a previous release won't be caught
@@ -331,14 +146,12 @@ jobs:
             echo "::warning::An unmerged MinSdkVersion bump PR from a previous release is still open: ${STALE_PR}. Consider merging it before this release ships another one."
           fi
 
-          echo "bump=${BUMP_MIN_SDK_VERSION}" >> "${GITHUB_OUTPUT}"
-          echo "SDK breaking-change validation passed (${#BREAKING_PRS[@]} breaking PR(s) found, bump_min_sdk_version=${BUMP_MIN_SDK_VERSION})."
+          echo "SDK breaking-change validation passed (bump_min_sdk_version=$BUMP_MIN_SDK_VERSION)."
 
   # Initialize - standard initialization phase (always first)
   initialize:
     name: Initialize
     needs: [ verify-branch ]
-    if: needs.verify-branch.outputs.already_shipped != 'true'
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
     # Release builds everything - no change detection needed
     with:
@@ -348,14 +161,11 @@ jobs:
   release-prepare:
     name: Release Prepare
     needs: [ verify-branch, initialize ]
-    if: needs.verify-branch.outputs.already_shipped != 'true'
     uses: ./.github/workflows/cicd_comp_release-prepare-phase.yml
     with:
       release_version: ${{ github.event.inputs.release_version }}
-      release_commit: ${{ needs.verify-branch.outputs.release_commit }}
-      bump_min_sdk_version: ${{ needs.verify-branch.outputs.sdk_bump == 'true' }}
-      previous_standard_tag: ${{ needs.verify-branch.outputs.previous_standard_tag }}
-      sdk_bump_mode: ${{ inputs.sdk_bump_mode }}
+      release_commit: ${{ github.event.inputs.release_commit }}
+      bump_min_sdk_version: ${{ github.event.inputs.bump_min_sdk_version == 'true' }}
     secrets:
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
       CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
@@ -364,7 +174,7 @@ jobs:
   build:
     name: Build
     needs: [ release-prepare, initialize ]
-    if: always() && !failure() && !cancelled() && needs.release-prepare.result == 'success'
+    if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_build-phase.yml
     with:
       core-build: true
@@ -392,7 +202,7 @@ jobs:
   deployment:
     name: Deployment
     needs: [ release-prepare, initialize, build ]
-    if: always() && !failure() && !cancelled() && needs.release-prepare.result == 'success'
+    if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
       environment: 'release'
@@ -484,7 +294,7 @@ jobs:
           done
 
   # Bump MinSdkVersion.java on main — only after a full green release, and only when the
-  # release's SDK policy requires a floor bump (see #36698).
+  # operator explicitly flagged this release as SDK-compatibility-breaking (see #36698).
   # Never a direct push to main: opens a PR and asks a human to merge it (main has no
   # auto-merge and requires a PR for any change, confirmed via the retired
   # cicd_manual-release-sdks.yml's identical "Open post-release PR" precedent).
@@ -493,13 +303,13 @@ jobs:
   # so this dotCMS-core-specific concern doesn't leak into a phase other callers reuse.
   bump-min-sdk-version:
     name: Bump MinSdkVersion.java
-    needs: [ verify-branch, release-prepare, build, deployment ]
+    needs: [ release-prepare, build, deployment ]
     # Strict success() gate (not the always()-based idiom used by build/deployment/release):
     # a release that fails after release-prepare must NEVER cause main to advertise a
     # stricter MIN_SDK_VERSION for a dotCMS version that was never actually shipped.
     if: >-
       success()
-      && needs.verify-branch.outputs.sdk_bump == 'true'
+      && github.event.inputs.bump_min_sdk_version == 'true'
       && github.ref_name == 'main'
       && needs.release-prepare.outputs.is_lts != 'true'
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
@@ -594,7 +404,7 @@ jobs:
             PR_URL=$(gh pr create \
               --repo "${GITHUB_REPOSITORY}" \
               --title "chore(sdk): bump MinSdkVersion.VALUE to ${RELEASE_VERSION}" \
-              --body "Automated post-release bump. Release \`${RELEASE_VERSION}\` was identified as containing an SDK-breaking change. This raises the compatibility floor advertised via the \`X-DotCMS-Min-SDK\` header to \`${RELEASE_VERSION}\`. Please review and merge — this does not auto-merge." \
+              --body "Automated post-release bump. Release \`${RELEASE_VERSION}\` was flagged (via \`bump_min_sdk_version\`) as containing an SDK-breaking change. This raises the compatibility floor advertised via the \`X-DotCMS-Min-SDK\` header to \`${RELEASE_VERSION}\`. Please review and merge — this does not auto-merge." \
               --base main \
               --head "${PR_BRANCH}")
           fi
@@ -638,7 +448,7 @@ jobs:
   release:
     name: Release
     needs: [ release-prepare, initialize, build, deployment ]
-    if: always() && !failure() && !cancelled() && needs.release-prepare.result == 'success'
+    if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_release-phase.yml
     with:
       release_version: ${{ needs.release-prepare.outputs.release_version }}
@@ -723,8 +533,8 @@ jobs:
   # Finalize - standard finalization phase (required for phase pattern)
   finalize:
     name: Finalize
-    if: always() && needs.verify-branch.outputs.already_shipped != 'true'
-    needs: [ verify-branch, initialize, build, deployment, release, bump-min-sdk-version ]
+    if: always()
+    needs: [ initialize, build, deployment, release, bump-min-sdk-version ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ github.run_id }}
@@ -734,8 +544,8 @@ jobs:
   report:
     name: Report
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    needs: [ verify-branch, release-prepare, deployment, release, finalize ]
-    if: always() && needs.verify-branch.outputs.already_shipped != 'true'
+    needs: [ release-prepare, deployment, release, finalize ]
+    if: always()
     steps:
       - name: Checkout core
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

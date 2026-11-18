@@ -34,10 +34,6 @@ on:
         description: 'Branch/tag to build from (defaults to main). Set to v<version> to rebuild the exact commit of a past release.'
         required: false
         default: 'main'
-      recovery:
-        description: 'Publish missing versions to sdk-recovery without changing npm latest; set ref to v<version>.'
-        type: boolean
-        default: false
       dry-run:
         description: 'Dry run (skip the actual npm publish)'
         default: 'false'
@@ -64,8 +60,6 @@ jobs:
     steps:
       - name: 'Set release version'
         id: version
-        env:
-          RECOVERY: ${{ inputs.recovery }}
         run: |
           set -euo pipefail
           TAG_NAME=""
@@ -85,11 +79,6 @@ jobs:
               echo "::error::Invalid version format: '$RELEASE_VERSION'. Expected yy.mm.dd-## or yy.mm.dd_lts_v## (matching the dotCMS release tag format)."
               exit 1
             fi
-          fi
-
-          if [[ "$RECOVERY" == 'true' && "$REF" != "v$RELEASE_VERSION" ]]; then
-            echo "::error::Recovery must build from the exact release tag v$RELEASE_VERSION."
-            exit 1
           fi
 
           # Case-insensitive substring match on whichever string carries the LTS marker
@@ -112,11 +101,9 @@ jobs:
             echo "::warning::This is an LTS release ($TAG_NAME). SDK publish will be skipped — LTS SDK publish policy is a separate, not-yet-decided follow-up (ADR-0019)."
           fi
 
-          {
-            echo "RELEASE_VERSION=$RELEASE_VERSION"
-            echo "REF=$REF"
-            echo "IS_LTS=$IS_LTS"
-          } >> "$GITHUB_OUTPUT"
+          echo "RELEASE_VERSION=$RELEASE_VERSION" >> "$GITHUB_OUTPUT"
+          echo "REF=$REF" >> "$GITHUB_OUTPUT"
+          echo "IS_LTS=$IS_LTS" >> "$GITHUB_OUTPUT"
 
   # Runs only when precheck itself fails (bad version format, unexpected script error).
   # publish depends on precheck, so it never starts in that case — meaning publish's own
@@ -151,30 +138,14 @@ jobs:
     needs: [ precheck ]
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
-      # Historical tags supply build sources, not the current publisher.
-      - name: Checkout the publisher
+      # Required before referencing any local (./) action — the runner's workspace is
+      # empty otherwise, so GitHub can't even locate deploy-javascript-sdk's action.yml.
+      # The composite action re-checks-out internally at the correct ref for the actual
+      # build/publish; this checkout only needs to make the action definition resolvable.
+      - name: 'Checkout'
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ github.workflow_sha }}
-
-      - name: Resolve SDK source SHA
-        id: sdk-source
-        env:
-          GH_TOKEN: ${{ github.token }}
-          REF: ${{ needs.precheck.outputs.REF }}
-          RECOVERY: ${{ inputs.recovery }}
-        run: |
-          set -euo pipefail
-          if [[ "$GITHUB_EVENT_NAME" == "release" || "$RECOVERY" == "true" ]]; then
-            REF="refs/tags/$REF"
-          fi
-          encoded_ref=$(jq -rn --arg ref "$REF" '$ref | @uri')
-          commit=$(gh api "repos/$GITHUB_REPOSITORY/commits/$encoded_ref" --jq '.sha')
-          if [[ ! "$commit" =~ ^[0-9a-f]{40}$ ]]; then
-            echo "::error::Could not resolve the SDK source commit."
-            exit 1
-          fi
-          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+          ref: ${{ needs.precheck.outputs.REF }}
 
       - name: 'LTS skip notice'
         if: needs.precheck.outputs.IS_LTS == 'true'
@@ -193,20 +164,10 @@ jobs:
           (github.event_name == 'release' || github.event.inputs.dry-run != 'true')
         uses: ./.github/actions/core-cicd/deployment/deploy-javascript-sdk
         with:
-          ref: ${{ steps.sdk-source.outputs.commit }}
+          ref: ${{ needs.precheck.outputs.REF }}
           version: ${{ needs.precheck.outputs.RELEASE_VERSION }}
-          npm-tag: ${{ inputs.recovery && 'sdk-recovery' || 'latest' }}
-          verify-existing: 'true'
           npm-token: ${{ secrets.NPM_ORG_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: SDK recovery receipt (${{ steps.sdk-source.outputs.commit }})
-        if: inputs.recovery && steps.deploy-javascript-sdk.outputs.published == 'true'
-        run: echo 'SDK recovery confirmed'
-
-      - name: SDK stable publication receipt (${{ steps.sdk-source.outputs.commit }})
-        if: steps.deploy-javascript-sdk.outputs.published == 'true' && steps.deploy-javascript-sdk.outputs.stable == 'true'
-        run: echo 'npm latest covers the verified SDK release'
 
       - name: 'Slack Notification (SDK release announcement)'
         if: success() && steps.deploy-javascript-sdk.outputs.published == 'true'

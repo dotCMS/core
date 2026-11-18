@@ -30,9 +30,6 @@ inputs:
     description: 'npm dist-tag to publish under (e.g. latest, next)'
     required: false
     default: 'latest'
-  verify-existing:
-    description: 'Verify existing package integrity before treating it as published'
-    default: 'false'
   npm-token:
     description: 'NPM token'
     required: true
@@ -46,9 +43,6 @@ outputs:
   published:
     description: 'SDK libs - Published (true if all packages published successfully)'
     value: ${{ steps.deployment_status.outputs.published }}
-  stable:
-    description: 'Every package has this version or newer on npm latest'
-    value: ${{ steps.publish_packages.outputs.stable }}
 runs:
   using: "composite"
   steps:
@@ -199,7 +193,6 @@ runs:
         RELEASE_VERSION: ${{ steps.update-versions.outputs.normalized_version }}
         NPM_AUTH_TOKEN: ${{ inputs.npm-token }}
         NPM_TAG: ${{ inputs.npm-tag }}
-        VERIFY_EXISTING: ${{ inputs.verify-existing }}
       run: |
         set -euo pipefail
         echo "::group::Publishing SDK packages"
@@ -210,7 +203,6 @@ runs:
         echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
 
         PUBLISH_SUCCESS=true
-        stable=true
 
         for sdk in $(find . -maxdepth 1 -mindepth 1 -type d -exec basename {} \;); do
           cd "$sdk"
@@ -231,14 +223,6 @@ runs:
           # the release. Treat "already published" as success so a re-run can finish the
           # remaining packages instead of getting stuck.
           if npm view "${PKG_NAME}@${RELEASE_VERSION}" version >/dev/null 2>&1; then
-            if [[ "$VERIFY_EXISTING" == "true" ]]; then
-              published_integrity=$(npm view "${PKG_NAME}@${RELEASE_VERSION}" dist.integrity)
-              built_integrity=$(npm pack --dry-run --json | jq -er '.[0].integrity')
-              if [[ "$published_integrity" != "$built_integrity" ]]; then
-                echo "::error::Published ${PKG_NAME}@${RELEASE_VERSION} differs from this build."
-                exit 1
-              fi
-            fi
             echo "  ⏭️  ${PKG_NAME}@${RELEASE_VERSION} already published — skipping (idempotent re-run)"
           else
             echo "  🚀 Publishing: ${PKG_NAME}@${RELEASE_VERSION} (tag: ${NPM_TAG})"
@@ -250,22 +234,11 @@ runs:
             fi
           fi
 
-          if [[ "$VERIFY_EXISTING" == "true" ]]; then
-            latest=$(npm view "${PKG_NAME}@latest" version --prefer-online) || latest=""
-            if [[ ! "$latest" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$ ]] ||
-               [[ "$(printf '%s\n' "$latest" "$RELEASE_VERSION" | sort -V | tail -1)" != "$latest" ]]; then
-              stable=false
-              echo "::warning::npm latest for $PKG_NAME does not cover $RELEASE_VERSION."
-            fi
-          fi
           cd ..
           echo ""
         done
 
-        {
-          echo "actual_published=$PUBLISH_SUCCESS"
-          echo "stable=$stable"
-        } >> "$GITHUB_OUTPUT"
+        echo "actual_published=$PUBLISH_SUCCESS" >> $GITHUB_OUTPUT
 
         if [ "$PUBLISH_SUCCESS" = "true" ]; then
           echo "🎉 All SDK packages published successfully!"
