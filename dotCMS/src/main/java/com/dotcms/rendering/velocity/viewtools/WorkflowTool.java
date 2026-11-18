@@ -192,7 +192,10 @@ public class WorkflowTool implements ViewTool {
 
 		try {
 			final MapToContentletPopulator mapToContentletPopulator = MapToContentletPopulator.INSTANCE;
-			contentlet = mapToContentletPopulator.populate(contentlet, properties);
+			// Pass the tool's user explicitly: during front-end render the request belongs to the
+			// site visitor, so relationship targets must be gated against this user, not the request
+			// (private-issues#930). This is the same user used as modUser on the checkin below.
+			contentlet = mapToContentletPopulator.populate(contentlet, properties, user);
 
 			if(UtilMethods.isSet(properties.get("inode"))) {
 				contentlet.setInode((String) properties.get("inode"));
