@@ -1,9 +1,10 @@
-jest.mock('@dotcms/utils', () => ({
-    ...jest.requireActual('@dotcms/utils'),
-    getDownloadLink: jest.fn().mockReturnValue({ click: jest.fn() })
+vi.mock('@dotcms/utils', async () => ({
+    ...(await vi.importActual('@dotcms/utils')),
+    getDownloadLink: vi.fn().mockReturnValue({ click: vi.fn() })
 }));
 
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { DotCMSAPIResponse, DotCategory } from '@dotcms/dotcms-models';
 import { getDownloadLink } from '@dotcms/utils';
@@ -205,7 +206,7 @@ describe('DotCategoriesService', () => {
 
     describe('exportCategories', () => {
         beforeEach(() => {
-            (getDownloadLink as jest.Mock).mockClear();
+            (getDownloadLink as Mock).mockClear();
         });
 
         it('should call GET /api/v1/categories/_export and trigger download', () => {

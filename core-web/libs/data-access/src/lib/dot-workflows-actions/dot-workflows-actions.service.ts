@@ -14,6 +14,8 @@ import {
     DotCMSWorkflowAction
 } from '@dotcms/dotcms-models';
 
+import { deriveInputsOnEach } from './dot-workflows-actions.utils';
+
 export enum DotRenderMode {
     LOCKED = 'LOCKED',
     LISTING = 'LISTING',
@@ -76,10 +78,7 @@ export class DotWorkflowsActionsService {
             .get<
                 DotCMSResponse<DotCMSContentletWorkflowActions[]>
             >(`${this.BASE_URL}/initialactions/contenttype/${contentTypeId}`)
-            .pipe(
-                map((x) => x?.entity),
-                map((res) => res || [])
-            );
+            .pipe(map((res) => deriveInputsOnEach(res?.entity ?? [])));
     }
 
     /**
@@ -120,9 +119,6 @@ export class DotWorkflowsActionsService {
             .get<
                 DotCMSResponse<DotCMSContentletWorkflowActions[]>
             >(`${this.BASE_URL}/defaultactions/contenttype/${contentTypeName}`)
-            .pipe(
-                map((x) => x?.entity),
-                map((res) => res || [])
-            );
+            .pipe(map((res) => deriveInputsOnEach(res?.entity ?? [])));
     }
 }

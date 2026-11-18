@@ -4,9 +4,10 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -28,7 +29,6 @@ import {
 
 import { DotExperimentsExperimentSummaryComponent } from './components/dot-experiments-experiment-summary/dot-experiments-experiment-summary.component';
 import { DotExperimentsReportDailyDetailsComponent } from './components/dot-experiments-report-daily-details/dot-experiments-report-daily-details.component';
-import { DotExperimentsReportsChartComponent } from './components/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsReportsSkeletonComponent } from './components/dot-experiments-reports-skeleton/dot-experiments-reports-skeleton.component';
 import { DotExperimentsReportsComponent } from './dot-experiments-reports.component';
 import {
@@ -36,6 +36,7 @@ import {
     VmReportExperiment
 } from './store/dot-experiments-reports-store';
 
+import { DotExperimentsReportsChartComponent } from '../../shared/ui/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
 import { DotExperimentsUiHeaderComponent } from '../shared/ui/dot-experiments-header/dot-experiments-ui-header.component';
 
 const ActivatedRouteMock = {
@@ -163,6 +164,9 @@ describe('DotExperimentsReportsComponent', () => {
         dotExperimentsService = spectator.inject(DotExperimentsService);
         dotExperimentsService.getById.mockReturnValue(of(EXPERIMENT_MOCK));
         dotExperimentsService.getResults.mockReturnValue(of({ ...EXPERIMENT_RESULTS_MOCK }));
+        // The store pipes promoteVariant; a bare mockProvider returns undefined and it
+        // dereferences nothing, asynchronously.
+        dotExperimentsService.promoteVariant.mockReturnValue(of(EXPERIMENT_MOCK));
 
         router = spectator.inject(Router);
     });
@@ -209,7 +213,7 @@ describe('DotExperimentsReportsComponent', () => {
     it('should reload results', () => {
         spectator.component.vm$ = of({ ...defaultVmMock, isLoading: false });
         spectator.detectChanges();
-        jest.spyOn(store, 'loadExperimentAndResults');
+        vi.spyOn(store, 'loadExperimentAndResults');
 
         spectator.triggerEventHandler(
             DotExperimentsExperimentSummaryComponent,
@@ -273,10 +277,10 @@ describe('DotExperimentsReportsComponent', () => {
         });
 
         spectator.detectChanges();
-        jest.spyOn(store, 'promoteVariant');
+        vi.spyOn(store, 'promoteVariant');
 
         const confirmationService = spectator.inject(ConfirmationService);
-        jest.spyOn(confirmationService, 'confirm');
+        vi.spyOn(confirmationService, 'confirm');
 
         // Simulate promoteVariant call with mock event
         const mockEvent = new MouseEvent('click');
@@ -290,7 +294,7 @@ describe('DotExperimentsReportsComponent', () => {
         expect(confirmationService.confirm).toHaveBeenCalled();
 
         // Get the confirm options and call accept
-        const confirmOptions = (confirmationService.confirm as jest.Mock).mock.calls[0][0];
+        const confirmOptions = (confirmationService.confirm as Mock).mock.calls[0][0];
         confirmOptions.accept();
 
         expect(store.promoteVariant).toHaveBeenCalledWith({

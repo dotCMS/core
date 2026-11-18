@@ -1,0 +1,78 @@
+<section class="flex h-full min-w-0 flex-col overflow-hidden">
+    <div class="flex shrink-0 items-center gap-3 border-b border-surface-200 p-4">
+        <!-- max-w-xs caps it: dot-search-input's host is `block w-full`, so unconstrained it
+             ate the bar and squeezed everything after it. Capped, it reads as a filter sitting
+             at the left rather than a full-width band. -->
+        <dot-search-input
+            class="max-w-xs"
+            [placeholder]="'dotai.config.filter.placeholder'"
+            (search)="$filter.set($event)"
+            data-testid="dotai-config-filter" />
+
+        <!-- flex-1 takes the slack, which is what keeps the filter left; truncate because a
+             long host string would otherwise do the squeezing itself. -->
+        <span class="flex-1 truncate text-sm text-muted-color" data-testid="dotai-config-host">
+            {{ $hostLabel() }}
+        </span>
+    </div>
+
+    <div class="min-h-0 flex-1 overflow-hidden">
+        @if (store.redactionFailed()) {
+            <!-- The server could not safely redact the config, so it sent a sentinel rather
+                 than JSON. Say so instead of rendering the sentinel as a value (FR-046). -->
+            <dot-empty-container
+                [configuration]="redactionFailedConfig"
+                [hideContactUsLink]="true"
+                data-testid="dotai-config-redaction-failed" />
+        } @else if ($emptyConfig(); as empty) {
+            <!-- Same reason as the Embeddings table: a `<td>` is sized by its content, so an
+                 empty state nested in one cannot centre in the pane. Which state this is --
+                 no match, or no config to show -- is decided in the component; an empty table
+                 is not one fact. -->
+            <dot-empty-container
+                [configuration]="empty"
+                [hideContactUsLink]="true"
+                data-testid="dotai-config-empty" />
+        } @else if ($filteredRows().length) {
+            <p-table
+                [value]="$filteredRows()"
+                [rowHover]="true"
+                [scrollable]="true"
+                scrollHeight="flex"
+                dataKey="key"
+                data-testid="dotai-config-table">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th>{{ 'dotai.config.column.key' | dm }}</th>
+                        <th>{{ 'dotai.config.column.value' | dm }}</th>
+                        <th class="w-40">{{ 'dotai.config.column.source' | dm }}</th>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-row>
+                    <tr class="group" data-testid="dotai-config-row">
+                        <td class="truncate font-mono text-sm">{{ row.key }}</td>
+                        <td class="font-mono text-sm">
+                            <div class="flex items-center gap-2">
+                                <span class="truncate" data-testid="dotai-config-value">
+                                    {{ row.value }}
+                                </span>
+                                @if (row.source !== sources.SECRET) {
+                                    <dot-copy-button
+                                        customClass="opacity-0 group-hover:opacity-100"
+                                        [copy]="row.value" />
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            <p-tag
+                                [severity]="severityFor(row.source)"
+                                [value]="row.source"
+                                data-testid="dotai-config-source" />
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        }
+    </div>
+</section>

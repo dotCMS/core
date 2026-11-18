@@ -88,8 +88,21 @@ export class DotWysiwygTinymceComponent implements OnDestroy {
     $editorConfig = computed<RawEditorOptions>(() => {
         const config: RawEditorOptions = {
             ...DEFAULT_TINYMCE_CONFIG,
+            // Browse buttons in the image and link dialogs. Before the configs below so they can
+            // still narrow `file_picker_types`; the callback itself is a function, which no JSON
+            // config can express or override.
+            ...this.#dotWysiwygPluginService.filePickerOptions(),
             ...(this.$wideConfig() || {}),
             ...this.$customPropsContentField(),
+            // TinyMCE renders into an iframe, which no label outside can name. Two surfaces need
+            // the field's name: `iframe_aria_text` labels the body inside the iframe, which is what
+            // a screen reader announces once inside the editing area, and `iframe_attrs.title`
+            // names the frame itself, which it announces on the way in. TinyMCE hardcodes that
+            // title to "Rich Text Area" otherwise — identical for every rich-text field on the
+            // form. Set after the spreads so a system-wide or per-field config cannot leave the
+            // editor unnamed.
+            iframe_aria_text: this.$field()?.name,
+            iframe_attrs: { title: this.$field()?.name },
             setup: (editor) => {
                 this.#dotWysiwygPluginService.initializePlugins(editor);
             }

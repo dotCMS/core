@@ -1,11 +1,13 @@
-import { byText, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { byText, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
+import { Mock, MockInstance, Mocked, vi } from 'vitest';
 
+import { signal, WritableSignal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DOT_AUTH_SYSTEM_HOST, DotAuthConfig } from '@dotcms/dotcms-models';
+import { DOT_AUTH_SYSTEM_HOST, DotAuthConfig, DotAuthSamlUiConfig } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAuthConfigComponent } from './dot-auth-config.component';
@@ -103,29 +105,34 @@ describe('DotAuthConfigComponent', () => {
         component: DotAuthConfigComponent,
         componentProviders: [
             mockProvider(DotAuthConfigStore, {
-                load: jest.fn(),
-                saveSso: jest.fn(),
-                reset: jest.fn(),
-                clearOverride: jest.fn(),
-                update: jest.fn(),
-                setProtocol: jest.fn(),
-                runOidcDiscovery: jest.fn(),
-                revokeAllSessionRefs: jest.fn(),
-                addAllowedOrigin: jest.fn(),
-                removeAllowedOrigin: jest.fn(),
-                addTrustedIdp: jest.fn(),
-                removeTrustedIdp: jest.fn(),
-                siteId: jest.fn().mockReturnValue(DOT_AUTH_SYSTEM_HOST),
-                draft: jest.fn().mockReturnValue(DRAFT),
-                original: jest.fn().mockReturnValue(DRAFT),
-                configured: jest.fn().mockReturnValue(true),
-                inherited: jest.fn().mockReturnValue(false),
-                status: jest.fn().mockReturnValue('loaded'),
-                errors: jest.fn().mockReturnValue({}),
-                errorCount: jest.fn().mockReturnValue(0),
-                dirty: jest.fn().mockReturnValue(false),
-                ssoDirty: jest.fn().mockReturnValue(false),
-                isSystem: jest.fn().mockReturnValue(true)
+                load: vi.fn(),
+                saveSso: vi.fn().mockReturnValue(true),
+                reset: vi.fn(),
+                clearOverride: vi.fn(),
+                update: vi.fn(),
+                setProtocol: vi.fn(),
+                runOidcDiscovery: vi.fn(),
+                applyGoogleGroupsPreset: vi.fn(),
+                dismissGooglePrefill: vi.fn(),
+                revokeAllSessionRefs: vi.fn(),
+                addAllowedOrigin: vi.fn(),
+                removeAllowedOrigin: vi.fn(),
+                addTrustedIdp: vi.fn(),
+                removeTrustedIdp: vi.fn(),
+                siteId: vi.fn().mockReturnValue(DOT_AUTH_SYSTEM_HOST),
+                hostName: vi.fn().mockReturnValue(''),
+                draft: signal<DotAuthConfig>(DRAFT),
+                original: signal<DotAuthConfig>(DRAFT),
+                configured: vi.fn().mockReturnValue(true),
+                inherited: vi.fn().mockReturnValue(false),
+                status: signal('loaded'),
+                reloadFailed: signal(false),
+                errors: vi.fn().mockReturnValue({}),
+                errorCount: vi.fn().mockReturnValue(0),
+                dirty: vi.fn().mockReturnValue(false),
+                ssoDirty: vi.fn().mockReturnValue(false),
+                isSystem: vi.fn().mockReturnValue(true),
+                googlePrefillPending: vi.fn().mockReturnValue(false)
             })
         ],
         providers: [
@@ -141,22 +148,178 @@ describe('DotAuthConfigComponent', () => {
                 useValue: new MockDotMessageService({
                     'dotauth.config.sso.title': 'Single sign-on',
                     'dotauth.config.headless.title': 'Headless token exchange',
-                    'dotauth.config.trusted-idps.title': 'Trusted IdPs'
+                    'dotauth.config.trusted-idps.title': 'Trusted IdPs',
+                    'dotauth.confirm.google-groups.header': 'Google Workspace detected',
+                    'dotauth.confirm.regenerate-keypair.header': 'Generate a new SP keypair?',
+                    'dotauth.toast.saved': 'dotAuth changes saved',
+                    'dotauth.toast.saved.keypair-regenerated':
+                        'dotAuth changes saved. A new SP keypair was generated.'
                 })
             }
         ]
     });
 
     beforeEach(() => {
-        spectator = createComponent();
+        spectator = createComponent({ detectChanges: false });
     });
 
     it('loads the route host and renders the SSO track by default', () => {
+        spectator.detectChanges();
         expect(spectator.component.store.load).toHaveBeenCalledWith(DOT_AUTH_SYSTEM_HOST);
         expect(spectator.query(byText('Single sign-on'))).toExist();
     });
 
     it('renders SSO content without tab selection (tabs removed)', () => {
+        spectator.detectChanges();
         expect(spectator.query(byText('Single sign-on'))).toExist();
+    });
+
+    describe('email linking toggle', () => {
+        const EMAIL_TOGGLE = '[data-testid="trust-email-toggle"]';
+
+        it('renders beside auto-provisioning for OIDC', () => {
+            spectator.detectChanges();
+            expect(spectator.queryAll(EMAIL_TOGGLE).length).toBeGreaterThan(0);
+        });
+
+        it('is not offered for SAML, which has no email_verified claim', () => {
+            const store = spectator.inject(DotAuthConfigStore, true) as unknown as Mocked<
+                InstanceType<typeof DotAuthConfigStore>
+            >;
+            (store.draft as unknown as WritableSignal<DotAuthConfig>).set({
+                ...DRAFT,
+                protocol: 'saml',
+                headless: { ...DRAFT.headless, trustedIdps: [] }
+            });
+            spectator.detectChanges();
+
+            expect(spectator.queryAll(EMAIL_TOGGLE)).toHaveLength(0);
+        });
+    });
+
+    describe('SAML keypair regeneration', () => {
+        let store: Mocked<InstanceType<typeof DotAuthConfigStore>>;
+        let confirmSpy: MockInstance;
+        let toastSpy: MockInstance;
+
+        const withSaml = (saml: Partial<DotAuthSamlUiConfig>): DotAuthConfig => ({
+            ...DRAFT,
+            protocol: 'saml',
+            saml: { ...DRAFT.saml, entityId: 'https://cms.example.com', ...saml }
+        });
+        const STORED = { x509cert: 'STORED-CERT', privateKey: '****' };
+        const CLEARED = { x509cert: '', privateKey: '' };
+
+        beforeEach(() => {
+            store = spectator.inject(DotAuthConfigStore, true) as unknown as Mocked<
+                InstanceType<typeof DotAuthConfigStore>
+            >;
+            confirmSpy = vi.spyOn(spectator.inject(ConfirmationService), 'confirm');
+            toastSpy = vi.spyOn(spectator.inject(MessageService, true), 'add');
+            // mockProvider creates the vi.fn() instances once per factory, so clear per test.
+            (store.saveSso as unknown as Mock).mockClear();
+            (store.original as unknown as WritableSignal<DotAuthConfig>).set(withSaml(STORED));
+            spectator.detectChanges();
+        });
+
+        it('asks before regenerating when both key fields are cleared on a stored keypair', () => {
+            (store.draft as unknown as WritableSignal<DotAuthConfig>).set(withSaml(CLEARED));
+
+            spectator.component.save();
+
+            expect(store.saveSso).not.toHaveBeenCalled();
+            expect(confirmSpy).toHaveBeenCalledTimes(1);
+            expect(confirmSpy.mock.calls[0][0].header).toBe('Generate a new SP keypair?');
+            confirmSpy.mock.calls[0][0].accept();
+            expect(store.saveSso).toHaveBeenCalledWith({ regenerateKeypair: true });
+        });
+
+        it('saves without asking when the stored keypair is kept', () => {
+            (store.draft as unknown as WritableSignal<DotAuthConfig>).set(withSaml(STORED));
+
+            spectator.component.save();
+
+            expect(confirmSpy).not.toHaveBeenCalled();
+            expect(store.saveSso).toHaveBeenCalledTimes(1);
+            expect(store.saveSso.mock.calls[0][0]).toBeUndefined();
+        });
+
+        it('saves without asking when nothing is stored yet', () => {
+            (store.original as unknown as WritableSignal<DotAuthConfig>).set(withSaml(CLEARED));
+            (store.draft as unknown as WritableSignal<DotAuthConfig>).set(withSaml(CLEARED));
+
+            spectator.component.save();
+
+            expect(confirmSpy).not.toHaveBeenCalled();
+            expect(store.saveSso).toHaveBeenCalledTimes(1);
+            expect(store.saveSso.mock.calls[0][0]).toBeUndefined();
+        });
+
+        it('says a new keypair was generated in the success toast', () => {
+            (store.draft as unknown as WritableSignal<DotAuthConfig>).set(withSaml(CLEARED));
+            spectator.component.save();
+            confirmSpy.mock.calls[0][0].accept();
+
+            (store.status as unknown as WritableSignal<string>).set('saving');
+            spectator.detectChanges();
+            (store.status as unknown as WritableSignal<string>).set('loaded');
+            spectator.detectChanges();
+
+            expect(toastSpy).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'success',
+                    summary: 'dotAuth changes saved. A new SP keypair was generated.'
+                })
+            );
+        });
+
+        it('keeps the plain saved toast for an ordinary save', () => {
+            (store.draft as unknown as WritableSignal<DotAuthConfig>).set(withSaml(STORED));
+            spectator.component.save();
+
+            (store.status as unknown as WritableSignal<string>).set('saving');
+            spectator.detectChanges();
+            (store.status as unknown as WritableSignal<string>).set('loaded');
+            spectator.detectChanges();
+
+            expect(toastSpy).toHaveBeenCalledWith(
+                expect.objectContaining({ summary: 'dotAuth changes saved' })
+            );
+        });
+    });
+
+    describe('Google Workspace groups pre-fill offer', () => {
+        let store: Mocked<InstanceType<typeof DotAuthConfigStore>>;
+        let confirmSpy: MockInstance;
+
+        beforeEach(() => {
+            store = spectator.inject(DotAuthConfigStore, true) as unknown as Mocked<
+                InstanceType<typeof DotAuthConfigStore>
+            >;
+            confirmSpy = vi.spyOn(spectator.inject(ConfirmationService), 'confirm');
+        });
+
+        it('does not open the dialog when no Google discovery is pending', () => {
+            spectator.detectChanges();
+            expect(confirmSpy).not.toHaveBeenCalled();
+        });
+
+        it('opens the dialog once and clears the pending flag when Google is detected', () => {
+            (store.googlePrefillPending as unknown as Mock).mockReturnValue(true);
+            spectator.detectChanges();
+            expect(store.dismissGooglePrefill).toHaveBeenCalledTimes(1);
+            expect(confirmSpy).toHaveBeenCalledTimes(1);
+            expect(confirmSpy.mock.calls[0][0].header).toBe('Google Workspace detected');
+        });
+
+        it('applies the preset on accept and nothing on reject', () => {
+            (store.googlePrefillPending as unknown as Mock).mockReturnValue(true);
+            spectator.detectChanges();
+            const options = confirmSpy.mock.calls[0][0];
+            options.reject?.();
+            expect(store.applyGoogleGroupsPreset).not.toHaveBeenCalled();
+            options.accept();
+            expect(store.applyGoogleGroupsPreset).toHaveBeenCalledTimes(1);
+        });
     });
 });

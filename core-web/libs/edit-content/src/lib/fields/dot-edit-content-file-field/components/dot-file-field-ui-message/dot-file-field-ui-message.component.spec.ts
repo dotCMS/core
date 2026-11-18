@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/vitest';
 
 import { CommonModule } from '@angular/common';
 

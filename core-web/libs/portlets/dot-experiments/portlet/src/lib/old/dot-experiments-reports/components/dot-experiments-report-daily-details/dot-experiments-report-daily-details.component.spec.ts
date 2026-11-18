@@ -1,4 +1,10 @@
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    SpyObject
+} from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
@@ -8,7 +14,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsReportDailyDetailsComponent } from './dot-experiments-report-daily-details.component';
 
-import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
+import { DotExperimentsDetailsTableComponent } from '../../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { DotExperimentsReportsStore } from '../../store/dot-experiments-reports-store';
 
 const messageServiceMock = new MockDotMessageService({
@@ -66,7 +72,7 @@ describe('DotExperimentsReportDailyDetailsComponent', () => {
                 useValue: messageServiceMock
             },
             mockProvider(DotExperimentsReportsStore, {
-                promoteVariant: jest.fn()
+                promoteVariant: vi.fn()
             }),
             mockProvider(ConfirmationService),
             mockProvider(MessageService)
@@ -100,8 +106,8 @@ describe('DotExperimentsReportDailyDetailsComponent', () => {
     });
 
     it('should show promote variant', () => {
-        jest.spyOn(store, 'promoteVariant');
-        jest.spyOn(confirmationService, 'confirm');
+        vi.spyOn(store, 'promoteVariant');
+        vi.spyOn(confirmationService, 'confirm');
 
         // Simulate promoteVariant call with mock event
         const mockEvent = new MouseEvent('click');
@@ -111,7 +117,7 @@ describe('DotExperimentsReportDailyDetailsComponent', () => {
         expect(confirmationService.confirm).toHaveBeenCalled();
 
         // Get the confirm options and call accept
-        const confirmOptions = (confirmationService.confirm as jest.Mock).mock.calls[0][0];
+        const confirmOptions = (confirmationService.confirm as Mock).mock.calls[0][0];
         confirmOptions.accept();
 
         // Verify store method was called with correct parameters

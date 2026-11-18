@@ -1,5 +1,5 @@
-import { describe, expect } from '@jest/globals';
-import { byTestId, createRoutingFactory, SpectatorRouting } from '@openng/spectator/jest';
+import { byTestId, createRoutingFactory, SpectatorRouting } from '@openng/spectator/vitest';
+import { describe, expect, vi } from 'vitest';
 
 import { Router } from '@angular/router';
 
@@ -22,7 +22,7 @@ const messages = {
 
 const store = {
     paletteOpen: () => false,
-    setPaletteOpen: jest.fn(),
+    setPaletteOpen: vi.fn(),
     pageParams: () => ({
         language_id: '3',
         personaId: '123'
@@ -103,7 +103,7 @@ describe('EditEmaNavigationBarComponent', () => {
         describe('Navigation', () => {
             it('should navigate with query params when clicking a link item', () => {
                 const router = spectator.inject(Router);
-                const navigateSpy = jest.spyOn(router, 'navigate').mockResolvedValue(true);
+                const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
 
                 const contentHost = spectator.queryAll(byTestId('nav-bar-item'))[0];
                 const innerButton = contentHost.querySelector('button');
@@ -115,9 +115,81 @@ describe('EditEmaNavigationBarComponent', () => {
                 );
             });
 
+            /**
+             * The switch-off guarantee for the Experiments entry point (#37005, US2, FR-016).
+             *
+             * `navigate()` prefixes `edit-page` because every item it has ever had is a child of
+             * that route. The switch-on destination is `/experiments`, which is not — so the
+             * prefix has to become conditional. The rule chosen is the smallest one that cannot
+             * disturb an existing item: a leading `/` means absolute.
+             *
+             * FR-016 and FR-019 then hold **by construction** rather than by inspection, because
+             * none of `content`, `layout`, `rules/{id}` or `experiments/{id}` starts with `/`.
+             * That is what these two tests pin.
+             */
+            describe('absolute vs relative hrefs', () => {
+                const clickItemAt = (index: number) => {
+                    const host = spectator.queryAll(byTestId('nav-bar-item'))[index];
+                    spectator.click(host.querySelector('button'));
+                };
+
+                it.each([
+                    [0, 'content'],
+                    [2, 'rules'],
+                    [3, 'experiments']
+                ])(
+                    'should keep the edit-page prefix for the relative item at %i (%s)',
+                    (index, segment) => {
+                        const navigateSpy = vi
+                            .spyOn(spectator.inject(Router), 'navigate')
+                            .mockResolvedValue(true);
+
+                        clickItemAt(index);
+
+                        expect(navigateSpy).toHaveBeenCalledWith(
+                            ['edit-page', segment],
+                            expect.objectContaining({ queryParams: store.pageParams() })
+                        );
+                    }
+                );
+
+                /**
+                 * Asserts the RESOLVED URL, not the commands array.
+                 *
+                 * The first version of this test asserted `commands` equalled
+                 * `['', 'experiments']` — the array the implementation happened to produce by
+                 * splitting `'/experiments'` on `/`. It passed, and the button did nothing: an
+                 * empty leading segment does not start with `/`, so the router treated the whole
+                 * navigation as relative. Asserting the array locked the bug in. Resolving it
+                 * through the real router is what makes the test able to see the destination.
+                 */
+                it('should navigate to an absolute href without the edit-page prefix', () => {
+                    const router = spectator.inject(Router);
+                    const navigateSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
+
+                    spectator.setInput('items', [
+                        {
+                            materialIcon: 'science',
+                            label: 'editema.editor.navbar.experiments',
+                            href: '/experiments',
+                            id: 'experiments',
+                            queryParams: { pageId: 'page-1', language_id: 2 }
+                        }
+                    ]);
+                    spectator.detectChanges();
+
+                    clickItemAt(0);
+
+                    const [commands, extras] = navigateSpy.mock.calls[0];
+                    const url = router.serializeUrl(router.createUrlTree(commands, extras));
+
+                    expect(url).toBe('/experiments?pageId=page-1&language_id=2');
+                });
+            });
+
             it('should not navigate when item is disabled', () => {
                 const router = spectator.inject(Router);
-                const navigateSpy = jest.spyOn(router, 'navigate');
+                const navigateSpy = vi.spyOn(router, 'navigate');
 
                 const layoutHost = spectator.queryAll(byTestId('nav-bar-item'))[1];
                 const innerButton = layoutHost.querySelector('button');
@@ -127,7 +199,7 @@ describe('EditEmaNavigationBarComponent', () => {
             });
 
             it('should emit action when clicking an action item (no href)', () => {
-                const emitSpy = jest.spyOn(spectator.component.action, 'emit');
+                const emitSpy = vi.spyOn(spectator.component.action, 'emit');
 
                 const actionHost = spectator.queryAll(byTestId('nav-bar-item'))[4];
                 const innerButton = actionHost.querySelector('button');
@@ -186,23 +258,35 @@ describe('EditEmaNavigationBarComponent', () => {
             });
         });
 
+        /**
+         * Asserted on the `<button>`, not on the `<p-button>` host it sits inside.
+         *
+         * These tests used to read the host, which is where `[attr.aria-label]` puts the name and
+         * where nothing can use it: the host is not focusable and is not what a screen reader
+         * announces. Every item in this bar was an unnamed icon button, and the tests passed the
+         * whole time — they were checking the attribute existed, not that it named anything.
+         * Reading the focusable element is what makes them able to fail.
+         */
         describe('Accessibility', () => {
-            it('should have aria-label on all interactive elements', () => {
-                const items = spectator.queryAll(byTestId('nav-bar-item'));
-                items.forEach((item) => {
-                    expect(item.getAttribute('aria-label')).toBeTruthy();
+            const nameOf = (index: number) =>
+                spectator
+                    .queryAll(byTestId('nav-bar-item'))
+                    [index].querySelector('button')
+                    ?.getAttribute('aria-label');
+
+            it('should name every interactive element', () => {
+                spectator.queryAll(byTestId('nav-bar-item')).forEach((item) => {
+                    expect(item.querySelector('button')?.getAttribute('aria-label')).toBeTruthy();
                 });
             });
 
-            it('should show translated label as aria-label', () => {
-                const buttons = spectator.queryAll(byTestId('nav-bar-item'));
-                expect(buttons[0].getAttribute('aria-label')).toBe('Content');
-                expect(buttons[2].getAttribute('aria-label')).toBe('Rules');
+            it('should name them with the translated label', () => {
+                expect(nameOf(0)).toBe('Content');
+                expect(nameOf(2)).toBe('Rules');
             });
 
-            it('should show item label as aria-label for disabled items', () => {
-                const layoutButton = spectator.queryAll(byTestId('nav-bar-item'))[1];
-                expect(layoutButton.getAttribute('aria-label')).toBe('Layout');
+            it('should name a disabled item too', () => {
+                expect(nameOf(1)).toBe('Layout');
             });
         });
     });

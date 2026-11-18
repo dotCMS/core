@@ -39,8 +39,35 @@ LABEL com.dotcms.contact="support@dotcms.com" \
       com.dotcms.vendor="dotCMS LLC" \
       com.dotcms.description="dotCMS Content Management System"
 
+# libvips is copied from the java-base image, which builds it from source with the
+# ImageMagick and OpenEXR delegates compiled out (docker/java-base/build-libvips.sh).
+# Ubuntu's libvips42t64 is deliberately NOT installed: it hard-depends on
+# libmagickcore-6.q16-7t64 and libopenexr-3-1-30, which carry every ImageMagick and
+# OpenEXR CVE in the security report and have no fixed version in noble, so no apt
+# upgrade could clear them. Nothing in dotCMS calls ImageMagick - that dependency
+# existed only because libvips' magick delegate linked it.
+#
+# Copied before the apt steps below so the delegate packages can be installed and
+# ldconfig can resolve libvips.so.42. The loader config travels with the prefix.
+COPY --from=container-base /usr/local/libvips /usr/local/libvips
+COPY --from=container-base /etc/ld.so.conf.d/libvips.conf /etc/ld.so.conf.d/libvips.conf
+
+# When archive.ubuntu.com or security.ubuntu.com does not resolve (Canonical's nameservers
+# stopped answering on 2026-11-11, dotCMS/core#38547), point apt at a mirror whose DNS does
+# not depend on them.
+# apt still verifies the Release signatures with the image's Ubuntu keyring, so the mirror
+# cannot alter packages. Plain HTTP because ca-certificates is not installed yet. The
+# rewritten sources file is used by every apt step below. Builds where the name resolves
+# are unchanged.
+ARG APT_FALLBACK_MIRROR="http://mirrors.edge.kernel.org/ubuntu/"
+
 # Install basic packages and tini
-RUN apt update && \
+RUN if ! getent hosts archive.ubuntu.com > /dev/null || ! getent hosts security.ubuntu.com > /dev/null; then \
+        echo "archive or security.ubuntu.com does not resolve; using apt mirror ${APT_FALLBACK_MIRROR}" && \
+        sed -i -E "s#http://(archive|security)\.ubuntu\.com/ubuntu/?#${APT_FALLBACK_MIRROR}#" \
+            /etc/apt/sources.list.d/ubuntu.sources; \
+    fi && \
+    apt update && \
     apt upgrade -y && \
     apt install -y --no-install-recommends \
         wget \
@@ -49,7 +76,6 @@ RUN apt update && \
         tini \
         zip \
         unzip \
-        libtcnative-1 \
         tzdata \
         ca-certificates \
         libmimalloc2.0 \
@@ -58,17 +84,27 @@ RUN apt update && \
         libapr1 \
         libarchive-tools \
         libpq-dev \
-        libvips42 \
-        libheif-plugin-aomenc \
         apt-transport-https && \
     rm -rf /var/lib/apt/lists/*
 
-# libvips42 (Ubuntu 24.04 = libvips 8.15.1) backs the optional libvips image engine
-# (IMAGE_API_USE_LIBVIPS=true). The stock package bundles the PDF (poppler), HEIC/AVIF
-# decode (libheif), SVG (rsvg), WebP and JPEG-XL delegates. AVIF *encode* additionally
-# needs an AV1 encoder, supplied by libheif-plugin-aomenc (a Recommends that
-# --no-install-recommends would otherwise drop). The engine is off by default; when off
-# these libraries are simply unused.
+# Install the libvips runtime dependency closure from the manifest generated at
+# build time by build-libvips.sh. It is derived from the resolved ELF dependencies
+# of the library, the CLI and every dynamic module - plus the dlopened libheif
+# codec plugins, which ELF inspection cannot see - so it carries exactly what
+# libvips needs and deliberately excludes libmagickcore-6.q16-7t64,
+# libopenexr-3-1-30 and imagemagick-6-common.
+#
+# This libvips backs the image engine selected by IMAGE_API_USE_LIBVIPS, and that
+# engine is ON by default whenever the native library is loadable, which it now is.
+# It provides AVIF/HEIC encode+decode (libheif with its AV1 codec plugin), PDF
+# (poppler), SVG (librsvg), animated GIF (nsgif/cgif), WebP, JXL, JPEG2000, TIFF,
+# PNG and JPEG, plus smartcrop. Formats only ImageMagick could read (ICO, DDS, DPX,
+# XCF) are no longer available, and EXR is gone entirely.
+RUN apt update && \
+    xargs -r apt install -y --no-install-recommends \
+        < /usr/local/libvips/share/runtime-packages.txt && \
+    ldconfig && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install PostgreSQL client, pg_dump and MS jaz (java launcher).
 # postgresql-common is installed and purged in the same layer so it does not
@@ -83,9 +119,11 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         postgresql-client-18 \
         jaz && \
-    /usr/bin/pg_dump --version && \
-    apt-get purge -y postgresql-common && \
+    # ssl-cert is pulled in by postgresql-common and generates a key pair in its postinst;
+    # purge it with postgresql-common so those generated files do not stay in the image.
+    apt-get purge -y postgresql-common ssl-cert && \
     apt-get autoremove -y && \
+    /usr/bin/pg_dump --version && \
     rm -rf /var/lib/apt/lists/*
 
 ARG USER_UID="65001"
@@ -100,10 +138,59 @@ RUN groupadd -g "$USER_GID" "$USER_GROUP" && \
 COPY --from=container-base /java /java
 COPY --from=container-base /srv /srv
 COPY --from=container-base /data /data
+# Tomcat Native (tcnative) built for Tomcat 9 in the java-base image, so it is
+# built once per java-base release and reused here. Runtime deps (libapr1,
+# libssl3) come from the apt packages above.
+COPY --from=container-base /usr/local/tomcat-native /usr/local/tomcat-native
+
+# 2026-10-22: remove the emSign ECC Root CA - G3 from the JDK truststore. eMudhra's
+# intermediates under it were issued with guessable private keys; Chrome distrusts the
+# root on 2026-10-27, but the JDK checks neither Certificate Transparency nor revocation
+# by default, so it would still accept a forged chain. Only G3 goes: the other emSign
+# roots are not distrusted yet. A patched base may have removed the root already;
+# the check still fails the build if any emsign_ecc_root_ca_-_g3 entry remains.
+# https://blog.google/security/protecting-chrome-and-android-users-from-compromised-emudhra-intermediate-ca-certificates/
+RUN set -eu; \
+    keytool="/java/bin/keytool -cacerts -storepass changeit"; \
+    alias="cn=emsign_ecc_root_ca_-_g3,o=emudhra_technologies_limited,ou=emsign_pki,c=in"; \
+    if $keytool -list -alias "$alias" >/dev/null 2>&1; then \
+        $keytool -delete -alias "$alias"; \
+    fi; \
+    remaining="$($keytool -list)"; \
+    if echo "$remaining" | grep -q "emsign_ecc_root_ca_-_g3"; then \
+        echo "emSign ECC Root CA - G3 is still in the JDK truststore" >&2; exit 1; \
+    fi
+
+# 2026-10-28: CVE-2026-91403. Removing G3 above only cuts the emSign path: the same eight
+# eMudhra intermediates are also cross-signed by Sectigo's AAA Certificate Services, which
+# some JDK vendors' cacerts trust (the 21.0.8-ms LTS image does). Block the intermediates
+# themselves the way upstream JDK-8395142 does, by appending their fingerprints to the JDK's
+# blocked.certs, so AAA stays usable for legitimate Sectigo chains. blocked.certs is read as
+# a Properties file, so duplicate lines are harmless once the vendor ships the fix (drop this
+# block then); the file starts with a blank line in case the JDK's copy lacks a final newline.
+# The check fails the build unless the JDK reports all 16 certificates as blocked.
+COPY emudhra/ /tmp/emudhra/
+RUN cat /tmp/emudhra/blocked.certs >> /java/lib/security/blocked.certs && \
+    /java/bin/java --add-exports java.base/sun.security.util=ALL-UNNAMED \
+        /tmp/emudhra/VerifyEmudhraBlocked.java /tmp/emudhra/blocked.pem && \
+    rm -rf /tmp/emudhra
+
+# Assert the native image engine actually works in this image rather than assuming
+# it: confirm the vulnerable packages are absent, that nothing links MagickCore or
+# OpenEXR, that every module dependency resolves, and that representative
+# encode/decode round trips (including AVIF) succeed. Runs after all apt operations
+# on purpose. A wrong module path raises no error - libvips silently falls back to
+# the pure-JVM engine and VipsParityTest self-skips - so this must be explicit.
+RUN /usr/local/libvips/share/verify-libvips.sh
 
 USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
-ENV PATH=$PATH:/java/bin
+ENV PATH=$PATH:/java/bin:/usr/local/libvips/bin
+# Makes the tcnative library visible to the JVM (System.loadLibrary("tcnative-1"))
+# and libvips visible to the vips-ffm FFM binding. ldconfig already registers the
+# libvips prefix through /etc/ld.so.conf.d/libvips.conf; this is belt-and-braces
+# for anything that dlopens without consulting the cache.
+ENV LD_LIBRARY_PATH="/usr/local/tomcat-native/lib:/usr/local/libvips/lib"
 
 ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 CMD ["dotcms"]

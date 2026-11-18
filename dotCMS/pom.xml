@@ -14,7 +14,7 @@
         <!-- Preload the byte-buddy agent for this module's tests so CacheSizingUtil can use
              Instrumentation.getObjectSize(). The path is populated by the dependency-plugin
              'properties' goal (see build/plugins). Consumed by the shared surefire/failsafe argLine. -->
-        <bytebuddy.agent.argline>-javaagent:${net.bytebuddy:byte-buddy-agent:jar}</bytebuddy.agent.argline>
+        <bytebuddy.agent.argline>-javaagent:"${net.bytebuddy:byte-buddy-agent:jar}"</bytebuddy.agent.argline>
         <servlet.port>8080</servlet.port>
         <palantirJavaFormat.version>2.29.0</palantirJavaFormat.version>
         <src.dir>${project.basedir}/src/main/java</src.dir>
@@ -154,11 +154,6 @@
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.commons-fileupload</artifactId>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.commons-httpclient</artifactId>
         </dependency>
         <dependency>
@@ -205,10 +200,6 @@
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.fileupload-ext</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.gif89</artifactId>
             <scope>compile</scope>
         </dependency>
@@ -224,11 +215,6 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.httpbridge</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.httpclient</artifactId>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
@@ -279,10 +265,6 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.jxl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.ldap</artifactId>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
@@ -711,11 +693,6 @@
             <scope>provided</scope>
         </dependency>
 
-
-        <dependency>
-            <groupId>com.impossibl.pgjdbc-ng</groupId>
-            <artifactId>pgjdbc-ng</artifactId>
-        </dependency>
 
         <!--
          *****************************
@@ -1719,6 +1696,34 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <!-- Opt-in JVM agents; attached by setenv.sh (see add_otel_agent / add_pyroscope_agent) -->
+                        <id>copy-observability-agents</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>io.opentelemetry.javaagent</groupId>
+                                    <artifactId>opentelemetry-javaagent</artifactId>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${assembly-directory}/${tomcat-dist-folder}/otel</outputDirectory>
+                                    <destFileName>opentelemetry-javaagent.jar</destFileName>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>io.pyroscope</groupId>
+                                    <artifactId>agent</artifactId>
+                                    <type>jar</type>
+                                    <overWrite>true</overWrite>
+                                    <outputDirectory>${assembly-directory}/${tomcat-dist-folder}/pyroscope</outputDirectory>
+                                    <destFileName>pyroscope.jar</destFileName>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>copy-redis</id>
                         <phase>prepare-package</phase>
                         <goals>
@@ -2162,6 +2167,7 @@
                         <package>com.dotcms.contenttype.model.field</package>
                         <package>com.dotcms.rendering.js</package>
                         <package>com.dotcms.ai.rest</package>
+                        <package>com.dotcms.inference.rest</package>
                         <package>com.dotcms.health</package>
                         <package>com.dotcms.auth.dotAuth.rest</package>
                     </resourcePackages>

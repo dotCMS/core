@@ -20,8 +20,8 @@
 package com.liferay.portal.ejb;
 
 import com.dotcms.api.system.user.UserService;
+import com.dotcms.auth.LoginLockout;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.enterprise.AuthPipeProxy;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.PasswordFactoryProxy.AuthenticationStatus;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
@@ -35,7 +35,9 @@ import com.dotcms.util.SecurityUtils.DelayStrategy;
 import com.dotcms.util.UrlStrategyUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotInvalidPasswordException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.cms.login.factories.LoginFactory;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
@@ -51,7 +53,6 @@ import com.liferay.portal.UserActiveException;
 import com.liferay.portal.UserEmailAddressException;
 import com.liferay.portal.UserIdException;
 import com.liferay.portal.UserPasswordException;
-import com.liferay.portal.auth.AuthException;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.auth.PrincipalException;
 import com.liferay.portal.auth.PrincipalFinder;
@@ -296,6 +297,15 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         return user.getUserId();
     }
 
+    /**
+     * Gives every user that still has the default password a newly generated one and emails it
+     * to them with the registration email. The new password is stored as a secure hash; only the
+     * email carries it in clear text.
+     *
+     * @return the number of users notified
+     * @throws PortalException if the current user is not an administrator
+     * @throws SystemException if a password cannot be generated or an email cannot be sent
+     */
     @Override
     public int notifyNewUsers() throws PortalException, SystemException {
         String companyId = getUser().getCompanyId();
@@ -326,7 +336,13 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         for (int i = 0; i < users.size(); i++) {
             User user = (User) users.get(i);
 
-            user.setPassword(PwdToolkitUtil.generate());
+            final String newPassword = PwdToolkitUtil.generate();
+            try {
+                user.setPassword(PasswordFactoryProxy.generateHash(newPassword));
+                user.setPasswordEncrypted(true);
+            } catch (final PasswordException e) {
+                throw new SystemException(e);
+            }
 
             UserUtil.update(user);
 
@@ -334,13 +350,13 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
                     new String[] {"[$ADMIN_EMAIL_ADDRESS$]", "[$ADMIN_NAME$]", "[$COMPANY_MX$]", "[$COMPANY_NAME$]", "[$PORTAL_URL$]",
                             "[$USER_EMAIL_ADDRESS$]", "[$USER_NAME$]", "[$USER_PASSWORD$]"},
                     new String[] {company.getEmailAddress(), adminName, company.getMx(), company.getName(), company.getPortalURL(),
-                            user.getEmailAddress(), user.getFullName(), user.getPassword()});
+                            user.getEmailAddress(), user.getFullName(), newPassword});
 
             body = StringUtil.replace(body,
                     new String[] {"[$ADMIN_EMAIL_ADDRESS$]", "[$ADMIN_NAME$]", "[$COMPANY_MX$]", "[$COMPANY_NAME$]", "[$PORTAL_URL$]",
                             "[$USER_EMAIL_ADDRESS$]", "[$USER_NAME$]", "[$USER_PASSWORD$]"},
                     new String[] {company.getEmailAddress(), adminName, company.getMx(), company.getName(), company.getPortalURL(),
-                            user.getEmailAddress(), user.getFullName(), user.getPassword()});
+                            user.getEmailAddress(), user.getFullName(), newPassword});
 
             try {
                 MailManagerUtil.sendEmail(new MailMessage(new InternetAddress(company.getEmailAddress(), adminName),
@@ -516,7 +532,9 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
     }
 
     /**
-     * Authenticates the user based on their e-mail or user ID.
+     * Authenticates the user based on their e-mail or user ID. When no account matches the login, the password is
+     * still checked, against a placeholder hash, so that the login does the same password hashing work as one with a
+     * wrong password.
      *
      * @param companyId      The ID of the company that the user belongs to.
      * @param login          The identification mechanism: The user e-mail, or the user ID.
@@ -535,41 +553,93 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         login = login.trim().toLowerCase();
         Logger.debug(this, String.format("Authenticating user '%s'", login));
         this.validateInputData(login, password, byEmailAddress);
-        Logger.debug(this, String.format("Running Login PRE authenticators by %s for User '%s'", byEmailAddress ?
-                                                                                                         "email" :
-                                                                                                         "user ID",
-                login));
-        int authResult = this.runCustomAuthenticators(companyId, login, password, byEmailAddress,
-                PropsUtil.getArray(PropsUtil.AUTH_PIPELINE_PRE));
         final User user = this.findUser(companyId, login, byEmailAddress);
         if (null == user) {
+            checkPasswordWithoutAccount(password);
             this.delayRequest(1);
             return Authenticator.DNE;
         }
         this.checkPasswordExpiration(login, user);
-        if (authResult == Authenticator.SUCCESS) {
-            authResult = LoginFactory.passwordMatch(password, user) ? Authenticator.SUCCESS : Authenticator.FAILURE;
-            Logger.debug(this, String.format("Does password for User '%s' match? %s", login,
-                    authResult == Authenticator.SUCCESS));
-            if (authResult == Authenticator.SUCCESS) {
-                this.checkUserStatus(user);
-                Logger.debug(this, String.format("Running Login POST authenticators by %s for User '%s'",
-                        byEmailAddress ? "email" : "user ID", login));
-                authResult = this.runCustomAuthenticators(companyId, login, password, byEmailAddress,
-                        PropsUtil.getArray(PropsUtil.AUTH_PIPELINE_POST));
-                if (authResult == Authenticator.SUCCESS && user.getFailedLoginAttempts() > 0) {
-                    // User authenticated, reset failed attempts
-                    Logger.debug(this, String.format("Setting failed login attempts for user '%s' to zero.",
-                            user.getUserId()));
-                    user.setFailedLoginAttempts(0);
-                    UserUtil.update(user);
-                }
+        // Counted before the password is checked, so parallel attempts get at most the limit between them
+        final LoginLockout.Attempt attempt = LoginLockout.getInstance().begin(user.getUserId(),
+                LoginLockout.clientAddress());
+        if (attempt.isRefused()) {
+            // Same work, delay, failure handlers and result as a wrong password, so a refused login gives
+            // no signal about whether the guess was right.
+            if (LoginFactory.passwordMatch(password, user)) {
+                // Refused only because a lock applies or too many attempts were in flight at once: a right
+                // password hands its count back, so it never sets a lock of its own
+                LoginLockout.getInstance().release(attempt);
+            } else {
+                LoginLockout.getInstance().failed(attempt);
             }
+            LoginLockout.getInstance().logRefused(attempt);
+            this.processFailedLogin(user, login, companyId, byEmailAddress, attempt, true);
+            return Authenticator.FAILURE;
         }
-        if (authResult == Authenticator.FAILURE) {
-            this.processFailedLogin(user, login, companyId, byEmailAddress);
+        final int authResult = LoginFactory.passwordMatch(password, user)
+                ? Authenticator.SUCCESS : Authenticator.FAILURE;
+        Logger.debug(this, String.format("Does password for User '%s' match? %s", login,
+                authResult == Authenticator.SUCCESS));
+        if (authResult == Authenticator.SUCCESS) {
+            this.checkUserStatus(user);
+            if (user.getFailedLoginAttempts() > 0) {
+                // User authenticated, reset failed attempts
+                Logger.debug(this, String.format("Setting failed login attempts for user '%s' to zero.",
+                        user.getUserId()));
+                user.setFailedLoginAttempts(0);
+                UserUtil.update(user);
+            }
+            // Earlier attempts from this address no longer count toward a lock
+            LoginLockout.getInstance().succeeded(attempt);
+        } else {
+            this.processFailedLogin(user, login, companyId, byEmailAddress, attempt, false);
         }
         return authResult;
+    }
+
+    /**
+     * Runs the password hash verifier for a login that matches no account, against {@link PlaceholderHash}, so the
+     * login costs the same as checking a stored password. The result is ignored: such a login always fails.
+     *
+     * @param password The password typed by the user.
+     */
+    private static void checkPasswordWithoutAccount(final String password) {
+        final String placeholder = PlaceholderHash.VALUE;
+        if (null == placeholder) {
+            return;
+        }
+        try {
+            PasswordFactoryProxy.authPassword(password, placeholder);
+        } catch (final PasswordException | RuntimeException e) {
+            // This check only evens out the work done; it must never turn a refused login into an error
+            Logger.debug(UserManagerImpl.class, "Unable to check a password for a login with no account", e);
+        }
+    }
+
+    /**
+     * Holds the hash of a random secret that is never kept anywhere, made once with the current password hashing
+     * settings the first time a login matches no account. No password matches it.
+     */
+    private static final class PlaceholderHash {
+
+        private static final String VALUE = create();
+
+        /**
+         * Creates the placeholder hash.
+         *
+         * @return The hash, or {@code null} if it cannot be created; logins with no account then skip the check until
+         * the next restart.
+         */
+        private static String create() {
+            try {
+                return PasswordFactoryProxy.generateRandomHash();
+            } catch (final PasswordException | RuntimeException e) {
+                Logger.error(UserManagerImpl.class, "Unable to prepare the placeholder password hash; logins with no "
+                        + "matching account skip the password check until the next restart", e);
+                return null;
+            }
+        }
     }
 
     /**
@@ -600,36 +670,6 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             Logger.error(this, "Password cannot be null");
             throw new UserPasswordException(UserPasswordException.PASSWORD_INVALID);
         }
-    }
-
-    /**
-     * Executes the list of custom authenticators. Developers can execute them before and/or after the default
-     * authentication process in dotCMS, in case an additional security layer is required. If the array of
-     * authenticators is empty, the {@link Authenticator#SUCCESS} will be returned by default.
-     * <p>Here are the properties that can be used to declare such authenticators:
-     * <ul>
-     *     <li>Pre-Authenticators: {@link PropsUtil#AUTH_PIPELINE_PRE}</li>
-     *     <li>Post-Authenticators: {@link PropsUtil#AUTH_PIPELINE_POST}</li>
-     * </ul>
-     * </p>
-     *
-     * @param companyId      The current Company ID.
-     * @param login          The user's email or ID.
-     * @param password       The human-readable user's password.
-     * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
-     *                       done via User ID, set to {@code false}.
-     * @param classes        The list of pre- or post-authenticator classes, specified in either the
-     *                       {@link PropsUtil#AUTH_PIPELINE_PRE} or {@link PropsUtil#AUTH_PIPELINE_POST} properties.
-     *
-     * @return The result of the authentication process: {@link Authenticator#SUCCESS}, {@link Authenticator#FAILURE},
-     * or {@link Authenticator#DNE}.
-     *
-     * @throws AuthException An error occurred when executing one of the authenticators.
-     */
-    private int runCustomAuthenticators(final String companyId, final String login, final String password,
-                                        final boolean byEmailAddress, final String[] classes) throws AuthException {
-        return byEmailAddress ? AuthPipeProxy.authenticateByEmailAddress(classes, companyId, login, password) :
-                       AuthPipeProxy.authenticateByUserId(classes, companyId, login, password);
     }
 
     /**
@@ -688,43 +728,36 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
     }
 
     /**
-     * Executes the optional custom on-failure handlers and updates the User information after a failed login attempt.
+     * Updates the User information after a failed login attempt.
      *
      * @param user           The {@link User} that failed to log in.
      * @param login          The user's email or ID.
      * @param companyId      The current Company ID.
      * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
      *                       done via User ID, set to {@code false}.
+     * @param attempt        The login lockout attempt for this login; see {@link LoginLockout#begin(String, String)}.
+     * @param refused        If the login was refused by login lockout, set this to {@code true}: the request is
+     *                       delayed the same way, but the User's failure counter is not changed, and the
+     *                       caller has already finished the lockout attempt.
      */
     private void processFailedLogin(final User user, final String login, final String companyId,
-                                    final boolean byEmailAddress) {
+                                    final boolean byEmailAddress, final LoginLockout.Attempt attempt,
+                                    final boolean refused) {
         Logger.debug(this, String.format("Authentication for user '%s' has failed.", login));
+        if (!refused) {
+            // Recorded first, before the delay below, so the lock state is up to date as soon as possible
+            LoginLockout.getInstance().failed(attempt);
+        }
         try {
-            this.runCustomOnFailureHandlers(companyId, login, byEmailAddress);
-            this.handleFailedLoginAttempt(user, login, companyId, byEmailAddress);
+            if (refused) {
+                this.delayFailedLogin(user, login, attempt);
+            } else {
+                this.handleFailedLoginAttempt(user, login, companyId, byEmailAddress, attempt);
+            }
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when handling failed login for User '%s': " +
                                                           "%s", login, e.getMessage());
             Logger.error(this, errorMsg, e);
-        }
-    }
-
-    /**
-     * Executes the list of custom failure handlers. They can be executed after a given User has failed to authenticate.
-     * It can be specified via the following property: {@link PropsUtil#AUTH_FAILURE}.
-     *
-     * @param companyId      The current Company ID.
-     * @param login          The user's email or ID.
-     * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
-     *                       done via User ID, set to {@code false}.
-     *
-     * @throws AuthException An error occurred when executing one of the authenticators.
-     */
-    private void runCustomOnFailureHandlers(String companyId, String login, boolean byEmailAddress) throws AuthException {
-        if (byEmailAddress) {
-            AuthPipeProxy.onFailureByEmailAddress(PropsUtil.getArray(PropsUtil.AUTH_FAILURE), companyId, login);
-        } else {
-            AuthPipeProxy.onFailureByUserId(PropsUtil.getArray(PropsUtil.AUTH_FAILURE), companyId, login);
         }
     }
 
@@ -743,50 +776,73 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
      * @param companyId      The current Company ID.
      * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
      *                       done via User ID, set to {@code false}.
+     * @param attempt        The login lockout attempt for this login; see {@link LoginLockout#begin(String, String)}.
      *
      * @throws SystemException User failed attempts data could not be saved.
-     * @throws AuthException   An error occurred when executing the handlers for maximum failed loin attempts.
      */
-    private void handleFailedLoginAttempt(final User user, final String login, final String companyId, final boolean byEmailAddress) throws SystemException, AuthException {
+    private void handleFailedLoginAttempt(final User user, final String login, final String companyId,
+                                          final boolean byEmailAddress, final LoginLockout.Attempt attempt)
+            throws SystemException {
         int failedLoginAttempts = user.getFailedLoginAttempts();
         Logger.debug(this, String.format("Current failed login attempts for user '%s' is %s", login,
                 failedLoginAttempts));
-        if (Config.getBooleanProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true)) {
-            Logger.debug(this, String.format("Delaying login attempts for user '%s'", login));
-            this.delayRequest(failedLoginAttempts);
-        }
+        this.delayFailedLogin(user, login, attempt);
         user.setFailedLoginAttempts(++failedLoginAttempts);
         Logger.debug(this, String.format("Setting failed login attempts for user '%s' to %s", login,
                 user.getFailedLoginAttempts()));
         UserUtil.update(user);
         final int maxFailures = GetterUtil.get(PropsUtil.get(PropsUtil.AUTH_MAX_FAILURES_LIMIT), 0);
         Logger.debug(this, String.format("Maximum failed login attempts is %s", maxFailures));
+        final boolean lockoutEnabled = LoginLockout.getInstance().isEnabled(maxFailures);
         if ((failedLoginAttempts >= maxFailures) && (maxFailures != 0)) {
             Logger.debug(this, String.format("User '%s' failed to authenticate via '%s' after %s failed attempts",
                     login, byEmailAddress ? "email" : "user ID", failedLoginAttempts));
-            this.runCustomMaxFailuresHandlers(login, companyId, byEmailAddress);
+            if (lockoutEnabled) {
+                // Locks are decided per address by LoginLockout. This account-wide count only paces the delay and
+                // the handlers below, so it starts over rather than growing with every failure from anywhere.
+                user.setFailedLoginAttempts(0);
+                UserUtil.update(user);
+            }
         }
     }
 
     /**
-     * Executes the list of custom failure handlers when the maximum number of login attempts has been reached. It can
-     * be specified via the following property: {@link PropsUtil#AUTH_MAX_FAILURES}.
+     * Applies the login-delaying strategy for a failed login, based on the login lockout attempt's pacing seed.
      *
-     * @param login          The user's email or ID.
-     * @param companyId      The current Company ID.
-     * @param byEmailAddress If the current authentication method is via email, set this to {@code true}. If it's
-     *                       done via User ID, set to {@code false}.
-     *
-     * @throws AuthException An error occurred when executing one of the authenticators.
+     * @param user    The {@link User} that failed to log in.
+     * @param login   The User's email or ID.
+     * @param attempt The login lockout attempt for this login; see {@link LoginLockout#begin(String, String)}.
      */
-    private void runCustomMaxFailuresHandlers(final String login, final String companyId,
-                                              final boolean byEmailAddress) throws AuthException {
-        if (byEmailAddress) {
-            AuthPipeProxy.onMaxFailuresByEmailAddress(PropsUtil.getArray(PropsUtil.AUTH_MAX_FAILURES), companyId,
-                    login);
-        } else {
-            AuthPipeProxy.onMaxFailuresByUserId(PropsUtil.getArray(PropsUtil.AUTH_MAX_FAILURES), companyId, login);
+    private void delayFailedLogin(final User user, final String login, final LoginLockout.Attempt attempt) {
+        if (Config.getBooleanProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true)) {
+            Logger.debug(this, String.format("Delaying login attempts for user '%s'", login));
+            this.delayRequest(this.delaySeed(user, attempt));
         }
+    }
+
+    /**
+     * Returns the count that paces the delay. With login lockout on and the attempt actually tracked, this is
+     * {@link LoginLockout#pacingSeed}: each attempt's own atomically-counted position, or the source's total
+     * recent failures across every account, whichever is larger, so the delay is paced whichever way the
+     * failures are concentrated. With lockout off, or when the attempt is untracked (for example after a
+     * database error in {@link LoginLockout#begin}), the legacy per-user failed-attempts count is used
+     * instead, since no lockout attempt is being tracked.
+     *
+     * <p>Either way the result is capped below the configured limit rather than reset in the database, so
+     * neither the first failed login of a dormant account, nor the legacy count left to grow unbounded while
+     * lockout is off (nothing resets it then), sleeps for a strategy's full scale of an old count.
+     *
+     * @param user    The {@link User} that failed to log in.
+     * @param attempt The login lockout attempt for this login; see {@link LoginLockout#begin(String, String)}.
+     *
+     * @return The seed for {@link #delayRequest(int)}.
+     */
+    private int delaySeed(final User user, final LoginLockout.Attempt attempt) {
+        final int maxFailures = LoginLockout.maxFailures();
+        final int seed = LoginLockout.getInstance().isEnabled(maxFailures) && !attempt.isUntracked()
+                ? LoginLockout.getInstance().pacingSeed(attempt)
+                : user.getFailedLoginAttempts();
+        return maxFailures > 0 ? Math.min(seed, maxFailures - 1) : seed;
     }
 
     /**
@@ -794,7 +850,13 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
      * order to prevent potential hacking attacks. The time that the user will have to wait is based on
      * a specific delay strategy. It defaults to raising the {@code defaultSeed} value to the power of
      * 2.
-     * 
+     *
+     * <p>A strategy with a literal parameter ({@code TIME_MILLS:2000}, {@code TIME_SEC:30}, {@code
+     * TIME_MIN:5}) treats it as a per-unit rate rather than a flat total: the literal is multiplied by
+     * {@code defaultSeed}, the same way the default strategy raises {@code defaultSeed} to a power,
+     * so every strategy scales with how paced the attempt actually is instead of sleeping the same
+     * fixed amount regardless of it.
+     *
      * @param defaultSeed - The default time seed in case the delay strategy does not specify one.
      */
     private void delayRequest(int defaultSeed) {
@@ -805,7 +867,8 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         try {
             strategy = (UtilMethods.isSet(stratParams[0])) ? DelayStrategy.valueOf(stratParams[0].toUpperCase()) : DelayStrategy.POW;
             if (stratParams.length > 1) {
-                seed = ConversionUtils.toInt(stratParams[1], defaultSeed);
+                final int unitsPerSeed = ConversionUtils.toInt(stratParams[1], 1);
+                seed = unitsPerSeed * defaultSeed;
             }
 
             Logger.debug(this, "Doing a delay request, with seed: " + seed + ", defaultSeed: " + defaultSeed + ", strategy: " + strategy);
@@ -823,10 +886,19 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
     public void resetPassword(String userId, String token, String newPassword) throws com.dotmarketing.business.NoSuchUserException,
             DotSecurityException, DotInvalidTokenException, DotInvalidPasswordException {
         try {
-                final User user = APILocator.getUserAPI().loadUserById(userId);
-                ResetPasswordTokenUtil.checkToken(user, token);
+            final User user = APILocator.getUserAPI().loadUserById(userId);
+            ResetPasswordTokenUtil.checkToken(user, token);
+            LocalTransaction.wrapReturn(() -> {
+                if (!FactoryLocator.getUserFactory().clearIcqId(user.getUserId(), token)) {
+                    throw new DotInvalidTokenException(token);
+                }
+                // Also clears any login lockout on the account.
                 APILocator.getUserAPI().updatePassword(user, newPassword, APILocator.getUserAPI().getSystemUser(), false);
-        } catch (DotDataException e) {
+                return null;
+            });
+        } catch (DotInvalidTokenException | DotSecurityException | RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
             throw new IllegalArgumentException();
         }
     }

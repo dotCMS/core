@@ -10,12 +10,12 @@
 package com.dotcms.enterprise.publishing.sitesearch;
 
 import com.dotcms.cdi.CDIUtils;
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexTag;
+import com.dotcms.content.index.IndexTimestamp;
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.VersionedIndicesAPI;
 import com.dotcms.content.index.VersionedIndicesImpl;
@@ -60,6 +60,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Default;
@@ -156,12 +157,25 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
 
     @Override
     public List<String> listIndices() {
+        return siteSearchIndices(indexApi.listIndices());
+    }
+
+    /**
+     * Same listing, but a failure to reach OpenSearch propagates instead of reading as "no indices"
+     * (issue #37636).
+     */
+    @Override
+    public List<String> listIndicesOrThrow() {
+        return siteSearchIndices(indexApi.listIndicesOrThrow());
+    }
+
+    private List<String> siteSearchIndices(final Set<String> allIndices) {
         if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
             return Collections.emptyList();
         }
         // The physical OS indices are .os-tagged; strip back to logical names so the ES∪OS merge in
         // SiteSearchAPIImpl.listIndices() deduplicates and no .os leaks to the portlet (issue #36672).
-        final List<String> indices = indexApi.listIndices().stream()
+        final List<String> indices = allIndices.stream()
                 .filter(IndexType.SITE_SEARCH::is)
                 .map(IndexTag::strip)
                 .distinct()
@@ -726,9 +740,9 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         indicesToRemove.removeAll(indicesWithAlias);
 
         // Keep indices created within the last 24 hours.
-        final Date yesterday = Date.from(Instant.now().minus(Duration.ofDays(1)));
+        // The cutoff must use the same UTC suffix the names are written with (issue #37282).
         final long yesterdayTimestamp =
-                Long.parseLong(ContentletIndexAPIImpl.timestampFormatter.format(yesterday));
+                Long.parseLong(IndexTimestamp.of(Instant.now().minus(Duration.ofDays(1))));
 
         final List<String> recent = new ArrayList<>();
         for (final String index : indicesToRemove) {

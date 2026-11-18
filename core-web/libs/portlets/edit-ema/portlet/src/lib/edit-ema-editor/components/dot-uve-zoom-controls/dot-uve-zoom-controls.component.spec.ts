@@ -1,4 +1,5 @@
-import { Spectator, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, createComponentFactory } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -9,7 +10,7 @@ import { UVEStore } from '../../../store/dot-uve.store';
 describe('DotUveZoomControlsComponent', () => {
     let spectator: Spectator<DotUveZoomControlsComponent>;
     let viewZoomLevel: ReturnType<typeof signal<number>>;
-    let viewZoomSetLevel: jest.Mock;
+    let viewZoomSetLevel: Mock;
 
     const createComponent = createComponentFactory({
         component: DotUveZoomControlsComponent,
@@ -27,7 +28,7 @@ describe('DotUveZoomControlsComponent', () => {
 
     beforeEach(() => {
         viewZoomLevel = signal(100);
-        viewZoomSetLevel = jest.fn();
+        viewZoomSetLevel = vi.fn();
     });
 
     describe('$zoomOptions', () => {

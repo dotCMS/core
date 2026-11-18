@@ -1,5 +1,6 @@
 import {
     DotExperimentStatus,
+    ExperimentChartDatasetColorsVariants,
     ExperimentsStatusList,
     GOAL_TYPES,
     GOALS_METADATA_MAP
@@ -8,7 +9,15 @@ import {
 import { DotExperimentsListSortDirection, ExperimentRow, TagSeverity } from './models';
 
 export const DEFAULT_EXPERIMENTS_LIST_PAGE = 1;
-export const DEFAULT_EXPERIMENTS_LIST_PER_PAGE = 25;
+/**
+ * Rows per page before anyone chooses. The smallest of {@link ROWS_PER_PAGE_OPTIONS}, matching
+ * Content Drive's own default — see that list for why the two agree.
+ *
+ * It is also the value `per_page` is omitted from the address for, so changing it changes which
+ * URLs carry the param. An address that still names the old size is honoured either way: the
+ * paginator only offers the options above, but `parseViewState` takes any positive integer.
+ */
+export const DEFAULT_EXPERIMENTS_LIST_PER_PAGE = 20;
 /**
  * Sortable columns. The values double as `pSortableColumn` fields, as the `orderby` URL param
  * and as the comparator keys, so the three can never drift apart.
@@ -37,6 +46,18 @@ export const DEFAULT_EXPERIMENTS_LIST_STATUSES: DotExperimentStatus[] = [];
 
 /** Same as the status filter: nothing pre-selected, so the chip reads as unfiltered. */
 export const DEFAULT_EXPERIMENTS_LIST_GOALS: GOAL_TYPES[] = [];
+
+/** Same as status and goal: nothing pre-selected, so the chip reads as unfiltered. */
+export const DEFAULT_EXPERIMENTS_LIST_CREATORS: string[] = [];
+
+/**
+ * The format the schedule bounds take in the address: a local calendar date.
+ *
+ * A date rather than an instant because that is what a period picked on a calendar means — the
+ * link reopens on the days that were chosen. Carrying an instant would make the calendar show a
+ * different day than the one selected, in any time zone but the writer's (FR-049a).
+ */
+export const SCHEDULE_BOUND_FORMAT = 'yyyy-MM-dd';
 
 /** i18n keys of the goal names, in the order the filter lists them. */
 export const GOAL_LABEL_KEYS = new Map<GOAL_TYPES, string>(
@@ -70,7 +91,16 @@ export const STATUS_LABEL_KEYS = new Map<string, string>(
 /** Lifetime of the success toasts pushed after a row action. */
 export const SUCCESS_MESSAGE_LIFE = 5000;
 
-export const ROWS_PER_PAGE_OPTIONS = [10, 25, 50];
+/**
+ * Page sizes offered by the paginator.
+ *
+ * The same three Content Drive offers, and the same smallest one — `dot-folder-list-view`'s
+ * `rowsPerPageOptions` (`libs/ui/src/lib/components/dot-folder-list-view`). Two listing screens in
+ * the same admin should not disagree about what a page is; this list is the one a user meets first.
+ * {@link DEFAULT_EXPERIMENTS_LIST_PER_PAGE} is its smallest member, so the paginator opens on the
+ * option the dropdown shows first.
+ */
+export const ROWS_PER_PAGE_OPTIONS = [20, 40, 60];
 
 /** Placeholder rows drawn while the first page is still loading. */
 export const SKELETON_ROW_COUNT = 5;
@@ -87,11 +117,27 @@ export const SKELETON_ROWS: ExperimentRow[] = Array.from(
     () => ({}) as ExperimentRow
 );
 
-/** One skeleton cell per table column. */
-export const SKELETON_COLUMNS = Array.from({ length: 8 }, (_, index) => index);
+/** One skeleton cell per table column. Nine since Created By joined them (#37307). */
+export const SKELETON_COLUMNS = Array.from({ length: 9 }, (_, index) => index);
 
-/** Placeholder rendered in the Goal column when no goal is configured. */
-export const NO_GOAL_PLACEHOLDER = '—';
+/**
+ * The same skeleton row inside the panel, which renders one column fewer — Page is dropped there
+ * (FR-009). A skeleton wider than its header puts a cell outside the table while it loads.
+ *
+ * Derived by dropping one, which holds only while exactly one column differs between the two
+ * surfaces. Created By (#37307) was added to both, so it still holds; a column rendered on one
+ * surface and not the other would break the derivation rather than this number.
+ */
+export const PANEL_SKELETON_COLUMNS = SKELETON_COLUMNS.slice(1);
+
+/**
+ * Rendered in place of a cell whose value the experiment does not carry — a goal that was never
+ * configured, or a creator name from a backend that predates #37304.
+ *
+ * One dash for both, so a reader scanning a column sees the same "nothing here" everywhere rather
+ * than having to learn a per-column convention.
+ */
+export const EMPTY_CELL_PLACEHOLDER = '—';
 
 /**
  * Style of the list table.
@@ -102,13 +148,36 @@ export const NO_GOAL_PLACEHOLDER = '—';
  * zero once the viewport is narrow enough. The `min-width` is the floor that stops it: below that
  * the table stops shrinking and the scroll container takes over horizontally.
  *
- * The value is the sum of the fixed columns (14 + 11 + 7 + 15 + 8 + 8 + 4 = 67rem) plus the floor
- * granted to Name (14rem). Keep it in step with the header widths — a column added or resized
- * there without updating this number silently eats into Name's floor again.
+ * The value is the sum of the fixed columns — Page 14 + Goal 11 + Variants 7 + Created By 10 +
+ * Schedule 15 + Status 8 + Modified 8 + actions 4 = 77rem — plus the floor granted to Name
+ * (14rem). Keep it in step with the header widths: a column added or resized there without
+ * updating this number silently eats into Name's floor again, which is how a wrong value shows up
+ * — not as a broken layout but as a Name column squeezed at a width nobody tests at.
  */
 export const LIST_TABLE_STYLE: Record<string, string> = {
     'table-layout': 'fixed',
-    'min-width': '81rem'
+    'min-width': '91rem'
+};
+
+/**
+ * The same table, inside the Experiments panel (#37478).
+ *
+ * One number differs, and it is not a style choice. `91rem` is what the portlet's eight data
+ * columns need at their declared widths; the panel drops the Page column (FR-009, `w-56` = 14rem)
+ * and gives the space back to the name, so the floor moves with it: 63rem of fixed columns
+ * (77 − 14) plus an 11rem floor for Name. Created By is **not** dropped here (FR-032a), so it is
+ * inside both sums. Keep both numbers in step with the header widths.
+ *
+ * The panel is the narrower of the two and therefore the binding constraint on how wide Created By
+ * can be: every rem given to it is a rem the panel starts scrolling earlier at.
+ *
+ * This is a scroll threshold, not a layout switch: which layout renders is decided by the mode
+ * flag alone, never by measured width (FR-041). Below this the panel scrolls horizontally exactly
+ * as the portlet does below `91rem`, which on an 80% panel means a viewport under about 1480px.
+ */
+export const PANEL_LIST_TABLE_STYLE: Record<string, string> = {
+    'table-layout': 'fixed',
+    'min-width': '74rem'
 };
 
 /** Height of the status filter's option list before it scrolls. */
@@ -128,6 +197,51 @@ export const CONFIGURATION_SEGMENT = 'configuration';
 
 /** Hides a `p-panel`'s footer band while its footer slot has nothing to show (see the theme). */
 export const DOT_PANEL_NO_FOOTER = 'dot-panel-no-footer';
+
+/**
+ * Width of the Experiments panel inside the editor (#37478).
+ *
+ * Percentual, and most of the viewport. The editor's own right-hand sidebar width was the
+ * starting point only because it was the width the template had; nothing the panel shows reads at
+ * that width — not a row carrying a name, a status, a goal and a schedule, and least of all the
+ * configuration form and the results charts reached from it. Width spent here costs nothing that
+ * was usable: the drawer's mask already covers the canvas while the panel is open. The page stays
+ * mounted and unnavigated behind it, which is what SC-001 and FR-036 ask for.
+ */
+export const PANEL_WIDTH = '80%';
+
+/**
+ * Width of the Experiments panel once the editor widens it (#37478).
+ *
+ * The expand toggle exists for parity with the Edit Content side panel. From a panel that is
+ * already most of the viewport it buys the rest of it — the reading mode for the results charts
+ * that O1 has yet to settle.
+ */
+export const PANEL_EXPANDED_WIDTH = '100%';
+/** Trailing segment of the Results URL. Reachable on every status, including DRAFT (AC1). */
+export const RESULTS_SEGMENT = 'results';
+
+/** Route parameter naming the experiment on the Configure and Results URLs. */
+export const EXPERIMENT_ID_ROUTE_PARAM = 'experimentId';
+
+/**
+ * i18n keys of the three screens' own titles — the same ones their routes declare.
+ *
+ * The crumb a screen puts on the trail says where you are, so it is the screen's title and not the
+ * experiment's: the experiment is already named right below, in the header. Reading the key the
+ * route reads keeps the crumb and the browser tab from drifting apart.
+ */
+export const LIST_TITLE_KEY = 'experiment.container.list.title';
+export const CONFIGURE_TITLE_KEY = 'experiment.container.configuration.title';
+export const RESULTS_TITLE_KEY = 'experiment.container.report.title';
+
+/**
+ * i18n key of the Configure screen's title while the draft has no name yet.
+ *
+ * Also the screen's own name at that point: a draft that has not been created is the New
+ * Experiment screen, and only becomes the Configure screen once it exists.
+ */
+export const NEW_EXPERIMENT_TITLE_KEY = 'experiments.configure.header.new-experiment';
 
 /**
  * Multiplier applied to the page-lookup limit.
@@ -166,6 +280,15 @@ export const LOCKED_BANNER_KEY_RUNNING = 'experiments.configure.locked.running';
 
 /** Read-only banner copy for every other non-DRAFT status. */
 export const LOCKED_BANNER_KEY_READ_ONLY = 'experiments.configure.locked.read-only';
+
+/**
+ * How many rows a page lookup asks for.
+ *
+ * More than one because a path — and an identifier — answers once per language, and `limit: 1`
+ * left it to the search which of them came back. The rows are narrowed to one deterministically
+ * after they arrive; ten is room for any realistic set of site languages.
+ */
+export const PAGE_LOOKUP_LIMIT = 10;
 
 /** Page card's inline error when `?pageId=`/`?url=` named a page that is not there. */
 export const PAGE_PREFILL_ERROR_KEY = 'experiments.configure.page.prefill.not-found';
@@ -246,7 +369,6 @@ export const SELECT_PAGE_BROWSER_PARAMS = {
     showFolders: false,
     showLinks: false,
     showWorking: true,
-    showArchived: false,
     sortByDesc: true
 } as const;
 
@@ -272,6 +394,20 @@ export const VARIANT_COLORS: readonly string[] = [
 ];
 
 /**
+ * Row colours of the Results screen, in the order the rows are drawn.
+ *
+ * The line colours the charts already draw with, read straight off the chart palette rather than
+ * restated here. On that screen a row's dot exists to tie the row to its line, so the dot, the line
+ * and the legend swatch have to be one value — and they are, because there is only one to change.
+ *
+ * `MAX_VARIANTS_ALLOWED` is 3 and so is this palette, so the modulo never wraps today; it is there
+ * for a cap raised without the chart palette following.
+ */
+export const RESULTS_VARIANT_COLORS: readonly string[] = ExperimentChartDatasetColorsVariants.map(
+    ({ borderColor }) => String(borderColor)
+);
+
+/**
  * Kind of the cross-field error the weights raise when they do not add up to 100.
  *
  * Deliberately the same string as the `weightsTotal` validation rule the store publishes on a Start
@@ -279,3 +415,21 @@ export const VARIANT_COLORS: readonly string[] = [
  * store's is what turns it into a scroll target (AC28) — and the card reads both.
  */
 export const WEIGHTS_TOTAL_ERROR_KIND = 'weightsTotal';
+
+/**
+ * Key of the Results screen's `p-confirmDialog`, which the Stop confirmation is raised on.
+ *
+ * Its own key rather than the Configure screen's `CONFIGURATION_CONFIRM_DIALOG_KEY`: the two
+ * screens never share a dialog instance, and the summary table mounts a second dialog of its own
+ * for Promote — a key shared between two mounted dialogs opens both at once.
+ */
+export const RESULTS_CONFIRM_DIALOG_KEY = 'resultsConfirmDialog';
+
+/**
+ * A chart's own skeleton: axes, gridlines and label placeholders, no series.
+ *
+ * Shared because two screens need the same silhouette — the chart draws it in place of a plot it
+ * cannot draw yet, and the Results screen draws it behind its empty state so a report with no
+ * sessions still reads as the report it will become.
+ */
+export const EMPTY_CHART_BACKGROUND_IMAGE = `url("data:image/svg+xml,%3Csvg width='917' height='515' viewBox='0 0 917 515' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cg clip-path='url(%23clip0_3061_22368)'%3E%3Crect width='855' height='515' transform='translate(61.5)' fill='white'/%3E%3Cline x1='136.863' y1='437' x2='136.863' y2='18' stroke='%23F4F4F6' stroke-width='1.27393'/%3E%3Cline x1='315.863' y1='437' x2='315.863' y2='18' stroke='%23F4F4F6' stroke-width='1.27393'/%3E%3Cline x1='482.863' y1='437' x2='482.863' y2='18' stroke='%23F4F4F6' stroke-width='1.27393'/%3E%3Cline x1='649.863' y1='437' x2='649.863' y2='18' stroke='%23F4F4F6' stroke-width='1.27393'/%3E%3Cline x1='816.863' y1='437' x2='816.863' y2='18' stroke='%23F4F4F6' stroke-width='1.27393'/%3E%3Cline x1='62.137' y1='437.05' x2='1397.22' y2='437.049' stroke='%23F4F4F6' stroke-width='1.27393' stroke-linecap='round'/%3E%3Cline x1='61.9612' y1='185.225' x2='1397.39' y2='185.225' stroke='%23F4F4F6' stroke-width='0.922339' stroke-linecap='round' stroke-dasharray='7.38 7.38'/%3E%3Cline x1='61.9612' y1='17.2254' x2='1397.39' y2='17.2254' stroke='%23F4F4F6' stroke-width='0.922339' stroke-linecap='round' stroke-dasharray='7.38 7.38'/%3E%3Cline x1='61.9612' y1='59.2254' x2='1397.39' y2='59.2254' stroke='%23F4F4F6' stroke-width='0.922339' stroke-linecap='round' stroke-dasharray='7.38 7.38'/%3E%3Cline x1='61.9612' y1='101.225' x2='1397.39' y2='101.225' stroke='%23F4F4F6' stroke-width='0.922339' stroke-linecap='round' stroke-dasharray='7.38 7.38'/%3E%3Cline x1='61.9612' y1='143.225' x2='1397.39' y2='143.225' stroke='%23F4F4F6' stroke-width='0.922339' stroke-linecap='round' stroke-dasharray='7.38 7.38'/%3E%3Cline x1='61.9612' y1='227.225' x2='1397.39' y2='227.225' stroke='%23F4F4F6' stroke-width='0.922339' stroke-linecap='round' stroke-dasharray='7.38 7.38'/%3E%3Cline x1='61.9612' y1='269.225' x2='1397.39' y2='269.225' stroke='%23F4F4F6' stroke-width='0.922339' stroke-linecap='round' stroke-dasharray='7.38 7.38'/%3E%3Cline x1='61.9612' y1='311.225' x2='1397.39' y2='311.225' stroke='%23F4F4F6' stroke-width='0.922339' stroke-linecap='round' stroke-dasharray='7.38 7.38'/%3E%3Cline x1='61.9612' y1='353.225' x2='1397.39' y2='353.225' stroke='%23F4F4F6' stroke-width='0.922339' stroke-linecap='round' stroke-dasharray='7.38 7.38'/%3E%3Cline x1='61.9612' y1='395.225' x2='1397.39' y2='395.225' stroke='%23F4F4F6' stroke-width='0.922339' stroke-linecap='round' stroke-dasharray='7.38 7.38'/%3E%3Crect x='100.5' y='458' width='72' height='15.7241' rx='7.86207' fill='%23F4F4F6'/%3E%3Crect x='90.5' y='477.725' width='92' height='16.1758' rx='8.08791' fill='%23F4F4F6'/%3E%3Crect x='270.5' y='458' width='72' height='15.7241' rx='7.86207' fill='%23F4F4F6'/%3E%3Crect x='260.5' y='477.725' width='92' height='16.1758' rx='8.08791' fill='%23F4F4F6'/%3E%3Crect x='440.5' y='458' width='72' height='15.7241' rx='7.86207' fill='%23F4F4F6'/%3E%3Crect x='430.5' y='477.725' width='92' height='16.1758' rx='8.08791' fill='%23F4F4F6'/%3E%3Crect x='610.5' y='458' width='72' height='15.7241' rx='7.86207' fill='%23F4F4F6'/%3E%3Crect x='600.5' y='477.725' width='92' height='16.1758' rx='8.08791' fill='%23F4F4F6'/%3E%3Crect x='780.5' y='458' width='72' height='15.7241' rx='7.86207' fill='%23F4F4F6'/%3E%3Crect x='770.5' y='477.725' width='92' height='16.1758' rx='8.08791' fill='%23F4F4F6'/%3E%3C/g%3E%3Cline x1='61.9375' y1='59.4612' x2='31.5003' y2='59.4612' stroke='%23F4F4F6' stroke-width='0.922339'/%3E%3Cline x1='61.9375' y1='17.4612' x2='31.5003' y2='17.4612' stroke='%23F4F4F6' stroke-width='0.922339'/%3E%3Cline x1='61.9375' y1='101.461' x2='31.5003' y2='101.461' stroke='%23F4F4F6' stroke-width='0.922339'/%3E%3Cline x1='61.9375' y1='143.461' x2='31.5003' y2='143.461' stroke='%23F4F4F6' stroke-width='0.922339'/%3E%3Cline x1='61.9375' y1='185.461' x2='31.5003' y2='185.461' stroke='%23F4F4F6' stroke-width='0.922339'/%3E%3Cline x1='61.9375' y1='227.461' x2='31.5003' y2='227.461' stroke='%23F4F4F6' stroke-width='0.922339'/%3E%3Cline x1='61.9375' y1='269.461' x2='31.5003' y2='269.461' stroke='%23F4F4F6' stroke-width='0.922339'/%3E%3Cline x1='61.9375' y1='311.461' x2='31.5003' y2='311.461' stroke='%23F4F4F6' stroke-width='0.922339'/%3E%3Cline x1='61.9375' y1='353.461' x2='31.5003' y2='353.461' stroke='%23F4F4F6' stroke-width='0.922339'/%3E%3Cline x1='61.9375' y1='395.461' x2='31.5003' y2='395.461' stroke='%23F4F4F6' stroke-width='0.922339'/%3E%3Cline x1='61.9375' y1='437.461' x2='31.5003' y2='437.461' stroke='%23F4F4F6' stroke-width='0.922339'/%3E%3Crect x='0.5' y='10' width='31' height='16' rx='8' fill='%23F4F4F6'/%3E%3Crect x='0.5' y='52' width='31' height='16' rx='8' fill='%23F4F4F6'/%3E%3Crect x='0.5' y='93' width='31' height='16' rx='8' fill='%23F4F4F6'/%3E%3Crect x='0.5' y='136' width='31' height='16' rx='8' fill='%23F4F4F6'/%3E%3Crect x='0.5' y='180' width='31' height='16' rx='8' fill='%23F4F4F6'/%3E%3Crect x='0.5' y='220' width='31' height='16' rx='8' fill='%23F4F4F6'/%3E%3Crect x='0.5' y='261' width='31' height='16' rx='8' fill='%23F4F4F6'/%3E%3Crect x='0.5' y='304' width='31' height='16' rx='8' fill='%23F4F4F6'/%3E%3Crect x='0.5' y='346' width='31' height='16' rx='8' fill='%23F4F4F6'/%3E%3Crect x='0.5' y='386' width='31' height='16' rx='8' fill='%23F4F4F6'/%3E%3Crect x='0.5' y='430' width='31' height='16' rx='8' fill='%23F4F4F6'/%3E%3Cdefs%3E%3CclipPath id='clip0_3061_22368'%3E%3Crect width='855' height='515' fill='white' transform='translate(61.5)'/%3E%3C/clipPath%3E%3C/defs%3E%3C/svg%3E")`;

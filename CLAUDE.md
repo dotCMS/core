@@ -21,8 +21,8 @@ core/
 ## Environment Prerequisites
 
 ```bash
-sdk env install   # Java 25 via SDKMAN (.sdkmanrc) — build fails with wrong version
-nvm use           # Node 22.22.3+ via nvm (.nvmrc) — frontend build fails with wrong version
+sdk env install   # installs the Java version pinned in .sdkmanrc — build fails with wrong version
+nvm use           # installs the Node version pinned in .nvmrc — frontend build fails with wrong version
 ```
 
 ## Build & Test Commands
@@ -65,9 +65,12 @@ UserAPI userAPI = APILocator.getUserAPI();   // Service access pattern
 
 - **Config/Logger only**: Never `System.out`, `System.getProperty`, or `System.getenv`
 - **Maven versions**: Add to `bom/application/pom.xml` ONLY, never `dotCMS/pom.xml`
-- **Java version**: Core modules compile to Java 25 by default (`dotcms.core.compiler.release`; override e.g. `-Ddotcms.core.compiler.release=11` for older bytecode). Java 25 runtime. CLI may target lower for portability.
+- **Java version**: see `.sdkmanrc` for the runtime version. Core modules compile to whatever `dotcms.core.compiler.release` is set to in `parent/pom.xml` (override e.g. `-Ddotcms.core.compiler.release=11` for older bytecode); `tools/dotcms-cli` targets whatever `maven.compiler.release` is set to in its own `pom.xml`, historically lower for portability.
 - **Security**: No hardcoded secrets, validate all input, never log sensitive data
 - **REST @Schema**: Must match actual return type — see [REST API Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md)
+- **Integration test placement**: compatibility first — JUnit 5 goes to `Junit5Suite1`, a test needing a live OpenSearch cluster to `OpenSearchUpgradeSuite`; neither competes on runtime. Every other **new test class** goes in the `MainSuite*` that `just suite-timings` currently names as fastest, with that output pasted into the PR. **The suite name is a result of the measurement, never an input** — never take it from an example, a nearby class, this document or memory. A **new method on an existing class stays with its class**. No timing data: report it and ask, do not pick a default. See [Integration Tests → Registering Tests in a MainSuite](docs/testing/INTEGRATION_TESTS.md#registering-tests-in-a-mainsuite-ci-gate).
+- **Integration test registration**: A new integration test class not added to a `MainSuite*`/`Junit5Suite*` `@SuiteClasses` list compiles fine but is **silently never run in CI** (green build, zero coverage) — it only runs locally via `-Dit.test=`. Register with `just add-it-test <TestClass> <Suite>`, never by editing the list by hand (hand-appending to the end of a list conflicts in the merge queue); CI fails on unregistered classes. See [Integration Tests → Registering Tests in a MainSuite](docs/testing/INTEGRATION_TESTS.md#registering-tests-in-a-mainsuite-ci-gate).
+- **Integration tests can silently run zero tests**: the Maven build cache may short-circuit failsafe (`Skipping plugin execution (cached): failsafe:integration-test`) — BUILD SUCCESS, `<completed>0</completed>`, exit 0. Pass `-Dmaven.build.cache.enabled=false`, prefer class-level over `-Dit.test=Class#method` selection, and confirm `Tests run: N` in `target/failsafe-reports/*.txt` rather than trusting the exit code. See [Integration Tests → The build cache can skip the tests entirely](docs/testing/INTEGRATION_TESTS.md#the-build-cache-can-skip-the-tests-entirely).
 - **Frontend**: See [core-web/CLAUDE.md](core-web/CLAUDE.md) for Angular/TypeScript standards
 
 ### OpenAPI / Swagger
@@ -75,7 +78,7 @@ UserAPI userAPI = APILocator.getUserAPI();   // Service access pattern
 `openapi.yaml` is **auto-generated** by `swagger-maven-plugin` at compile phase — it writes directly to `src/main/webapp/WEB-INF/openapi/openapi.yaml`. The CI verifies the committed file matches what the build produces.
 
 - All description changes must go in Java `@Operation` / `@Parameter` annotations, not in the yaml directly
-- Regenerate after annotation changes: `./mvnw compile -pl :dotcms-core -DskipTests` (no Docker needed)
+- Regenerate after annotation changes: `./mvnw compile -pl :dotcms-core --am -DskipTests` (no Docker needed; `--am` avoids the same missing-in-project-deps failure noted above)
 - Commit the regenerated yaml alongside the Java changes
 
 ### Progressive Enhancement
@@ -85,6 +88,7 @@ When editing ANY code, improve incrementally:
 - Replace legacy: `Logger.info()` not `System.out.println()`
 - Modern Angular: `@if` not `*ngIf`, `input()` not `@Input()`
 - Add missing annotations: `@Override`, `@Nullable`
+- Add missing Javadoc on any Java method you edit, human-readable not AI-oriented — see [Java Standards → Javadoc Requirements](docs/backend/JAVA_STANDARDS.md#javadoc-requirements-required)
 
 ## Spec-Driven Development (Spec-Kit)
 
@@ -92,17 +96,68 @@ This repo uses [GitHub Spec-Kit](https://github.com/github/spec-kit) for spec-dr
 customized for dotCMS. How to run it: [Spec-Kit Quick Start](docs/core/SPEC_KIT_QUICK_START.md).
 How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/CUSTOMIZATIONS.md).
 
-- **Flow**: `/speckit-specify` (new feature) **or** `/speckit-specify-fix` (issue/bug resolution) → **PR 1 (spec) approved** → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` → PR 2 (implementation).
-- **Two PRs, gated on approval — not merge**: PR 1 carries `spec.md` **alone** and another dev must **approve** it before `/speckit-plan` runs. Do **not** wait for PR 1 to merge — branch off the spec branch (the spec isn't on `main` yet) and open PR 2 with the implementation. If the spec changes after sign-off, get it re-approved. See [Quick Start §3](docs/core/SPEC_KIT_QUICK_START.md).
+- **Flow**: `/speckit-specify` (new feature) **or** `/speckit-specify-fix` (issue/bug resolution) → **PR 1 (spec) approved** → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement` → `/speckit-converge` → PR 2 (implementation).
+- **Two PRs, gated on approval — not merge**: PR 1 carries `spec.md` **alone** and another dev must **approve** it before `/speckit-plan` runs. Do **not** wait for PR 1 to merge — branch off the spec branch (the spec isn't on `main` yet) and open PR 2 with the implementation. If the spec changes after sign-off, get it re-approved. **Before opening PR 2, run `/speckit-converge` on your final code** and get `converged` (or consciously accept what remains). Human-triggered and human-judged; nothing enforces it. See [Quick Start §3](docs/core/SPEC_KIT_QUICK_START.md).
 - **Constitution**: [.specify/memory/constitution.md](.specify/memory/constitution.md) — legacy-awareness + Critical Rules; loaded by every skill.
+- **Reporting**: never let a reference carry the meaning. Say what a thing is or does, then attach the pointer in parentheses — spec or task id, commit sha, CI run id, ADR number, path. The test is whether the reader could act on the sentence without opening the thing it names: "proving that ten files upload as ten is still pending (T065)", not "T065 is pending"; "ADR-0018 makes the DB authoritative for folder and host, so the scope belongs in the SQL builder", not "per ADR-0018". References are encouraged — paths, classes, methods, config keys and line numbers are checkable, and the repair for a bare one is to add the meaning beside it, never to drop it. See [Constitution → Reporting to the Developer](.specify/memory/constitution.md).
 - **TDD (Principle V, non-negotiable)**: no implementation code before tests are written, **dev-approved**, and confirmed **failing (Red)**. If a test type can't be done, the dev must say so and why. Enforced in the constitution + `tasks-template` `[GATE]` tasks + plan Test Strategy.
+- **Convergence (closing step — you trigger it)**: `/speckit-converge` checks the code against the approved spec. `/speckit-implement` **recommends** it on finishing (`after_implement` hook, `optional: true`) but does **not** run it — the end of the task list is rarely the end of your work, and a run fired before your manual corrections would assess code you're about to change. Run it when you judge the work done, fix, repeat until `converged`. **Append-only** — findings become tasks in `tasks.md`, never direct edits. See [Quick Start §9](docs/core/SPEC_KIT_QUICK_START.md).
 - **ADRs**: live only in the private repo `dotCMS/platform-adrs`. `/speckit-plan` **always consults** relevant ADRs (auto `before_plan` hook → `/speckit-adr-context`, read-only via `gh`). Spec-Kit **never creates ADRs** — it only *proposes* them; ADRs are authored in `platform-adrs` via its `new-adr.sh`.
 
 ## Tech Stack
 
-- **Backend**: Java 25 (runtime + core compile target, override-able), Maven, CDI
-- **Frontend**: Angular 22+, Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
+- **Backend**: Java (see `.sdkmanrc` / `parent/pom.xml`'s `dotcms.core.compiler.release`, override-able), Maven, CDI
+- **Frontend**: Angular (see `core-web/package.json`'s `@angular/core`), Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
 - **Infrastructure**: Docker, PostgreSQL, Elasticsearch, GitHub Actions
+
+## Required Reading Before You Edit
+
+The Critical Rules above are one-line summaries. The full directives live in the guides below, so
+before the **first edit** in any of these areas, read the linked guide and say in your reply which
+directive you are applying. The index under "Documentation (Load On-Demand)" is reference; this
+table is a gate.
+
+| When the change touches… | Read first |
+|---|---|
+| Any new or moved integration-test coverage (`dotcms-integration/src/test/**`) | [Integration Tests](docs/testing/INTEGRATION_TESTS.md) — compatibility gate first, then the suite `just suite-timings` names (never a remembered one); a new method stays with its class; register with `just add-it-test` (never append or edit the list by hand), `@AfterClass` cleanup of test data, `-Dmaven.build.cache.enabled=false` when running |
+| A unit test in `dotCMS/src/test/**` | [Backend Unit Tests](docs/testing/BACKEND_UNIT_TESTS.md) |
+| A feature flag (`FeatureFlagName`, `Config.get*Property`, `dotmarketing-config.properties`) | [Configuration Patterns → Feature Flags](docs/backend/CONFIGURATION_PATTERNS.md#feature-flags) — constant in `FeatureFlagName`, `FEATURE_FLAG_` prefix, default stated in the Javadoc |
+| A JAX-RS resource, `@Schema`, `@Operation` or `openapi.yaml` | [REST API Patterns](docs/backend/REST_API_PATTERNS.md) and [REST API Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md) — regenerate and commit `openapi.yaml` |
+| `DotConnect`, `@WrapInTransaction`, `@CloseDBIfOpened`, SQL strings | [Database Patterns](docs/backend/DATABASE_PATTERNS.md) |
+| Input handling, auth checks, logging of user data, secrets | [Security Patterns](docs/backend/SECURITY_BACKEND.md) |
+| `DotHttpHeaderSecurityFilter`, `ContentSecurityPolicyUtil`, or any response header (HSTS, X-Frame-Options, Content-Security-Policy) | [Security Patterns → Response security headers](docs/backend/SECURITY_BACKEND.md#response-security-headers) — headers go through the one filter, not per servlet; back-end and site-page policies are separate properties |
+| `ESContentFactoryImpl`, `IndexAPI`, anything under `content/elasticsearch` or `opensearch` | [Search API Migration](docs/backend/SEARCH_API_MIGRATION.md) and [OpenSearch Migration](docs/backend/OPENSEARCH_MIGRATION.md) |
+| A `pom.xml` dependency or version | [Maven Build System](docs/backend/MAVEN_BUILD_SYSTEM.md) |
+| Anything under `core-web/` | [core-web/CLAUDE.md](core-web/CLAUDE.md) and [docs/frontend/README.md](docs/frontend/README.md) |
+| A commit message, branch name or PR description | [Git Workflows](docs/core/GIT_WORKFLOWS.md) |
+| Any Java under `dotCMS/src/main/java` | [Java Standards](docs/backend/JAVA_STANDARDS.md) — immutables, exceptions, utilities, Javadoc on every method you touch |
+| A DB schema change, an index mapping change, or a REST/GraphQL contract change | [Rollback-Unsafe Change Categories](docs/core/ROLLBACK_UNSAFE_CATEGORIES.md) |
+| An executor, thread pool, `synchronized` block or anything that blocks on I/O | [When to Use Virtual Threads](docs/backend/VIRTUAL_THREADS.md) |
+| `loadFields`, `toMap`, or how a field lands in the index document | [Index Field Emission](docs/backend/INDEX_FIELD_EMISSION.md) |
+| A system-event producer or consumer (`SystemEventsAPI`, `EventSubscriber`) | [System Events](docs/backend/SYSTEM_EVENTS.md) — at-least-once delivery, idempotent consumers |
+| A new metric or anything under `com.dotcms.telemetry` | [Telemetry Implementation](docs/backend/TELEMETRY_IMPLEMENTATION.md) |
+| Anything under `tools/dotcms-cli/` | [CLI Overview](docs/cli/CLI_OVERVIEW.md) — compiles to a lower `maven.compiler.release` than core |
+| A Playwright test under `core-web/apps/dotcms-ui-e2e/` | [E2E Tests](docs/testing/E2E_TESTS.md) |
+| `.github/workflows/**` | [CI/CD Pipeline](docs/core/CICD_PIPELINE.md) |
+| A `Dockerfile` or anything under `docker/` | [Docker Build Process](docs/infrastructure/DOCKER_BUILD_PROCESS.md) |
+| Creating or triaging a GitHub issue | [GitHub Issue Management](docs/core/GITHUB_ISSUE_MANAGEMENT.md) |
+| A new module, package or cross-module feature | [Architecture Overview](docs/core/ARCHITECTURE_OVERVIEW.md) |
+| Input handling, auth checks, logging of user data, secrets (principles) | [Security Principles](docs/core/SECURITY_PRINCIPLES.md) — the backend patterns are in the Security Patterns row above |
+| `/api/inference/v1/**`, anything under `com.dotcms.ai` | [Inference API](docs/backend/INFERENCE_API.md) |
+| Health endpoints, `com.dotcms.health`, log levels | [Health Monitoring](docs/backend/HEALTH_MONITORING.md) |
+| GraphQL types for image or file fields, `com.dotcms.graphql` | [GraphQL Asset Fields Migration](docs/backend/GRAPHQL_ASSET_FIELDS_MIGRATION.md) |
+| Reflection, class scanning or annotation lookups | [Jandex Metadata Scanning](docs/backend/JANDEX_METADATA_SCANNING.md) — prefer Jandex over reflection |
+| `OS_*` / `ES_*` properties, the search client configuration | [OpenSearch Client Configuration](docs/backend/OPENSEARCH_CLIENT_CONFIGURATION.md) |
+| QA of the ES → OpenSearch migration phases | [Migration Test Plan](docs/backend/OPENSEARCH_MIGRATION_TEST_PLAN.md) and [Migration Tester Guide](docs/backend/OPENSEARCH_MIGRATION_TESTER_GUIDE.md) |
+| Angular syntax, signals, change detection, forms, icons | [Angular Standards](docs/frontend/ANGULAR_STANDARDS.md) |
+| A new Angular component or its file layout | [Component Architecture](docs/frontend/COMPONENT_ARCHITECTURE.md) |
+| An NgRx Signal Store, `rxMethod`, `patchState` | [State Management](docs/frontend/STATE_MANAGEMENT.md) |
+| Tailwind, PrimeNG theme, SCSS, form markup | [Styling Standards](docs/frontend/STYLING_STANDARDS.md) |
+| TypeScript types, `as const`, private fields | [TypeScript Standards](docs/frontend/TYPESCRIPT_STANDARDS.md) |
+| Writing a Jest/Spectator test | [Testing Frontend](docs/frontend/TESTING_FRONTEND.md) |
+| Reviewing a frontend test | [Testing Review Rules](docs/frontend/TESTING_REVIEW_RULES.md) |
+| The GlobalStore breadcrumb trail | [Breadcrumbs](docs/frontend/BREADCRUMBS.md) |
+| `tools/dotcms-cli` build: profiles, native image, dev mode | [CLI Build System](docs/cli/CLI_BUILD_SYSTEM.md) |
 
 ## Documentation (Load On-Demand)
 
@@ -118,26 +173,44 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - [Java Standards](docs/backend/JAVA_STANDARDS.md) — Coding patterns, immutables, exceptions, utilities
 - [When to Use Virtual Threads](docs/backend/VIRTUAL_THREADS.md) — Socket I/O yes, file I/O no; carrier pinning
 - [REST API Patterns](docs/backend/REST_API_PATTERNS.md) — JAX-RS, Swagger, @Schema rules
+- [Inference API](docs/backend/INFERENCE_API.md) — OpenAI-compatible `/api/inference/v1` family: chat completions, streaming, models, embeddings, images; bearer-only auth, per-site resolution, limits
 - [Maven Build System](docs/backend/MAVEN_BUILD_SYSTEM.md) — Dependency management
 - [Configuration Patterns](docs/backend/CONFIGURATION_PATTERNS.md) — Config.getProperty() usage
+- [Apps Configuration](docs/backend/APPS_CONFIGURATION.md) — Who can change and read Apps configuration; legacy delegation switch
 - [Database Patterns](docs/backend/DATABASE_PATTERNS.md) — DotConnect, transactions
 - [Health Monitoring](docs/backend/HEALTH_MONITORING.md) — Health endpoints, log levels
+- [Security Patterns](docs/backend/SECURITY_BACKEND.md) — Input validation, auth, SQL/XSS prevention, secure logging
+- [Search API Migration](docs/backend/SEARCH_API_MIGRATION.md) — ES → OpenSearch: deprecated `ContentletAPI` search methods, plugin migration guide
+- [GraphQL Asset Fields Migration](docs/backend/GRAPHQL_ASSET_FIELDS_MIGRATION.md) — Image/File fields now resolve to an interface; existing queries keep working, but `__typename` reports the concrete type and generated types must be regenerated
+- [Telemetry Implementation](docs/backend/TELEMETRY_IMPLEMENTATION.md) — CDI-based metrics system, creating new metrics, `/v1/usage` endpoints
+- [Index Field Emission](docs/backend/INDEX_FIELD_EMISSION.md) — how `loadFields`/`toMap` build the index document; the `_dotraw` zero-padding sort invariant
+- [Jandex Metadata Scanning](docs/backend/JANDEX_METADATA_SCANNING.md) — Fast class/annotation metadata lookup, prefer over reflection
+- **ES → OpenSearch Migration** — infra migration from ElasticSearch to OpenSearch, phased dual-write/read rollout
+  - [Migration Design](docs/backend/OPENSEARCH_MIGRATION.md) — Architecture, phased rollout, configuration
+  - [Migration Test Plan](docs/backend/OPENSEARCH_MIGRATION_TEST_PLAN.md) — QA test plan for the migration phases
+  - [Client Configuration](docs/backend/OPENSEARCH_CLIENT_CONFIGURATION.md) — `OS_*`/`ES_*` config property reference and fallback chain
+  - [Migration Tester Guide](docs/backend/OPENSEARCH_MIGRATION_TESTER_GUIDE.md) — Getting-started guide for QA testers validating the migration
+- [System Events](docs/backend/SYSTEM_EVENTS.md) — Cross-node event queue: at-least-once delivery, consumer idempotency rules, payload deserialization
 
 ### Frontend Development (Angular/TypeScript)
 - **[docs/frontend/README.md](docs/frontend/README.md) — index of all frontend docs and when to load each. Start here if unsure.**
 - [Angular Standards](docs/frontend/ANGULAR_STANDARDS.md) — **single source of truth**: syntax, signals, change detection, forms, icons
 - [Component Architecture](docs/frontend/COMPONENT_ARCHITECTURE.md) — Structure, file layout, data flow
 - [State Management](docs/frontend/STATE_MANAGEMENT.md) — NgRx Signal Store, rxMethod, patchState
-- [Styling Standards](docs/frontend/STYLING_STANDARDS.md) — Tailwind, PrimeNG theme, BEM, SCSS
+- [Styling Standards](docs/frontend/STYLING_STANDARDS.md) — Tailwind, PrimeNG theme, BEM, SCSS, **form markup** (global `.form` / `.field`, labels, hints/errors, accessible naming)
 - [TypeScript Standards](docs/frontend/TYPESCRIPT_STANDARDS.md) — Strict types, as const, `#` private
 - [Testing Frontend](docs/frontend/TESTING_FRONTEND.md) — Writing tests: Spectator, Jest, byTestId
 - [Testing Review Rules](docs/frontend/TESTING_REVIEW_RULES.md) — Reviewing tests: violation checklist
 - [Breadcrumbs](docs/frontend/BREADCRUMBS.md) — GlobalStore breadcrumb trail
 
 ### Testing
-- [Backend Unit Tests](docs/testing/BACKEND_UNIT_TESTS.md) — JUnit, integration patterns
-- [Integration Tests](docs/testing/INTEGRATION_TESTS.md) — API testing, database setup
+- [Backend Unit Tests](docs/testing/BACKEND_UNIT_TESTS.md) — Surefire in `:dotcms-core`, Mockito setup, naming (there is no category/tag mechanism), running and debugging
+- [Integration Tests](docs/testing/INTEGRATION_TESTS.md) — Running/debugging tests, MainSuite registration, API testing, database setup
 - [E2E Tests](docs/testing/E2E_TESTS.md) — Playwright, user workflows
+
+### CLI (`tools/dotcms-cli`)
+- [CLI Overview](docs/cli/CLI_OVERVIEW.md) — Quarkus + PicocLI architecture, module layout, command patterns. **Compiles to a lower `maven.compiler.release` than the core modules** — read the property before using modern syntax
+- [CLI Build System](docs/cli/CLI_BUILD_SYSTEM.md) — Maven profiles (`dist`, `native`, `release`), Quarkus dev mode, native image, testcontainers
 
 ### Infrastructure
 - [Docker Build Process](docs/infrastructure/DOCKER_BUILD_PROCESS.md) — Container setup, optimization

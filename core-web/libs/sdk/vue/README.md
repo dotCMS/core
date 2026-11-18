@@ -111,11 +111,21 @@ For detailed instructions, please refer to the [dotCMS API Documentation - Read-
 npm install @dotcms/vue@latest
 ```
 
-Requires **Vue 3.4+** (declared as a peer dependency). The install also brings in:
+Requires **Vue 3.4+** (declared as a peer dependency). The install also brings in
+`@tinymce/tinymce-vue` (powers inline text editing in [`DotCMSEditableText`](#dotcmseditabletext)),
+but you need to install these packages yourself:
 
 -   `@dotcms/uve`: Enables interaction with the [Universal Visual Editor](https://dev.dotcms.com/docs/uve-headless-config) for real-time content editing
 -   `@dotcms/client`: Provides the core client functionality for fetching and managing dotCMS data
--   `@tinymce/tinymce-vue`: Powers inline text editing in [`DotCMSEditableText`](#dotcmseditabletext)
+-   `@dotcms/types`: TypeScript definitions used throughout the API
+
+```bash
+npm install @dotcms/uve @dotcms/client @dotcms/types
+```
+
+> npm 7+ and pnpm install these automatically as peer dependencies alongside `@dotcms/vue`.
+> **Yarn Classic (1.x) and npm below v7 do not** — they only print a warning if one is missing,
+> so on those package managers you must add them explicitly as shown above.
 
 ### dotCMS Client Configuration
 

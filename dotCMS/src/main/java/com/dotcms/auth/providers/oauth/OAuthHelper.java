@@ -14,6 +14,7 @@ import com.google.common.cache.CacheBuilder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.SecurityUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -27,6 +28,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
@@ -174,11 +176,12 @@ public class OAuthHelper {
     }
 
     /**
-     * Variant that also accepts the verified id_token claim set (OIDC). Those claims —
-     * not the unsigned userinfo response — are authoritative for deciding whether the
-     * asserted email may be trusted to match an existing dotCMS account. Browser-flow
-     * callers must enforce that the userinfo subject equals the id_token subject before
-     * calling this; the exchange flow passes the verified claims as {@code userInfo}.
+     * Variant that also accepts the verified id_token claim set (OIDC). Those claims, not
+     * the unsigned userinfo response, decide whether an IdP with no subject-style claim can
+     * fall back to a verified email as the user's stable identity. Browser-flow callers must
+     * enforce that the userinfo subject equals the id_token subject before calling this; the
+     * exchange flow passes the verified claims as {@code userInfo}. Existing accounts are
+     * matched the way SAML matches them; see {@link #resolveUser}.
      */
     public User resolveOrProvisionUser(final OAuthProvider provider,
                                        final String accessToken,
@@ -203,11 +206,11 @@ public class OAuthHelper {
         // same email (DuplicateUserException on the second login). When the IdP exposes
         // no subject-style claim at all, a verified email is the only stable identity we
         // can key on; an unverified email is not safe to trust, so we refuse instead.
-        final boolean emailVerified = isEmailVerified(userInfo, verifiedClaims);
+        final Boolean emailVerifiedClaim = emailVerifiedClaim(userInfo, verifiedClaims);
         final String effectiveSubject;
         if (UtilMethods.isSet(subject)) {
             effectiveSubject = subject;
-        } else if (emailVerified) {
+        } else if (Boolean.TRUE.equals(emailVerifiedClaim)) {
             effectiveSubject = "email:" + email.toLowerCase();
         } else {
             throw new DotRuntimeException(
@@ -228,7 +231,8 @@ public class OAuthHelper {
                 : (config != null ? config.issuerUrl : null);
         final String externalId = namespacedSubject(provider, effectiveSubject, effectiveIssuer, hashUserId);
 
-        User user = resolveUser(email, emailVerified, externalId, provider, effectiveSubject, effectiveIssuer);
+        User user = resolveUser(email, externalId, provider, effectiveSubject, effectiveIssuer,
+                emailVerifiedClaim, config);
 
         if (user == null) {
             if (config != null && !config.autoProvision) {
@@ -255,30 +259,63 @@ public class OAuthHelper {
                 .getOrElse(user);
     }
 
+    /**
+     * Finds the dotCMS user for an OAuth/OIDC identity in the same order SAML uses
+     * ({@code SAMLHelper.resolveUser}): the issuer-namespaced subject first, then the email
+     * claim. Whether the email may be used depends on what the IdP says about it:
+     *
+     * <ul>
+     *   <li>{@code email_verified} true: the email links, with no configuration.</li>
+     *   <li>{@code email_verified} absent: the email links only when
+     *       {@link OAuthAppConfig#trustEmailWithoutVerifiedClaim} is on. Some IdPs, such as
+     *       Okta custom authorization servers, never send the claim (#37691), so an
+     *       administrator can opt in to trusting their email the way SAML trusts the email in a
+     *       signed assertion. That is only safe when users cannot set their own email address
+     *       at the IdP, which is why it defaults to off.</li>
+     *   <li>{@code email_verified} false: the email never links.</li>
+     * </ul>
+     *
+     * <p>A refused link is not an error here: the lookup returns {@code null} as for any miss,
+     * so the caller provisions or rejects as it normally would. Both a link and a refusal are
+     * recorded in the security log.</p>
+     *
+     * @param emailVerifiedClaim the {@code email_verified} claim: {@code null} when absent
+     * @param config             the provider config, or {@code null} for the defaults
+     * @return the matching user, or {@code null} when neither the subject nor an allowed email match
+     */
     private User resolveUser(final String email,
-                             final boolean emailVerified,
                              final String externalId,
                              final OAuthProvider provider,
                              final String subject,
-                             final String issuer) {
-        // Email may only match an EXISTING account when the IdP asserts it is verified.
-        // Otherwise an IdP (or a user-editable profile) could claim an arbitrary address
-        // and take over an account it doesn't own — the issuer-namespaced subject is the
-        // trustworthy identity key, so an unverified email falls through to it instead.
-        if (emailVerified && UtilMethods.isSet(email)) {
+                             final String issuer,
+                             final Boolean emailVerifiedClaim,
+                             final OAuthAppConfig config) {
+        if (UtilMethods.isSet(externalId)) {
+            for (final String candidate : externalIdCandidates(externalId, provider, subject, issuer)) {
+                final User u = Try.of(() -> APILocator.getUserAPI().loadUserById(candidate)).getOrNull();
+                if (u != null) {
+                    return u;
+                }
+            }
+        }
+        if (UtilMethods.isSet(email)) {
             final User u = Try.of(() -> APILocator.getUserAPI().loadByUserByEmail(email, APILocator.systemUser(), false))
                     .getOrNull();
             if (u != null) {
-                return u;
-            }
-        }
-        if (!UtilMethods.isSet(externalId)) {
-            return null;
-        }
-        for (final String candidate : externalIdCandidates(externalId, provider, subject, issuer)) {
-            final User u = Try.of(() -> APILocator.getUserAPI().loadUserById(candidate)).getOrNull();
-            if (u != null) {
-                return u;
+                final boolean trustUnflagged = config != null && config.trustEmailWithoutVerifiedClaim;
+                if (Boolean.TRUE.equals(emailVerifiedClaim) || (emailVerifiedClaim == null && trustUnflagged)) {
+                    SecurityLogger.logInfo(OAuthHelper.class, "OAuth identity from issuer '"
+                            + SecurityUtils.sanitizeForLogging(issuer)
+                            + "' linked to existing user " + u.getUserId() + " by email");
+                    return u;
+                }
+                SecurityLogger.logWarn(OAuthHelper.class, "OAuth identity from issuer '"
+                        + SecurityUtils.sanitizeForLogging(issuer)
+                        + "' matched existing user " + u.getUserId() + " by email but was NOT linked: "
+                        + (emailVerifiedClaim == null
+                        ? "the IdP sent no email_verified claim and "
+                                + OAuthAppConfig.KEY_TRUST_EMAIL_WITHOUT_VERIFIED_CLAIM + " is off"
+                        : "the IdP reported email_verified=false"));
             }
         }
         return null;
@@ -666,7 +703,11 @@ public class OAuthHelper {
     }
 
     private static String getEmail(final Map<String, Object> userInfo, final OAuthAppConfig config) {
-        final String email = claimValue(userInfo, config == null ? null : config.emailClaim, EMAIL_CLAIMS, null);
+        final String raw = claimValue(userInfo, config == null ? null : config.emailClaim, EMAIL_CLAIMS, null);
+        // dotCMS stores emails trimmed and lowercased (Liferay normalizes on create and
+        // update) but looks them up by exact match, so normalize the IdP's value the same
+        // way or a mixed-case or padded address misses its own account (#37691).
+        final String email = raw == null ? null : raw.trim().toLowerCase(Locale.ROOT);
         if (UtilMethods.isSet(email) && !UtilMethods.isValidEmail(email)) {
             // The regex caps TLDs at 4 chars (pre-2012 gTLDs), so real addresses like
             // user@corp.systems get dropped here — the user is then provisioned with a
@@ -681,23 +722,28 @@ public class OAuthHelper {
     }
 
     /**
-     * Whether the IdP asserts {@code email_verified}. The verified id_token claims take
-     * precedence over the unsigned userinfo response when both are present.
+     * What the IdP says about {@code email_verified}, looking at both the verified id_token
+     * claims and the userinfo response: {@code TRUE} when it asserts the address is verified,
+     * {@code FALSE} when the claim is present with any other value, {@code null} when neither
+     * source carries the claim. If the sources disagree, {@code FALSE} wins so a contradiction
+     * never makes an address look verified.
      */
-    private static boolean isEmailVerified(final Map<String, Object> userInfo,
-                                           final Map<String, Object> verifiedClaims) {
-        return claimsAssertEmailVerified(verifiedClaims) || claimsAssertEmailVerified(userInfo);
+    private static Boolean emailVerifiedClaim(final Map<String, Object> userInfo,
+                                              final Map<String, Object> verifiedClaims) {
+        final Boolean fromToken = emailVerifiedIn(verifiedClaims);
+        final Boolean fromUserInfo = emailVerifiedIn(userInfo);
+        if (fromToken == null) {
+            return fromUserInfo;
+        }
+        return fromUserInfo == null ? fromToken : fromToken && fromUserInfo;
     }
 
-    private static boolean claimsAssertEmailVerified(final Map<String, Object> claims) {
-        if (claims == null) {
-            return false;
+    private static Boolean emailVerifiedIn(final Map<String, Object> claims) {
+        final Object value = claims == null ? null : claims.get("email_verified");
+        if (value == null) {
+            return null;
         }
-        final Object value = claims.get("email_verified");
-        if (value instanceof Boolean) {
-            return (Boolean) value;
-        }
-        return value != null && "true".equalsIgnoreCase(value.toString());
+        return value instanceof Boolean ? (Boolean) value : "true".equalsIgnoreCase(value.toString());
     }
 
     private static String claimValue(final Map<String, Object> userInfo,

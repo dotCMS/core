@@ -1,0 +1,13 @@
+{
+  "entity": {
+    "identifier": "asset-migrated-001",
+    "inode": "inode-migrated-001",
+    "languageId": 1,
+    "contentType": "dotAsset",
+    "assetContentAsset": "somehash",
+    "assetVersion": "/dA/asset-migrated-001/asset/already.vtl",
+    "fileName": "already.vtl",
+    "title": "already.vtl",
+    "live": true
+  }
+}

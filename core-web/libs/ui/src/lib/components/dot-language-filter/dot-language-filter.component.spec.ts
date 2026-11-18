@@ -4,8 +4,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { By } from '@angular/platform-browser';
 
@@ -56,7 +57,7 @@ describe('DotLanguageFilterComponent', () => {
         component: DotLanguageFilterComponent,
         providers: [
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(MOCK_LANGUAGES))
+                get: vi.fn().mockReturnValue(of(MOCK_LANGUAGES))
             }),
             {
                 provide: DotMessageService,
@@ -76,7 +77,7 @@ describe('DotLanguageFilterComponent', () => {
         languagesService = spectator.inject(DotLanguagesService);
     });
 
-    afterEach(() => jest.clearAllMocks());
+    afterEach(() => vi.clearAllMocks());
 
     it('should fetch languages and populate state', () => {
         spectator.detectChanges();
@@ -114,7 +115,7 @@ describe('DotLanguageFilterComponent', () => {
         it('should emit the selected ids on change', () => {
             spectator.detectChanges();
 
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('selectionChange').subscribe(handler);
 
             component.$selectedLanguages.set([1, 2]);
@@ -127,7 +128,7 @@ describe('DotLanguageFilterComponent', () => {
             spectator.setInput('selectedLanguageIds', [1]);
             spectator.detectChanges();
 
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('selectionChange').subscribe(handler);
 
             component.$selectedLanguages.set([]);
@@ -217,7 +218,7 @@ describe('DotLanguageFilterComponent', () => {
 
             const popoverDe = spectator.fixture.debugElement.query(By.directive(Popover));
             const popover = popoverDe.componentInstance as Popover;
-            const toggleSpy = jest.spyOn(popover, 'toggle');
+            const toggleSpy = vi.spyOn(popover, 'toggle');
 
             const chipDe = spectator.fixture.debugElement.query(
                 By.directive(DotChipFilterComponent)
@@ -231,7 +232,7 @@ describe('DotLanguageFilterComponent', () => {
             spectator.setInput('selectedLanguageIds', [1]);
             spectator.detectChanges();
 
-            const handler = jest.fn();
+            const handler = vi.fn();
             spectator.output('selectionChange').subscribe(handler);
 
             const chipDe = spectator.fixture.debugElement.query(

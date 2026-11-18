@@ -1,5 +1,11 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
@@ -23,7 +29,7 @@ describe('DotImageEditorCropOverlayComponent', () => {
         providers: [
             provideNoopAnimations(),
             Dispatcher,
-            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) })
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) })
         ],
         componentProviders: [
             mockProvider(ImageEditorStore, {
@@ -37,7 +43,7 @@ describe('DotImageEditorCropOverlayComponent', () => {
         spectator.setInput('imageRect', IMAGE_RECT);
         spectator.setInput('naturalSize', NATURAL);
         dispatcher = spectator.inject(Dispatcher, true);
-        jest.spyOn(dispatcher, 'dispatch');
+        vi.spyOn(dispatcher, 'dispatch');
         spectator.detectChanges();
     });
 
@@ -230,7 +236,7 @@ describe('DotImageEditorCropOverlayComponent', () => {
 
     it('should stop propagation and dispatch cropCancelled on Escape', () => {
         const event = new KeyboardEvent('keydown', { key: 'Escape' });
-        const stopSpy = jest.spyOn(event, 'stopPropagation');
+        const stopSpy = vi.spyOn(event, 'stopPropagation');
 
         spectator.element.dispatchEvent(event);
 

@@ -1,4 +1,5 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DotEventsSocket, WebSocketStatus } from './dot-events-socket.service';
 
@@ -67,7 +68,7 @@ describe('DotEventsSocket', () => {
     });
 
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
         MockWebSocket.instances = [];
         (global as unknown as { WebSocket: unknown }).WebSocket = MockWebSocket;
 
@@ -76,7 +77,7 @@ describe('DotEventsSocket', () => {
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
         service.destroy();
     });
 
@@ -91,18 +92,19 @@ describe('DotEventsSocket', () => {
             expect(latestSocket().url).toBe(WS_URL);
         });
 
-        it('should emit and complete immediately', (done) => {
-            let emitted = false;
-            service.connect().subscribe({
-                next: () => {
-                    emitted = true;
-                },
-                complete: () => {
-                    expect(emitted).toBe(true);
-                    done();
-                }
-            });
-        });
+        it('should emit and complete immediately', () =>
+            new Promise<void>((done) => {
+                let emitted = false;
+                service.connect().subscribe({
+                    next: () => {
+                        emitted = true;
+                    },
+                    complete: () => {
+                        expect(emitted).toBe(true);
+                        done();
+                    }
+                });
+            }));
 
         it('should set status to "connecting" on first connect', () => {
             const statuses: WebSocketStatus[] = [];
@@ -127,7 +129,7 @@ describe('DotEventsSocket', () => {
             service.connect().subscribe();
             latestSocket().triggerOpen();
             latestSocket().triggerClose();
-            jest.advanceTimersByTime(2000);
+            vi.advanceTimersByTime(2000);
 
             latestSocket().triggerOpen();
 
@@ -139,20 +141,21 @@ describe('DotEventsSocket', () => {
     // on<T>() — message filtering
     // -----------------------------------------------------------------------
     describe('on()', () => {
-        it('should emit payload for matching event type', (done) => {
-            service.connect().subscribe();
-            latestSocket().triggerOpen();
+        it('should emit payload for matching event type', () =>
+            new Promise<void>((done) => {
+                service.connect().subscribe();
+                latestSocket().triggerOpen();
 
-            service.on<{ name: string }>('PUBLISH_SITE').subscribe((data) => {
-                expect(data).toEqual({ name: 'demo.dotcms.com' });
-                done();
-            });
+                service.on<{ name: string }>('PUBLISH_SITE').subscribe((data) => {
+                    expect(data).toEqual({ name: 'demo.dotcms.com' });
+                    done();
+                });
 
-            latestSocket().triggerMessage({
-                event: 'PUBLISH_SITE',
-                payload: { data: { name: 'demo.dotcms.com' } }
-            });
-        });
+                latestSocket().triggerMessage({
+                    event: 'PUBLISH_SITE',
+                    payload: { data: { name: 'demo.dotcms.com' } }
+                });
+            }));
 
         it('should not emit for non-matching event type', () => {
             service.connect().subscribe();
@@ -187,17 +190,18 @@ describe('DotEventsSocket', () => {
     // messages()
     // -----------------------------------------------------------------------
     describe('messages()', () => {
-        it('should emit all raw messages', (done) => {
-            service.connect().subscribe();
-            latestSocket().triggerOpen();
+        it('should emit all raw messages', () =>
+            new Promise<void>((done) => {
+                service.connect().subscribe();
+                latestSocket().triggerOpen();
 
-            service.messages().subscribe((msg) => {
-                expect(msg.event).toBe('UPDATE_SITE');
-                done();
-            });
+                service.messages().subscribe((msg) => {
+                    expect(msg.event).toBe('UPDATE_SITE');
+                    done();
+                });
 
-            latestSocket().triggerMessage({ event: 'UPDATE_SITE', payload: { data: {} } });
-        });
+                latestSocket().triggerMessage({ event: 'UPDATE_SITE', payload: { data: {} } });
+            }));
     });
 
     // -----------------------------------------------------------------------
@@ -235,7 +239,7 @@ describe('DotEventsSocket', () => {
             latestSocket().triggerOpen();
             latestSocket().triggerClose(1006);
 
-            jest.advanceTimersByTime(3000);
+            vi.advanceTimersByTime(3000);
 
             expect(MockWebSocket.instances.length).toBe(2);
         });
@@ -257,7 +261,7 @@ describe('DotEventsSocket', () => {
             service.destroy();
             latestSocket().triggerClose(1006);
 
-            jest.advanceTimersByTime(5000);
+            vi.advanceTimersByTime(5000);
 
             expect(MockWebSocket.instances.length).toBe(1);
         });
@@ -267,7 +271,7 @@ describe('DotEventsSocket', () => {
             latestSocket().triggerOpen();
             latestSocket().triggerClose(1001);
 
-            jest.advanceTimersByTime(5000);
+            vi.advanceTimersByTime(5000);
 
             expect(MockWebSocket.instances.length).toBe(1);
         });
@@ -276,7 +280,7 @@ describe('DotEventsSocket', () => {
             // Pin jitter to 0 so delays are deterministic:
             // retry 1 (retryCount=1): 1000 * 2^1 = 2000ms
             // retry 2 (retryCount=2): 1000 * 2^2 = 4000ms
-            const randomSpy = jest.spyOn(Math, 'random').mockReturnValue(0);
+            const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0);
 
             service.connect().subscribe();
             latestSocket().triggerOpen();
@@ -284,15 +288,15 @@ describe('DotEventsSocket', () => {
             // First disconnect — schedules retry at 2000ms
             latestSocket().triggerClose(1006);
             const countAfterFirst = MockWebSocket.instances.length;
-            jest.advanceTimersByTime(2100); // enough for first retry (2000ms)
+            vi.advanceTimersByTime(2100); // enough for first retry (2000ms)
             const countAfterFirstRetry = MockWebSocket.instances.length;
 
             // Second disconnect — schedules retry at 4000ms
             latestSocket().triggerClose(1006);
-            jest.advanceTimersByTime(3000); // NOT enough for second retry (4000ms)
+            vi.advanceTimersByTime(3000); // NOT enough for second retry (4000ms)
             const countAfterShortWait = MockWebSocket.instances.length;
 
-            jest.advanceTimersByTime(1100); // now enough (4100ms > 4000ms)
+            vi.advanceTimersByTime(1100); // now enough (4100ms > 4000ms)
             const countAfterLongWait = MockWebSocket.instances.length;
 
             randomSpy.mockRestore();

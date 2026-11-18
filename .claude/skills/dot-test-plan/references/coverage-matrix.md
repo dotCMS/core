@@ -1,11 +1,12 @@
 # Coverage matrix
 
-Nine product-surface axes. For **each**, decide **In scope** (≥1 manual case) or **Out of scope**.
+Ten coverage axes. For **each**, decide **In scope** (≥1 manual case) or **Out of scope**.
 The plan publishes no out-of-scope list, so this walk is invisible in the output — which is exactly
 why it must be deliberate. A forgotten axis and a consciously excluded one produce an identical
 plan, and only one of them is right.
 
-Walk the matrix **once** over the union of everything the PR changed, not once per issue.
+Walk the matrix **once** over the union of everything the PR set changed — not once per PR, and not
+once per issue.
 
 | Axis | What to vary | In scope when |
 |---|---|---|
@@ -18,6 +19,7 @@ Walk the matrix **once** over the union of everything the PR changed, not once p
 | **Push Publish** | bundle generation, receiver replay, integrity checks | the diff touches publishable entities (content, templates, containers, content types, workflows, categories) |
 | **Persistence** | **PostgreSQL only** — CI does not run H2 | any DB-touching code |
 | **UI / UX** | see the checklist below | any of the triggers below |
+| **Form & state semantics** | see the checklist below | the diff adds or changes a form, a multi-step editor, or any save / discard / leave gesture |
 
 ### UI / UX triggers
 
@@ -52,8 +54,48 @@ person checks by hand:
   unreachable actions
 - **i18n** — copy resolves for the default language and one non-default language; long translations
   don't break the layout
-- **Theme / contrast** — light and dark both render correctly; text stays legible
+- **Contrast** — text stays legible against its background, including disabled, error and selected
+  states. **Not** light/dark mode — see below.
 - **Copy** — labels, buttons, errors, and tooltips match the spec or the acceptance criteria
+
+
+### Form & state semantics checklist
+
+In scope whenever the change touches a form or an editor. These are behavioural rather than
+presentational — the UI / UX checklist asks whether a control *looks* right, this one asks whether
+the *data* survives:
+
+- **Bounded choices** — exercise every option of a select, radio group or status enum, not only the
+  default. A five-value enum with one value tested is one case, not five.
+- **Numeric boundaries** — min, max, min−1, max+1, zero, empty. Ranges and durations especially.
+- **Derived or recomputed fields** — a counter, a summary line, a total: change an input and confirm
+  the derived value follows, including back to zero.
+- **Child-entity CRUD inside a parent form** — add, rename, reorder and delete a child while the
+  parent is unsaved, then confirm what actually persisted.
+- **Optional configuration** — set versus deliberately left unset. "Not configured" is a state, and
+  it is the one nobody tests.
+- **Which gesture persists what** — when more than one thing saves (autosave, an explicit Save, a
+  status transition), exercise each separately and state which persisted what. Do not assume one
+  gesture covers another.
+- **Leaving with unsaved work** — navigate away, reload, and use the browser Back button with changes
+  pending. Confirm the guard fires, and that discarding actually discards.
+- **Locked / read-only states** — a status that disables the form must disable *all* of it, not the
+  obvious controls only.
+
+
+### Does not exist in dotCMS — never write a case for it
+
+A generic web-app checklist suggests these; dotCMS has none of them, and a case for one is a
+hallucination the reviewer then has to catch.
+
+- **Light/dark mode.** There is no theme switcher and no user theme preference. The shared theme
+  provider pins PrimeNG's `darkModeSelector` to `false` (`core-web/libs/ui/src/lib/theme/providers.ts`),
+  nothing in the product reads `prefers-color-scheme`, and no element carries a `data-theme`
+  attribute. The single `.dark` selector in the repo belongs to the standalone block-editor app
+  config and has nothing to switch it on. Test contrast; never "toggle dark mode and confirm…".
+
+If a change genuinely introduces one of these, the diff will show it — and then it is in scope like
+any other new behaviour. Absent that, it is not.
 
 ---
 
@@ -74,5 +116,7 @@ the fixed behavior. Spell out environment, user, site, screen, and click sequenc
 | Touches `com.dotcms.rest.*` | **Response contract** — response JSON matches the declared `@Schema`. `Medium`. |
 | Adds or changes a startup/upgrade task, or any DDL | **Upgrade on a populated DB** — restore a pre-fix snapshot, deploy, confirm the task runs once cleanly and the schema matches, then restart and confirm it does not re-run. Cross-reference `docs/core/ROLLBACK_UNSAFE_CATEGORIES.md`. `High`. |
 
-An axis or mandatory case already covered by a test the PR itself added gets **no manual case** —
-CI checks it on every build. Drop it silently; the plan does not enumerate what was skipped.
+An axis or mandatory case already covered by a test one of the PRs itself added gets **no manual
+case** — CI checks it on every build. Drop it silently; the plan does not enumerate what was skipped.
+This holds only when that test exercises the same path a person would: a spec that mocks the store or
+builds a fake component does not retire the case (SKILL.md §5).

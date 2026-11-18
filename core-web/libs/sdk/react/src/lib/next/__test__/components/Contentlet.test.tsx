@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
+import { Mock, vi } from 'vitest';
 
 import {
     getAnalyticsContentletAttributes,
@@ -12,21 +13,21 @@ import { Contentlet, CONTENTLET_CLASS } from '../../components/Contentlet/Conten
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
 
-jest.mock('../../components/FallbackComponent/FallbackComponent', () => ({
+vi.mock('../../components/FallbackComponent/FallbackComponent', () => ({
     FallbackComponent: ({ contentlet }: any) => (
         <div data-testid="fallback">Fallback Component: {contentlet.contentType}</div>
     ),
     NoComponentType: () => <div>No Component</div>
 }));
 
-jest.mock('../../hooks/useCheckVisibleContent', () => ({
-    useCheckVisibleContent: jest.fn(() => false)
+vi.mock('../../hooks/useCheckVisibleContent', () => ({
+    useCheckVisibleContent: vi.fn(() => false)
 }));
 
-jest.mock('@dotcms/uve/internal', () => ({
-    getDotContentletAttributes: jest.fn(() => ({ 'data-dot-identifier': 'editor-id' })),
-    getAnalyticsContentletAttributes: jest.fn(() => ({ 'data-dot-identifier': 'analytics-id' })),
-    isDotAnalyticsActive: jest.fn(() => false),
+vi.mock('@dotcms/uve/internal', () => ({
+    getDotContentletAttributes: vi.fn(() => ({ 'data-dot-identifier': 'editor-id' })),
+    getAnalyticsContentletAttributes: vi.fn(() => ({ 'data-dot-identifier': 'analytics-id' })),
+    isDotAnalyticsActive: vi.fn(() => false),
     ANALYTICS_READY_EVENT: 'dotcms:analytics:ready',
     CUSTOM_NO_COMPONENT: 'CustomNoComponent',
     DEVELOPMENT_MODE: 'development',
@@ -35,18 +36,29 @@ jest.mock('@dotcms/uve/internal', () => ({
 
 describe('Contentlet', () => {
     const dummyContentlet = { contentType: 'test-type', someField: 'value' };
+    /**
+     * Contentlet no longer resolves dev mode or the Analytics flag itself — DotCMSPageProvider
+     * resolves both once for the layout tree and shares them through the context. Tests keep
+     * expressing intent via `mode` and the `isDotAnalyticsActive` mock, so derive the two
+     * context fields here exactly as the provider would.
+     */
     const renderContentlet = (contextValue: any, contentletProps: any) => {
         return render(
-            <DotCMSPageContext.Provider value={contextValue}>
+            <DotCMSPageContext.Provider
+                value={{
+                    isDevMode: contextValue.mode === 'development',
+                    isAnalyticsActive: !!isDotAnalyticsActiveMock(),
+                    ...contextValue
+                }}>
                 <Contentlet {...contentletProps} />
             </DotCMSPageContext.Provider>
         );
     };
 
-    const useCheckVisibleContentMock = useCheckVisibleContent as jest.Mock;
-    const getDotContentletAttributesMock = getDotContentletAttributes as jest.Mock;
-    const getAnalyticsContentletAttributesMock = getAnalyticsContentletAttributes as jest.Mock;
-    const isDotAnalyticsActiveMock = isDotAnalyticsActive as jest.Mock;
+    const useCheckVisibleContentMock = useCheckVisibleContent as Mock;
+    const getDotContentletAttributesMock = getDotContentletAttributes as Mock;
+    const getAnalyticsContentletAttributesMock = getAnalyticsContentletAttributes as Mock;
+    const isDotAnalyticsActiveMock = isDotAnalyticsActive as Mock;
 
     beforeEach(() => {
         useCheckVisibleContentMock.mockReturnValue(false);

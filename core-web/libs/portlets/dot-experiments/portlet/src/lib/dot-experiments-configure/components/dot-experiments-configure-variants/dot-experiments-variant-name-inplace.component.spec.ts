@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { MockInstance, vi } from 'vitest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
@@ -16,7 +17,7 @@ const messageServiceMock = new MockDotMessageService({
 
 describe('DotExperimentsVariantNameInplaceComponent', () => {
     let spectator: Spectator<DotExperimentsVariantNameInplaceComponent>;
-    let emit: jest.SpyInstance;
+    let emit: MockInstance;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsVariantNameInplaceComponent,
@@ -46,7 +47,7 @@ describe('DotExperimentsVariantNameInplaceComponent', () => {
         spectator = createComponent();
         spectator.setInput('name', VARIANT_NAME);
         spectator.detectChanges();
-        emit = jest.spyOn(spectator.component.$nameChanged, 'emit');
+        emit = vi.spyOn(spectator.component.$nameChanged, 'emit');
     });
 
     describe('display mode', () => {

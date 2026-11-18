@@ -1,5 +1,6 @@
 package com.dotcms.auth.providers.jwt.services;
 
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
@@ -15,10 +16,14 @@ import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.IncorrectClaimException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import java.lang.reflect.Field;
+import java.security.Key;
+import java.util.Arrays;
 import java.text.ParseException;
 import java.util.Calendar;
 import java.util.Date;
@@ -134,6 +139,55 @@ public class JsonWebTokenServiceIntegrationTest {
 
         //Parse the generated token
         jsonWebTokenService.parseToken(jsonWebToken);
+    }
+
+    /**
+     * Given: a stored API token and the server's signing key
+     * When: a JWT is signed for that token ID but with issue and expiry dates that differ from the
+     *       stored record (as a forged token would)
+     * Then: the JWT is rejected, while the JWT the server issues for the same token is accepted
+     */
+    @Test
+    public void apiToken_jwt_with_claims_not_matching_record_is_rejected() throws Exception {
+        final ApiToken apiToken = APILocator.getApiTokenAPI().persistApiToken(userId,
+                DateUtil.addDate(new Date(), Calendar.YEAR, 1), userId, "127.0.0.1");
+        try {
+            final String issued = jsonWebTokenService.generateApiToken(apiToken);
+            assertNotNull(jsonWebTokenService.parseToken(issued));
+
+            final Key key = (Key) get(jsonWebTokenService, "signingKey");
+            final SignatureAlgorithm algorithm = Arrays.stream(SignatureAlgorithm.values())
+                    .filter(alg -> key.getAlgorithm().equals(alg.getJcaName())).findFirst().get();
+            final Date now = new Date();
+            final String forged = Jwts.builder()
+                    .setHeaderParam("typ", "JWT")
+                    .setId("forged-" + now.getTime())
+                    .setSubject(apiToken.id)
+                    .setIssuer(clusterId)
+                    .setIssuedAt(now)
+                    .setNotBefore(now)
+                    .setExpiration(new Date(now.getTime() + 3_600_000L))
+                    .signWith(algorithm, key)
+                    .compact();
+            try {
+                jsonWebTokenService.parseToken(forged);
+                fail("A JWT whose iat/exp do not match the stored token must be rejected");
+            } catch (final IncorrectClaimException expected) {
+                // expected
+            }
+        } finally {
+            APILocator.getApiTokenAPI().deleteToken(apiToken, APILocator.systemUser());
+        }
+    }
+
+    private Object get(Object object, String fieldName) {
+        try {
+            Field field = object.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(object);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private void set(Object object, String fieldName, Object fieldValue) {

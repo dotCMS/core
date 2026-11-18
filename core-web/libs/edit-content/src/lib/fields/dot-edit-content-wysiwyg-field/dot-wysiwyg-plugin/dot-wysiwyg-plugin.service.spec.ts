@@ -1,7 +1,7 @@
-import { expect } from '@jest/globals';
 import { createServiceFactory, SpectatorService } from '@openng/spectator';
 import { MockComponent } from 'ng-mocks';
 import { Observable, of, Subject, throwError } from 'rxjs';
+import { expect, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -22,7 +22,7 @@ import {
 import { EMPTY_CONTENTLET } from '@dotcms/utils-testing';
 
 import { DotWysiwygPluginService } from './dot-wysiwyg-plugin.service';
-import { formatDotImageNode } from './utils/editor.utils';
+import { formatDotImageNode, replaceURLPattern } from './utils/editor.utils';
 
 import { DotEditContentStore } from '../../../store/edit-content.store';
 
@@ -62,9 +62,9 @@ class MockEditor {
         this.events[name].forEach((fn) => fn(event));
     };
 
-    insertContent = jest.fn();
+    insertContent = vi.fn();
 
-    focus = jest.fn();
+    focus = vi.fn();
 }
 
 const MOCK_IMAGE_URL_PATTERN = '/dA/{shortyId}/{name}?language_id={languageId}';
@@ -77,6 +77,9 @@ const SITE: DotSite = {
 };
 
 const LOCALE_ID = 2;
+
+/** The contentlet being edited, as the Edit Content store holds it. `null` = new content. */
+const editedContentlet = signal<DotCMSContentlet | null>(null);
 
 /**
  * Swapped per test so the site lookup can be resolved, deferred or failed. Read lazily by the mock
@@ -105,26 +108,30 @@ describe('DotWysiwygPluginService', () => {
             {
                 provide: DotPropertiesService,
                 useValue: {
-                    getKey: jest.fn().mockReturnValue(of(MOCK_IMAGE_URL_PATTERN))
+                    getKey: vi.fn().mockReturnValue(of(MOCK_IMAGE_URL_PATTERN))
                 }
             },
             {
                 provide: DotUploadFileService,
                 useValue: {
-                    publishContent: jest.fn()
+                    publishContent: vi.fn()
                 }
             },
             {
                 provide: DotSiteService,
-                useValue: { getCurrentSite: jest.fn(() => siteSource) }
+                useValue: { getCurrentSite: vi.fn(() => siteSource) }
             },
             {
                 provide: DotMessageService,
-                useValue: { get: jest.fn((key: string) => key) }
+                useValue: { get: vi.fn((key: string) => key) }
             },
             {
                 provide: DotEditContentStore,
-                useValue: { currentLocale: signal({ id: LOCALE_ID }) }
+                useValue: {
+                    hasAttemptedSubmit: signal(false),
+                    currentLocale: signal({ id: LOCALE_ID }),
+                    contentlet: editedContentlet
+                }
             },
             // Angular Edit Content host: the launcher is what makes the new picker the picker.
             // Its legacy counterpart lives in `dot-wysiwyg-plugin.service.legacy-host.spec.ts`.
@@ -136,7 +143,8 @@ describe('DotWysiwygPluginService', () => {
         // The `useValue` mocks are one object shared by every `createService()` in this file, so call
         // counts accumulate across tests unless they are cleared first. Before the service is built,
         // since its constructor is itself a call worth counting.
-        jest.clearAllMocks();
+        vi.clearAllMocks();
+        editedContentlet.set(null);
         siteSource = of(SITE);
         spectator = createService();
         dialogService = spectator.inject(DialogService);
@@ -157,8 +165,8 @@ describe('DotWysiwygPluginService', () => {
 
     describe('dotImagePlugin', () => {
         it('should configure the dotAddImage button', () => {
-            const spyButton = jest.spyOn(editor.ui.registry, 'addButton');
-            const spyOn = jest.spyOn(editor, 'on');
+            const spyButton = vi.spyOn(editor.ui.registry, 'addButton');
+            const spyOn = vi.spyOn(editor, 'on');
 
             spectator.service.initializePlugins(editor);
 
@@ -173,11 +181,11 @@ describe('DotWysiwygPluginService', () => {
         });
 
         it('should open the shared asset picker when the button is clicked', () => {
-            const spyDialog = jest.spyOn(dialogService, 'open').mockReturnValue({
+            const spyDialog = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: of(EMPTY_CONTENTLET)
             } as DynamicDialogRef);
 
-            const spyEditorInserContent = jest.spyOn(editor, 'insertContent');
+            const spyEditorInserContent = vi.spyOn(editor, 'insertContent');
 
             clickAddImage();
 
@@ -203,11 +211,11 @@ describe('DotWysiwygPluginService', () => {
         });
 
         it('should NOT insert content when the dialog is closed without selecting an image', () => {
-            const spyDialog = jest.spyOn(dialogService, 'open').mockReturnValue({
+            const spyDialog = vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: of(undefined)
             } as DynamicDialogRef);
 
-            const spyEditorInserContent = jest.spyOn(editor, 'insertContent');
+            const spyEditorInserContent = vi.spyOn(editor, 'insertContent');
 
             clickAddImage();
 
@@ -224,7 +232,7 @@ describe('DotWysiwygPluginService', () => {
             const site$ = new Subject<DotSite>();
             siteSource = site$.asObservable();
             spectator = createService();
-            const spyDialog = jest
+            const spyDialog = vi
                 .spyOn(spectator.inject(DialogService), 'open')
                 .mockReturnValue({ onClose: of(undefined) } as DynamicDialogRef);
 
@@ -238,7 +246,7 @@ describe('DotWysiwygPluginService', () => {
         });
 
         it('should open again after the picker closed', () => {
-            const spyDialog = jest
+            const spyDialog = vi
                 .spyOn(dialogService, 'open')
                 .mockReturnValue({ onClose: of(undefined) } as DynamicDialogRef);
 
@@ -251,7 +259,7 @@ describe('DotWysiwygPluginService', () => {
         it('should not open a picker that has nothing to browse', () => {
             siteSource = throwError(() => new Error('no site'));
             spectator = createService();
-            const spyDialog = jest.spyOn(spectator.inject(DialogService), 'open');
+            const spyDialog = vi.spyOn(spectator.inject(DialogService), 'open');
 
             spectator.service.initializePlugins(editor);
             editor.ui.registry.getAll().buttons['dotAddImage'].onAction();
@@ -282,10 +290,10 @@ describe('DotWysiwygPluginService', () => {
 
         it('should upload the image when dropped', () => {
             const uploadRespMock: unknown = [{ '1234': EMPTY_CONTENTLET }];
-            const spyUpload = jest
+            const spyUpload = vi
                 .spyOn(dotUploadFileService, 'publishContent')
                 .mockReturnValue(of(uploadRespMock as DotCMSContentlet[]));
-            const spyEditorInserContent = jest.spyOn(editor, 'insertContent');
+            const spyEditorInserContent = vi.spyOn(editor, 'insertContent');
 
             spectator.service.initializePlugins(editor);
 
@@ -297,9 +305,9 @@ describe('DotWysiwygPluginService', () => {
                         }
                     ]
                 },
-                preventDefault: jest.fn(),
-                stopImmediatePropagation: jest.fn(),
-                stopPropagation: jest.fn()
+                preventDefault: vi.fn(),
+                stopImmediatePropagation: vi.fn(),
+                stopPropagation: vi.fn()
             };
 
             editor.fakeOnCall('drop', dropEvent);
@@ -318,10 +326,10 @@ describe('DotWysiwygPluginService', () => {
 
         it('should not upload the image when dropped', () => {
             const uploadRespMock: unknown = [{ '1234': EMPTY_CONTENTLET }];
-            const spyUpload = jest
+            const spyUpload = vi
                 .spyOn(dotUploadFileService, 'publishContent')
                 .mockReturnValue(of(uploadRespMock as DotCMSContentlet[]));
-            const spyEditorInserContent = jest.spyOn(editor, 'insertContent');
+            const spyEditorInserContent = vi.spyOn(editor, 'insertContent');
 
             spectator.service.initializePlugins(editor);
 
@@ -333,9 +341,9 @@ describe('DotWysiwygPluginService', () => {
                         }
                     ]
                 },
-                preventDefault: jest.fn(),
-                stopImmediatePropagation: jest.fn(),
-                stopPropagation: jest.fn()
+                preventDefault: vi.fn(),
+                stopImmediatePropagation: vi.fn(),
+                stopPropagation: vi.fn()
             };
 
             editor.fakeOnCall('drop', dropEvent);
@@ -346,6 +354,181 @@ describe('DotWysiwygPluginService', () => {
             expect(spyEditorInserContent).not.toHaveBeenCalledWith(
                 formatDotImageNode(MOCK_IMAGE_URL_PATTERN, EMPTY_CONTENTLET)
             );
+        });
+    });
+
+    describe('filePickerOptions (browse buttons in the image and link dialogs)', () => {
+        const FILE_ASSET = {
+            ...EMPTY_CONTENTLET,
+            baseType: 'FILEASSET',
+            host: SITE.identifier,
+            identifier: 'fedcba0987654321',
+            fileName: 'report.pdf',
+            path: '/docs/report.pdf',
+            title: 'Annual report'
+        } as DotCMSContentlet;
+
+        /** The same file, owned by a site other than the one the content is published on. */
+        const OTHER_SITE_FILE_ASSET = { ...FILE_ASSET, host: 'site-2' } as DotCMSContentlet;
+
+        const DOT_ASSET = {
+            ...EMPTY_CONTENTLET,
+            baseType: 'DOTASSET',
+            identifier: 'abcdef1234567890',
+            fileName: 'brochure.pdf',
+            title: 'Brochure'
+        } as DotCMSContentlet;
+
+        /** Clicks the browse button of the TinyMCE dialog that asks for `filetype`. */
+        const browse = (filetype: 'image' | 'file', callback = vi.fn()) => {
+            const pick = spectator.service.filePickerOptions().file_picker_callback;
+
+            if (!pick) {
+                throw new Error('filePickerOptions() returned no file_picker_callback');
+            }
+
+            pick(callback, '', { filetype, fieldname: 'src' });
+
+            return callback;
+        };
+
+        it('should enable the browse button for images and files', () => {
+            const options = spectator.service.filePickerOptions();
+
+            expect(options.file_picker_types).toBe('file image');
+            expect(options.file_picker_callback).toEqual(expect.any(Function));
+        });
+
+        it('should open the picker in image mode from the image dialog, above TinyMCE', () => {
+            const spyDialog = vi
+                .spyOn(dialogService, 'open')
+                .mockReturnValue({ onClose: of(undefined) } as DynamicDialogRef);
+
+            browse('image');
+
+            expect(spyDialog).toHaveBeenCalledWith(
+                DotAssetPickerComponent,
+                expect.objectContaining({
+                    // TinyMCE's dialog layer is at 1300; anything lower opens behind it.
+                    baseZIndex: 1300,
+                    data: expect.objectContaining({
+                        site: SITE,
+                        mimeTypes: ['image/*'],
+                        languageId: String(LOCALE_ID),
+                        title: 'dot.asset.picker.header.image'
+                    })
+                })
+            );
+        });
+
+        it('should open the picker in file mode from the link dialog', () => {
+            const spyDialog = vi
+                .spyOn(dialogService, 'open')
+                .mockReturnValue({ onClose: of(undefined) } as DynamicDialogRef);
+
+            browse('file');
+
+            const config = spyDialog.mock.calls[0][1];
+            expect(config.baseZIndex).toBe(1300);
+            expect(config.data).toEqual(
+                expect.objectContaining({ site: SITE, title: 'dot.asset.picker.header.file' })
+            );
+            // File mode lists any asset, not just images.
+            expect((config.data as { mimeTypes?: string[] }).mimeTypes ?? []).not.toContain(
+                'image/*'
+            );
+        });
+
+        it('should hand the image URL and alt text back to the dialog instead of inserting', () => {
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of(EMPTY_CONTENTLET)
+            } as DynamicDialogRef);
+
+            const callback = browse('image');
+
+            expect(callback).toHaveBeenCalledWith(
+                replaceURLPattern(MOCK_IMAGE_URL_PATTERN, EMPTY_CONTENTLET),
+                { alt: EMPTY_CONTENTLET.title }
+            );
+            expect(editor.insertContent).not.toHaveBeenCalled();
+        });
+
+        it('should link a file asset on the same site by its path', () => {
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of(FILE_ASSET)
+            } as DynamicDialogRef);
+
+            expect(browse('file')).toHaveBeenCalledWith('/docs/report.pdf', {
+                text: 'Annual report'
+            });
+        });
+
+        it('should link a file asset from another site by its /dA/ URL, not a path that would 404', () => {
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of(OTHER_SITE_FILE_ASSET)
+            } as DynamicDialogRef);
+
+            expect(browse('file')).toHaveBeenCalledWith('/dA/fedcba0987/report.pdf', {
+                text: 'Annual report'
+            });
+        });
+
+        it("should compare against the edited content's site, not the site the picker opened on", () => {
+            // Content lives on site-2 while the admin's current site (the picker's start) is site-1.
+            editedContentlet.set({ ...EMPTY_CONTENTLET, host: 'site-2' } as DotCMSContentlet);
+            const onClose = new Subject<DotCMSContentlet | undefined>();
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: onClose.asObservable(),
+                close: vi.fn()
+            } as unknown as DynamicDialogRef);
+
+            const fromContentSite = browse('file');
+            onClose.next(OTHER_SITE_FILE_ASSET);
+            expect(fromContentSite).toHaveBeenCalledWith('/docs/report.pdf', {
+                text: 'Annual report'
+            });
+
+            const fromPickerSite = browse('file');
+            onClose.next(FILE_ASSET);
+            expect(fromPickerSite).toHaveBeenCalledWith('/dA/fedcba0987/report.pdf', {
+                text: 'Annual report'
+            });
+        });
+
+        it('should link a dotAsset by its /dA/ URL', () => {
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of(DOT_ASSET)
+            } as DynamicDialogRef);
+
+            expect(browse('file')).toHaveBeenCalledWith('/dA/abcdef1234/brochure.pdf', {
+                text: 'Brochure'
+            });
+        });
+
+        it('should leave the dialog untouched when the picker is dismissed', () => {
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of(undefined)
+            } as DynamicDialogRef);
+
+            expect(browse('file')).not.toHaveBeenCalled();
+        });
+
+        it('should not stack a second picker while one is open', () => {
+            const onClose = new Subject<DotCMSContentlet | undefined>();
+            const spyDialog = vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: onClose.asObservable(),
+                close: vi.fn()
+            } as unknown as DynamicDialogRef);
+
+            browse('file');
+            browse('image');
+
+            expect(spyDialog).toHaveBeenCalledTimes(1);
+
+            onClose.next(undefined);
+            browse('image');
+
+            expect(spyDialog).toHaveBeenCalledTimes(2);
         });
     });
 });

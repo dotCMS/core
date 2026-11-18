@@ -9,8 +9,10 @@ import com.dotcms.enterprise.publishing.remote.bundler.RuleBundlerTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.experiments.business.ExperimentAPIImpIntegrationTest;
+import com.dotcms.experiments.business.ExperimentResultsQueryFactoryIntegrationTest;
 import com.dotcms.rest.api.v1.experiments.ExperimentsResourceIntegrationTest;
 import com.dotcms.experiments.business.ExperimentUrlPatternCalculatorIntegrationTest;
+import com.dotcms.experiments.business.ExperimentVariantEditIntegrationTest;
 import com.dotcms.experiments.business.web.ExperimentWebAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
@@ -23,7 +25,6 @@ import com.dotcms.publisher.business.PublishQueueElementTransformerTest;
 import com.dotcms.publisher.util.DependencyModDateUtilTest;
 import com.dotcms.publishing.job.SiteSearchJobImplTest;
 import com.dotcms.rendering.js.JsEngineTest;
-import com.dotcms.rendering.velocity.viewtools.XsltToolTest;
 import com.dotcms.storage.FileMetadataAPITest;
 import com.dotcms.uuid.shorty.LegacyShortyIdApiTest;
 import com.dotmarketing.cache.FolderCacheImplIntegrationTest;
@@ -34,6 +35,7 @@ import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJobTest;
 import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.startup.runonce.Task240306MigrateLegacyLanguageVariablesTest;
+import com.dotmarketing.webdav.DotWebdavAuthenticationIntegrationTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -56,8 +58,10 @@ import org.junit.runners.Suite.SuiteClasses;
         StartEndScheduledExperimentsJobTest.class,
         RulesAPIImplIntegrationTest.class,
         ExperimentAPIImpIntegrationTest.class,
+        ExperimentResultsQueryFactoryIntegrationTest.class,
         ExperimentsResourceIntegrationTest.class,
         ExperimentWebAPIImplIntegrationTest.class,
+        ExperimentVariantEditIntegrationTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA
         SiteAndFolderResolverImplTest.class, //Moved up to avoid conflicts with CT deletion
@@ -65,7 +69,6 @@ import org.junit.runners.Suite.SuiteClasses;
         StaticPublisherIntegrationTest.class,
         com.dotcms.publishing.PublisherAPIImplTest.class,
         SiteSearchJobImplTest.class,
-        XsltToolTest.class,
         PushPublishBundleGeneratorTest.class,
         LegacyShortyIdApiTest.class,
         RuleBundlerTest.class,
@@ -127,6 +130,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.structure.factories.FieldFactoryTest.class,
         com.dotmarketing.portlets.structure.model.ContentletRelationshipsTest.class,
         com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformerTest.class,
+        DotWebdavAuthenticationIntegrationTest.class,
+        com.dotcms.enterprise.ClusterUtilIntegrationTest.class,
 })
 
 public class MainSuite1a {

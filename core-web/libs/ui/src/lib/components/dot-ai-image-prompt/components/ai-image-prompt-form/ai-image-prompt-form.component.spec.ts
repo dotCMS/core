@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -65,7 +66,7 @@ describe('DotAiImagePromptFormComponent', () => {
     });
 
     it('should emit value when form value change', () => {
-        const emitSpy = jest.spyOn(spectator.component.valueChange, 'emit');
+        const emitSpy = vi.spyOn(spectator.component.valueChange, 'emit');
         spectator.component.form.setValue(MOCK_FORM_VALUE);
 
         spectator.detectChanges();
@@ -107,7 +108,7 @@ describe('DotAiImagePromptFormComponent', () => {
     });
 
     it('should emit generate when the form is submitted', () => {
-        const valueSpy = jest.spyOn(spectator.component.generate, 'emit');
+        const valueSpy = vi.spyOn(spectator.component.generate, 'emit');
         spectator.setInput('isLoading', false);
         spectator.component.form.setValue(MOCK_FORM_VALUE);
         spectator.detectChanges();

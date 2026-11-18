@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { MockInstance, vi } from 'vitest';
 
 import { Component, DebugElement, Injectable, Input } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
@@ -93,10 +94,10 @@ describe('CategoriesPropertyComponent', () => {
     });
 
     describe('Pagination events', () => {
-        let spyMethod: jest.SpyInstance;
+        let spyMethod: MockInstance;
 
         beforeEach(() => {
-            spyMethod = jest.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([]));
+            spyMethod = vi.spyOn(paginatorService, 'getWithOffset').mockReturnValue(of([]));
         });
 
         it('should change Page', () => {

@@ -1,5 +1,5 @@
-import { describe, expect } from '@jest/globals';
 import { Observable, of, throwError } from 'rxjs';
+import { describe, expect, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -89,43 +89,44 @@ describe('DotFavoritePageStore', () => {
         dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
         dotHttpErrorManagerService = TestBed.inject(DotHttpErrorManagerService);
 
-        jest.spyOn(dotPageRenderService, 'get').mockReturnValue(of(mockDotRenderedPage()));
+        vi.spyOn(dotPageRenderService, 'get').mockReturnValue(of(mockDotRenderedPage()));
     });
 
     describe('New Favorite Page', () => {
         beforeEach(() => {
-            jest.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(of(true));
+            vi.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(of(true));
 
             dotFavoritePageStore.setInitialStateData({
                 favoritePageUrl: ''
             });
         });
 
-        it('should set initial data for a page with total user access', (done) => {
-            const expectedInitialState = {
-                formState: {
-                    inode: '',
-                    order: 1,
-                    thumbnail: '',
-                    title: 'A title',
-                    url: ''
-                },
-                imgWidth: 1024,
-                imgHeight: 768.192048012003,
-                renderThumbnail: true,
-                loading: false,
-                pageRenderedHtml: '<html><head></header><body><p>Hello World</p></body></html>',
-                showFavoriteEmptySkeleton: undefined,
-                closeDialog: false,
-                actionState: null
-            };
+        it('should set initial data for a page with total user access', () =>
+            new Promise<void>((done) => {
+                const expectedInitialState = {
+                    formState: {
+                        inode: '',
+                        order: 1,
+                        thumbnail: '',
+                        title: 'A title',
+                        url: ''
+                    },
+                    imgWidth: 1024,
+                    imgHeight: 768.192048012003,
+                    renderThumbnail: true,
+                    loading: false,
+                    pageRenderedHtml: '<html><head></header><body><p>Hello World</p></body></html>',
+                    showFavoriteEmptySkeleton: undefined,
+                    closeDialog: false,
+                    actionState: null
+                };
 
-            dotFavoritePageStore.state$.subscribe((state) => {
-                expect(state).toEqual(expectedInitialState);
-                done();
-            });
-            expect(dotPageRenderService.get).toHaveBeenCalledTimes(1);
-        });
+                dotFavoritePageStore.state$.subscribe((state) => {
+                    expect(state).toEqual(expectedInitialState);
+                    done();
+                });
+                expect(dotPageRenderService.get).toHaveBeenCalledTimes(1);
+            }));
 
         // Updaters
         it('should update setRenderThumbnail flag', () => {
@@ -174,225 +175,235 @@ describe('DotFavoritePageStore', () => {
         });
 
         // Effects
-        it('should create a Favorite Page with thumbnail', (done) => {
-            jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
-                of([mockDotCMSTempFile])
-            );
-            jest.spyOn(
-                dotWorkflowActionsFireService,
-                'publishContentletAndWaitForIndex'
-            ).mockReturnValue(of(null));
+        it('should create a Favorite Page with thumbnail', () =>
+            new Promise<void>((done) => {
+                vi.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                    of([mockDotCMSTempFile])
+                );
+                vi.spyOn(
+                    dotWorkflowActionsFireService,
+                    'publishContentletAndWaitForIndex'
+                ).mockReturnValue(of(null));
 
-            const file = new File(
-                [
-                    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAXlJREFUaEPVktuNwjAQRWNaWApBFAGUBBVASUARaAvZbQGQI4EScJx53JvY/vHfeM45Dg3xHH//N3H8YfVzZT0TWIPj3NPt7xzv/Xq5Y71DA2jt3++XdvHFYsuqQAOI9h/NYxv3D024sCpQAHr2X3+HVIEC0LX/2p9VAQ6QtE+sAAdI2WdWgAJk7ZMqQAFy9lkVYAAi+4QKMACJfUYFCIDKPrgCBEBjH13BDWCyD6zgBrDYR1ZwAbjsgyq4ADz2URXMABD7gApmAIR9RAUTANS+s4IJAGnfW0ENQLHvqKAGYNj3VFABUO0bK6gAmPatFcQAk9g3VBADTGHfUkEEMKl9ZQURwJT2tRVGAWaxr6gwCjCHfU2FLMCs9oUVsgBz2pdWGAQowr6gwiBACfYlFZIARdkfqZAEKMn+WIUvgCLtZyp8AZRoP1ehB1C0/YEKPYCS7Q9VeANUYT9R4Q1Qg/1UhRagKvsfFVqAmux/VghV2u9UCDXa71Z4AkPtR8QJFVfWAAAAAElFTkSuQmCC'
-                ],
-                'image.png'
-            );
+                const file = new File(
+                    [
+                        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAXlJREFUaEPVktuNwjAQRWNaWApBFAGUBBVASUARaAvZbQGQI4EScJx53JvY/vHfeM45Dg3xHH//N3H8YfVzZT0TWIPj3NPt7xzv/Xq5Y71DA2jt3++XdvHFYsuqQAOI9h/NYxv3D024sCpQAHr2X3+HVIEC0LX/2p9VAQ6QtE+sAAdI2WdWgAJk7ZMqQAFy9lkVYAAi+4QKMACJfUYFCIDKPrgCBEBjH13BDWCyD6zgBrDYR1ZwAbjsgyq4ADz2URXMABD7gApmAIR9RAUTANS+s4IJAGnfW0ENQLHvqKAGYNj3VFABUO0bK6gAmPatFcQAk9g3VBADTGHfUkEEMKl9ZQURwJT2tRVGAWaxr6gwCjCHfU2FLMCs9oUVsgBz2pdWGAQowr6gwiBACfYlFZIARdkfqZAEKMn+WIUvgCLtZyp8AZRoP1ehB1C0/YEKPYCS7Q9VeANUYT9R4Q1Qg/1UhRagKvsfFVqAmux/VghV2u9UCDXa71Z4AkPtR8QJFVfWAAAAAElFTkSuQmCC'
+                    ],
+                    'image.png'
+                );
 
-            dotFavoritePageStore.saveFavoritePage({
-                thumbnail:
-                    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAXlJREFUaEPVktuNwjAQRWNaWApBFAGUBBVASUARaAvZbQGQI4EScJx53JvY/vHfeM45Dg3xHH//N3H8YfVzZT0TWIPj3NPt7xzv/Xq5Y71DA2jt3++XdvHFYsuqQAOI9h/NYxv3D024sCpQAHr2X3+HVIEC0LX/2p9VAQ6QtE+sAAdI2WdWgAJk7ZMqQAFy9lkVYAAi+4QKMACJfUYFCIDKPrgCBEBjH13BDWCyD6zgBrDYR1ZwAbjsgyq4ADz2URXMABD7gApmAIR9RAUTANS+s4IJAGnfW0ENQLHvqKAGYNj3VFABUO0bK6gAmPatFcQAk9g3VBADTGHfUkEEMKl9ZQURwJT2tRVGAWaxr6gwCjCHfU2FLMCs9oUVsgBz2pdWGAQowr6gwiBACfYlFZIARdkfqZAEKMn+WIUvgCLtZyp8AZRoP1ehB1C0/YEKPYCS7Q9VeANUYT9R4Q1Qg/1UhRagKvsfFVqAmux/VghV2u9UCDXa71Z4AkPtR8QJFVfWAAAAAElFTkSuQmCC',
-                title: 'A title',
-                url: '/an/url/test?language_id=1',
-                order: 1
-            });
-
-            expect(dotTempFileUploadService.upload).toHaveBeenCalledWith(file);
-
-            expect(
-                dotWorkflowActionsFireService.publishContentletAndWaitForIndex
-            ).toHaveBeenCalledWith(
-                'dotFavoritePage',
-                {
-                    screenshot: 'temp-file_123',
-                    inode: null,
-                    title: 'A title',
-                    url: '/an/url/test?language_id=1',
-                    order: 1
-                },
-                {
-                    READ: CMS_OWNER_ROLE_LIST,
-                    WRITE: CMS_OWNER_ROLE_LIST,
-                    PUBLISH: CMS_OWNER_ROLE_LIST
-                }
-            );
-
-            dotFavoritePageStore.state$.subscribe((state) => {
-                expect(state.closeDialog).toEqual(true);
-                expect(state.loading).toEqual(false);
-                expect(state.actionState).toEqual(DotFavoritePageActionState.SAVED);
-                done();
-            });
-        });
-
-        it('should create a Favorite Page without thumbnail', (done) => {
-            jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
-                of([mockDotCMSTempFile])
-            );
-            jest.spyOn(
-                dotWorkflowActionsFireService,
-                'publishContentletAndWaitForIndex'
-            ).mockReturnValue(of(null));
-
-            dotFavoritePageStore.saveFavoritePage({
-                thumbnail: '',
-                title: 'A title',
-                url: '/an/url/test?language_id=1',
-                order: 1
-            });
-
-            expect(dotTempFileUploadService.upload).toHaveBeenCalledTimes(0);
-
-            expect(
-                dotWorkflowActionsFireService.publishContentletAndWaitForIndex
-            ).toHaveBeenCalledWith(
-                'dotFavoritePage',
-                {
-                    screenshot: '',
-                    inode: null,
-                    title: 'A title',
-                    url: '/an/url/test?language_id=1',
-                    order: 1
-                },
-                {
-                    READ: CMS_OWNER_ROLE_LIST,
-                    WRITE: CMS_OWNER_ROLE_LIST,
-                    PUBLISH: CMS_OWNER_ROLE_LIST
-                }
-            );
-
-            dotFavoritePageStore.state$.subscribe((state) => {
-                expect(state.closeDialog).toEqual(true);
-                expect(state.loading).toEqual(false);
-                expect(state.actionState).toEqual(DotFavoritePageActionState.SAVED);
-                done();
-            });
-        });
-
-        it('should Edit a Favorite Page', (done) => {
-            jest.spyOn(
-                dotWorkflowActionsFireService,
-                'publishContentletAndWaitForIndex'
-            ).mockReturnValue(of(null));
-
-            dotFavoritePageStore.saveFavoritePage({
-                inode: 'abc123',
-                thumbnail:
-                    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAXlJREFUaEPVktuNwjAQRWNaWApBFAGUBBVASUARaAvZbQGQI4EScJx53JvY/vHfeM45Dg3xHH//N3H8YfVzZT0TWIPj3NPt7xzv/Xq5Y71DA2jt3++XdvHFYsuqQAOI9h/NYxv3D024sCpQAHr2X3+HVIEC0LX/2p9VAQ6QtE+sAAdI2WdWgAJk7ZMqQAFy9lkVYAAi+4QKMACJfUYFCIDKPrgCBEBjH13BDWCyD6zgBrDYR1ZwAbjsgyq4ADz2URXMABD7gApmAIR9RAUTANS+s4IJAGnfW0ENQLHvqKAGYNj3VFABUO0bK6gAmPatFcQAk9g3VBADTGHfUkEEMKl9ZQURwJT2tRVGAWaxr6gwCjCHfU2FLMCs9oUVsgBz2pdWGAQowr6gwiBACfYlFZIARdkfqZAEKMn+WIUvgCLtZyp8AZRoP1ehB1C0/YEKPYCS7Q9VeANUYT9R4Q1Qg/1UhRagKvsfFVqAmux/VghV2u9UCDXa71Z4AkPtR8QJFVfWAAAAAElFTkSuQmCC',
-                title: 'A title',
-                url: '/an/url/test?language_id=1',
-                order: 1
-            });
-
-            expect(
-                dotWorkflowActionsFireService.publishContentletAndWaitForIndex
-            ).toHaveBeenCalledWith(
-                'dotFavoritePage',
-                {
-                    screenshot:
+                dotFavoritePageStore.saveFavoritePage({
+                    thumbnail:
                         'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAXlJREFUaEPVktuNwjAQRWNaWApBFAGUBBVASUARaAvZbQGQI4EScJx53JvY/vHfeM45Dg3xHH//N3H8YfVzZT0TWIPj3NPt7xzv/Xq5Y71DA2jt3++XdvHFYsuqQAOI9h/NYxv3D024sCpQAHr2X3+HVIEC0LX/2p9VAQ6QtE+sAAdI2WdWgAJk7ZMqQAFy9lkVYAAi+4QKMACJfUYFCIDKPrgCBEBjH13BDWCyD6zgBrDYR1ZwAbjsgyq4ADz2URXMABD7gApmAIR9RAUTANS+s4IJAGnfW0ENQLHvqKAGYNj3VFABUO0bK6gAmPatFcQAk9g3VBADTGHfUkEEMKl9ZQURwJT2tRVGAWaxr6gwCjCHfU2FLMCs9oUVsgBz2pdWGAQowr6gwiBACfYlFZIARdkfqZAEKMn+WIUvgCLtZyp8AZRoP1ehB1C0/YEKPYCS7Q9VeANUYT9R4Q1Qg/1UhRagKvsfFVqAmux/VghV2u9UCDXa71Z4AkPtR8QJFVfWAAAAAElFTkSuQmCC',
+                    title: 'A title',
+                    url: '/an/url/test?language_id=1',
+                    order: 1
+                });
+
+                expect(dotTempFileUploadService.upload).toHaveBeenCalledWith(file);
+
+                expect(
+                    dotWorkflowActionsFireService.publishContentletAndWaitForIndex
+                ).toHaveBeenCalledWith(
+                    'dotFavoritePage',
+                    {
+                        screenshot: 'temp-file_123',
+                        inode: null,
+                        title: 'A title',
+                        url: '/an/url/test?language_id=1',
+                        order: 1
+                    },
+                    {
+                        READ: CMS_OWNER_ROLE_LIST,
+                        WRITE: CMS_OWNER_ROLE_LIST,
+                        PUBLISH: CMS_OWNER_ROLE_LIST
+                    }
+                );
+
+                dotFavoritePageStore.state$.subscribe((state) => {
+                    expect(state.closeDialog).toEqual(true);
+                    expect(state.loading).toEqual(false);
+                    expect(state.actionState).toEqual(DotFavoritePageActionState.SAVED);
+                    done();
+                });
+            }));
+
+        it('should create a Favorite Page without thumbnail', () =>
+            new Promise<void>((done) => {
+                vi.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                    of([mockDotCMSTempFile])
+                );
+                vi.spyOn(
+                    dotWorkflowActionsFireService,
+                    'publishContentletAndWaitForIndex'
+                ).mockReturnValue(of(null));
+
+                dotFavoritePageStore.saveFavoritePage({
+                    thumbnail: '',
+                    title: 'A title',
+                    url: '/an/url/test?language_id=1',
+                    order: 1
+                });
+
+                expect(dotTempFileUploadService.upload).toHaveBeenCalledTimes(0);
+
+                expect(
+                    dotWorkflowActionsFireService.publishContentletAndWaitForIndex
+                ).toHaveBeenCalledWith(
+                    'dotFavoritePage',
+                    {
+                        screenshot: '',
+                        inode: null,
+                        title: 'A title',
+                        url: '/an/url/test?language_id=1',
+                        order: 1
+                    },
+                    {
+                        READ: CMS_OWNER_ROLE_LIST,
+                        WRITE: CMS_OWNER_ROLE_LIST,
+                        PUBLISH: CMS_OWNER_ROLE_LIST
+                    }
+                );
+
+                dotFavoritePageStore.state$.subscribe((state) => {
+                    expect(state.closeDialog).toEqual(true);
+                    expect(state.loading).toEqual(false);
+                    expect(state.actionState).toEqual(DotFavoritePageActionState.SAVED);
+                    done();
+                });
+            }));
+
+        it('should Edit a Favorite Page', () =>
+            new Promise<void>((done) => {
+                vi.spyOn(
+                    dotWorkflowActionsFireService,
+                    'publishContentletAndWaitForIndex'
+                ).mockReturnValue(of(null));
+
+                dotFavoritePageStore.saveFavoritePage({
                     inode: 'abc123',
+                    thumbnail:
+                        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAXlJREFUaEPVktuNwjAQRWNaWApBFAGUBBVASUARaAvZbQGQI4EScJx53JvY/vHfeM45Dg3xHH//N3H8YfVzZT0TWIPj3NPt7xzv/Xq5Y71DA2jt3++XdvHFYsuqQAOI9h/NYxv3D024sCpQAHr2X3+HVIEC0LX/2p9VAQ6QtE+sAAdI2WdWgAJk7ZMqQAFy9lkVYAAi+4QKMACJfUYFCIDKPrgCBEBjH13BDWCyD6zgBrDYR1ZwAbjsgyq4ADz2URXMABD7gApmAIR9RAUTANS+s4IJAGnfW0ENQLHvqKAGYNj3VFABUO0bK6gAmPatFcQAk9g3VBADTGHfUkEEMKl9ZQURwJT2tRVGAWaxr6gwCjCHfU2FLMCs9oUVsgBz2pdWGAQowr6gwiBACfYlFZIARdkfqZAEKMn+WIUvgCLtZyp8AZRoP1ehB1C0/YEKPYCS7Q9VeANUYT9R4Q1Qg/1UhRagKvsfFVqAmux/VghV2u9UCDXa71Z4AkPtR8QJFVfWAAAAAElFTkSuQmCC',
                     title: 'A title',
                     url: '/an/url/test?language_id=1',
                     order: 1
-                },
-                {
-                    READ: CMS_OWNER_ROLE_LIST,
-                    WRITE: CMS_OWNER_ROLE_LIST,
-                    PUBLISH: CMS_OWNER_ROLE_LIST
-                }
-            );
+                });
 
-            dotFavoritePageStore.state$.subscribe((state) => {
-                expect(state.closeDialog).toEqual(true);
-                expect(state.loading).toEqual(false);
-                expect(state.actionState).toEqual(DotFavoritePageActionState.SAVED);
-                done();
-            });
-        });
+                expect(
+                    dotWorkflowActionsFireService.publishContentletAndWaitForIndex
+                ).toHaveBeenCalledWith(
+                    'dotFavoritePage',
+                    {
+                        screenshot:
+                            'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAXlJREFUaEPVktuNwjAQRWNaWApBFAGUBBVASUARaAvZbQGQI4EScJx53JvY/vHfeM45Dg3xHH//N3H8YfVzZT0TWIPj3NPt7xzv/Xq5Y71DA2jt3++XdvHFYsuqQAOI9h/NYxv3D024sCpQAHr2X3+HVIEC0LX/2p9VAQ6QtE+sAAdI2WdWgAJk7ZMqQAFy9lkVYAAi+4QKMACJfUYFCIDKPrgCBEBjH13BDWCyD6zgBrDYR1ZwAbjsgyq4ADz2URXMABD7gApmAIR9RAUTANS+s4IJAGnfW0ENQLHvqKAGYNj3VFABUO0bK6gAmPatFcQAk9g3VBADTGHfUkEEMKl9ZQURwJT2tRVGAWaxr6gwCjCHfU2FLMCs9oUVsgBz2pdWGAQowr6gwiBACfYlFZIARdkfqZAEKMn+WIUvgCLtZyp8AZRoP1ehB1C0/YEKPYCS7Q9VeANUYT9R4Q1Qg/1UhRagKvsfFVqAmux/VghV2u9UCDXa71Z4AkPtR8QJFVfWAAAAAElFTkSuQmCC',
+                        inode: 'abc123',
+                        title: 'A title',
+                        url: '/an/url/test?language_id=1',
+                        order: 1
+                    },
+                    {
+                        READ: CMS_OWNER_ROLE_LIST,
+                        WRITE: CMS_OWNER_ROLE_LIST,
+                        PUBLISH: CMS_OWNER_ROLE_LIST
+                    }
+                );
 
-        it('should handle error when create/save Favorite Page', (done) => {
-            jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
-                of([mockDotCMSTempFile])
-            );
-            jest.spyOn(
-                dotWorkflowActionsFireService,
-                'publishContentletAndWaitForIndex'
-            ).mockImplementation(() => {
-                throw new Error('error');
-            });
-            jest.spyOn(dotHttpErrorManagerService, 'handle');
+                dotFavoritePageStore.state$.subscribe((state) => {
+                    expect(state.closeDialog).toEqual(true);
+                    expect(state.loading).toEqual(false);
+                    expect(state.actionState).toEqual(DotFavoritePageActionState.SAVED);
+                    done();
+                });
+            }));
 
-            dotFavoritePageStore.saveFavoritePage({
-                thumbnail:
-                    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAXlJREFUaEPVktuNwjAQRWNaWApBFAGUBBVASUARaAvZbQGQI4EScJx53JvY/vHfeM45Dg3xHH//N3H8YfVzZT0TWIPj3NPt7xzv/Xq5Y71DA2jt3++XdvHFYsuqQAOI9h/NYxv3D024sCpQAHr2X3+HVIEC0LX/2p9VAQ6QtE+sAAdI2WdWgAJk7ZMqQAFy9lkVYAAi+4QKMACJfUYFCIDKPrgCBEBjH13BDWCyD6zgBrDYR1ZwAbjsgyq4ADz2URXMABD7gApmAIR9RAUTANS+s4IJAGnfW0ENQLHvqKAGYNj3VFABUO0bK6gAmPatFcQAk9g3VBADTGHfUkEEMKl9ZQURwJT2tRVGAWaxr6gwCjCHfU2FLMCs9oUVsgBz2pdWGAQowr6gwiBACfYlFZIARdkfqZAEKMn+WIUvgCLtZyp8AZRoP1ehB1C0/YEKPYCS7Q9VeANUYT9R4Q1Qg/1UhRagKvsfFVqAmux/VghV2u9UCDXa71Z4AkPtR8QJFVfWAAAAAElFTkSuQmCC',
-                title: 'A title',
-                url: '/an/url/test?language_id=1',
-                order: 1
-            });
+        it('should handle error when create/save Favorite Page', () =>
+            new Promise<void>((done) => {
+                vi.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                    of([mockDotCMSTempFile])
+                );
+                vi.spyOn(
+                    dotWorkflowActionsFireService,
+                    'publishContentletAndWaitForIndex'
+                ).mockImplementation(() => {
+                    throw new Error('error');
+                });
+                vi.spyOn(dotHttpErrorManagerService, 'handle');
 
-            expect(
-                dotWorkflowActionsFireService.publishContentletAndWaitForIndex
-            ).toHaveBeenCalledWith(
-                'dotFavoritePage',
-                {
-                    screenshot: 'temp-file_123',
-                    inode: null,
+                dotFavoritePageStore.saveFavoritePage({
+                    thumbnail:
+                        'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADAAAAAwCAYAAABXAvmHAAAAAXNSR0IArs4c6QAAAXlJREFUaEPVktuNwjAQRWNaWApBFAGUBBVASUARaAvZbQGQI4EScJx53JvY/vHfeM45Dg3xHH//N3H8YfVzZT0TWIPj3NPt7xzv/Xq5Y71DA2jt3++XdvHFYsuqQAOI9h/NYxv3D024sCpQAHr2X3+HVIEC0LX/2p9VAQ6QtE+sAAdI2WdWgAJk7ZMqQAFy9lkVYAAi+4QKMACJfUYFCIDKPrgCBEBjH13BDWCyD6zgBrDYR1ZwAbjsgyq4ADz2URXMABD7gApmAIR9RAUTANS+s4IJAGnfW0ENQLHvqKAGYNj3VFABUO0bK6gAmPatFcQAk9g3VBADTGHfUkEEMKl9ZQURwJT2tRVGAWaxr6gwCjCHfU2FLMCs9oUVsgBz2pdWGAQowr6gwiBACfYlFZIARdkfqZAEKMn+WIUvgCLtZyp8AZRoP1ehB1C0/YEKPYCS7Q9VeANUYT9R4Q1Qg/1UhRagKvsfFVqAmux/VghV2u9UCDXa71Z4AkPtR8QJFVfWAAAAAElFTkSuQmCC',
                     title: 'A title',
                     url: '/an/url/test?language_id=1',
                     order: 1
-                },
-                {
-                    READ: CMS_OWNER_ROLE_LIST,
-                    WRITE: CMS_OWNER_ROLE_LIST,
-                    PUBLISH: CMS_OWNER_ROLE_LIST
-                }
-            );
+                });
 
-            dotFavoritePageStore.state$.subscribe((state) => {
-                expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
-                expect(state.closeDialog).toEqual(false);
-                done();
-            });
-        });
+                expect(
+                    dotWorkflowActionsFireService.publishContentletAndWaitForIndex
+                ).toHaveBeenCalledWith(
+                    'dotFavoritePage',
+                    {
+                        screenshot: 'temp-file_123',
+                        inode: null,
+                        title: 'A title',
+                        url: '/an/url/test?language_id=1',
+                        order: 1
+                    },
+                    {
+                        READ: CMS_OWNER_ROLE_LIST,
+                        WRITE: CMS_OWNER_ROLE_LIST,
+                        PUBLISH: CMS_OWNER_ROLE_LIST
+                    }
+                );
 
-        it('should delete Favorite Page', (done) => {
-            jest.spyOn(dotWorkflowActionsFireService, 'deleteContentlet').mockReturnValue(of(null));
+                dotFavoritePageStore.state$.subscribe((state) => {
+                    expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+                    expect(state.closeDialog).toEqual(false);
+                    done();
+                });
+            }));
 
-            dotFavoritePageStore.deleteFavoritePage('abc123');
+        it('should delete Favorite Page', () =>
+            new Promise<void>((done) => {
+                vi.spyOn(dotWorkflowActionsFireService, 'deleteContentlet').mockReturnValue(
+                    of(null)
+                );
 
-            expect(dotWorkflowActionsFireService.deleteContentlet).toHaveBeenCalledWith({
-                inode: 'abc123'
-            });
+                dotFavoritePageStore.deleteFavoritePage('abc123');
 
-            dotFavoritePageStore.state$.subscribe((state) => {
-                expect(state.closeDialog).toEqual(true);
-                expect(state.loading).toEqual(false);
-                expect(state.actionState).toEqual(DotFavoritePageActionState.DELETED);
-                done();
-            });
-        });
+                expect(dotWorkflowActionsFireService.deleteContentlet).toHaveBeenCalledWith({
+                    inode: 'abc123'
+                });
 
-        it('should handle error when delete Favorite Page', (done) => {
-            jest.spyOn(dotWorkflowActionsFireService, 'deleteContentlet').mockImplementation(() => {
-                throw new Error('error');
-            });
-            jest.spyOn(dotHttpErrorManagerService, 'handle');
+                dotFavoritePageStore.state$.subscribe((state) => {
+                    expect(state.closeDialog).toEqual(true);
+                    expect(state.loading).toEqual(false);
+                    expect(state.actionState).toEqual(DotFavoritePageActionState.DELETED);
+                    done();
+                });
+            }));
 
-            dotFavoritePageStore.deleteFavoritePage('abc123');
+        it('should handle error when delete Favorite Page', () =>
+            new Promise<void>((done) => {
+                vi.spyOn(dotWorkflowActionsFireService, 'deleteContentlet').mockImplementation(
+                    () => {
+                        throw new Error('error');
+                    }
+                );
+                vi.spyOn(dotHttpErrorManagerService, 'handle');
 
-            expect(dotWorkflowActionsFireService.deleteContentlet).toHaveBeenCalledWith({
-                inode: 'abc123'
-            });
+                dotFavoritePageStore.deleteFavoritePage('abc123');
 
-            dotFavoritePageStore.state$.subscribe((state) => {
-                expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
-                expect(state.closeDialog).toEqual(false);
-                expect(state.loading).toEqual(false);
-                done();
-            });
-        });
+                expect(dotWorkflowActionsFireService.deleteContentlet).toHaveBeenCalledWith({
+                    inode: 'abc123'
+                });
+
+                dotFavoritePageStore.state$.subscribe((state) => {
+                    expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+                    expect(state.closeDialog).toEqual(false);
+                    expect(state.loading).toEqual(false);
+                    done();
+                });
+            }));
     });
 
     describe('Existing Favorite Page', () => {
@@ -406,111 +417,114 @@ describe('DotFavoritePageStore', () => {
             owner: 'admin'
         };
 
-        it('should set initial data', (done) => {
-            jest.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(of(true));
-            dotFavoritePageStore.setInitialStateData({
-                favoritePageUrl: existingDataMock.url,
-                favoritePage: { ...existingDataMock }
-            });
+        it('should set initial data', () =>
+            new Promise<void>((done) => {
+                vi.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(of(true));
+                dotFavoritePageStore.setInitialStateData({
+                    favoritePageUrl: existingDataMock.url,
+                    favoritePage: { ...existingDataMock }
+                });
 
-            const expectedInitialState = {
-                formState: {
-                    inode: '',
-                    order: 1,
-                    thumbnail: existingDataMock.screenshot,
-                    title: existingDataMock.title,
-                    url: existingDataMock.url
-                },
-                imgWidth: 1024,
-                imgHeight: 768.192048012003,
-                renderThumbnail: false,
-                loading: false,
-                pageRenderedHtml: '<html><head></header><body><p>Hello World</p></body></html>',
-                showFavoriteEmptySkeleton: false,
-                closeDialog: false,
-                actionState: null
-            };
+                const expectedInitialState = {
+                    formState: {
+                        inode: '',
+                        order: 1,
+                        thumbnail: existingDataMock.screenshot,
+                        title: existingDataMock.title,
+                        url: existingDataMock.url
+                    },
+                    imgWidth: 1024,
+                    imgHeight: 768.192048012003,
+                    renderThumbnail: false,
+                    loading: false,
+                    pageRenderedHtml: '<html><head></header><body><p>Hello World</p></body></html>',
+                    showFavoriteEmptySkeleton: false,
+                    closeDialog: false,
+                    actionState: null
+                };
 
-            dotFavoritePageStore.state$.subscribe((state) => {
-                expect(state).toEqual(expectedInitialState);
-                done();
-            });
-            expect(dotPageRenderService.get).toHaveBeenCalledTimes(1);
-        });
+                dotFavoritePageStore.state$.subscribe((state) => {
+                    expect(state).toEqual(expectedInitialState);
+                    done();
+                });
+                expect(dotPageRenderService.get).toHaveBeenCalledTimes(1);
+            }));
 
-        it('should set right title if it is urlContentMap', (done) => {
-            jest.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(of(true));
+        it('should set right title if it is urlContentMap', () =>
+            new Promise<void>((done) => {
+                vi.spyOn(dotPageRenderService, 'checkPermission').mockReturnValue(of(true));
 
-            dotPageRenderService.get = jest.fn().mockReturnValue(
-                of({
-                    ...mockDotRenderedPage(),
-                    urlContentMap: { title: 'test urlContentMap' }
-                })
-            );
+                dotPageRenderService.get = vi.fn().mockReturnValue(
+                    of({
+                        ...mockDotRenderedPage(),
+                        urlContentMap: { title: 'test urlContentMap' }
+                    })
+                );
 
-            dotFavoritePageStore.setInitialStateData({
-                favoritePageUrl: existingDataMock.url,
-                favoritePage: { ...existingDataMock }
-            });
+                dotFavoritePageStore.setInitialStateData({
+                    favoritePageUrl: existingDataMock.url,
+                    favoritePage: { ...existingDataMock }
+                });
 
-            const expectedInitialState = {
-                formState: {
-                    inode: '',
-                    order: 1,
-                    thumbnail: existingDataMock.screenshot,
-                    title: 'test urlContentMap',
-                    url: existingDataMock.url
-                },
-                imgWidth: 1024,
-                imgHeight: 768.192048012003,
-                renderThumbnail: false,
-                loading: false,
-                pageRenderedHtml: '<html><head></header><body><p>Hello World</p></body></html>',
-                showFavoriteEmptySkeleton: false,
-                closeDialog: false,
-                actionState: null
-            };
+                const expectedInitialState = {
+                    formState: {
+                        inode: '',
+                        order: 1,
+                        thumbnail: existingDataMock.screenshot,
+                        title: 'test urlContentMap',
+                        url: existingDataMock.url
+                    },
+                    imgWidth: 1024,
+                    imgHeight: 768.192048012003,
+                    renderThumbnail: false,
+                    loading: false,
+                    pageRenderedHtml: '<html><head></header><body><p>Hello World</p></body></html>',
+                    showFavoriteEmptySkeleton: false,
+                    closeDialog: false,
+                    actionState: null
+                };
 
-            dotFavoritePageStore.state$.subscribe((state) => {
-                expect(state).toEqual(expectedInitialState);
-                done();
-            });
-            expect(dotPageRenderService.get).toHaveBeenCalledTimes(1);
-        });
+                dotFavoritePageStore.state$.subscribe((state) => {
+                    expect(state).toEqual(expectedInitialState);
+                    done();
+                });
+                expect(dotPageRenderService.get).toHaveBeenCalledTimes(1);
+            }));
 
-        it('should set initial data for an unknown 404 page', (done) => {
-            const error404 = mockResponseView(404);
-            dotPageRenderService.checkPermission = jest
-                .fn()
-                .mockReturnValue(throwError(() => error404));
+        it('should set initial data for an unknown 404 page', () =>
+            new Promise<void>((done) => {
+                const error404 = mockResponseView(404);
+                dotPageRenderService.checkPermission = vi
+                    .fn()
+                    .mockReturnValue(throwError(() => error404));
 
-            dotFavoritePageStore.setInitialStateData({
-                favoritePageUrl: existingDataMock.url,
-                favoritePage: { ...existingDataMock }
-            });
+                dotFavoritePageStore.setInitialStateData({
+                    favoritePageUrl: existingDataMock.url,
+                    favoritePage: { ...existingDataMock }
+                });
 
-            const expectedInitialState = {
-                formState: {
-                    inode: '',
-                    order: 1,
-                    thumbnail: 'test1',
-                    title: 'preview1',
-                    url: '/index1?host_id=A&language_id=1&device_inode=123'
-                },
-                imgWidth: 1024,
-                imgHeight: 1.333,
-                renderThumbnail: false,
-                loading: false,
-                pageRenderedHtml: '',
-                showFavoriteEmptySkeleton: false,
-                closeDialog: false,
-                actionState: null
-            };
+                const expectedInitialState = {
+                    formState: {
+                        inode: '',
+                        order: 1,
+                        thumbnail: 'test1',
+                        title: 'preview1',
+                        url: '/index1?host_id=A&language_id=1&device_inode=123'
+                    },
+                    imgWidth: 1024,
+                    imgHeight: 1.333,
+                    renderThumbnail: false,
+                    loading: false,
+                    pageRenderedHtml: '',
+                    showFavoriteEmptySkeleton: false,
+                    closeDialog: false,
+                    actionState: null
+                };
 
-            dotFavoritePageStore.state$.subscribe((state) => {
-                expect(state).toEqual(expectedInitialState);
-                done();
-            });
-        });
+                dotFavoritePageStore.state$.subscribe((state) => {
+                    expect(state).toEqual(expectedInitialState);
+                    done();
+                });
+            }));
     });
 });

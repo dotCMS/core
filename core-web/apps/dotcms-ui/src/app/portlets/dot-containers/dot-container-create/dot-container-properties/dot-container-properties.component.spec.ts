@@ -1,5 +1,6 @@
-import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/jest';
+import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
@@ -213,10 +214,10 @@ describe('DotContainerPropertiesComponent', () => {
 
     const messageServiceMock = new MockDotMessageService(messages);
     const mockRouterService = {
-        gotoPortlet: jest.fn(),
-        goToEditContainer: jest.fn(),
-        goToSiteBrowser: jest.fn(),
-        goToURL: jest.fn()
+        gotoPortlet: vi.fn(),
+        goToEditContainer: vi.fn(),
+        goToSiteBrowser: vi.fn(),
+        goToURL: vi.fn()
     };
 
     const createComponent = createComponentFactory({
@@ -318,7 +319,7 @@ describe('DotContainerPropertiesComponent', () => {
 
         it('should render content types when max-content greater then zero', fakeAsync(() => {
             const comp = spectator.component;
-            jest.spyOn(comp, 'showContentTypeAndCode');
+            vi.spyOn(comp, 'showContentTypeAndCode');
             comp.form.get('maxContentlets').setValue(0);
             comp.form.get('maxContentlets').valueChanges.subscribe((value) => {
                 expect(value).toBe(5);
@@ -334,11 +335,11 @@ describe('DotContainerPropertiesComponent', () => {
         }));
 
         it('should clear the field', fakeAsync(() => {
-            jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
+            vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
             const comp = spectator.component;
-            jest.spyOn(comp, 'clearContentConfirmationModal');
+            vi.spyOn(comp, 'clearContentConfirmationModal');
             comp.form.get('maxContentlets').setValue(0);
             tick(150);
             spectator.detectChanges();
@@ -360,8 +361,8 @@ describe('DotContainerPropertiesComponent', () => {
             comp.form.get('maxContentlets').setValue(0);
             comp.form.get('maxContentlets').setValue(5);
             spectator.detectChanges();
-            jest.spyOn(comp, 'clearContentConfirmationModal');
-            jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
+            vi.spyOn(comp, 'clearContentConfirmationModal');
+            vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
                 conf.accept();
             });
             spectator.click(byTestId('clearContent'));
@@ -433,7 +434,7 @@ describe('DotContainerPropertiesComponent', () => {
         }));
 
         it('should redirect to containers list after save', fakeAsync(() => {
-            (dotRouterService.goToURL as jest.Mock).mockClear();
+            (dotRouterService.goToURL as Mock).mockClear();
             spectator.component.form.get('title').setValue('Hello');
             tick(150);
             spectator.detectChanges();

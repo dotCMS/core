@@ -1,5 +1,6 @@
 package com.dotcms.ai.api;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.client.AIProxyClient;
@@ -115,10 +116,14 @@ public class OpenAIImageAPIImpl implements ImageAPI {
             final DotTempFile file;
 
             if (!UtilMethods.isEmpty(() -> url)) {
-                file = tempFileApi.createTempFileFromUrl(fileName, getRequest(), URI.create(url).toURL(), 20);
+                try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
+                    file = tempFileApi.createTempFileFromUrl(fileName, getRequest(), URI.create(url).toURL(), 20);
+                }
             } else if (!UtilMethods.isEmpty(() -> b64)) {
                 final byte[] imageBytes = Base64.getDecoder().decode(b64);
-                file = tempFileApi.createTempFile(fileName, getRequest(), new ByteArrayInputStream(imageBytes));
+                try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
+                    file = tempFileApi.createTempFile(fileName, getRequest(), new ByteArrayInputStream(imageBytes));
+                }
             } else {
                 Logger.warn(this.getClass(), "imageResponse does not include URL or base64 data:" + imageResponse);
                 throw new DotRuntimeException("Image Response does not include URL or base64 data:" + imageResponse);

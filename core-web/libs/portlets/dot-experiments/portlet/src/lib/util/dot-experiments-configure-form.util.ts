@@ -355,8 +355,26 @@ export function toSchedulingSlice(
 
 /**
  * And the persisted shape it goes back out as: instants, or `null` for the whole range when neither
- * date is set — which is what `PATCH /api/v1/experiments/{id}` reads as "no schedule at all", and
- * therefore what both ways of emptying the card mean.
+ * date is set.
+ *
+ * **A cleared schedule does not reach the server, and cannot from here (TC-031).**
+ * `PATCH /api/v1/experiments/{id}` applies only the keys its body carries — `ExperimentsResource`
+ * builds the update with `if (experimentForm.getScheduling() != null)` — so this `null` reads as
+ * "leave the schedule alone", and Clear Schedule followed by Save Draft comes back with the old
+ * dates still on it.
+ *
+ * The other spelling is worse. Sending an empty range *does* clear the stored dates, but it leaves
+ * a `Scheduling` object in place with neither date, and the backend does not agree with itself
+ * about what that means: `ExperimentsAPIImpl.emptyScheduling` treats it as no schedule, while
+ * `start()` asks `scheduling().isEmpty()` — is there an object at all — to decide whether the
+ * experiment was meant to run now. With a running experiment already on the page, that sends it
+ * down the schedule-conflict branch, where `startDate().orElseThrow()` throws
+ * `NoSuchElementException` and Start answers **500** instead of the refusal the editor should see.
+ * Measured on a running instance: `ExperimentsAPIImpl.start` line 572.
+ *
+ * So there is no spelling of "clear this schedule" the frontend can send today. Fixing it means
+ * making those two agree, which is a backend change — tracked separately; do not reach for the
+ * empty range here again without it.
  */
 export function toRange(scheduling: SchedulingFormSlice): RangeOfDateAndTime | null {
     const startDate = toTime(scheduling.startDate);

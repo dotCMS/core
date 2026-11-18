@@ -4,9 +4,12 @@ name: Claude AI Post-Merge Test Plan
 # posts it as a comment on every related dotCMS/core issue.
 #
 # Eligibility (rock spec §4): the event is pull_request.closed, the PR merged,
-# it carries "Area : Backend" or "Area : Frontend", and at least one valid
-# related issue is found. No related issue is a SKIP with a visible warning —
-# not a workflow failure.
+# it carries the opt-in label "PR : dotbot review" (the same label that triggers
+# dotbot-review.yml), it carries "Area : Backend" or "Area : Frontend", and at
+# least one valid related issue is found. A manual workflow_dispatch skips the
+# opt-in label check — dispatching by hand is already an explicit request, and
+# it is the way to plan a PR that got the label only after it merged. No related
+# issue is a SKIP with a visible warning — not a workflow failure.
 #
 # Job structure:
 #   preflight → prep → claude (via ai-workflows) → finalize
@@ -102,6 +105,15 @@ jobs:
 
           if [ "$MERGED" != "true" ]; then
             echo "::notice::PR #$PR_NUMBER is not merged — skipping."
+            echo "should_run=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+
+          # Opt-in: the automatic run only plans PRs that asked for dotbot. A manual dispatch is
+          # already an explicit request, so it skips this check. Labels are read from the API above,
+          # not the event payload, so a label added right before the merge is still seen.
+          OPT_IN_LABEL='PR : dotbot review'
+          if [ "$EVENT_NAME" != "workflow_dispatch" ] && ! echo "$LABELS" | grep -qxF "$OPT_IN_LABEL"; then
+            echo "::notice::PR #$PR_NUMBER does not carry '$OPT_IN_LABEL' — skipping."
             echo "should_run=false" >> "$GITHUB_OUTPUT"; exit 0
           fi
 

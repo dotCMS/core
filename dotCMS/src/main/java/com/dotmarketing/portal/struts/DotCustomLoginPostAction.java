@@ -6,18 +6,11 @@ import java.util.Map;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
-import com.dotcms.enterprise.LDAPImpl;
-import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.Role;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
 
-import com.liferay.portal.model.User;
 import com.liferay.portal.struts.Action;
 import com.liferay.portal.struts.ActionException;
-import com.liferay.portal.util.PropsUtil;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.CookieUtil;
 import com.liferay.util.ObjectValuePair;
@@ -31,28 +24,24 @@ import com.liferay.util.StringPool;
  */
 public class DotCustomLoginPostAction extends Action {
 
+	/**
+	 * Value older versions stored as the local password of users synced from an external directory.
+	 * The directory integration is gone, so nothing writes it any more, and it never matches as a
+	 * password.
+	 */
 	public static final String FAKE_PASSWORD = "fake_dotCMS_LDAP_password";
-	
+
+	/**
+	 * Runs after a back-end login and restores the page the user was trying to reach, if any.
+	 *
+	 * @param request  the login request
+	 * @param response the login response
+	 */
+	@Override
 	@SuppressWarnings({ "unchecked" })
 	public void run(HttpServletRequest request, HttpServletResponse response)
 	throws ActionException {
 
-		try{
-			boolean SYNC_PASSWORD = Boolean.valueOf(PropsUtil.get("auth.impl.ldap.syncPassword"));
-			if(!SYNC_PASSWORD){
-				User user = com.liferay.portal.util.PortalUtil.getUser(request);
-				Role r = com.dotmarketing.business.APILocator.getRoleAPI().loadRoleByKey(LDAPImpl.LDAP_USER_ROLE);
-				if(com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user, r)){
-					user.setPassword(FAKE_PASSWORD);
-					APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
-				}
-			}
-		}catch (Exception e) {
-			Logger.debug(this,"syncPassword not set or unable to load user", e);
-		}
-		
-		
-		
 		try {
 			// To manually set a path for the user to forward to, edit
 			// portal.properties and set auth.forward.by.last.path to true.

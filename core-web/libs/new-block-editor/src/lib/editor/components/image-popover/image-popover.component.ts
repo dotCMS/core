@@ -20,7 +20,8 @@ import { EditorPopoverComponent } from '../editor-popover/editor-popover.compone
 
 /**
  * Caret-anchored dialog that lets the user **edit the properties of an existing
- * `dotImage` node** — URL (`src`), tooltip (`title`), alt text. Opened from the toolbar's
+ * `dotImage` node** — URL (`src`), title (`title`, shown as the browser tooltip on hover),
+ * alt text (`alt`). Opened from the toolbar's
  * "Edit image properties" button when an image is selected; prefilled from
  * `manager.imagePropertiesPayload()`. Insertion is the responsibility of
  * {@link ImageInsertDialogComponent}.

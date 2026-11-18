@@ -1,4 +1,5 @@
-import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -143,7 +144,7 @@ describe('ActionMenuButtonComponent', () => {
         spectator.setInput('item', mockContentType);
         spectator.detectChanges();
 
-        const commandSpy = jest.spyOn(fakeActions[0].menuItem, 'command');
+        const commandSpy = vi.spyOn(fakeActions[0].menuItem, 'command');
 
         const actionButtonTooltip = spectator.query(byTestId('dot-action-tooltip-button'));
         spectator.click(actionButtonTooltip);
@@ -241,7 +242,7 @@ describe('ActionMenuButtonComponent', () => {
     });
 
     it('should call menu option actions with item passed', () => {
-        const mockCommand = jest.fn();
+        const mockCommand = vi.fn();
         const fakeActions: DotActionMenuItem[] = [
             {
                 menuItem: {

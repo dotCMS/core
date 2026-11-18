@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
@@ -24,7 +25,7 @@ describe('DotAppsListResolver', () => {
                 DotAppsListResolver,
                 {
                     provide: DotAppsService,
-                    useValue: { get: jest.fn().mockReturnValue(of(appsResponse)) }
+                    useValue: { get: vi.fn().mockReturnValue(of(appsResponse)) }
                 },
                 {
                     provide: ActivatedRouteSnapshot,
@@ -37,7 +38,7 @@ describe('DotAppsListResolver', () => {
     });
 
     it('should get and return apps list', () => {
-        jest.spyOn(dotAppsService, 'get').mockReturnValue(of(appsResponse));
+        vi.spyOn(dotAppsService, 'get').mockReturnValue(of(appsResponse));
 
         dotAppsListResolver.resolve(activatedRouteSnapshotMock).subscribe((apps: DotApp[]) => {
             expect(apps).toEqual(appsResponse);

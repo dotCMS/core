@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 import { Component, DebugElement } from '@angular/core';
@@ -91,7 +91,7 @@ describe('DotLayoutSidebarComponent', () => {
         ).nativeElement;
 
         dotLayoutPropertiesItem.switch.subscribe((value) => (res = value));
-        jest.spyOn(comp, 'propagateChange');
+        vi.spyOn(comp, 'propagateChange');
         layoutPropertyItemEl.click();
         comp.setValue(true, 'left');
 
@@ -111,8 +111,8 @@ describe('DotLayoutSidebarComponent', () => {
         dotLayoutPropertiesItem.switch.subscribe((value) => (res = value));
         layoutPropertyItemEl.click();
 
-        jest.spyOn(comp.propertyItemLeft, 'setChecked');
-        jest.spyOn(comp.propertyItemRight, 'setUnchecked');
+        vi.spyOn(comp.propertyItemLeft, 'setChecked');
+        vi.spyOn(comp.propertyItemRight, 'setUnchecked');
         comp.setValue(true, 'left');
 
         expect(res).toEqual(true);
@@ -132,8 +132,8 @@ describe('DotLayoutSidebarComponent', () => {
         dotLayoutPropertiesItem.switch.subscribe((value) => (res = value));
         layoutPropertyItemEl.click();
 
-        jest.spyOn(comp.propertyItemLeft, 'setUnchecked');
-        jest.spyOn(comp.propertyItemRight, 'setChecked');
+        vi.spyOn(comp.propertyItemLeft, 'setUnchecked');
+        vi.spyOn(comp.propertyItemRight, 'setChecked');
         comp.setValue(true, 'right');
 
         expect(res).toEqual(true);
@@ -151,7 +151,7 @@ describe('DotLayoutSidebarComponent', () => {
             width: ''
         };
 
-        jest.spyOn(component, 'writeValue');
+        vi.spyOn(component, 'writeValue');
         comp.setValue(true, 'right');
         hostComponentfixture.detectChanges();
 

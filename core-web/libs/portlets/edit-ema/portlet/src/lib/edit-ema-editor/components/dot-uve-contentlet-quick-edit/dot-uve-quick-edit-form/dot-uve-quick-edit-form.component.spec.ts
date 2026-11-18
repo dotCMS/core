@@ -1,7 +1,7 @@
-import { describe, expect, it, jest, beforeEach } from '@jest/globals';
-import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { of, throwError } from 'rxjs';
+import { Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 
@@ -20,8 +20,9 @@ import { DotUveQuickEditFormComponent } from './dot-uve-quick-edit-form.componen
 import { UveOptimisticSaveService } from '../../../../services/uve-optimistic-save/uve-optimistic-save.service';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { UVEStore } from '../../../../store/dot-uve.store';
+import { ContentletEditData } from '../../../../store/features/editor/models';
 import { PageType } from '../../../../store/models';
-import { ContentletEditData, ContentletField } from '../types';
+import { ContentletField } from '../types';
 
 const flushMicrotasks = () => new Promise<void>((resolve) => queueMicrotask(resolve));
 
@@ -53,14 +54,14 @@ describe('DotUveQuickEditFormComponent', () => {
         typeof signal<{ payload: { container: unknown; contentlet: DotCMSContentlet } } | null>
     >;
     let pageType: ReturnType<typeof signal<PageType>>;
-    let saveQuickEditFields: jest.Mock;
-    let setSelectedPayload: jest.Mock;
-    let setUveStatus: jest.Mock;
-    let pageReload: jest.Mock;
-    let addCurrentPageToHistory: jest.Mock;
-    let messageAdd: jest.Mock;
-    let updateIframeOptimistically: jest.Mock;
-    let extractFromRollback: jest.Mock;
+    let saveQuickEditFields: Mock;
+    let setSelectedPayload: Mock;
+    let setUveStatus: Mock;
+    let pageReload: Mock;
+    let addCurrentPageToHistory: Mock;
+    let messageAdd: Mock;
+    let updateIframeOptimistically: Mock;
+    let extractFromRollback: Mock;
 
     const createComponent = createComponentFactory({
         component: DotUveQuickEditFormComponent,
@@ -112,7 +113,7 @@ describe('DotUveQuickEditFormComponent', () => {
             {
                 provide: DotMessageService,
                 useFactory: () => ({
-                    get: jest.fn((key: string) => key)
+                    get: vi.fn((key: string) => key)
                 })
             }
         ],
@@ -128,14 +129,14 @@ describe('DotUveQuickEditFormComponent', () => {
             }
         });
         pageType = signal(PageType.HEADLESS);
-        saveQuickEditFields = jest.fn().mockReturnValue(of(makeContentlet({ title: 'Saved' })));
-        setSelectedPayload = jest.fn();
-        setUveStatus = jest.fn();
-        pageReload = jest.fn();
-        addCurrentPageToHistory = jest.fn();
-        messageAdd = jest.fn();
-        updateIframeOptimistically = jest.fn();
-        extractFromRollback = jest.fn().mockReturnValue({});
+        saveQuickEditFields = vi.fn().mockReturnValue(of(makeContentlet({ title: 'Saved' })));
+        setSelectedPayload = vi.fn();
+        setUveStatus = vi.fn();
+        pageReload = vi.fn();
+        addCurrentPageToHistory = vi.fn();
+        messageAdd = vi.fn();
+        updateIframeOptimistically = vi.fn();
+        extractFromRollback = vi.fn().mockReturnValue({});
     });
 
     describe('form construction', () => {
@@ -172,7 +173,7 @@ describe('DotUveQuickEditFormComponent', () => {
             await flushMicrotasks();
             spectator.detectChanges();
 
-            const emitSpy = jest.fn();
+            const emitSpy = vi.fn();
             spectator.component.openFullEditor.subscribe(emitSpy);
 
             const button = spectator
@@ -193,7 +194,7 @@ describe('DotUveQuickEditFormComponent', () => {
             await flushMicrotasks();
             spectator.detectChanges();
 
-            const emitSpy = jest.fn();
+            const emitSpy = vi.fn();
             spectator.component.closed.subscribe(emitSpy);
 
             const button = spectator.query(byTestId('cancel-button'))?.querySelector('button');

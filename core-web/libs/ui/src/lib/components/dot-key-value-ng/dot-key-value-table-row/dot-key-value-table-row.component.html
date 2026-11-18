@@ -1,55 +1,171 @@
 @let variable = $variable();
 @let showHiddenField = $showHiddenField();
 @let isHiddenField = $isHiddenField();
-@let index = $index();
+@let readOnly = $readOnly();
+@let isEditing = $isEditing();
+@let isEditingKey = $isEditingKey();
+@let editing = isEditing || isEditingKey;
 
-<tr class="dot-key-value-table-row" [pReorderableRow]="index">
-    @if ($dragAndDrop()) {
-        <td class="p-2 align-middle">
-            <span class="pi pi-bars text-gray-500" pReorderableRowHandle></span>
-        </td>
+<!--
+    The cell stays whatever the mode, because the header always renders its gutter
+    column; only the handle inside it goes when the list cannot be reordered.
+
+    The handle is deliberately not focusable. `pReorderableRowHandle` drives PrimeNG's
+    pointer drag and nothing else — no Enter, no Space, no arrow keys — so a `role` and
+    a `tabindex` here would put a stop in the tab order that announces itself as a
+    button and then does nothing at all. Until there is a keyboard reorder to reach,
+    presenting it as a pointer affordance is the honest description.
+-->
+<td class="pr-0! pl-4!" [class.align-top]="editing" data-testId="dot-key-value-gutter">
+    <div class="flex min-w-0 items-center" [class.min-h-12]="editing">
+        @if (!readOnly) {
+            <span
+                class="inline-flex cursor-grab text-surface-500 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 dark:text-surface-400"
+                pReorderableRowHandle
+                data-testId="dot-key-value-drag-handle">
+                <span
+                    class="material-symbols-outlined text-lg!"
+                    aria-hidden="true"
+                    data-testId="dot-key-value-drag-handle-icon">
+                    drag_indicator
+                </span>
+            </span>
+        }
+    </div>
+</td>
+
+<!--
+    At rest the cells keep the browser default of `middle`: nothing here is taller than
+    anything else, and top-aligning only moved the resting column for no gain.
+
+    While a cell is open they all top-align, and every cell wraps its content in a band
+    of the same height. A refusal renders its message inside the cell but below that
+    band, making the cell taller than its sibling; left at `middle` the sibling would
+    re-centre against the taller row and drop about 10px below the cell being edited.
+    Anchoring the bands to the top instead keeps their centres level however far the
+    message grows the row.
+-->
+<td [class.align-top]="editing" data-testId="dot-key-value-key">
+    <div class="flex min-w-0 items-center" [class.min-h-12]="editing">
+        @if (isEditingKey) {
+            <input
+                (keydown.enter)="commitEdit($event)"
+                (keydown.escape)="cancelEdit($event)"
+                (blur)="cancelEdit($event)"
+                [formControl]="editControl"
+                [placeholder]="'keyValue.key_input.placeholder' | dm"
+                class="w-full"
+                #keyInput
+                autocomplete="false"
+                data-testId="dot-key-value-key-input"
+                pInputText
+                pSize="small"
+                type="text" />
+        } @else {
+            <!-- `title` keeps the whole key reachable once the column clips it. -->
+            <span
+                (click)="startEditKey()"
+                (keydown.enter)="startEditKey()"
+                (keydown.space)="$event.preventDefault(); startEditKey()"
+                [title]="variable.key"
+                [class.cursor-text]="!readOnly"
+                [attr.role]="readOnly ? null : 'button'"
+                [attr.tabindex]="readOnly ? null : 0"
+                class="block truncate"
+                data-testId="dot-key-value-key-output">
+                {{ variable.key }}
+            </span>
+        }
+    </div>
+    @if (isEditingKey && editControl.dirty && editControl.hasError('required')) {
+        <small class="mt-1 block text-xs text-red-500" data-testId="dot-key-value-key-required">
+            {{ 'keyValue.key_input.required' | dm }}
+        </small>
+    } @else if (isEditingKey && editControl.dirty && editControl.hasError('duplicatedKey')) {
+        <small class="mt-1 block text-xs text-red-500" data-testId="dot-key-value-key-duplicated">
+            {{ 'keyValue.key_input.duplicated' | dm }}
+        </small>
     }
-    <td class="p-2 align-middle" data-testId="dot-key-value-key">
-        <span>{{ variable.key }}</span>
-    </td>
-    @if (isHiddenField) {
-        <td class="p-2 align-middle" data-testId="dot-key-value-label">
-            <span>
-                <i class="pi pi-lock inline-block mr-1"></i>
+</td>
+
+<!--
+    Whether a value is withheld is decided when the pair is created, and never after.
+    The server sends a mask rather than the stored secret, so there is no reveal to
+    offer, and no way to re-hide a value without persisting the mask over the secret.
+    An existing row therefore carries no visibility control at all.
+-->
+<td [class.align-top]="editing" data-testId="dot-key-value-editable-column">
+    <div class="flex min-w-0 items-center" [class.min-h-12]="editing">
+        @if (isHiddenField) {
+            <span
+                class="inline-flex items-center gap-1 text-surface-500 dark:text-surface-400"
+                data-testId="dot-key-value-label">
+                <span
+                    class="material-symbols-outlined text-base!"
+                    aria-hidden="true"
+                    data-testId="dot-key-value-hidden-icon">
+                    lock
+                </span>
                 {{ 'keyValue.value_hidden' | dm }}
             </span>
-        </td>
-    } @else {
-        <td class="p-2 align-middle" data-testId="dot-key-value-editable-column">
+        } @else if (isEditing) {
             <input
-                (keydown.enter)="onPressEnter($event)"
+                (keydown.enter)="commitEdit($event)"
+                (keydown.escape)="cancelEdit($event)"
+                (blur)="cancelEdit($event)"
+                [formControl]="editControl"
                 [placeholder]="'keyValue.value_input.placeholder' | dm"
-                [type]="inputType"
-                [formControl]="valueControl"
                 class="w-full"
+                #valueInput
                 autocomplete="false"
                 data-testId="dot-key-value-input"
                 pInputText
-                pSize="small" />
-        </td>
+                pSize="small"
+                type="text" />
+        } @else {
+            <!-- `title` keeps the whole value reachable once the column clips it. -->
+            <span
+                (click)="startEdit()"
+                (keydown.enter)="startEdit()"
+                (keydown.space)="$event.preventDefault(); startEdit()"
+                [class.cursor-text]="!readOnly"
+                [attr.role]="readOnly ? null : 'button'"
+                [attr.tabindex]="readOnly ? null : 0"
+                [title]="variable.value"
+                class="block w-full truncate"
+                data-testId="dot-key-value-value-output">
+                {{ variable.value }}
+            </span>
+        }
+    </div>
+    @if (isEditing && editControl.dirty && editControl.hasError('required')) {
+        <small class="mt-1 block text-xs text-red-500" data-testId="dot-key-value-value-required">
+            {{ 'keyValue.value_input.required' | dm }}
+        </small>
     }
-    @if (showHiddenField) {
-        <td class="p-2 align-middle">
-            @if (valueControl.value !== passwordPlaceholder && !variable.hidden) {
-                <p-toggleSwitch
-                    [formControl]="hiddenControl"
-                    data-testId="dot-key-value-hidden-switch" />
-            }
-        </td>
-    }
+</td>
 
-    <td class="p-2 align-middle">
-        <p-button
-            (click)="delete.emit()"
-            data-testId="dot-key-value-delete-button"
-            icon="pi pi-times"
-            severity="secondary"
-            size="small"
-            [text]="true" />
+@if (!readOnly) {
+    <td class="w-21 min-w-21" [class.align-top]="editing">
+        <div class="flex items-center" [class.min-h-12]="editing">
+            <button
+                (click)="delete.emit()"
+                [attr.aria-label]="'keyValue.action.delete' | dm"
+                [text]="true"
+                class="opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
+                data-testId="dot-key-value-delete-button"
+                pButton
+                severity="secondary"
+                size="small"
+                type="button">
+                <span
+                    class="material-symbols-outlined text-lg!"
+                    aria-hidden="true"
+                    data-testId="dot-key-value-delete-icon"
+                    pButtonIcon>
+                    close
+                </span>
+            </button>
+        </div>
     </td>
-</tr>
+}

@@ -9,6 +9,38 @@ public interface FeatureFlagName {
     // Experiments and Analytics
     String FEATURE_FLAG_EXPERIMENTS = "FEATURE_FLAG_EXPERIMENTS";
 
+    /**
+     * Selects which experiments experience the Universal Visual Editor's Experiments navigation
+     * item leads to: the new site-wide Experiments portlet when on, the legacy per-page screens
+     * when off. Off by default ({@code dotmarketing-config.properties} sets
+     * {@code FEATURE_FLAG_EXPERIMENTS_PORTLET=false}) so existing customers keep the flow they
+     * have until they opt in.
+     *
+     * <p><b>Not</b> a kill-switch for experiments. {@link #FEATURE_FLAG_EXPERIMENTS} is that, and
+     * this value has no bearing on whether experiments are served to site visitors, on experiment
+     * JavaScript injection, or on experiment resolution during page render.
+     *
+     * <p>The explicit {@code false} in the properties file is required rather than decorative: the
+     * shared frontend flag readers treat an absent property as <i>enabled</i>, so declaring this
+     * switch without shipping a value would deliver it on.
+     *
+     * <p>Retired by #37008, which removes the legacy per-page screens. Frontend equivalent:
+     * {@code FeaturedFlags.FEATURE_FLAG_EXPERIMENTS_PORTLET}.
+     */
+    String FEATURE_FLAG_EXPERIMENTS_PORTLET = "FEATURE_FLAG_EXPERIMENTS_PORTLET";
+
+    /**
+     * Lets a template hand {@code $xslttool} a URL as the XML to transform, instead of a document
+     * stored in dotCMS. Off by default: the tool is meant to transform content that already lives
+     * in the instance, and the remote fetch is deprecated.
+     *
+     * <p>When it is turned on the download is performed by the platform's outbound HTTP client
+     * ({@link com.dotcms.http.CircuitBreakerUrl}) and follows its network policy, timeouts and size
+     * limits. Turning this off does not affect stylesheets or XML files that are stored in dotCMS,
+     * which is how the tool is normally used.
+     */
+    String FEATURE_FLAG_XSLT_REMOTE_XML = "FEATURE_FLAG_XSLT_REMOTE_XML";
+
     String FEATURE_FLAG_TELEMETRY_CORE_ENABLED = "FEATURE_FLAG_TELEMETRY_CORE_ENABLED";
 
     String FEATURE_FLAG_CONTENT_ANALYTICS = "FEATURE_FLAG_CONTENT_ANALYTICS";
@@ -17,6 +49,30 @@ public interface FeatureFlagName {
 
     // Unique Fields
     String FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = "FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION";
+
+    /**
+     * Kill switch for widget field scripting over REST ({@code /api/widget},
+     * {@code /api/content?render=true} and {@code _search} with {@code render}). On by default:
+     * Velocity found in a widget's field values is evaluated when the widget was last modified by
+     * a user holding the Scripting Developer role, and rendered as text otherwise. Off: field
+     * values render as text for every widget. Pages are not affected either way.
+     */
+    String FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER = "FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER";
+
+    /**
+     * Kill switch for the destination check on checkin. On by default: creating a contentlet
+     * somewhere other than where its content type places content by default (the type's own
+     * folder or site, or the default site for a type on the System Host) requires, besides WRITE
+     * on the content type, "Can Add Children" or WRITE on that folder or site; the former is what
+     * the content editor and the move operation already enforce. Saving an existing contentlet
+     * with a different site or folder, which moves it there, requires the same grant on the new
+     * place besides WRITE on the contentlet. Off: only the content-type or contentlet WRITE check
+     * runs, as before. Default placements, content on the System Host, Host contentlets
+     * themselves, existing contentlets that stay where they are, and the system user are not
+     * affected either way. Environment form:
+     * {@code DOT_FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK}.
+     */
+    String FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK = "FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK";
 
     // others
     String FULLSCREEN_FIELD_FEATURE_FLAG = "content.edit.ui.fullscreen";
@@ -47,8 +103,6 @@ public interface FeatureFlagName {
 
     String FEATURE_FLAG_PAGE_SCANNER = "FEATURE_FLAG_PAGE_SCANNER";
 
-    String FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION = "FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION";
-
     /**
      * Controls the active ES → OpenSearch migration phase (integer ordinal 0–3).
      *
@@ -62,6 +116,22 @@ public interface FeatureFlagName {
      * @see com.dotcms.content.index.IndexConfigHelper.MigrationPhase
      */
     String FEATURE_FLAG_OPEN_SEARCH_PHASE = "FEATURE_FLAG_OPEN_SEARCH_PHASE";
+
+    /**
+     * Escape hatch for Velocity templates that still call the deprecated Elasticsearch-only
+     * {@code $estool.esSearch()} / {@code $estool.esRaw()} once the migration reaches Phase 3.
+     *
+     * <p>In Phase 3 Elasticsearch no longer receives writes, so those calls could only answer from the
+     * index frozen at cutover. By default (off) they fail with a clear error, which fails the page
+     * render. Turning this on makes them return {@code null} instead — the page renders, the block
+     * that used the call shows nothing (or its unresolved {@code $variable}, depending on how the
+     * template references it) — and logs a rate-limited warning naming the migration to do. Neither
+     * mode ever serves frozen Elasticsearch results. Meant to be switched on temporarily by support
+     * while a customer migrates those calls to {@code $estool.search()} / {@code $estool.raw()}; it
+     * has no effect before Phase 3 and does not change the Java API, which always fails in Phase 3.</p>
+     */
+    String FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL =
+            "FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL";
 
     String FEATURE_FLAG_NEW_BLOCK_EDITOR = "FEATURE_FLAG_NEW_BLOCK_EDITOR";
 
@@ -104,4 +174,69 @@ public interface FeatureFlagName {
      * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_DOTAI_CONFIG_UI}.
      */
     String FEATURE_FLAG_DOTAI_CONFIG_UI = "FEATURE_FLAG_DOTAI_CONFIG_UI";
+
+    /**
+     * Routes experiment result queries to the CAEM analytics backend instead of CubeJS.
+     * Off by default; enable only after CAEM endpoints (#37223, #37224) are deployed and
+     * customer data has been migrated to CAEM.
+     */
+    String FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS = "FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS";
+
+    /**
+     * Lets users with the Apps portlet change and read Apps configuration, upload app descriptors
+     * and remove apps, as they could before Apps configuration became an administrator setting.
+     * Off by default; kept for one release for installations that delegated Apps configuration to
+     * non-administrator roles.
+     *
+     * @see com.dotcms.security.apps.AppsAPIImpl
+     */
+    String FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION =
+            "FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION";
+
+    /**
+     * Makes the {@code $cmsuser} Velocity tool's lookups ({@code getUserByEmail},
+     * {@code getUserByUserId}, {@code getAllUsersInGroup}) return read-only
+     * {@code UserProfile} objects. On by default: when the flag is not set, it is treated as
+     * {@code true}. Turn it off only for installations whose templates pass looked-up accounts to
+     * methods that require a {@code User}; lookups then return detached {@code User} copies with
+     * the credential fields cleared.
+     */
+    String FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES = "FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES";
+
+    /**
+     * Also sends the dotCMS version headers ({@code X-DotCMS-Version}, {@code X-DotCMS-Min-SDK})
+     * and the {@code x-dot-server} node header on requests that carry no valid credentials. Off by
+     * default: those headers go only to requests with a logged-in session or a valid bearer token,
+     * which is what the {@code @dotcms/client} SDK sends. Turn it on to restore the earlier
+     * behavior of sending them on every response.
+     *
+     * <p>Does not override {@code RESPONSE_HEADER_ADD_NODE_ID=false}, which still removes
+     * {@code x-dot-server} from every response, nor the {@code ?nodeid=true} request parameter,
+     * which still requests it on a single response.
+     *
+     * @see com.dotcms.filters.interceptor.meta.SdkVersionWebInterceptor
+     * @see com.dotcms.filters.interceptor.meta.ResponseMetaDataWebInterceptor
+     */
+    String FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS =
+            "FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS";
+
+    /**
+     * Opt-in protection against the scheduled publish job re-publishing content that someone
+     * deliberately unpublished. Off by default.
+     *
+     * <p>The publish job normally skips not-live content whose publish date it already covered in
+     * an earlier run. When it cannot tell when it last ran (typically its first run after a
+     * restart), it publishes every not-live item whose publish date has passed. With this flag on,
+     * it instead skips any such item that was modified after its publish date, which is what a
+     * manual unpublish leaves behind, and logs each skip. Content last saved before its publish
+     * date is still published.
+     *
+     * <p>Has no effect on runs where the previous run time is known, and is overridden by
+     * {@code PUBLISH_JOB_QUEUE_FORCE_INCLUDE_PAST_CONTENT=true}.
+     *
+     * @see com.dotcms.enterprise.publishing.PublishDateUpdater#shouldPublishContent(
+     *      com.dotmarketing.portlets.contentlet.model.Contentlet, java.util.Date, boolean)
+     */
+    String FEATURE_FLAG_PUBLISH_JOB_QUEUE_PROTECT_UNPUBLISHED_CONTENT =
+            "FEATURE_FLAG_PUBLISH_JOB_QUEUE_PROTECT_UNPUBLISHED_CONTENT";
 }

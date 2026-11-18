@@ -1,20 +1,24 @@
-import { describe, expect } from '@jest/globals';
 import {
     createServiceFactory,
     SpectatorService,
     mockProvider,
     SpyObject
-} from '@openng/spectator/jest';
-import { NEVER, of, Subject, throwError } from 'rxjs';
+} from '@openng/spectator/vitest';
+import { NEVER, Observable, of, Subject, throwError } from 'rxjs';
+import { Mock, Mocked, describe, expect, vi } from 'vitest';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
-import { fakeAsync, tick } from '@angular/core/testing';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal, WritableSignal } from '@angular/core';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
 import {
     AddToBundleService,
     DotBulkRefreshService,
+    DotFolderBulkDeleteService,
+    DotFolderBulkDuplicateService,
     DotEventsSocket,
     DotMessageService,
     PushPublishService,
@@ -24,18 +28,24 @@ import {
     DotFolderService,
     DotHttpErrorManagerService,
     DotPropertiesService,
+    DotRouterService,
+    DotSessionStorageService,
+    DotUploadFileService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
     DotAjaxActionResponseView,
     DotBulkRefreshCompletedEvent,
+    DotBulkUploadCompletedEvent,
     DotContentDriveItem,
     DotContentDriveSearchResponse,
     DotCurrentUser,
     DotFireDefaultActionResult,
+    DotFolderDeleteActiveRun,
     DotLanguage,
     DotSite,
-    DotWorkflowPushPublishValue
+    DotWorkflowPushPublishValue,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { createFakeTagField, createFakeTextField, mockLocales } from '@dotcms/utils-testing';
@@ -43,9 +53,11 @@ import { createFakeTagField, createFakeTextField, mockLocales } from '@dotcms/ut
 import { DotContentDriveStore } from './dot-content-drive.store';
 
 import {
+    CONTENT_DRIVE_URL_PARAM,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
     DEFAULT_SORT,
+    ROOT_PATH,
     DEFAULT_TREE_EXPANDED,
     SHARED_ASSETS_DISABLED_VALUE,
     SHARED_ASSETS_ENABLED_VALUE,
@@ -84,17 +96,22 @@ describe('DotContentDriveStore', () => {
                 }
             }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(SYSTEM_HOST)
+                siteDetails: vi.fn().mockReturnValue(SYSTEM_HOST),
+                // Nothing advertised by default, which is what an instance older than the field
+                // reports and what a configuration still in flight reads as.
+                systemBulkUpload: vi.fn().mockReturnValue(null),
+                systemFolderBulkDelete: vi.fn().mockReturnValue(null),
+                systemFolderBulkDuplicate: vi.fn().mockReturnValue(null)
             }),
             mockProvider(DotContentDriveService),
             // Fetched once on init to resolve the CMS Administrator role. Answers through a subject
             // rather than a fixed `of(...)` so a test can control *when* — the store subscribes
             // during construction, and "hasn't answered yet" is a case the flag has to get right.
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn(() => currentUser$)
+                getCurrentUser: vi.fn(() => currentUser$)
             }),
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([]))
             }),
             // Required by `withActionExecution`, which fires workflow actions from the store.
             mockProvider(DotWorkflowActionsFireService),
@@ -102,25 +119,35 @@ describe('DotContentDriveStore', () => {
             mockProvider(AddToBundleService),
             // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
-            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
-                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
             }),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             // The store resolves the environment's default language on init and seeds it into the
             // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
             // the seed is already in place by the time they assert. Blocks that need to control the
             // timing override this provider with a Subject.
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(mockLocales))
+                get: vi.fn().mockReturnValue(of(mockLocales))
             }),
-            provideHttpClient()
+            // Paired with the testing backend: a real HttpClient in jsdom dials
+            // localhost for every relative URL and the request dies with
+            // "socket hang up", asynchronously — Jest dropped that, Vitest counts it.
+            // Nothing asserts on these requests; they just must not leave the process.
+            provideHttpClient(),
+            provideHttpClientTesting()
         ]
     });
 
@@ -144,6 +171,77 @@ describe('DotContentDriveStore', () => {
             expect(store.isTreeExpanded()).toBe(DEFAULT_TREE_EXPANDED);
             expect(store.sort()).toEqual(DEFAULT_SORT);
         });
+    });
+
+    // Content Drive stopped reading the side-panel flag: both editors always open in a panel
+    // (#37759, FR-006). The flag keeps working outside Content Drive; this store just never asks.
+    describe('side-panel flag', () => {
+        it('does not fetch the side-panel flag', () => {
+            const properties = spectator.inject(DotPropertiesService);
+            const askedFor = (properties.getFeatureFlags as Mock).mock.calls.flatMap(
+                ([keys]) => keys ?? []
+            );
+
+            expect(askedFor).not.toContain(FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL);
+        });
+    });
+
+    describe('uploadCeilings', () => {
+        it('should pass through the ceilings the server advertises', () => {
+            const globalStore = spectator.inject(GlobalStore);
+
+            (globalStore.systemBulkUpload as unknown as Mock).mockReturnValue({
+                maxFiles: 100,
+                maxTotalBytes: 1073741824
+            });
+
+            expect(store.uploadCeilings()).toEqual({ maxFiles: 100, maxTotalBytes: 1073741824 });
+        });
+
+        it('should read as no ceiling when the server advertises none', () => {
+            // Set here rather than left to the provider's default: that mock is built once for the
+            // factory, so the test above it would decide what this one sees.
+            const globalStore = spectator.inject(GlobalStore);
+
+            (globalStore.systemBulkUpload as unknown as Mock).mockReturnValue(null);
+
+            // The two cases callers must not tell apart: a configuration still loading, and an
+            // instance too old to carry the field. Both mean the server does the refusing.
+            expect(store.uploadCeilings()).toBeNull();
+        });
+    });
+
+    /**
+     * How many folders one duplicate or delete may carry, as the server advertises it (#37062), so
+     * the Action Center can cap the run, and its row's count, at the ceiling.
+     */
+    describe('folder ceilings', () => {
+        it.each([
+            ['folderDuplicateMaxPaths', 'systemFolderBulkDuplicate'],
+            ['folderDeleteMaxPaths', 'systemFolderBulkDelete']
+        ] as const)('%s should read the maximum the server advertises', (signal, source) => {
+            const globalStore = spectator.inject(GlobalStore);
+
+            (globalStore[source] as unknown as Mock).mockReturnValue({ maxPaths: 25 });
+
+            expect(store[signal]()).toBe(25);
+        });
+
+        it.each([
+            ['folderDuplicateMaxPaths', 'systemFolderBulkDuplicate'],
+            ['folderDeleteMaxPaths', 'systemFolderBulkDelete']
+        ] as const)(
+            '%s should read as no ceiling when the server advertises none',
+            (signal, source) => {
+                // A configuration still loading, or an instance too old to carry the field: either
+                // way the server does the refusing.
+                const globalStore = spectator.inject(GlobalStore);
+
+                (globalStore[source] as unknown as Mock).mockReturnValue(null);
+
+                expect(store[signal]()).toBeNull();
+            }
+        );
     });
 
     describe('currentUserIsAdmin', () => {
@@ -261,10 +359,12 @@ describe('DotContentDriveStore', () => {
 
         it('should still show folders when a language is selected', () => {
             // Folders have no language, so a locale filter — which selects a *version* of content —
-            // must not tear down the structure being navigated.
+            // must not tear down the structure being navigated. Asserted at the site root, which is
+            // where structure exists: all site content asks for no folders by design, so testing it
+            // there would prove nothing about the language filter.
             store.initContentDrive({
                 currentSite: SYSTEM_HOST,
-                path: DEFAULT_PATH,
+                path: ROOT_PATH,
                 filters: { languageId: ['1', '2'] },
                 isTreeExpanded: false
             });
@@ -305,7 +405,10 @@ describe('DotContentDriveStore', () => {
                 // Likewise `status`: omitted entirely when nothing is selected, so an unfiltered
                 // request stays byte-identical to one that never knew about the filter (FR-002).
                 expect(request.status).toBeUndefined();
-                expect(request.showFolders).toBe(true);
+                // No location means all site content, which spans every folder in the site and so
+                // lists none of them; the tree is still there to navigate. Browsing the site root
+                // instead is what asks for the top-level folders.
+                expect(request.showFolders).toBe(false);
             });
 
             describe('includeSystemHost', () => {
@@ -389,6 +492,199 @@ describe('DotContentDriveStore', () => {
                 const request = store.$request();
 
                 expect(request.assetPath).toBe(`//${customSite.hostname}/`);
+            });
+
+            describe('browse scope', () => {
+                // The wire values are written out rather than imported: this is the one place the
+                // client's idea of a location turns into what the endpoint is asked for, so the
+                // assertions should fail if that mapping drifts, not follow it.
+
+                it('should ask for all site content when the URL carries no location', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    expect(request.browseScope).toBe('ALL');
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
+                });
+
+                // An empty path reaches the same branch as an absent one today, because
+                // toRequestLocation asks `!path?.length`. Both forms occur — the URL yields
+                // undefined, a cleared location yields '' — so the equivalence is pinned rather
+                // than assumed. Narrowing that check to one of the two would fail here.
+                it('should treat an empty location the same as an absent one', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+                    const absent = store.$request();
+
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+                    const empty = store.$request();
+
+                    expect(empty.browseScope).toBe(absent.browseScope);
+                    expect(empty.assetPath).toBe(absent.assetPath);
+                    expect(empty.showFolders).toBe(absent.showFolders);
+                });
+
+                it('should ask for the site root when the location is the root itself', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '/',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    expect(request.browseScope).toBe('ROOT');
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
+                });
+
+                it('should name no scope when the location is a folder', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '/documents/',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    // A folder is addressed by its path alone. Naming a scope as well would be
+                    // refused by the endpoint, and it is what would turn this into a listing of
+                    // every descendant.
+                    expect(request.browseScope).toBeUndefined();
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/documents/`);
+                });
+
+                it('should ask for System Host without pasting the reserved word onto the site', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    const request = store.$request();
+
+                    expect(request.browseScope).toBe('SYSTEM_HOST');
+                    // The bug this exists to catch: interpolating the location straight into the
+                    // path produces `//demo.dotcms.comSYSTEM_HOST`, which resolves to nothing.
+                    expect(request.assetPath).toBe(`//${SYSTEM_HOST.hostname}/`);
+                });
+
+                it('should keep System Host selected when the site is switched', () => {
+                    // **Characterization test: green the day it is written**, like the host-clause
+                    // guard on the backend. System Host belongs to no site, so switching sites does
+                    // not change what it lists, and the selection already survives because it is
+                    // derived from the location while a switch changes the site.
+                    //
+                    // Written precisely because nothing would notice if that stopped being true. A
+                    // later change that reset the path on a site switch would drift the highlight
+                    // onto the new site's root, and the sidebar would claim the user is in two
+                    // places at once — with every other test still passing.
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+                    expect(store.$systemHostSelected()).toBe(true);
+
+                    // A site switch reaches the store as a re-init carrying the new site and the
+                    // location the route still holds — which is how the switch can change the
+                    // site without disturbing where the drive is browsing.
+                    store.initContentDrive({
+                        currentSite: MOCK_SITES[0],
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$systemHostSelected()).toBe(true);
+                    expect(store.$allSiteContentSelected()).toBe(false);
+                    // The hierarchy below re-renders for the newly chosen site, so the switch
+                    // visibly does something rather than appearing to fail.
+                    expect(store.currentSite()).toEqual(MOCK_SITES[0]);
+                    // And the request still asks for System Host, not for the new site's content.
+                    expect(store.$request().browseScope).toBe('SYSTEM_HOST');
+                });
+
+                it('should not ask for folders in all site content', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    // Folders are not results in a flat listing that spans the whole site, and the
+                    // tree is still there to navigate them.
+                    expect(store.$request().showFolders).toBe(false);
+                });
+
+                // Searching all site content asks for them again: a term matches names rather
+                // than browsing a place, and a folder should be found wherever it lives
+                // (#37479 FR-011). Suppressing them for the whole scope broke that feature's
+                // e2e at the default view, which is the only place the two rules meet.
+                it('should ask for folders when all site content is searched', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: DEFAULT_PATH,
+                        filters: { title: 'report' },
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().showFolders).toBe(true);
+                });
+
+                // System Host has none either way, so a term changes nothing there.
+                it('should still ask for no folders when System Host is searched', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: { title: 'report' },
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().showFolders).toBe(false);
+                });
+
+                it('should not ask for folders in System Host, which has none', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: 'SYSTEM_HOST',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    expect(store.$request().showFolders).toBe(false);
+                });
+
+                it('should still ask for folders at the site root', () => {
+                    store.initContentDrive({
+                        currentSite: SYSTEM_HOST,
+                        path: '/',
+                        filters: {},
+                        isTreeExpanded: false
+                    });
+
+                    // The top-level folders sit at the root, so they are part of what is there.
+                    expect(store.$request().showFolders).toBe(true);
+                });
             });
 
             it('should include title filter in request when provided', () => {
@@ -555,14 +851,15 @@ describe('DotContentDriveStore', () => {
 
             it('should KEEP showFolders true when a languageId filter is provided', () => {
                 // Folders have no language, so a locale filter — which picks a *version* of content
-                // — must not tear down the structure being navigated.
+                // — must not tear down the structure being navigated. At the site root for the same
+                // reason as the sibling test above.
                 const filters = {
                     languageId: ['en']
                 };
 
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
+                    path: ROOT_PATH,
                     filters,
                     isTreeExpanded: false
                 });
@@ -607,7 +904,7 @@ describe('DotContentDriveStore', () => {
             it('should drop the status filter when filters are cleared', () => {
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
+                    path: ROOT_PATH,
                     filters: { status: ['ARCHIVED'] },
                     isTreeExpanded: false
                 });
@@ -654,9 +951,11 @@ describe('DotContentDriveStore', () => {
             });
 
             it('should set showFolders to true when no filters are provided', () => {
+                // At the site root: with no location at all this is now all site content, which
+                // asks for no folders whatever the filters say.
                 store.initContentDrive({
                     currentSite: SYSTEM_HOST,
-                    path: DEFAULT_PATH,
+                    path: ROOT_PATH,
                     filters: {},
                     isTreeExpanded: false
                 });
@@ -793,6 +1092,28 @@ describe('DotContentDriveStore', () => {
                 );
             });
 
+            it('should drop the search scope when the term is cleared', () => {
+                store.setGlobalSearch('pricing');
+                store.setSearchScope('ALL_FIELDS');
+                expect(store.filters()['searchScope']).toBe('ALL_FIELDS');
+
+                store.setGlobalSearch('');
+
+                // The scope qualifies the term; with the term gone it is nonsense in the state —
+                // and a leftover scope would keep "Clear all" lit with nothing filtered (FR-020).
+                expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
+            });
+
+            it('should keep the scope when the term is replaced, not cleared', () => {
+                store.setGlobalSearch('pricing');
+                store.setSearchScope('ALL_FIELDS');
+
+                store.setGlobalSearch('contracts');
+
+                expect(store.filters()['searchScope']).toBe('ALL_FIELDS');
+                expect(store.filters()['title']).toBe('contracts');
+            });
+
             it('should reset pagination offset when setting global search', () => {
                 store.setPagination({ limit: 20, page: 2, offset: 20 });
                 expect(store.pagination()).toEqual({ limit: 20, page: 2, offset: 20 });
@@ -807,6 +1128,75 @@ describe('DotContentDriveStore', () => {
 
                 store.setGlobalSearch('test');
                 expect(store.path()).toBe(DEFAULT_PATH);
+            });
+        });
+
+        describe('setSearchScope', () => {
+            it('should record a non-default scope as filter state', () => {
+                store.setSearchScope('ALL_FIELDS');
+
+                expect(store.filters()).toEqual(
+                    withSeeded({ languageId: ['1'], searchScope: 'ALL_FIELDS' })
+                );
+            });
+
+            it('should remove the key when the scope returns to the default', () => {
+                store.setSearchScope('ALL_FIELDS');
+
+                store.setSearchScope('TITLE');
+
+                // Removed, not set to 'TITLE'. A present key counts as a non-default filter,
+                // so storing the default would offer "Clear all" on an unfiltered drive.
+                expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+            });
+
+            it('should never store the default, even when set first', () => {
+                store.setSearchScope('TITLE');
+
+                expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
+            });
+
+            it('should preserve the search term and other filters', () => {
+                store.setGlobalSearch('pricing');
+                store.patchFilters({ contentType: ['Blog'] });
+
+                store.setSearchScope('ALL_FIELDS');
+
+                expect(store.filters()).toEqual(
+                    withSeeded({
+                        languageId: ['1'],
+                        contentType: ['Blog'],
+                        title: 'pricing',
+                        searchScope: 'ALL_FIELDS'
+                    })
+                );
+            });
+
+            it('should keep the scope and the term under separate keys', () => {
+                store.setGlobalSearch('pricing');
+                store.setSearchScope('ALL_FIELDS');
+
+                // `title` holds the TERM; `searchScope` holds the mode. Title is the default and is
+                // never stored, so only All fields ever sits beside the term.
+                expect(store.filters()['title']).toBe('pricing');
+                expect(store.filters()['searchScope']).toBe('ALL_FIELDS');
+            });
+
+            it('should reset pagination so the widened results start at page 1', () => {
+                store.setPagination({ offset: 40, limit: 20, page: 3 });
+
+                store.setSearchScope('ALL_FIELDS');
+
+                expect(store.pagination().page).toBe(1);
+                expect(store.pagination().offset).toBe(0);
+            });
+
+            it('should drop the scope when all filters are cleared', () => {
+                store.setSearchScope('ALL_FIELDS');
+
+                store.clearFilters();
+
+                expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
             });
         });
 
@@ -1039,17 +1429,17 @@ describe('DotContentDriveStore - onInit', () => {
                 }
             }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[2])
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[2])
             }),
             // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
             }),
             mockProvider(DotContentDriveService, {
-                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([]))
             }),
             // Required by `withActionExecution`, which fires workflow actions from the store.
             mockProvider(DotWorkflowActionsFireService),
@@ -1057,23 +1447,28 @@ describe('DotContentDriveStore - onInit', () => {
             mockProvider(AddToBundleService),
             // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
-            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
-                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
             }),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             // The store resolves the environment's default language on init and seeds it into the
             // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
             // the seed is already in place by the time they assert. Blocks that need to control the
             // timing override this provider with a Subject.
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(mockLocales))
+                get: vi.fn().mockReturnValue(of(mockLocales))
             }),
             provideHttpClient()
         ]
@@ -1099,6 +1494,377 @@ describe('DotContentDriveStore - onInit', () => {
     });
 });
 
+/** Everything the store needs except session storage, which each block decides. */
+/** An identifier in the shape the Drive accepts from its URL. */
+const A_URL_IDENTIFIER = '6f2f0f56-6c7e-4c11-9f3a-0c7c1a7f2b11';
+
+const rememberedContentTypeProviders = (
+    routeSnapshot: { queryParams: Record<string, string> },
+    siteDetails: WritableSignal<DotSite | null>
+) => [
+    mockProvider(ActivatedRoute, { snapshot: routeSnapshot }),
+    mockProvider(GlobalStore, { siteDetails }),
+    mockProvider(DotCurrentUserService, {
+        getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+    }),
+    mockProvider(DotContentDriveService, {
+        search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+    }),
+    mockProvider(DotFolderService, {
+        getFolders: vi.fn().mockReturnValue(of([]))
+    }),
+    mockProvider(DotWorkflowActionsFireService),
+    mockProvider(AddToBundleService),
+    mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
+    mockProvider(DotBulkRefreshService),
+    mockProvider(DotFolderBulkDeleteService, {
+        readActiveRuns: vi.fn(() => of([]))
+    }),
+    mockProvider(DotHttpErrorManagerService),
+    mockProvider(Location, {
+        subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+    }),
+    mockProvider(DotPropertiesService, {
+        getFeatureFlags: vi.fn().mockReturnValue(of({}))
+    }),
+    mockProvider(DotLanguagesService, {
+        get: vi.fn().mockReturnValue(of(mockLocales))
+    }),
+    provideHttpClient()
+];
+
+/**
+ * The content type last opened in the Content Types editor, handed to Content Drive once through
+ * session storage (#37903).
+ */
+describe('DotContentDriveStore - remembered content type', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+
+    /** Mutated per test before the store is built: `onInit` reads it straight away. */
+    const routeSnapshot: { queryParams: Record<string, string> } = { queryParams: {} };
+    const consumeLastContentType = vi.fn();
+    /** A real signal, so a test can switch site and re-run the store's init effect. */
+    const siteDetails = signal<DotSite | null>(MOCK_SITES[2]);
+
+    const sharedProviders = rememberedContentTypeProviders(routeSnapshot, siteDetails);
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            ...sharedProviders,
+            mockProvider(DotSessionStorageService, { consumeLastContentType })
+        ]
+    });
+
+    const buildStore = (
+        queryParams: Record<string, string>,
+        remembered: string | null,
+        site: DotSite | null = MOCK_SITES[2]
+    ) => {
+        routeSnapshot.queryParams = queryParams;
+        siteDetails.set(site);
+        consumeLastContentType.mockReset();
+        consumeLastContentType.mockReturnValue(remembered);
+        spectator = createService();
+        store = spectator.service;
+        spectator.flushEffects();
+    };
+
+    it('should filter by the remembered content type when the Drive opens with no instructions', () => {
+        buildStore({}, 'anyContentType');
+
+        expect(store.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+    });
+
+    it('should keep the folder from the URL and still filter by the remembered content type', () => {
+        buildStore({ path: '/a/folder/' }, 'anyContentType');
+
+        expect(store.path()).toBe('/a/folder/');
+        expect(store.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+    });
+
+    it('should filter by the remembered content type when the URL filters decode to nothing', () => {
+        buildStore({ filters: 'status:BOGUS' }, 'anyContentType');
+
+        expect(store.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+    });
+
+    it('should keep the remembered content type when the site loads after the Drive', () => {
+        buildStore({}, 'anyContentType', null);
+
+        siteDetails.set(MOCK_SITES[2]);
+        spectator.flushEffects();
+
+        expect(store.currentSite()).toBe(MOCK_SITES[2]);
+        expect(store.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+        expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        ['the retired create marker', { [CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT]: 'new' }],
+        ['a folder dialog switched off', { [CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER]: 'false' }],
+        ['a malformed folder id', { [CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER]: 'not-an-id' }],
+        ['a language with no item', { [CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT_LANG]: '1' }]
+    ])(
+        'should filter by the remembered content type when the URL asks for nothing (%s)',
+        (_case, queryParams) => {
+            buildStore(queryParams, 'anyContentType');
+
+            expect(store.filters()).toEqual(
+                withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+            );
+        }
+    );
+
+    it('should open as today when no content type is remembered', () => {
+        buildStore({}, null);
+
+        expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+    });
+
+    it('should read the remembered content type once per Drive open', () => {
+        buildStore({}, 'anyContentType');
+
+        expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not apply the remembered content type again when the site changes', () => {
+        buildStore({}, 'anyContentType');
+
+        siteDetails.set(MOCK_SITES[1]);
+        spectator.flushEffects();
+
+        expect(store.currentSite()).toBe(MOCK_SITES[1]);
+        expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+        expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+    });
+
+    describe('when the Drive opens with its own instructions', () => {
+        it('should apply only the filters from the URL', () => {
+            buildStore({ filters: 'baseType:4' }, 'anyContentType');
+
+            expect(store.filters()).toEqual(withSeeded({ baseType: ['4'], languageId: ['1'] }));
+            expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+        });
+
+        it.each([
+            [CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT, A_URL_IDENTIFIER],
+            [CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT, 'aContentType'],
+            [CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER, 'true'],
+            [CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER, A_URL_IDENTIFIER],
+            [CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS, A_URL_IDENTIFIER]
+        ])('should not apply the remembered content type with %s in the URL', (param, value) => {
+            buildStore({ [param]: value }, 'anyContentType');
+
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+            expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+        });
+    });
+});
+
+/**
+ * The same handoff with the real session storage: the first Drive visit empties it, so the next
+ * visit finds nothing to apply (#37903, User Story 2).
+ */
+describe('DotContentDriveStore - remembered content type, next visit', () => {
+    const routeSnapshot: { queryParams: Record<string, string> } = { queryParams: {} };
+    const siteDetails = signal<DotSite | null>(MOCK_SITES[2]);
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: rememberedContentTypeProviders(routeSnapshot, siteDetails)
+    });
+
+    beforeEach(() => sessionStorage.clear());
+
+    it('should not filter the next Drive visit, because the first one emptied session storage', () => {
+        TestBed.inject(DotSessionStorageService).setLastContentType('anyContentType');
+
+        const firstVisit = createService();
+        firstVisit.flushEffects();
+
+        expect(firstVisit.service.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+
+        const nextVisit = TestBed.runInInjectionContext(() => new DotContentDriveStore());
+        TestBed.tick();
+
+        expect(nextVisit.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+        expect(sessionStorage.length).toBe(0);
+    });
+});
+
+/**
+ * Runs still going when Content Drive opens (developer decision, 2026-09-28: FR-015 amended). One
+ * read of every queue's active listing, routed to whichever part of the store owns each: delete
+ * marks the folders it covers, duplicate and upload put their status back.
+ */
+describe('DotContentDriveStore - runs in progress on load', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+    let currentUser$: Observable<DotCurrentUser>;
+    let activeDeletes$: Observable<DotFolderDeleteActiveRun[]>;
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            mockProvider(ActivatedRoute, {
+                snapshot: {
+                    queryParams: {
+                        path: '/initial/test/path',
+                        filters: 'contentType:InitialTestContentType',
+                        isTreeExpanded: 'true'
+                    }
+                }
+            }),
+            mockProvider(GlobalStore, {
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[2])
+            }),
+            // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: vi.fn(() => currentUser$)
+            }),
+            mockProvider(DotContentDriveService, {
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: vi.fn().mockReturnValue(of([]))
+            }),
+            // Required by `withActionExecution`, which fires workflow actions from the store.
+            mockProvider(DotWorkflowActionsFireService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
+            // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
+            // init, and an unstubbed `mockProvider` returns undefined for the observable.
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
+            mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => activeDeletes$)
+            }),
+            mockProvider(DotFolderBulkDuplicateService, {
+                readActiveRuns: vi.fn(() =>
+                    of([
+                        { id: 'mine', userId: 'me', assetPaths: ['//demo.com/a/'] },
+                        { id: 'theirs', userId: 'someone-else', assetPaths: ['//demo.com/b/'] }
+                    ])
+                )
+            }),
+            mockProvider(DotUploadFileService, {
+                readActiveUploads: vi.fn(() =>
+                    of([
+                        { id: 'upload-mine', userId: 'me', fileCount: 2 },
+                        { id: 'upload-theirs', userId: 'someone-else', fileCount: 1 }
+                    ])
+                )
+            }),
+            mockProvider(DotHttpErrorManagerService),
+            // The store subscribes to Location (popstate re-hydration); capture the handler here.
+            mockProvider(Location, {
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
+            }),
+            // The store resolves the environment's default language on init and seeds it into the
+            // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
+            // the seed is already in place by the time they assert. Blocks that need to control the
+            // timing override this provider with a Subject.
+            mockProvider(DotLanguagesService, {
+                get: vi.fn().mockReturnValue(of(mockLocales))
+            }),
+            provideHttpClient()
+        ]
+    });
+
+    const build = () => {
+        spectator = createService();
+        store = spectator.service;
+        spectator.flushEffects();
+    };
+
+    beforeEach(() => {
+        currentUser$ = of({ userId: 'me', admin: false } as DotCurrentUser);
+        activeDeletes$ = of([{ id: 'delete-1', state: 'RUNNING', paths: ['//demo.com/gone/'] }]);
+    });
+
+    it("should restore the author's own duplicates and uploads, and no one else's", () => {
+        // The listings are not scoped to the reader, and only the submitter is sent the completion
+        // that ends a run: another author's restored status would never go away.
+        build();
+
+        expect(Object.keys(store.duplicateJobs())).toEqual(['mine']);
+        expect(Object.keys(store.uploadJobs())).toEqual(['upload-mine']);
+        expect(store.toolbarRunCount()).toBe(2);
+    });
+
+    it('should mark the folders a delete is working on from the same read', () => {
+        // Unlike the others, delete marks every author's runs: the folders are in use either way.
+        build();
+
+        expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
+    });
+
+    it('should still restore the other runs when one read throws', () => {
+        // Each read answers `[]` on failure, but one that throws anyway, from a mapping bug say,
+        // must cost only its own runs: the reads are joined, and a join fails as a whole.
+        activeDeletes$ = throwError(() => new Error('boom'));
+        build();
+
+        expect(Object.keys(store.folderDeleteRuns())).toEqual([]);
+        expect(Object.keys(store.duplicateJobs())).toEqual(['mine']);
+        expect(Object.keys(store.uploadJobs())).toEqual(['upload-mine']);
+    });
+
+    it("should mark a delete's folders without waiting for the other reads", () => {
+        // A folder the delete leaves while a slower read is still out is announced then; marked
+        // only after every read answered, it would be marked again and stay busy until reload.
+        currentUser$ = NEVER;
+        build();
+
+        expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
+    });
+
+    it('should restore no status when it cannot tell who the author is', () => {
+        currentUser$ = throwError(() => new Error('boom'));
+        build();
+
+        expect(store.toolbarRunCount()).toBe(0);
+        expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
+    });
+
+    it('should hold no upload completion for a restore that cannot happen without an author', () => {
+        // With no author nothing is ever restored to claim a held completion, so holding one would
+        // keep it for the portlet's lifetime.
+        currentUser$ = throwError(() => new Error('boom'));
+        build();
+
+        store.reportUploadCompleted('Upload', {
+            jobId: 'other-tab',
+            state: 'SUCCESS',
+            total: 1,
+            processed: 1,
+            successCount: 1,
+            failedCount: 0,
+            skippedCount: 0
+        } as DotBulkUploadCompletedEvent);
+
+        expect(store.unclaimedUploadCompletions()).toEqual({});
+    });
+});
+
 describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
     let store: InstanceType<typeof DotContentDriveStore>;
@@ -1108,20 +1874,20 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
         providers: [
             mockProvider(ActivatedRoute, { snapshot: { queryParams: {} } }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[0])
             }),
             // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
             }),
             mockProvider(DotContentDriveService, {
-                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([]))
             }),
             mockProvider(Location, {
-                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
             }),
             // Required by `withActionExecution`, which fires workflow actions from the store.
             mockProvider(DotWorkflowActionsFireService),
@@ -1129,19 +1895,24 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             mockProvider(AddToBundleService),
             // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
-            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
             mockProvider(DotHttpErrorManagerService),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             // The store resolves the environment's default language on init and seeds it into the
             // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
             // the seed is already in place by the time they assert. Blocks that need to control the
             // timing override this provider with a Subject.
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(mockLocales))
+                get: vi.fn().mockReturnValue(of(mockLocales))
             }),
             provideHttpClient()
         ]
@@ -1149,7 +1920,7 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
 
     /** Invokes the popstate handler the store registered in onInit with the given restored URL. */
     const popstate = (url: string) => {
-        const subscribe = spectator.inject(Location).subscribe as jest.Mock;
+        const subscribe = spectator.inject(Location).subscribe as Mock;
         const handler = subscribe.mock.lastCall?.[0] as (event: { url: string }) => void;
         handler({ url });
     };
@@ -1194,7 +1965,7 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             filters: { contentType: ['Blog'] },
             isTreeExpanded: true
         });
-        const initSpy = jest.spyOn(store, 'initContentDrive');
+        const initSpy = vi.spyOn(store, 'initContentDrive');
 
         // Same browsing params — only editContent differs (here, absent). Must be a no-op so the
         // list isn't reset/reloaded just because the side panel closed.
@@ -1215,7 +1986,7 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             filters: {},
             isTreeExpanded: true
         });
-        const initSpy = jest.spyOn(store, 'initContentDrive');
+        const initSpy = vi.spyOn(store, 'initContentDrive');
 
         popstate('/c/content-drive?path=/keep&isTreeExpanded=true');
 
@@ -1232,7 +2003,7 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             filters: { title: 'Blog', languageId: ['2'] },
             isTreeExpanded: true
         });
-        const initSpy = jest.spyOn(store, 'initContentDrive');
+        const initSpy = vi.spyOn(store, 'initContentDrive');
 
         popstate('/c/content-drive?path=/keep&filters=languageId:2;title:Blog&isTreeExpanded=true');
 
@@ -1256,29 +2027,29 @@ describe('DotContentDriveStore - default language resolution', () => {
         providers: [
             mockProvider(ActivatedRoute, { snapshot: { queryParams: {} } }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[0])
             }),
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
             }),
             mockProvider(DotContentDriveService, {
-                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([]))
             }),
             mockProvider(Location, {
-                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
             }),
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(AddToBundleService),
-            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotLanguagesService, {
-                get: jest.fn(() => languages$)
+                get: vi.fn(() => languages$)
             }),
             provideHttpClient()
         ]
@@ -1293,7 +2064,7 @@ describe('DotContentDriveStore - default language resolution', () => {
         // The factory's spies are shared across the tests in this block, so call counts would
         // otherwise carry over. Cleared after construction but before any effect is flushed, so no
         // search has been recorded yet. (Clear, not reset: the mock implementations must survive.)
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should hold the first search until the default language resolves', () => {
@@ -1338,6 +2109,18 @@ describe('DotContentDriveStore - default language resolution', () => {
         expect(contentDriveService.search).toHaveBeenCalledTimes(1);
     });
 
+    it('should keep a filter changed before the default language resolves', () => {
+        // The init effect used to re-run when the default language landed, re-reading the page's
+        // original URL and wiping any filter a chip had already corrected in between.
+        spectator.flushEffects();
+        store.patchFilters({ contentType: ['Blog'] });
+
+        languages$.next(mockLocales);
+        spectator.flushEffects();
+
+        expect(store.filters()).toEqual(withSeeded({ contentType: ['Blog'], languageId: ['1'] }));
+    });
+
     it('should expose the environment languages for the Locale filter to render', () => {
         spectator.flushEffects();
         languages$.next(mockLocales);
@@ -1349,7 +2132,7 @@ describe('DotContentDriveStore - default language resolution', () => {
 describe('DotContentDriveStore - Content Loading Effect', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
     let store: InstanceType<typeof DotContentDriveStore>;
-    let contentDriveService: jest.Mocked<DotContentDriveService>;
+    let contentDriveService: Mocked<DotContentDriveService>;
 
     const createService = createServiceFactory({
         service: DotContentDriveStore,
@@ -1360,17 +2143,17 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
                 }
             }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[0])
             }),
             // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
             }),
             mockProvider(DotContentDriveService, {
-                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([]))
             }),
             // Required by `withActionExecution`, which fires workflow actions from the store.
             mockProvider(DotWorkflowActionsFireService),
@@ -1378,23 +2161,28 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             mockProvider(AddToBundleService),
             // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
-            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
-                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
             }),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             // The store resolves the environment's default language on init and seeds it into the
             // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
             // the seed is already in place by the time they assert. Blocks that need to control the
             // timing override this provider with a Subject.
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(mockLocales))
+                get: vi.fn().mockReturnValue(of(mockLocales))
             }),
             provideHttpClient()
         ]
@@ -1412,7 +2200,7 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should fetch content when store has a non-SYSTEM_HOST site', () => {
@@ -1511,6 +2299,60 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
         );
     });
 
+    describe('quiet reload', () => {
+        beforeEach(() => {
+            // Held in flight on purpose: this is about what the listing looks like *while* the
+            // request is out. Letting it resolve would settle the status and hide the difference.
+            contentDriveService.search.mockReturnValue(NEVER);
+        });
+
+        it('should blank the listing for an ordinary search', () => {
+            // The skeleton is the only signal an author has that a search is running. It stays.
+            store.setStatus(DotContentDriveStatus.LOADED);
+
+            spectator.service.loadItems();
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+        });
+
+        it('should leave the listing rendered on a quiet reload', () => {
+            // Redundant exactly when the affected rows are already marked busy: the author has
+            // already been told which rows are working, so blanking everything to swap them reads
+            // as a second load and a jump.
+            store.setStatus(DotContentDriveStatus.LOADED);
+
+            spectator.service.loadItems({ quiet: true });
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+        });
+
+        it('should still refetch when quiet, so the result stays filter-correct', () => {
+            // The point of refetching rather than patching rows in place: an archived or unpublished
+            // row simply is not in the new result. The client cannot work that out for itself.
+            contentDriveService.search.mockClear();
+
+            spectator.service.loadItems({ quiet: true });
+
+            expect(contentDriveService.search).toHaveBeenCalled();
+        });
+
+        it('should keep the skeleton for a reload that marked no rows', () => {
+            store.setStatus(DotContentDriveStatus.LOADED);
+
+            store.reloadContentDrive();
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+        });
+
+        it('should skip the skeleton for a reload whose caller marked rows', () => {
+            store.setStatus(DotContentDriveStatus.LOADED);
+
+            store.reloadContentDrive({ quiet: true });
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+        });
+    });
+
     it('should handle title filter in request', () => {
         // Set title filter
         store.patchFilters({ title: 'test' });
@@ -1524,6 +2366,48 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
                 })
             })
         );
+    });
+
+    /**
+     * The request always names the scope when there is a term (search box cleanup on #37062). The
+     * server's own default is All fields, so leaving Title out of the request would search every
+     * field while the box says Title.
+     */
+    describe('search scope in the request', () => {
+        it('should send Title when a term is present and no scope is stored', () => {
+            store.patchFilters({ title: 'test' });
+
+            spectator.service.loadItems();
+
+            expect(contentDriveService.search).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    filters: expect.objectContaining({ text: 'test', searchScope: 'TITLE' })
+                })
+            );
+        });
+
+        it('should send All fields when that is the stored scope', () => {
+            store.patchFilters({ title: 'test' });
+            store.setSearchScope('ALL_FIELDS');
+
+            spectator.service.loadItems();
+
+            expect(contentDriveService.search).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    filters: expect.objectContaining({ text: 'test', searchScope: 'ALL_FIELDS' })
+                })
+            );
+        });
+
+        it('should send no scope without a term, which the server would reject', () => {
+            spectator.service.loadItems();
+
+            expect(contentDriveService.search).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    filters: expect.not.objectContaining({ searchScope: expect.anything() })
+                })
+            );
+        });
     });
 
     it('should handle pagination', () => {
@@ -1648,9 +2532,9 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
 describe('DotContentDriveStore - withActionExecution', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
     let store: InstanceType<typeof DotContentDriveStore>;
-    let fireService: jest.Mocked<DotWorkflowActionsFireService>;
-    let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
-    let bulkRefreshService: jest.Mocked<DotBulkRefreshService>;
+    let fireService: Mocked<DotWorkflowActionsFireService>;
+    let httpErrorManager: Mocked<DotHttpErrorManagerService>;
+    let bulkRefreshService: Mocked<DotBulkRefreshService>;
     /** Declared outside the factory so a test can push into the hook's subscription. */
     const bulkRefreshEvents$ = new Subject<DotBulkRefreshCompletedEvent>();
 
@@ -1659,52 +2543,52 @@ describe('DotContentDriveStore - withActionExecution', () => {
         providers: [
             mockProvider(ActivatedRoute, { snapshot: { queryParams: {} } }),
             mockProvider(GlobalStore, {
-                siteDetails: jest.fn().mockReturnValue(MOCK_SITES[0])
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[0])
             }),
             // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
             mockProvider(DotCurrentUserService, {
-                getCurrentUser: jest.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+                getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
             }),
             mockProvider(DotContentDriveService, {
-                search: jest.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
             }),
             mockProvider(DotFolderService, {
-                getFolders: jest.fn().mockReturnValue(of([]))
+                getFolders: vi.fn().mockReturnValue(of([]))
             }),
             mockProvider(DotWorkflowActionsFireService, {
-                fireDefaultAction: jest.fn(),
-                bulkFire: jest.fn()
+                fireDefaultAction: vi.fn(),
+                bulkFire: vi.fn()
             }),
             // Add to Bundle leaves the workflow path entirely and posts to the legacy bundle servlet.
-            mockProvider(AddToBundleService, { addToBundle: jest.fn() }),
+            mockProvider(AddToBundleService, { addToBundle: vi.fn() }),
             // `getEnvironments` on top of main's stub: `withPushPublishEnvironments` looks the
             // environments up on init, so an unstubbed one returns undefined for the observable.
             mockProvider(PushPublishService, {
-                pushPublishAssets: jest.fn(),
-                getEnvironments: jest.fn(() => of([]))
+                pushPublishAssets: vi.fn(),
+                getEnvironments: vi.fn(() => of([]))
             }),
             // Refresh is the one quick action that is job-backed: the service submits and returns, so
             // the store only ever sees a single-emission observable.
-            mockProvider(DotBulkRefreshService, { refresh: jest.fn() }),
+            mockProvider(DotBulkRefreshService, { refresh: vi.fn() }),
             // The completion event is pushed, so the socket is the seam the run settles through.
             // A Subject lets the tests below emit one without a server.
-            mockProvider(DotEventsSocket, { on: jest.fn(() => bulkRefreshEvents$) }),
-            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
+            mockProvider(DotEventsSocket, { on: vi.fn(() => bulkRefreshEvents$) }),
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
             // The store subscribes to Location (popstate re-hydration); stub so it is inert here.
             mockProvider(Location, {
-                subscribe: jest.fn().mockReturnValue({ unsubscribe: jest.fn() })
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
             }),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: jest.fn().mockReturnValue(of({}))
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             }),
             // The store resolves the environment's default language on init and seeds it into the
             // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
             // the seed is already in place by the time they assert. Blocks that need to control the
             // timing override this provider with a Subject.
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(mockLocales))
+                get: vi.fn().mockReturnValue(of(mockLocales))
             }),
             provideHttpClient()
         ]
@@ -1713,16 +2597,16 @@ describe('DotContentDriveStore - withActionExecution', () => {
     beforeEach(() => {
         // The provider mocks live in the factory closure, so call counts would otherwise accumulate
         // across tests in this block.
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         spectator = createService();
         store = spectator.service;
         fireService = spectator.inject(
             DotWorkflowActionsFireService
-        ) as jest.Mocked<DotWorkflowActionsFireService>;
+        ) as Mocked<DotWorkflowActionsFireService>;
         httpErrorManager = spectator.inject(
             DotHttpErrorManagerService
-        ) as jest.Mocked<DotHttpErrorManagerService>;
+        ) as Mocked<DotHttpErrorManagerService>;
 
         fireService.fireDefaultAction.mockReturnValue(
             of({ results: [], summary: { affected: 2, successCount: 2, failCount: 0, time: 1 } })
@@ -1731,7 +2615,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
         bulkRefreshService = spectator.inject(
             DotBulkRefreshService
-        ) as jest.Mocked<DotBulkRefreshService>;
+        ) as Mocked<DotBulkRefreshService>;
         bulkRefreshService.refresh.mockReturnValue(of({ jobId: 'job-1', submitted: 1 }));
     });
 
@@ -1831,14 +2715,16 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 versionsIndexed: 1
             });
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Refresh',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 0,
-                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
-                backgrounded: true
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Refresh',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 0,
+                    partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
+                    backgrounded: true
+                })
+            );
         });
     });
 
@@ -1870,7 +2756,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
 
             const lockInFlight = store.actionExecution();
-            expect(lockInFlight).toEqual({ actionName: 'Lock', total: 1 });
+            expect(lockInFlight).toEqual(expect.objectContaining({ operation: 'LOCK', total: 1 }));
 
             store.reportRefreshCompleted('Refresh', {
                 jobId: 'job-1',
@@ -1882,7 +2768,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 versionsIndexed: 1
             });
 
-            expect(store.actionExecution()).toBe(lockInFlight);
+            expect(store.actionExecution()).toEqual(lockInFlight);
             expect(store.actionExecutionResult()).toBeDefined();
         });
 
@@ -1931,7 +2817,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
 
             const lockInFlight = store.actionExecution();
-            expect(lockInFlight).toEqual({ actionName: 'Lock', total: 1 });
+            expect(lockInFlight).toEqual(expect.objectContaining({ operation: 'LOCK', total: 1 }));
 
             store.reportRefreshCompleted('Refresh', {
                 jobId: 'job-1',
@@ -1943,7 +2829,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 versionsIndexed: 0
             });
 
-            expect(store.actionExecution()).toBe(lockInFlight);
+            expect(store.actionExecution()).toEqual(lockInFlight);
         });
 
         it('should report an unusable outcome rather than settling on it', () => {
@@ -1967,14 +2853,16 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 versionsIndexed: 3
             });
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Refresh',
-                successCount: 2,
-                skippedCount: 1,
-                failCount: 1,
-                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
-                backgrounded: true
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Refresh',
+                    successCount: 2,
+                    skippedCount: 1,
+                    failedCount: 1,
+                    partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
+                    backgrounded: true
+                })
+            );
         });
 
         it('should still report a cancelled run, whose counters do account for every item', () => {
@@ -2048,7 +2936,9 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecution()).toEqual({ actionName: 'Lock', total: 2 });
+            expect(store.actionExecution()).toEqual(
+                expect.objectContaining({ operation: 'LOCK', total: 2 })
+            );
         });
 
         it('should fire the default action with the given inodes', () => {
@@ -2072,12 +2962,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Lock',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 1
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Lock',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 1
+                })
+            );
         });
 
         it('should clear the running action once settled', () => {
@@ -2143,12 +3035,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Lock',
-                successCount: 0,
-                skippedCount: 0,
-                failCount: 2
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Lock',
+                    successCount: 0,
+                    skippedCount: 0,
+                    failedCount: 2
+                })
+            );
             expect(httpErrorManager.handle).not.toHaveBeenCalled();
         });
     });
@@ -2174,12 +3068,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeWorkflowAction('action-review', 'Send for Review', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Send for Review',
-                successCount: 1,
-                skippedCount: 1,
-                failCount: 0
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Send for Review',
+                    successCount: 1,
+                    skippedCount: 1,
+                    failedCount: 0
+                })
+            );
         });
 
         it('should count per-item failures from the fails list', () => {
@@ -2193,7 +3089,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeWorkflowAction('action-review', 'Send for Review', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecutionResult()?.failCount).toBe(1);
+            expect(store.actionExecutionResult()?.failedCount).toBe(1);
         });
 
         it('should hand errors to the error manager and clear the running action', () => {
@@ -2227,6 +3123,24 @@ describe('DotContentDriveStore - withActionExecution', () => {
             expect(addToBundleService.addToBundle).toHaveBeenCalledWith('id-1,id-2', BUNDLE);
         });
 
+        it('should mark the rows it is acting on, not the assets it is sending', () => {
+            // The request takes identifiers, because a bundle holds one entry per asset and the
+            // language versions of a contentlet are one entry. The *rows* are keyed by inode, so a
+            // run whose targets were identifiers marked nothing: the listing dimmed no row while
+            // the action ran, and a workflow run over the same rows was not refused, because the
+            // overlap check compares two vocabularies that never intersect.
+            addToBundleService.addToBundle.mockReturnValue(NEVER);
+
+            store.executeAddToBundle(
+                'Add to Bundle',
+                BUNDLE,
+                ['id-1', 'id-2'],
+                ['inode-1', 'inode-2']
+            );
+
+            expect(store.busyRows()).toEqual(['inode-1', 'inode-2']);
+        });
+
         it('should report the server count of assets queued, not the number sent', () => {
             // The server dedupes by identifier and drops anything already in the bundle, so `total`
             // can be lower than what was posted. Reporting the input would overstate the result.
@@ -2236,12 +3150,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Add to Bundle',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 0
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Add to Bundle',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 0
+                })
+            );
         });
 
         it('should split failures out of the total', () => {
@@ -2251,12 +3167,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2', 'id-3']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Add to Bundle',
-                successCount: 2,
-                skippedCount: 0,
-                failCount: 1
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Add to Bundle',
+                    successCount: 2,
+                    skippedCount: 0,
+                    failedCount: 1
+                })
+            );
         });
 
         // Folder ids reach here as plain strings, so this asserts the same arithmetic as the case
@@ -2278,12 +3196,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'folder-1']);
 
             expect(addToBundleService.addToBundle).toHaveBeenCalledWith('id-1,folder-1', BUNDLE);
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Add to Bundle',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 1
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Add to Bundle',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 1
+                })
+            );
         });
 
         it('should never report a negative success count', () => {
@@ -2302,16 +3222,29 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
 
-            expect(store.actionExecution()).toEqual({ actionName: 'Add to Bundle', total: 2 });
+            expect(store.actionExecution()).toEqual(
+                expect.objectContaining({ operation: 'Add to Bundle', total: 2 })
+            );
         });
 
-        it('should refuse a second run while one is in flight', () => {
+        it('should refuse the same items being queued again while in flight', () => {
+            addToBundleService.addToBundle.mockReturnValue(NEVER);
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
+
+            expect(addToBundleService.addToBundle).toHaveBeenCalledTimes(1);
+        });
+
+        it('should allow different items to be queued while one run is in flight', () => {
+            // **Deliberate change.** The guard is now scoped to this operation over *these* items
+            // (FR-016), so bundling one asset no longer blocks bundling a different one.
             addToBundleService.addToBundle.mockReturnValue(NEVER);
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
 
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-2']);
 
-            expect(addToBundleService.addToBundle).toHaveBeenCalledTimes(1);
+            expect(addToBundleService.addToBundle).toHaveBeenCalledTimes(2);
         });
 
         it('should hand errors to the error manager and clear the running action', () => {
@@ -2364,12 +3297,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executePushPublish('Push Publish', ['id-1', 'id-2'], SETTINGS);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Push Publish',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 0
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Push Publish',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 0
+                })
+            );
         });
 
         it('should split failures out of the total', () => {
@@ -2379,12 +3314,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executePushPublish('Push Publish', ['id-1', 'id-2', 'id-3'], SETTINGS);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Push Publish',
-                successCount: 2,
-                skippedCount: 0,
-                failCount: 1
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Push Publish',
+                    successCount: 2,
+                    skippedCount: 0,
+                    failedCount: 1
+                })
+            );
         });
 
         // Folder ids reach here as plain strings, so this asserts the same arithmetic as the case
@@ -2405,12 +3342,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executePushPublish('Push Publish', ['id-1', 'folder-1'], SETTINGS);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Push Publish',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 1
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Push Publish',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failedCount: 1
+                })
+            );
         });
 
         it('should never report a negative success count', () => {
@@ -2457,14 +3396,16 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executePushPublish('Push Publish', ['id-1', 'id-2'], SETTINGS);
 
-            expect(store.actionExecution()).toEqual({ actionName: 'Push Publish', total: 2 });
+            expect(store.actionExecution()).toEqual(
+                expect.objectContaining({ operation: 'Push Publish', total: 2 })
+            );
         });
 
-        it('should refuse a second run while one is in flight', () => {
+        it('should refuse the same items being pushed again while in flight', () => {
             pushPublishService.pushPublishAssets.mockReturnValue(NEVER);
             store.executePushPublish('Push Publish', ['id-1'], SETTINGS);
 
-            store.executePushPublish('Push Publish', ['id-2'], SETTINGS);
+            store.executePushPublish('Push Publish', ['id-1'], SETTINGS);
 
             expect(pushPublishService.pushPublishAssets).toHaveBeenCalledTimes(1);
         });
@@ -2497,5 +3438,177 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             expect(store.actionExecutionResult()).toBeUndefined();
         });
+    });
+});
+
+/**
+ * Which view opens (#37930, US4): `viewType` in the URL, then the view remembered for this screen,
+ * then a custom tool's `defaultViewType`, then the table.
+ */
+describe('DotContentDriveStore - view type', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+
+    const routeSnapshot: { queryParams: Record<string, string> } = { queryParams: {} };
+    const siteDetails = signal<DotSite | null>(MOCK_SITES[2]);
+    const portlet = { id: 'content-drive' };
+    const DRIVE_KEY = 'dotcms.content-drive.view-type.content-drive';
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            ...rememberedContentTypeProviders(routeSnapshot, siteDetails),
+            mockProvider(DotSessionStorageService, {
+                consumeLastContentType: vi.fn().mockReturnValue(null)
+            }),
+            {
+                provide: DotRouterService,
+                useValue: {
+                    get currentPortlet() {
+                        return { id: portlet.id, url: '', parentMenuId: '' };
+                    }
+                }
+            }
+        ]
+    });
+
+    const buildStore = (queryParams: Record<string, string> = {}, portletId = 'content-drive') => {
+        routeSnapshot.queryParams = queryParams;
+        portlet.id = portletId;
+        spectator = createService();
+        store = spectator.service;
+        spectator.flushEffects();
+    };
+
+    const popstate = (url: string) => {
+        const subscribe = spectator.inject(Location).subscribe as Mock;
+        const handler = subscribe.mock.lastCall?.[0] as (event: { url: string }) => void;
+        handler({ url });
+    };
+
+    beforeEach(() => localStorage.clear());
+
+    it('should open the table when nothing says otherwise (US4 #6)', () => {
+        buildStore();
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should open the view remembered for this screen (US4 #1)', () => {
+        localStorage.setItem(DRIVE_KEY, 'card');
+
+        buildStore();
+
+        expect(store.viewType()).toBe('card');
+    });
+
+    it('should let the URL win over the remembered view (US4 #3)', () => {
+        localStorage.setItem(DRIVE_KEY, 'card');
+
+        buildStore({ viewType: 'List' });
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should not remember a view that came from the URL (US4 #3)', () => {
+        buildStore({ viewType: 'card' });
+
+        expect(localStorage.getItem(DRIVE_KEY)).toBeNull();
+    });
+
+    it('should use the tool default when this screen remembers nothing (US4 #5)', () => {
+        buildStore({ defaultViewType: 'card' });
+
+        expect(store.viewType()).toBe('card');
+    });
+
+    it('should let the remembered view win over the tool default (US4 #5)', () => {
+        localStorage.setItem(DRIVE_KEY, 'list');
+
+        buildStore({ defaultViewType: 'card' });
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should not use a view remembered for another screen (US4 #4)', () => {
+        localStorage.setItem('dotcms.content-drive.view-type.c_blogs', 'card');
+
+        buildStore({}, 'content-drive');
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should open the table when the remembered value is unreadable (US4 #8)', () => {
+        localStorage.setItem(DRIVE_KEY, 'mosaic');
+
+        buildStore();
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should show and remember a view picked with the switcher (FR-019)', () => {
+        buildStore();
+
+        store.setViewType('card', { remember: true });
+
+        expect(store.viewType()).toBe('card');
+        expect(localStorage.getItem(DRIVE_KEY)).toBe('card');
+    });
+
+    it('should remember it for this screen only', () => {
+        buildStore({}, 'c_blogs');
+
+        store.setViewType('card', { remember: true });
+
+        expect(localStorage.getItem('dotcms.content-drive.view-type.c_blogs')).toBe('card');
+        expect(localStorage.getItem(DRIVE_KEY)).toBeNull();
+    });
+
+    it('should show a view without remembering it when not asked to', () => {
+        buildStore();
+
+        store.setViewType('card');
+
+        expect(store.viewType()).toBe('card');
+        expect(localStorage.getItem(DRIVE_KEY)).toBeNull();
+    });
+
+    it('should still switch when the browser refuses to store the choice (US4 #7)', () => {
+        buildStore();
+        const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new Error('QuotaExceededError');
+        });
+
+        expect(() => store.setViewType('card', { remember: true })).not.toThrow();
+        expect(store.viewType()).toBe('card');
+
+        setItem.mockRestore();
+    });
+
+    it('should keep remembering under the screen the Drive opened on', () => {
+        buildStore({}, 'c_blogs');
+        portlet.id = 'c_news';
+
+        store.setViewType('card', { remember: true });
+
+        expect(localStorage.getItem('dotcms.content-drive.view-type.c_blogs')).toBe('card');
+        expect(localStorage.getItem('dotcms.content-drive.view-type.c_news')).toBeNull();
+    });
+
+    it('should keep the current view on Back and Forward, as the view is a preference (FR-020)', () => {
+        buildStore();
+
+        popstate('/c/content-drive?viewType=card');
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should not reload the results when Back only changes the view', () => {
+        buildStore();
+        const status = store.status();
+
+        popstate('/c/content-drive?viewType=card');
+
+        expect(store.status()).toBe(status);
     });
 });

@@ -26,7 +26,6 @@ interface RoleBehaviorOption {
 
 @Component({
     selector: 'dot-auth-provisioning',
-    standalone: true,
     host: {
         class: 'dot-auth-provisioning'
     },
@@ -51,6 +50,9 @@ export class DotAuthProvisioningComponent {
     // Group-security controls (allowUnmappedGroups / groupFilterPattern) are OIDC-only —
     // the SAML handler does not read those keys.
     readonly showGroupSecurity = input<boolean>(false);
+    // Email linking by trust (trustEmailWithoutVerifiedClaim) is OIDC-only — SAML always
+    // trusts the email in a signed assertion and has no email_verified claim.
+    readonly showEmailLinking = input<boolean>(false);
 
     readonly fieldChange = output<ProvisioningChange>();
 

@@ -1,4 +1,4 @@
-import { describe, expect, it } from '@jest/globals';
+import { describe, expect, it, vi } from 'vitest';
 
 import { MenuItemCommandEvent } from 'primeng/api';
 
@@ -111,8 +111,8 @@ describe('Dot UVE Palette Utils', () => {
             const mockCallbacks = {
                 viewMode: 'grid' as const,
                 currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
-                onSortSelect: jest.fn(),
-                onViewSelect: jest.fn()
+                onSortSelect: vi.fn(),
+                onViewSelect: vi.fn()
             };
 
             const result = buildPaletteMenuItems(mockCallbacks);
@@ -126,8 +126,8 @@ describe('Dot UVE Palette Utils', () => {
             const mockCallbacks = {
                 viewMode: 'grid' as const,
                 currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
-                onSortSelect: jest.fn(),
-                onViewSelect: jest.fn()
+                onSortSelect: vi.fn(),
+                onViewSelect: vi.fn()
             };
 
             const result = buildPaletteMenuItems(mockCallbacks);
@@ -143,8 +143,8 @@ describe('Dot UVE Palette Utils', () => {
             const mockCallbacks = {
                 viewMode: 'grid' as const,
                 currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
-                onSortSelect: jest.fn(),
-                onViewSelect: jest.fn()
+                onSortSelect: vi.fn(),
+                onViewSelect: vi.fn()
             };
 
             const result = buildPaletteMenuItems(mockCallbacks);
@@ -159,8 +159,8 @@ describe('Dot UVE Palette Utils', () => {
             const mockCallbacks = {
                 viewMode: 'grid' as const,
                 currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
-                onSortSelect: jest.fn(),
-                onViewSelect: jest.fn()
+                onSortSelect: vi.fn(),
+                onViewSelect: vi.fn()
             };
 
             const result = buildPaletteMenuItems(mockCallbacks);
@@ -175,8 +175,8 @@ describe('Dot UVE Palette Utils', () => {
             const mockCallbacks = {
                 viewMode: 'list' as const,
                 currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
-                onSortSelect: jest.fn(),
-                onViewSelect: jest.fn()
+                onSortSelect: vi.fn(),
+                onViewSelect: vi.fn()
             };
 
             const result = buildPaletteMenuItems(mockCallbacks);
@@ -187,12 +187,12 @@ describe('Dot UVE Palette Utils', () => {
         });
 
         it('should call onSortSelect when sort command is executed', () => {
-            const onSortSelect = jest.fn();
+            const onSortSelect = vi.fn();
             const mockCallbacks = {
                 viewMode: 'grid' as const,
                 currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
                 onSortSelect,
-                onViewSelect: jest.fn()
+                onViewSelect: vi.fn()
             };
 
             const result = buildPaletteMenuItems(mockCallbacks);
@@ -207,8 +207,8 @@ describe('Dot UVE Palette Utils', () => {
             const mockCallbacks = {
                 viewMode: 'grid' as const,
                 currentSort: { orderby: 'usage' as const, direction: 'DESC' as const },
-                onSortSelect: jest.fn(),
-                onViewSelect: jest.fn()
+                onSortSelect: vi.fn(),
+                onViewSelect: vi.fn()
             };
 
             const result = buildPaletteMenuItems(mockCallbacks);
@@ -220,11 +220,11 @@ describe('Dot UVE Palette Utils', () => {
         });
 
         it('should call onViewSelect when view command is executed', () => {
-            const onViewSelect = jest.fn();
+            const onViewSelect = vi.fn();
             const mockCallbacks = {
                 viewMode: 'grid' as const,
                 currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
-                onSortSelect: jest.fn(),
+                onSortSelect: vi.fn(),
                 onViewSelect
             };
 

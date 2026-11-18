@@ -593,8 +593,10 @@ public class FieldVariableResource implements Serializable {
 	 *
 	 * @return An empty response indicating a successful deletion.
 	 *
-	 * @throws DotDataException An error occurred when deleting the Field Variable from the
-	 *                          database.
+	 * @throws DotDataException     An error occurred when deleting the Field Variable from the
+	 *                              database.
+	 * @throws DotSecurityException The user does not have READ and EDIT_PERMISSIONS on the
+	 *                              Content Type of the Field.
 	 */
 	@Operation(
 		summary = "Delete field variable by field ID",
@@ -626,14 +628,15 @@ public class FieldVariableResource implements Serializable {
 												 @Parameter(description = "Field variable ID", required = true)
 												 @PathParam("fieldVarId") final String fieldVarId,
 												 @Context final HttpServletRequest req,
-												 @Context final HttpServletResponse res) throws DotDataException, UniqueFieldValueDuplicatedException {
-		new WebResource.InitBuilder(this.webResource)
+												 @Context final HttpServletResponse res)
+			throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException {
+		final User user = new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(req, res)
 				.requiredBackendUser(true)
 				.rejectWhenNoUser(true)
-				.init();
+				.init().getUser();
 		final Field field = this.fieldAPI.find(fieldId);
-		this.deleteFieldVariable(field, fieldVarId);
+		this.deleteFieldVariable(field, fieldVarId, user);
 		return Response.ok(new ResponseEntityView<>((String) null)).build();
 	}
 
@@ -654,8 +657,10 @@ public class FieldVariableResource implements Serializable {
 	 *
 	 * @return An empty response indicating a successful deletion.
 	 *
-	 * @throws DotDataException An error occurred when deleting the Field Variable from the
-	 *                          database.
+	 * @throws DotDataException     An error occurred when deleting the Field Variable from the
+	 *                              database.
+	 * @throws DotSecurityException The user does not have READ and EDIT_PERMISSIONS on the
+	 *                              Content Type of the Field.
 	 */
 	@Operation(
 		summary = "Delete field variable by field variable name",
@@ -687,30 +692,35 @@ public class FieldVariableResource implements Serializable {
 												  @Parameter(description = "Field variable ID", required = true)
 												  @PathParam("fieldVarId") final String fieldVarId,
 												  @Context final HttpServletRequest req,
-												  @Context final HttpServletResponse res) throws DotDataException, UniqueFieldValueDuplicatedException {
-		new WebResource.InitBuilder(this.webResource)
+												  @Context final HttpServletResponse res)
+			throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException {
+		final User user = new WebResource.InitBuilder(this.webResource)
 				.requestAndResponse(req, res)
 				.requiredBackendUser(true)
 				.rejectWhenNoUser(true)
-				.init();
+				.init().getUser();
 		final Field field = this.fieldAPI.byContentTypeIdAndVar(typeId, fieldVar);
-		this.deleteFieldVariable(field, fieldVarId);
+		this.deleteFieldVariable(field, fieldVarId, user);
 		return Response.ok(new ResponseEntityView<>((String) null)).build();
 	}
 
 	/**
-	 * Deletes the specified Field Variable from the given Field.
+	 * Deletes the specified Field Variable from the given Field, as the given user.
 	 *
 	 * @param field      The {@link Field} that the Field Variable is associated with.
 	 * @param fieldVarId The ID of the Field Variable that will be deleted.
+	 * @param user       The {@link User} performing the action.
 	 *
-	 * @throws DotDataException An error occurred when deleting the Field Variable from the
-	 *                          database.
+	 * @throws DotDataException     An error occurred when deleting the Field Variable from the
+	 *                              database.
+	 * @throws DotSecurityException The user does not have the necessary permissions to perform
+	 *                              this action.
 	 */
 	@WrapInTransaction
-	private void deleteFieldVariable(final Field field, final String fieldVarId) throws DotDataException, UniqueFieldValueDuplicatedException {
+	private void deleteFieldVariable(final Field field, final String fieldVarId, final User user)
+			throws DotDataException, DotSecurityException, UniqueFieldValueDuplicatedException {
 		final FieldVariable fieldVariable = this.getFieldVariable(field, fieldVarId);
-		this.fieldAPI.delete(fieldVariable);
+		this.fieldAPI.delete(fieldVariable, user);
 	}
 
 	/**

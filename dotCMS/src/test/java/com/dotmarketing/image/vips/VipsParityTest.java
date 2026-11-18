@@ -3,13 +3,19 @@ package com.dotmarketing.image.vips;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.dotmarketing.util.Config;
 import java.awt.Dimension;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.ImageWriter;
+import javax.imageio.stream.ImageInputStream;
+import javax.imageio.stream.ImageOutputStream;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -28,14 +34,56 @@ import org.junit.Test;
  *       legacy output stays under a generous threshold.</li>
  * </ul>
  *
- * <p>Tests are skipped (not failed) when native libvips is unavailable, so CI without libvips stays
- * green. Run locally with the libvips path wired in via {@code -Dvipsffm.libpath.args=...}.</p>
+ * <p>Tests are skipped (not failed) when native libvips is unavailable, so a developer machine
+ * without it stays green. Set {@code DOT_TEST_REQUIRE_LIBVIPS=true} to invert that: the native
+ * engine, the PDF delegate and the AVIF encoder then become hard assertions. That is how CI runs,
+ * so a regression in the shipped native build cannot hide behind a skipped test. Run locally with
+ * the libvips path wired in via {@code -Dvipsffm.libpath.args=...}.</p>
  */
 public class VipsParityTest {
 
+    /** Config key (env override {@code DOT_TEST_REQUIRE_LIBVIPS}) that turns skips into failures. */
+    private static final String STRICT_PROPERTY = "TEST_REQUIRE_LIBVIPS";
+
+    /**
+     * Whether a missing native capability should fail instead of skipping.
+     *
+     * <p>Read through dotCMS {@code Config} rather than {@code System.getenv} so the override uses
+     * the standard {@code DOT_} prefix: {@code DOT_TEST_REQUIRE_LIBVIPS=true}.</p>
+     *
+     * @return true when the native engine is required to be present and complete
+     */
+    private static boolean strict() {
+        return Config.getBooleanProperty(STRICT_PROPERTY, false);
+    }
+
+    /**
+     * Require a native capability, or skip when it is legitimately optional.
+     *
+     * <p>Outside strict mode a missing capability skips the test, keeping local runs green on hosts
+     * with a partially delegated libvips. In strict mode it is a failure, so CI cannot pass while
+     * the shipped native build is incomplete.</p>
+     *
+     * @param message description of the capability being required
+     * @param supported whether the capability is available
+     */
+    private static void requireCapability(final String message, final boolean supported) {
+        if (strict()) {
+            assertTrue(message + " (TEST_REQUIRE_LIBVIPS is set, so this is a failure)", supported);
+            return;
+        }
+        Assume.assumeTrue(message, supported);
+    }
+
+    /**
+     * Gate the whole class on a usable native libvips.
+     *
+     * <p>In strict mode (CI) a missing libvips fails; otherwise the class is skipped so a host
+     * without it does not report false failures.</p>
+     */
     @BeforeClass
     public static void requireLibvips() {
-        Assume.assumeTrue("native libvips not available on this host", VipsManager.isAvailable());
+        requireCapability("native libvips not available on this host", VipsManager.isAvailable());
     }
 
     private File image(final String name) {
@@ -210,7 +258,7 @@ public class VipsParityTest {
 
     @Test
     public void pdf_renders_page_to_png() throws Exception {
-        Assume.assumeTrue("host libvips lacks the PDF (poppler) delegate", pdfSupported());
+        requireCapability("host libvips lacks the PDF (poppler) delegate", pdfSupported());
         // Write a minimal one-page PDF directly (no fixture needed).
         final File dir = java.nio.file.Files.createTempDirectory("vips-pdf").toFile();
         final File in = new File(dir, "dotGenerated_doc.pdf");
@@ -270,11 +318,71 @@ public class VipsParityTest {
 
     @Test
     public void animated_gif_resize_preserves_animation() throws Exception {
-        final File in = image("test.gif");
+        // The bundled test.gif fixture is single-frame, so build a genuinely animated input:
+        // otherwise this assertion cannot tell "animation preserved" from "flattened to one frame".
+        final File in = animatedGif(3);
+        final int sourceFrames = gifFrameCount(in);
+        assertTrue("fixture is animated (frames=" + sourceFrames + ")", sourceFrames > 1);
+
         final File out = tempOut("gif");
         new VipsResizeImageFilter().transform(in, out, params("resize_w", "50", "resize_h", "50"));
         assertTrue("animated gif resize output exists", out.exists() && out.length() > 50);
         assertTrue("gif decodes", ImageIO.read(out) != null);
+        assertEquals("animation frame count preserved", sourceFrames, gifFrameCount(out));
+    }
+
+    /**
+     * Build a small genuinely-animated GIF.
+     *
+     * <p>The bundled {@code test.gif} fixture has a single frame, so tests that claim to check
+     * animation preservation need their own input rather than a static resource.</p>
+     *
+     * @param frames number of frames to write
+     * @return the written GIF
+     * @throws Exception if the file cannot be written
+     */
+    private File animatedGif(final int frames) throws Exception {
+        final File out = tempOut("gif");
+        final ImageWriter writer = ImageIO.getImageWritersByFormatName("gif").next();
+        try (ImageOutputStream stream = ImageIO.createImageOutputStream(out)) {
+            writer.setOutput(stream);
+            writer.prepareWriteSequence(null);
+            try {
+                for (int i = 0; i < frames; i++) {
+                    final BufferedImage frame = new BufferedImage(40, 30, BufferedImage.TYPE_INT_RGB);
+                    final int colour = 0x333333 * (i + 1);
+                    for (int y = 0; y < frame.getHeight(); y++) {
+                        for (int x = 0; x < frame.getWidth(); x++) {
+                            frame.setRGB(x, y, colour);
+                        }
+                    }
+                    writer.writeToSequence(new IIOImage(frame, null, null), null);
+                }
+            } finally {
+                writer.endWriteSequence();
+                writer.dispose();
+            }
+        }
+        return out;
+    }
+
+    /**
+     * Count the frames in a GIF, to tell a preserved animation from a flattened single frame.
+     *
+     * @param gif file to inspect
+     * @return number of frames, or 0 when no GIF reader is registered
+     * @throws Exception if the file cannot be read
+     */
+    private int gifFrameCount(final File gif) throws Exception {
+        try (ImageInputStream stream = ImageIO.createImageInputStream(gif)) {
+            final ImageReader reader = ImageIO.getImageReadersByFormatName("gif").next();
+            reader.setInput(stream);
+            try {
+                return reader.getNumImages(true);
+            } finally {
+                reader.dispose();
+            }
+        }
     }
 
     // ---- Production path: runFilter (output-extension determination + rename) -------------------
@@ -297,13 +405,20 @@ public class VipsParityTest {
 
     @Test
     public void runFilter_resize_of_gif_stays_gif_and_keeps_animation() throws Exception {
-        final File in = staged("test.gif", "gif");
+        // Production path, on a genuinely animated input (test.gif is single-frame).
+        final File dir = java.nio.file.Files.createTempDirectory("vips-runfilter").toFile();
+        final File in = new File(dir, "dotGenerated_src.gif");
+        java.nio.file.Files.copy(animatedGif(3).toPath(), in.toPath());
+        final int sourceFrames = gifFrameCount(in);
+        assertTrue("fixture is animated (frames=" + sourceFrames + ")", sourceFrames > 1);
+
         final File out = new VipsResizeImageFilter().runFilter(in, params("resize_w", "50", "resize_h", "50"));
         assertTrue("result keeps .gif extension (not png)", out.getName().endsWith(".gif"));
         // page height (single frame) is the resized height, not the stacked strip
         final Dimension d = new VipsImageFilterApiImpl().getWidthHeight(out);
         assertEquals(50, d.height);
         assertTrue("gif decodes", ImageIO.read(out) != null);
+        assertEquals("animation frame count preserved through runFilter", sourceFrames, gifFrameCount(out));
     }
 
     // ---- New capability: content-aware smart crop (no legacy equivalent) -----------------------
@@ -322,7 +437,7 @@ public class VipsParityTest {
 
     @Test
     public void avif_encoder_produces_valid_avif() throws Exception {
-        Assume.assumeTrue("host libvips lacks an AVIF/AV1 encoder (libheif-plugin-aomenc)",
+        requireCapability("host libvips lacks an AVIF/AV1 encoder (libheif-plugin-aomenc)",
                 avifEncodeSupported());
         final File in = image("test.png");
         final File out = tempOut("avif");
@@ -335,6 +450,27 @@ public class VipsParityTest {
         }
         final String brand = new String(head, 8, 4, java.nio.charset.StandardCharsets.US_ASCII);
         assertTrue("expected avif brand, got '" + brand + "'", brand.startsWith("avi"));
+    }
+
+    /**
+     * Decode an AVIF back through the engine, covering the libheif decode path independently of the
+     * encoder that {@link #avif_encoder_produces_valid_avif()} exercises.
+     *
+     * @throws Exception if the fixture or output cannot be read
+     */
+    @Test
+    public void avif_decode_reads_back_encoded_output() throws Exception {
+        requireCapability("host libvips lacks an AVIF/AV1 encoder (libheif-plugin-aomenc)",
+                avifEncodeSupported());
+        final File in = image("test.png");
+        final File encoded = tempOut("avif");
+        new VipsAvifImageFilter().transform(in, encoded, params("avif_q", "50"));
+
+        // Read the geometry back through heifload and compare with the source: a write-only bug
+        // (valid container, undecodable payload) would otherwise go unnoticed.
+        final Dimension decoded = new VipsImageFilterApiImpl().getWidthHeight(encoded);
+        final Dimension original = new VipsImageFilterApiImpl().getWidthHeight(in);
+        assertEquals("AVIF decodes back to the source geometry", original, decoded);
     }
 
     @Test

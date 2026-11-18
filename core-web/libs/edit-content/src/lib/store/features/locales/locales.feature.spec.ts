@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { patchState, signalStore, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
-import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 
@@ -61,13 +62,14 @@ describe('LocalesFeature', () => {
 
     // Locale reloads are delegated to the host (router vs in-place is its call).
     const mockHost = {
-        reloadContent: jest.fn(),
-        resolveIdentity: jest.fn().mockReturnValue({}),
-        reportSaved: jest.fn(),
-        setContentTitle: jest.fn(),
-        addBreadcrumb: jest.fn(),
-        goToSavedContent: jest.fn(),
-        goToRestoredVersion: jest.fn()
+        reloadContent: vi.fn(),
+        resolveIdentity: vi.fn().mockReturnValue({}),
+        reportSaved: vi.fn(),
+        setContentTitle: vi.fn(),
+        addBreadcrumb: vi.fn(),
+        goToSavedContent: vi.fn(),
+        leaveDeletedContent: vi.fn(),
+        goToRestoredVersion: vi.fn()
     };
 
     const createStore = createServiceFactory({
@@ -88,6 +90,7 @@ describe('LocalesFeature', () => {
 
     beforeEach(() => {
         Object.values(mockHost).forEach((fn) => fn.mockClear());
+        mockHost.resolveIdentity.mockReturnValue({});
         spectator = createStore();
         store = spectator.service;
         dotLanguagesService = spectator.inject(DotLanguagesService);
@@ -128,9 +131,45 @@ describe('LocalesFeature', () => {
         expect(store.currentLocale()).toEqual(SYSTEM_LANGUAGES[1]);
     }));
 
+    // A create opened from Content Drive starts in the language its list is filtered by, so the new
+    // content shows in that list once saved (#37759, FR-003).
+    describe('starting language of new content', () => {
+        it('starts in the language the host asks for', fakeAsync(() => {
+            mockHost.resolveIdentity.mockReturnValue({ contentTypeId: 'Blog', languageId: 1 });
+            dotLanguagesService.get.mockReturnValue(of(SYSTEM_LANGUAGES));
+
+            store.loadSystemLocales();
+            tick();
+
+            expect(store.currentLocale()).toEqual(SYSTEM_LANGUAGES[0]);
+            // The system default is still known, for whatever compares against it.
+            expect(store.systemDefaultLocale()).toEqual(SYSTEM_LANGUAGES[1]);
+        }));
+
+        it('falls back to the default when the asked-for language is not a system language', fakeAsync(() => {
+            mockHost.resolveIdentity.mockReturnValue({ contentTypeId: 'Blog', languageId: 99 });
+            dotLanguagesService.get.mockReturnValue(of(SYSTEM_LANGUAGES));
+
+            store.loadSystemLocales();
+            tick();
+
+            expect(store.currentLocale()).toEqual(SYSTEM_LANGUAGES[1]);
+        }));
+
+        it('starts in the default when the host asks for no language', fakeAsync(() => {
+            mockHost.resolveIdentity.mockReturnValue({ contentTypeId: 'Blog' });
+            dotLanguagesService.get.mockReturnValue(of(SYSTEM_LANGUAGES));
+
+            store.loadSystemLocales();
+            tick();
+
+            expect(store.currentLocale()).toEqual(SYSTEM_LANGUAGES[1]);
+        }));
+    });
+
     describe('when there is switch of locale', () => {
         beforeEach(() => {
-            const mockContentlet = { inode: '456' } as DotCMSContentlet;
+            const mockContentlet = { inode: '456', languageId: 2 } as DotCMSContentlet;
             dotEditContentService.getContentById.mockReturnValue(of(mockContentlet));
             dotContentletService.getLanguages.mockReturnValue(of(MOCK_LANGUAGES));
             dotLanguagesService.getDefault.mockReturnValue(of(MOCK_LANGUAGES[0]));
@@ -148,12 +187,12 @@ describe('LocalesFeature', () => {
             });
 
             // The host decides router vs in-place reload; the feature just states
-            // the intent with the resolved inode.
-            expect(mockHost.reloadContent).toHaveBeenCalledWith('456');
+            // the intent with the resolved inode and its language (#37759, T124).
+            expect(mockHost.reloadContent).toHaveBeenCalledWith('456', 2);
         }));
 
         it('should open dialog and update state for untranslated locale doing populate copy', fakeAsync(() => {
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: of('populate')
             } as DynamicDialogRef);
 
@@ -181,7 +220,7 @@ describe('LocalesFeature', () => {
         }));
 
         it('should open dialog, update state for untranslated locale doing manual copy', fakeAsync(() => {
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: of('manual')
             } as DynamicDialogRef);
 
@@ -197,7 +236,7 @@ describe('LocalesFeature', () => {
         }));
 
         it('should reset isManualTranslation to false when switching to a translated locale', fakeAsync(() => {
-            jest.spyOn(dialogService, 'open').mockReturnValue({
+            vi.spyOn(dialogService, 'open').mockReturnValue({
                 onClose: of('manual')
             } as DynamicDialogRef);
 

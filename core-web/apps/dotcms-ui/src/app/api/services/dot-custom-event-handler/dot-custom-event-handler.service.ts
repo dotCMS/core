@@ -9,6 +9,7 @@ import {
     DotGenerateSecurePasswordService,
     DotIframeService,
     DotLicenseService,
+    DotNavLogoService,
     DotPropertiesService,
     DotRouterService,
     DotUiColorsService,
@@ -21,7 +22,6 @@ import { DotLoadingIndicatorService } from '@dotcms/utils';
 import { DotCMSEditPageEvent } from '../../../view/components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotDownloadBundleDialogService } from '../dot-download-bundle-dialog/dot-download-bundle-dialog.service';
-import { DotNavLogoService } from '../dot-nav-logo/dot-nav-logo.service';
 
 export const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
 

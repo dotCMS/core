@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -89,9 +91,9 @@ describe('ContentTypeFieldsTabComponent', () => {
     });
 
     it('should emit change evt with onBlur & keyUp.enter', () => {
-        jest.spyOn(comp.editTab, 'emit');
-        const preventDefaultSpy = jest.fn();
-        const stopPropagationSpy = jest.fn();
+        vi.spyOn(comp.editTab, 'emit');
+        const preventDefaultSpy = vi.fn();
+        const stopPropagationSpy = vi.fn();
         const labelInput = de.query(By.css('div[contenteditable]'));
 
         labelInput.triggerEventHandler('keydown.enter', {
@@ -125,10 +127,10 @@ describe('ContentTypeFieldsTabComponent', () => {
     });
 
     it('should emit delete evt', () => {
-        jest.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
+        vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
-        jest.spyOn(comp.removeTab, 'emit');
+        vi.spyOn(comp.removeTab, 'emit');
         const deleteButton = de.query(By.css('p-button')).nativeElement;
         deleteButton.click();
         expect(comp.removeTab.emit).toHaveBeenCalledWith(mockFieldTab);

@@ -213,17 +213,6 @@ export class ToolbarComponent implements OnDestroy {
             this.store.isAllowed('codeBlock')
     );
 
-    protected readonly showInsertGroup = computed(
-        () =>
-            this.store.isAllowed('link') ||
-            this.store.isAllowed('image') ||
-            this.store.isAllowed('video') ||
-            this.store.isAllowed('audio') ||
-            this.store.isAllowed('table') ||
-            this.store.isAllowed('emoji') ||
-            this.showAssetByUrl()
-    );
-
     /**
      * The "Add asset by URL" popover inserts an image, plain video, or YouTube embed —
      * show the trigger only when at least one of those node types is permitted by
@@ -308,13 +297,21 @@ export class ToolbarComponent implements OnDestroy {
         }
     }
 
-    /** Reads Markdown from the clipboard and inserts it as rich content at the cursor. */
+    /**
+     * Reads Markdown from the clipboard and inserts it as rich content at the cursor.
+     *
+     * The HTML goes through the editor's paste pipeline rather than `insertContent`, so the same
+     * hooks that serve Cmd+V apply: the `assetUploader` extension's paste-only parser and
+     * `transformPasted` upload base64 images as dotAssets instead of dropping them (#38165), and
+     * the emoji extension's `transformPastedHTML` heals emoji markup.
+     */
     protected async pasteFromMarkdown(): Promise<void> {
         const editor = this.editor();
         try {
             const text = await navigator.clipboard.readText();
             if (!text) return;
-            editor.chain().focus().insertContent(markdownToHtml(text)).run();
+            editor.view.focus();
+            editor.view.pasteHTML(markdownToHtml(text));
         } catch (err) {
             console.warn('Paste from Markdown failed', err);
         }

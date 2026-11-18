@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, ParamMap } from '@angular/router';
@@ -73,7 +74,7 @@ describe('DotAppsConfigurationDetailResolver', () => {
             id: queryParams.id
         });
 
-        jest.spyOn(dotAppsServices, 'getConfiguration').mockReturnValue(of(response));
+        vi.spyOn(dotAppsServices, 'getConfiguration').mockReturnValue(of(response));
 
         dotAppsConfigurationDetailResolver
             .resolve(activatedRouteSnapshotMock)

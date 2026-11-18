@@ -1,5 +1,6 @@
 package com.dotcms.jobs.business.processor.impl;
 
+import com.dotcms.auth.SystemUserScope;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -77,7 +78,7 @@ import javax.enterprise.context.Dependent;
  * @see Queue
  * @see ExponentialBackoffRetryPolicy
  */
-@Queue("importContentlets")
+@Queue(value = "importContentlets", genericEntry = true)
 @NoRetryPolicy
 @Dependent
 public class ImportContentletsProcessor implements JobProcessor, Validator, Cancellable {
@@ -443,7 +444,9 @@ public class ImportContentletsProcessor implements JobProcessor, Validator, Canc
                 .stopOnError(stopOnError)
                 .commitGranularityOverride(commitGranularity)
                 .build();
-        return ImportUtil.importFileResult(importFileParams);
+        try (SystemUserScope ignored = SystemUserScope.openIfSystemUser(user)) {
+            return ImportUtil.importFileResult(importFileParams);
+        }
     }
 
     /**

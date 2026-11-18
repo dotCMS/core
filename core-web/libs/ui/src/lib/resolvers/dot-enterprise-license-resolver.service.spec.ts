@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -26,7 +27,7 @@ describe('DotEnterpriseLicenseResolver', () => {
     });
 
     it('should call dotLicenseService', () => {
-        jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
+        vi.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
 
         service.resolve().subscribe(() => {
             expect(dotLicenseService.isEnterprise).toHaveBeenCalled();

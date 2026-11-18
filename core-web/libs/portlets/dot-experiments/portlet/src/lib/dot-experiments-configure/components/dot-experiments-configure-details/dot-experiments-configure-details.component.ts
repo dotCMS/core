@@ -8,7 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { PanelModule } from 'primeng/panel';
 
 import { MAX_INPUT_DESCRIPTIVE_LENGTH, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import { DOT_PANEL_NO_FOOTER } from '../../../shared/constants';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
@@ -37,7 +37,14 @@ import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-con
  */
 @Component({
     selector: 'dot-experiments-configure-details',
-    imports: [ButtonModule, PanelModule, FormField, InputTextModule, DotMessagePipe],
+    imports: [
+        ButtonModule,
+        PanelModule,
+        FormField,
+        InputTextModule,
+        DotFieldRequiredDirective,
+        DotMessagePipe
+    ],
     templateUrl: './dot-experiments-configure-details.component.html'
 })
 export class DotExperimentsConfigureDetailsComponent {

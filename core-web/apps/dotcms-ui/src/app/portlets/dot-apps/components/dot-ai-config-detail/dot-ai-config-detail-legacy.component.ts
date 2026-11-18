@@ -16,7 +16,7 @@ import { TextareaModule } from 'primeng/textarea';
 import { map } from 'rxjs/operators';
 
 import {
-    DotAiService,
+    DotAiConfigService,
     DotMessageDisplayService,
     DotMessageService,
     DotRouterService
@@ -79,7 +79,7 @@ const EXAMPLE_CONFIG = {
 })
 export class DotAiConfigDetailLegacyComponent implements OnInit {
     private route = inject(ActivatedRoute);
-    private dotAiService = inject(DotAiService);
+    private dotAiService = inject(DotAiConfigService);
     private dotRouterService = inject(DotRouterService);
     private dotMessageDisplayService = inject(DotMessageDisplayService);
     private dotMessageService = inject(DotMessageService);

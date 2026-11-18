@@ -7,7 +7,7 @@
         "Content Management",
         "UVE",
         "Universal Visual Editor"
-      ],
+    ],
     "exports": {
         "./package.json": "./package.json",
         ".": "./src/index.ts",
@@ -15,8 +15,13 @@
     },
     "typesVersions": {
         "*": {
-            ".": ["./src/index.d.ts"],
-            "internal": ["./src/internal.d.ts"]
+            ".": [
+                "./src/index.d.ts"
+            ],
+            "internal": [
+                "./src/internal.d.ts"
+            ]
         }
-    }
+    },
+    "sideEffects": false
 }

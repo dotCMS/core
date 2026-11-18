@@ -4,8 +4,9 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { ActivatedRoute } from '@angular/router';
 
@@ -89,7 +90,7 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
     });
 
     it('should save form when is valid ', () => {
-        jest.spyOn(store, 'setSelectedAllocation');
+        vi.spyOn(store, 'setSelectedAllocation');
         const submitButtonWrapper = spectator.query(byTestId('add-trafficAllocation-button'));
         const submitButton = submitButtonWrapper.querySelector('button') || submitButtonWrapper;
 
@@ -112,7 +113,7 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
     });
 
     it('should close sidebar ', () => {
-        jest.spyOn(store, 'closeSidebar');
+        vi.spyOn(store, 'closeSidebar');
         sidebar = spectator.query(Drawer);
         sidebar.hide();
 

@@ -5,18 +5,19 @@ import {
     DotContainerMap,
     DotDevice,
     DotExperiment,
-    DotExperimentStatus
+    EXPERIMENT_RETURN_PARAM
 } from '@dotcms/dotcms-models';
 import {
     DotCMSPage,
     DotCMSPageAssetContainers,
+    DotCMSSite,
     DotCMSURLContentMap,
     DotCMSVanityUrl,
     DotCMSViewAsPersona
 } from '@dotcms/types';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
+import { DotPageApiParams, DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
 import { COMMON_ERRORS, DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { CONTAINER_INSERT_ERROR } from '../shared/enums';
 import {
@@ -26,7 +27,8 @@ import {
     ContentTypeDragPayload,
     DotPageAssetParams,
     DragDatasetItem,
-    PageContainer
+    PageContainer,
+    SelectedContentlet
 } from '../shared/models';
 import { IframeAccessMode, Orientation } from '../store/models';
 
@@ -122,6 +124,65 @@ export function getHrefFromClickTarget(target: EventTarget | null): string | nul
     }
 
     return maybeTarget.closest?.('a')?.href ?? null;
+}
+
+/**
+ * Resolves the anchor a click is meant for, even when the hit-tested
+ * `target` isn't the anchor itself.
+ *
+ * Checks ancestors first (`target.closest('a')`), same as a normal click. If
+ * that finds nothing, falls back to a descendant anchor — but only when
+ * there's exactly one inside `target`, AND that anchor has
+ * `pointer-events: none`. This covers a real pattern: an anchor styled that
+ * way, wrapped in a container a page's own script makes clickable instead
+ * (e.g. a "clickable card"). Hit-testing a `pointer-events: none` element
+ * always resolves to whatever is behind it — here, its own containing
+ * wrapper — so `target.closest('a')` can never find it no matter how
+ * precisely the click lands; `pointer-events: none` is also the only reason
+ * hit-testing could have skipped a real, clickable anchor to land on `target`
+ * in the first place, so it's what tells this apart from a click that merely
+ * landed somewhere else inside a large, unrelated container that happens to
+ * contain one ordinary link.
+ *
+ * Multiple descendant anchors are left alone (returns `null`): picking one
+ * would be a guess, and guessing wrong risks navigating somewhere the user
+ * didn't click.
+ */
+export function resolveClickedAnchor(target: HTMLElement): HTMLAnchorElement | null {
+    const ancestorAnchor = target.closest('a');
+
+    if (ancestorAnchor) {
+        return ancestorAnchor;
+    }
+
+    const descendantAnchors = target.querySelectorAll('a');
+
+    if (descendantAnchors.length !== 1) {
+        return null;
+    }
+
+    const [onlyAnchor] = descendantAnchors;
+
+    return getComputedStyle(onlyAnchor).pointerEvents === 'none' ? onlyAnchor : null;
+}
+
+/**
+ * Whether an `href` points somewhere the browser would actually navigate to.
+ *
+ * `#…` (same-page scroll) and `javascript:…` (a page's own click handler,
+ * invoked via the pseudo-protocol instead of a real `onclick`/listener) never
+ * navigate anywhere — a page's own UI commonly uses both as an `<a>`-shaped
+ * button (accordions, tabs, Bootstrap-style `data-toggle` collapses). Treating
+ * them as a real link caused dotCMS/core#37961's second QA regression: the
+ * editor took over (and thus `stopPropagation()`-blocked) clicks on these
+ * non-navigating anchors, so the page's own handler for them never ran.
+ */
+export function isNavigableHref(href: string | null | undefined): boolean {
+    if (!href) {
+        return false;
+    }
+
+    return !href.startsWith('#') && !/^\s*javascript:/i.test(href);
 }
 
 /**
@@ -328,20 +389,87 @@ export function deleteContentletFromContainer(action: ActionPayload): {
 }
 
 /**
- * Check if two containers are equals
+ * Whether moving a contentlet next to a pivot in the container it already sits in changes the
+ * container's order. It does not when the pivot is the moved contentlet itself, when the drop is
+ * right after the contentlet above it or right before the one below it, or when the pivot is not
+ * in the container, so there is nothing to place it next to.
  *
- * @param {PageContainer} currentContainer
- * @param {ContainerPayload} containerToFind
+ * @param contentletsId the container's contentlets, in order, before the move
+ * @param contentletId the contentlet being moved
+ * @param pivotId the contentlet it is dropped next to
+ * @param position which side of the pivot it is dropped on
+ * @returns true when the move leaves a different order
+ */
+export function doesMoveChangeOrder({
+    contentletsId,
+    contentletId,
+    pivotId,
+    position
+}: {
+    contentletsId: string[];
+    contentletId: string;
+    pivotId: string | undefined;
+    position: 'before' | 'after' | undefined;
+}): boolean {
+    const remaining = contentletsId.filter((id) => id !== contentletId);
+    const pivotIndex = pivotId === undefined ? -1 : remaining.indexOf(pivotId);
+
+    if (pivotIndex === -1) {
+        return false;
+    }
+
+    const offset = position === 'before' ? pivotIndex : pivotIndex + 1;
+    const moved = [...remaining.slice(0, offset), contentletId, ...remaining.slice(offset)];
+
+    return moved.some((id, index) => id !== contentletsId[index]);
+}
+
+/**
+ * Check if two containers are equals: the same container, by identifier, in the same place on
+ * the page, by uuid. Takes a page container or a container payload on either side.
+ *
+ * @param {Pick<PageContainer, 'identifier' | 'uuid'>} currentContainer
+ * @param {Pick<ContainerPayload, 'identifier' | 'uuid'>} containerToFind
  * @return {*}  {boolean}
  */
 export function areContainersEquals(
-    currentContainer: PageContainer,
-    containerToFind?: ContainerPayload
+    currentContainer: Pick<PageContainer, 'identifier' | 'uuid'>,
+    containerToFind?: Pick<ContainerPayload, 'identifier' | 'uuid'>
 ): boolean {
     return (
         currentContainer.identifier === containerToFind?.identifier &&
         currentContainer.uuid === containerToFind?.uuid
     );
+}
+
+/**
+ * Whether the selected contentlet is gone from the container it was selected in, once the page's
+ * containers become `pageContainers`. False when no contentlet is selected.
+ *
+ * @param {SelectedContentlet | null} selected - The editor's selection.
+ * @param {PageContainer[]} pageContainers - The page's containers after a change.
+ * @return {boolean} True when the selection points at a contentlet that is no longer there.
+ */
+export function isSelectedContentletGone(
+    selected: SelectedContentlet | null,
+    pageContainers: PageContainer[]
+): boolean {
+    const payload = selected?.payload;
+
+    if (!payload?.contentlet?.identifier) {
+        return false;
+    }
+
+    const selectedContentletId = payload.contentlet.identifier;
+
+    return !pageContainers.some((container) => {
+        // For now, if is not the same container, we deactivate the active contentlet
+        // This can be improved in the future to check if the contentlet was moved, but we need to implement optimistic updates in UVE first
+        // Because moving contentlets change the container structure, and we need to have a rollback mechanism in case the update fails
+        const isSameContainer = areContainersEquals(container, payload.container);
+
+        return container.contentletsId?.includes(selectedContentletId) && isSameContainer;
+    });
 }
 
 /**
@@ -397,14 +525,21 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
                 return pageContainer;
             }
 
-            const index = pageContainer.contentletsId.indexOf(contentlet.identifier);
+            const pivotId = contentlet?.identifier;
+            const index = pivotId === undefined ? -1 : pageContainer.contentletsId.indexOf(pivotId);
 
             if (index !== -1) {
                 const offset = position === 'before' ? index : index + 1;
                 pageContainer.contentletsId.splice(offset, 0, newContentletId);
 
                 didInsert = true;
+            } else if (pivotId !== undefined && pivotId === newContentletId) {
+                // A moved contentlet dropped next to itself: its place left with the move, so
+                // there is nothing to place it next to, and it is not appended to the end (#38575).
+                errorCode = CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND;
             } else {
+                // The pivot is gone, as when someone removed it while new content was being
+                // created: the contentlet still goes in, at the end.
                 pageContainer.contentletsId.push(newContentletId);
                 didInsert = true;
             }
@@ -621,6 +756,12 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
     delete paramsCopy?.clientHost;
     delete paramsCopy?.url;
 
+    // A param set to `undefined` has been cleared (a removed filter, a reset
+    // publish date). URLSearchParams would print it as "key=undefined".
+    Object.keys(paramsCopy).forEach(
+        (key) => paramsCopy[key] === undefined && delete paramsCopy[key]
+    );
+
     const searchParams = new URLSearchParams(paramsCopy);
 
     const pureURL = new URL(`${url}?${searchParams.toString()}`, clientHost);
@@ -661,7 +802,9 @@ export function computeIsPageLocked(page: DotCMSPage, currentUser: CurrentUser):
  * Editing is allowed when ALL of the following are true:
  * - User has edit permission on the page
  * - Page is not locked (or locked by current user with feature flag enabled)
- * - No experiment is running or scheduled
+ *
+ * A running or scheduled experiment no longer blocks editing (#37308). The `experiment` argument
+ * is kept so callers and tests can show it is ignored.
  *
  * @param {DotCMSPage} page - The page to check
  * @param {CurrentUser} currentUser - The current user
@@ -677,12 +820,7 @@ export function computeCanEditPage(
 ): boolean {
     const hasEditPermission = !!page?.canEdit;
 
-    const isBlockedByExperiment = [
-        DotExperimentStatus.RUNNING,
-        DotExperimentStatus.SCHEDULED
-    ].includes(experiment?.status);
-
-    if (!hasEditPermission || isBlockedByExperiment) {
+    if (!hasEditPermission) {
         return false;
     }
 
@@ -968,11 +1106,12 @@ export const checkClientHostAccess = (
  * Otherwise, it falls back to the URL extracted from the event.
  *
  * @param {string | undefined} url - The URL extracted from the event.
+ * @param {DotCMSURLContentMap | undefined} urlContentMap - The page's URL map, when it has one.
  * @returns {string | undefined} - The final target URL for navigation, or undefined if none.
  */
 export function getTargetUrl(
     url: string | undefined,
-    urlContentMap: DotCMSURLContentMap
+    urlContentMap: DotCMSURLContentMap | undefined
 ): string | undefined {
     // Return URL from content map or fallback to the provided URL
     return urlContentMap?.URL_MAP_FOR_CONTENT || url;
@@ -987,6 +1126,37 @@ export function getTargetUrl(
 export function shouldNavigate(targetUrl: string | undefined, currentUrl: string): boolean {
     // Navigate if the target URL is defined and different from the current URL
     return targetUrl !== undefined && !compareUrlPaths(targetUrl, currentUrl);
+}
+
+/**
+ * The page to load after the legacy editor saved a page in a new language. The language comes from
+ * the `htmlPageReferer` the editor reports; the URL is added only when that page is not the one on
+ * screen. A URL-mapped page is compared by its URL map, since its referer is the detail page.
+ *
+ * @param {string} htmlPageReferer - The page URL the legacy editor reports, relative or absolute.
+ * @param {string} options.origin - Where a relative referer resolves from.
+ * @param {DotCMSURLContentMap | undefined} options.urlContentMap - The URL map of the page on screen, if any.
+ * @param {string} options.currentUrl - The URL of the page on screen.
+ * @returns The params for `pageLoad`: the language, plus the URL when the page moved. The language
+ * is `undefined` when the referer carries none, which the legacy editor never sends.
+ */
+export function getLanguageChangePageParams(
+    htmlPageReferer: string,
+    {
+        origin,
+        urlContentMap,
+        currentUrl
+    }: { origin: string; urlContentMap: DotCMSURLContentMap | undefined; currentUrl: string }
+): { url?: string; language_id?: string } {
+    const url = new URL(htmlPageReferer, origin); // Add base for relative URLs
+    const targetUrl = getTargetUrl(url.pathname, urlContentMap);
+    const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language') ?? undefined;
+
+    if (shouldNavigate(targetUrl, currentUrl)) {
+        return { url: targetUrl, language_id };
+    }
+
+    return { language_id };
 }
 
 /**
@@ -1168,6 +1338,101 @@ export const isSamePageNavigation = (incomingUrl: string, currentUrl: string): b
 
     return target.pathname === current.pathname;
 };
+
+/**
+ * Tells whether a link's hostname points at the site of the page being edited.
+ *
+ * Pages often link to their own site with an absolute URL
+ * (`https://www.site.com/news?year=2025`), and the admin usually runs on a
+ * different host than the site. Those links must load inside the editor like
+ * relative ones, so the site's hostname and aliases count as internal, as
+ * well as the admin host itself.
+ *
+ * @param {string} hostname - Hostname of the clicked link
+ * @param {Pick<DotCMSSite, 'hostname' | 'aliases'> | undefined} site - Site of the edited page
+ * @param {string} adminHostname - Hostname the admin runs on
+ * @returns {boolean} `true` when the link belongs to the edited site
+ */
+export function isPageSiteHost(
+    hostname: string,
+    site: Pick<DotCMSSite, 'hostname' | 'aliases'> | undefined,
+    adminHostname: string
+): boolean {
+    // Aliases are stored one per line, but commas are accepted too.
+    const aliases = (site?.aliases ?? '').split(/[\s,]+/);
+    const siteHosts = [adminHostname, site?.hostname, ...aliases];
+
+    return siteHosts.some((host) => !!host && host.toLowerCase() === hostname.toLowerCase());
+}
+
+/**
+ * Returns the query params of the current page that the editor does not own,
+ * such as a filter a page link added.
+ *
+ * `pageLoad` merges new params over the current ones, so these would otherwise
+ * survive every later link navigation. Setting them to `undefined` clears
+ * them: `undefined` values are left out of both the Page API request and the
+ * admin URL. Editor params (language, persona, mode, variant, device…) are not
+ * returned, so they still follow the editor.
+ *
+ * @param {DotPageAssetParams | null} pageParams - Params of the current page
+ * @returns {string[]} The keys of the page-owned params
+ */
+export function getPageOwnedParamKeys(pageParams: DotPageAssetParams | null): string[] {
+    const editorKeys = new Set<string>([
+        ...Object.values(DotPageAssetKeys),
+        EXPERIMENT_RETURN_PARAM,
+        'device',
+        'orientation',
+        'seo'
+    ]);
+
+    return Object.keys(pageParams ?? {}).filter((key) => !editorKeys.has(key));
+}
+
+/**
+ * Scrolls a traditional page's iframe to the element a URL fragment points at.
+ *
+ * Traditional pages render through `srcdoc`, whose base URL is the admin's, so a
+ * browser-handled `#section` link resolves to the admin URL and loads the admin
+ * inside the canvas instead of scrolling. Callers cancel the click and scroll
+ * here instead. The target follows the HTML rules: the element with that id,
+ * else the first element with that name, and the top of the page for `#` or
+ * `#top`. An unknown fragment does nothing, as in a browser.
+ *
+ * Scrolls the iframe's own window rather than calling `scrollIntoView`, which
+ * would also scroll the editor's canvas around the iframe.
+ *
+ * @param {Window | null} win - The iframe's window
+ * @param {string} hash - The fragment, with or without the leading `#`
+ */
+export function scrollIframeToFragment(win: Window | null, hash: string): void {
+    if (!win) {
+        return;
+    }
+
+    const fragment = hash.replace(/^#/, '');
+    let id = fragment;
+
+    try {
+        id = decodeURIComponent(fragment);
+    } catch {
+        // A malformed escape is looked up as written.
+    }
+
+    const doc = win.document;
+    const target = id ? (doc.getElementById(id) ?? doc.getElementsByName(id)[0]) : undefined;
+
+    if (target) {
+        win.scrollTo({ top: target.getBoundingClientRect().top + (win.scrollY || 0), left: 0 });
+
+        return;
+    }
+
+    if (!id || id.toLowerCase() === 'top') {
+        win.scrollTo({ top: 0, left: 0 });
+    }
+}
 
 /** dotCMS path prefixes that stream a binary asset instead of rendering a page. */
 const ASSET_PATH_PREFIXES = ['/dA/', '/dotAsset/', '/contentAsset/'];

@@ -1,0 +1,13 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/s/googlelogo_color_272x92dp.png"
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "image/png"
+    },
+    "bodyFileName": "googlelogo_color_272x92dp.png"
+  }
+}

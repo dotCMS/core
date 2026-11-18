@@ -1,4 +1,5 @@
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpClient } from '@angular/common/http';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -15,6 +16,12 @@ import {
 const mockRoute = {} as ActivatedRouteSnapshot;
 const mockState = {} as RouterStateSnapshot;
 
+// The resolver returns an Observable; ResolveFn only promises the wider MaybeAsync union.
+const runResolver = (): Observable<DotContentTypeTabsResolvedData> =>
+    TestBed.runInInjectionContext(() =>
+        dotContentTypeTabsResolver(mockRoute, mockState)
+    ) as Observable<DotContentTypeTabsResolvedData>;
+
 describe('dotContentTypeTabsResolver', () => {
     let dotCurrentUserService: DotCurrentUserService;
 
@@ -24,7 +31,7 @@ describe('dotContentTypeTabsResolver', () => {
                 HttpClient,
                 {
                     provide: DotCurrentUserService,
-                    useValue: { hasAccessToPortlet: jest.fn().mockReturnValue(of(hasAccess)) }
+                    useValue: { hasAccessToPortlet: vi.fn().mockReturnValue(of(hasAccess)) }
                 }
             ],
             imports: [HttpClientTestingModule]
@@ -33,27 +40,29 @@ describe('dotContentTypeTabsResolver', () => {
         dotCurrentUserService = TestBed.inject(DotCurrentUserService);
     };
 
-    it('should resolve showPermissionsTab as true when user has access', (done) => {
-        setup(true);
+    it('should resolve showPermissionsTab as true when user has access', () =>
+        new Promise<void>((done) => {
+            setup(true);
 
-        TestBed.runInInjectionContext(() =>
-            dotContentTypeTabsResolver(mockRoute, mockState)
-        ).subscribe((result: DotContentTypeTabsResolvedData) => {
-            expect(dotCurrentUserService.hasAccessToPortlet).toHaveBeenCalledWith('permissions');
-            expect(result).toEqual({ showPermissionsTab: true });
-            done();
-        });
-    });
+            runResolver().subscribe((result) => {
+                expect(dotCurrentUserService.hasAccessToPortlet).toHaveBeenCalledWith(
+                    'permissions'
+                );
+                expect(result).toEqual({ showPermissionsTab: true });
+                done();
+            });
+        }));
 
-    it('should resolve showPermissionsTab as false when user lacks access', (done) => {
-        setup(false);
+    it('should resolve showPermissionsTab as false when user lacks access', () =>
+        new Promise<void>((done) => {
+            setup(false);
 
-        TestBed.runInInjectionContext(() =>
-            dotContentTypeTabsResolver(mockRoute, mockState)
-        ).subscribe((result: DotContentTypeTabsResolvedData) => {
-            expect(dotCurrentUserService.hasAccessToPortlet).toHaveBeenCalledWith('permissions');
-            expect(result).toEqual({ showPermissionsTab: false });
-            done();
-        });
-    });
+            runResolver().subscribe((result) => {
+                expect(dotCurrentUserService.hasAccessToPortlet).toHaveBeenCalledWith(
+                    'permissions'
+                );
+                expect(result).toEqual({ showPermissionsTab: false });
+                done();
+            });
+        }));
 });

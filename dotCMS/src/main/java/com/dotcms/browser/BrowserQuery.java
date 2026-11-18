@@ -5,6 +5,7 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotcms.rest.api.v1.drive.SearchScope;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Theme;
@@ -28,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.Set;
 import org.apache.commons.lang3.StringUtils;
 
@@ -63,13 +65,14 @@ public class BrowserQuery {
     final boolean showDefaultLangItems;
     final boolean useElasticsearchFiltering;
     final boolean filterFolderNames;
+    final SearchScope searchScope;
     final Set<Long> languageIds;
     final String luceneQuery;
     final Set<BaseContentType> baseTypes;
     final Set<String> contentTypeIds;
     final Set<String> excludedContentTypeIds;
     final Host site;
-    final boolean forceSystemHost;
+    final SystemHostMode systemHostMode;
     final boolean skipFolder;
     final boolean ignoreSiteForFolders;
     final Folder folder;
@@ -129,7 +132,7 @@ public class BrowserQuery {
                 ", contentCursor=" + contentCursor + ", folderCursor=" + folderCursor +
                 ", linkCursor=" + linkCursor +
                 " ,site:" + site + ", folder:" + folder + ", filter:"
-                + filter + ", sortBy:" + sortBy + ", forceSystemHost:" + forceSystemHost
+                + filter + ", sortBy:" + sortBy + ", systemHostMode:" + systemHostMode
                 + ", skipFolder:" + skipFolder + ", ignoreSiteForFolders:" + ignoreSiteForFolders
                 + ", offset:" + offset + ", maxResults:" + maxResults + ", showWorking:"
                 + showWorking + ", showArchived:"
@@ -155,6 +158,7 @@ public class BrowserQuery {
         final Tuple2<Host, Folder> siteAndFolder = getParents(builder.hostFolderId,this.user, builder.hostIdSystemFolder);
         this.filter = builder.filter;
         this.useElasticsearchFiltering = builder.useElasticsearchFiltering;
+        this.searchScope = builder.searchScope;
         this.skipFolder = builder.skipFolder;
         this.ignoreSiteForFolders = builder.ignoreSiteForFolders;
         this.filterFolderNames = builder.filterFolderNames;
@@ -199,8 +203,9 @@ public class BrowserQuery {
         this.showMenuItemsOnly = builder.showMenuItemsOnly;
         this.site = siteAndFolder._1;
         this.folder = siteAndFolder._2;
-        //Despite the site and folder passed, forceSystemHost makes the inclusion of SYSTEM_HOME in the query
-        this.forceSystemHost = builder.forceSystemHost;
+        //Despite the site and folder passed, this decides whether SYSTEM_HOST content joins the
+        //results, is kept out of them, or is the only thing in them.
+        this.systemHostMode = builder.systemHostMode;
         this.directParent = this.folder.isSystemFolder() ? site : folder;
         this.roles= Try.of(()->APILocator.getRoleAPI().loadRolesForUser(user.getUserId()).toArray(new Role[0])).getOrElse(new Role[0]);
     }
@@ -291,6 +296,10 @@ public class BrowserQuery {
         private User user;
         private boolean useElasticsearchFiltering = false;
         private boolean filterFolderNames = false;
+        // Defaults to ALL_FIELDS so the callers that never set it — the assets REST API, the legacy
+        // admin browser, the Velocity viewtool and the File Asset API — keep producing exactly the
+        // results they produced before this field existed.
+        private SearchScope searchScope = SearchScope.ALL_FIELDS;
         private String filter = null;
         private String fileName = null;
         private String sortBy = "moddate";
@@ -311,10 +320,35 @@ public class BrowserQuery {
         private final StringBuilder luceneQuery = new StringBuilder();
         private final Set<BaseContentType> baseTypes = new HashSet<>();
         private String hostFolderId = FolderAPI.SYSTEM_FOLDER;
-        private boolean forceSystemHost = false;
+        private SystemHostMode systemHostMode = SystemHostMode.EXCLUDE;
         private boolean skipFolder = false;
         private boolean ignoreSiteForFolders = false;
         private String hostIdSystemFolder = null;
+        /**
+         * MIME types, the partial and wildcard forms the file browser sends, and the parameter
+         * forms that appear in stored metadata such as {@code text/plain; charset=iso-8859-1}.
+         *
+         * <p>Covers the RFC 6838 token characters plus {@code ;}, {@code =} and space for
+         * parameters. Deliberately excludes {@code "} and {@code \}, which are the only
+         * characters that could terminate or escape the quoted regex literal the value is placed
+         * inside, and the grouping characters {@code ( ) [ ] { } | ?}, which would allow a caller
+         * to build a pattern with catastrophic backtracking.</p>
+         */
+        private static final Pattern MIME_TYPE_PATTERN =
+                Pattern.compile("[A-Za-z0-9 !#$&^_.+*/;=~-]{1,255}");
+
+        /**
+         * The value is placed directly after {@code .*} inside the regex literal, so a quantifier
+         * with nothing to quantify is a syntax error that PostgreSQL raises when the query runs.
+         * Matching one here turns a 500 from the database into a 400 from the endpoint.
+         *
+         * <p>Catches a leading {@code *} or {@code +}, which would attach to the template's own
+         * {@code .*}, and any two adjacent quantifiers, which are invalid wherever they appear.
+         * Those are the only two shapes reachable: the grouping characters that could introduce
+         * other quantifier forms are already excluded by {@link #MIME_TYPE_PATTERN}.</p>
+         */
+        private static final Pattern ORPHANED_QUANTIFIER = Pattern.compile("^[*+]|[*+]{2}");
+
         private List<String> mimeTypes = new ArrayList<>();
         private List<String> extensions = new ArrayList<>();
         private Set<String> workflowSchemeIds = new LinkedHashSet<>();
@@ -333,7 +367,10 @@ public class BrowserQuery {
                     ? browserQuery.site.getIdentifier()
                     : browserQuery.folder.getInode();
             this.useElasticsearchFiltering = browserQuery.useElasticsearchFiltering;
-            this.forceSystemHost = browserQuery.forceSystemHost;
+            this.searchScope = browserQuery.searchScope;
+            // `forceSystemHost` on the other side of this merge; the boolean field is gone, and
+            // the deprecated setter that replaced it translates into this same enum.
+            this.systemHostMode = browserQuery.systemHostMode;
             this.skipFolder = browserQuery.skipFolder;
             this.ignoreSiteForFolders = browserQuery.ignoreSiteForFolders;
             this.filter = browserQuery.filter;
@@ -414,13 +451,36 @@ public class BrowserQuery {
         }
 
         /**
-         * When set, search includes items that belong to system-host
-         * @param forceSystemHost
-         * @return
+         * What the search does about System Host content: keeps it out, admits it alongside the
+         * named site, or returns nothing else.
+         * <p>
+         * Replaces a boolean that could only say the first two. Left unset it is
+         * {@link SystemHostMode#EXCLUDE}, which is what the boolean {@code false} meant, so a
+         * caller that never mentions System Host is unaffected.
+         *
+         * @param systemHostMode how System Host content is treated, never null
+         * @return this builder
          */
-        public Builder forceSystemHost(boolean forceSystemHost) {
-            this.forceSystemHost = forceSystemHost;
+        public Builder systemHostMode(@Nonnull SystemHostMode systemHostMode) {
+            this.systemHostMode = systemHostMode;
             return this;
+        }
+
+        /**
+         * When set, search includes items that belong to system-host.
+         *
+         * @param forceSystemHost whether System Host content joins the results
+         * @return this builder
+         * @deprecated since 26.09, use {@link #systemHostMode(SystemHostMode)}. The boolean can
+         * only name two of the three shapes the host predicate has, and not the one Content Drive
+         * needs ({@link SystemHostMode#ONLY}). It is kept because it is public API that has
+         * shipped for years and may be held by a static plugin, a jar on the container classpath,
+         * or customer code compiled against an older core; it delegates, so it cannot drift.
+         */
+        @Deprecated
+        public Builder forceSystemHost(final boolean forceSystemHost) {
+            return systemHostMode(
+                    forceSystemHost ? SystemHostMode.INCLUDE : SystemHostMode.EXCLUDE);
         }
 
         /**
@@ -454,6 +514,18 @@ public class BrowserQuery {
          */
         public Builder useElasticsearchFiltering(boolean useElasticsearchFiltering) {
             this.useElasticsearchFiltering = useElasticsearchFiltering;
+            return this;
+        }
+
+        /**
+         * Which fields the text filter is matched against. Only Content Drive sets this; every
+         * other caller leaves it at {@link SearchScope#ALL_FIELDS} and is therefore unaffected.
+         *
+         * @param searchScope the {@link SearchScope}
+         * @return this
+         */
+        public Builder searchScope(final SearchScope searchScope) {
+            this.searchScope = null == searchScope ? SearchScope.ALL_FIELDS : searchScope;
             return this;
         }
 
@@ -493,8 +565,46 @@ public class BrowserQuery {
             return this;
         }
 
-        public Builder showMimeTypes(@Nonnull List<String> mimeTypes) {
-            this.mimeTypes = mimeTypes;
+        /**
+         * Sets browser MIME filters: bare types such as {@code application/pdf}, partial types
+         * such as {@code image}, wildcard forms such as {@code image/*}, and parameter forms such
+         * as {@code text/plain; charset=iso-8859-1}. The parameter form matters because that is
+         * how Tika reports text files and how the value is stored in asset metadata, so a caller
+         * that reads {@code metadata.contentType} and feeds it back as a filter keeps working.
+         *
+         * <p>Each filter must be 1–255 characters drawn from {@link #MIME_TYPE_PATTERN}. This is a
+         * restricted browser filter syntax rather than a general MIME parser: a quoted parameter
+         * value such as {@code charset="utf-8"} is not accepted, since dotCMS does not produce
+         * one. Existing regex matching semantics are preserved.</p>
+         *
+         * <p>Validation is defence in depth. What prevents SQL injection is that the JSONPath
+         * expression is bound as a parameter rather than placed into the statement text, so this
+         * pattern is kept as permissive as the surrounding quoting safely allows.</p>
+         *
+         * <p>A {@code null} list means "no MIME type filter" and is normalised to an empty list.
+         * Callers such as {@code BrowserAjax} pass null on their default path, and the query
+         * builder already treats null and empty identically.</p>
+         *
+         * @throws IllegalArgumentException if any value is null or outside the filter syntax
+         */
+        public Builder showMimeTypes(final List<String> mimeTypes) {
+            if (mimeTypes == null) {
+                this.mimeTypes = List.of();
+                return this;
+            }
+            for (int i = 0; i < mimeTypes.size(); i++) {
+                final String mimeType = mimeTypes.get(i);
+                if (mimeType == null || !MIME_TYPE_PATTERN.matcher(mimeType).matches()) {
+                    // The rejected value is deliberately not echoed back to the caller or the log.
+                    throw new IllegalArgumentException("Invalid MIME type filter at index " + i
+                            + ". Allowed characters are letters, digits, space and ! # $ & ^ _ . + * / ; = ~ -");
+                }
+                if (ORPHANED_QUANTIFIER.matcher(mimeType).find()) {
+                    throw new IllegalArgumentException("Invalid MIME type filter at index " + i
+                            + ". '*' and '+' must follow the character they repeat, as in image/*");
+                }
+            }
+            this.mimeTypes = List.copyOf(mimeTypes);
             return this;
         }
 

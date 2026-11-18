@@ -42,13 +42,14 @@ either layout, so `user/123-description` links as reliably as `issue-123-descrip
 ### Linking a PR to its issue
 
 Every PR must reference an issue — `.github/workflows/issue_comp_link-issue-to-pr.yml` blocks
-the merge otherwise. Put one of these in the PR body:
+the merge otherwise. Use one of these:
 
 | Form | Effect on merge |
 |---|---|
 | `Fixes #123`, `Closes #123`, `Resolves #123` | Issue is **closed** |
 | `Fixes org/repo#123`, or the full issue URL | Cross-repo issue is closed |
 | `Refs #123`, `Part of #123`, `Related to #123`, `Contributes to #123` | Issue **stays open** |
+| PR title ends with `(#123)` | Same-repo issue **stays open** |
 
 Non-closing forms take a same-repo `#123` only — the cross-repo and full-URL variants exist
 for closing keywords.
@@ -58,9 +59,9 @@ Spec-Kit PR 1 carries the spec for an issue that PR 2 does the work for, so a cl
 there would retire the issue while the implementation is still unwritten. A closing keyword
 anywhere in the body always outranks a non-closing reference.
 
-If the body carries no reference at all, the check falls back to the branch name and appends
-`This PR fixes: #N` to the body — writing the closing keyword for you. Spell out `Refs #N`
-when you do not want that.
+If the body and title carry no reference at all, the check falls back to the branch name and
+appends `This PR fixes: #N` to the body — writing the closing keyword for you. Spell out
+`Refs #N` when you do not want that, or end the PR title with `(#N)`.
 
 ### Commit and PR Title Strategy
 

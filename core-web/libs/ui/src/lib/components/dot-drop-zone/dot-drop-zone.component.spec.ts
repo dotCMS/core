@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { SpectatorHost, createHostFactory } from '@openng/spectator/jest';
+import { SpectatorHost, createHostFactory } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 
@@ -28,10 +29,10 @@ const createMockDataTransfer = (files: File[]) => {
     return {
         items,
         files,
-        clearData: jest.fn(),
-        getData: jest.fn(),
-        setData: jest.fn(),
-        setDragImage: jest.fn()
+        clearData: vi.fn(),
+        getData: vi.fn(),
+        setData: vi.fn(),
+        setDragImage: vi.fn()
     };
 };
 
@@ -73,12 +74,12 @@ describe('DotDropZoneComponent', () => {
 
     describe('onDrop', () => {
         it('should emit fileDropped event', () => {
-            const spy = jest.spyOn(spectator.component.fileDropped, 'emit');
+            const spy = vi.spyOn(spectator.component.fileDropped, 'emit');
             const dataTransfer = createMockDataTransfer([mockFile]);
 
             const dropEvent = {
-                preventDefault: jest.fn(),
-                stopPropagation: jest.fn(),
+                preventDefault: vi.fn(),
+                stopPropagation: vi.fn(),
                 dataTransfer
             };
 
@@ -96,8 +97,8 @@ describe('DotDropZoneComponent', () => {
             const dataTransfer = createMockDataTransfer([mockFile]);
 
             const dropEvent = {
-                preventDefault: jest.fn(),
-                stopPropagation: jest.fn(),
+                preventDefault: vi.fn(),
+                stopPropagation: vi.fn(),
                 dataTransfer
             };
 
@@ -114,12 +115,12 @@ describe('DotDropZoneComponent', () => {
             });
 
             it('should emit fileDropped event', () => {
-                const spy = jest.spyOn(spectator.component.fileDropped, 'emit');
+                const spy = vi.spyOn(spectator.component.fileDropped, 'emit');
                 const dataTransfer = createMockDataTransfer([mockFile]);
 
                 const dropEvent = {
-                    preventDefault: jest.fn(),
-                    stopPropagation: jest.fn(),
+                    preventDefault: vi.fn(),
+                    stopPropagation: vi.fn(),
                     dataTransfer
                 };
 
@@ -136,14 +137,14 @@ describe('DotDropZoneComponent', () => {
 
         describe('when multiple files are being dragged', () => {
             it('should set multiFileError to true if multiplefiles are being dragged', () => {
-                const spy = jest.spyOn(spectator.component.fileDropped, 'emit');
+                const spy = vi.spyOn(spectator.component.fileDropped, 'emit');
                 const file1 = new File([''], 'filename1', { type: 'text/html' });
                 const file2 = new File([''], 'filename2', { type: 'text/html' });
                 const dataTransfer = createMockDataTransfer([file1, file2]);
 
                 const dropEvent = {
-                    preventDefault: jest.fn(),
-                    stopPropagation: jest.fn(),
+                    preventDefault: vi.fn(),
+                    stopPropagation: vi.fn(),
                     dataTransfer
                 };
 
@@ -169,12 +170,12 @@ describe('DotDropZoneComponent', () => {
             });
 
             it('should emit fileDropped event with validity fileTypeMismatch to true', () => {
-                const spy = jest.spyOn(spectator.component.fileDropped, 'emit');
+                const spy = vi.spyOn(spectator.component.fileDropped, 'emit');
                 const dataTransfer = createMockDataTransfer([mockFile]);
 
                 const dropEvent = {
-                    preventDefault: jest.fn(),
-                    stopPropagation: jest.fn(),
+                    preventDefault: vi.fn(),
+                    stopPropagation: vi.fn(),
                     dataTransfer
                 };
 
@@ -195,11 +196,11 @@ describe('DotDropZoneComponent', () => {
                 const file = new File([''], 'mockfile.png', { type: 'image/png' });
                 Object.defineProperty(file, 'size', { value: 2000000 });
                 const dataTransfer = createMockDataTransfer([file]);
-                const spy = jest.spyOn(spectator.component.fileDropped, 'emit');
+                const spy = vi.spyOn(spectator.component.fileDropped, 'emit');
 
                 const dropEvent = {
-                    preventDefault: jest.fn(),
-                    stopPropagation: jest.fn(),
+                    preventDefault: vi.fn(),
+                    stopPropagation: vi.fn(),
                     dataTransfer
                 };
 
@@ -220,7 +221,7 @@ describe('DotDropZoneComponent', () => {
 
     describe('onDragEnter', () => {
         it('should emit fileDragEnter event', () => {
-            const spy = jest.spyOn(spectator.component.fileDragEnter, 'emit');
+            const spy = vi.spyOn(spectator.component.fileDragEnter, 'emit');
             const event = new DragEvent('dragenter');
 
             spectator.component.onDragEnter(event);
@@ -231,8 +232,8 @@ describe('DotDropZoneComponent', () => {
 
         it('should prevent default', () => {
             const event = new DragEvent('dragenter');
-            const spyEventPrevent = jest.spyOn(event, 'preventDefault');
-            const spyEventStop = jest.spyOn(event, 'stopPropagation');
+            const spyEventPrevent = vi.spyOn(event, 'preventDefault');
+            const spyEventStop = vi.spyOn(event, 'stopPropagation');
 
             spectator.component.onDragEnter(event);
 
@@ -243,7 +244,7 @@ describe('DotDropZoneComponent', () => {
 
     describe('onDragOver', () => {
         it('should emit fileDragOver event', () => {
-            const spy = jest.spyOn(spectator.component.fileDragOver, 'emit');
+            const spy = vi.spyOn(spectator.component.fileDragOver, 'emit');
             const event = new DragEvent('dragover');
 
             spectator.component.onDragOver(event);
@@ -254,8 +255,8 @@ describe('DotDropZoneComponent', () => {
 
         it('should prevent default', () => {
             const event = new DragEvent('dragover');
-            const spyEventPrevent = jest.spyOn(event, 'preventDefault');
-            const spyEventStop = jest.spyOn(event, 'stopPropagation');
+            const spyEventPrevent = vi.spyOn(event, 'preventDefault');
+            const spyEventStop = vi.spyOn(event, 'stopPropagation');
 
             spectator.component.onDragOver(event);
 
@@ -266,7 +267,7 @@ describe('DotDropZoneComponent', () => {
 
     describe('onDragLeave', () => {
         it('should emit fileDragLeave event', () => {
-            const spy = jest.spyOn(spectator.component.fileDragLeave, 'emit');
+            const spy = vi.spyOn(spectator.component.fileDragLeave, 'emit');
             const event = new DragEvent('dragleave');
 
             spectator.component.onDragLeave(event);
@@ -277,8 +278,8 @@ describe('DotDropZoneComponent', () => {
 
         it('should prevent default', () => {
             const event = new DragEvent('dragleave');
-            const spyEventPrevent = jest.spyOn(event, 'preventDefault');
-            const spyEventStop = jest.spyOn(event, 'stopPropagation');
+            const spyEventPrevent = vi.spyOn(event, 'preventDefault');
+            const spyEventStop = vi.spyOn(event, 'stopPropagation');
 
             spectator.component.onDragLeave(event);
 
@@ -298,12 +299,12 @@ describe('DotDropZoneComponent', () => {
         });
 
         it('should not emit events when onDrop is called while disabled', () => {
-            const spy = jest.spyOn(spectator.component.fileDropped, 'emit');
+            const spy = vi.spyOn(spectator.component.fileDropped, 'emit');
             const dataTransfer = createMockDataTransfer([mockFile]);
 
             const dropEvent = {
-                preventDefault: jest.fn(),
-                stopPropagation: jest.fn(),
+                preventDefault: vi.fn(),
+                stopPropagation: vi.fn(),
                 dataTransfer
             };
 
@@ -313,7 +314,7 @@ describe('DotDropZoneComponent', () => {
         });
 
         it('should not emit events when onDragEnter is called while disabled', () => {
-            const spy = jest.spyOn(spectator.component.fileDragEnter, 'emit');
+            const spy = vi.spyOn(spectator.component.fileDragEnter, 'emit');
             const event = new DragEvent('dragenter');
 
             spectator.component.onDragEnter(event);
@@ -322,7 +323,7 @@ describe('DotDropZoneComponent', () => {
         });
 
         it('should not emit events when onDragOver is called while disabled', () => {
-            const spy = jest.spyOn(spectator.component.fileDragOver, 'emit');
+            const spy = vi.spyOn(spectator.component.fileDragOver, 'emit');
             const event = new DragEvent('dragover');
 
             spectator.component.onDragOver(event);
@@ -331,7 +332,7 @@ describe('DotDropZoneComponent', () => {
         });
 
         it('should not emit events when onDragLeave is called while disabled', () => {
-            const spy = jest.spyOn(spectator.component.fileDragLeave, 'emit');
+            const spy = vi.spyOn(spectator.component.fileDragLeave, 'emit');
             const event = new DragEvent('dragleave');
 
             spectator.component.onDragLeave(event);
@@ -340,8 +341,8 @@ describe('DotDropZoneComponent', () => {
         });
 
         it('should return early from onDrop without processing files when disabled', () => {
-            const preventDefaultSpy = jest.fn();
-            const stopPropagationSpy = jest.fn();
+            const preventDefaultSpy = vi.fn();
+            const stopPropagationSpy = vi.fn();
             const dataTransfer = createMockDataTransfer([mockFile]);
 
             const dropEvent = {
@@ -358,8 +359,8 @@ describe('DotDropZoneComponent', () => {
         });
 
         it('should return early from drag events without calling event methods when disabled', () => {
-            const preventDefaultSpy = jest.fn();
-            const stopPropagationSpy = jest.fn();
+            const preventDefaultSpy = vi.fn();
+            const stopPropagationSpy = vi.fn();
 
             const dragEvent = {
                 preventDefault: preventDefaultSpy,

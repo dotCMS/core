@@ -6,6 +6,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import {
     CanDeactivateGuardService,
+    DotActionUrlService,
     DotAnalyticsTrackerService,
     DotContentletLockerService,
     DotESContentService,
@@ -21,7 +22,8 @@ import {
 } from '@dotcms/data-access';
 import {
     DotExperimentExperimentResolver,
-    DotExperimentsConfigResolver
+    DotExperimentsConfigResolver,
+    DotExperimentsPanelStore
 } from '@dotcms/portlets/dot-experiments/data-access';
 import {
     DotEnterpriseLicenseResolver,
@@ -31,7 +33,6 @@ import {
 import { WINDOW } from '@dotcms/utils';
 
 import { DotEmaShellComponent } from './dot-ema-shell/dot-ema-shell.component';
-import { DotActionUrlService } from './services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from './services/dot-page-api/dot-page-api.service';
 import { editEmaGuard } from './services/guards/edit-ema.guard';
 import { UVEStore } from './store/dot-uve.store';
@@ -44,6 +45,16 @@ export const dotEmaRoutes: Route[] = [
         providers: [
             // UVEStore and its direct dependencies (needed for store to persist across child routes)
             UVEStore,
+            /**
+             * Route level, not on the shell component — and that difference is the whole feature
+             * (#37478).
+             *
+             * The shell is destroyed and rebuilt when the editor leaves for a variant, so a store
+             * provided by the component dies with it, taking the panel's memory of which
+             * experiment and which screen the editor was on. The return then had nothing to return
+             * to. Same reason UVEStore is here, and #37005 found it first.
+             */
+            DotExperimentsPanelStore,
             DotPageApiService,
             DotActionUrlService,
             DotLanguagesService,

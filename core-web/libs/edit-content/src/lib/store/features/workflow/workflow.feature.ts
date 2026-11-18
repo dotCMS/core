@@ -237,6 +237,51 @@ export function withWorkflow() {
                         switchMap((options) => {
                             const currentContentlet = store.contentlet();
 
+                            // Delete/Destroy remove the content, so the post-action refetch
+                            // below would 404. Leave the editor instead of reloading it.
+                            const firedAction = Object.values(store.currentContentActions())
+                                .flat()
+                                .find((action) => action.id === options.actionId);
+                            const deletesContent =
+                                !!firedAction?.hasDeleteActionlet ||
+                                !!firedAction?.hasDestroyActionlet;
+
+                            if (deletesContent && currentContentlet) {
+                                return workflowActionsFireService.fireTo(options).pipe(
+                                    tapResponse({
+                                        next: () => {
+                                            // Set before leaving so the unsaved-changes guard
+                                            // lets the navigation through.
+                                            patchState(store, {
+                                                state: ComponentStatus.LOADED,
+                                                error: null,
+                                                workflowActionSuccess: currentContentlet
+                                            });
+
+                                            messageService.clear();
+                                            messageService.add({
+                                                severity: 'success',
+                                                summary: dotMessageService.get(
+                                                    'edit.content.success.workflow.title'
+                                                ),
+                                                detail: dotMessageService.get(
+                                                    'edit.content.success.workflow.message'
+                                                )
+                                            });
+
+                                            host.leaveDeletedContent(currentContentlet.contentType);
+                                        },
+                                        error: (error: HttpErrorResponse) => {
+                                            patchState(store, {
+                                                state: ComponentStatus.LOADED,
+                                                error: 'Error firing workflow action'
+                                            });
+                                            dotHttpErrorManagerService.handle(error);
+                                        }
+                                    })
+                                );
+                            }
+
                             return workflowActionsFireService.fireTo(options).pipe(
                                 switchMap((updatedContentlet) => {
                                     // Use current contentlet if response is empty (reset action)

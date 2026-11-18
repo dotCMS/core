@@ -1,8 +1,23 @@
 // STYLE EXCEPTION — dot-edit-content-file-field
-// Project standard: prefer Tailwind utilities in templates.
-// This feature is the documented exception: it ships as a legacy web component
-// (dotcms-binary-field-builder) without Tailwind in its bundle. Use plain SCSS/BEM
-// here so styles are always embedded with the component in both Angular and Dojo.
+// Project standard: prefer Tailwind utilities in templates, and let the global
+// `.form` / `.field` system in apps/dotcms-ui/src/style.css own field layout,
+// label typography and hint/error colour (see docs/frontend/STYLING_STANDARDS.md).
+//
+// This subtree is the documented exception to BOTH, and #37460 kept it deliberately
+// while removing every other hand-rolled form style in libs/edit-content:
+//
+//   1. It compiles into dotcms-binary-field-builder as well as dotcms-ui. That bundle
+//      loads neither apps/dotcms-ui/src/style.css nor Tailwind — it has no
+//      .postcssrc.json — so a utility class or a `.form` class here resolves to
+//      nothing at all in the legacy Dojo editor.
+//   2. Both dialogs open with `appendTo: 'body'` (dot-file-field.component.ts), which
+//      puts them outside the editor's `<form class="form">`. Every rule in the global
+//      system is descendant-scoped to `.form`, so none of them reach this DOM even in
+//      dotcms-ui.
+//
+// Plain SCSS/BEM here, so the styles are embedded with the component and render the
+// same in both hosts. Deleting this file does not fall back to the global system —
+// it falls back to unstyled.
 
 :host {
     display: block;

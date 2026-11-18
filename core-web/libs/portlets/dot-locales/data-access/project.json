@@ -5,22 +5,5 @@
     "prefix": "lib",
     "projectType": "library",
     "tags": ["type:data-access", "scope:dotcms-ui", "portlet:languages"],
-    "targets": {
-        "test": {
-            "outputs": [
-                "{workspaceRoot}/coverage/{projectRoot}",
-                "{workspaceRoot}/target/core-web-reports"
-            ],
-            "options": {
-                "passWithNoTests": true
-            },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "verbose": false,
-                    "coverage": true
-                }
-            }
-        }
-    }
+    "targets": {}
 }

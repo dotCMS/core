@@ -1,6 +1,10 @@
 package com.dotcms.publisher.bundle.business;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.DotPublisherException;
@@ -8,21 +12,27 @@ import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
+import com.dotcms.publisher.business.PublishQueueElement;
+import com.dotcms.publisher.business.PublisherAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -32,6 +42,8 @@ public class BundleAPITest {
 
     private static User adminUser;
     private static BundleAPI bundleAPI;
+    private static ContentType assetContentType;
+    private static final List<String> createdBundleIds = new ArrayList<>();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -39,6 +51,18 @@ public class BundleAPITest {
         IntegrationTestInitService.getInstance().init();
         adminUser = APILocator.systemUser();
         bundleAPI = APILocator.getBundleAPI();
+        assetContentType = new ContentTypeDataGen().nextPersisted();
+    }
+
+    @AfterClass
+    public static void cleanup() {
+        for (final String bundleId : createdBundleIds) {
+            try {
+                bundleAPI.deleteBundleAndDependencies(bundleId, adminUser);
+            } catch (final Exception e) {
+                // the bundle may already be gone
+            }
+        }
     }
 
     private String insertPublishingBundle(final String userId, final Date publishDate)
@@ -261,6 +285,113 @@ public class BundleAPITest {
         bundleAPI.generateTarGzipBundleFile(bundle);
         assertTrue(bundle.bundleTgzExists());
         PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
+    }
+
+    /**
+     * Given: a bundle owned by one back-end user, with one queued asset
+     * When: a different back-end user, who is not a CMS Administrator, removes the asset
+     * Then: the change is rejected and the asset stays in the bundle
+     */
+    @Test
+    public void test_deleteAssetFromBundleAndAuditStatus_byNonOwner_isRejected() throws Exception {
+        final User owner = new UserDataGen().nextPersisted();
+        final User otherUser = new UserDataGen().nextPersisted();
+        final String bundleId = insertPublishingBundle(owner.getUserId(), null);
+        createdBundleIds.add(bundleId);
+        final String assetId = addQueuedAsset(bundleId);
+
+        try {
+            bundleAPI.deleteAssetFromBundleAndAuditStatus(assetId, bundleId, otherUser);
+            fail("A user who does not own the bundle must not change its contents");
+        } catch (final DotSecurityException e) {
+            // expected
+        }
+
+        assertTrue(queuedAssets(bundleId).contains(assetId));
+    }
+
+    /**
+     * Given: a bundle owned by a back-end user who is not a CMS Administrator, with one queued asset
+     * When: the owner removes the asset
+     * Then: the asset is removed from the bundle
+     */
+    @Test
+    public void test_deleteAssetFromBundleAndAuditStatus_byOwner_removesAsset() throws Exception {
+        final User owner = new UserDataGen().nextPersisted();
+        final String bundleId = insertPublishingBundle(owner.getUserId(), null);
+        createdBundleIds.add(bundleId);
+        final String assetId = addQueuedAsset(bundleId);
+
+        bundleAPI.deleteAssetFromBundleAndAuditStatus(assetId, bundleId, owner);
+
+        assertFalse(queuedAssets(bundleId).contains(assetId));
+    }
+
+    /**
+     * Given: a bundle owned by a back-end user, with one queued asset
+     * When: a CMS Administrator who does not own the bundle removes the asset
+     * Then: the asset is removed from the bundle
+     */
+    @Test
+    public void test_deleteAssetFromBundleAndAuditStatus_byAdmin_removesAsset() throws Exception {
+        final User owner = new UserDataGen().nextPersisted();
+        final String bundleId = insertPublishingBundle(owner.getUserId(), null);
+        createdBundleIds.add(bundleId);
+        final String assetId = addQueuedAsset(bundleId);
+
+        bundleAPI.deleteAssetFromBundleAndAuditStatus(assetId, bundleId, TestUserUtils.getAdminUser());
+
+        assertFalse(queuedAssets(bundleId).contains(assetId));
+    }
+
+    /**
+     * Given: a bundle with one queued asset
+     * When: the asset is removed with no user
+     * Then: the change is rejected and the asset stays in the bundle
+     */
+    @Test
+    public void test_deleteAssetFromBundleAndAuditStatus_nullUser_isRejected() throws Exception {
+        final User owner = new UserDataGen().nextPersisted();
+        final String bundleId = insertPublishingBundle(owner.getUserId(), null);
+        createdBundleIds.add(bundleId);
+        final String assetId = addQueuedAsset(bundleId);
+
+        try {
+            bundleAPI.deleteAssetFromBundleAndAuditStatus(assetId, bundleId, null);
+            fail("A change with no user must be rejected");
+        } catch (final DotSecurityException e) {
+            // expected
+        }
+
+        assertTrue(queuedAssets(bundleId).contains(assetId));
+    }
+
+    /**
+     * Given: a bundle id that does not exist
+     * When: a back-end user who is not a CMS Administrator removes an asset from it
+     * Then: the bundle is reported as not found
+     */
+    @Test(expected = NotFoundInDbException.class)
+    public void test_deleteAssetFromBundleAndAuditStatus_unknownBundle_isNotFound() throws Exception {
+        final User user = new UserDataGen().nextPersisted();
+
+        bundleAPI.deleteAssetFromBundleAndAuditStatus(
+                UUIDGenerator.generateUuid(), UUIDGenerator.generateUuid(), user);
+    }
+
+    private String addQueuedAsset(final String bundleId) throws Exception {
+        final String assetId = new ContentletDataGen(assetContentType).nextPersisted().getIdentifier();
+        PublisherAPI.getInstance().saveBundleAssets(List.of(assetId), bundleId, TestUserUtils.getAdminUser());
+        assertTrue(queuedAssets(bundleId).contains(assetId));
+        return assetId;
+    }
+
+    private List<String> queuedAssets(final String bundleId) throws Exception {
+        final List<String> assets = new ArrayList<>();
+        for (final PublishQueueElement element : PublisherAPI.getInstance().getQueueElementsByBundleId(bundleId)) {
+            assets.add(element.getAsset());
+        }
+        return assets;
     }
 
 }

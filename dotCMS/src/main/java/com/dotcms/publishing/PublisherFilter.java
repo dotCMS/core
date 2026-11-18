@@ -68,4 +68,31 @@ public interface PublisherFilter {
      * @return boolean value of the dependencies param.
      */
     boolean isDependencies();
+
+    /**
+     * Indicates whether related content should also be followed one extra level beyond the
+     * direct relationships already covered by {@link #isRelationships()} — e.g. pushing a
+     * Contentlet A related to B, where B is also related to C, additionally includes C.
+     * Defaults to {@code false} so existing implementers of this interface (including
+     * out-of-repo plugins) keep compiling and keep today's shallower behavior unless they
+     * explicitly opt in.
+     *
+     * @return {@code true} if second-level relationship traversal is enabled.
+     */
+    default boolean isRelationshipsSecondLevel() {
+        return false;
+    }
+
+    /**
+     * Returns how many relationship levels to follow when building the bundle: 1 for direct
+     * relationships only, 2 for one extra level, N for N levels, and
+     * {@link FilterDescriptor#RELATIONSHIPS_DEPTH_UNLIMITED} for no limit. The default is
+     * worked out from {@link #isRelationshipsSecondLevel()}, so implementations that don't
+     * override it (including out-of-repo plugins) keep their current behavior.
+     *
+     * @return The configured relationship traversal depth.
+     */
+    default int getRelationshipsDepth() {
+        return isRelationshipsSecondLevel() ? 2 : 1;
+    }
 }

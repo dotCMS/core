@@ -62,6 +62,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.business.DotContentletValidationException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
@@ -3061,6 +3062,24 @@ public class WorkflowResource {
         }
     }
 
+    /**
+     * Fires a workflow action on a contentlet and returns the resulting contentlet to the caller.
+     * Story Block references in the returned contentlet keep their data only when the caller can
+     * read the contentlet they point to.
+     *
+     * @param request        The current request.
+     * @param fireActionForm The form sent by the caller, if any.
+     * @param user           The user firing the action.
+     * @param contentlet     The contentlet the action is fired on.
+     * @param actionId       The workflow action to fire, or {@code null} when a system action
+     *                       command decides it.
+     * @param fireCommandOpt The system action command to use instead of the workflow API, if any.
+     *
+     * @return A 200 response with the resulting contentlet, and any advisory messages.
+     *
+     * @throws DotDataException     An error occurred when firing the action.
+     * @throws DotSecurityException The user cannot fire the action.
+     */
     private Response fireAction(final HttpServletRequest request,
                                 final FireActionForm fireActionForm,
                                 final User user,
@@ -3118,9 +3137,15 @@ public class WorkflowResource {
         final Contentlet basicContentlet = fireCommandOpt.isPresent()?
                 fireCommandOpt.get().fire(contentlet, this.needSave(fireActionForm), formBuilder.build()):
                 this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build());
+        // The saved contentlet holds the Story Block references as stored; the caller only gets
+        // the ones they can read. The multiple-contentlet endpoints get here inside a transaction,
+        // so the reader is passed explicitly
         final Contentlet hydratedContentlet = Objects.nonNull(basicContentlet)?
                 new DotTransformerBuilder().contentResourceOptions(false)
-                    .content(basicContentlet).build().hydrate().get(0): basicContentlet;
+                    .content((Contentlet) APILocator.getStoryBlockAPI()
+                            .limitReferencesToReader(new Contentlet(basicContentlet), user,
+                                    pageMode.respectAnonPerms).getValue())
+                    .build().hydrate().get(0): basicContentlet;
 
         if (Objects.nonNull(basicContentlet) && Objects.nonNull(basicContentlet.getVariantId())) {
             hydratedContentlet.setVariantId(basicContentlet.getVariantId());
@@ -6208,27 +6233,36 @@ public class WorkflowResource {
     }
 
     /**
-     * Returns the status of a specific piece of Content in the Workflow it is assigned to. In
-     * summary:
-     * <ul>
-     *     <li>The Workflow Scheme that the Contentlet is in.</li>
-     *     <li>The Step that the Contentlet is in.</li>
-     *     <li>The User assigned to such a Step.</li>
-     * </ul>
+     * Returns the Workflow timeline of a specific piece of Content: the comments left on its
+     * Workflow task, interleaved with its Workflow change history, newest first.
+     * <p>
+     * A Contentlet that has never been through a Workflow has no task, and therefore an empty
+     * timeline. A Site never has one at all, because Workflow actions are prohibited on the Host
+     * Content Type. Both cases return an empty list rather than an error.
+     * <p>
+     * A Workflow task is per language — {@code findTaskByContentlet} keys on identifier <i>and</i>
+     * language — so this timeline is the one belonging to the language version being viewed. A
+     * Contentlet whose task and comments live under another language therefore returns an empty
+     * timeline here, not that other language's history.
+     * <p>
      * Here's an example of how to use this endpoint:
      * <pre>
-     *     http://localhost:8080/api/v1/workflow/status/{contentletInode}
+     *     http://localhost:8080/api/v1/workflow/tasks/history/comments/{contentletIdentifier}
      * </pre>
      *
-     * @param request         The current instance of the {@link HttpServletRequest}.
-     * @param response        The current instance of the {@link HttpServletResponse}.
-     * @param contentletIdentifier The inode of the Contentlet whose status will be checked.
+     * @param request              The current instance of the {@link HttpServletRequest}.
+     * @param response             The current instance of the {@link HttpServletResponse}.
+     * @param contentletIdentifier The identifier of the Contentlet whose timeline is requested.
+     * @param language             The language version of the Contentlet to inspect, or {@code -1}
+     *                             to resolve it from the request.
      *
-     * @return The status information of the Contentlet in the Workflow it is assigned to.
+     * @return The Contentlet's Workflow comments and change history, empty if it has no task.
      *
-     * @throws DotDataException          The specified Contentlet Inode was not found.
-     * @throws DotSecurityException      The User calling this endpoint does not have required
-     *                                   permissions to do so.
+     * @throws DoesNotExistException     No Contentlet with that identifier exists that the User
+     *                                   can read; see {@link DoesNotExistException}.
+     * @throws DotDataException          The Contentlet, its task or its permissions could not be
+     *                                   loaded.
+     * @throws DotSecurityException      The User is not allowed to call this endpoint.
      * @throws InvocationTargetException Failed to transform the {@link WorkflowTask} data for this
      *                                   view.
      * @throws IllegalAccessException    Failed to transform the {@link WorkflowTask} data for this
@@ -6281,12 +6315,26 @@ public class WorkflowResource {
         final Optional<Contentlet> currentContentlet =  languageId <= 0?
                 this.workflowHelper.getContentletByIdentifier(contentletIdentifier, mode, initDataObject.getUser(),
                         ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId()):
-                this.contentletAPI.findContentletByIdentifierOrFallback
-                        (contentletIdentifier, mode.showLive, languageId, initDataObject.getUser(), mode.respectAnonPerms);
+                findInLanguage(contentletIdentifier, languageId, user, mode);
 
-        if (currentContentlet.isPresent()) {
+        if (currentContentlet.isPresent() && canRead(currentContentlet.get(), user)) {
 
             final WorkflowTask currentWorkflowTask = this.workflowAPI.findTaskByContentlet(currentContentlet.get());
+            if (null == currentWorkflowTask) {
+                // A Contentlet that has never been through a Workflow has no task, and a Site never
+                // can have one at all, since Workflow actions are prohibited on the Host Content
+                // Type. That is an empty timeline, not an error.
+                //
+                // Note this is per LANGUAGE: findTaskByContentlet keys on identifier AND
+                // languageId, so a Contentlet whose task lives under another language resolves
+                // here too. That is the intended reading - the timeline belongs to the language
+                // version being viewed - and it is pinned by
+                // History_Comments_Are_Scoped_To_The_Requested_Language.
+                Logger.debug(this, () -> String.format(
+                        "No Workflow task for Contentlet '%s' in language '%d'; returning an empty timeline",
+                        contentletIdentifier, currentContentlet.get().getLanguageId()));
+                return new ResponseEntityWorkflowHistoryCommentsView(List.of());
+            }
             final List<WorkflowTimelineItem> workflowComments = this.workflowAPI.getCommentsAndChangeHistory(currentWorkflowTask);
             final List<WorkflowTimelineItemView> workflowTimelineItemViews = workflowComments.stream()
                     .map(this::toWorkflowTimelineItemView)
@@ -6295,6 +6343,48 @@ public class WorkflowResource {
         }
 
         throw new DoesNotExistException("Contentlet with identifier " + contentletIdentifier + " does not exist.");
+    }
+
+    /**
+     * Tells whether the user can read the contentlet a workflow history or comment request refers
+     * to. A contentlet the user cannot read is answered the same way as an unknown identifier.
+     * <p>
+     * These endpoints serve back-end users only, so front-end and anonymous roles are not taken
+     * into account, whatever page mode the request asks for. That makes this check stricter than
+     * the lookup that resolved the contentlet, which follows the page mode.
+     *
+     * @param contentlet the {@link Contentlet} the request resolved to
+     * @param user       the {@link User} making the request
+     * @return {@code true} when the user has READ on the contentlet
+     * @throws DotDataException if the permissions cannot be loaded
+     */
+    private boolean canRead(final Contentlet contentlet, final User user) throws DotDataException {
+        return this.permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ,
+                user, false);
+    }
+
+    /**
+     * Finds the version of a contentlet in the given language, falling back to the default
+     * language when the content type allows it. A contentlet the user is not allowed to read is
+     * reported as not found, the same as an unknown identifier.
+     *
+     * @param identifier the contentlet identifier
+     * @param languageId the language to look in
+     * @param user       the {@link User} making the request
+     * @param mode       the {@link PageMode} of the request, which decides live or working version
+     * @return the {@link Contentlet}, or empty when it does not exist or the user cannot read it
+     */
+    private Optional<Contentlet> findInLanguage(final String identifier, final long languageId,
+            final User user, final PageMode mode) {
+        try {
+            return this.contentletAPI.findContentletByIdentifierOrFallback(identifier, mode.showLive,
+                    languageId, user, mode.respectAnonPerms);
+        } catch (final DotContentletStateException e) {
+            if (e.getCause() instanceof DotSecurityException) {
+                return Optional.empty();
+            }
+            throw e;
+        }
     }
 
     private WorkflowTimelineItemView toWorkflowTimelineItemView(final WorkflowTimelineItem wfTimeLine) {
@@ -6326,11 +6416,20 @@ public class WorkflowResource {
     }
 
     /**
-     * Creates a new workflow comment
+     * Adds a comment to the workflow task of a contentlet. The user must be able to read the
+     * contentlet.
      *
-     * @param request HttpServletRequest
-     * @param workflowSchemeForm WorkflowSchemeForm
-     * @return Response
+     * @param request             the current {@link HttpServletRequest}
+     * @param response            the current {@link HttpServletResponse}
+     * @param contentletId        identifier of the {@link Contentlet} to comment on
+     * @param language            language version of the contentlet, or {@code -1} to resolve it
+     *                            from the request
+     * @param workflowCommentForm the comment to add
+     * @return the saved comment
+     * @throws DoesNotExistException no contentlet with that identifier exists that the user can
+     *                               read
+     * @throws DotDataException      if the contentlet or its task cannot be loaded
+     * @throws DotSecurityException  if the user is not allowed to call this endpoint
      */
     @POST
     @Path("/{contentletId}/comments")
@@ -6387,9 +6486,8 @@ public class WorkflowResource {
         final Optional<Contentlet> currentContentlet =  languageId <= 0?
                 this.workflowHelper.getContentletByIdentifier(contentletId, mode, initDataObject.getUser(),
                         ()->WebAPILocator.getLanguageWebAPI().getLanguage(request).getId()):
-                this.contentletAPI.findContentletByIdentifierOrFallback
-                        (contentletId, mode.showLive, languageId, initDataObject.getUser(), mode.respectAnonPerms);
-        if (currentContentlet.isPresent()) {
+                findInLanguage(contentletId, languageId, user, mode);
+        if (currentContentlet.isPresent() && canRead(currentContentlet.get(), user)) {
 
             final WorkflowTask task = this.workflowAPI.findTaskByContentlet(currentContentlet.get());
             final WorkflowComment taskComment = new WorkflowComment();

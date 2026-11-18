@@ -6,7 +6,7 @@ import NotFound from "@/app/not-found";
 import { BlogListingPage } from "@/views/BlogListingPage";
 import { ErrorPage } from "@/components/error";
 import { getDotCMSPage } from "@/utils/getDotCMSPage";
-import { getErrorStatus, getPageTitle, isPageError } from "@/utils/pageResponse";
+import { getErrorDetails, getPageTitle, isPageError } from "@/utils/pageResponse";
 
 export async function generateMetadata(): Promise<Metadata> {
     const pageResponse = await getDotCMSPage(`/blog`);
@@ -33,7 +33,7 @@ export default async function Home({ searchParams }: BlogPageProps) {
             return <BlogListingPage pageContent={graphql ? { graphql } : undefined} />;
         }
 
-        return <ErrorPage error={{ status: getErrorStatus(pageResponse.error) }} />;
+        return <ErrorPage error={getErrorDetails(pageResponse.error)} />;
     }
 
     const vanityUrl = pageResponse.pageAsset?.vanityUrl;

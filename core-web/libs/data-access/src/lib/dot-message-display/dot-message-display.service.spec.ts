@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { describe, it, expect } from '@jest/globals';
 import { Subject } from 'rxjs';
+import { describe, expect, it, vi } from 'vitest';
 
 import { TestBed } from '@angular/core/testing';
 
@@ -14,7 +14,7 @@ import { DotEventsSocket } from '../dot-websocket/dot-events-socket.service';
 describe('DotMessageDisplayService', () => {
     const messageSubject = new Subject<unknown>();
     const mockDotEventsSocket = {
-        on: jest.fn().mockReturnValue(messageSubject.asObservable())
+        on: vi.fn().mockReturnValue(messageSubject.asObservable())
     };
 
     let dotMessageDisplayService: DotMessageDisplayService;

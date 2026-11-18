@@ -1,13 +1,20 @@
 <nav class="flex flex-col items-center" aria-label="Page editor navigation">
     @for (item of items(); track item.id) {
-        <div class="w-full p-2 flex justify-center relative">
+        <div class="relative flex w-full justify-center p-2">
             <span
-                class="absolute left-0 inset-y-0 w-1 bg-primary"
+                class="absolute inset-y-0 left-0 w-1 bg-primary"
                 [style.opacity]="item.href === $activeHref() ? 1 : 0"></span>
+            <!--
+                `[ariaLabel]`, PrimeNG's own input, never `[attr.aria-label]`: the latter lands on
+                the `<p-button>` host, which is not the focusable element, leaving the real
+                `<button>` — whose only content is an icon glyph — with no accessible name at all.
+                Every item in this bar was in that state, so a screen reader announced six unnamed
+                buttons, and `getByRole('button', { name })` could not find any of them either.
+            -->
             <p-button
                 [text]="true"
                 [disabled]="item.isDisabled"
-                [attr.aria-label]="item.label | dm"
+                [ariaLabel]="item.label | dm"
                 [attr.aria-disabled]="item.isDisabled ? 'true' : null"
                 [pTooltip]="(item.isDisabled && item.tooltip ? item.tooltip : item.label) | dm"
                 (click)="navigate(item)"

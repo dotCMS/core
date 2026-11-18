@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { ApplicationRef } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
@@ -49,7 +55,7 @@ describe('DotAgentActivityLogComponent', () => {
             // jsdom does no layout: it reports `overflowY` as undefined and both scroll
             // dimensions as 0, so the component's `scrollParent` walk would never find a
             // scroller. Stub the three things that walk reads.
-            jest.spyOn(window, 'getComputedStyle').mockImplementation(
+            vi.spyOn(window, 'getComputedStyle').mockImplementation(
                 (el) =>
                     (el === host
                         ? { overflowY: 'auto' }
@@ -90,7 +96,7 @@ describe('DotAgentActivityLogComponent', () => {
         }
 
         afterEach(() => {
-            jest.restoreAllMocks();
+            vi.restoreAllMocks();
         });
 
         it('pins to the bottom while the user is following along', () => {

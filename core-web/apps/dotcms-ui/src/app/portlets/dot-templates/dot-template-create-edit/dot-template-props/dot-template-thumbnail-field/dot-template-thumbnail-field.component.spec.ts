@@ -1,4 +1,5 @@
 import { of, Subject, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Component, CUSTOM_ELEMENTS_SCHEMA, DebugElement, inject as inject_1 } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -96,7 +97,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             component = fixture.componentInstance;
             dotTempFileUploadService = TestBed.inject(DotTempFileUploadService);
             dotWorkflowActionsFireService = TestBed.inject(DotWorkflowActionsFireService);
-            jest.spyOn(component, 'propagateChange');
+            vi.spyOn(component, 'propagateChange');
         });
 
         it('should have basic attr', () => {
@@ -119,7 +120,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
 
         it('should not fetch or disable when writeValue receives an empty id', () => {
             dotCrudService = TestBed.inject(DotCrudService);
-            jest.spyOn(dotCrudService, 'getDataById');
+            vi.spyOn(dotCrudService, 'getDataById');
 
             component.writeValue('');
             fixture.detectChanges();
@@ -197,8 +198,8 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             });
 
             it('should show error for invalid image url', () => {
-                jest.spyOn(dotWorkflowActionsFireService, 'publishContentletAndWaitForIndex');
-                jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                vi.spyOn(dotWorkflowActionsFireService, 'publishContentletAndWaitForIndex');
+                vi.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
                     of([
                         {
                             fileName: '',
@@ -235,11 +236,11 @@ describe('DotTemplateThumbnailFieldComponent', () => {
             });
 
             it('should show default error', () => {
-                jest.spyOn(
+                vi.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
                 ).mockReturnValue(throwError(() => ({})));
-                jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                vi.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
                     of([
                         {
                             fileName: '',
@@ -286,11 +287,11 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                     name: 'Something',
                     identifier: '456'
                 };
-                jest.spyOn(
+                vi.spyOn(
                     dotWorkflowActionsFireService,
                     'publishContentletAndWaitForIndex'
                 ).mockReturnValue(of(mock));
-                jest.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
+                vi.spyOn(dotTempFileUploadService, 'upload').mockReturnValue(
                     of([
                         {
                             fileName: '',
@@ -341,7 +342,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
         });
 
         it('should set asset', () => {
-            jest.spyOn(dotCrudService, 'getDataById').mockReturnValue(
+            vi.spyOn(dotCrudService, 'getDataById').mockReturnValue(
                 of([
                     {
                         ...dotcmsContentletMock,
@@ -372,7 +373,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
                 }[]
             >();
 
-            jest.spyOn(dotCrudService, 'getDataById').mockReturnValue(response$.asObservable());
+            vi.spyOn(dotCrudService, 'getDataById').mockReturnValue(response$.asObservable());
 
             fixture.detectChanges();
 
@@ -405,7 +406,7 @@ describe('DotTemplateThumbnailFieldComponent', () => {
         });
 
         it('should not call getDataById when form control value is empty', () => {
-            jest.spyOn(dotCrudService, 'getDataById');
+            vi.spyOn(dotCrudService, 'getDataById');
 
             field.writeValue('');
 

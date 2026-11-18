@@ -1,65 +1,68 @@
 package com.dotcms;
 
-import com.dotcms.ai.workflow.OpenAIAutoTagActionletTest;
+import com.dotcms.analytics.ContentAnalyticsPersistenceModeIT;
+import com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyResourceIntegrationTest;
 import com.dotcms.business.interceptor.InterceptorHandlerTest;
-import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
-import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
-import com.dotcms.contenttype.test.DotAssetAPITest;
-import com.dotcms.dotpubsub.PostgresPubSubImplTest;
-import com.dotcms.ema.EMAWebInterceptorTest;
-import com.dotcms.enterprise.cluster.ClusterFactoryTest;
+import com.dotcms.content.elasticsearch.business.ContentletCheckinDestinationPermissionTest;
+import com.dotcms.enterprise.publishing.remote.handler.FolderHandlerTest;
+import com.dotcms.enterprise.rules.RulesAPIImplParentChecksIntegrationTest;
+import com.dotcms.inference.rest.ChatCompletionsStreamingTest;
+import com.dotcms.inference.rest.ChatCompletionsTest;
+import com.dotcms.inference.rest.InferenceAuthorizationTest;
+import com.dotcms.inference.rest.InferenceClientConformanceTest;
+import com.dotcms.inference.rest.InferenceEmbeddingsTest;
+import com.dotcms.inference.rest.InferenceFallbackTest;
+import com.dotcms.inference.rest.InferenceImagesTest;
+import com.dotcms.inference.rest.InferenceLoggingTest;
+import com.dotcms.inference.rest.InferenceModelValidationTest;
+import com.dotcms.inference.rest.InferenceModelsTest;
+import com.dotcms.inference.rest.InferenceSiteIsolationTest;
+import com.dotcms.inference.rest.InferenceSiteResolutionTest;
+import com.dotcms.inference.rest.InferenceTestsAreRegisteredTest;
 import com.dotcms.junit.MainBaseSuite;
-import com.dotcms.mock.request.CachedParameterDecoratorTest;
-import com.dotcms.publisher.bundle.business.BundleFactoryTest;
-import com.dotcms.publisher.business.PublishAuditAPITest;
-import com.dotcms.publisher.util.PushedAssetUtilTest;
-import com.dotcms.publishing.PublisherFilterImplTest;
-import com.dotcms.publishing.PushPublishFiltersInitializerTest;
-import com.dotcms.rendering.velocity.directive.DotParseTest;
-import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
-import com.dotcms.rest.BundleResourceTest;
-import com.dotcms.rest.api.v1.apps.AppsResourceTest;
-import com.dotcms.rest.api.v1.folder.FolderResourceTest;
+import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtilTest;
+import com.dotcms.rest.api.v1.authentication.ApiTokenResourceTest;
+import com.dotcms.rendering.js.JsModuleImportIntegrationTest;
+import com.dotcms.rendering.js.viewtools.UserJsViewToolTest;
+import com.dotcms.rendering.velocity.viewtools.CMSUserToolTest;
+import com.dotcms.rest.api.v1.content.ContentRelationshipsResourceIntegrationTest;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
-import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
-import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
-import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
-import com.dotcms.saml.SamlConfigurationServiceTest;
-import com.dotcms.security.apps.AppsAPIImplTest;
-import com.dotcms.security.apps.AppsCacheImplTest;
-import com.dotcms.translate.GoogleTranslationServiceIntegrationTest;
-import com.dotmarketing.image.focalpoint.FocalPointAPITest;
-import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactoryTest;
-import com.dotmarketing.portlets.containers.business.ContainerFactoryImplTest;
+import com.dotcms.rest.api.v1.sites.ruleengine.RuleRefusedActionsIntegrationTest;
+import com.dotcms.rest.api.v1.sites.ruleengine.RuleResourcesAccessIntegrationTest;
+import com.dotcms.variant.VariantPromotePermissionTest;
+import com.dotmarketing.business.UserDeletionCacheInvalidationTest;
+import com.dotmarketing.image.vips.VipsResizeImageFilterIntegrationTest;
+import com.dotmarketing.image.vips.VipsResizeOrientationIntegrationTest;
+import com.dotmarketing.image.vips.VipsResizePhotoIntegrationTest;
+import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
+import com.dotmarketing.portlets.cmsmaintenance.action.ViewCMSMaintenanceActionTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
-import com.dotmarketing.portlets.contentlet.model.IntegrationResourceLinkTest;
-import com.dotmarketing.portlets.fileassets.business.FileAssetAPIImplIntegrationTest;
-import com.dotmarketing.portlets.fileassets.business.FileAssetFactoryIntegrationTest;
-import com.dotmarketing.portlets.folders.model.FolderTest;
-import com.dotmarketing.portlets.templates.business.TemplateFactoryImplTest;
-import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
-import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
-import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
-import com.dotmarketing.startup.runonce.Task05225RemoveLoadRecordsToIndexTest;
-import com.dotmarketing.startup.runonce.Task05305AddPushPublishFilterColumnTest;
-import com.dotmarketing.startup.runonce.Task05350AddDotSaltClusterColumnTest;
-import com.dotmarketing.startup.runonce.Task240131UpdateLanguageVariableContentTypeTest;
-import com.dotmarketing.util.HashBuilderTest;
-import com.dotmarketing.util.TestConfig;
-import com.liferay.portal.language.LanguageUtilTest;
-import org.apache.felix.framework.OSGIUtilTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 
-/**
- * NOTE: LET'S AVOID ADDING MORE TESTS TO THIS SUITE, THIS ONE IS TAKING ALMOST TWICE THE TIME TO RUN THAN THE OTHERS
- */
+/** JUnit 4 integration-test shard; balance additions using current CI runtime measurements. */
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
-
+        ChatCompletionsTest.class,
+        ChatCompletionsStreamingTest.class,
+        com.dotmarketing.portlets.contentlet.business.HostFactoryImplDefaultSiteTest.class,
+        InferenceAuthorizationTest.class,
+        InferenceClientConformanceTest.class,
+        InferenceEmbeddingsTest.class,
+        InferenceFallbackTest.class,
+        InferenceImagesTest.class,
+        InferenceLoggingTest.class,
+        InferenceModelsTest.class,
+        VipsResizeImageFilterIntegrationTest.class,
+        VipsResizeOrientationIntegrationTest.class,
+        VipsResizePhotoIntegrationTest.class,
+        InferenceModelValidationTest.class,
+        InferenceSiteIsolationTest.class,
+        InferenceTestsAreRegisteredTest.class,
+        InferenceSiteResolutionTest.class,
         // Data-scanning tests run FIRST on purpose.
         // Integration tests accumulate content and never clean up, so anything
         // that walks the whole dataset (findAllContent) costs O(all content
@@ -68,6 +71,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.factories.MultiTreeAPITest.class,
 
         com.dotcms.rest.api.v1.workflow.WorkflowResourceResponseCodeIntegrationTest.class,
+        com.dotcms.rest.api.v1.workflow.WorkflowResourceCommentsReadAccessTest.class,
         com.dotcms.rest.api.v1.workflow.WorkflowResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.workflow.WorkflowResourceLockUnlockIntegrationTest.class,
         com.dotcms.rest.api.v1.workflow.WorkflowResourceLicenseIntegrationTest.class,
@@ -92,7 +96,9 @@ import org.junit.runners.Suite.SuiteClasses;
         ContainerStructureFinderStrategyResolverTest.class,
         com.dotmarketing.portlets.contentlet.business.ContentletAPITest.class,
         com.dotmarketing.portlets.contentlet.model.ContentletIntegrationTest.class,
+        com.dotcms.rest.api.v1.authentication.AuthenticationResourceStoredPasswordTest.class,
         com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformerTest.class,
+        com.dotcms.content.elasticsearch.business.ContentletPermissionReplacementIntegrationTest.class,
         com.dotmarketing.portlets.contentlet.transform.ContentletTransformerTest.class,
         com.dotmarketing.portlets.contentlet.transform.WidgetViewStrategyTest.class,
         com.dotmarketing.portlets.contentlet.ajax.ContentletAjaxTest.class,
@@ -101,23 +107,73 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.workflows.business.SaveContentActionletTest.class,
         com.dotmarketing.portlets.workflows.business.WorkflowAPIMultiLanguageTest.class,
         com.dotmarketing.portlets.workflows.business.WorkflowAPITest.class,
+        RulesAPIImplParentChecksIntegrationTest.class,
+        RuleResourcesAccessIntegrationTest.class,
+        RuleRefusedActionsIntegrationTest.class,
         com.dotmarketing.portlets.workflows.model.WorkflowSearcherTest.class,
+        com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionIntegrationTest.class,
         com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMappingTest.class,
+        com.dotcms.rest.api.v1.authentication.ForgotPasswordResourceIntegrationTest.class,
         com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.SaveContentActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.SaveContentActionletWithTagsTest.class,
         com.dotmarketing.portlets.workflows.actionlet.CopyActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletTest.class,
+        com.dotcms.rest.api.v1.page.PageResourceReadAccessTest.class,
+        com.dotcms.rest.api.v1.user.PasswordPolicyIntegrationTest.class,
         com.dotmarketing.portlets.personas.business.PersonaAPITest.class,
         com.dotmarketing.portlets.personas.business.DeleteMultiTreeUsedPersonaTagJobTest.class,
+        com.dotcms.rest.api.v1.maintenance.MaintenanceToolsAccessIntegrationTest.class,
         com.dotmarketing.portlets.links.business.MenuLinkAPITest.class,
+        com.dotcms.rest.api.v1.linkchecker.LinkCheckerResourceIntegrationTest.class,
         com.dotmarketing.portlets.links.factories.LinkFactoryTest.class,
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
         com.dotmarketing.filters.FiltersTest.class,
+        com.dotcms.rest.IntegrityResourceTest.class,
         InterceptorHandlerTest.class,
         com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcherTest.class,
         com.dotcms.rest.AuditPublishingResourceTest.class,
-        MaintenanceResourceIntegrationTest.class
+        com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPIImplTest.class,
+        com.dotmarketing.cms.login.factories.LoginFactoryTest.class,
+        com.dotcms.cms.login.LoginTokenInvalidationTest.class,
+        MaintenanceResourceIntegrationTest.class,
+        FolderHandlerTest.class,
+        ContentAnalyticsPersistenceModeIT.class,
+        EventAnalyticsProxyResourceIntegrationTest.class,
+        com.dotmarketing.portlets.contentlet.action.ExportContentletsToCSVTest.class,
+        GenericBundleActivatorIntegrationTest.class,
+        com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
+        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
+        com.dotmarketing.portlets.contentlet.transform.ContentMapWidgetFieldRenderTest.class,
+        ApiTokenResourceTest.class,
+        AuthCredentialPushPublishUtilTest.class,
+        com.dotcms.publishing.remote.RemoteReceiverRelationshipsFilterTest.class,
+        com.dotcms.rest.ClusterResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.cluster.ClusterNodesResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.system.ConfigurationHelperTest.class,
+        com.dotcms.rest.api.v1.container.ContainerResourceDependenciesIntegrationTest.class,
+        com.dotmarketing.startup.runonce.Task261103RemoveContainersLegacyPortletFromLayoutsTest.class,
+        com.dotmarketing.portlets.templates.business.TemplateAPIFindUsingContainerTest.class,
+        com.dotmarketing.startup.runonce.Task261028RemoveSearchLegacyPortletsFromLayoutsTest.class,
+        UserDeletionCacheInvalidationTest.class,
+        ViewCMSMaintenanceActionTest.class,
+        JsModuleImportIntegrationTest.class,
+        com.dotcms.rendering.velocity.WidgetRendererTest.class,
+        CMSUserToolTest.class,
+        UserJsViewToolTest.class,
+        com.dotcms.rest.BundleResourceDeleteResponseTest.class,
+        ContentRelationshipsResourceIntegrationTest.class,
+        com.dotmarketing.portal.struts.StrutsPathAccessTest.class,
+        com.liferay.portal.struts.PortletRequestProcessorAccessTest.class,
+        com.dotcms.security.multipart.MultiPartRequestSecurityWebInterceptorTest.class,
+        com.dotmarketing.startup.runonce.Task261110PromoteUsersRolesToolsPortletsTest.class,
+        com.dotcms.rest.api.v1.temp.TempFileNamingTest.class,
+        com.dotcms.content.elasticsearch.business.ESContentletAPIImplTrailingBackslashQueryTest.class,
+        com.dotmarketing.webdav.DotWebdavHelperTest.class,
+        com.dotcms.enterprise.publishing.remote.handler.UserHandlerTest.class,
+        com.dotcms.contenttype.business.StoryBlockReferenceAccessTest.class,
+        ContentletCheckinDestinationPermissionTest.class,
+        VariantPromotePermissionTest.class
 })
 public class MainSuite2a {
 

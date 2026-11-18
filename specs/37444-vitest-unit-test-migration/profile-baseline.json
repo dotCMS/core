@@ -1,0 +1,920 @@
+{
+  "capturedAt": "2026-09-08T19:56:00.687Z",
+  "vitestFlags": [],
+  "projects": [
+    {
+      "project": "dotcms-ui",
+      "dir": "apps/dotcms-ui",
+      "specs": 226,
+      "files": "226 passed (226)",
+      "tests": "2234 passed (2234)",
+      "filesTotal": 226,
+      "testsTotal": 2234,
+      "failed": false,
+      "duration": 28.96,
+      "phases": {
+        "transform": 30.9,
+        "setup": 171.9,
+        "import": 149.14,
+        "tests": 90.57,
+        "environment": 7.04
+      },
+      "wall": 42.09,
+      "exitCode": 0
+    },
+    {
+      "project": "ui",
+      "dir": "libs/ui",
+      "specs": 123,
+      "files": "123 passed (123)",
+      "tests": "2026 passed (2026)",
+      "filesTotal": 123,
+      "testsTotal": 2026,
+      "failed": false,
+      "duration": 18.29,
+      "phases": {
+        "transform": 19.81,
+        "setup": 28.7,
+        "import": 84.79,
+        "tests": 46.12,
+        "environment": 5.01
+      },
+      "wall": 25.295,
+      "exitCode": 0
+    },
+    {
+      "project": "edit-content",
+      "dir": "libs/edit-content",
+      "specs": 116,
+      "files": "116 passed (116)",
+      "tests": "2346 passed (2346)",
+      "filesTotal": 116,
+      "testsTotal": 2346,
+      "failed": false,
+      "duration": 20.45,
+      "phases": {
+        "transform": 32.78,
+        "setup": 82.3,
+        "import": 87.68,
+        "tests": 62.36,
+        "environment": 7.87
+      },
+      "wall": 28.135,
+      "exitCode": 0
+    },
+    {
+      "project": "data-access",
+      "dir": "libs/data-access",
+      "specs": 85,
+      "files": "85 passed (85)",
+      "tests": "853 passed (853)",
+      "filesTotal": 85,
+      "testsTotal": 853,
+      "failed": false,
+      "duration": 4.87,
+      "phases": {
+        "transform": 9.23,
+        "setup": 16.52,
+        "import": 43.6,
+        "tests": 2.43,
+        "environment": 5.99
+      },
+      "wall": 9.698,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-edit-ema-portlet",
+      "dir": "libs/portlets/edit-ema/portlet",
+      "specs": 64,
+      "files": "64 passed (64)",
+      "tests": "1453 passed | 5 skipped (1458)",
+      "filesTotal": 64,
+      "testsTotal": 1458,
+      "failed": false,
+      "duration": 21.74,
+      "phases": {
+        "transform": 33.59,
+        "setup": 65.79,
+        "import": 64.62,
+        "tests": 48,
+        "environment": 5.71
+      },
+      "wall": 29.43,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-dot-experiments-portlet",
+      "dir": "libs/portlets/dot-experiments/portlet",
+      "specs": 55,
+      "files": "55 passed (55)",
+      "tests": "988 passed (988)",
+      "filesTotal": 55,
+      "testsTotal": 988,
+      "failed": false,
+      "duration": 11.03,
+      "phases": {
+        "transform": 22.31,
+        "setup": 14.75,
+        "import": 87.08,
+        "tests": 30.73,
+        "environment": 5.75
+      },
+      "wall": 16.861,
+      "exitCode": 0
+    },
+    {
+      "project": "image-editor",
+      "dir": "libs/image-editor",
+      "specs": 30,
+      "files": "30 passed (30)",
+      "tests": "355 passed (355)",
+      "filesTotal": 30,
+      "testsTotal": 355,
+      "failed": false,
+      "duration": 5.56,
+      "phases": {
+        "transform": 22.85,
+        "setup": 11.54,
+        "import": 50.79,
+        "tests": 4.8,
+        "environment": 5.6
+      },
+      "wall": 10.869,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-content-drive",
+      "dir": "libs/portlets/dot-content-drive/portlet",
+      "specs": 30,
+      "files": "30 passed (30)",
+      "tests": "1370 passed (1370)",
+      "filesTotal": 30,
+      "testsTotal": 1370,
+      "failed": false,
+      "duration": 20.57,
+      "phases": {
+        "transform": 33.93,
+        "setup": 49.17,
+        "import": 52.51,
+        "tests": 36.64,
+        "environment": 2.78
+      },
+      "wall": 27.716,
+      "exitCode": 0
+    },
+    {
+      "project": "block-editor",
+      "dir": "libs/block-editor",
+      "specs": 29,
+      "files": "14 failed | 15 passed (29)",
+      "tests": "35 failed | 87 passed (122)",
+      "filesTotal": 29,
+      "testsTotal": 122,
+      "failed": true,
+      "duration": 12.67,
+      "phases": {
+        "transform": 14.16,
+        "setup": 10.83,
+        "import": 20.86,
+        "tests": 11.08,
+        "environment": 5.56
+      },
+      "wall": 17.678,
+      "exitCode": 1
+    },
+    {
+      "project": "portlets-dot-analytics",
+      "dir": "libs/portlets/dot-analytics/portlet",
+      "specs": 26,
+      "files": "26 passed (26)",
+      "tests": "333 passed (333)",
+      "filesTotal": 26,
+      "testsTotal": 333,
+      "failed": false,
+      "duration": 7.8,
+      "phases": {
+        "transform": 21.71,
+        "setup": 11.47,
+        "import": 51.18,
+        "tests": 9.32,
+        "environment": 2.97
+      },
+      "wall": 13.82,
+      "exitCode": 0
+    },
+    {
+      "project": "sdk-angular",
+      "dir": "libs/sdk/angular",
+      "specs": 21,
+      "files": "21 passed (21)",
+      "tests": "246 passed (246)",
+      "filesTotal": 21,
+      "testsTotal": 246,
+      "failed": false,
+      "duration": 2.07,
+      "phases": {
+        "transform": 9.53,
+        "setup": 10.92,
+        "import": 7.92,
+        "tests": 1.67,
+        "environment": 6.39
+      },
+      "wall": 5.925,
+      "exitCode": 0
+    },
+    {
+      "project": "edit-ema-ui",
+      "dir": "libs/portlets/edit-ema/ui",
+      "specs": 20,
+      "files": "20 passed (20)",
+      "tests": "353 passed (353)",
+      "filesTotal": 20,
+      "testsTotal": 353,
+      "failed": false,
+      "duration": 8.2,
+      "phases": {
+        "transform": 19.23,
+        "setup": 10.27,
+        "import": 58.38,
+        "tests": 8.37,
+        "environment": 5.49
+      },
+      "wall": 14.147,
+      "exitCode": 0
+    },
+    {
+      "project": "sdk-react",
+      "dir": "libs/sdk/react",
+      "specs": 18,
+      "files": "18 passed (18)",
+      "tests": "138 passed (138)",
+      "filesTotal": 18,
+      "testsTotal": 138,
+      "failed": false,
+      "duration": 1.2,
+      "phases": {
+        "transform": 1.11,
+        "setup": 0,
+        "import": 3.37,
+        "tests": 0.47,
+        "environment": 6.58
+      },
+      "wall": 3.25,
+      "exitCode": 0
+    },
+    {
+      "project": "new-block-editor",
+      "dir": "libs/new-block-editor",
+      "specs": 16,
+      "files": "16 passed (16)",
+      "tests": "158 passed (158)",
+      "filesTotal": 16,
+      "testsTotal": 158,
+      "failed": false,
+      "duration": 6.45,
+      "phases": {
+        "transform": 16.35,
+        "setup": 45.45,
+        "import": 13.42,
+        "tests": 1.51,
+        "environment": 5.57
+      },
+      "wall": 11.86,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-dot-agents-portlet",
+      "dir": "libs/portlets/dot-agents",
+      "specs": 16,
+      "files": "16 passed (16)",
+      "tests": "249 passed (249)",
+      "filesTotal": 16,
+      "testsTotal": 249,
+      "failed": false,
+      "duration": 6.78,
+      "phases": {
+        "transform": 16.87,
+        "setup": 10.1,
+        "import": 38.95,
+        "tests": 2.9,
+        "environment": 6.28
+      },
+      "wall": 12.711,
+      "exitCode": 0
+    },
+    {
+      "project": "template-builder",
+      "dir": "libs/template-builder",
+      "specs": 16,
+      "files": "15 passed | 1 skipped (16)",
+      "tests": "166 passed | 2 skipped (168)",
+      "filesTotal": 16,
+      "testsTotal": 168,
+      "failed": false,
+      "duration": 29.21,
+      "phases": {
+        "transform": 20.72,
+        "setup": 10.33,
+        "import": 47.35,
+        "tests": 26.87,
+        "environment": 5.7
+      },
+      "wall": 34.213,
+      "exitCode": 0
+    },
+    {
+      "project": "sdk-analytics",
+      "dir": "libs/sdk/analytics",
+      "specs": 15,
+      "files": "15 passed (15)",
+      "tests": "314 passed (314)",
+      "filesTotal": 15,
+      "testsTotal": 314,
+      "failed": false,
+      "duration": 0.819,
+      "phases": {
+        "transform": 0.66,
+        "setup": 0,
+        "import": 1.13,
+        "tests": 0.336,
+        "environment": 5.5
+      },
+      "wall": 3.15,
+      "exitCode": 0
+    },
+    {
+      "project": "sdk-client",
+      "dir": "libs/sdk/client",
+      "specs": 15,
+      "files": "15 passed (15)",
+      "tests": "299 passed (299)",
+      "filesTotal": 15,
+      "testsTotal": 299,
+      "failed": false,
+      "duration": 0.746,
+      "phases": {
+        "transform": 0.791,
+        "setup": 0,
+        "import": 1.18,
+        "tests": 0.07,
+        "environment": 5.49
+      },
+      "wall": 2.747,
+      "exitCode": 0
+    },
+    {
+      "project": "sdk-vue",
+      "dir": "libs/sdk/vue",
+      "specs": 14,
+      "files": "14 passed (14)",
+      "tests": "55 passed (55)",
+      "filesTotal": 14,
+      "testsTotal": 55,
+      "failed": false,
+      "duration": 0.902,
+      "phases": {
+        "transform": 1.58,
+        "setup": 0.087,
+        "import": 2.66,
+        "tests": 0.214,
+        "environment": 4.95
+      },
+      "wall": 3.597,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-dot-publishing-queue-portlet",
+      "dir": "libs/portlets/dot-publishing-queue",
+      "specs": 12,
+      "files": "12 passed (12)",
+      "tests": "255 passed (255)",
+      "filesTotal": 12,
+      "testsTotal": 255,
+      "failed": false,
+      "duration": 7.91,
+      "phases": {
+        "transform": 16.61,
+        "setup": 7.97,
+        "import": 45,
+        "tests": 6.59,
+        "environment": 3.77
+      },
+      "wall": 12.948,
+      "exitCode": 0
+    },
+    {
+      "project": "sdk-create-app",
+      "dir": "libs/sdk/create-app",
+      "specs": 12,
+      "files": "12 passed (12)",
+      "tests": "166 passed (166)",
+      "filesTotal": 12,
+      "testsTotal": 166,
+      "failed": false,
+      "duration": 0.34,
+      "phases": {
+        "transform": 0.139,
+        "setup": 0,
+        "import": 0.315,
+        "tests": 0.096,
+        "environment": 0.001
+      },
+      "wall": 2.589,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-dot-users-portlet",
+      "dir": "libs/portlets/dot-users",
+      "specs": 11,
+      "files": "11 passed (11)",
+      "tests": "158 passed (158)",
+      "filesTotal": 11,
+      "testsTotal": 158,
+      "failed": false,
+      "duration": 6.76,
+      "phases": {
+        "transform": 15.38,
+        "setup": 27.31,
+        "import": 17.72,
+        "tests": 4.08,
+        "environment": 3.28
+      },
+      "wall": 11.882,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-dot-roles-portlet",
+      "dir": "libs/portlets/dot-roles",
+      "specs": 10,
+      "files": "10 passed (10)",
+      "tests": "174 passed (174)",
+      "filesTotal": 10,
+      "testsTotal": 174,
+      "failed": false,
+      "duration": 5.73,
+      "phases": {
+        "transform": 14.65,
+        "setup": 24.78,
+        "import": 16.88,
+        "tests": 4.29,
+        "environment": 2.78
+      },
+      "wall": 10.846,
+      "exitCode": 0
+    },
+    {
+      "project": "mcp-server",
+      "dir": "apps/mcp-server",
+      "specs": 10,
+      "files": "10 passed (10)",
+      "tests": "165 passed (165)",
+      "filesTotal": 10,
+      "testsTotal": 165,
+      "failed": false,
+      "duration": 0.484,
+      "phases": {
+        "transform": 0.274,
+        "setup": 0,
+        "import": 0.566,
+        "tests": 0.512,
+        "environment": 0.001
+      },
+      "wall": 2.449,
+      "exitCode": 0
+    },
+    {
+      "project": "sdk-experiments",
+      "dir": "libs/sdk/experiments",
+      "specs": 9,
+      "files": "9 passed (9)",
+      "tests": "48 passed (48)",
+      "filesTotal": 9,
+      "testsTotal": 48,
+      "failed": false,
+      "duration": 0.961,
+      "phases": {
+        "transform": 0.365,
+        "setup": 0,
+        "import": 0.733,
+        "tests": 0.079,
+        "environment": 2.69
+      },
+      "wall": 3.381,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-dot-analytics-data-access",
+      "dir": "libs/portlets/dot-analytics/data-access",
+      "specs": 8,
+      "files": "8 passed (8)",
+      "tests": "217 passed (217)",
+      "filesTotal": 8,
+      "testsTotal": 217,
+      "failed": false,
+      "duration": 2.71,
+      "phases": {
+        "transform": 4.12,
+        "setup": 4.85,
+        "import": 3.83,
+        "tests": 0.122,
+        "environment": 2.13
+      },
+      "wall": 7.437,
+      "exitCode": 0
+    },
+    {
+      "project": "global-store",
+      "dir": "libs/global-store",
+      "specs": 6,
+      "files": "6 passed (6)",
+      "tests": "187 passed (187)",
+      "filesTotal": 6,
+      "testsTotal": 187,
+      "failed": false,
+      "duration": 2.03,
+      "phases": {
+        "transform": 3.5,
+        "setup": 3.62,
+        "import": 4.34,
+        "tests": 0.228,
+        "environment": 1.74
+      },
+      "wall": 5.974,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-dot-velocity-playground-portlet",
+      "dir": "libs/portlets/dot-velocity-playground",
+      "specs": 6,
+      "files": "6 passed (6)",
+      "tests": "119 passed (119)",
+      "filesTotal": 6,
+      "testsTotal": 119,
+      "failed": false,
+      "duration": 4.61,
+      "phases": {
+        "transform": 6.05,
+        "setup": 3.59,
+        "import": 8.82,
+        "tests": 1.39,
+        "environment": 1.63
+      },
+      "wall": 9.386,
+      "exitCode": 0
+    },
+    {
+      "project": "sdk-ai",
+      "dir": "libs/sdk/ai",
+      "specs": 6,
+      "files": "6 passed (6)",
+      "tests": "68 passed (68)",
+      "filesTotal": 6,
+      "testsTotal": 68,
+      "failed": false,
+      "duration": 1.01,
+      "phases": {
+        "transform": 0.122,
+        "setup": 0,
+        "import": 0.208,
+        "tests": 1.04,
+        "environment": 0
+      },
+      "wall": 3.08,
+      "exitCode": 0
+    },
+    {
+      "project": "sdk-uve",
+      "dir": "libs/sdk/uve",
+      "specs": 6,
+      "files": "6 passed (6)",
+      "tests": "117 passed (117)",
+      "filesTotal": 6,
+      "testsTotal": 117,
+      "failed": false,
+      "duration": 0.457,
+      "phases": {
+        "transform": 0.203,
+        "setup": 0,
+        "import": 0.28,
+        "tests": 0.058,
+        "environment": 1.27
+      },
+      "wall": 2.493,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-dot-auth-portlet",
+      "dir": "libs/portlets/dot-auth",
+      "specs": 5,
+      "files": "5 passed (5)",
+      "tests": "103 passed (103)",
+      "filesTotal": 5,
+      "testsTotal": 103,
+      "failed": false,
+      "duration": 4.89,
+      "phases": {
+        "transform": 6.18,
+        "setup": 2.88,
+        "import": 10.53,
+        "tests": 1.5,
+        "environment": 1.33
+      },
+      "wall": 9.956,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-dot-locales-portlet",
+      "dir": "libs/portlets/dot-locales/portlet",
+      "specs": 5,
+      "files": "5 passed (5)",
+      "tests": "20 passed (20)",
+      "filesTotal": 5,
+      "testsTotal": 20,
+      "failed": false,
+      "duration": 4,
+      "phases": {
+        "transform": 6.03,
+        "setup": 9.89,
+        "import": 5.87,
+        "tests": 0.433,
+        "environment": 0.657
+      },
+      "wall": 9.095,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-dot-categories-portlet",
+      "dir": "libs/portlets/dot-categories",
+      "specs": 4,
+      "files": "4 passed (4)",
+      "tests": "109 passed (109)",
+      "filesTotal": 4,
+      "testsTotal": 109,
+      "failed": false,
+      "duration": 5.52,
+      "phases": {
+        "transform": 5.18,
+        "setup": 2.15,
+        "import": 10.9,
+        "tests": 2.09,
+        "environment": 0.95
+      },
+      "wall": 10.276,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-dot-plugins-portlet",
+      "dir": "libs/portlets/dot-plugins",
+      "specs": 4,
+      "files": "4 passed (4)",
+      "tests": "81 passed (81)",
+      "filesTotal": 4,
+      "testsTotal": 81,
+      "failed": false,
+      "duration": 3.6,
+      "phases": {
+        "transform": 5.23,
+        "setup": 2.2,
+        "import": 7.95,
+        "tests": 0.989,
+        "environment": 0.987
+      },
+      "wall": 8.1,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-dot-tags-portlet",
+      "dir": "libs/portlets/dot-tags",
+      "specs": 4,
+      "files": "4 passed (4)",
+      "tests": "102 passed (102)",
+      "filesTotal": 4,
+      "testsTotal": 102,
+      "failed": false,
+      "duration": 5.22,
+      "phases": {
+        "transform": 5.19,
+        "setup": 2.24,
+        "import": 9.8,
+        "tests": 1.81,
+        "environment": 1
+      },
+      "wall": 10.064,
+      "exitCode": 0
+    },
+    {
+      "project": "ai-ui",
+      "dir": "libs/ai-ui",
+      "specs": 3,
+      "files": "3 passed (3)",
+      "tests": "23 passed (23)",
+      "filesTotal": 3,
+      "testsTotal": 23,
+      "failed": false,
+      "duration": 2.93,
+      "phases": {
+        "transform": 3.53,
+        "setup": 1.75,
+        "import": 4.41,
+        "tests": 0.129,
+        "environment": 0.365
+      },
+      "wall": 7.412,
+      "exitCode": 0
+    },
+    {
+      "project": "dot-rules",
+      "dir": "libs/dot-rules",
+      "specs": 3,
+      "files": "3 passed (3)",
+      "tests": "12 passed (12)",
+      "filesTotal": 3,
+      "testsTotal": 12,
+      "failed": false,
+      "duration": 3.35,
+      "phases": {
+        "transform": 3.04,
+        "setup": 1.83,
+        "import": 3.04,
+        "tests": 0.117,
+        "environment": 0.376
+      },
+      "wall": 8.597,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-dot-query-tool-portlet",
+      "dir": "libs/portlets/dot-query-tool",
+      "specs": 3,
+      "files": "3 passed (3)",
+      "tests": "49 passed (49)",
+      "filesTotal": 3,
+      "testsTotal": 49,
+      "failed": false,
+      "duration": 7.54,
+      "phases": {
+        "transform": 4.76,
+        "setup": 6.39,
+        "import": 4.72,
+        "tests": 1.29,
+        "environment": 0.717
+      },
+      "wall": 14.033,
+      "exitCode": 0
+    },
+    {
+      "project": "utils",
+      "dir": "libs/utils",
+      "specs": 3,
+      "files": "3 passed (3)",
+      "tests": "111 passed (111)",
+      "filesTotal": 3,
+      "testsTotal": 111,
+      "failed": false,
+      "duration": 0.937,
+      "phases": {
+        "transform": 1.13,
+        "setup": 1.63,
+        "import": 0.091,
+        "tests": 0.016,
+        "environment": 0.704
+      },
+      "wall": 4.435,
+      "exitCode": 0
+    },
+    {
+      "project": "edit-content-bridge",
+      "dir": "libs/edit-content-bridge",
+      "specs": 2,
+      "files": "2 passed (2)",
+      "tests": "130 passed (130)",
+      "filesTotal": 2,
+      "testsTotal": 130,
+      "failed": false,
+      "duration": 3.51,
+      "phases": {
+        "transform": 2.36,
+        "setup": 1.18,
+        "import": 2.58,
+        "tests": 0.052,
+        "environment": 0.491
+      },
+      "wall": 8.848,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-dot-es-search-portlet",
+      "dir": "libs/portlets/dot-es-search",
+      "specs": 2,
+      "files": "2 passed (2)",
+      "tests": "83 passed (83)",
+      "filesTotal": 2,
+      "testsTotal": 83,
+      "failed": false,
+      "duration": 6.32,
+      "phases": {
+        "transform": 2.85,
+        "setup": 4.05,
+        "import": 2.54,
+        "tests": 1.96,
+        "environment": 0.508
+      },
+      "wall": 11.632,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-dot-experiments-data-access",
+      "dir": "libs/portlets/dot-experiments/data-access",
+      "specs": 2,
+      "files": "2 passed (2)",
+      "tests": "3 passed (3)",
+      "filesTotal": 2,
+      "testsTotal": 3,
+      "failed": false,
+      "duration": 2.8,
+      "phases": {
+        "transform": 1.64,
+        "setup": 1.24,
+        "import": 2.92,
+        "tests": 0.034,
+        "environment": 0.492
+      },
+      "wall": 7.636,
+      "exitCode": 0
+    },
+    {
+      "project": "content-drive-ui",
+      "dir": "libs/portlets/dot-content-drive/ui",
+      "specs": 1,
+      "files": "1 passed (1)",
+      "tests": "58 passed (58)",
+      "filesTotal": 1,
+      "testsTotal": 58,
+      "failed": false,
+      "duration": 5.02,
+      "phases": {
+        "transform": 2.1,
+        "setup": 0.579,
+        "import": 3.5,
+        "tests": 0.616,
+        "environment": 0.244
+      },
+      "wall": 10.675,
+      "exitCode": 0
+    },
+    {
+      "project": "portlets-dot-usage",
+      "dir": "libs/portlets/dot-usage",
+      "specs": 1,
+      "files": "1 passed (1)",
+      "tests": "21 passed (21)",
+      "filesTotal": 1,
+      "testsTotal": 21,
+      "failed": false,
+      "duration": 4.55,
+      "phases": {
+        "transform": 2.11,
+        "setup": 1.98,
+        "import": 2.07,
+        "tests": 0.266,
+        "environment": 0.125
+      },
+      "wall": 9.751,
+      "exitCode": 0
+    },
+    {
+      "project": "dotcms-binary-field-builder",
+      "dir": "apps/dotcms-binary-field-builder",
+      "specs": 1,
+      "files": "1 passed (1)",
+      "tests": "1 passed (1)",
+      "filesTotal": 1,
+      "testsTotal": 1,
+      "failed": false,
+      "duration": 0.935,
+      "phases": {
+        "transform": 0.428,
+        "setup": 0.591,
+        "import": 0.004,
+        "tests": 0.024,
+        "environment": 0.241
+      },
+      "wall": 4.314,
+      "exitCode": 0
+    },
+    {
+      "project": "dotcms-models",
+      "dir": "libs/dotcms-models",
+      "specs": 0,
+      "files": null,
+      "tests": null,
+      "filesTotal": null,
+      "testsTotal": null,
+      "failed": false,
+      "duration": null,
+      "phases": {},
+      "wall": 3.331,
+      "exitCode": 1
+    }
+  ]
+}

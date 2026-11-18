@@ -1,12 +1,20 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { EMPTY, of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
+import { ContextMenu } from 'primeng/contextmenu';
 import { DialogService } from 'primeng/dynamicdialog';
+import { TreeNodeContextMenuSelectEvent } from 'primeng/types/tree';
 
-import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRolesTreeComponent } from './dot-roles-tree.component';
@@ -17,6 +25,8 @@ const MESSAGES = {
     'roles.panel.title': 'ROLES',
     'roles.filter.placeholder': 'Filter roles',
     'roles.action.new': 'New',
+    'roles.action.edit': 'Edit',
+    'roles.action.delete': 'Delete',
     'roles.action.add-child': 'Add child',
     'roles.tree.empty': 'No roles',
     loading: 'Loading',
@@ -32,26 +42,25 @@ describe('DotRolesTreeComponent', () => {
         detectChanges: false,
         componentProviders: [
             mockProvider(DotRolesStore, {
-                roles: jest.fn().mockReturnValue([]),
-                roleTree: jest.fn().mockReturnValue([]),
-                filteredRoles: jest.fn().mockReturnValue([]),
-                filter: jest.fn().mockReturnValue(''),
-                isSearching: jest.fn().mockReturnValue(false),
-                selectedRoleId: jest.fn().mockReturnValue(null),
-                status: jest.fn().mockReturnValue('LOADED'),
-                setFilter: jest.fn(),
-                selectRole: jest.fn(),
-                deleteRole: jest.fn().mockResolvedValue(null),
-                loadRoleChildren: jest.fn()
+                roles: vi.fn().mockReturnValue([]),
+                roleTree: vi.fn().mockReturnValue([]),
+                filteredRoles: vi.fn().mockReturnValue([]),
+                filter: vi.fn().mockReturnValue(''),
+                isSearching: vi.fn().mockReturnValue(false),
+                selectedRoleId: vi.fn().mockReturnValue(null),
+                status: vi.fn().mockReturnValue('LOADED'),
+                setFilter: vi.fn(),
+                selectRole: vi.fn(),
+                deleteRole: vi.fn().mockResolvedValue(null),
+                loadRoleChildren: vi.fn()
             }),
-            mockProvider(DialogService, { open: jest.fn() }),
+            mockProvider(DialogService, { open: vi.fn() }),
             mockProvider(ConfirmationService, {
-                confirm: jest.fn().mockImplementation((cfg) => cfg.accept?.()),
+                confirm: vi.fn().mockImplementation((cfg) => cfg.accept?.()),
                 requireConfirmation$: EMPTY,
                 accept: EMPTY,
                 reject: EMPTY
-            }),
-            mockProvider(DotAlertConfirmService, { alert: jest.fn() })
+            })
         ],
         providers: [{ provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }]
     });
@@ -67,6 +76,73 @@ describe('DotRolesTreeComponent', () => {
         expect(spectator.query(byTestId('filter-input'))).toBeTruthy();
     });
 
+    it('should render New as a filled primary button', () => {
+        spectator.detectChanges();
+
+        const newBtn = spectator.query(byTestId('new-role-btn'));
+        expect(newBtn?.classList).not.toContain('p-button-outlined');
+    });
+
+    describe('context menu', () => {
+        const rightClick = (data: object): void => {
+            const event = { node: { key: 'r-1', label: 'Eco', data } };
+            spectator.component['onNodeContextMenu'](
+                event as unknown as TreeNodeContextMenuSelectEvent
+            );
+            spectator.detectChanges();
+        };
+
+        const menuItems = () => spectator.query(ContextMenu)?.model ?? [];
+
+        it('should read Edit and Delete, without the "Role" suffix', () => {
+            spectator.detectChanges();
+
+            expect(menuItems().map((item) => item.label ?? 'separator')).toEqual([
+                'Edit',
+                'separator',
+                'Delete'
+            ]);
+        });
+
+        it('should confirm, then delete the right-clicked role', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            const confirmation = spectator.inject(ConfirmationService, true);
+            spectator.detectChanges();
+            rightClick({ id: 'r-1', name: 'Eco' });
+
+            menuItems()[2].command?.({});
+
+            // The mocked confirm accepts straight away.
+            expect(confirmation.confirm).toHaveBeenCalledWith(
+                expect.objectContaining({ acceptLabel: 'Delete', defaultFocus: 'reject' })
+            );
+            expect(store.deleteRole).toHaveBeenCalledWith('r-1');
+        });
+
+        it('should not delete when the admin cancels the confirmation', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            const confirmation = spectator.inject(ConfirmationService, true);
+            (confirmation.confirm as Mock).mockImplementationOnce((cfg) => cfg.reject?.());
+            // Shared factory mocks: an earlier test's delete would otherwise still be counted.
+            (store.deleteRole as Mock).mockClear();
+            spectator.detectChanges();
+            rightClick({ id: 'r-1', name: 'Eco' });
+
+            menuItems()[2].command?.({});
+
+            expect(confirmation.confirm).toHaveBeenCalled();
+            expect(store.deleteRole).not.toHaveBeenCalled();
+        });
+
+        it('should disable Edit and Delete on a system role', () => {
+            spectator.detectChanges();
+            rightClick({ id: 'r-cms', name: 'CMS Admin', system: true });
+
+            expect(menuItems()[0].disabled).toBe(true);
+            expect(menuItems()[2].disabled).toBe(true);
+        });
+    });
+
     it('should render the empty state when no roles match', () => {
         spectator.detectChanges();
 
@@ -75,13 +151,77 @@ describe('DotRolesTreeComponent', () => {
 
     it('should render the tree view when roles are loaded', () => {
         const store = spectator.inject(DotRolesStore, true);
-        (store.filteredRoles as jest.Mock).mockReturnValue([
+        (store.filteredRoles as Mock).mockReturnValue([
             { id: 'r-eco', name: 'Eco Role', children: [] }
         ]);
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('roles-tree-view'))).toBeTruthy();
         expect(spectator.query(byTestId('tree-empty'))).toBeNull();
+    });
+
+    it('should not inherit the shared tree folder icons (#37362)', () => {
+        // This portlet renders a *roles* hierarchy through the shared DotFolderTreeComponent and
+        // draws its own Material Symbols icons in the projected label template. The shared
+        // folder-icon input is opt-in precisely so a folder glyph never lands next to them here.
+        const store = spectator.inject(DotRolesStore, true);
+        (store.filteredRoles as Mock).mockReturnValue([
+            { id: 'r-eco', name: 'Eco Role', children: [] }
+        ]);
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('tree-node-folder-icon'))).toBeNull();
+
+        // The label the portlet projects still draws its own Material Symbols icons, and no
+        // PrimeIcons glyph joined them there — the only `.pi` on the row is PrimeNG's chevron,
+        // which lives outside the label in the toggle button.
+        const label = spectator.query('.p-tree-node-label');
+        expect(label?.querySelector('.material-symbols-outlined')).toBeTruthy();
+        expect(label?.querySelector('.pi')).toBeNull();
+    });
+
+    describe('long role names (#37363)', () => {
+        const LONG_NAME = 'A-very-long-role-name-that-will-not-fit-in-the-panel';
+
+        beforeEach(() => {
+            vi.useFakeTimers();
+            const store = spectator.inject(DotRolesStore, true);
+            (store.filteredRoles as Mock).mockReturnValue([
+                { id: 'r-long', name: LONG_NAME, childCount: 2, userCount: 3, roleChildren: [] }
+            ]);
+            spectator.detectChanges();
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+            document.querySelectorAll('.p-tooltip').forEach((node) => node.remove());
+        });
+
+        const clip = () => spectator.query(byTestId('tree-node-label-clip')) as HTMLElement;
+
+        it('should clip the name with the shared label', () => {
+            expect(clip()).toBeTruthy();
+            expect(clip().textContent?.trim()).toBe(LONG_NAME);
+        });
+
+        it('should keep the user-count badge outside the clipped name', () => {
+            // FR-008: the row keeps its own structure. Only the name is allowed to shrink — the
+            // badge must not be the thing that gets cut off.
+            expect(spectator.query(byTestId('node-user-count-r-long'))).toBeTruthy();
+            expect(clip().querySelector('[data-testid="node-user-count-r-long"]')).toBeNull();
+        });
+
+        it('should reveal the full name on hover when it is clipped', () => {
+            const element = clip();
+            Object.defineProperty(element, 'offsetWidth', { value: 100, configurable: true });
+            Object.defineProperty(element, 'scrollWidth', { value: 400, configurable: true });
+
+            element.dispatchEvent(new MouseEvent('mouseenter'));
+            spectator.detectChanges();
+            vi.advanceTimersByTime(1000);
+
+            expect(document.querySelector('.p-tooltip-text')?.textContent?.trim()).toBe(LONG_NAME);
+        });
     });
 
     describe('leaf detection via childCount (#37071)', () => {
@@ -94,7 +234,7 @@ describe('DotRolesTreeComponent', () => {
 
         it('marks a node with childCount 0 as a leaf before any expansion', () => {
             const store = spectator.inject(DotRolesStore, true);
-            (store.filteredRoles as jest.Mock).mockReturnValue([
+            (store.filteredRoles as Mock).mockReturnValue([
                 { id: 'r-leaf', name: 'Leaf Role', childCount: 0, roleChildren: [] }
             ]);
             spectator.detectChanges();
@@ -104,7 +244,7 @@ describe('DotRolesTreeComponent', () => {
 
         it('keeps the chevron when childCount is positive but children are not hydrated', () => {
             const store = spectator.inject(DotRolesStore, true);
-            (store.filteredRoles as jest.Mock).mockReturnValue([
+            (store.filteredRoles as Mock).mockReturnValue([
                 { id: 'r-parent', name: 'Parent Role', childCount: 3, roleChildren: [] }
             ]);
             spectator.detectChanges();
@@ -114,7 +254,7 @@ describe('DotRolesTreeComponent', () => {
 
         it('falls back to the fetched-set heuristic when childCount is absent (legacy search nodes)', () => {
             const store = spectator.inject(DotRolesStore, true);
-            (store.filteredRoles as jest.Mock).mockReturnValue([
+            (store.filteredRoles as Mock).mockReturnValue([
                 { id: 'r-legacy', name: 'Legacy Node', roleChildren: [] }
             ]);
             spectator.detectChanges();
@@ -125,7 +265,7 @@ describe('DotRolesTreeComponent', () => {
 
         it('treats user-roles as leaves regardless of childCount', () => {
             const store = spectator.inject(DotRolesStore, true);
-            (store.filteredRoles as jest.Mock).mockReturnValue([
+            (store.filteredRoles as Mock).mockReturnValue([
                 { id: 'r-user', name: 'Some User', user: true, childCount: 5 }
             ]);
             spectator.detectChanges();
@@ -173,9 +313,9 @@ describe('DotRolesTreeComponent', () => {
         const seedReactiveTree = (parentOfSelected: string) => {
             const store = spectator.inject(DotRolesStore, true);
             const tree = signal(treeWithMoveTarget(parentOfSelected));
-            (store.selectedRoleId as jest.Mock).mockReturnValue('r-moved');
-            (store.roleTree as jest.Mock).mockImplementation(() => tree());
-            (store.filteredRoles as jest.Mock).mockImplementation(() => tree());
+            (store.selectedRoleId as Mock).mockReturnValue('r-moved');
+            (store.roleTree as Mock).mockImplementation(() => tree());
+            (store.filteredRoles as Mock).mockImplementation(() => tree());
             spectator.detectChanges();
 
             return tree;
@@ -216,7 +356,7 @@ describe('DotRolesTreeComponent', () => {
 
     describe('lazy-load gate on expand', () => {
         beforeEach(() => {
-            (spectator.inject(DotRolesStore, true).loadRoleChildren as jest.Mock).mockClear();
+            (spectator.inject(DotRolesStore, true).loadRoleChildren as Mock).mockClear();
         });
 
         const expand = (data: Record<string, unknown>) =>
@@ -271,24 +411,24 @@ describe('DotRolesTreeComponent', () => {
 
     describe('revealing a newly created role', () => {
         beforeEach(() => {
-            // `mockProvider` shares its jest.fn()s across tests, so call
+            // `mockProvider` shares its vi.fn()s across tests, so call
             // history survives unless it is cleared here.
-            (spectator.inject(DotRolesStore, true).loadRoleChildren as jest.Mock).mockClear();
+            (spectator.inject(DotRolesStore, true).loadRoleChildren as Mock).mockClear();
         });
 
         const openWithResult = (created: unknown) => {
             const dialogService = spectator.inject(DialogService, true);
-            (dialogService.open as jest.Mock).mockReturnValue({ onClose: of(created) });
+            (dialogService.open as Mock).mockReturnValue({ onClose: of(created) });
             spectator.detectChanges();
             spectator.click(byTestId('new-role-btn'));
         };
 
         it('expands the parent branch so the new child is actually visible', () => {
             const store = spectator.inject(DotRolesStore, true);
-            (store.roleTree as jest.Mock).mockReturnValue([
+            (store.roleTree as Mock).mockReturnValue([
                 { id: 'r-parent', name: 'Parent', childCount: 1, roleChildren: [] }
             ]);
-            (store.filteredRoles as jest.Mock).mockReturnValue([
+            (store.filteredRoles as Mock).mockReturnValue([
                 { id: 'r-parent', name: 'Parent', childCount: 1, roleChildren: [] }
             ]);
 
@@ -305,7 +445,7 @@ describe('DotRolesTreeComponent', () => {
 
         it('fetches the parent children so the new role does not appear alone', () => {
             const store = spectator.inject(DotRolesStore, true);
-            (store.roleTree as jest.Mock).mockReturnValue([
+            (store.roleTree as Mock).mockReturnValue([
                 { id: 'r-parent', name: 'Parent', childCount: 1, roleChildren: [] }
             ]);
 

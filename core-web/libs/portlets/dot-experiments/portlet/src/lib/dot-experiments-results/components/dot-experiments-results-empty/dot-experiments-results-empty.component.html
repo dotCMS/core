@@ -1,0 +1,30 @@
+<div
+    class="relative overflow-hidden rounded-lg border border-surface-200 bg-white"
+    data-testid="results-empty">
+    <div class="pointer-events-none opacity-60 select-none" aria-hidden="true">
+        <div
+            class="h-[340px] w-full bg-contain bg-center bg-no-repeat"
+            [style.background-image]="backgroundImage"></div>
+        <div class="flex flex-col gap-3 border-t border-surface-200 px-6 py-5">
+            @for (row of ghostRows; track $index) {
+                <p-skeleton height="1.25rem" width="100%" />
+            }
+        </div>
+    </div>
+
+    <div
+        class="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-white/70 px-6 text-center">
+        <i
+            class="material-symbols-rounded mb-1 text-4xl text-surface-400"
+            aria-hidden="true"
+            data-testid="results-empty-icon">
+            monitoring
+        </i>
+        <p class="m-0 text-lg font-semibold text-surface-900" data-testid="results-empty-title">
+            {{ $title() }}
+        </p>
+        <p class="m-0 max-w-md text-sm text-surface-500" data-testid="results-empty-subtitle">
+            {{ $subtitle() }}
+        </p>
+    </div>
+</div>

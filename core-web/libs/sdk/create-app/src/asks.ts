@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import fs from 'fs-extra';
 import inquirer from 'inquirer';
 
@@ -206,12 +207,22 @@ export async function prepareDirectory(basePath: string, projectName: string) {
         return targetPath; // empty → OK
     }
 
+    // A docker-compose.yml here means a previous run left a stack behind — possibly one that is
+    // still running. Emptying the directory would delete the only file that can tear it down,
+    // stranding containers the user then has to hunt for by hand. That is the CLI destroying its
+    // own recovery path, which is the shape of the failure in #37262, so it is refused outright
+    // rather than folded into the blanket "all files will be deleted" confirmation.
+    const composePath = path.join(targetPath, 'docker-compose.yml');
+    const hasComposeFile = fs.existsSync(composePath);
+
     // Directory not empty → warn user
     const ans = await inquirer.prompt([
         {
             type: 'confirm',
             name: 'confirm',
-            message: `⚠️  Directory "${targetPath}" is not empty. All files inside will be deleted. Continue?`,
+            message: hasComposeFile
+                ? `⚠️  Directory "${targetPath}" contains a docker-compose.yml from a previous run. Everything EXCEPT that file will be deleted. Continue?`
+                : `⚠️  Directory "${targetPath}" is not empty. All files inside will be deleted. Continue?`,
             default: false
         }
     ]);
@@ -221,8 +232,80 @@ export async function prepareDirectory(basePath: string, projectName: string) {
         process.exit(1);
     }
 
-    // Empty directory
-    await fs.emptyDir(targetPath);
+    if (hasComposeFile) {
+        const preserved = await fs.readFile(composePath);
+        await fs.emptyDir(targetPath);
+        await fs.writeFile(composePath, preserved);
+    } else {
+        await fs.emptyDir(targetPath);
+    }
 
     return targetPath;
+}
+
+/**
+ * Asked when a healthy dotCMS is already listening on 8082.
+ *
+ * The earlier version said "A dotCMS instance is already running on port 8082. What would you
+ * like to do?" and offered only reuse or quit. That states a fact and then abandons the user:
+ * it never says WHAT is running, and anyone who did not want that instance had to leave the CLI
+ * and run docker by hand. Replacing it is the documented recovery for a bricked instance
+ * (#37262), so the CLI can now do it.
+ *
+ * `canReplace` is false when nothing identifiable owns the ports — something started outside
+ * compose is not ours to destroy, so the option is withheld rather than offered and then failed.
+ */
+export async function askPortConflictAction({
+    description,
+    canReplace
+}: {
+    description: string;
+    canReplace: boolean;
+}): Promise<'reuse' | 'replace' | 'cancel'> {
+    console.log(
+        '\n' +
+            chalk.yellow('⚠  Found a dotCMS already running at ') +
+            chalk.cyan('http://localhost:8082') +
+            '\n' +
+            chalk.gray(`   ${description}`) +
+            '\n'
+    );
+
+    // One line per choice. A `\n` inside a choice name breaks inquirer's line accounting and
+    // the list renders blank — the hint belongs in `description`, which it prints under the
+    // highlighted option.
+    const choices: {
+        name: string;
+        value: 'reuse' | 'replace' | 'cancel';
+        description: string;
+    }[] = [
+        {
+            name: 'Use this instance for my project',
+            value: 'reuse',
+            description: 'Fastest. Keeps its existing content.'
+        }
+    ];
+
+    if (canReplace) {
+        choices.push({
+            name: 'Replace it with a clean instance',
+            value: 'replace',
+            description: 'Stops it and DELETES its data, then starts fresh.'
+        });
+    }
+
+    choices.push({
+        name: 'Cancel',
+        value: 'cancel',
+        description: 'Change nothing and exit.'
+    });
+
+    const { action } = await inquirer.prompt([
+        // `select`, NOT `list`. Inquirer 13 is built on @inquirer/prompts, where the type is
+        // `select`; `list` is the inquirer 8/9 name and is not registered, so the message renders
+        // and the choices silently do not. Every other prompt in this file already uses `select`.
+        { type: 'select', name: 'action', message: 'How would you like to continue?', choices }
+    ]);
+
+    return action;
 }

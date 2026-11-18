@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { ButtonDirective, ButtonModule } from 'primeng/button';
 import { Chip, ChipModule } from 'primeng/chip';
@@ -110,7 +111,7 @@ describe('DotCategoryFieldChipsComponent', () => {
 
     describe('onRemove', () => {
         it('should call the output', () => {
-            const removeSpy = jest.spyOn(spectator.component.remove, 'emit');
+            const removeSpy = vi.spyOn(spectator.component.remove, 'emit');
             spectator.setInput('max', 2);
             spectator.component.$showAll.set(true);
             spectator.detectChanges();

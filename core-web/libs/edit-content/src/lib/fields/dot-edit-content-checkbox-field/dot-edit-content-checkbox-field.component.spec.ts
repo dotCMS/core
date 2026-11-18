@@ -1,4 +1,4 @@
-import { SpectatorHost, createHostFactory } from '@openng/spectator/jest';
+import { SpectatorHost, createHostFactory } from '@openng/spectator/vitest';
 
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -420,5 +420,133 @@ describe('DotEditContentCheckboxFieldComponent', () => {
             spectator.detectChanges();
             expect(spectator.queryAll(Checkbox).length).toBe(0);
         });
+    });
+});
+
+/**
+ * T-03 — option rows use the global `.form-checkbox` (AC-109).
+ *
+ * `.form .form-checkbox { @apply flex flex-row items-center gap-2 }` computes identically to the
+ * hand-rolled `flex items-center gap-2` it replaces — `flex-row` is the default for
+ * `display: flex` — so this is a zero-delta swap on the ROW.
+ *
+ * It is not zero-delta on the option LABELS, and that is the point: `.form .form-checkbox label`
+ * additionally applies `text-sm font-normal`, which is a DESCENDANT selector and so reaches them
+ * where they already sit, with no restructuring. Option labels go 14px/400 -> 12.25px/400, which
+ * is the one accepted delta that #37460's measured-impact table does not list (research R3).
+ */
+describe('DotEditContentCheckboxFieldComponent — option rows', () => {
+    let spectator: SpectatorHost<DotEditContentCheckboxFieldComponent, MockFormComponent>;
+
+    const createHost = createHostFactory({
+        component: DotEditContentCheckboxFieldComponent,
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
+        detectChanges: false
+    });
+
+    beforeEach(() => {
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-checkbox-field [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [CHECKBOX_FIELD_MOCK.variable]: new FormControl(null)
+                    }),
+                    field: CHECKBOX_FIELD_MOCK,
+                    contentlet: createFakeContentlet({ [CHECKBOX_FIELD_MOCK.variable]: null })
+                }
+            }
+        );
+        spectator.detectChanges();
+    });
+
+    it('should wrap each option in a .form-checkbox row', () => {
+        expect(spectator.queryAll('.form-checkbox').length).toBeGreaterThan(0);
+    });
+
+    it('should not hand-roll the layout the global class already provides', () => {
+        expect(spectator.query('.flex.items-center.gap-2')).toBeNull();
+    });
+
+    it('should not use the .form-radio variant', () => {
+        expect(spectator.query('.form-radio')).toBeNull();
+    });
+
+    it('should keep each option label inside its row so the descendant rule reaches it', () => {
+        const row = spectator.query('.form-checkbox');
+
+        expect(row).toBeTruthy();
+        expect(row?.querySelector('label')).toBeTruthy();
+    });
+});
+
+/**
+ * AC-209 — naming and requiredness for an option group.
+ *
+ * A set of options has no single control to carry `for` / `aria-required`: the field's value is the
+ * selection, not any one input. The group itself becomes the named widget, and because a `<div>` is
+ * not a labelable element, it is named with `aria-labelledby` rather than the label's `for`.
+ */
+describe('DotEditContentCheckboxFieldComponent — option group semantics (AC-209)', () => {
+    let spectator: SpectatorHost<DotEditContentCheckboxFieldComponent, MockFormComponent>;
+
+    const createHost = createHostFactory({
+        component: DotEditContentCheckboxFieldComponent,
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
+        detectChanges: false
+    });
+
+    const render = (required: boolean) => {
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-checkbox-field [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [CHECKBOX_FIELD_MOCK.variable]: new FormControl(null)
+                    }),
+                    field: { ...CHECKBOX_FIELD_MOCK, required },
+                    contentlet: createFakeContentlet({ [CHECKBOX_FIELD_MOCK.variable]: null })
+                }
+            }
+        );
+        spectator.detectChanges();
+    };
+
+    it('should expose the options as a group', () => {
+        render(true);
+
+        expect(spectator.query('[role="group"]')).toBeTruthy();
+    });
+
+    it('should name the group from the field label', () => {
+        render(true);
+
+        const group = spectator.query('[role="group"]');
+
+        expect(group).toBeTruthy();
+        expect(group?.getAttribute('aria-labelledby')).toBe(
+            'label-' + CHECKBOX_FIELD_MOCK.variable
+        );
+        expect(spectator.query('label[dotCardFieldLabel]')?.id).toBe(
+            'label-' + CHECKBOX_FIELD_MOCK.variable
+        );
+    });
+
+    // Deliberately no aria-required assertion: ARIA defines that attribute on radiogroup but NOT
+    // on the plain `group` role a checkbox set uses, so asserting it would enshrine invalid ARIA.
+    it('should not put aria-required on a plain group, which ARIA does not define it on', () => {
+        render(true);
+
+        // toBeTruthy first: with `?.` alone a missing group would satisfy toBeNull vacuously.
+        const group = spectator.query('[role="group"]');
+
+        expect(group).toBeTruthy();
+        expect(group?.getAttribute('aria-required')).toBeNull();
     });
 });

@@ -197,6 +197,14 @@
 		document.dispatchEvent(customEvent);
 	}
 
+	// Completion callback for the commentable/assignable/push/moveable path opened via
+	// PushHandler.showWorkflowEnabledDialog (see executeWfAction above). Mirrors
+	// fileActionCallback's success branch so both paths signal completion the same way.
+	function angularWorkflowEventCallback () {
+		showDotCMSSystemMessage("<%=LanguageUtil.get(pageContext, "Workflow-executed")%>");
+		executeEditTaskExecutedWorkflowEvent();
+	}
+
 	var contentAdmin = new dotcms.dijit.contentlet.ContentAdmin();
 
 </script>

@@ -1,4 +1,4 @@
-<%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
+<%@ page import="com.liferay.util.Xss" %><%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="java.util.HashMap"%>
 <%@page import="java.util.Map"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
@@ -98,7 +98,7 @@
             { id:'',  name:'' }
             <%for(WorkflowAction action : availableActions){%>
             ,{ id:'<%=action.getId()%>',
-                name:'<%=action.getName()%>',
+                name:'<%=Xss.encodeForJavaScript(action.getName())%>',
                 assignable:'<%=action.isAssignable()%>',
                 commentable:'<%=action.isCommentable() ||  UtilMethods.isSet(action.getCondition())%>',
 				pushPublish:'<%=action.hasPushPublishActionlet()%>'
@@ -193,7 +193,7 @@
 
 			</td>
 			<td onClick="editTask(event, '<%=task.getId()%>', '<%=contentlet.getLanguageId()%>', '<%= contentlet.getContentType().variable()%>')">
-				<%=contentlet.getTitle() %>
+				<%=Xss.encodeForHTML(contentlet.getTitle()) %>
 			</td>
 			<td nowrap="true" align="center" width="1%" onClick="editTask(event, '<%=task.getId()%>', '<%=contentlet.getLanguageId()%>' , '<%= contentlet.getContentType().variable()%>')">
 				<%if (contentlet.isLive()) {%>
@@ -230,7 +230,7 @@
 
 			<td align="center" onClick="editTask(event, '<%=task.getId()%>', '<%=contentlet.getLanguageId()%>', '<%= contentlet.getContentType().variable()%>')" <%if(step.isResolved()) {%>style="text-decoration: line-through;"<%} %> >
 
-				<%=step.getName() %>
+				<%=Xss.encodeForHTML(step.getName())%>
 
 			</td>
 

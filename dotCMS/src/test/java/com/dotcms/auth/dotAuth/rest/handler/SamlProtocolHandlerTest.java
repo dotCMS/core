@@ -27,7 +27,7 @@ public class SamlProtocolHandlerTest {
     public void secretKeys_match_dotsaml_config_yml_params() {
         assertEquals(
                 List.of("enable", "idpName", "sPIssuerURL", "sPEndpointHostname",
-                        "signatureValidationType", "idPMetadataFile", "publicCert",
+                        "additionalAcsUrls", "signatureValidationType", "idPMetadataFile", "publicCert",
                         "privateKey", "buttonParam"),
                 handler.secretKeys());
     }
@@ -114,6 +114,52 @@ public class SamlProtocolHandlerTest {
     }
 
     @Test
+    public void buildSecrets_rejects_silent_regeneration_when_keypair_already_stored() {
+        // Clearing both fields on an existing config used to mint a new keypair and
+        // return 200, leaving the IdP with a stale SP certificate.
+        final AppSecrets existing = AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withHiddenSecret("privateKey", "stored-PEM")
+                .withSecret("publicCert", "stored-CERT")
+                .build();
+
+        assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                Map.of("idpName", "Okta"),
+                Optional.of(existing)));
+    }
+
+    @Test
+    public void buildSecrets_regenerates_keypair_when_flag_set_and_does_not_store_flag() {
+        final AppSecrets existing = AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withHiddenSecret("privateKey", "stored-PEM")
+                .withSecret("publicCert", "stored-CERT")
+                .build();
+
+        final AppSecrets result = handler.buildSecrets(
+                Map.of("idpName", "Okta", SamlProtocolHandler.REGENERATE_KEYPAIR_KEY, true),
+                Optional.of(existing));
+
+        assertTrue(result.getSecrets().get("publicCert").getString().contains("BEGIN CERTIFICATE"));
+        assertNotEquals("stored-PEM", result.getSecrets().get("privateKey").getString());
+        assertFalse(result.getSecrets().containsKey(SamlProtocolHandler.REGENERATE_KEYPAIR_KEY));
+    }
+
+    @Test
+    public void buildSecrets_generates_keypair_when_existing_config_has_none() {
+        final AppSecrets existing = AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withSecret("idpName", "Okta")
+                .build();
+
+        final AppSecrets result = handler.buildSecrets(
+                Map.of("idpName", "Okta"),
+                Optional.of(existing));
+
+        assertTrue(result.getSecrets().get("publicCert").getString().contains("BEGIN CERTIFICATE"));
+    }
+
+    @Test
     public void maskedValues_passes_through_undeclared_keys_as_strings() {
         final AppSecrets secrets = AppSecrets.builder()
                 .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
@@ -164,5 +210,65 @@ public class SamlProtocolHandlerTest {
                 Optional.of(existing));
 
         assertFalse(result.getSecrets().containsKey("emailAttribute"));
+    }
+
+    @Test
+    public void buildSecrets_rejects_signature_validation_type_none() {
+        assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                Map.of("privateKey", "****", "publicCert", "stored-CERT", "signatureValidationType", "none"),
+                Optional.of(existingKeypair())));
+    }
+
+    @Test
+    public void buildSecrets_rejects_unknown_signature_validation_type() {
+        assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                Map.of("privateKey", "****", "publicCert", "stored-CERT", "signatureValidationType", "signature"),
+                Optional.of(existingKeypair())));
+    }
+
+    @Test
+    public void buildSecrets_stores_supported_signature_validation_type_normalized() {
+        final AppSecrets result = handler.buildSecrets(
+                Map.of("privateKey", "****", "publicCert", "stored-CERT", "signatureValidationType", " Assertion "),
+                Optional.of(existingKeypair()));
+
+        assertEquals("assertion", result.getSecrets().get("signatureValidationType").getString());
+    }
+
+    @Test
+    public void buildSecrets_stores_additional_acs_urls() {
+        final String urls = "https://a.example.com/api/v1/dotsaml/benchmark/x, https://b.example.com:8443/acs";
+        final AppSecrets result = handler.buildSecrets(
+                Map.of("privateKey", "****", "publicCert", "stored-CERT", "additionalAcsUrls", urls),
+                Optional.of(existingKeypair()));
+
+        assertEquals(urls, result.getSecrets().get("additionalAcsUrls").getString());
+    }
+
+    @Test
+    public void buildSecrets_rejects_additional_acs_url_that_is_not_an_absolute_http_url() {
+        for (final String invalid : List.of("/api/v1/dotsaml/benchmark/x", "a.example.com/acs",
+                "ftp://a.example.com/acs", "https://a.example.com/acs,javascript:alert(1)")) {
+            assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                    Map.of("privateKey", "****", "publicCert", "stored-CERT", "additionalAcsUrls", invalid),
+                    Optional.of(existingKeypair())), invalid);
+        }
+    }
+
+    @Test
+    public void buildSecrets_rejects_wildcard_additional_acs_url() {
+        for (final String wildcard : List.of("https://a.example.com/acs/*", "https://*.example.com/acs")) {
+            assertThrows(javax.ws.rs.BadRequestException.class, () -> handler.buildSecrets(
+                    Map.of("privateKey", "****", "publicCert", "stored-CERT", "additionalAcsUrls", wildcard),
+                    Optional.of(existingKeypair())), wildcard);
+        }
+    }
+
+    private static AppSecrets existingKeypair() {
+        return AppSecrets.builder()
+                .withKey(DotSamlProxyFactory.SAML_APP_CONFIG_KEY)
+                .withHiddenSecret("privateKey", "stored-PEM")
+                .withSecret("publicCert", "stored-CERT")
+                .build();
     }
 }

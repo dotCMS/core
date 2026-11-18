@@ -34,6 +34,5 @@ test('unpublish the page @critical', async ({ page }) => {
 
     await pagesListPage.doActionOnPage(rowLocator, 'Unpublish');
 
-    const statusIcon = await pagesListPage.getStatusChipText(rowLocator);
-    expect(statusIcon).toContain('Draft');
+    await pagesListPage.expectStatusChip(rowLocator, 'Draft');
 });

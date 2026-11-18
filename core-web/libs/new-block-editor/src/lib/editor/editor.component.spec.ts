@@ -1,4 +1,5 @@
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -44,6 +45,7 @@ import {
 /** A Story Block field with no field variables — keeps `buildEditor` on the fast path. */
 const PLAIN_BLOCK_FIELD = {
     variable: 'body',
+    name: 'Story Body',
     fieldVariables: []
 } as unknown as DotCMSContentTypeField;
 
@@ -173,12 +175,12 @@ describe('DotCMSEditorComponent — #36985 value-load gating', () => {
     // raised from an animation-frame callback and buries the real assertion failure. Shimming
     // them changes no behaviour under test — the editor never reads the geometry back.
     beforeAll(() => {
-        Element.prototype.getClientRects = jest.fn(() => emptyRectList());
-        Element.prototype.getBoundingClientRect = jest.fn(() => emptyRect());
+        Element.prototype.getClientRects = vi.fn(() => emptyRectList());
+        Element.prototype.getBoundingClientRect = vi.fn(() => emptyRect());
 
         // ProseMirror measures through a Range, not only an Element.
-        Range.prototype.getClientRects = jest.fn(() => emptyRectList());
-        Range.prototype.getBoundingClientRect = jest.fn(() => emptyRect());
+        Range.prototype.getClientRects = vi.fn(() => emptyRectList());
+        Range.prototype.getBoundingClientRect = vi.fn(() => emptyRect());
     });
 
     afterEach(() => {
@@ -190,6 +192,19 @@ describe('DotCMSEditorComponent — #36985 value-load gating', () => {
         //
         // BROKEN_BODY carries BOTH legacy triggers at once — root `chartCount` and absent
         // `indent` — so this single assertion covers AC-001 and AC-002 as well as AC-004.
+        /**
+         * AC-209 — the editable surface carries `role="textbox"` and a translated, generic
+         * aria-label. On a form with several rich-text fields that name is identical for all of
+         * them, so a screen reader cannot tell which field is focused. The field's own name is the
+         * accessible name; the generic string stays as the fallback for standalone use.
+         */
+        it('names the editable surface after the field rather than generically', async () => {
+            const fixture = await mountEditor();
+            const surface = fixture.nativeElement.querySelector('[role="textbox"]');
+
+            expect(surface.getAttribute('aria-label')).toBe(PLAIN_BLOCK_FIELD.name);
+        });
+
         it('keeps the NodeSelection on a legacy-shaped body', async () => {
             const fixture = await mountEditor(BROKEN_BODY);
             const editor = editorOf(fixture);
@@ -366,5 +381,149 @@ describe('DotCMSEditorComponent — #36985 value-load gating', () => {
 
             expect(editorOf(fixture).getText()).toContain('Heading above the card');
         });
+    });
+});
+
+/**
+ * #37340 — the heal has to reach the HOST, not just the editor's own document.
+ *
+ * `emoji-heal.utils.spec.ts` covers the transform as a pure function, and that is not the same
+ * thing: `loadContent` calls `setContent` with `emitUpdate: false`, so a healed document can sit
+ * in the editor while the reactive-form control still holds the unhealed string. An author who
+ * opens the field, sees the © render correctly and hits Publish then saves the ORIGINAL — which
+ * is precisely what happened in manual testing.
+ *
+ * These specs assert at the call site: did the host receive a healed value, without anyone typing.
+ */
+describe('DotCMSEditorComponent — the emoji heal reaches the host (#37340)', () => {
+    const HREF = 'https://dotcms.com';
+
+    const linkMark = () => ({ type: 'link', attrs: { href: HREF } });
+
+    /** The reported payload: text(link) + bare emoji + text(link), identical link marks. */
+    const brokenBody = (): JSONContent => ({
+        type: 'doc',
+        content: [
+            {
+                type: 'paragraph',
+                content: [
+                    { type: 'text', marks: [linkMark()], text: 'dotCMS Copyright ' },
+                    { type: 'emoji', attrs: { name: 'copyright' } },
+                    { type: 'text', marks: [linkMark()], text: 'All rights reserved' }
+                ]
+            }
+        ]
+    });
+
+    /** Same sentence, no emoji node. The heal must leave this alone and emit nothing. */
+    const cleanBody = (): JSONContent => ({
+        type: 'doc',
+        content: [
+            {
+                type: 'paragraph',
+                content: [
+                    {
+                        type: 'text',
+                        marks: [linkMark()],
+                        text: 'dotCMS Copyright © All rights reserved'
+                    }
+                ]
+            }
+        ]
+    });
+
+    it('emits a healed value to the form control with NO author edit', async () => {
+        const fixture = await mountEditor();
+        const component = fixture.componentInstance;
+        const emitted: string[] = [];
+
+        component.registerOnChange((value: string) => emitted.push(value));
+        component.writeValue(JSON.stringify(brokenBody()));
+        await settle(fixture);
+
+        expect(emitted.length).toBeGreaterThan(0);
+
+        const last = JSON.parse(emitted[emitted.length - 1]) as JSONContent;
+        expect(JSON.stringify(last)).not.toContain('"emoji"');
+
+        const inline = (last.content?.[0] as JSONContent)?.content ?? [];
+        expect(inline).toHaveLength(1);
+        expect(inline[0].text).toContain('©');
+        expect(inline[0].marks?.map((mark) => mark.type)).toEqual(['link']);
+    });
+
+    it('emits NOTHING for content that carried no emoji node', async () => {
+        const fixture = await mountEditor();
+        const component = fixture.componentInstance;
+        const emitted: string[] = [];
+
+        component.registerOnChange((value: string) => emitted.push(value));
+        component.writeValue(JSON.stringify(cleanBody()));
+        await settle(fixture);
+
+        // The form must stay pristine. Emitting here would mark every field the author merely
+        // OPENED as dirty, which is the cost the `healed !== parsed` guard exists to avoid.
+        expect(emitted).toEqual([]);
+    });
+});
+
+/**
+ * #37340 T051 — the HTML-string load branch.
+ *
+ * `normalizeEditorContent` treats any non-JSON string value as HTML. dotCMS does not store Story
+ * Block fields that way, but a host embedding the editor can pass HTML, and that branch is the one
+ * `transformPastedHTML` does NOT cover — it only runs on paste.
+ *
+ * With `parseHTML` neutralized, the question is what the two rendered emoji shapes degrade to. The
+ * span wrapping a character should keep its text. The span wrapping the `fallbackImage` is the risk:
+ * if the inner `<img>` is left exposed, `DotImage` can claim it as a dotCMS image node pointing at
+ * a third-party CDN — worse than the bug being fixed (research.md R3).
+ */
+describe('DotCMSEditorComponent — HTML-string load with parseHTML neutralized (#37340)', () => {
+    const emojiSpanWithCharacter =
+        '<p>dotCMS <span data-type="emoji" data-name="copyright">©</span> 2026</p>';
+
+    const emojiSpanWithFallbackImage =
+        '<p>dotCMS <span data-type="emoji" data-name="copyright">' +
+        '<img src="https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/00a9-fe0f.png" ' +
+        'alt="copyright emoji"></span> 2026</p>';
+
+    const loadHtml = async (html: string) => {
+        const fixture = await mountEditor();
+        fixture.componentInstance.writeValue(html);
+        await settle(fixture);
+
+        const editor = fixture.componentInstance.editor() as Editor;
+        const types: string[] = [];
+        editor.state.doc.descendants((node) => {
+            types.push(node.type.name);
+
+            return true;
+        });
+
+        return {
+            json: JSON.stringify(editor.getJSON()),
+            text: editor.state.doc.textBetween(0, editor.state.doc.content.size, '', ''),
+            types
+        };
+    };
+
+    it('an emoji span carrying the character degrades to text', async () => {
+        const result = await loadHtml(emojiSpanWithCharacter);
+
+        expect(result.types).not.toContain('emoji');
+        expect(result.text).toContain('©');
+    });
+
+    /**
+     * The one that could have been a real defect. If this ever fails with a `dotImage` in the node
+     * list, the HTML branch needs the same treatment `transformPastedHTML` gives the paste path.
+     */
+    it('an emoji span wrapping the fallbackImage does NOT become a dotCMS image', async () => {
+        const result = await loadHtml(emojiSpanWithFallbackImage);
+
+        expect(result.types).not.toContain('emoji');
+        expect(result.types).not.toContain('dotImage');
+        expect(result.json).not.toContain('cdn.jsdelivr.net');
     });
 });

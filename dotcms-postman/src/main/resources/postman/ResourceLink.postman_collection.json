@@ -26,16 +26,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -56,7 +51,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"https://dotcms-storage.b-cdn.net/Bocas2.jpg\"\n}",
+					"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"http://wm:8080/s/Bocas2.jpg\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -111,16 +106,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -200,16 +190,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -257,16 +242,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -320,16 +300,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]

@@ -20,8 +20,7 @@
         <div class="ml-auto flex items-center gap-2">
             @if (store.selectedCategories().length > 0) {
                 <p-button
-                    severity="danger"
-                    [outlined]="true"
+                    [text]="true"
                     (onClick)="confirmDelete()"
                     data-testid="category-delete-btn">
                     <span

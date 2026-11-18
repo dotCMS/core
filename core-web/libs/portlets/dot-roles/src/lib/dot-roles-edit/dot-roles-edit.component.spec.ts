@@ -1,10 +1,14 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
-import { EMPTY } from 'rxjs';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { fakeAsync, flushMicrotasks, tick } from '@angular/core/testing';
 
-import { ConfirmationService } from 'primeng/api';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -19,10 +23,8 @@ const MESSAGES = {
     'roles.edit.title': 'Edit Role',
     'roles.edit.readonly': 'read only',
     'roles.edit.error': 'update failed',
-    'roles.delete.blocked': 'delete blocked',
     'roles.action.save': 'Save',
     'roles.action.cancel': 'Cancel',
-    'roles.action.delete': 'Delete Role',
     'roles.form.name': 'Role',
     'roles.form.key': 'Key',
     'roles.form.parent': 'Parent',
@@ -54,24 +56,12 @@ describe('DotRolesEditComponent', () => {
         component: DotRolesEditComponent,
         schemas: [CUSTOM_ELEMENTS_SCHEMA],
         detectChanges: false,
-        componentProviders: [
-            mockProvider(ConfirmationService, {
-                confirm: jest.fn().mockImplementation((cfg) => cfg.accept?.()),
-                // p-confirmDialog subscribes to these on init
-                requireConfirmation$: EMPTY,
-                accept: EMPTY,
-                reject: EMPTY
-            })
-        ],
         providers: [
-            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             mockProvider(DotRolesStore, {
-                roleTree: jest.fn().mockReturnValue([]),
-                searchRoleTree: jest.fn().mockResolvedValue([]),
-                updateRole: jest.fn().mockResolvedValue(BASE_ROLE),
-                deleteRole: jest
-                    .fn()
-                    .mockResolvedValue({ deleted: true, roleId: 'r-eco', usersAffected: 2 })
+                roleTree: vi.fn().mockReturnValue([]),
+                searchRoleTree: vi.fn().mockResolvedValue([]),
+                updateRole: vi.fn().mockResolvedValue(BASE_ROLE)
             }),
             { provide: DynamicDialogConfig, useValue: dialogConfig },
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }
@@ -82,18 +72,12 @@ describe('DotRolesEditComponent', () => {
         dialogConfig.data = { role: BASE_ROLE };
         spectator = createComponent();
         const store = spectator.inject(DotRolesStore, true);
-        (store.updateRole as jest.Mock).mockClear();
-        (store.updateRole as jest.Mock).mockResolvedValue(BASE_ROLE);
-        (store.deleteRole as jest.Mock).mockClear();
-        (store.deleteRole as jest.Mock).mockResolvedValue({
-            deleted: true,
-            roleId: 'r-eco',
-            usersAffected: 2
-        });
-        // `mockProvider` builds its jest.fn()s once at factory scope, so an
+        (store.updateRole as Mock).mockClear();
+        (store.updateRole as Mock).mockResolvedValue(BASE_ROLE);
+        // `mockProvider` builds its vi.fn()s once at factory scope, so an
         // implementation set by one test would otherwise become every later
         // test's behaviour.
-        (store.searchRoleTree as jest.Mock).mockReset().mockResolvedValue([]);
+        (store.searchRoleTree as Mock).mockReset().mockResolvedValue([]);
     });
 
     describe('parent picker search', () => {
@@ -107,7 +91,7 @@ describe('DotRolesEditComponent', () => {
             let resolveSearch: (value: DotRoleNode[]) => void = () => {
                 /* replaced below */
             };
-            (store.searchRoleTree as jest.Mock).mockReturnValueOnce(
+            (store.searchRoleTree as Mock).mockReturnValueOnce(
                 new Promise<DotRoleNode[]>((resolve) => {
                     resolveSearch = resolve;
                 })
@@ -132,7 +116,7 @@ describe('DotRolesEditComponent', () => {
             let resolveFirst: (value: DotRoleNode[]) => void = () => {
                 /* replaced below */
             };
-            (store.searchRoleTree as jest.Mock)
+            (store.searchRoleTree as Mock)
                 .mockReturnValueOnce(
                     new Promise<DotRoleNode[]>((resolve) => {
                         resolveFirst = resolve;
@@ -197,7 +181,7 @@ describe('DotRolesEditComponent', () => {
 
     it('reparents to root when "None (Top Level)" is picked, sending null not the sentinel', async () => {
         const store = spectator.inject(DotRolesStore, true);
-        (store.updateRole as jest.Mock).mockClear();
+        (store.updateRole as Mock).mockClear();
         spectator.detectChanges();
 
         const [rootOption] = spectator.component['$parentTree']();
@@ -226,18 +210,12 @@ describe('DotRolesEditComponent', () => {
         expect(dialogRef.close).toHaveBeenCalled();
     });
 
-    it('opens the confirm and calls store.deleteRole when Delete is clicked', async () => {
-        const store = spectator.inject(DotRolesStore, true);
-        const dialogRef = spectator.inject(DynamicDialogRef);
+    it('does not offer Delete — it lives in the detail header menu', () => {
         spectator.detectChanges();
 
-        spectator.click(byTestId('btn-delete'));
-        await Promise.resolve();
-
-        expect(store.deleteRole).toHaveBeenCalledWith('r-eco');
-        expect(dialogRef.close).toHaveBeenCalledWith(
-            expect.objectContaining({ deleted: true, usersAffected: 2 })
-        );
+        expect(spectator.query(byTestId('btn-delete'))).toBeNull();
+        expect(spectator.query(byTestId('btn-cancel'))).toBeTruthy();
+        expect(spectator.query(byTestId('btn-save'))).toBeTruthy();
     });
 
     it('disables Save + shows readonly notice for system roles', () => {

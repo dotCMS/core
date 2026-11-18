@@ -5,6 +5,8 @@ import com.dotcms.content.index.SearchAPI;
 import com.dotcms.content.index.VersionedIndices;
 import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.content.index.domain.ContentSearchResults;
+import com.dotcms.content.index.domain.InvalidSearchQueryException;
+import com.dotcms.content.index.domain.QueryRejectedByOpenSearchException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
@@ -20,6 +22,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.IOException;
@@ -28,6 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import org.opensearch.client.json.JsonpDeserializer;
@@ -144,7 +148,7 @@ public class OSSearchAPIImpl implements SearchAPI {
             throws DotSecurityException, DotDataException {
 
         if (!UtilMethods.isSet(query)) {
-            throw new DotStateException("Search query is null");
+            throw new InvalidSearchQueryException("Search query is null");
         }
 
         // Normalize the query the same way search() does, so the raw path resolves mixed-case
@@ -159,7 +163,9 @@ public class OSSearchAPIImpl implements SearchAPI {
             completeQueryJSON = new JSONObject(normalizedQuery);
             completeQueryJSON.put("_source", new JSONArray("[identifier, inode]"));
         } catch (final JSONException e) {
-            throw new DotStateException("Unable to parse the given query.", e);
+            // The caller's error, not the cluster's: raised as such so Phase 2 does not retry it on
+            // Elasticsearch and log it as an index outage (issue #37637).
+            throw new InvalidSearchQueryException("Unable to parse the given query.", e);
         }
 
         return executeSearch(completeQueryJSON, live, user, respectFrontendRoles, -1, -1, null);
@@ -285,49 +291,7 @@ public class OSSearchAPIImpl implements SearchAPI {
                     "You must specify a user if you are not respecting frontend roles");
         }
 
-        List<Role> roles = new ArrayList<>();
-        boolean isAdmin = false;
-        if (user != null) {
-            if (!APILocator.getRoleAPI().doesUserHaveRole(user,
-                    APILocator.getRoleAPI().loadCMSAdminRole())) {
-                roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
-            } else {
-                isAdmin = true;
-            }
-        }
-
-        final StringBuffer perms = new StringBuffer();
-        if (!isAdmin && !queryJson.has("permissions:")) {
-            final ContentletAPI contentletAPI = APILocator.getContentletAPIImpl();
-            contentletAPI.addPermissionsToQuery(perms, user, roles, respectFrontendRoles);
-            // Secondary category-permission filter: mirror the ES path
-            // (ESContentletAPIImpl.applyPermissionsToQuery). Without this the categoryperms:
-            // clause is never added under OS, so content restricted by category read permissions
-            // leaks to users who lack the category role (Phase 3 permission-filter gap).
-            contentletAPI.addCategoryPermissionsToQuery(perms, user, roles, respectFrontendRoles);
-        }
-
-        if (perms.length() > 0) {
-            try {
-                final JSONObject permissionsFilter = new JSONObject().put("query_string",
-                        new JSONObject().put("query", perms.toString().trim()));
-                JSONArray boolFilters = new JSONArray("[" + permissionsFilter + "]");
-
-                if (queryJson.has("query")) {
-                    final JSONObject currentQueryJSON =
-                            new JSONObject(queryJson.getJSONObject("query").toString());
-                    boolFilters =
-                            new JSONArray("[" + permissionsFilter + "," + currentQueryJSON + "]");
-                }
-
-                final JSONObject filteredJSON = new JSONObject().put("bool",
-                        new JSONObject().put("must", new JSONObject().put("bool",
-                                new JSONObject().put("must", boolFilters))));
-                queryJson.put("query", filteredJSON);
-            } catch (final JSONException e) {
-                throw new DotStateException("Unable to apply permissions to OS query.", e);
-            }
-        }
+        applyPermissionsFilter(queryJson, user, respectFrontendRoles);
 
         // Override pagination from parameters
         try {
@@ -368,8 +332,7 @@ public class OSSearchAPIImpl implements SearchAPI {
                     "OS search returned an empty body (HTTP " + status + ")"));
 
             if (status < 200 || status >= 300) {
-                throw new DotStateException(
-                        "OS search failed: HTTP " + status + " — " + body.bodyAsString());
+                throw searchFailure(status, body.bodyAsString());
             }
 
             try (final InputStream is = body.body();
@@ -382,6 +345,59 @@ public class OSSearchAPIImpl implements SearchAPI {
 
         } catch (final IOException e) {
             throw new DotStateException("OS search execution failed: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * OpenSearch error types that mean it could not parse the request: the query JSON is malformed,
+     * or uses syntax OpenSearch does not accept — possibly older syntax Elasticsearch 7 still does.
+     */
+    private static final Set<String> MALFORMED_REQUEST_ERRORS = Set.of(
+            "parsing_exception", "x_content_parse_exception", "json_parse_exception",
+            "json_e_o_f_exception");
+
+    /**
+     * The exception for a search OpenSearch answered with a non-2xx status.
+     *
+     * <p>An HTTP 400 whose top-level error and every root cause are parse failures
+     * ({@link #MALFORMED_REQUEST_ERRORS}) is raised as {@link QueryRejectedByOpenSearchException}.
+     * Phase 2 still retries it on Elasticsearch — Elasticsearch 7 accepts syntax OpenSearch 3
+     * dropped, so the query may well succeed there — but logs it as a query that will fail at
+     * Phase 3 instead of blaming the index (issue #37637).</p>
+     *
+     * <p>Every other failure stays a plain {@link DotStateException}: a 400 from a shard
+     * ({@code query_shard_exception}, {@code search_phase_execution_exception}), which a
+     * well-formed query can draw from an OpenSearch mapping that has not caught up; a body that
+     * cannot be read; and every other status.</p>
+     */
+    static DotStateException searchFailure(final int status, final String body) {
+        final String message = "OS search failed: HTTP " + status + " — " + body;
+        return status == 400 && isMalformedRequest(body)
+                ? new QueryRejectedByOpenSearchException(message)
+                : new DotStateException(message);
+    }
+
+    /** Whether an OpenSearch error body reports only parse failures of the request itself. */
+    private static boolean isMalformedRequest(final String body) {
+        try {
+            final JSONObject error = new JSONObject(body).getJSONObject("error");
+            if (!MALFORMED_REQUEST_ERRORS.contains(error.optString("type"))) {
+                return false;
+            }
+            final JSONArray rootCauses = error.optJSONArray("root_cause");
+            if (null == rootCauses) {
+                return true;
+            }
+            for (int i = 0; i < rootCauses.length(); i++) {
+                if (!MALFORMED_REQUEST_ERRORS.contains(
+                        rootCauses.getJSONObject(i).optString("type"))) {
+                    return false;
+                }
+            }
+            return true;
+        } catch (final RuntimeException e) {
+            // JSONException is a RuntimeException: any unreadable body lands here.
+            return false;
         }
     }
 
@@ -431,5 +447,70 @@ public class OSSearchAPIImpl implements SearchAPI {
         return indices.working().orElseThrow(
                 () -> new com.dotmarketing.exception.DotRuntimeException(
                         "No working index found for OS search"));
+    }
+
+    /**
+     * Adds the permission filter to a raw query for every non-administrator user, combining it
+     * with the query the caller sent. Administrators are left untouched.
+     *
+     * <p>The filter is built on the server side from the user's roles. Nothing in the request
+     * body takes part in the decision, so a caller cannot influence whether it is applied.</p>
+     *
+     * @param queryJson            the raw query body, modified in place
+     * @param user                 the user the search runs as
+     * @param respectFrontendRoles whether front-end roles count towards the permission check
+     * @return the same {@code queryJson}, so callers and tests can read the body that will be sent
+     * @throws DotDataException if the roles of the user cannot be loaded
+     * @throws DotSecurityException if the permission clauses cannot be built for the user
+     */
+    @VisibleForTesting
+    static JSONObject applyPermissionsFilter(final JSONObject queryJson, final User user,
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        List<Role> roles = new ArrayList<>();
+        boolean isAdmin = false;
+        if (user != null) {
+            if (!APILocator.getRoleAPI().doesUserHaveRole(user,
+                    APILocator.getRoleAPI().loadCMSAdminRole())) {
+                roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
+            } else {
+                isAdmin = true;
+            }
+        }
+
+        final StringBuffer perms = new StringBuffer();
+        if (!isAdmin) {
+            final ContentletAPI contentletAPI = APILocator.getContentletAPIImpl();
+            contentletAPI.addPermissionsToQuery(perms, user, roles, respectFrontendRoles);
+            // Secondary category-permission filter: mirror the ES path
+            // (ESContentletAPIImpl.applyPermissionsToQuery). Without this the categoryperms:
+            // clause is never added under OS, so content restricted by category read permissions
+            // leaks to users who lack the category role (Phase 3 permission-filter gap).
+            contentletAPI.addCategoryPermissionsToQuery(perms, user, roles, respectFrontendRoles);
+        }
+
+        if (perms.length() > 0) {
+            try {
+                final JSONObject permissionsFilter = new JSONObject().put("query_string",
+                        new JSONObject().put("query", perms.toString().trim()));
+                JSONArray boolFilters = new JSONArray("[" + permissionsFilter + "]");
+
+                if (queryJson.has("query")) {
+                    final JSONObject currentQueryJSON =
+                            new JSONObject(queryJson.getJSONObject("query").toString());
+                    boolFilters =
+                            new JSONArray("[" + permissionsFilter + "," + currentQueryJSON + "]");
+                }
+
+                final JSONObject filteredJSON = new JSONObject().put("bool",
+                        new JSONObject().put("must", new JSONObject().put("bool",
+                                new JSONObject().put("must", boolFilters))));
+                queryJson.put("query", filteredJSON);
+            } catch (final JSONException e) {
+                throw new DotStateException("Unable to apply permissions to OS query.", e);
+            }
+        }
+
+        return queryJson;
     }
 }

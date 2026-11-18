@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { ErrorLayout } from "@/components/ErrorLayout";
+import type { ErrorDetails } from "@/utils/pageResponse";
 
 export const ERROR_COPY = {
     403: {
@@ -17,7 +18,7 @@ export const ERROR_COPY = {
 };
 
 interface ErrorPageProps {
-    error?: { status?: number };
+    error?: ErrorDetails;
 }
 
 export async function ErrorPage({ error }: ErrorPageProps) {
@@ -35,6 +36,8 @@ export async function ErrorPage({ error }: ErrorPageProps) {
             status={status}
             heading={copy.heading}
             body={copy.body}
+            // Development only: getErrorDetails leaves it unset in production.
+            detail={error?.message}
         />
     );
 }

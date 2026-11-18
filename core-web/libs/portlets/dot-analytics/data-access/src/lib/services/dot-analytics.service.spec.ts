@@ -1,4 +1,4 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 
 import { HttpTestingController } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -60,9 +60,20 @@ function dotCMSWrapAnalytics<T extends Record<string, string | number>>(
 
 function createAnalyticsHealthResponse(available: string | boolean): DotCMSResponse<HealthEntity> {
     return {
-        entity: {
-            available
-        },
+        entity: { available },
+        errors: [],
+        i18nMessagesMap: {},
+        messages: [],
+        pagination: null,
+        permissions: []
+    };
+}
+
+function createAnalyticsHealthResponseWithHealth(
+    health: 'OK' | 'NOT_CONFIGURED' | 'CONFIGURATION_ERROR'
+): DotCMSResponse<HealthEntity> {
+    return {
+        entity: { health },
         errors: [],
         i18nMessagesMap: {},
         messages: [],
@@ -260,17 +271,18 @@ describe('DotAnalyticsService', () => {
             req.flush(dotCMSWrapAnalytics([{ totalEvents: 99 }]));
         });
 
-        it('should propagate HTTP errors for total-events', (done) => {
-            spectator.service.getTotalEvents({ range: 'last_7_days' }).subscribe({
-                error: (e) => {
-                    expect(e.status).toBe(500);
-                    done();
-                }
-            });
+        it('should propagate HTTP errors for total-events', () =>
+            new Promise<void>((done) => {
+                spectator.service.getTotalEvents({ range: 'last_7_days' }).subscribe({
+                    error: (e) => {
+                        expect(e.status).toBe(500);
+                        done();
+                    }
+                });
 
-            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
-            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-        });
+                const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
+                req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+            }));
     });
 
     describe('getUniqueVisitors', () => {
@@ -341,17 +353,18 @@ describe('DotAnalyticsService', () => {
             req.flush(dotCMSWrapAnalytics([{ uniqueVisitors: 3 }]));
         });
 
-        it('should propagate HTTP errors for unique-visitors', (done) => {
-            spectator.service.getUniqueVisitors({ range: 'last_7_days' }).subscribe({
-                error: (e) => {
-                    expect(e.status).toBe(500);
-                    done();
-                }
-            });
+        it('should propagate HTTP errors for unique-visitors', () =>
+            new Promise<void>((done) => {
+                spectator.service.getUniqueVisitors({ range: 'last_7_days' }).subscribe({
+                    error: (e) => {
+                        expect(e.status).toBe(500);
+                        done();
+                    }
+                });
 
-            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
-            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-        });
+                const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
+                req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+            }));
     });
 
     describe('getContentAttribution', () => {
@@ -418,17 +431,18 @@ describe('DotAnalyticsService', () => {
             req.flush(dotCMSWrapAnalytics([]));
         });
 
-        it('should propagate HTTP errors for content attribution', (done) => {
-            spectator.service.getContentAttribution({ range: 'last_7_days' }).subscribe({
-                error: (e) => {
-                    expect(e.status).toBe(500);
-                    done();
-                }
-            });
+        it('should propagate HTTP errors for content attribution', () =>
+            new Promise<void>((done) => {
+                spectator.service.getContentAttribution({ range: 'last_7_days' }).subscribe({
+                    error: (e) => {
+                        expect(e.status).toBe(500);
+                        done();
+                    }
+                });
 
-            const req = expectAnalyticsContentReq(TestBed.inject(HttpTestingController));
-            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-        });
+                const req = expectAnalyticsContentReq(TestBed.inject(HttpTestingController));
+                req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+            }));
     });
 
     describe('getTopContent', () => {
@@ -479,17 +493,18 @@ describe('DotAnalyticsService', () => {
             req.flush(dotCMSWrapAnalytics([]));
         });
 
-        it('should propagate HTTP errors for top-content', (done) => {
-            spectator.service.getTopContent({ range: 'last_7_days' }).subscribe({
-                error: (e) => {
-                    expect(e.status).toBe(500);
-                    done();
-                }
-            });
+        it('should propagate HTTP errors for top-content', () =>
+            new Promise<void>((done) => {
+                spectator.service.getTopContent({ range: 'last_7_days' }).subscribe({
+                    error: (e) => {
+                        expect(e.status).toBe(500);
+                        done();
+                    }
+                });
 
-            const req = expectAnalyticsContentReq(TestBed.inject(HttpTestingController));
-            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-        });
+                const req = expectAnalyticsContentReq(TestBed.inject(HttpTestingController));
+                req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+            }));
     });
 
     describe('getPageviewsByDeviceBrowser', () => {
@@ -553,22 +568,23 @@ describe('DotAnalyticsService', () => {
             ]);
         });
 
-        it('should propagate HTTP errors for pageviews-by-device-browser', (done) => {
-            spectator.service
-                .getPageviewsByDeviceBrowser({
-                    range: 'last_30_days',
-                    groupBy: 'device'
-                })
-                .subscribe({
-                    error: (e) => {
-                        expect(e.status).toBe(500);
-                        done();
-                    }
-                });
+        it('should propagate HTTP errors for pageviews-by-device-browser', () =>
+            new Promise<void>((done) => {
+                spectator.service
+                    .getPageviewsByDeviceBrowser({
+                        range: 'last_30_days',
+                        groupBy: 'device'
+                    })
+                    .subscribe({
+                        error: (e) => {
+                            expect(e.status).toBe(500);
+                            done();
+                        }
+                    });
 
-            const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
-            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-        });
+                const req = expectAnalyticsEventsReq(TestBed.inject(HttpTestingController));
+                req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+            }));
     });
 
     describe('getSessionEngagement', () => {
@@ -628,17 +644,18 @@ describe('DotAnalyticsService', () => {
             expect(result).toEqual(byDay);
         });
 
-        it('should propagate HTTP errors for session engagement', (done) => {
-            spectator.service.getSessionEngagement({ range: 'last_7_days' }).subscribe({
-                error: (e) => {
-                    expect(e.status).toBe(503);
-                    done();
-                }
-            });
+        it('should propagate HTTP errors for session engagement', () =>
+            new Promise<void>((done) => {
+                spectator.service.getSessionEngagement({ range: 'last_7_days' }).subscribe({
+                    error: (e) => {
+                        expect(e.status).toBe(503);
+                        done();
+                    }
+                });
 
-            const req = expectAnalyticsSessionsReq(TestBed.inject(HttpTestingController));
-            req.flush('Unavailable', { status: 503, statusText: 'Service Unavailable' });
-        });
+                const req = expectAnalyticsSessionsReq(TestBed.inject(HttpTestingController));
+                req.flush('Unavailable', { status: 503, statusText: 'Service Unavailable' });
+            }));
     });
 
     describe('getSessionEngagementGroupBy', () => {
@@ -787,56 +804,97 @@ describe('DotAnalyticsService', () => {
             ]);
         });
 
-        it('should propagate HTTP errors for session engagement groupBy', (done) => {
-            spectator.service
-                .getSessionEngagementGroupBy({ range: 'last_7_days', groupBy: 'language' })
-                .subscribe({
-                    error: (e) => {
-                        expect(e.status).toBe(500);
-                        done();
-                    }
-                });
+        it('should propagate HTTP errors for session engagement groupBy', () =>
+            new Promise<void>((done) => {
+                spectator.service
+                    .getSessionEngagementGroupBy({ range: 'last_7_days', groupBy: 'language' })
+                    .subscribe({
+                        error: (e) => {
+                            expect(e.status).toBe(500);
+                            done();
+                        }
+                    });
 
-            const req = expectAnalyticsSessionsReq(TestBed.inject(HttpTestingController));
-            req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
-        });
+                const req = expectAnalyticsSessionsReq(TestBed.inject(HttpTestingController));
+                req.flush('Server error', { status: 500, statusText: 'Internal Server Error' });
+            }));
     });
 
     describe('healthCheck', () => {
-        it('should return AVAILABLE when entity.available is string "true"', () => {
-            let result!: HealthStatusTypes;
-            spectator.service.healthCheck().subscribe((status) => {
-                result = status;
+        describe('new health field (preferred)', () => {
+            it('should return OK when entity.health is "OK"', () => {
+                let result!: HealthStatusTypes;
+                spectator.service.healthCheck().subscribe((status) => {
+                    result = status;
+                });
+
+                const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+                req.flush(createAnalyticsHealthResponseWithHealth('OK'));
+
+                expect(result).toBe(HealthStatusTypes.OK);
             });
 
-            const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
-            req.flush(createAnalyticsHealthResponse('true'));
+            it('should return NOT_CONFIGURED when entity.health is "NOT_CONFIGURED"', () => {
+                let result!: HealthStatusTypes;
+                spectator.service.healthCheck().subscribe((status) => {
+                    result = status;
+                });
 
-            expect(result).toBe(HealthStatusTypes.AVAILABLE);
+                const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+                req.flush(createAnalyticsHealthResponseWithHealth('NOT_CONFIGURED'));
+
+                expect(result).toBe(HealthStatusTypes.NOT_CONFIGURED);
+            });
+
+            it('should return CONFIGURATION_ERROR when entity.health is "CONFIGURATION_ERROR"', () => {
+                let result!: HealthStatusTypes;
+                spectator.service.healthCheck().subscribe((status) => {
+                    result = status;
+                });
+
+                const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+                req.flush(createAnalyticsHealthResponseWithHealth('CONFIGURATION_ERROR'));
+
+                expect(result).toBe(HealthStatusTypes.CONFIGURATION_ERROR);
+            });
         });
 
-        it('should return AVAILABLE when entity.available is boolean true', () => {
-            let result!: HealthStatusTypes;
-            spectator.service.healthCheck().subscribe((status) => {
-                result = status;
+        describe('legacy available field (rollback fallback)', () => {
+            it('should return OK when entity.health is absent and entity.available is string "true"', () => {
+                let result!: HealthStatusTypes;
+                spectator.service.healthCheck().subscribe((status) => {
+                    result = status;
+                });
+
+                const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+                req.flush(createAnalyticsHealthResponse('true'));
+
+                expect(result).toBe(HealthStatusTypes.OK);
             });
 
-            const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
-            req.flush(createAnalyticsHealthResponse(true));
+            it('should return OK when entity.health is absent and entity.available is boolean true', () => {
+                let result!: HealthStatusTypes;
+                spectator.service.healthCheck().subscribe((status) => {
+                    result = status;
+                });
 
-            expect(result).toBe(HealthStatusTypes.AVAILABLE);
-        });
+                const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+                req.flush(createAnalyticsHealthResponse(true));
 
-        it('should return NOT_AVAILABLE when entity.available is string "false"', () => {
-            let result!: HealthStatusTypes;
-            spectator.service.healthCheck().subscribe((status) => {
-                result = status;
+                expect(result).toBe(HealthStatusTypes.OK);
             });
 
-            const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
-            req.flush(createAnalyticsHealthResponse('false'));
+            it('should return NOT_AVAILABLE when entity.health is absent and entity.available is false', () => {
+                let result!: HealthStatusTypes;
+                spectator.service.healthCheck().subscribe((status) => {
+                    result = status;
+                });
 
-            expect(result).toBe(HealthStatusTypes.NOT_AVAILABLE);
+                const req = spectator.expectOne(ANALYTICS_HEALTH_URL, HttpMethod.GET);
+                req.flush(createAnalyticsHealthResponse('false'));
+
+                expect(result).toBe(HealthStatusTypes.NOT_AVAILABLE);
+            });
         });
 
         it('should return ERROR on HTTP failure', () => {
@@ -864,11 +922,11 @@ describe('DotAnalyticsService', () => {
 
             const reqs = spectator.controller.match((req) => req.url === ANALYTICS_HEALTH_URL);
             expect(reqs.length).toBe(2);
-            reqs[0].flush(createAnalyticsHealthResponse('true'));
-            reqs[1].flush(createAnalyticsHealthResponse('false'));
+            reqs[0].flush(createAnalyticsHealthResponseWithHealth('OK'));
+            reqs[1].flush(createAnalyticsHealthResponseWithHealth('NOT_CONFIGURED'));
 
-            expect(first).toBe(HealthStatusTypes.AVAILABLE);
-            expect(second).toBe(HealthStatusTypes.NOT_AVAILABLE);
+            expect(first).toBe(HealthStatusTypes.OK);
+            expect(second).toBe(HealthStatusTypes.NOT_CONFIGURED);
         });
     });
 

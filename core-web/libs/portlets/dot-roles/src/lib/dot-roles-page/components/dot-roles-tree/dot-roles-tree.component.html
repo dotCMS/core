@@ -1,5 +1,5 @@
 <header class="flex items-center justify-between">
-    <span class="text-color-secondary text-xs font-semibold tracking-wider uppercase">
+    <span class="text-color-secondary text-sm font-semibold tracking-wider uppercase">
         {{ 'roles.panel.title' | dm }}
     </span>
     <button
@@ -8,7 +8,6 @@
         (click)="onAddRole()"
         data-testid="new-role-btn"
         [attr.aria-label]="'roles.action.new' | dm"
-        [outlined]="true"
         size="small">
         {{ 'roles.action.new' | dm }}
     </button>
@@ -57,7 +56,9 @@
                 <!-- Do NOT swap the `+` for `<button pButton>` — PrimeNG's
                      ~40px min-height pushes the row past 50px. -->
                 <span class="group flex w-full items-center gap-2">
-                    <span class="flex-1 truncate">{{ node.label }}</span>
+                    <dot-truncated-label class="min-w-0 flex-1">
+                        {{ node.label }}
+                    </dot-truncated-label>
                     <!-- Direct-grant count (#37071). Hidden at zero to keep
                          the row quiet, and absent entirely on legacy search
                          nodes, which don't carry the field. -->

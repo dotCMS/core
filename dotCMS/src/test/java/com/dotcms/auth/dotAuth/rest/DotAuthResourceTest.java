@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -309,6 +310,46 @@ public class DotAuthResourceTest {
         }
     }
 
+    @Test
+    public void getConfig_carries_the_site_hostname() throws Exception {
+        when(appsAPI.getSecrets(any(), anyBoolean(), any(Host.class), eq(user)))
+                .thenReturn(Optional.empty());
+
+        try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
+            apiLocator.when(APILocator::systemHost).thenReturn(systemHost);
+            apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
+            when(hostAPI.find(SITE_ID, user, false)).thenReturn(site);
+
+            final DotAuthConfigView entity = (DotAuthConfigView) ((ResponseEntityView<?>)
+                    resource.getConfig(request, response, SITE_ID).getEntity()).getEntity();
+
+            assertEquals(SITE_NAME, entity.getHostName());
+        }
+    }
+
+    @Test
+    public void getConfig_for_system_host_has_no_hostname() throws Exception {
+        // The redirect host for a SYSTEM_HOST config depends on where the user logs in
+        // (each inheriting site's own host, or the admin origin), so no single value is right.
+        when(appsAPI.getSecrets(any(), anyBoolean(), any(Host.class), eq(user)))
+                .thenReturn(Optional.empty());
+
+        final Host defaultHost = mock(Host.class);
+        when(defaultHost.getHostname()).thenReturn("www.default.example");
+
+        try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
+            apiLocator.when(APILocator::systemHost).thenReturn(systemHost);
+            apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
+            when(hostAPI.findDefaultHost(user, false)).thenReturn(defaultHost);
+
+            final DotAuthConfigView entity = (DotAuthConfigView) ((ResponseEntityView<?>)
+                    resource.getConfig(request, response, Host.SYSTEM_HOST).getEntity()).getEntity();
+
+            // Even with a resolvable default site, SYSTEM_HOST must not claim one host.
+            assertNull(entity.getHostName());
+        }
+    }
+
     // --- saveConfig (mutual exclusion) -------------------------------------
 
     @Test
@@ -400,6 +441,62 @@ public class DotAuthResourceTest {
         }
     }
 
+    @Test
+    public void saveConfig_returns_json_message_when_handler_rejects_the_payload() throws Exception {
+        // A javax.ws.rs.BadRequestException has no entity, so without mapping the browser
+        // received Tomcat's HTML 400 page and the UI lost the reason for the rejection.
+        final DotAuthConfigForm form = new DotAuthConfigForm(
+                DotAuthProtocol.SAML,
+                Map.of("idpName", "Okta", "publicCert", "a-CERT", "privateKey", ""));
+
+        when(appsAPI.getSecrets(eq(SAML_KEY), anyBoolean(), eq(site), eq(user)))
+                .thenReturn(Optional.empty());
+
+        try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
+            apiLocator.when(APILocator::systemHost).thenReturn(systemHost);
+            apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
+            when(hostAPI.find(SITE_ID, user, false)).thenReturn(site);
+
+            final Response rsp = resource.saveConfig(request, response, SITE_ID, form);
+
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), rsp.getStatus());
+            assertEquals(javax.ws.rs.core.MediaType.APPLICATION_JSON_TYPE, rsp.getMediaType());
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> body = (Map<String, Object>) rsp.getEntity();
+            assertTrue(String.valueOf(body.get("message")).contains("public certificate"),
+                    "Expected the handler's message in the JSON body, got " + body);
+            verify(appsAPI, never()).saveSecrets(any(AppSecrets.class), any(Host.class), any(User.class));
+        }
+    }
+
+    @Test
+    public void saveConfig_rejects_clearing_both_saml_key_fields_without_regenerate_flag() throws Exception {
+        final DotAuthConfigForm form = new DotAuthConfigForm(
+                DotAuthProtocol.SAML, Map.of("idpName", "Okta"));
+        final AppSecrets stored = AppSecrets.builder()
+                .withKey(SAML_KEY)
+                .withHiddenSecret("privateKey", "stored-PEM")
+                .withSecret("publicCert", "stored-CERT")
+                .build();
+
+        when(appsAPI.getSecrets(eq(SAML_KEY), anyBoolean(), eq(site), eq(user)))
+                .thenReturn(Optional.of(stored));
+
+        try (MockedStatic<APILocator> apiLocator = Mockito.mockStatic(APILocator.class)) {
+            apiLocator.when(APILocator::systemHost).thenReturn(systemHost);
+            apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
+            when(hostAPI.find(SITE_ID, user, false)).thenReturn(site);
+
+            final Response rsp = resource.saveConfig(request, response, SITE_ID, form);
+
+            assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), rsp.getStatus());
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> body = (Map<String, Object>) rsp.getEntity();
+            assertTrue(String.valueOf(body.get("message")).contains("keypair is already stored"));
+            verify(appsAPI, never()).saveSecrets(any(AppSecrets.class), any(Host.class), any(User.class));
+        }
+    }
+
     // --- clearConfig --------------------------------------------------------
 
     @Test
@@ -472,5 +569,22 @@ public class DotAuthResourceTest {
             list.add(h);
         }
         return list;
+    }
+    // ---- metadata / discovery proxy redirect handling ----
+
+    @Test
+    void nextHop_resolvesRelativeAndAbsoluteLocations() {
+        assertEquals("https://idp.example.com/saml/metadata",
+                DotAuthResource.nextHop("https://idp.example.com/a/b", "/saml/metadata"));
+        assertEquals("https://other.example.com/x",
+                DotAuthResource.nextHop("https://idp.example.com/a", "https://other.example.com/x"));
+    }
+
+    @Test
+    void nextHop_missingOrInvalidLocation_isRejected() {
+        assertThrows(javax.ws.rs.BadRequestException.class,
+                () -> DotAuthResource.nextHop("https://idp.example.com/a", null));
+        assertThrows(javax.ws.rs.BadRequestException.class,
+                () -> DotAuthResource.nextHop("https://idp.example.com/a", "http://bad host/"));
     }
 }

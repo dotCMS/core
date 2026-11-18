@@ -1,6 +1,7 @@
 import { InferInputSignals } from '@openng/spectator';
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of, throwError, timer } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { HttpClient } from '@angular/common/http';
 import { computed, signal } from '@angular/core';
@@ -45,12 +46,12 @@ type MockUveStore = {
     pageAsset: ReturnType<typeof computed<DotCMSPageAsset | null>>;
     pageType: ReturnType<typeof signal<PageType>>;
     $pageData: ReturnType<typeof signal<PageData>>;
-    saveStyleEditor: jest.Mock;
-    rollbackPageAssetResponse: jest.Mock;
-    addCurrentPageToHistory: jest.Mock;
-    setPageAsset: jest.Mock;
-    setUveStatus: jest.Mock;
-    pageReload: jest.Mock;
+    saveStyleEditor: Mock;
+    rollbackPageAssetResponse: Mock;
+    addCurrentPageToHistory: Mock;
+    setPageAsset: Mock;
+    setUveStatus: Mock;
+    pageReload: Mock;
 };
 
 const createMockSchema = (): StyleEditorFormSchema => ({
@@ -198,14 +199,14 @@ describe('DotUveStyleEditorFormComponent', () => {
                 languageId: 1,
                 personaTag: undefined
             }),
-            saveStyleEditor: jest.fn().mockReturnValue(of({})),
-            rollbackPageAssetResponse: jest.fn().mockReturnValue(true),
-            addCurrentPageToHistory: jest.fn(),
-            setPageAsset: jest.fn((payload: { pageAsset: DotCMSPageAsset | null }) => {
+            saveStyleEditor: vi.fn().mockReturnValue(of({})),
+            rollbackPageAssetResponse: vi.fn().mockReturnValue(true),
+            addCurrentPageToHistory: vi.fn(),
+            setPageAsset: vi.fn((payload: { pageAsset: DotCMSPageAsset | null }) => {
                 pageAssetSignal.set(payload?.pageAsset ?? null);
             }),
-            setUveStatus: jest.fn(),
-            pageReload: jest.fn()
+            setUveStatus: vi.fn(),
+            pageReload: vi.fn()
         };
 
         spectator = createTestComponent();

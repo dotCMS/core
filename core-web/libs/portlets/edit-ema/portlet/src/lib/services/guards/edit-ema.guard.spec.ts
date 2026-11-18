@@ -1,3 +1,5 @@
+import { Mock, vi } from 'vitest';
+
 import { TestBed } from '@angular/core/testing';
 import {
     ActivatedRouteSnapshot,
@@ -12,11 +14,11 @@ import { editEmaGuard } from './edit-ema.guard';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../../shared/consts';
 
 describe('editEmaGuard', () => {
-    let mockCreateUrlTree: jest.Mock;
+    let mockCreateUrlTree: Mock;
     let mockRouterStateSnapshot: RouterStateSnapshot;
 
     beforeEach(() => {
-        mockCreateUrlTree = jest.fn().mockReturnValue({} as UrlTree);
+        mockCreateUrlTree = vi.fn().mockReturnValue({} as UrlTree);
         mockRouterStateSnapshot = {
             url: '/test'
         } as RouterStateSnapshot;
@@ -41,7 +43,7 @@ describe('editEmaGuard', () => {
     };
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('when all required query parameters are present', () => {
@@ -473,6 +475,6 @@ function createMockRoute(
         paramMap: new Map(),
         queryParamMap: new Map(),
         title: null,
-        toString: jest.fn()
+        toString: vi.fn()
     } as unknown as ActivatedRouteSnapshot;
 }

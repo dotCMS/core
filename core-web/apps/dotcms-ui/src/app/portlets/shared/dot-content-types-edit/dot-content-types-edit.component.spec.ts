@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { of, Subject, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
@@ -25,7 +26,8 @@ import {
     DotHttpErrorManagerService,
     DotMessageDisplayService,
     DotMessageService,
-    DotRouterService
+    DotRouterService,
+    DotSessionStorageService
 } from '@dotcms/data-access';
 import { LoginService, SiteService } from '@dotcms/dotcms-js';
 import {
@@ -92,7 +94,7 @@ class TestContentTypesFormComponent {
     @Output() $send: EventEmitter<DotCMSContentType> = new EventEmitter();
     @Output() $valid: EventEmitter<boolean> = new EventEmitter();
 
-    resetForm = jest.fn();
+    resetForm = vi.fn();
 
     submitForm(): void {}
 }
@@ -187,7 +189,7 @@ describe('DotContentTypesEditComponent', () => {
                 DotEventsService,
                 DotFieldService,
                 Location,
-                { provide: GlobalStore, useValue: { addNewBreadcrumb: jest.fn() } }
+                { provide: GlobalStore, useValue: { addNewBreadcrumb: vi.fn() } }
             ]
         };
     };
@@ -214,7 +216,7 @@ describe('DotContentTypesEditComponent', () => {
             fixture.detectChanges();
             dialog = de.query(By.css('p-dialog'));
 
-            jest.spyOn(comp, 'onDialogHide');
+            vi.spyOn(comp, 'onDialogHide');
         }));
 
         it('should have dialog opened by default & has css base-type class', () => {
@@ -343,8 +345,8 @@ describe('DotContentTypesEditComponent', () => {
                     }
                 };
 
-                jest.spyOn(crudService, 'postData').mockReturnValue(of([responseContentType]));
-                jest.spyOn(location, 'replaceState').mockImplementation(() => {});
+                vi.spyOn(crudService, 'postData').mockReturnValue(of([responseContentType]));
+                vi.spyOn(location, 'replaceState').mockImplementation(() => {});
 
                 contentTypeForm.triggerEventHandler('$send', mockContentType);
 
@@ -370,17 +372,17 @@ describe('DotContentTypesEditComponent', () => {
             });
 
             it('should handle error', () => {
-                jest.spyOn(crudService, 'postData').mockReturnValue(
+                vi.spyOn(crudService, 'postData').mockReturnValue(
                     throwError(() => mockResponseView(403))
                 );
-                jest.spyOn(dotHttpErrorManagerService, 'handle');
+                vi.spyOn(dotHttpErrorManagerService, 'handle');
 
                 contentTypeForm.triggerEventHandler('$send', mockContentType);
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
             });
 
             it('should update workflows value', () => {
-                jest.spyOn(crudService, 'postData').mockReturnValue(of([]));
+                vi.spyOn(crudService, 'postData').mockReturnValue(of([]));
 
                 contentTypeForm.triggerEventHandler('$send', {
                     workflows: [
@@ -402,7 +404,7 @@ describe('DotContentTypesEditComponent', () => {
 
             it('should set savingContentType to true while creating and false on success', fakeAsync(() => {
                 const response$ = new Subject<DotCMSContentType[]>();
-                jest.spyOn(crudService, 'postData').mockReturnValue(response$.asObservable());
+                vi.spyOn(crudService, 'postData').mockReturnValue(response$.asObservable());
 
                 contentTypeForm.triggerEventHandler('$send', mockContentType);
                 expect(comp.savingContentType()).toBe(true);
@@ -415,10 +417,10 @@ describe('DotContentTypesEditComponent', () => {
             }));
 
             it('should set savingContentType to false on create error', () => {
-                jest.spyOn(crudService, 'postData').mockReturnValue(
+                vi.spyOn(crudService, 'postData').mockReturnValue(
                     throwError(() => mockResponseView(403))
                 );
-                jest.spyOn(dotHttpErrorManagerService, 'handle');
+                vi.spyOn(dotHttpErrorManagerService, 'handle');
 
                 contentTypeForm.triggerEventHandler('$send', mockContentType);
                 expect(comp.savingContentType()).toBe(false);
@@ -430,7 +432,7 @@ describe('DotContentTypesEditComponent', () => {
 
             beforeEach(() => {
                 form = de.query(By.css('dot-content-types-form'));
-                jest.spyOn(form.componentInstance, 'submitForm');
+                vi.spyOn(form.componentInstance, 'submitForm');
             });
 
             it('should bind save button disabled attribute to canSave property from the form', () => {
@@ -533,7 +535,7 @@ describe('DotContentTypesEditComponent', () => {
                     { provide: DotMessageService, useValue: messageServiceMock },
                     { provide: DotRouterService, useClass: MockDotRouterService },
                     { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
-                    { provide: GlobalStore, useValue: { addNewBreadcrumb: jest.fn() } },
+                    { provide: GlobalStore, useValue: { addNewBreadcrumb: vi.fn() } },
                     ConfirmationService,
                     DotAlertConfirmService,
                     DotContentTypesInfoService,
@@ -560,7 +562,7 @@ describe('DotContentTypesEditComponent', () => {
             );
 
             fixture.detectChanges();
-            jest.spyOn(comp, 'onDialogHide');
+            vi.spyOn(comp, 'onDialogHide');
         }));
 
         const clickEditButton = () => {
@@ -615,7 +617,7 @@ describe('DotContentTypesEditComponent', () => {
 
         it('should send notifications to add rows & tab divider', () => {
             const dotEventsService = fixture.debugElement.injector.get(DotEventsService);
-            jest.spyOn(dotEventsService, 'notify');
+            vi.spyOn(dotEventsService, 'notify');
 
             comp.contentTypeActions[0].command({ originalEvent: createFakeEvent('click') });
             expect(comp.contentTypeActions[0].label).toBe('Add rows');
@@ -681,7 +683,7 @@ describe('DotContentTypesEditComponent', () => {
             const fieldToUpdate: DotCMSContentTypeField = layout[0].columns[0].fields[0];
             fieldToUpdate.name = 'Updated field';
 
-            jest.spyOn(fieldService, 'saveFields').mockReturnValue(of(layout));
+            vi.spyOn(fieldService, 'saveFields').mockReturnValue(of(layout));
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
             contentTypeFieldsDropZone.componentInstance.saveFields.emit([fieldToUpdate]);
@@ -696,7 +698,7 @@ describe('DotContentTypesEditComponent', () => {
             const layout: DotCMSContentTypeLayoutRow[] = structuredClone(currentLayoutInServer);
             const fieldToUpdate: DotCMSContentTypeField = layout[0].columns[0].fields[0];
 
-            jest.spyOn(fieldService, 'updateField').mockReturnValue(of(layout));
+            vi.spyOn(fieldService, 'updateField').mockReturnValue(of(layout));
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
 
@@ -729,7 +731,7 @@ describe('DotContentTypesEditComponent', () => {
             const fieldsReturnByServer: DotCMSContentTypeLayoutRow[] =
                 structuredClone(currentLayoutInServer);
 
-            jest.spyOn(fieldService, 'saveFields').mockReturnValue(of(fieldsReturnByServer));
+            vi.spyOn(fieldService, 'saveFields').mockReturnValue(of(fieldsReturnByServer));
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
 
@@ -761,7 +763,7 @@ describe('DotContentTypesEditComponent', () => {
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
 
-            jest.spyOn(fieldService, 'saveFields').mockImplementation(() => {
+            vi.spyOn(fieldService, 'saveFields').mockImplementation(() => {
                 // Check loading is set to true before the observable completes
                 expect(comp.loadingFields()).toBe(true);
                 return of(fieldsReturnByServer);
@@ -791,7 +793,7 @@ describe('DotContentTypesEditComponent', () => {
             newFieldsAdded.concat(fieldsReturnByServer[0].columns[0].fields);
             fieldsReturnByServer[0].columns[0].fields = newFieldsAdded;
 
-            jest.spyOn(fieldService, 'saveFields').mockReturnValue(of(fieldsReturnByServer));
+            vi.spyOn(fieldService, 'saveFields').mockReturnValue(of(fieldsReturnByServer));
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
 
@@ -830,7 +832,7 @@ describe('DotContentTypesEditComponent', () => {
 
             layout.push(newRow);
 
-            jest.spyOn(fieldService, 'saveFields').mockReturnValue(of(layout));
+            vi.spyOn(fieldService, 'saveFields').mockReturnValue(of(layout));
 
             const contentTypeFieldsDropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
 
@@ -842,7 +844,7 @@ describe('DotContentTypesEditComponent', () => {
 
         it('should handle 403 when user does not have permission to save feld', () => {
             const dropZone = de.query(By.css('dot-content-type-fields-drop-zone'));
-            jest.spyOn(dropZone.componentInstance, 'cancelLastDragAndDrop');
+            vi.spyOn(dropZone.componentInstance, 'cancelLastDragAndDrop');
 
             const newFieldsAdded: DotCMSContentTypeField[] = [
                 {
@@ -861,8 +863,8 @@ describe('DotContentTypesEditComponent', () => {
                 }
             ];
 
-            jest.spyOn(dotHttpErrorManagerService, 'handle');
-            jest.spyOn(fieldService, 'saveFields').mockReturnValue(
+            vi.spyOn(dotHttpErrorManagerService, 'handle');
+            vi.spyOn(fieldService, 'saveFields').mockReturnValue(
                 throwError(() => mockResponseView(403))
             );
 
@@ -879,7 +881,7 @@ describe('DotContentTypesEditComponent', () => {
             const layout: DotCMSContentTypeLayoutRow[] = structuredClone(currentLayoutInServer);
             layout[0].columns[0].fields = layout[0].columns[0].fields.slice(-1);
 
-            jest.spyOn(fieldService, 'deleteFields').mockReturnValue(
+            vi.spyOn(fieldService, 'deleteFields').mockReturnValue(
                 of({ fields: layout, deletedIds: ['3'] })
             );
 
@@ -902,9 +904,9 @@ describe('DotContentTypesEditComponent', () => {
         });
 
         it('should handle remove field error', () => {
-            jest.spyOn(dotHttpErrorManagerService, 'handle');
+            vi.spyOn(dotHttpErrorManagerService, 'handle');
 
-            jest.spyOn(fieldService, 'deleteFields').mockReturnValue(
+            vi.spyOn(fieldService, 'deleteFields').mockReturnValue(
                 throwError(() => mockResponseView(403))
             );
 
@@ -928,7 +930,7 @@ describe('DotContentTypesEditComponent', () => {
                 name: 'CT changed'
             });
 
-            jest.spyOn(crudService, 'putData').mockReturnValue(of(responseContentType));
+            vi.spyOn(crudService, 'putData').mockReturnValue(of(responseContentType));
 
             const contentTypeLayout = de.query(By.css('dot-content-type-layout'));
             contentTypeLayout.triggerEventHandler('changeContentTypeName', 'CT changed');
@@ -962,7 +964,7 @@ describe('DotContentTypesEditComponent', () => {
                     fields: [{ hello: 'world' }]
                 });
 
-                jest.spyOn(crudService, 'putData').mockReturnValue(of(responseContentType));
+                vi.spyOn(crudService, 'putData').mockReturnValue(of(responseContentType));
 
                 contentTypeForm.triggerEventHandler('$send', fakeContentType);
 
@@ -983,8 +985,8 @@ describe('DotContentTypesEditComponent', () => {
             });
 
             it('should handle error', () => {
-                jest.spyOn(dotHttpErrorManagerService, 'handle');
-                jest.spyOn(crudService, 'putData').mockReturnValue(
+                vi.spyOn(dotHttpErrorManagerService, 'handle');
+                vi.spyOn(crudService, 'putData').mockReturnValue(
                     throwError(() => mockResponseView(403))
                 );
 
@@ -995,7 +997,7 @@ describe('DotContentTypesEditComponent', () => {
 
             it('should set savingContentType to true while updating and false on success', fakeAsync(() => {
                 const response$ = new Subject<DotCMSContentType>();
-                jest.spyOn(crudService, 'putData').mockReturnValue(response$.asObservable());
+                vi.spyOn(crudService, 'putData').mockReturnValue(response$.asObservable());
 
                 contentTypeForm.triggerEventHandler('$send', fakeContentType);
                 expect(comp.savingContentType()).toBe(true);
@@ -1008,10 +1010,10 @@ describe('DotContentTypesEditComponent', () => {
             }));
 
             it('should set savingContentType to false on update error', () => {
-                jest.spyOn(crudService, 'putData').mockReturnValue(
+                vi.spyOn(crudService, 'putData').mockReturnValue(
                     throwError(() => mockResponseView(403))
                 );
-                jest.spyOn(dotHttpErrorManagerService, 'handle');
+                vi.spyOn(dotHttpErrorManagerService, 'handle');
 
                 contentTypeForm.triggerEventHandler('$send', fakeContentType);
                 expect(comp.savingContentType()).toBe(false);
@@ -1019,7 +1021,7 @@ describe('DotContentTypesEditComponent', () => {
 
             it('should close the dialog after a successful update', fakeAsync(() => {
                 const response$ = new Subject<DotCMSContentType>();
-                jest.spyOn(crudService, 'putData').mockReturnValue(response$.asObservable());
+                vi.spyOn(crudService, 'putData').mockReturnValue(response$.asObservable());
 
                 contentTypeForm.triggerEventHandler('$send', fakeContentType);
                 fixture.detectChanges();
@@ -1036,8 +1038,8 @@ describe('DotContentTypesEditComponent', () => {
 
             it('should keep dialog closed after update (no reopen)', fakeAsync(() => {
                 const response$ = new Subject<DotCMSContentType>();
-                jest.spyOn(crudService, 'putData').mockReturnValue(response$.asObservable());
-                jest.spyOn(comp, 'startFormDialog');
+                vi.spyOn(crudService, 'putData').mockReturnValue(response$.asObservable());
+                vi.spyOn(comp, 'startFormDialog');
 
                 contentTypeForm.triggerEventHandler('$send', fakeContentType);
 
@@ -1053,7 +1055,7 @@ describe('DotContentTypesEditComponent', () => {
 
         describe('checkAndOpenFormDialog', () => {
             beforeEach(() => {
-                jest.spyOn(comp, 'startFormDialog');
+                vi.spyOn(comp, 'startFormDialog');
             });
 
             it('should open form dialog when open-config is true', fakeAsync(() => {
@@ -1069,25 +1071,27 @@ describe('DotContentTypesEditComponent', () => {
                 expect(comp.dialogFocusOnShow).toBe(false);
             }));
 
-            it('should not open form dialog when open-config is false', (done) => {
-                queryParams.next({ 'open-config': 'false' });
-                fixture.detectChanges();
+            it('should not open form dialog when open-config is false', () =>
+                new Promise<void>((done) => {
+                    queryParams.next({ 'open-config': 'false' });
+                    fixture.detectChanges();
 
-                setTimeout(() => {
-                    expect(comp.startFormDialog).not.toHaveBeenCalled();
-                    done();
-                });
-            });
+                    setTimeout(() => {
+                        expect(comp.startFormDialog).not.toHaveBeenCalled();
+                        done();
+                    });
+                }));
 
-            it('should not open form dialog when open-config is not present', (done) => {
-                queryParams.next({});
-                fixture.detectChanges();
+            it('should not open form dialog when open-config is not present', () =>
+                new Promise<void>((done) => {
+                    queryParams.next({});
+                    fixture.detectChanges();
 
-                setTimeout(() => {
-                    expect(comp.startFormDialog).not.toHaveBeenCalled();
-                    done();
-                });
-            });
+                    setTimeout(() => {
+                        expect(comp.startFormDialog).not.toHaveBeenCalled();
+                        done();
+                    });
+                }));
 
             it('should only subscribe once to queryParams', fakeAsync(() => {
                 // First detectChanges to trigger subscription
@@ -1124,6 +1128,62 @@ describe('DotContentTypesEditComponent', () => {
                 expect(comp.startFormDialog).toHaveBeenCalledTimes(1);
                 expect(comp.show()).toBe(false);
             }));
+        });
+    });
+
+    describe('remembering the content type for Content Drive', () => {
+        const setLastContentType = vi.fn();
+        const removeLastContentType = vi.fn();
+
+        const openEditorWith = (contentType: Partial<DotCMSContentType>) => {
+            const config = getConfig({ contentType });
+
+            TestBed.configureTestingModule({
+                ...config,
+                providers: [
+                    ...config.providers,
+                    {
+                        provide: DotSessionStorageService,
+                        useValue: { setLastContentType, removeLastContentType }
+                    }
+                ]
+            });
+
+            fixture = TestBed.createComponent(DotContentTypesEditComponent);
+            fixture.detectChanges();
+        };
+
+        beforeEach(() => {
+            setLastContentType.mockReset();
+            removeLastContentType.mockReset();
+        });
+
+        it('should remember the content type it opens', () => {
+            openEditorWith(fakeContentType);
+
+            expect(setLastContentType).toHaveBeenCalledWith(fakeContentType.variable);
+            expect(removeLastContentType).not.toHaveBeenCalled();
+        });
+
+        it('should forget the remembered content type when it opens a form', () => {
+            openEditorWith({ ...fakeContentType, baseType: 'FORM' });
+
+            expect(removeLastContentType).toHaveBeenCalled();
+            expect(setLastContentType).not.toHaveBeenCalled();
+        });
+
+        it('should forget the remembered content type when it opens a system type', () => {
+            openEditorWith({ ...fakeContentType, system: true });
+
+            expect(removeLastContentType).toHaveBeenCalled();
+            expect(setLastContentType).not.toHaveBeenCalled();
+        });
+
+        it('should not touch the remembered content type while creating a new one', () => {
+            openEditorWith({ baseType: 'CONTENT' });
+
+            expect(setLastContentType).not.toHaveBeenCalled();
+            expect(removeLastContentType).not.toHaveBeenCalled();
         });
     });
 

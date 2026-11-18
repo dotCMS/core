@@ -1,4 +1,3 @@
-import { format } from 'date-fns';
 import { forkJoin, Observable, of } from 'rxjs';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
@@ -6,40 +5,47 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 import { DotFolderService } from '@dotcms/data-access';
 import {
     createLoadMoreTreeNode,
-    DotCMSContentTypeField,
     PERMISSIONS_TYPE,
-    DotContentDriveDateRange,
     DotContentDriveActionableFolder,
     DotContentDriveActionableItem,
-    DotContentDriveUserSearchableValue,
+    DotContentDriveBrowseScope,
     DotFolder,
     DotSite,
     FolderSearchView,
-    LOAD_MORE_NODE_TYPE
+    LOAD_MORE_NODE_TYPE,
+    DotFolderBean
 } from '@dotcms/dotcms-models';
-import { getSingleSelectableFieldOptions } from '@dotcms/edit-content';
 import { DotFolderTreeNodeData, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { isDotIdentifier } from '@dotcms/utils';
 
 import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 
 import {
+    CONTENT_DRIVE_URL_PARAM,
     CONTENT_STATUS,
-    FIELD_FILTER_CHECKBOX_TYPE,
-    FIELD_FILTER_DATE_TYPES,
-    FIELD_FILTER_KEY_VALUE_TYPE,
-    FIELD_FILTER_MULTI_VALUE_TYPES,
     FOLDER_NAME_FILTER_MIN_LENGTH,
     FOLDER_TREE_HIERARCHY_PAGE_SIZE,
     FOLDER_TREE_PAGE_SIZE,
+    ROOT_PATH,
     SHARED_ASSETS_ENABLED_VALUE,
     SHARED_ASSETS_FILTER_KEY,
+    SYSTEM_HOST,
+    SYSTEM_HOST_PATH,
     USER_SEARCHABLE_PREFIX,
-    USER_SEARCHABLE_VALUE_SEPARATOR
+    DIALOG_TYPE
 } from '../shared/constants';
 import {
+    DOT_CONTENT_DRIVE_SEARCH_SCOPE,
     DotContentDriveDecodeFunction,
     DotContentDriveFilters,
-    DotKnownContentDriveFilters
+    DotContentDrivePanelLocation,
+    DotContentDriveSearchScope,
+    DotContentDriveUrlIntent,
+    DotKnownContentDriveFilters,
+    FolderTreeHierarchyLevel,
+    WorkflowFilterEntry,
+    DotContentDriveDialog,
+    DotContentDriveFolderPermissionsPayload
 } from '../shared/models';
 
 /**
@@ -64,12 +70,6 @@ const multiSelector = (value = ''): string[] =>
  * @return {*}  {string}
  */
 const singleSelector: DotContentDriveDecodeFunction = (value = ''): string => value.trim();
-
-/** A single workflow filter entry: one scheme, optionally pinned to a step. */
-export interface WorkflowFilterEntry {
-    scheme: string;
-    step?: string;
-}
 
 /** Separator for the `schemeId[:stepId]` workflow token encoding. */
 export const WORKFLOW_TOKEN_SEPARATOR = ':';
@@ -154,8 +154,25 @@ export const decodeByFilterKey: Record<
     // filter", which is how the other filters already behave — an unknown contentType id is
     // dropped server-side rather than failing the request.
     status: (value) => multiSelector(value).filter(isContentStatus),
-    sharedAssets: singleSelector
+    sharedAssets: singleSelector,
+    // MUST be listed explicitly, for the same reason `status` is: an unrecognized value has to be
+    // dropped here rather than passed on. The endpoint rejects an unknown search scope with a 400
+    // — it will not silently widen or narrow the results — and that 400 would surface as a stopped
+    // spinner over a stale grid. A stale or hand-edited URL should degrade to "no scope", which
+    // resolves to the default.
+    //
+    // Dropped rather than replaced with the default value: a present key counts as a non-default
+    // filter (`hasNonDefaultFilters`), so writing ALL_FIELDS here would offer "Clear all" on a
+    // drive with nothing filtered at all.
+    searchScope: (value) => (isSearchScope(value) ? value : '')
 };
+
+/** Narrows a raw URL value to a search scope, so an unknown one can be dropped. */
+function isSearchScope(value: string): value is DotContentDriveSearchScope {
+    return Object.values(DOT_CONTENT_DRIVE_SEARCH_SCOPE).includes(
+        value as DotContentDriveSearchScope
+    );
+}
 
 /**
  * Decodes the filters string into a record of key-value pairs.
@@ -196,9 +213,11 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
         // narrowing happens only inside decodeFilterValue for the known-key lookup.
         const decoded = decodeFilterValue(key, value);
 
-        // A multi-value key that decoded to nothing is not a filter. Dropping it keeps a sanitized
-        // `status:BOGUS` from round-tripping back into the URL as a bare `status:`.
-        if (Array.isArray(decoded) && decoded.length === 0) {
+        // A key that decoded to nothing is not a filter. Dropping it keeps a sanitized URL from
+        // carrying a key with no meaning — and it is what lets a decoder reject an unrecognized
+        // value (see `status` and `searchScope`) by returning empty. `encodeFilters` never writes
+        // an empty value, so an empty decoded one can only come from a stale or hand-edited URL.
+        if (Array.isArray(decoded) ? decoded.length === 0 : decoded === '') {
             return acc;
         }
 
@@ -443,25 +462,6 @@ export function folderSearchViewToDotFolder(view: FolderSearchView, hostName: st
         permissions: view.permissions ?? undefined
     };
 }
-
-/**
- * One level of the folder hierarchy returned by {@link getFolderHierarchyByPath}.
- * `path` is the parent path that was queried; `folders` are its direct children (first page).
- */
-export type FolderTreeHierarchyLevel = {
-    path: string;
-    folders: DotFolder[];
-    totalEntries: number;
-    /**
-     * The 1-based page "Load more" should request next for this level, expressed in
-     * {@link FOLDER_TREE_PAGE_SIZE} units because that is what load-more pages by.
-     *
-     * Derived from the folders actually fetched, never from the rendered node count: a level can
-     * carry one extra folder that {@link resolveHierarchyAncestor} appended out of sort order, and
-     * counting that as paged-through would make load-more skip a page of real folders.
-     */
-    nextPage: number;
-};
 
 /**
  * The last segment of a folder path: `/a/b/` → `b`, `/a/` → `a`.
@@ -845,282 +845,22 @@ export function isFolder(
     return item != null && 'type' in item && item.type === 'folder';
 }
 
-/** True when the field type stores a `{ from, to }` date range (Date / Date-and-Time / Time). */
-export function isDateFieldFilterType(fieldType: string): boolean {
-    return (FIELD_FILTER_DATE_TYPES as readonly string[]).includes(fieldType);
-}
-
-/** True when the field type stores a list of values (Multi-Select / Checkbox / Tag / …). */
-export function isMultiValueFieldFilterType(fieldType: string): boolean {
-    return FIELD_FILTER_MULTI_VALUE_TYPES.includes(fieldType);
-}
-
-/**
- * The field variables that have a `us.*` field-filter entry in the bag, in insertion order.
- * Parsed at the same layer as {@link decodeFilters} so the store just stores the result.
- *
- * @param {DotContentDriveFilters} filters
- * @return {*}  {string[]}
- */
-export function getUserSearchableActive(filters: DotContentDriveFilters): string[] {
-    return Object.keys(filters ?? {})
-        .filter((key) => key.startsWith(USER_SEARCHABLE_PREFIX))
-        .map((key) => key.slice(USER_SEARCHABLE_PREFIX.length));
-}
-
-/**
- * True for a binary (boolean) checkbox — a Checkbox field with a single option (e.g. `|true`).
- * Unlike a multi-option checkbox, this is a single boolean *value* (true/false), not a selection.
- */
-export function isBinaryCheckboxField(field: DotCMSContentTypeField): boolean {
-    return (
-        field.fieldType === FIELD_FILTER_CHECKBOX_TYPE &&
-        getSingleSelectableFieldOptions(field.values ?? '', field.dataType).length <= 1
-    );
-}
-
-/**
- * Reshapes a raw stored field-filter string into the payload value for its field type:
- * date → `{ from, to }`, multi-select → `string[]`, everything else → the raw string.
- * Returns `undefined` when the value is effectively empty (so callers can skip it).
- *
- * @param {string} raw - The raw value stored in the filter bag.
- * @param {string} fieldType - The content-type field type (e.g. `Text`, `Date`, `Multi-Select`).
- * @return {*}  {(DotContentDriveUserSearchableValue | undefined)}
- */
-export function parseUserSearchableValue(
-    raw: string,
-    fieldType: string
-): DotContentDriveUserSearchableValue | undefined {
-    if (!raw) {
-        return undefined;
-    }
-
-    if (isDateFieldFilterType(fieldType)) {
-        const [from = '', to = ''] = raw.split(USER_SEARCHABLE_VALUE_SEPARATOR);
-
-        return from || to ? { from, to } : undefined;
-    }
-
-    if (isMultiValueFieldFilterType(fieldType)) {
-        const values = parseMultiValue(raw);
-
-        return values.length ? values : undefined;
-    }
-
-    if (fieldType === FIELD_FILTER_KEY_VALUE_TYPE) {
-        return toKeyValueTerm(raw);
-    }
-
-    return raw;
-}
-
-/**
- * Translates a Key/Value filter input into the term the backend contains-matches against the
- * indexed `.key_value` subfield (stored as `key_value` = `key + "_" + value`).
- *
- * The term is lowercased to match the indexed `.key_value` sub-field, which dotCMS stores as
- * `(key + "_" + value).toLowerCase()` — so `Color:Red` matches the same content as `color:red`.
- *
- * Shorthand rules (the **first** colon is the key/value separator — everything after it is the
- * value, so a value may itself contain colons):
- * - `key:value`         → `key_value`           (exact-pair match; e.g. `Deploy:HTTPS://x` → `deploy_https://x`)
- * - `key:` / `:value`   → `key` / `value`       (only the filled side)
- * - bare term (no `:`)  → the term              (loose match on a key OR a value)
- *
- * ⚠️ Greedy shorthand: because *any* colon is treated as the separator, a **bare** value that
- * happens to contain a colon (a URL like `https://x`, a time like `12:30`, a ratio like `16:9`) is
- * read as `key:value` (`https_//x`, `12_30`, `16_9`) and will likely match nothing. To search a
- * colon-bearing value, prefix it with its key (`myKey:12:30`) so the intended value is preserved.
- * A raw colon is never sent to the backend — that path is metadata-only and wouldn't match a
- * regular Key/Value field anyway.
- *
- * @param {string} raw - The literal value the user typed (also what's kept in the URL/chip).
- * @return {*}  {(string | undefined)} Returns `undefined` when the input is empty.
- */
-function toKeyValueTerm(raw: string): string | undefined {
-    const trimmed = raw.trim();
-    if (!trimmed) {
-        return undefined;
-    }
-
-    // Split on the FIRST colon only, so a value may contain further colons (e.g. `key:12:30`).
-    const separator = trimmed.indexOf(':');
-    // The index stores `.key_value` as `(key + "_" + value).toLowerCase()`, so the term is
-    // lowercased to match regardless of the case the user typed (e.g. `Color:Red` → `color_red`).
-    if (separator === -1) {
-        return trimmed.toLowerCase();
-    }
-
-    const key = trimmed.slice(0, separator).trim();
-    const value = trimmed.slice(separator + 1).trim();
-
-    if (key && value) {
-        return `${key}_${value}`.toLowerCase();
-    }
-
-    // Only one side of the `key:value` was filled — match on whichever is present.
-    return (key || value).toLowerCase() || undefined;
-}
-
-/** Safe `decodeURIComponent` that returns the input unchanged on a malformed sequence. */
-const safeDecode = (value: string): string => {
-    try {
-        return decodeURIComponent(value);
-    } catch {
-        return value;
-    }
-};
-
-/**
- * Splits a stored multi-value string back into its values. Each value is percent-encoded on
- * serialize (see {@link serializeMultiValue}) so a value containing the separator — e.g. a tag
- * label like `"News, Press"` — round-trips intact.
- *
- * @param {string} raw
- * @return {*}  {string[]}
- */
-export function parseMultiValue(raw: string): string[] {
-    if (!raw) {
-        return [];
-    }
-
-    return raw
-        .split(USER_SEARCHABLE_VALUE_SEPARATOR)
-        .map((value) => safeDecode(value.trim()))
-        .filter(Boolean);
-}
-
-/**
- * Joins multi-value entries into the stored string, percent-encoding each value so it can safely
- * contain the separator. Inverse of {@link parseMultiValue}.
- *
- * @param {string[]} values
- * @return {*}  {string}
- */
-export function serializeMultiValue(values: string[]): string {
-    return values.map(encodeURIComponent).join(USER_SEARCHABLE_VALUE_SEPARATOR);
-}
-
-/**
- * Serializes a shaped field-filter value back into the raw string stored in the filter bag,
- * inverse of {@link parseUserSearchableValue}. Empty values serialize to `''` so the URL encoder
- * (which drops empty entries) leaves no dangling criterion.
- *
- * @param {(DotContentDriveUserSearchableValue | null | undefined)} value
- * @param {string} fieldType
- * @return {*}  {string}
- */
-/** Narrows a user-searchable value to a `{ from, to }` date range (object, not array). */
-function isDateRange(value: DotContentDriveUserSearchableValue): value is DotContentDriveDateRange {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/**
- * Formats a Date as a timezone-naive local wall-clock ISO string (`yyyy-MM-ddTHH:mm:ss`, no `Z` or
- * offset) — i.e. the exact date/time the user sees in the picker.
- *
- * Date/Date-and-Time/Time filters must send the wall-clock, not a UTC instant: `toISOString()`
- * shifts by the browser's offset (a UTC-3 user's 10:00 becomes `13:00Z`), and the backend then
- * parses that `Z` value as an instant and reformats it in the SERVER zone — so the bound no longer
- * matches what the user picked. A no-offset value instead round-trips as identity: the backend
- * parses it in the server zone and formats it back in the server zone (see
- * `BrowserAPIImpl#parseFlexibleDate` → `LocalDateTime.parse(...)` and `normalizeDateBound`). On the
- * FE, `new Date('…T10:00:00')` (no offset) also parses as local, so the picker round-trips too.
- *
- * Returns `''` for an invalid/absent Date: the typeable Time picker (`[keepInvalid]="true"`) can
- * emit an `Invalid Date` mid-typing, and `date-fns` `format` throws `RangeError` on one — so a
- * partial time simply clears that bound instead of blowing up `#applyRange`.
- */
-export function toLocalIsoString(date: Date): string {
-    if (!date || Number.isNaN(date.getTime())) {
-        return '';
-    }
-
-    // `date-fns` formats by the Date's LOCAL components, so this is the wall-clock with no offset/Z.
-    return format(date, "yyyy-MM-dd'T'HH:mm:ss");
-}
-
-export function serializeUserSearchableValue(
-    value: DotContentDriveUserSearchableValue | null | undefined,
-    fieldType: string
-): string {
-    if (value == null) {
-        return '';
-    }
-
-    if (isDateFieldFilterType(fieldType)) {
-        // Guard the shape rather than blindly casting: a mismatched fieldType/value pair yields ''
-        // (not filtering) instead of a misleading partial range.
-        if (!isDateRange(value)) {
-            return '';
-        }
-
-        if (!value.from && !value.to) {
-            return '';
-        }
-
-        return `${value.from ?? ''}${USER_SEARCHABLE_VALUE_SEPARATOR}${value.to ?? ''}`;
-    }
-
-    if (isMultiValueFieldFilterType(fieldType)) {
-        return serializeMultiValue(Array.isArray(value) ? value : []);
-    }
-
-    return String(value);
-}
-
-/**
- * Builds the `userSearchable` payload object from the flat filter bag, keyed by field variable.
- * Only `us.`-prefixed entries whose field metadata is known (loaded) are considered. A binary
- * checkbox emits its boolean value when set (`true`/`false`); every field type is included only
- * when its value is non-empty. Returns `undefined` when there are no active field filters.
- *
- * @param {DotContentDriveFilters} filters - The full filter bag.
- * @param {DotCMSContentTypeField[]} fields - The active content type's searchable fields.
- * @return {*}  {(Record<string, DotContentDriveUserSearchableValue> | undefined)}
- */
-export function buildUserSearchablePayload(
-    filters: DotContentDriveFilters,
-    fields: DotCMSContentTypeField[]
-): Record<string, DotContentDriveUserSearchableValue> | undefined {
-    const fieldByVariable = new Map(fields.map((field) => [field.variable, field]));
-    const payload: Record<string, DotContentDriveUserSearchableValue> = {};
-
-    for (const [key, raw] of Object.entries(filters ?? {})) {
-        if (!key.startsWith(USER_SEARCHABLE_PREFIX)) {
-            continue;
-        }
-
-        const variable = key.slice(USER_SEARCHABLE_PREFIX.length);
-        const field = fieldByVariable.get(variable);
-        if (!field) {
-            continue;
-        }
-
-        const rawValue = Array.isArray(raw)
-            ? raw.join(USER_SEARCHABLE_VALUE_SEPARATOR)
-            : (raw ?? '');
-
-        // A binary checkbox filters for the chosen boolean; empty means not filtering.
-        if (isBinaryCheckboxField(field)) {
-            if (rawValue === 'true' || rawValue === 'false') {
-                payload[variable] = rawValue === 'true';
-            }
-
-            continue;
-        }
-
-        const value = parseUserSearchableValue(rawValue, field.fieldType);
-        if (value === undefined) {
-            continue;
-        }
-
-        payload[variable] = value;
-    }
-
-    return Object.keys(payload).length ? payload : undefined;
-}
+// The `us.*` value layer moved to `@dotcms/ui` with the field-filter chips: both surfaces build
+// the same request from the same bag, so the reshaping has to be one implementation rather than two
+// that can drift. Re-exported here so this portlet's own importers — the store's request builder,
+// the URL decode layer and their specs — keep their imports.
+export {
+    buildUserSearchablePayload,
+    getUserSearchableActive,
+    isBinaryCheckboxField,
+    isDateFieldFilterType,
+    isMultiValueFieldFilterType,
+    parseMultiValue,
+    parseUserSearchableValue,
+    serializeMultiValue,
+    serializeUserSearchableValue,
+    toLocalIsoString
+} from '@dotcms/ui';
 
 /**
  * Whether the user may add children to a drop target.
@@ -1159,4 +899,285 @@ export function canAddChildrenTo(
     }
 
     return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
+}
+
+/**
+ * Turns the one value that says where the user is browsing into the two the endpoint expects.
+ *
+ * The sidebar can select four things and the URL carries one value for all of them: absent means
+ * all site content, `/` means the site root, a deeper path means that folder, and a reserved word
+ * means System Host. Keeping it to one value is what stops a location and a scope disagreeing,
+ * and this is the single place the two representations meet.
+ *
+ * Written as a mapping rather than interpolation on purpose. Pasting the location into the path
+ * produces `//demo.dotcms.comSYSTEM_HOST` for the reserved word, which resolves to nothing.
+ *
+ * A folder deliberately gets **no** scope: it is addressed by its path, the endpoint refuses a
+ * scope alongside a folder path, and a scope there is what would turn the listing into every
+ * descendant.
+ */
+export function toRequestLocation(
+    hostname: string | undefined,
+    path: string | undefined
+): { assetPath: string; browseScope?: DotContentDriveBrowseScope } {
+    const siteRoot = `//${hostname}/`;
+
+    if (!path?.length) {
+        return { assetPath: siteRoot, browseScope: 'ALL' };
+    }
+
+    if (path === SYSTEM_HOST_PATH) {
+        return { assetPath: siteRoot, browseScope: 'SYSTEM_HOST' };
+    }
+
+    if (path === ROOT_PATH) {
+        return { assetPath: siteRoot, browseScope: 'ROOT' };
+    }
+
+    return { assetPath: `//${hostname}${path}` };
+}
+
+/**
+ * Whether the listing should ask for folders at all.
+ *
+ * Browsing all site content is a flat listing over every folder on the site, so folder rows there
+ * are noise -- the tree beside it is how folders are navigated. Searching is the other case: a
+ * name is being matched rather than a place browsed, and a match should be found wherever it
+ * lives. That is #37479's FR-011, that folder matching behaves the same in either search scope,
+ * and suppressing folders for the whole of all site content broke it at the default view.
+ *
+ * System Host is unconditional: it has no folders to list either way. `getFolders` returns an
+ * empty list for that scope, so asking spends a query to be told nothing.
+ *
+ * @param browseScope which scope the listing is showing
+ * @param isSearching whether a text filter is narrowing it
+ */
+export function listsFolders(
+    browseScope: DotContentDriveBrowseScope | undefined,
+    isSearching: boolean
+): boolean {
+    if (browseScope === 'SYSTEM_HOST') {
+        return false;
+    }
+
+    return browseScope !== 'ALL' || isSearching;
+}
+
+/**
+ * Canonical form for comparing two folder references: `//hostname/path`, lower-cased and without a
+ * trailing slash.
+ *
+ * The two sides arrive spelled differently — a move destination comes in as `//hostname/path/` from
+ * the tree, the browsed folder as a bare path plus the current site — so they are normalised rather
+ * than compared as given. Lower-casing is not a convenience: dotCMS resolves asset paths through a
+ * unique index over the lower-cased full path per host, so two spellings of one folder *are* one
+ * folder.
+ */
+export const toFolderRef = (hostname: string | null | undefined, path: string | null | undefined) =>
+    normalizeFolderRef(`//${hostname ?? ''}${path ?? ''}`);
+
+/** Normalises an already-formed `//hostname/path` reference. See {@link toFolderRef}. */
+export const normalizeFolderRef = (ref: string | null | undefined): string =>
+    (ref ?? '').toLowerCase().replace(/\/+$/, '');
+
+/**
+ * The folder reference for the location the drive is on, in the form runs are compared against.
+ *
+ * Not {@link toFolderRef} applied to the site and the location directly, because the location is
+ * not always a path on the browsed site. System Host belongs to no site, so pairing its reserved
+ * location value with whatever hostname the switcher happens to show produced
+ * `//demo.dotcms.comsystem_host` — a reference to nothing, which matched no run's affected folders.
+ * The listing therefore never reloaded after an upload landed there.
+ *
+ * @param {string | null | undefined} hostname - The browsed site's hostname
+ * @param {string | null | undefined} path - The location, which may not be a folder path at all
+ * @returns {string} the canonical reference for what is on screen
+ */
+export const browsedFolderRef = (
+    hostname: string | null | undefined,
+    path: string | null | undefined
+): string =>
+    path === SYSTEM_HOST_PATH
+        ? toFolderRef(SYSTEM_HOST.hostname, ROOT_PATH)
+        : toFolderRef(hostname, path);
+
+/**
+ * Which wording an upload run names itself with.
+ *
+ * The messages spell "file" or "files" out instead of hedging with "file(s)", so the count has to
+ * choose between them, and only the caller knows the count. Nothing here names a destination: the
+ * drive already shows where the author is, and the sentence was long enough that the part they
+ * could read at a glance was getting lost behind the part they could not.
+ *
+ * @param {number} count - How many files the batch carries
+ * @param {{ backgrounded?: boolean }} [options] - Whether the batch is the server's now
+ * @returns {string} the message key for that run
+ */
+export const uploadIndicatorKey = (count: number, options?: { backgrounded?: boolean }): string => {
+    const base = options?.backgrounded
+        ? 'content-drive.upload.indicator.background'
+        : 'content-drive.upload.indicator';
+
+    return count === 1 ? `${base}.one` : base;
+};
+
+/**
+ * What a `createContent` link may name: a content type variable or id. Letters, digits, `_` and
+ * `-` only, so the value cannot reshape the REST paths it reaches (Constitution III).
+ */
+const CONTENT_TYPE_REF_PATTERN = /^[A-Za-z0-9_-]+$/;
+
+/**
+ * Reads what a Content Drive URL asks to open when the portlet loads (#37759, FR-023).
+ *
+ * One URL may name at most one side panel or folder dialog. When it names more, Content Drive can't
+ * tell which one the author meant, so the answer is `conflict` and the caller opens nothing. The
+ * retired `editContent=new` create marker counts as absent, so old links open nothing rather than
+ * an empty form.
+ *
+ * @param queryParams The route's query params.
+ * @returns The single thing the URL asks to open, `none`, or `conflict`.
+ */
+export function resolveContentDriveUrlIntent(
+    queryParams: Record<string, unknown>
+): DotContentDriveUrlIntent {
+    const read = (key: string): string | undefined => {
+        const value = queryParams[key];
+
+        return typeof value === 'string' && value.length > 0 ? value : undefined;
+    };
+
+    // Values from the URL reach a Lucene query and REST paths, so only the shapes they can take
+    // are accepted; anything else reads as absent (Constitution III). The retired `new` create
+    // marker is not an identifier, so it is refused the same way.
+    const readIdentifier = (key: string): string | undefined => {
+        const value = read(key);
+
+        return isDotIdentifier(value) ? value : undefined;
+    };
+
+    const identifier = readIdentifier(CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT);
+    const createContent = read(CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT);
+    const contentType =
+        createContent && CONTENT_TYPE_REF_PATTERN.test(createContent) ? createContent : undefined;
+    const createFolder = read(CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER) === 'true';
+    const editFolder = readIdentifier(CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER);
+    const folderPermissions = readIdentifier(CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS);
+
+    const asked = [
+        identifier,
+        contentType,
+        createFolder || undefined,
+        editFolder,
+        folderPermissions
+    ];
+
+    if (asked.filter(Boolean).length > 1) {
+        return { kind: 'conflict' };
+    }
+
+    if (identifier) {
+        const languageId = Number(read(CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT_LANG));
+
+        return {
+            kind: 'edit',
+            identifier,
+            languageId: Number.isInteger(languageId) && languageId > 0 ? languageId : undefined
+        };
+    }
+
+    if (contentType) {
+        return { kind: 'create', contentType };
+    }
+
+    if (createFolder) {
+        return { kind: 'createFolder' };
+    }
+
+    if (editFolder) {
+        return { kind: 'editFolder', identifier: editFolder };
+    }
+
+    if (folderPermissions) {
+        return { kind: 'folderPermissions', identifier: folderPermissions };
+    }
+
+    return { kind: 'none' };
+}
+
+/**
+ * The one URL param that names an open panel, and the value it must hold: the identifier for an
+ * edit, the content type variable for a create. Browser Back compares the URL against it to tell
+ * whether the open panel was popped.
+ *
+ * @param location What the URL says about the open panel.
+ * @returns The param key and the value it must carry.
+ */
+export function panelParamOf(location: DotContentDrivePanelLocation): {
+    key: string;
+    value: string;
+} {
+    return location.kind === 'edit'
+        ? { key: CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT, value: location.editContent }
+        : { key: CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT, value: location.createContent };
+}
+
+/**
+ * The one URL param that names an open folder dialog, and the value it must hold (#37759, FR-030):
+ * `createFolder=true` for New Folder, `editFolder=<id>` for Folder Settings, `folderPermissions=<id>`
+ * for Edit Permissions. `null` for any other dialog, or none.
+ *
+ * @param dialog The dialog the store holds.
+ * @returns The param key and the value it must carry, or `null`.
+ */
+export function folderDialogParamOf(
+    dialog: DotContentDriveDialog | undefined
+): { key: string; value: string } | null {
+    if (dialog?.type === DIALOG_TYPE.FOLDER) {
+        const folder = dialog.payload as DotContentDriveActionableFolder | undefined;
+
+        return folder
+            ? { key: CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER, value: folder.identifier }
+            : { key: CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER, value: 'true' };
+    }
+
+    if (dialog?.type === DIALOG_TYPE.FOLDER_PERMISSIONS) {
+        const { identifier } = dialog.payload as DotContentDriveFolderPermissionsPayload;
+
+        return { key: CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS, value: identifier };
+    }
+
+    return null;
+}
+
+/**
+ * Turns a folder read by id (`GET /api/v1/folder/{id}`) into the folder the Folder Settings dialog
+ * edits, with the user's permissions on it, so a dialog opened from a link sees exactly what one
+ * opened from the listing would (#37759, FR-031).
+ *
+ * @param folder The folder bean.
+ * @param access What the user may do to it.
+ * @returns The folder, as the folder dialog takes it.
+ */
+export function toActionableFolder(
+    folder: DotFolderBean,
+    access: { canEdit: boolean; canEditPermissions: boolean }
+): DotContentDriveActionableFolder {
+    return {
+        type: 'folder',
+        identifier: folder.identifier,
+        inode: folder.inode,
+        name: folder.name,
+        title: folder.title,
+        path: folder.path,
+        sortOrder: folder.sortOrder,
+        showOnMenu: folder.showOnMenu,
+        filesMasks: folder.filesMasks,
+        defaultFileType: folder.defaultFileType,
+        defaultBaseType: folder.defaultBaseType,
+        permissions: [
+            ...(access.canEdit ? [PERMISSIONS_TYPE.EDIT] : []),
+            ...(access.canEditPermissions ? [PERMISSIONS_TYPE.EDIT_PERMISSIONS] : [])
+        ]
+    };
 }

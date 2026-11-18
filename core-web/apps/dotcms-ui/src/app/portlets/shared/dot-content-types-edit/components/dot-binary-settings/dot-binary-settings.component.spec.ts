@@ -4,8 +4,9 @@ import {
     byTestId,
     createComponentFactory,
     mockProvider
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
 import { FormBuilder, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
@@ -119,7 +120,7 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         it('should emit changeControls when isVisible input is true', () => {
-            jest.spyOn(component.$changeControls, 'emit');
+            vi.spyOn(component.$changeControls, 'emit');
 
             spectator.setInput('isVisible', true);
 
@@ -127,7 +128,7 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         it('should emit valid output on form change', () => {
-            jest.spyOn(component.$valid, 'emit');
+            vi.spyOn(component.$valid, 'emit');
 
             const acceptInput = spectator.query(byTestId('setting-accept'));
             spectator.typeInElement('text/*', acceptInput);
@@ -136,9 +137,9 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         it('should handler error if save properties failed', () => {
-            jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(throwError(() => ({})));
-            jest.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
-            jest.spyOn(component.$save, 'emit');
+            vi.spyOn(dotFieldVariableService, 'save').mockReturnValue(throwError(() => ({})));
+            vi.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
+            vi.spyOn(component.$save, 'emit');
 
             component.saveSettings();
 
@@ -214,10 +215,8 @@ describe('DotBinarySettingsComponent', () => {
         });
 
         it('should not call save or delete when is empty and not previous variable exist', () => {
-            jest.spyOn(dotFieldVariableService, 'delete').mockReturnValue(
-                of({} as DotFieldVariable)
-            );
-            jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(of({} as DotFieldVariable));
+            vi.spyOn(dotFieldVariableService, 'delete').mockReturnValue(of({} as DotFieldVariable));
+            vi.spyOn(dotFieldVariableService, 'save').mockReturnValue(of({} as DotFieldVariable));
 
             spectator.detectChanges();
 

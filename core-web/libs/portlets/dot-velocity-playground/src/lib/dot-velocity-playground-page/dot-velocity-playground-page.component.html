@@ -73,7 +73,7 @@
                 class="min-h-0 flex-1"
                 [ngModel]="store.code()"
                 (ngModelChange)="store.setCode($event)"
-                (onInit)="onEditorInit()"
+                (init)="onEditorInit($event)"
                 [options]="$editorOptions()"
                 data-testid="velocity-playground-editor" />
 
@@ -137,6 +137,8 @@
                 data-testid="velocity-playground-run-footer">
                 <p-button
                     [loading]="store.isLoading()"
+                    [pTooltip]="'velocityPlayground.action.run.tooltip' | dm: [runShortcutLabel]"
+                    tooltipPosition="top"
                     (onClick)="onRun()"
                     data-testid="velocity-playground-run-btn">
                     <span class="material-symbols-rounded" aria-hidden="true">play_arrow</span>

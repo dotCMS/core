@@ -1,0 +1,151 @@
+<form class="form" data-testid="dotai-settings-panel">
+    <div class="field">
+        <label for="dotai-settings-index">{{ 'dotai.settings.index' | dm }}</label>
+        @if (store.indexesForbidden()) {
+            <!-- indexCount needs CMS_ADMINISTRATOR_ROLE while portlet access does not, so a
+                 non-admin lands here through no fault of their own (FR-049). -->
+            <p class="p-field-hint" data-testid="dotai-settings-index-forbidden">
+                {{ 'dotai.index.admin-required' | dm }}
+            </p>
+        } @else {
+            <p-select
+                inputId="dotai-settings-index"
+                size="small"
+                [options]="store.indexOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="store.settingsIndexName()"
+                [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="store.setSettings({ settingsIndexName: $event })"
+                data-testid="dotai-settings-index" />
+        }
+    </div>
+
+    <div class="field">
+        <label for="dotai-settings-threshold">{{ 'dotai.settings.threshold' | dm }}</label>
+        <!-- min is deliberately above zero. The server skips the distance predicate entirely
+             when threshold is 0, so it returns EVERYTHING — the exact opposite of what this
+             field's label promises. Until that is fixed server-side, the value is not offered. -->
+        <p-inputNumber
+            inputId="dotai-settings-threshold"
+            size="small"
+            [min]="thresholdRange.min"
+            [max]="thresholdRange.max"
+            [step]="0.05"
+            [minFractionDigits]="2"
+            [ngModel]="store.settingsThreshold()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="store.setSettings({ settingsThreshold: $event })"
+            data-testid="dotai-settings-threshold" />
+        <!-- Reads backwards otherwise: it is a MAX distance, so higher matches more. -->
+        <small class="p-field-hint">{{ 'dotai.settings.threshold.hint' | dm }}</small>
+    </div>
+
+    <!-- role=group + aria-labelledby, because a bare <label> with no `for` names nothing:
+         a screen reader reached the three radios with no group name at all. The individual
+         radios are already paired correctly below. -->
+    <div class="field" role="group" aria-labelledby="dotai-settings-operator-label">
+        <label id="dotai-settings-operator-label">{{ 'dotai.settings.operator' | dm }}</label>
+        @for (operator of operators; track operator.value) {
+            <div class="form-radio">
+                <p-radioButton
+                    name="dotai-operator"
+                    [inputId]="'dotai-op-' + operator.value"
+                    [value]="operator.value"
+                    [ngModel]="store.settingsOperator()"
+                    [ngModelOptions]="{ standalone: true }"
+                    (ngModelChange)="store.setSettings({ settingsOperator: $event })"
+                    [attr.data-testid]="'dotai-settings-operator-' + operator.value" />
+                <label [for]="'dotai-op-' + operator.value">{{ operator.label | dm }}</label>
+            </div>
+        }
+    </div>
+
+    <div class="field">
+        <label for="dotai-settings-model">{{ 'dotai.settings.model' | dm }}</label>
+        <p-select
+            inputId="dotai-settings-model"
+            size="small"
+            [options]="store.chatModels()"
+            [ngModel]="store.settingsModel()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="store.setSettings({ settingsModel: $event })"
+            data-testid="dotai-settings-model" />
+    </div>
+
+    <div class="field">
+        <label for="dotai-settings-temperature">{{ 'dotai.settings.temperature' | dm }}</label>
+        <p-inputNumber
+            inputId="dotai-settings-temperature"
+            size="small"
+            [min]="temperatureRange.min"
+            [max]="temperatureRange.max"
+            [step]="0.1"
+            [minFractionDigits]="1"
+            [ngModel]="store.settingsTemperature()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="store.setSettings({ settingsTemperature: $event })"
+            data-testid="dotai-settings-temperature" />
+    </div>
+
+    <div class="field">
+        <label for="dotai-settings-response-length">
+            {{ 'dotai.settings.response-length' | dm }}
+        </label>
+        <p-inputNumber
+            inputId="dotai-settings-response-length"
+            size="small"
+            [min]="minResponseTokens"
+            [max]="4096"
+            [step]="128"
+            [ngModel]="store.settingsResponseLength()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="store.setSettings({ settingsResponseLength: $event })"
+            data-testid="dotai-settings-response-length" />
+        <!-- The legacy screen advertised 10 here, which the server's own contract rejects. -->
+        <small class="p-field-hint">
+            {{ 'dotai.settings.response-length.hint' | dm: [minResponseTokens + ''] }}
+        </small>
+    </div>
+
+    <div class="field">
+        <label for="dotai-settings-site">{{ 'dotai.settings.site' | dm }}</label>
+        <!-- The clear affordance lives here rather than on dot-site: adding a `showClear`
+             input to that shared component would mean editing libs/ui for one consumer.
+             Clearing sets the site to null, which the payload sends as site:"" — all sites
+             (FR-021). The placeholder is piped through `dm` because dot-site takes resolved
+             text, unlike dot-search-input which pipes its own. -->
+        <dot-site
+            id="dotai-settings-site"
+            [showSystemHost]="false"
+            [value]="store.settingsSite()"
+            (siteChange)="onSiteChange($event)"
+            [placeholder]="'dotai.settings.site.all' | dm"
+            data-testid="dotai-settings-site" />
+        @if (store.settingsSite()) {
+            <p-button
+                severity="secondary"
+                [text]="true"
+                size="small"
+                [label]="'dotai.settings.site.clear' | dm"
+                (onClick)="onSiteChange(null)"
+                data-testid="dotai-settings-site-clear" />
+        }
+        <small class="p-field-hint">{{ 'dotai.settings.site.hint' | dm }}</small>
+    </div>
+
+    <div class="field">
+        <label for="dotai-settings-content-types">
+            {{ 'dotai.settings.content-types' | dm }}
+        </label>
+        <input
+            pInputText
+            id="dotai-settings-content-types"
+            [ngModel]="store.settingsContentTypes()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="store.setSettings({ settingsContentTypes: $event })"
+            [placeholder]="'dotai.settings.content-types.placeholder' | dm"
+            data-testid="dotai-settings-content-types" />
+        <small class="p-field-hint">{{ 'dotai.settings.content-types.hint' | dm }}</small>
+    </div>
+</form>

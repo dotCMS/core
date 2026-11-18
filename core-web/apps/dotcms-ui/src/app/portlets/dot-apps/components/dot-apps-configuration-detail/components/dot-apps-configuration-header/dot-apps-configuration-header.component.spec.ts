@@ -1,4 +1,5 @@
 import { MarkdownService } from 'ngx-markdown';
+import { vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
 import { Component, DebugElement, NO_ERRORS_SCHEMA } from '@angular/core';
@@ -115,7 +116,7 @@ describe('DotAppsConfigurationHeaderComponent', () => {
         fixture.detectChanges();
     });
 
-    xit('should set messages/values in DOM correctly', async () => {
+    it.skip('should set messages/values in DOM correctly', async () => {
         await fixture.whenStable();
         expect(
             de.query(By.css('.dot-apps-configuration__service-name')).nativeElement.textContent
@@ -160,7 +161,7 @@ describe('DotAppsConfigurationHeaderComponent', () => {
         expect(routerService.goToAppsConfiguration).toHaveBeenCalledTimes(1);
 
         // Reset mock and test title click
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         const title = de.query(By.css('.dot-apps-configuration__service-name'));
         title.triggerEventHandler('click', { key: appData.key });
         expect(routerService.goToAppsConfiguration).toHaveBeenCalledWith(component.app.key);

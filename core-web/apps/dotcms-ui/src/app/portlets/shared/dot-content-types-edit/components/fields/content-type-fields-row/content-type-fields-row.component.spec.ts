@@ -1,4 +1,5 @@
 import { DragulaModule, DragulaService } from 'ng2-dragula';
+import { vi } from 'vitest';
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, waitForAsync } from '@angular/core/testing';
@@ -181,7 +182,7 @@ describe('ContentTypeFieldsRowComponent', () => {
                 rowFixture.detectChanges();
                 rowDe = rowHostDe.query(By.css('dot-content-type-fields-row'));
                 rowComp = rowDe.componentInstance;
-                jest.spyOn(dotDialogService, 'confirm');
+                vi.spyOn(dotDialogService, 'confirm');
             });
 
             it('should show 1 remove button when column is empty', () => {

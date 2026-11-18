@@ -1,4 +1,5 @@
-import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/jest';
+import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
@@ -13,11 +14,11 @@ import { EditorStore } from '../../../store/editor.store';
 /** Fluent mock of `editor.chain().focus().setNodeSelection(pos).run()`. */
 function mockEditor() {
     const chain = {
-        focus: jest.fn(() => chain),
-        setNodeSelection: jest.fn(() => chain),
-        run: jest.fn(() => true)
+        focus: vi.fn(() => chain),
+        setNodeSelection: vi.fn(() => chain),
+        run: vi.fn(() => true)
     };
-    const editor = { chain: jest.fn(() => chain) } as unknown as Editor;
+    const editor = { chain: vi.fn(() => chain) } as unknown as Editor;
 
     return { editor, chain };
 }
@@ -52,8 +53,8 @@ describe('DotContentletNodeViewComponent — click-to-select (#36985)', () => {
                 selected: false,
                 extension: {},
                 HTMLAttributes: {},
-                updateAttributes: jest.fn(),
-                deleteNode: jest.fn()
+                updateAttributes: vi.fn(),
+                deleteNode: vi.fn()
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
             } as any
         });
@@ -64,7 +65,7 @@ describe('DotContentletNodeViewComponent — click-to-select (#36985)', () => {
         create(7, editor);
 
         const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
-        const preventDefault = jest.spyOn(event, 'preventDefault');
+        const preventDefault = vi.spyOn(event, 'preventDefault');
         spectator.element.dispatchEvent(event);
 
         expect(preventDefault).toHaveBeenCalled();
@@ -77,7 +78,7 @@ describe('DotContentletNodeViewComponent — click-to-select (#36985)', () => {
         create(undefined, editor);
 
         const event = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
-        const preventDefault = jest.spyOn(event, 'preventDefault');
+        const preventDefault = vi.spyOn(event, 'preventDefault');
         spectator.element.dispatchEvent(event);
 
         expect(preventDefault).not.toHaveBeenCalled();

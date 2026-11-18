@@ -9,8 +9,10 @@ import { DotCMSContentlet, DotSite } from '@dotcms/dotcms-models';
 import {
     buildAssetPickerConfig,
     buildAssetPickerDialogConfig,
+    CONTENT_STATUS,
     DotAssetPickerBrowseOptions,
-    DotAssetPickerComponent
+    DotAssetPickerComponent,
+    DotContentStatus
 } from '@dotcms/ui';
 
 import {
@@ -23,6 +25,7 @@ import {
     FieldValidationState,
     FormBridge,
     FormFieldAPI,
+    FormFieldSetOptions,
     FormFieldValue
 } from '../interfaces/form-bridge.interface';
 
@@ -47,6 +50,11 @@ export class AngularFormBridge implements FormBridge {
     #dialogService: DialogService;
     #dialogRef: DynamicDialogRef | null = null;
     #visibilityWarningEmitted: Record<'show' | 'hide', boolean> = { show: false, hide: false };
+    /**
+     * Set once the bridge is torn down, so {@link popInstance} can tell a dead bridge on the
+     * global from a live one.
+     */
+    #destroyed = false;
 
     /**
      * Optional callback invoked when a field's visibility changes via show()/hide().
@@ -191,8 +199,10 @@ export class AngularFormBridge implements FormBridge {
      * from the stack. Call this when a nested context (e.g. a dialog) is closed.
      */
     static popInstance(): void {
-        if (AngularFormBridge.instance) {
-            AngularFormBridge.instance.forceDestroy();
+        const popped = AngularFormBridge.instance;
+
+        if (popped) {
+            popped.forceDestroy();
             AngularFormBridge.instance = null;
             AngularFormBridge.refCount = 0;
         }
@@ -201,6 +211,18 @@ export class AngularFormBridge implements FormBridge {
         if (previous) {
             AngularFormBridge.instance = previous.instance;
             AngularFormBridge.refCount = previous.refCount;
+        }
+
+        // The nested context's custom fields pointed the global at its own bridge, which is now
+        // destroyed. Templates behind the dialog that look `DotCustomFieldApi` up lazily (in an
+        // event handler) would otherwise reach the dead instance. That bridge is usually already
+        // gone by now — the dialog's last custom field destroys it before the dialog closes — so
+        // `popped` can be null; a destroyed bridge on the global is ours to replace too. Anything
+        // that is not one of our bridges belongs to someone else and is left alone.
+        const host = globalThis as { DotCustomFieldApi?: unknown };
+        const current = host.DotCustomFieldApi;
+        if (current instanceof AngularFormBridge && (current === popped || current.#destroyed)) {
+            host.DotCustomFieldApi = AngularFormBridge.instance ?? undefined;
         }
     }
 
@@ -217,17 +239,27 @@ export class AngularFormBridge implements FormBridge {
     /**
      * Sets the value of a field in the Angular form.
      *
+     * A value the user typed and a value a template derives (a slug, a padded index, a default)
+     * both go through here, but only the first is an edit. So the field is marked touched and
+     * dirty unless the caller says otherwise with `markDirty: false`.
+     *
+     * `setValue` already re-runs validation and emits once, so `onChange` callbacks fire exactly
+     * once per change.
+     *
      * @param fieldId - The ID of the field to set the value for.
      * @param value - The value to set for the field.
+     * @param options - `markDirty: false` keeps the field's touched and dirty state as it was.
      */
-    set(fieldId: string, value: FormFieldValue): void {
+    set(fieldId: string, value: FormFieldValue, options?: FormFieldSetOptions): void {
         this.#zone.run(() => {
             const control = this.#form.get(fieldId);
             if (control && control.value !== value) {
                 control.setValue(value, { emitEvent: true });
-                control.markAsTouched();
-                control.markAsDirty();
-                control.updateValueAndValidity({ emitEvent: true });
+
+                if (options?.markDirty !== false) {
+                    control.markAsTouched();
+                    control.markAsDirty();
+                }
             }
         });
     }
@@ -356,6 +388,7 @@ export class AngularFormBridge implements FormBridge {
 
         this.#dialogRef?.close();
         this.#dialogRef = null;
+        this.#destroyed = true;
     }
 
     /**
@@ -371,8 +404,8 @@ export class AngularFormBridge implements FormBridge {
                 return this.get(fieldId);
             },
 
-            setValue: (value: FormFieldValue): void => {
-                this.set(fieldId, value);
+            setValue: (value: FormFieldValue, options?: FormFieldSetOptions): void => {
+                this.set(fieldId, value, options);
             },
 
             onChange: (callback: (value: FormFieldValue) => void): (() => void) => {
@@ -579,9 +612,8 @@ export class AngularFormBridge implements FormBridge {
                                     initialAssetPath: options.path,
                                     allowedBaseTypes: baseTypesFor(options.kinds),
                                     browse: browseOptionsFor(options),
-                                    ...(options.mimeTypes?.length
-                                        ? { mimeTypes: options.mimeTypes }
-                                        : {})
+                                    status: statusFilterFor(options.status),
+                                    mimeTypes: options.mimeTypes
                                 })
                             )
                         );
@@ -618,6 +650,14 @@ export class AngularFormBridge implements FormBridge {
     }
 }
 
+/**
+ * Every kind the browse contract admits.
+ *
+ * Declared rather than derived from {@link KIND_BASE_TYPES}, which covers only the kinds that map
+ * onto a base type — `link` has none, so deriving would report it as unsupported.
+ */
+const SUPPORTED_KINDS: readonly DotBrowserItemKind[] = ['file', 'dotasset', 'page', 'link'];
+
 /** Base types a `kinds` list asks the selector to offer. */
 const KIND_BASE_TYPES: Partial<Record<DotBrowserItemKind, string>> = {
     file: 'FILEASSET',
@@ -651,6 +691,21 @@ function browseOptionsFor(options: DotBrowserOptions): DotAssetPickerBrowseOptio
     const kinds = options.kinds ?? [];
     const wantsLinks = kinds.includes('link');
 
+    // Callers are VTL string literals, so `kinds` can carry anything the type no longer admits —
+    // `'folder'` above all, which `file_browser_field_render_new.vtl` asked for until #37366, and
+    // which a third-party template still might. Warn and drop it: an
+    // exception here would take the whole custom field down, while the rest of the request is still
+    // satisfiable. Mirrors the mimetype conflict below.
+    const unsupported = kinds.filter((kind) => !SUPPORTED_KINDS.includes(kind));
+
+    if (unsupported.length) {
+        console.warn(
+            `DotCustomFieldApi.openBrowserModal: unsupported kind(s) ${unsupported.join(', ')} — ` +
+                'ignored. Folders in particular are navigation, not content: they appear only in ' +
+                'the picker sidebar tree and can never be listed or returned.'
+        );
+    }
+
     if (wantsLinks && options.mimeTypes?.length) {
         // The browse endpoint drops links whenever a mimetype filter is set, because a link has no
         // file metadata to match against. Surfaced rather than worked around: silently returning
@@ -662,23 +717,34 @@ function browseOptionsFor(options: DotBrowserOptions): DotAssetPickerBrowseOptio
     }
 
     return {
-        ...(kinds.includes('folder') ? { showFolders: true } : {}),
         ...(wantsLinks ? { showLinks: true } : {}),
-        // Three states, expressed as the two flags the picker already understands.
+        // Version state only. `'archived'` no longer sets a second flag here — content condition
+        // has exactly one representation now, the Status filter, seeded below (FR-014b) — so this
+        // line answers a single question: is the query narrowed to published content?
         ...(options.status ? { showWorking: options.status !== 'live' } : {}),
-        ...(options.status ? { showArchived: options.status === 'archived' } : {}),
         ...(options.sort
             ? { sortField: options.sort.field, sortByDesc: options.sort.direction === 'desc' }
             : {})
     };
 }
 
-/** What the picker returned, in the terms the item itself reports. */
-function kindOf(item: Record<string, unknown>): DotBrowserItemKind {
-    if (item['type'] === 'folder') {
-        return 'folder';
-    }
+/**
+ * The Status chip's seed.
+ *
+ * `'archived'` means *archived only*, and it travels as a seed the editor can clear from inside the
+ * dialog rather than a pinned flag (FR-014b). `'live'` and `'working'` answer the version-state
+ * question instead, which is why they are absent here and handled in {@link browseOptionsFor}.
+ */
+function statusFilterFor(status: DotBrowserOptions['status']): DotContentStatus[] | undefined {
+    return status === 'archived' ? [CONTENT_STATUS.ARCHIVED] : undefined;
+}
 
+/**
+ * What the picker returned, in the terms the item itself reports.
+ *
+ * No folder branch: the picker never lists a folder, so a row can never be one.
+ */
+function kindOf(item: Record<string, unknown>): DotBrowserItemKind {
     if (item['type'] === 'link' || item['extension'] === 'link') {
         return 'link';
     }
@@ -695,9 +761,9 @@ function kindOf(item: Record<string, unknown>): DotBrowserItemKind {
 /**
  * Maps a picked row onto the published selection shape.
  *
- * `url` is the one guarantee: a contentlet reports `url` (or `urlMap`), a folder its path, a link
- * its target. Contentlet-only fields are attached only for the kinds that actually have them, so a
- * consumer can never read a mimetype off a folder.
+ * `url` is the one guarantee: a contentlet reports `url` (or `urlMap`), a link its target.
+ * Contentlet-only fields are attached only for the kinds that actually have them, so a consumer can
+ * never read a mimetype off a menu link.
  */
 /**
  * A string, or nothing.
@@ -721,7 +787,7 @@ function toSelection(item: DotCMSContentlet | Record<string, unknown>): DotBrows
         url: String(row['url'] ?? row['urlMap'] ?? row['path'] ?? '')
     };
 
-    if (kind === 'folder' || kind === 'link') {
+    if (kind === 'link') {
         return base as DotBrowserSelection;
     }
 

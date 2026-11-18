@@ -4,10 +4,9 @@ import { Component, DestroyRef, computed, inject, signal, viewChild } from '@ang
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { ConfirmationService, TreeNode } from 'primeng/api';
+import { TreeNode } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
@@ -36,8 +35,9 @@ import {
  * Edit Role dialog. Wired to PUT /v1/roles/{roleId} via the store (#36936).
  *
  * System and locked roles are read-only per the backend gate: the form is
- * still shown but Save is disabled with a tooltip explaining why. The
- * `Delete` action is deferred to task #36939 wiring (a follow-up PR).
+ * still shown but Save is disabled with a tooltip explaining why. Deleting is
+ * not offered here: it lives in the detail header's actions menu and the
+ * tree's context menu.
  *
  * The parent picker is filtered so the currently-edited role and its
  * descendants aren't selectable — the backend would reject a cycle with 400,
@@ -53,12 +53,10 @@ import {
         CheckboxModule,
         TreeSelectModule,
         TooltipModule,
-        ConfirmDialogModule,
         DotMessagePipe,
         DotFieldRequiredDirective,
         DotFieldValidationMessageComponent
     ],
-    providers: [ConfirmationService],
     templateUrl: './dot-roles-edit.component.html'
 })
 export class DotRolesEditComponent {
@@ -66,7 +64,6 @@ export class DotRolesEditComponent {
     readonly #fb = inject(FormBuilder);
     readonly #ref = inject(DynamicDialogRef);
     readonly #config = inject(DynamicDialogConfig);
-    readonly #confirmationService = inject(ConfirmationService);
     readonly #messageService = inject(DotMessageService);
     readonly #destroyRef = inject(DestroyRef);
 
@@ -301,54 +298,6 @@ export class DotRolesEditComponent {
 
     protected onCancel(): void {
         this.#ref.close();
-    }
-
-    /**
-     * Delete flow: confirms first, then delegates to the store. The BE
-     * cascades, so the confirm copy names the blast radius when we already
-     * know it (the store may enrich it via `usersAffected` post-delete via a
-     * follow-up toast, but the confirm itself is intentionally conservative
-     * — always call out that the deletion is permanent).
-     *
-     * System/locked roles never reach this button; it's disabled at the
-     * template level. The BE also rejects them with 403.
-     */
-    protected onDelete(): void {
-        if (this.readOnly) {
-            return;
-        }
-
-        this.#confirmationService.confirm({
-            message: this.#messageService.get('roles.confirm.delete.message', this.role.name),
-            header: this.#messageService.get('roles.confirm.delete.header'),
-            // Plain "Delete" (not "Delete Role") — the header already names the object.
-            acceptLabel: this.#messageService.get('roles.action.delete'),
-            rejectLabel: this.#messageService.get('roles.action.cancel'),
-            // Default (primary) styling — no red — per UX guidance for this
-            // confirm even though the action is destructive.
-            rejectButtonStyleClass: 'p-button-text',
-            defaultFocus: 'reject',
-            closable: true,
-            closeOnEscape: true,
-            position: 'center',
-            accept: () => {
-                this.$submitting.set(true);
-                this.#store.deleteRole(this.role.id).then((result) => {
-                    this.$submitting.set(false);
-                    if (result?.deleted) {
-                        this.#ref.close({ deleted: true, ...result });
-                    } else if (result && result.deleted === false) {
-                        // Server-side rejection with a 200 (e.g. hierarchy
-                        // constraint) — no toast was fired, surface the
-                        // inline banner as the only feedback.
-                        this.$error.set('roles.delete.error');
-                    }
-                    // result === null → HTTP error already surfaced by
-                    // `DotHttpErrorManagerService.handle` inside the store.
-                    // Don't double up.
-                });
-            }
-        });
     }
 
     /**

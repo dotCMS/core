@@ -1,4 +1,4 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -9,6 +9,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { DotSystemConfigService } from '@dotcms/data-access';
 import { DotMenu } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
+import { DOT_SYSTEM_CONFIG_SERVICE_MOCK } from '@dotcms/utils-testing';
 
 import { DotSubNavComponent } from './dot-sub-nav.component';
 
@@ -37,7 +38,7 @@ describe('DotSubNavComponent', () => {
         providers: [
             {
                 provide: DotSystemConfigService,
-                useValue: { getSystemConfig: () => ({ of: jest.fn() }) }
+                useValue: DOT_SYSTEM_CONFIG_SERVICE_MOCK
             },
             mockProvider(GlobalStore),
             provideHttpClient(),

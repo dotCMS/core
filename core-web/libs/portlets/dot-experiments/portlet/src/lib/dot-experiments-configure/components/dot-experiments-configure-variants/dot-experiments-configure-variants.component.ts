@@ -3,6 +3,7 @@ import { Events, injectDispatch } from '@ngrx/signals/events';
 import { Component, computed, DestroyRef, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FieldTree, FormField } from '@angular/forms/signals';
+import { Router } from '@angular/router';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { BlockUIModule } from 'primeng/blockui';
@@ -18,15 +19,20 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import {
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
+    DotExperimentStatus,
+    DotMessageSeverity,
+    DotMessageType,
     MAX_INPUT_TITLE_LENGTH,
     Variant,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
+import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
+import { UVE_MODE } from '@dotcms/types';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsVariantNameInplaceComponent } from './dot-experiments-variant-name-inplace.component';
@@ -48,6 +54,7 @@ import {
     splitWeightsEvenly,
     totalWeight
 } from '../../../util/dot-experiments-configure.util';
+import { buildVariantEditorLink } from '../../../util/dot-experiments-uve-link.util';
 import {
     DotExperimentsAddVariantDialogComponent,
     DotExperimentsAddVariantDialogData,
@@ -56,6 +63,46 @@ import {
 
 /** Query string every variant preview URL carries, before `&variantName=`. */
 const PREVIEW_URL_PARAMS = 'disabledNavigateMode=true&mode=LIVE';
+
+/**
+ * How long the "cannot open this variant" toast stays up (ms).
+ *
+ * Longer than the list's success toasts: this one states a reason the editor has to read and act
+ * on, rather than confirming something they just did.
+ */
+const REFUSAL_MESSAGE_LIFE = 5000;
+
+/**
+ * The statuses whose variants stay read-only (#37308).
+ *
+ * A finished experiment has nothing left to measure, so editing one of its variants could only
+ * misrepresent a result already reported. A running or scheduled one is the case this issue opens
+ * up, and a draft was never closed.
+ */
+const FINISHED_EXPERIMENT_STATUSES: readonly DotExperimentStatus[] = [
+    DotExperimentStatus.ENDED,
+    DotExperimentStatus.ARCHIVED
+];
+
+/**
+ * The statuses whose variants cost something to edit (#37308).
+ *
+ * Running: from the save on, the run measures different content, so its results combine data from
+ * before and after. Scheduled: the edit simply becomes part of what gets measured. Both are
+ * consequences to accept rather than losses to avert — nothing collected is discarded — which is
+ * why this is a confirmation and not a warning about damage.
+ */
+const LIVE_EXPERIMENT_STATUSES: readonly DotExperimentStatus[] = [
+    DotExperimentStatus.RUNNING,
+    DotExperimentStatus.SCHEDULED
+];
+
+/** Narrowing helpers: the store's experiment is optional, so its status may be absent. */
+const isFinished = (status?: DotExperimentStatus): boolean =>
+    !!status && FINISHED_EXPERIMENT_STATUSES.includes(status);
+
+const isLive = (status?: DotExperimentStatus): boolean =>
+    !!status && LIVE_EXPERIMENT_STATUSES.includes(status);
 
 /**
  * The single row drawn while no experiment exists yet (#37003).
@@ -74,7 +121,9 @@ const CONTROL_ROW_BEFORE_CREATION: VariantRowViewModel = {
     copyUrl: null,
     disabled: true,
     // Nothing to explain: the row is frozen because it does not exist yet, not because of a lock.
-    disabledTooltipKey: null
+    disabledTooltipKey: null,
+    // Academic while the action is disabled before creation, but the control is read-only anyway.
+    editorMode: UVE_MODE.PREVIEW
 };
 
 /**
@@ -90,10 +139,14 @@ const CONTROL_ROW_BEFORE_CREATION: VariantRowViewModel = {
  * `CONTROL_ROW_BEFORE_CREATION` — the Original row the POST is about to create — and freezes every
  * action that would need a server entity behind it.
  *
- * Two things are deliberately *not* live here. The `[data-error]` markers only appear once
- * Start/Schedule has been pressed (AC28), which is what `validationErrors` records; and the
- * Edit Content / Preview button renders disabled, because the UVE round-trip is out of scope
- * (AC-Var-Edit).
+ * The `[data-error]` markers only appear once Start/Schedule has been pressed (AC28), which is
+ * what `validationErrors` records.
+ *
+ * Edit Content opens the variant in the Universal Visual Editor (#37005). The destination is built
+ * from the store's page data rather than the address bar, and the action is refused with a reason
+ * when that data cannot produce a complete one — see {@link onEditContent}. The card deliberately
+ * says nothing about whether a variant's content *has* been edited, and must not start: there is no
+ * such signal on either side of the wire and FR-007a forbids inventing one.
  */
 @Component({
     selector: 'dot-experiments-configure-variants',
@@ -155,16 +208,32 @@ export class DotExperimentsConfigureVariantsComponent {
         const disabledTooltipKey = this.store.$disabledTooltipKey();
         const previewUrl = this.#previewUrl();
 
-        return this.store.$variants().map((variant, index) => ({
-            id: variant.id,
-            name: variant.name,
-            weight: variant.weight ?? 0,
-            isControl: isControlVariant(variant),
-            color: VARIANT_COLORS[index % VARIANT_COLORS.length],
-            copyUrl: previewUrl ? `${previewUrl}&variantName=${variant.id}` : null,
-            disabled: !!disabledTooltipKey,
-            disabledTooltipKey
-        }));
+        // Evaluated per row because only the control condition varies by row. NOT `!!disabledTooltipKey`:
+        // that is null for the control on an editable draft, which would open the Original for editing (FR-008).
+        //
+        // Reads the status directly rather than `$isLocked()` (#37308). `$isLocked` means
+        // `status !== DRAFT`, which used to be the same question — every non-draft variant opened
+        // read-only. It no longer is: a running or scheduled experiment's variant is editable, and
+        // only a finished one stays frozen. `$isLocked` itself must keep its meaning, because it
+        // also freezes the configuration form's name, description, traffic allocation, goal,
+        // scheduling and Save. Widening it here would unfreeze all of those.
+        const experimentIsFinished = isFinished(this.store.experiment()?.status);
+
+        return this.store.$variants().map((variant, index) => {
+            const isControl = isControlVariant(variant);
+
+            return {
+                id: variant.id,
+                name: variant.name,
+                weight: variant.weight ?? 0,
+                isControl,
+                color: VARIANT_COLORS[index % VARIANT_COLORS.length],
+                copyUrl: previewUrl ? `${previewUrl}&variantName=${variant.id}` : null,
+                disabled: !!disabledTooltipKey,
+                disabledTooltipKey,
+                editorMode: isControl || experimentIsFinished ? UVE_MODE.PREVIEW : UVE_MODE.EDIT
+            };
+        });
     });
 
     /**
@@ -195,7 +264,20 @@ export class DotExperimentsConfigureVariantsComponent {
 
     /** Adding needs an experiment id to add the variant to, so it waits for the creation POST. */
     readonly $isAddDisabled = computed<boolean>(
-        () => this.$isAtVariantCap() || this.$isBeforeCreation()
+        () => this.$isDisabled() || this.$isAtVariantCap() || this.$isBeforeCreation()
+    );
+
+    /**
+     * Why Add is closed, or `null` when it is open.
+     *
+     * The button is disabled rather than removed: a control that vanishes leaves the reader with
+     * an absence and nowhere to read the reason, and the reason lives on the button itself. The
+     * lock comes first — it freezes the whole card, so the cap is beside the point while it holds.
+     */
+    readonly $addDisabledTooltipKey = computed<string>(
+        () =>
+            this.store.$disabledTooltipKey() ??
+            (this.$isAtVariantCap() ? 'experiments.configure.variants.cap-reached' : '')
     );
 
     /** Rebuilt by `onRowMenuToggle` for whichever row is opening the kebab. */
@@ -270,9 +352,26 @@ export class DotExperimentsConfigureVariantsComponent {
     readonly #dialogService = inject(DialogService);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #router = inject(Router);
+    /** Present only inside the UVE panel (#37478). */
+    readonly #panel = inject(DotExperimentsPanelStore, { optional: true });
+    readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
 
     constructor() {
         this.#resplitWeightsAfterAdd();
+    }
+
+    /**
+     * Identity of a row, for the table's own diffing.
+     *
+     * `$rows()` rebuilds every view model whenever the variants change, so the table's default
+     * `trackBy` — which compares the objects themselves — sees an entirely new set each time and
+     * tears down every row. Tracking by variant id is what keeps a rename or a re-split from
+     * re-creating rows that did not move, and it is what leaves the enter/leave animation firing
+     * only on the variant actually added or deleted.
+     */
+    trackVariantById(_index: number, row: VariantRowViewModel): string {
+        return row.id;
     }
 
     /** Persists a renamed variant. The variant endpoint takes the name on its own. */
@@ -353,6 +452,100 @@ export class DotExperimentsConfigureVariantsComponent {
             });
     }
 
+    /**
+     * Opens a variant in the Universal Visual Editor — the outbound leg of the round-trip (#37005).
+     *
+     * The destination comes from the store's own page data, never from the address bar (FR-003):
+     * this screen lives at `/experiments/:id/configuration`, where the `url` and `language_id` the
+     * legacy card relied on `queryParamsHandling: 'merge'` to supply simply are not present.
+     *
+     * When the page data cannot produce a complete destination the builder returns `null` and the
+     * action is refused with a reason (FR-004). That refusal matters more than it looks:
+     * `editEmaGuard` *substitutes* defaults for missing params rather than rejecting, so a
+     * partially-formed link would not fail — it would open the site root, or the wrong language,
+     * with nothing reported.
+     *
+     * No `queryParamsHandling`: the portlet's own URL carries `filter`/`orderby`/`pageAsset`, none
+     * of which UVE wants.
+     */
+    onEditContent(row: VariantRowViewModel, mode: UVE_MODE = row.editorMode): void {
+        const link = buildVariantEditorLink({
+            page: this.store.selectedPage(),
+            variantId: row.id,
+            experimentId: this.store.experiment()?.id ?? '',
+            experimentPageId: this.store.experiment()?.pageId,
+            mode
+        });
+
+        if (!link) {
+            // `DotMessageDisplayService`, not PrimeNG's `MessageService`: the latter is provided
+            // by the UVE shell but by nothing on the `/experiments` route, so injecting it here
+            // threw NG0201 and blanked the whole Configure screen on the portlet path. This is
+            // also what the rest of the portlet already uses for toasts.
+            this.#dotMessageDisplayService.push({
+                life: REFUSAL_MESSAGE_LIFE,
+                severity: DotMessageSeverity.ERROR,
+                message: this.#dotMessageService.get(
+                    'experiments.configure.variants.edit-content.unavailable'
+                ),
+                type: DotMessageType.SIMPLE_MESSAGE
+            });
+
+            return;
+        }
+
+        // The one door out of the panel that really is a navigation: editing a variant means going
+        // to the editor on that variant. Suspending rather than closing is what makes the return
+        // land on this configuration instead of a fresh list — `close()` discards exactly the
+        // state the round trip needs (FR-021, FR-023, FR-025).
+        //
+        // Both steps live in `leave`, and that matters. Suspending runs first, so a confirmation
+        // wrapped around the navigation alone would leave a cancelled attempt with the panel
+        // already suspended: nothing opened, but something changed (#37308).
+        const leave = () => {
+            this.#panel?.suspendForVariant();
+
+            this.#router.navigate(link.commands, { queryParams: link.queryParams });
+        };
+
+        const status = this.store.experiment()?.status;
+
+        // Gated on the resolved mode, not on the gesture. The kebab's Preview action passes
+        // PREVIEW explicitly, and previewing a live variant takes none of the risk this question
+        // is about — asking there would put a dialog in front of the safe way out. The control
+        // never reaches EDIT in any status, so it never asks either.
+        const costsSomething = mode === UVE_MODE.EDIT && isLive(status);
+
+        if (!costsSomething) {
+            leave();
+
+            return;
+        }
+
+        this.#confirmationService.confirm({
+            key: CONFIGURATION_CONFIRM_DIALOG_KEY,
+            header: this.#dotMessageService.get(
+                'experiments.configure.variants.edit-live.confirm.header'
+            ),
+            message: this.#dotMessageService.get(
+                status === DotExperimentStatus.RUNNING
+                    ? 'experiments.configure.variants.edit-live.confirm.running'
+                    : 'experiments.configure.variants.edit-live.confirm.scheduled'
+            ),
+            acceptLabel: this.#dotMessageService.get(
+                'experiments.configure.variants.edit-live.confirm.accept'
+            ),
+            rejectLabel: this.#dotMessageService.get(
+                'experiments.configure.variants.edit-live.confirm.reject'
+            ),
+            rejectButtonStyleClass: 'p-button-secondary',
+            defaultFocus: 'reject',
+            closable: true,
+            closeOnEscape: true,
+            accept: leave
+        });
+    }
+
     /** Deleting is irreversible, so it goes through the shell's confirm dialog first. */
     /**
      * Rebuilds the kebab for the row about to open it.
@@ -366,8 +559,15 @@ export class DotExperimentsConfigureVariantsComponent {
                 id: 'variant-preview',
                 label: this.#dotMessageService.get('experiments.configure.variants.action.preview'),
                 icon: 'visibility',
-                // Previewing a variant is a UVE round-trip, the same one Edit Content waits on.
-                disabled: true
+                /**
+                 * Forced to PREVIEW, which is the whole reason this sits beside Edit Content.
+                 *
+                 * The row's own button follows `row.editorMode` — read-only where an edit would do
+                 * harm, editable otherwise — so on the rows that show this menu at all (a
+                 * non-control variant of an editable draft) that button says *Edit*. This is the
+                 * only way to look at such a variant without opening it for writing.
+                 */
+                command: () => this.onEditContent(row, UVE_MODE.PREVIEW)
             },
             {
                 id: 'variant-delete',

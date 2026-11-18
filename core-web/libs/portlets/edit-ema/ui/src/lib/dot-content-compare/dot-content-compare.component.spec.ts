@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { it, expect } from '@jest/globals';
 import { of } from 'rxjs';
+import { expect, it, vi } from 'vitest';
 
 import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -75,6 +75,7 @@ describe('DotContentCompareComponent', () => {
                 {
                     provide: DotcmsConfigService,
                     useValue: {
+                        getConfig: () => of({ languageBundleVersion: 'test-version' }),
                         getSystemTimeZone: () =>
                             of({
                                 id: 'America/Costa_Rica',
@@ -85,7 +86,10 @@ describe('DotContentCompareComponent', () => {
                 },
                 {
                     provide: LoginService,
-                    useValue: { currentUserLanguageId: 'en-US' }
+                    useValue: {
+                        currentUserLanguageId: 'en-US',
+                        loadAuth: () => of({ sessionLanguageId: 'en-US' })
+                    }
                 },
                 {
                     provide: DotPropertiesService,
@@ -98,10 +102,10 @@ describe('DotContentCompareComponent', () => {
         TestBed.overrideProvider(DotContentCompareStore, {
             useValue: {
                 vm$: of({ data: dotContentCompareTableDataMock, showDiff: false }),
-                loadData: jest.fn(),
-                updateShowDiff: jest.fn(),
-                updateCompare: jest.fn(),
-                bringBack: jest.fn()
+                loadData: vi.fn(),
+                updateShowDiff: vi.fn(),
+                updateCompare: vi.fn(),
+                bringBack: vi.fn()
             }
         });
 
@@ -138,11 +142,11 @@ describe('DotContentCompareComponent', () => {
     });
 
     it('should bring back version after confirm and emit shutdown', () => {
-        jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
+        vi.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
-        const emitSpy = jest.spyOn(hostComponent.shutdown, 'emit');
-        const iframeServiceSpy = jest.spyOn(dotIframeService, 'run');
+        const emitSpy = vi.spyOn(hostComponent.shutdown, 'emit');
+        const iframeServiceSpy = vi.spyOn(dotIframeService, 'run');
 
         contentCompareTableComponent.bringBack.emit('123');
 

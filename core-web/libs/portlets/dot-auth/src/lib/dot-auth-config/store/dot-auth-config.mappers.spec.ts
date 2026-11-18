@@ -1,7 +1,15 @@
-import { DotAuthConfig, DotAuthConfigView, DotAuthDiscoveryView } from '@dotcms/dotcms-models';
+import {
+    DotAuthConfig,
+    DotAuthConfigView,
+    DotAuthDiscoveryView,
+    DotAuthSignatureValidation
+} from '@dotcms/dotcms-models';
 
 import {
     DEFAULT_CONFIG,
+    GOOGLE_GROUPS_SCOPE,
+    GOOGLE_GROUPS_URL,
+    applyGoogleGroupsPreset,
     applyOidcDiscovery,
     applyTrustedDiscovery,
     clone,
@@ -244,6 +252,19 @@ describe('dot-auth-config.mappers', () => {
             expect(config.oidc.groupFilterPattern).toBe('');
         });
 
+        it('maps trustEmailWithoutVerifiedClaim', () => {
+            const view: DotAuthConfigView = {
+                ...OIDC_VIEW,
+                values: { ...OIDC_VIEW.values, trustEmailWithoutVerifiedClaim: true }
+            };
+            expect(fromView(view).oidc.trustEmailWithoutVerifiedClaim).toBe(true);
+        });
+
+        it('defaults trustEmailWithoutVerifiedClaim to false (verified-email linking only)', () => {
+            // OIDC_VIEW carries no such key — the backend treats an absent value as off.
+            expect(fromView(OIDC_VIEW).oidc.trustEmailWithoutVerifiedClaim).toBe(false);
+        });
+
         it('maps top-level login behavior fields', () => {
             const config = fromView(OIDC_VIEW);
             expect(config.enableBackend).toBe(true);
@@ -272,6 +293,7 @@ describe('dot-auth-config.mappers', () => {
                 idpName: 'Okta',
                 sPIssuerURL: 'https://cms.example',
                 sPEndpointHostname: '',
+                additionalAcsUrls: 'https://cms.example/api/v1/dotsaml/benchmark/abc',
                 signatureValidationType: 'responseandassertion',
                 idPMetadataFile: 'https://idp.example/metadata.xml',
                 publicCert: 'MIIC...',
@@ -308,6 +330,16 @@ describe('dot-auth-config.mappers', () => {
             expect(config.saml.privateKey).toBe('****');
         });
 
+        it('maps additionalAcsUrls to its own field, not an extra property', () => {
+            const config = fromView(SAML_VIEW);
+            expect(config.saml.additionalAcsUrls).toBe(
+                'https://cms.example/api/v1/dotsaml/benchmark/abc'
+            );
+            expect(config.saml.extraProperties.map((p) => p.key)).not.toContain(
+                'additionalAcsUrls'
+            );
+        });
+
         it('maps SAML IdP endpoint fields', () => {
             const config = fromView(SAML_VIEW);
             expect(config.saml.ssoUrl).toBe('https://idp.example/sso');
@@ -318,6 +350,39 @@ describe('dot-auth-config.mappers', () => {
             const config = fromView(SAML_VIEW);
             expect(config.saml.wantAssertionsSigned).toBe(true);
             expect(config.saml.wantResponseSigned).toBe(true);
+        });
+
+        it('maps single-signature validation types', () => {
+            const assertionOnly = fromView({
+                ...SAML_VIEW,
+                values: { ...SAML_VIEW.values, signatureValidationType: 'assertion' }
+            });
+            expect(assertionOnly.saml.wantAssertionsSigned).toBe(true);
+            expect(assertionOnly.saml.wantResponseSigned).toBe(false);
+
+            const responseOnly = fromView({
+                ...SAML_VIEW,
+                values: { ...SAML_VIEW.values, signatureValidationType: 'response' }
+            });
+            expect(responseOnly.saml.wantAssertionsSigned).toBe(false);
+            expect(responseOnly.saml.wantResponseSigned).toBe(true);
+        });
+
+        it('shows a legacy "none" or unknown validation type as both signatures required', () => {
+            // out-of-range values on purpose: what an old or hand-edited configuration may hold
+            const legacyValues = [
+                'none',
+                '',
+                'signature'
+            ] as unknown as DotAuthSignatureValidation[];
+            for (const signatureValidationType of legacyValues) {
+                const config = fromView({
+                    ...SAML_VIEW,
+                    values: { ...SAML_VIEW.values, signatureValidationType }
+                });
+                expect(config.saml.wantAssertionsSigned).toBe(true);
+                expect(config.saml.wantResponseSigned).toBe(true);
+            }
         });
 
         it('maps SAML claim fields', () => {
@@ -448,6 +513,19 @@ describe('dot-auth-config.mappers', () => {
             expect(payload.values.groupFilterPattern).toBe('^(dotcms|CMS) ');
         });
 
+        it('serializes trustEmailWithoutVerifiedClaim, false by default', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.protocol = 'oidc';
+            expect(toPayload(config, 'test-site-id').values).toMatchObject({
+                trustEmailWithoutVerifiedClaim: false
+            });
+
+            config.oidc.trustEmailWithoutVerifiedClaim = true;
+            expect(toPayload(config, 'test-site-id').values).toMatchObject({
+                trustEmailWithoutVerifiedClaim: true
+            });
+        });
+
         it('defaults allowUnmappedGroups to false and omits an empty filter pattern', () => {
             const config = clone(DEFAULT_CONFIG);
             config.protocol = 'oidc';
@@ -524,13 +602,14 @@ describe('dot-auth-config.mappers', () => {
                 ]
             ).toBe('response');
 
+            // never 'none': with neither box checked both signatures are required
             config.saml.wantAssertionsSigned = false;
             config.saml.wantResponseSigned = false;
             expect(
                 (toPayload(config, 'test-site-id').values as Record<string, unknown>)[
                     'signatureValidationType'
                 ]
-            ).toBe('none');
+            ).toBe('responseandassertion');
         });
 
         it('round-trips idpName and sPEndpointHostname so a save never wipes a working SP hostname', () => {
@@ -551,6 +630,24 @@ describe('dot-auth-config.mappers', () => {
 
             const vals = toPayload(config, 'test-site-id').values as Record<string, unknown>;
             expect(vals['sPEndpointHostname']).toBeUndefined();
+        });
+
+        it('serializes additionalAcsUrls trimmed, and sends an empty value when blank', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.protocol = 'saml';
+            config.saml.additionalAcsUrls = '  https://a.example/acs, https://b.example/acs  ';
+            expect(
+                (toPayload(config, 'test-site-id').values as Record<string, unknown>)[
+                    'additionalAcsUrls'
+                ]
+            ).toBe('https://a.example/acs, https://b.example/acs');
+
+            config.saml.additionalAcsUrls = '   ';
+            expect(
+                (toPayload(config, 'test-site-id').values as Record<string, unknown>)[
+                    'additionalAcsUrls'
+                ]
+            ).toBe('');
         });
 
         it('serializes signRequests so the toggle persists', () => {
@@ -671,6 +768,38 @@ describe('dot-auth-config.mappers', () => {
             config.oidc.issuer = 'https://original.example';
             const result = applyOidcDiscovery(config, {});
             expect(result.oidc.issuer).toBe('https://original.example');
+        });
+    });
+
+    describe('applyGoogleGroupsPreset', () => {
+        it('fills the Google groups URL and response path when both are empty', () => {
+            const config = clone(DEFAULT_CONFIG);
+            const result = applyGoogleGroupsPreset(config);
+            expect(result.oidc.groupsUrl).toBe(GOOGLE_GROUPS_URL);
+            expect(result.oidc.groupsResponsePath).toBe('memberships[].groupKey.id');
+            expect(config.oidc.groupsUrl).toBe('');
+        });
+
+        it('leaves a customized groups URL and response path untouched', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.oidc.groupsUrl = 'https://custom.example/groups';
+            config.oidc.groupsResponsePath = 'items[].name';
+            const result = applyGoogleGroupsPreset(config);
+            expect(result.oidc.groupsUrl).toBe('https://custom.example/groups');
+            expect(result.oidc.groupsResponsePath).toBe('items[].name');
+        });
+
+        it('appends the cloud-identity scope when absent', () => {
+            const config = clone(DEFAULT_CONFIG);
+            const result = applyGoogleGroupsPreset(config);
+            expect(result.oidc.scopes).toBe(`openid email profile ${GOOGLE_GROUPS_SCOPE}`);
+        });
+
+        it('does not duplicate the cloud-identity scope when already present', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.oidc.scopes = `openid ${GOOGLE_GROUPS_SCOPE} email`;
+            const result = applyGoogleGroupsPreset(config);
+            expect(result.oidc.scopes).toBe(`openid ${GOOGLE_GROUPS_SCOPE} email`);
         });
     });
 

@@ -1,3 +1,5 @@
+import { vi } from 'vitest';
+
 import { execSync, spawn } from 'node:child_process';
 import { existsSync, readdirSync } from 'node:fs';
 import { basename, join, sep } from 'node:path';
@@ -89,7 +91,7 @@ const speak = (
 
 describe('mcp-server boot smoke test', () => {
     // Spawning node and loading the bundle is slower than the 5s jest default.
-    jest.setTimeout(30_000);
+    vi.setConfig({ testTimeout: 30_000 });
 
     it('has a built artifact to test', () => {
         expect(existsSync(SERVER)).toBe(true);
@@ -139,6 +141,45 @@ describe('mcp-server boot smoke test', () => {
         ]);
     });
 
+    it('flags a failed call as an MCP error, not as an ordinary result', async () => {
+        // Unconfigured, every call fails as CONFIGURATION. Sent back as plain text content,
+        // a failure looked like a result to the client: nothing in the protocol said the
+        // call had failed, so a client could not show it as one or stop a chain on it.
+        const { responses, stderr, exitCode } = await speak(
+            [
+                {
+                    jsonrpc: '2.0',
+                    id: 1,
+                    method: 'initialize',
+                    params: {
+                        protocolVersion: '2025-06-18',
+                        capabilities: {},
+                        clientInfo: { name: 'boot-smoke-test', version: '0' }
+                    }
+                },
+                { jsonrpc: '2.0', method: 'notifications/initialized' },
+                {
+                    jsonrpc: '2.0',
+                    id: 2,
+                    method: 'tools/call',
+                    params: { name: 'page_verify', arguments: { path: '/about-us' } }
+                }
+            ],
+            2
+        );
+
+        expect({ exitCode, stderr }).toEqual({ exitCode: null, stderr: '' });
+        const call = responses.find((response) => response.id === 2);
+        const result = call?.result as
+            | { isError?: boolean; content?: Array<{ type: string; text: string }> }
+            | undefined;
+        expect(result?.isError).toBe(true);
+        expect(JSON.parse(result?.content?.[0]?.text ?? '{}')).toMatchObject({
+            ok: false,
+            code: 'CONFIGURATION'
+        });
+    });
+
     // The test above boots dist/ in place, which never consults package.json's `files`
     // allowlist — so it would happily pass while the published tarball was missing half the
     // bundle. That is #37337 one level up: build output fine, shipped artifact broken, nothing
@@ -147,11 +188,38 @@ describe('mcp-server boot smoke test', () => {
     // explicit list is not possible here). If xmcp ever emits a chunk into a subdirectory, that
     // glob silently drops it.
     it('packs every file the bundle needs', () => {
+        // Both packers are tried because neither is present everywhere, and each failed in
+        // exactly one of the two places this runs. `npm` is absent from a pnpm-managed local
+        // toolchain (`pnpm env` installs node without it), so `npm pack` died with "command
+        // not found" on a dev machine. `pnpm` is on PATH in CI but old enough there to reject
+        // the flag outright — "Unknown option: 'dry-run'" — which is what turned this green
+        // check red after the first fix. Whichever answers first decides it; if neither does,
+        // both errors are reported, because a silent packer is what made this unreadable.
+        //
         // --dry-run --json reports the tarball manifest without writing one, so this needs no
-        // temp directory and no tar — it runs the same everywhere the build does.
-        const [manifest] = JSON.parse(
-            execSync('npm pack --dry-run --json', { cwd: DIST, encoding: 'utf-8' })
-        ) as { files: { path: string }[] }[];
+        // temp directory and no tar.
+        const manifest = ((): { files: { path: string }[] } => {
+            const failures: string[] = [];
+            for (const packer of ['pnpm', 'npm']) {
+                try {
+                    const raw = execSync(`${packer} pack --dry-run --json`, {
+                        cwd: DIST,
+                        encoding: 'utf-8',
+                        stdio: ['pipe', 'pipe', 'pipe']
+                    });
+                    const parsed = JSON.parse(raw);
+
+                    // npm answers with an ARRAY of manifests, pnpm with a single object.
+                    return Array.isArray(parsed) ? parsed[0] : parsed;
+                } catch (error) {
+                    failures.push(`${packer}: ${(error as Error).message.split('\n')[0]}`);
+                }
+            }
+
+            throw new Error(
+                `no packer could report the tarball manifest, so the \`files\` allowlist is unverified:\n${failures.join('\n')}`
+            );
+        })();
 
         const packed = new Set(manifest.files.map((file) => file.path));
 

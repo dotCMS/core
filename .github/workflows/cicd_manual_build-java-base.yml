@@ -1,10 +1,15 @@
 name: Build SDKMan Base Java Image
-run-name: Base Image for ${{ inputs.sdkman_java_version }} by @${{ github.actor }}
+run-name: Base Image for ${{ inputs.sdkman_java_version || format('PR {0}', github.event.pull_request.number) }} by @${{ github.actor }}
 on:
+  # Trusted default-branch code handles publication; PR content is read only as data.
+  pull_request_target:
+    branches: [main, master]
+    paths: ['.sdkmanrc']
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
     inputs:
       sdkman_java_version:
-        description: 'SDKMAN version string run "sdk list java" for options'
+        description: 'SDKMAN version string from "sdk list java". Docker tags replace + with -.'
         required: true
       image_suffix:
         description: 'append suffix to image tag (can be empty)'
@@ -19,42 +24,143 @@ on:
         type: boolean
         required: false
         default: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
 jobs:
+  resolve:
+    name: Resolve Java-base request
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      version: ${{ steps.request.outputs.version }}
+      tag: ${{ steps.request.outputs.tag }}
+    steps:
+      - name: Read and validate Java selection
+        id: request
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
+        env:
+          JAVA_VERSION: ${{ inputs.sdkman_java_version }}
+          IMAGE_SUFFIX: ${{ inputs.image_suffix }}
+        with:
+          script: |
+            let version = process.env.JAVA_VERSION;
+            if (context.eventName === 'pull_request_target') {
+              const request = { ...context.repo, pull_number: context.payload.pull_request.number };
+              let { data: pr } = await github.rest.pulls.get(request);
+              // GitHub computes new merge refs asynchronously after open/synchronize.
+              const mergeAttempts = 12;
+              const mergeDelayMs = 5000;
+              for (let attempt = 1; pr.mergeable === null && attempt < mergeAttempts; attempt++) {
+                await new Promise(resolve => setTimeout(resolve, mergeDelayMs));
+                ({ data: pr } = await github.rest.pulls.get(request));
+              }
+              // Forks cannot publish; superseded requests must not publish stale versions.
+              if (pr.state !== 'open' || pr.head.repo?.full_name !== `${context.repo.owner}/${context.repo.repo}` ||
+                  pr.head.sha !== context.payload.pull_request.head.sha) {
+                core.info('Skipping fork, closed or superseded PR.');
+                return;
+              }
+              const files = await github.paginate(github.rest.pulls.listFiles, {
+                ...context.repo, pull_number: pr.number, per_page: 100,
+              });
+              if (!files.some(file => file.filename === '.sdkmanrc' || file.previous_filename === '.sdkmanrc')) {
+                core.info('.sdkmanrc unchanged; no Java-base lookup needed.');
+                return;
+              }
+              if (!pr.merge_commit_sha || pr.mergeable !== true) {
+                throw new Error('PR merge checkout unavailable; resolve conflicts and rerun Java-base preparation.');
+              }
+              const { data: file } = await github.rest.repos.getContent({
+                ...context.repo, path: '.sdkmanrc', ref: pr.merge_commit_sha,
+              });
+              const entries = Buffer.from(file.content, 'base64').toString('utf8')
+                .split(/\r?\n/).filter(line => line.startsWith('java='));
+              if (entries.length !== 1) throw new Error('Expected exactly one java= entry in .sdkmanrc');
+              version = entries[0].slice('java='.length);
+            }
+            if (!/^[0-9][A-Za-z0-9.+_-]*-[A-Za-z0-9]+$/.test(version || '')) {
+              throw new Error('Invalid SDKMAN Java identifier');
+            }
+            const tag = version.replace(/\+/g, '-') + (process.env.IMAGE_SUFFIX || '');
+            if (!/^[A-Za-z0-9_][A-Za-z0-9_.-]{0,127}$/.test(tag)) {
+              throw new Error('Invalid Java-base Docker tag');
+            }
+            core.setOutput('version', version);
+            core.setOutput('tag', tag);
+
   build_image:
     name: Build Docker Base Image
+    needs: resolve
+    if: needs.resolve.outputs.version != ''
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    timeout-minutes: 90
+    # Recheck inside the lock so simultaneous requests reuse the first publication.
+    concurrency:
+      group: java-base-${{ needs.resolve.outputs.tag }}
+      cancel-in-progress: false
+      queue: max
     steps:
-      - name: Checkout core
+      - name: Checkout trusted build definition
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event_name == 'pull_request_target' && github.event.repository.default_branch || github.sha }}
+          persist-credentials: false
+
+      - name: Check existing Java-base image
+        id: image
+        if: github.event_name == 'pull_request_target'
+        env:
+          JAVA_BASE_TAG: ${{ needs.resolve.outputs.tag }}
+        run: |
+          readonly MISSING=3
+          missing=0
+          bash .github/scripts/java-base/inspect.sh "$JAVA_BASE_TAG" || missing=$?
+          case "$missing" in
+            0) echo 'exists=true' >> "$GITHUB_OUTPUT" ;;
+            "$MISSING") echo 'exists=false' >> "$GITHUB_OUTPUT" ;;
+            *) exit "$missing" ;;
+          esac
+
       - name: Set Common Vars
+        if: steps.image.outputs.exists != 'true'
+        env:
+          MULTI_ARCH: ${{ github.event_name == 'pull_request_target' || inputs.multi_arch }}
         run: |
           PLATFORMS='linux/amd64'
-          [[ "${{ github.event.inputs.multi_arch }}" == 'true' ]] && PLATFORMS='linux/amd64,linux/arm64'
+          if [ "$MULTI_ARCH" = 'true' ]; then
+            PLATFORMS='linux/amd64,linux/arm64'
+          fi
+          echo "PLATFORMS=${PLATFORMS}" >> "$GITHUB_ENV"
 
-          echo "PLATFORMS=${PLATFORMS}" >> $GITHUB_ENV
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3.6.0
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
         with:
           platforms: amd64,arm64
-        if: github.event.inputs.multi_arch == 'true'
-      - id: docker-setup-buildx
-        name: Docker Setup Buildx
-        uses: docker/setup-buildx-action@v3.10.0
+        if: steps.image.outputs.exists != 'true' && (github.event_name == 'pull_request_target' || inputs.multi_arch)
+
+      - name: Docker Setup Buildx
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
         with:
-          version: v0.23.0 # version of buildx https://github.com/docker/buildx/releases
+          version: v0.23.0
           platforms: ${{ env.PLATFORMS }}
-        if: github.event.inputs.multi_arch == 'true'
+        if: steps.image.outputs.exists != 'true'
+
       - name: Docker Hub login
+        if: steps.image.outputs.exists != 'true'
         uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
+
       - name: Build and push
-        uses: docker/build-push-action@v6.15.0
+        if: steps.image.outputs.exists != 'true'
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
           context: ./docker/java-base
-          push: ${{ github.event.inputs.push }}
-          tags: dotcms/java-base:${{ github.event.inputs.sdkman_java_version }}${{ github.event.inputs.image_suffix }}
+          push: ${{ github.event_name == 'pull_request_target' || inputs.push }}
+          tags: dotcms/java-base:${{ needs.resolve.outputs.tag }}
           platforms: ${{ env.PLATFORMS }}
-          build-args:
-            SDKMAN_JAVA_VERSION=${{ github.event.inputs.sdkman_java_version }}
+          build-args: |
+            SDKMAN_JAVA_VERSION=${{ needs.resolve.outputs.version }}

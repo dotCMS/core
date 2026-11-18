@@ -1,4 +1,5 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -44,7 +45,7 @@ const SAMPLE_DATA: EngagementPlatformMetrics[] = [
 describe('DotAnalyticsBarEngagementChartComponent', () => {
     let spectator: Spectator<DotAnalyticsBarEngagementChartComponent>;
 
-    const dialogOpenSpy = jest.fn();
+    const dialogOpenSpy = vi.fn();
 
     const createComponent = createComponentFactory({
         component: DotAnalyticsBarEngagementChartComponent,
@@ -58,7 +59,7 @@ describe('DotAnalyticsBarEngagementChartComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: {
-                    get: jest.fn((key: string, ...args: string[]) => {
+                    get: vi.fn((key: string, ...args: string[]) => {
                         if (key === 'analytics.engagement.charts.browser.title') {
                             return 'Translated title';
                         }

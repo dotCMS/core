@@ -31,6 +31,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.MultiTreeAPI;
+import com.dotmarketing.factories.PageTreeReadFilter;
 import com.dotmarketing.factories.PersonalizedContentlet;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -81,6 +82,12 @@ import org.apache.velocity.context.Context;
 public class PageRenderUtil implements Serializable {
 
     public static String CONTAINER_UUID_PREFIX = "uuid-";
+    /**
+     * Prefix of the Velocity context key, followed by the page identifier, that holds the visitor's
+     * personalization when an edit or preview render shows the default content in its place,
+     * because the user can see none of that persona's content (see {@link #personalizationToRender}).
+     */
+    public static final String HIDDEN_PERSONALIZATION_PREFIX = "dotHiddenPersonalization";
     private static final long serialVersionUID = 1L;
 
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -99,6 +106,9 @@ public class PageRenderUtil implements Serializable {
     final long languageId;
     final Host site;
     final TemplateLayout templateLayout;
+    // Kept out of contextMap: asString() writes contextMap into the page's cached Velocity code,
+    // which must not depend on the user rendering it
+    private String hiddenPersonalization;
 
 
 
@@ -261,7 +271,14 @@ public class PageRenderUtil implements Serializable {
                 .getPageMultiTrees(htmlPage, currentVariantId, live);
         final Set<String> personalizationsForPage = multiTreeAPI.getPersonalizationsForPage(htmlPage, currentVariantId);
         final List<ContainerRaw> rawContainers  = Lists.newArrayList();
-        final String includeContentFor = this.getPersonaTagToIncludeContent(request, personalizationsForPage);
+        final String includeContentFor = this.getPersonaTagToIncludeContent(request, personalizationsForPage,
+                pageContents, currentVariantId);
+        final String visitorPersonalization = WebAPILocator.getPersonalizationWebAPI()
+                .getContainerPersonalization(request);
+        if (PageTreeReadFilter.appliesTo(this.mode) && !visitorPersonalization.equals(includeContentFor)
+                && personalizationsForPage.contains(visitorPersonalization)) {
+            this.hiddenPersonalization = visitorPersonalization;
+        }
 
         for (final String containerId : pageContents.rowKeySet()) {
 
@@ -335,8 +352,16 @@ public class PageRenderUtil implements Serializable {
                     containerUuidPersona.add(container, uniqueUUIDForRender, personalizedContentlet);
 
 
+                    final boolean canEditContentlet =
+                            permissionAPI.doesUserHavePermission(contentlet, PERMISSION_WRITE, user);
                     contextMap.put("EDIT_CONTENT_PERMISSION" + contentlet.getIdentifier(),
-                            permissionAPI.doesUserHavePermission(contentlet, PERMISSION_WRITE, user));
+                            canEditContentlet);
+                    // Surface the same permission on the contentlet map so it reaches the Page API
+                    // JSON response and GraphQL's `_map`. Traditional pages read it from the
+                    // `data-dot-can-edit` attribute in the rendered HTML; headless pages have no
+                    // such markup and need it in the payload to gate the editor's edit affordances.
+                    // Reuses the value already computed above -- no extra permission lookup.
+                    contentlet.getMap().put("canEdit", canEditContentlet);
 
                     this.widgetPreExecute(contentlet);
                     this.addAccrueTags(contentlet);
@@ -838,10 +863,21 @@ public class PageRenderUtil implements Serializable {
     }
 
 
-    public Context addAll(Context incoming) {
+    /**
+     * Adds the page's variables to a Velocity context the page is rendered with: the content of
+     * each container and, in edit and preview mode, the visitor's personalization when the page
+     * shows the default content in its place (see {@link #personalizationToRender}).
+     *
+     * @param incoming the {@link Context} of the current render
+     * @return the same context, with the page's variables added
+     */
+    public Context addAll(final Context incoming) {
 
-        for (String key : this.contextMap.keySet()) {
+        for (final String key : this.contextMap.keySet()) {
             incoming.put(key, this.contextMap.get(key));
+        }
+        if (null != this.hiddenPersonalization) {
+            incoming.put(HIDDEN_PERSONALIZATION_PREFIX + this.htmlPage.getIdentifier(), this.hiddenPersonalization);
         }
 
         return incoming;
@@ -873,7 +909,43 @@ public class PageRenderUtil implements Serializable {
         return this.containersRaw;
     }
 
-    private String getPersonaTagToIncludeContent(final HttpServletRequest request, final Set<String> personalizationsForPage) {
+    /**
+     * Returns the personalization whose content a page's containers show, so the HTML of an edit or
+     * preview render shows the same content as its JSON: the default personalization when the
+     * render chose it in place of the visitor's persona (see {@link #getPersonaTagToIncludeContent}),
+     * otherwise the visitor's personalization. A persona set on the visitor while the page renders
+     * is used as it is.
+     *
+     * @param context                the Velocity {@link Context} the page is rendered with
+     * @param pageIdentifier         identifier of the rendered page
+     * @param visitorPersonalization the visitor's current personalization tag
+     * @return the personalization tag to show
+     */
+    public static String personalizationToRender(final Context context, final String pageIdentifier,
+            final String visitorPersonalization) {
+        final boolean hidden = null != context && UtilMethods.isSet(pageIdentifier)
+                && visitorPersonalization.equals(context.get(HIDDEN_PERSONALIZATION_PREFIX + pageIdentifier));
+        return hidden ? MultiTree.DOT_PERSONALIZATION_DEFAULT : visitorPersonalization;
+    }
+
+    /**
+     * Returns the personalization whose content the page shows: the visitor's persona when the page
+     * is personalized for it and, in edit and preview mode, the user can see some of that persona's
+     * content (see {@link PageTreeReadFilter#forRender}), otherwise the default personalization. In
+     * the other modes the page renders only when the user can read all of its content, so the
+     * persona's rows are enough.
+     *
+     * @param request                 the current request, holding the visitor and its persona
+     * @param personalizationsForPage the personalizations the page has rows for
+     * @param pageContents            the page's tree
+     * @param variantName             the variant the tree was loaded for
+     * @return the personalization tag to render
+     * @throws DotDataException if the permissions of the persona's content cannot be loaded
+     */
+    private String getPersonaTagToIncludeContent(final HttpServletRequest request,
+            final Set<String> personalizationsForPage,
+            final Table<String, String, Set<PersonalizedContentlet>> pageContents,
+            final String variantName) throws DotDataException {
         IPersona iPersona = null;
 
         if (request != null) {
@@ -884,7 +956,11 @@ public class PageRenderUtil implements Serializable {
         final String currentPersonaTag = iPersona == null ? MultiTree.DOT_PERSONALIZATION_DEFAULT
                 : Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + iPersona.getKeyTag();
 
-        final boolean hasPersonalizations = personalizationsForPage.contains(currentPersonaTag);
+        final boolean hasPersonalizations = personalizationsForPage.contains(currentPersonaTag)
+                && (MultiTree.DOT_PERSONALIZATION_DEFAULT.equals(currentPersonaTag)
+                    || !PageTreeReadFilter.appliesTo(this.mode)
+                    || PageTreeReadFilter.forRender(this.user, this.mode)
+                            .hasReadableContent(pageContents, currentPersonaTag, variantName));
 
         return hasPersonalizations ? currentPersonaTag : MultiTree.DOT_PERSONALIZATION_DEFAULT;
     }

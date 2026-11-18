@@ -39,18 +39,19 @@ import {
     DotWorkflowPayload,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
+import { toSourceEditorRequest } from '@dotcms/edit-content';
 import { DotJspIframeDialogComponent, DotJspIframeDialogData } from '@dotcms/ui';
 
 import {
     DIALOG_TYPE,
     ERROR_MESSAGE_LIFE,
-    SUCCESS_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
     ROOT_PATH
 } from '../../shared/constants';
-import { DotContentDriveContextMenu, DotContentDriveStatus } from '../../shared/models';
+import { DotContentDriveContextMenu } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { toFolderAssetPaths } from '../../utils/action-center';
 import { isFolder } from '../../utils/functions';
 
 /**
@@ -77,6 +78,36 @@ const ACTIONS_LABEL_KEY = 'content-drive.context-menu.actions';
 const GROUP_LABEL_STYLE_CLASS =
     'p-menu-submenu-label p-0! pointer-events-none [&_.p-contextmenu-item-content]:text-inherit';
 
+/**
+ * Content rows carry their permissions as the server's numeric bits, unlike folders, which carry
+ * names. Only the bits the content menu reads are listed.
+ */
+const CONTENT_PERMISSION = {
+    WRITE: 2,
+    PUBLISH: 4
+} as const;
+
+/**
+ * Whether a content row allows `bit`. A row without `permissions` reads as allowed: the search did
+ * not send them, and refusing would hide entries users had before (#37903, FR-011).
+ *
+ * @param contentlet the content row
+ * @param bit the permission bit to check
+ */
+const contentAllows = (contentlet: DotCMSContentlet, bit: number): boolean => {
+    const permissions = contentlet['permissions'] as unknown as number[] | undefined;
+
+    return !permissions || permissions.includes(bit);
+};
+
+/**
+ * The row context menu.
+ *
+ * **None of these actions announce success.** The listing shows the result, so a notification
+ * would repeat what the author is already looking at; failures still speak, because nothing else
+ * reports those. Stated here once rather than at each call site, since four copies of one policy
+ * drift the first time the policy changes.
+ */
 @Component({
     selector: 'dot-folder-list-context-menu',
     templateUrl: './dot-folder-list-context-menu.component.html',
@@ -133,11 +164,28 @@ export class DotFolderListViewContextMenuComponent {
      * The memoized items are cleared to force a refresh of the menu options.
      */
     readonly statusEffect = effect(() => {
-        const status = this.#store.status();
+        // Read for their dependencies alone, and neither is consulted: the effect re-runs on
+        // either, and every run clears. Read up front on principle — a guard placed before a read
+        // drops that signal as a dependency — even though nothing guards here any more.
+        this.#store.status();
+        this.#store.items();
 
-        if (status === DotContentDriveStatus.LOADING) {
-            this.$memoizedMenuItems.set({});
-        }
+        // `items` is the load-agnostic trigger, and it is the one that matters. The memo used to be
+        // dropped only on LOADING, which held while every reload blanked the listing. A reload that
+        // settles an action is now quiet and never sets LOADING, so the cache outlived the data and
+        // the menu went on offering the workflow actions for the step the item was on *before* the
+        // action ran.
+        //
+        // Keying the memo by inode does not save it: publishing does not change the working inode,
+        // so the same key comes back pointing at a stale menu. Dropping the memo when the rows
+        // themselves arrive is the honest trigger, since that is exactly when what the menu was
+        // built from stopped being true.
+        // Cleared unconditionally, which is what the reasoning above actually describes. Both
+        // signals are still read, because the effect has to re-run on either — but the old
+        // `status === LOADING || items` could not gate anything: `items` is an array signal and an
+        // empty array is truthy, so the second half always held and the status check only looked
+        // like it still decided something.
+        this.$memoizedMenuItems.set({});
     });
 
     /**
@@ -152,6 +200,21 @@ export class DotFolderListViewContextMenuComponent {
      */
     readonly pushPublishEnvironmentsEffect = effect(() => {
         this.#store.hasPushPublishEnvironments();
+
+        this.$memoizedMenuItems.set({});
+    });
+
+    /**
+     * Drops the memo when the add-children answer for the browsed folder changes.
+     *
+     * Duplicate is offered only where its copy may land, and that answer is decided when the menu is
+     * built. The site lookup is asynchronous and reads as allowed until it settles, so a menu cached
+     * before it would go on offering a duplicate the server then refuses.
+     *
+     * The signal is read before anything else so it stays a dependency of this effect.
+     */
+    readonly canAddChildrenEffect = effect(() => {
+        this.#store.$canDuplicateHere();
 
         this.$memoizedMenuItems.set({});
     });
@@ -213,6 +276,20 @@ export class DotFolderListViewContextMenuComponent {
                 });
             }
 
+            // Duplicating needs READ on the folder and add-children where its duplicate lands: the
+            // folder being browsed, or, in all site content, the folder's own parent, which the
+            // server checks (#37062). Right after Folder Settings: it makes something new from the
+            // folder rather than configuring or publishing it.
+            if (
+                contentlet.permissions?.includes(PERMISSIONS_TYPE.READ) &&
+                this.#store.$canDuplicateHere()
+            ) {
+                folderMenuItems.push({
+                    label: this.#dotMessageService.get('content-drive.action-center.duplicate'),
+                    command: () => this.#duplicateFolder(contentlet)
+                });
+            }
+
             const canEditPermissions = contentlet.permissions?.includes(
                 PERMISSIONS_TYPE.EDIT_PERMISSIONS
             );
@@ -220,7 +297,14 @@ export class DotFolderListViewContextMenuComponent {
             if (canEditPermissions) {
                 folderMenuItems.push({
                     label: this.#dotMessageService.get('Edit-Permissions'),
-                    command: () => this.#openPermissionsDialog(contentlet.identifier)
+                    // Through the store, like the other folder dialogs, so the URL can name it
+                    // while it is open; the shell opens the permissions JSP (#37759, FR-030).
+                    command: () =>
+                        this.#store.setDialog({
+                            type: DIALOG_TYPE.FOLDER_PERMISSIONS,
+                            header: this.#dotMessageService.get('Edit-Permissions'),
+                            payload: { identifier: contentlet.identifier }
+                        })
                 });
             }
 
@@ -298,19 +382,44 @@ export class DotFolderListViewContextMenuComponent {
 
         const actionsMenu = [];
 
-        const label =
-            contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE ? 'page' : 'content';
+        const isPage = contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE;
+        // Without WRITE the entries still open the item, read as View, as in Content Search
+        // (#37903, FR-010).
+        const verb = contentAllows(contentlet, CONTENT_PERMISSION.WRITE) ? 'edit' : 'view';
 
-        // The built-in entries are a group like any other, so they get named too. Unconditional,
-        // unlike the folder branch: Edit Content is pushed immediately below with no gate.
+        // The built-in entries are a group like any other, so they get named too. Never empty:
+        // the open-in-editor entry is pushed immediately below for every row.
         actionsMenu.push(this.#buildGroupLabel(ACTIONS_LABEL_KEY));
 
         actionsMenu.push({
-            label: this.#dotMessageService.get(`content-drive.context-menu.edit-${label}`),
+            label: this.#dotMessageService.get(
+                `content-drive.context-menu.${verb}-${isPage ? 'page' : 'content'}`
+            ),
             command: () => {
                 this.#navigationService.editContent(contentlet);
             }
         });
+
+        // A page also opens its fields, in the same side-panel form Edit Content uses elsewhere.
+        if (isPage) {
+            actionsMenu.push({
+                label: this.#dotMessageService.get(`content-drive.context-menu.${verb}-properties`),
+                command: () => {
+                    this.#navigationService.editPageProperties(contentlet);
+                }
+            });
+        }
+
+        // The file's source in a code editor, for developers. Same rule as the page editor's VTL
+        // menu, from `toSourceEditorRequest`: a file type it handles, and a lock the user can take.
+        const sourceEditorRequest = toSourceEditorRequest(contentlet, canLockData);
+
+        if (sourceEditorRequest) {
+            actionsMenu.push({
+                label: this.#dotMessageService.get('content-drive.context-menu.edit-code'),
+                command: () => this.#store.openSourceEditor(sourceEditorRequest)
+            });
+        }
 
         if (canLockData.canLock) {
             actionsMenu.push({
@@ -326,14 +435,17 @@ export class DotFolderListViewContextMenuComponent {
         // The push group, ordered the same way as on a folder: Push Publish then Add to Bundle.
         // Push Publish is what the old content search offered outside its workflow dropdown, so it
         // belongs here rather than among the workflow actions, which are scheme-driven.
-        actionsMenu.push(this.#buildPushPublishItem(contentlet.identifier));
+        // Gated on PUBLISH like the folder branch, so a read-only row offers neither (FR-011).
+        if (contentAllows(contentlet, CONTENT_PERMISSION.PUBLISH)) {
+            actionsMenu.push(this.#buildPushPublishItem(contentlet.identifier));
 
-        actionsMenu.push({
-            label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
-            command: () => {
-                this.#store.setShowAddToBundle(true);
-            }
-        });
+            actionsMenu.push({
+                label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
+                command: () => {
+                    this.#store.setShowAddToBundle(true);
+                }
+            });
+        }
 
         // Workflow actions get a labelled section rather than a flyout. "Workflows" is a real
         // dotCMS concept, so it reads as a name rather than an invented category — which matters
@@ -400,7 +512,9 @@ export class DotFolderListViewContextMenuComponent {
         } else {
             this.#fireWorkflowAction({
                 contentletInode: contentlet.inode,
-                actionId: workflowAction.id
+                actionId: workflowAction.id,
+                actionName: workflowAction.name,
+                itemTitle: contentlet.title
             });
         }
     }
@@ -420,10 +534,11 @@ export class DotFolderListViewContextMenuComponent {
                     workflowAction.actionInputs
                 );
 
-                this.#store.setStatus(DotContentDriveStatus.LOADING);
                 this.#fireWorkflowAction({
                     contentletInode: contentlet.inode,
                     actionId: workflowAction.id,
+                    actionName: workflowAction.name,
+                    itemTitle: contentlet.title,
                     payload
                 });
             });
@@ -432,59 +547,82 @@ export class DotFolderListViewContextMenuComponent {
     #fireWorkflowAction({
         contentletInode,
         actionId,
+        actionName,
+        itemTitle,
         payload
     }: {
         contentletInode: string;
         actionId: string;
+        /** Already-resolved action label, so the outcome can name what ran. */
+        actionName: string;
+        /** What it ran on. Both halves are needed: "Workflow Executed" told the author neither. */
+        itemTitle: string;
         payload?: DotProcessedWorkflowPayload;
     }) {
-        this.#store.setStatus(DotContentDriveStatus.LOADING);
+        // Reports on the toolbar indicator rather than blanking the listing: the author needs to
+        // keep seeing the row they acted on, and the listing's own loading state means "fetching
+        // the listing" and nothing else (FR-007, FR-009).
+        const runId = this.#store.startExternalRun({
+            operation: actionId,
+            total: 1,
+            targets: [contentletInode]
+        });
         this.#workflowActionsFireService
             .fireTo({ actionId, inode: contentletInode, data: payload })
-            .subscribe(
-                () => {
-                    this.#store.reloadContentDrive();
+            .subscribe({
+                next: () => {
+                    this.#store.endExternalRun(runId);
+                    // Quiet: this row was marked busy, so the skeleton would be a second load right
+                    // after the first and would read as a jump.
+                    this.#store.reloadContentDrive({ quiet: true });
 
-                    this.#messageService.add({
-                        severity: 'success',
-                        summary: this.#dotMessageService.get(
-                            'content-drive.toast.workflow-executed'
-                        )
-                    });
+                    // Silent on success: see the note on this class.
                 },
-                (error) => {
+                error: (error) => {
                     this.#messageService.add({
                         severity: 'error',
                         summary: this.#dotMessageService.get('content-drive.toast.workflow-error'),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.toast.workflow-error-detail',
+                            actionName,
+                            itemTitle
+                        ),
                         life: ERROR_MESSAGE_LIFE
                     });
-                    this.#store.setStatus(DotContentDriveStatus.LOADED);
+                    this.#store.endExternalRun(runId);
                     console.error('Error firing workflow action', error);
                 }
-            );
+            });
     }
 
     #resolveLockAction(contentlet: DotCMSContentlet, canLockData: DotContentletCanLock) {
+        // Registered like every other operation, so the same Lock reads the same way whether it was
+        // fired from here or from the Workflow Center (FR-007). It used to report nothing at all
+        // until its toast, which was the last place this inconsistency survived.
+        //
+        // The request stays this component's own: the Workflow Center locks through the default
+        // workflow action, this locks through the contentlet service. Only the *reporting* is shared.
+        const runId = this.#store.startExternalRun({
+            operation: canLockData.locked ? 'UNLOCK' : 'LOCK',
+            total: 1,
+            targets: [contentlet.inode]
+        });
+
         if (canLockData.locked) {
             this.#dotContentletService
                 .unlockContent(contentlet.inode)
                 .pipe(take(1))
-                .subscribe(
-                    ({ title }: DotCMSContentlet) => {
-                        this.#messageService.add({
-                            severity: 'success',
-                            summary: this.#dotMessageService.get(
-                                'content-drive.toast.unlock-success',
-                                title
-                            ),
-                            detail: this.#dotMessageService.get(
-                                'content-drive.toast.unlock-success-detail'
-                            )
-                        });
+                .subscribe({
+                    next: () => {
+                        this.#store.endExternalRun(runId);
+                        // Silent on success: see the note on this class.
 
-                        this.#store.reloadContentDrive();
+                        // Quiet: the row was marked busy, so a skeleton here is a second load
+                        // straight after the first and reads as the table blinking.
+                        this.#store.reloadContentDrive({ quiet: true });
                     },
-                    (error) => {
+                    error: (error) => {
+                        this.#store.endExternalRun(runId);
                         console.error('Error unlocking content', error);
                         this.#messageService.add({
                             severity: 'error',
@@ -492,73 +630,41 @@ export class DotFolderListViewContextMenuComponent {
                                 'content-drive.toast.unlock-error'
                             ),
                             detail: this.#dotMessageService.get(
-                                'content-drive.toast.unlock-error-detail'
+                                'content-drive.toast.unlock-error-detail',
+                                contentlet.title
                             ),
                             life: ERROR_MESSAGE_LIFE
                         });
                         console.error('Error unlocking content', error);
                     }
-                );
+                });
         } else {
             this.#dotContentletService
                 .lockContent(contentlet.inode)
                 .pipe(take(1))
-                .subscribe(
-                    ({ title }: DotCMSContentlet) => {
-                        this.#messageService.add({
-                            severity: 'success',
-                            summary: this.#dotMessageService.get(
-                                'content-drive.toast.lock-success',
-                                title
-                            ),
-                            detail: this.#dotMessageService.get(
-                                'content-drive.toast.lock-success-detail'
-                            )
-                        });
-                        this.#store.reloadContentDrive();
+                .subscribe({
+                    next: () => {
+                        this.#store.endExternalRun(runId);
+                        // Silent on success: see the note on this class.
+                        // Quiet: the row was marked busy, so a skeleton here is a second load
+                        // straight after the first and reads as the table blinking.
+                        this.#store.reloadContentDrive({ quiet: true });
                     },
-                    (error) => {
+                    error: (error) => {
+                        this.#store.endExternalRun(runId);
                         console.error('Error locking content', error);
                         this.#messageService.add({
                             severity: 'error',
                             summary: this.#dotMessageService.get('content-drive.toast.lock-error'),
                             detail: this.#dotMessageService.get(
-                                'content-drive.toast.lock-error-detail'
+                                'content-drive.toast.lock-error-detail',
+                                contentlet.title
                             ),
                             life: ERROR_MESSAGE_LIFE
                         });
                     }
-                );
+                });
         }
-    }
-
-    #openPermissionsDialog(identifier: string): void {
-        this.#dialogService.open(DotJspIframeDialogComponent, {
-            header: this.#dotMessageService.get('Edit-Permissions'),
-            width: 'min(92vw, 75rem)',
-            contentStyle: { overflow: 'hidden' },
-            data: {
-                url: this.#buildPermissionsUrl(identifier),
-                titleKey: 'Permissions',
-                emptyKey: 'dot.permissions.iframe.dialog.no-asset',
-                testIdPrefix: 'permissions'
-            } satisfies DotJspIframeDialogData,
-            modal: true,
-            appendTo: 'body',
-            closable: true,
-            closeOnEscape: true,
-            draggable: false,
-            resizable: false,
-            position: 'center'
-        });
-    }
-
-    #buildPermissionsUrl(identifier: string): string {
-        const params = new URLSearchParams({
-            folderIdentifier: identifier,
-            popup: 'true'
-        });
-        return `/html/portlet/ext/folders/permissions.jsp?${params.toString()}`;
     }
 
     #openPushHistoryDialog(identifier: string): void {
@@ -641,10 +747,49 @@ export class DotFolderListViewContextMenuComponent {
             return;
         }
 
+        // Opened and left alone. The dialog signals success by closing and says nothing, which is
+        // how Push Publish behaves from every other surface in the app — the nine other callers
+        // pass no callback either. Content Drive matching them is the point: a confirmation only
+        // here would make the same action read differently depending on where it was fired.
         this.#dotPushPublishDialogService.open({
             assetIdentifier: identifier,
             title: this.#dotMessageService.get('contenttypes.content.push_publish')
         });
+    }
+
+    /**
+     * Duplicates one folder in place, as a batch of one through the same run as the Action Center.
+     *
+     * No confirmation: nothing is overwritten or removed, and the duplicate lands beside the
+     * original. The outcome is reported by the shell when the pushed completion arrives, the same
+     * toast the bulk action gets.
+     *
+     * @param folder the right-clicked folder
+     */
+    #duplicateFolder(folder: DotContentDriveActionableFolder): void {
+        const hostname = this.#store.currentSite()?.hostname;
+
+        if (!hostname) {
+            // Without a site the path would come out as `///path/`, and the started toast would
+            // report a run that could not happen. Refused the way the single-folder delete is.
+            this.#messageService.add({
+                severity: 'error',
+                summary: this.#dotMessageService.get('content-drive.action-center.duplicate'),
+                detail: this.#dotMessageService.get(
+                    'content-drive.dialog.duplicate-folder.no-site'
+                ),
+                life: ERROR_MESSAGE_LIFE
+            });
+
+            return;
+        }
+
+        const assetPaths = toFolderAssetPaths([folder], hostname);
+
+        this.#store.executeDuplicate(
+            this.#dotMessageService.get('content-drive.action-center.duplicate'),
+            assetPaths
+        );
     }
 
     /**
@@ -690,22 +835,29 @@ export class DotFolderListViewContextMenuComponent {
             return;
         }
 
+        // A recursive subtree delete is the slowest thing in the portlet, and the confirm dialog
+        // closes on accept, so the run outlives its trigger and belongs on the indicator (FR-007).
+        // It reported nothing at all until its toast.
+        //
+        // Both keys, because neither is reliably the one the grid marks by. The search service
+        // backfills a folder's `inode` from its identifier, but only when it has none
+        // (`dot-content-drive.service.ts`: "Any folder that does carry one is left alone, so legacy
+        // data keeps whatever it has"). A folder the API returns *with* a distinct inode would
+        // therefore never have its row marked, and the indicator would report a run over a row that
+        // shows nothing — the delete still working, but looking like nothing is happening.
+        const runId = this.#store.startExternalRun({
+            operation: 'DELETE_FOLDER',
+            total: 1,
+            targets: [folder.identifier, folder.inode].filter(Boolean)
+        });
+
         this.#dotFolderService
             .deleteFolder(`//${hostname}${folder.path}`)
             .pipe(take(1))
             .subscribe({
                 next: () => {
-                    this.#messageService.add({
-                        severity: 'success',
-                        summary: this.#dotMessageService.get(
-                            'content-drive.context-menu.delete-folder'
-                        ),
-                        detail: this.#dotMessageService.get(
-                            'content-drive.dialog.delete-folder.success',
-                            folder.name
-                        ),
-                        life: SUCCESS_MESSAGE_LIFE
-                    });
+                    this.#store.endExternalRun(runId);
+                    // Silent on success: see the note on this class.
                     // The tree serves this menu too, so the deleted folder can be an ancestor of
                     // the one being browsed — or the browsed folder itself. Reloading the current
                     // path would then fetch a path that no longer exists, leaving an empty grid
@@ -714,7 +866,9 @@ export class DotFolderListViewContextMenuComponent {
                     if (this.#browsingInside(folder.path)) {
                         this.#store.setPath(ROOT_PATH);
                     } else {
-                        this.#store.reloadContentDrive();
+                        // Quiet: the folder row was marked busy, so a skeleton here would be a
+                        // second load right after the first and would read as a jump.
+                        this.#store.reloadContentDrive({ quiet: true });
                     }
 
                     // Always: the tree reloads separately from the grid, so without this it keeps
@@ -722,6 +876,8 @@ export class DotFolderListViewContextMenuComponent {
                     this.#store.loadFolders();
                 },
                 error: (error: HttpErrorResponse) => {
+                    // A failed delete that left the indicator up would report work that stopped.
+                    this.#store.endExternalRun(runId);
                     this.#httpErrorManagerService.handle(error);
                 }
             });

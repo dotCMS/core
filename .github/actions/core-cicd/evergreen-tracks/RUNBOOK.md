@@ -51,6 +51,35 @@ uv run evergreen-tracks promote --repo dotcms/dotcms --tracks standard,trailing
 ```
 The tainted version must not appear as any track's target.
 
+### GitHub Release title and site record
+
+On `apply`, taint/untaint on `dotcms/dotcms` also retitles the GitHub Release `v<version>` to
+`⚠️ TAINTED Release <v>` (untaint removes the marker), and the `EvergreenState` record on the
+auth instance is re-synced (and Push Published to prod). In `dry-run` the log shows `DRY-RUN would retitle v<version>: '<old>' -> '<new>'`.
+
+If the title step fails, #dot-releases gets "GitHub Release title NOT updated": the registry
+action DID apply. Fix the title by hand (`gh release edit v<version> --title ...`) or re-run.
+
+**One-time title backfill:** versions tainted before this feature keep their old titles. Re-run
+`evergreen-tracks-admin` with `action` = `taint`, `mode` = `apply` for `26.08.28-01` and
+`26.08.31-01`. The registry taint is idempotent; the title is set.
+
+### Site sync failure and drift notices
+
+- **"Evergreen site sync FAILED"**: Docker Hub is unaffected. The reason is in the message.
+  "Docker Hub state read failed" means nothing was written; "no release row for ..." means a track
+  version has no release entry on the site yet (publish it, or wait for the release publish). Any
+  other reason: check the run log, then re-run the failed job. The next promote run (daily) also
+  heals it.
+- **"Evergreen site record drifted"**: after the daily sync the record still differs from Hub in
+  the named fields, on auth or on prod. Re-run `evergreen-tracks-promote`; if it persists, check
+  the record on the auth instance for a human edit, and check auth's push-publishing queue for a
+  failed or stuck bundle.
+- **"... did not reach prod within 300s"**: the write landed on auth but its push never showed up
+  on prod. Check auth's push-publishing queue for the bundle and its error. The sync retries on
+  its own and the next daily run re-pushes a stale prod record; for a changelog entry, re-run the
+  failed release-notes job once the queue is healthy.
+
 ### ⚠️ Taint does not roll anything back
 
 Taint only blocks **future** promotion. If a track *already* points at the version you just

@@ -1,4 +1,5 @@
 import { renderHook, act } from '@testing-library/react-hooks';
+import { vi } from 'vitest';
 
 import { DotCMSAISearchResponse, DotCMSBasicContentlet, DotCMSEntityState } from '@dotcms/types';
 
@@ -45,7 +46,7 @@ const createMockContentlet = (
 });
 
 describe('useAISearch', () => {
-    const mockSearch = jest.fn();
+    const mockSearch = vi.fn();
     const mockClient = {
         ai: {
             search: mockSearch
@@ -76,7 +77,7 @@ describe('useAISearch', () => {
     };
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('Initial state', () => {
@@ -352,7 +353,7 @@ describe('useAISearch', () => {
         test('search callback should update when client changes', () => {
             const newMockClient = {
                 ai: {
-                    search: jest.fn()
+                    search: vi.fn()
                 }
             } as any;
 

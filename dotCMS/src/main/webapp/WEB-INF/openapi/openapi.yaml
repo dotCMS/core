@@ -35,6 +35,8 @@ tags:
   name: Announcements
 - description: Third-party application integration and configuration
   name: Apps
+- description: Creating several assets in one background run
+  name: Bulk Upload
 - externalDocs:
     description: Additional Authentication API information
     url: https://www.dotcms.com/docs/latest/rest-api-authentication
@@ -722,10 +724,12 @@ paths:
     put:
       deprecated: true
       description: "Checks whether the current user can lock a contentlet identified\
-        \ by inode or identifier. Returns lock capability information including current\
-        \ lock status and lock owner details. Parameters are passed as semicolon-delimited\
-        \ path segments (e.g., id:abc123/language:1). This endpoint is deprecated\
-        \ - use the v1 ContentResource canLockContent endpoint instead."
+        \ by inode or identifier. Returns whether it can be locked and whether it\
+        \ is locked; when locked, the lock date, and for back-end users also the lock\
+        \ owner's user id (lockedBy) and full name (lockedByName). Parameters are\
+        \ passed as semicolon-delimited path segments (e.g., id:abc123/language:1).\
+        \ This endpoint is deprecated - use the v1 ContentResource canLockContent\
+        \ endpoint instead."
       operationId: canLockContentLegacy
       parameters:
       - description: "Semicolon-delimited parameters (e.g., inode:abc123/language:1/live:true)"
@@ -760,8 +764,9 @@ paths:
       - Content Delivery
   /content/indexcount/{query}:
     get:
-      description: Performs an index count using the specified Lucene query and returns
-        the total number of matching contentlets as a plain text string.
+      description: "Performs an index count using the specified Lucene query and returns,\
+        \ as a plain text string, the total number of matching contentlets that the\
+        \ calling user is allowed to read."
       operationId: indexCountContent
       parameters:
       - description: Lucene query string to count matching content
@@ -786,7 +791,8 @@ paths:
             text/plain:
               schema:
                 type: string
-                description: The count of contentlets matching the query
+                description: The count of contentlets matching the query that the
+                  calling user is allowed to read
           description: Count of matching contentlets returned successfully
         "400":
           content:
@@ -1336,6 +1342,254 @@ paths:
       summary: Search content using a search query (POST)
       tags:
       - Elasticsearch Content Search
+  /inference/v1/chat/completions:
+    post:
+      description: "Runs one chat completion against the model the resolved site has\
+        \ configured, in the OpenAI-compatible request and response shape. Set \"\
+        stream\": true to receive the answer as server-sent events, each frame a chat.completion.chunk,\
+        \ closing with data: [DONE] — a stream that failed ends on an error frame\
+        \ and never carries that marker. The model field is required and must be one\
+        \ the site has configured; there is no implicit default. Every response reports\
+        \ the serving site in the X-dotCMS-Resolved-Site header."
+      operationId: createChatCompletion
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatCompletionRequestView"
+        description: The completion to run
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatCompletionView"
+          description: "The completion, or the event stream when stream was requested"
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: "Malformed request, or one asking for something unsupported"
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Forbidden - the caller cannot read the requested site
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: The requested model is not configured for the resolved site
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Too many streamed completions are already in flight on this
+            node
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: The model provider failed to complete the request
+      summary: Create a chat completion
+      tags:
+      - AI
+  /inference/v1/embeddings:
+    post:
+      description: "Embeds text against the model the resolved site has configured\
+        \ for embeddings, in the OpenAI-compatible request and response shape. The\
+        \ input field accepts either a single string or an array of strings embedded\
+        \ as one batch; the response is always a list with one entry per input, each\
+        \ carrying the index of the input it corresponds to. An absent, null or empty\
+        \ input is refused, as is a blank or whitespace-only string wherever it appears,\
+        \ and every element of an array must be a string — arrays of token ids are\
+        \ not supported. The model field is required and is validated against the\
+        \ site's embeddings configuration, not its chat models; there is no implicit\
+        \ default. Every response reports the serving site in the X-dotCMS-Resolved-Site\
+        \ header."
+      operationId: createEmbeddings
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmbeddingsRequestView"
+        description: What to embed
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmbeddingListView"
+          description: "The vectors, one per input"
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: "Malformed request, or one asking for something unsupported"
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Forbidden - the caller cannot read the requested site
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: The requested model is not configured for the resolved site
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: The model provider failed to complete the request
+      summary: Create embeddings
+      tags:
+      - AI
+  /inference/v1/images/generations:
+    post:
+      description: "Generates images against the model the resolved site has configured\
+        \ for images, in the OpenAI-compatible request and response shape. Every image\
+        \ is returned inline as b64_json: no hosted, separately-addressable artifact\
+        \ is created, and no url is ever returned. Both model and prompt are required,\
+        \ and model is validated against the site's image configuration rather than\
+        \ its chat or embeddings models; there is no implicit default. The n field\
+        \ is honored — omitting it means one image. A value below 1, a value above\
+        \ the configured maximum, or any value above 1 on a site whose image model\
+        \ can only produce one, is refused with a 400 naming the field. The size field\
+        \ is passed through to the provider as a WIDTHxHEIGHT string; where the site\
+        \ carries an image size setting the caller's value wins and the site's is\
+        \ the default. Every response reports the serving site in the X-dotCMS-Resolved-Site\
+        \ header."
+      operationId: createImageGeneration
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImageGenerationRequestView"
+        description: What to generate
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageGenerationView"
+          description: "The generated images, each inline as base64"
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: "Malformed request, or one asking for something unsupported"
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Forbidden - the caller cannot read the requested site
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: The requested model is not configured for the resolved site
+        "502":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: The model provider failed to complete the request
+      summary: Generate images
+      tags:
+      - AI
+  /inference/v1/models:
+    get:
+      description: "Returns the models the resolved site has configured for chat,\
+        \ embeddings and image generation, including every entry of a chat fallback\
+        \ chain, in configured order with chat first — the first entry is the site's\
+        \ primary chat model. Each entry reports in \"type\" which operation accepts\
+        \ it: \"chat\", \"embedding\" or \"image\". A name configured for more than\
+        \ one operation is listed once, with the type of the first of those in that\
+        \ order. The list is exactly the set of values this family accepts as \"model\"\
+        : there is no implicit default and no reserved alias, and nothing synthetic\
+        \ is added. No model provider is contacted. A site with no AI configuration,\
+        \ on an instance with none at the system level either, returns an empty data\
+        \ array rather than another site's models. Every response reports the serving\
+        \ site in the X-dotCMS-Resolved-Site header."
+      operationId: listInferenceModels
+      parameters:
+      - in: query
+        name: siteId
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelListView"
+          description: "The configured models, possibly none"
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: The requested site could not be resolved
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InferenceErrorView"
+          description: Forbidden - the caller cannot read the requested site
+      summary: List the models this site has configured
+      tags:
+      - AI
   /integrity/_fixconflictsfromremote:
     post:
       operationId: fixConflictsFromRemote
@@ -3253,9 +3507,11 @@ paths:
   /v1/analytics/content/event:
     post:
       description: "Validates the site_auth field in the JSON body via SiteAuthValidator,\
-        \ resolves the active site, injects site_id into context, and asynchronously\
-        \ forwards the body to {DOT_ANALYTICS_BASE_URL}/v1/event/ingest. The dotCMS-side\
-        \ path is a fixed match; the upstream sub-path is not caller-controllable."
+        \ resolves the active site, adds site_id to context, cleans each event's page\
+        \ and link URL fields (allowlisted query parameters only, no user info or\
+        \ session ids; events with a malformed data or page object are dropped), and\
+        \ asynchronously forwards the body to {DOT_ANALYTICS_BASE_URL}/v1/event/ingest.\
+        \ The dotCMS-side path is a fixed match; the upstream sub-path is not caller-controllable."
       operationId: proxyAnalyticsEventRequest
       requestBody:
         content:
@@ -3310,6 +3566,32 @@ paths:
         "500":
           description: Internal Server Error
       summary: Generate Site Auth
+      tags:
+      - Content Analytics
+  /v1/analytics/health:
+    get:
+      description: Returns a dotCMS-evaluated analytics health state. Always returns
+        200 — never returns 503 unlike the catch-all proxy. Reflects the App configuration
+        and backend connectivity for the site resolved from the request.
+      operationId: analyticsHealth
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "ResponseEntityView containing {\"health\": \"OK\"|\"\
+                  NOT_CONFIGURED\"|\"CONFIGURATION_ERROR\"}"
+          description: Health state evaluated successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized — backend user required
+        "403":
+          content:
+            application/json: {}
+          description: User lacks READ on the resolved site
+      summary: Evaluate analytics health for the current site
       tags:
       - Content Analytics
   /v1/analytics/{path}:
@@ -3647,46 +3929,6 @@ paths:
         "500":
           description: Unexpected server error
       summary: Deletes an API token
-      tags:
-      - API Token
-  /v1/apitoken/{tokenId}/jwt:
-    get:
-      description: Returns a JSON web token. This overwrites the JWT value associated
-        with the specified token object.
-      operationId: getJwtFromApiTokenV1
-      parameters:
-      - description: Identifier of API token to receive a new JWT.
-        in: path
-        name: tokenId
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              example:
-                entity:
-                  jwt: string
-                errors: []
-                i18nMessagesMap: {}
-                messages: []
-                pagination: null
-                permissions: []
-              schema:
-                $ref: "#/components/schemas/ResponseEntityJwtView"
-          description: JSON web token successfully created
-        "400":
-          description: Bad request
-        "401":
-          description: Invalid user
-        "403":
-          description: Forbidden
-        "404":
-          description: Token not found
-        "500":
-          description: Unexpected server error
-      summary: Generates a new JWT for an existing token
       tags:
       - API Token
   /v1/apitoken/{tokenId}/revoke:
@@ -4130,6 +4372,38 @@ paths:
       summary: Archive asset
       tags:
       - Web Assets
+  /v1/assets/_bulkupload:
+    post:
+      description: |-
+        Accepts several files plus a JSON `form` part naming the target and the base type, and answers `202` with a job handle **before the assets are created**. The work runs in the background: follow it with `GET /api/v1/jobs/{jobId}/status`, watch it with `GET /api/v1/jobs/{jobId}/monitor`, cancel it with `POST /api/v1/jobs/{jobId}/cancel`, and read the per-file outcome from the job's result. The submitting author is notified on any terminal state, so the outcome survives them navigating away.
+
+        One file failing does not abort the batch: every remaining file is still attempted, and each failure is reported by name with a machine-readable reason.
+      operationId: bulkUploadAssets
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/FormDataMultiPart"
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBulkUploadSubmitView"
+          description: Batch queued
+        "400":
+          description: No files; malformed or missing `form`; unsupported base type;
+            neither or both of folderId/siteId; more files than the configured maximum;
+            request not same-origin; staging disabled
+        "403":
+          description: The author may not add children to the target
+        "404":
+          description: The target folder or site does not exist
+        "413":
+          description: The batch is over the configured total size
+      summary: "Create several assets from one upload, asynchronously"
+      tags:
+      - Bulk Upload
   /v1/assets/_delete:
     post:
       description: Permanently delete an asset (file) from the system using its path
@@ -4262,6 +4536,62 @@ paths:
       summary: Update existing folder
       tags:
       - Web Assets
+  /v1/assets/folders/_bulkdelete:
+    post:
+      description: |-
+        Accepts a list of folder paths and answers `202` with a job handle **before any folder is deleted**. The run is asynchronous, queued to the `folderBulkDelete` queue, and each folder's delete is recursive and permanent, exactly as the single-folder delete already is. Follow the run with `GET /api/v1/jobs/{jobId}/status`, cancel it with `POST /api/v1/jobs/{jobId}/cancel`, and watch it with `GET /api/v1/jobs/{jobId}/monitor`. The submitting author is notified on any terminal state.
+
+        One folder failing does not abort the run: every remaining folder is still attempted, and each failure is reported by path with a machine-readable reason.
+      operationId: bulkDeleteFolders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FolderBulkDeleteForm"
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFolderBulkDeleteSubmitView"
+          description: Run queued
+        "400":
+          description: "No paths submitted, or more paths than the configured maximum"
+        "403":
+          description: The caller is not entitled to use this operation
+        "409":
+          description: A submitted path overlaps an in-flight run's paths
+      summary: "Delete several folders from one submission, asynchronously"
+      tags:
+      - Web Assets
+  /v1/assets/folders/_bulkduplicate:
+    post:
+      description: |-
+        Accepts a list of site-qualified folder paths and answers `202` with a job handle **before any folder is duplicated**. The run is asynchronous, queued to the `folderBulkDuplicate` queue. Follow it with `GET /api/v1/jobs/{jobId}/status`, cancel it with `POST /api/v1/jobs/{jobId}/cancel`, and watch it with `GET /api/v1/jobs/{jobId}/monitor`. The submitting author is notified on any terminal state. The run's outcome stays readable from the job status indefinitely, since finished jobs are not purged, and the author's notification stays until they dismiss it. A cancelled run's outcome names the first folder it never reached, as `stoppedAt`.
+
+        Each folder is duplicated in place, beside its original in the same parent, holding everything the original holds in the same state. The duplicate takes the original's name followed by `_copy`, with `_copy` appended again until the name is free. The outcome identifies each folder by the path that was submitted.
+
+        One folder failing does not abort the run: every remaining folder is still attempted, and each failure is reported by path with a machine-readable reason.
+      operationId: bulkDuplicateFolders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FolderBulkDuplicateForm"
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityFolderBulkDuplicateSubmitView"
+          description: Run queued
+        "400":
+          description: "No paths submitted, or more paths than the configured maximum"
+        "401":
+          description: "No authenticated user, or the user is not a back-end user"
+      summary: "Duplicate several folders in place from one submission, asynchronously"
+      tags:
+      - Web Assets
   /v1/assets/folders/_delete:
     post:
       description: Permanently delete a folder and all its contents from the system
@@ -4354,7 +4684,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityMapMapView"
+                $ref: "#/components/schemas/ResponseEntitySessionUsersView"
           description: User data successfully collected
         "400":
           description: Bad request
@@ -4455,9 +4785,10 @@ paths:
         \ resolution: (1) look up by bundleId, (2) if not found, look up unsent bundles\
         \ by bundleName, (3) if still not found, auto-create a new bundle. A non-matching\
         \ bundleId does NOT return 404 — it falls through to name lookup and then\
-        \ auto-creation. Assets already in the bundle are silently skipped (idempotent).\
-        \ Individual asset failures (e.g., no publish permission) are reported in\
-        \ the errors list as human-readable strings, not as HTTP errors."
+        \ auto-creation. A bundleId that belongs to another user returns 403 unless\
+        \ the caller is a CMS Administrator. Assets already in the bundle are silently\
+        \ skipped (idempotent). Individual asset failures (e.g., no publish permission)\
+        \ are reported in the errors list as human-readable strings, not as HTTP errors."
       operationId: addAssetsToBundle
       requestBody:
         content:
@@ -4484,7 +4815,7 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: Forbidden - the bundle belongs to another user
         "404":
           content:
             application/json: {}
@@ -4503,9 +4834,9 @@ paths:
       - Publishing
   /v1/bundles/{bundleId}/assets:
     delete:
-      description: Removes one or more assets from an unpushed bundle. Each asset
-        is processed independently with per-asset results. Assets not found in the
-        bundle return success=false.
+      description: Removes one or more assets from an unpushed bundle. Only the bundle
+        owner or a CMS Administrator may remove assets. Each asset is processed independently
+        with per-asset results. Assets not found in the bundle return success=false.
       operationId: removeAssetsFromBundle
       parameters:
       - description: Bundle identifier
@@ -4540,7 +4871,7 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: Forbidden - the bundle belongs to another user
         "404":
           content:
             application/json: {}
@@ -4571,9 +4902,7 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityListStringView"
           description: Cache regions retrieved successfully
         "401":
-          description: Unauthorized - authentication required
-        "403":
-          description: Forbidden - requires maintenance portlet access
+          description: Unauthorized - requires a logged-in CMS Administrator
       summary: List cache region names
       tags:
       - Cache Management
@@ -4588,6 +4917,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityStringView"
           description: Action(s) returned successfully
+        "401":
+          description: Unauthorized - requires a logged-in CMS Administrator
         "500":
           description: General Error
       summary: Deletes the menu cache
@@ -4610,9 +4941,7 @@ paths:
         "200":
           description: All caches flushed successfully
         "401":
-          description: Unauthorized - authentication required
-        "403":
-          description: Forbidden - requires maintenance portlet access
+          description: Unauthorized - requires a logged-in CMS Administrator
       summary: Flush all caches
       tags:
       - Cache Management
@@ -4816,9 +5145,7 @@ paths:
         "400":
           description: Bad request - unknown cache region name
         "401":
-          description: Unauthorized - authentication required
-        "403":
-          description: Forbidden - requires maintenance portlet access
+          description: Unauthorized - requires a logged-in CMS Administrator
       summary: Flush a cache region
       tags:
       - Cache Management
@@ -4835,9 +5162,7 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityCacheStatsView"
           description: Cache statistics retrieved successfully
         "401":
-          description: Unauthorized - authentication required
-        "403":
-          description: Forbidden - requires maintenance portlet access
+          description: Unauthorized - requires a logged-in CMS Administrator
       summary: Get cache statistics
       tags:
       - Cache Management
@@ -5244,6 +5569,37 @@ paths:
       summary: Reset user password
       tags:
       - Authentication
+  /v1/cluster/nodes:
+    get:
+      description: "Lists the servers with a recent heartbeat, in database order,\
+        \ and asks every server for a status report with one cluster request. Each\
+        \ server has a status computed on the backend: UP when it answered and its\
+        \ heartbeat is fresh, LAGGING when only one of the two holds, DOWN when neither\
+        \ does or when it answered with a failed assets check (the legacy red). Servers\
+        \ that don't answer within the wait window are listed with responded=false\
+        \ and null sections. Requires a back-end user with the configuration or network-beta\
+        \ portlet, or a CMS Administrator. There is no license check."
+      operationId: getClusterNodes
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityClusterNodesView"
+          description: Servers listed
+        "401":
+          content:
+            application/json: {}
+          description: "No authenticated back-end user, or the caller holds neither\
+            \ the configuration nor the network-beta portlet and is not a CMS Administrator"
+        "500":
+          content:
+            application/json: {}
+          description: The cluster's servers could not be read from the database
+      summary: "List the cluster's servers with their status and cache, search and\
+        \ assets details"
+      tags:
+      - Cluster Management
   /v1/configuration:
     get:
       operationId: list_6
@@ -5285,29 +5641,39 @@ paths:
           description: Security key regenerated successfully
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Regenerate company security key
       tags:
       - System Configuration
   /v1/configuration/_validateCompanyEmail:
     post:
+      description: Queues a test e-mail from the given sender to the logged-in user.
+        The result is delivered later as a system message.
       operationId: validateEmail
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/CompanyEmailForm"
+        description: Sender address to send the test e-mail from
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Test e-mail queued
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: "Missing body, or the sender is not a valid e-mail address"
+        "401":
+          content:
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
+      summary: Send a test e-mail from the company address
       tags:
       - System Configuration
   /v1/configuration/authentication:
@@ -5335,12 +5701,8 @@ paths:
           description: Bad request - invalid auth type
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Save company authentication type
       tags:
       - System Configuration
@@ -5358,12 +5720,8 @@ paths:
           description: Company configuration retrieved successfully
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Get company configuration
       tags:
       - System Configuration
@@ -5391,12 +5749,8 @@ paths:
           description: Bad request - invalid parameters
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Save company basic info and branding
       tags:
       - System Configuration
@@ -5437,6 +5791,53 @@ paths:
       summary: Retrieve whitelisted configuration values
       tags:
       - System Configuration
+  /v1/configuration/dotcmsLogo:
+    get:
+      description: "Returns the /dA/ path of the stock dotCMS login logo. The path\
+        \ can be saved as loginScreenLogo through PUT /api/v1/configuration/branding.\
+        \ Read-only: no content and no company setting is created or changed. Returns\
+        \ 404 when this instance doesn't have the stock logo, or it isn't published,\
+        \ readable by anonymous users, or the stock dotCMS image."
+      operationId: getDotcmsLogo
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Path of the stock dotCMS login logo
+        "401":
+          content:
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
+        "404":
+          content:
+            application/json: {}
+          description: The dotCMS logo is not available on this instance
+      summary: Get the stock dotCMS login logo
+      tags:
+      - System Configuration
+  /v1/configuration/license:
+    get:
+      description: "Returns the title, licensor, change date, change license and full\
+        \ text of the license shipped with the running build. When the license file\
+        \ can't be read, returns a short pointer to the published license and null\
+        \ header values."
+      operationId: getLicense
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityLicenseInfoView"
+          description: License retrieved successfully
+        "401":
+          content:
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a backend user"
+      summary: Get the dotCMS license
+      tags:
+      - System Configuration
   /v1/configuration/locale:
     put:
       description: Updates the locale (language and timezone) for the current company.
@@ -5462,19 +5863,16 @@ paths:
           description: Invalid locale parameters (e.g. invalid timezone)
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Save company locale info
       tags:
       - System Configuration
   /v1/containers:
     delete:
       description: Permanently deletes the specified container. The user must have
-        Edit permissions on the container.
+        Edit permissions on the container. A container that any template still uses
+        is not deleted (409).
       operationId: deleteContainer
       parameters:
       - description: Container identifier to delete
@@ -5497,6 +5895,8 @@ paths:
           description: Forbidden - User lacks edit permissions
         "404":
           description: Container not found
+        "409":
+          description: Conflict - The container is used by one or more templates
       summary: Deletes a container
       tags:
       - Containers
@@ -5568,6 +5968,8 @@ paths:
           description: Unauthorized - User not authenticated
         "403":
           description: Forbidden - User lacks required permissions
+        "404":
+          description: Not found - The content type does not exist
         "500":
           description: Internal server error
       summary: Retrieves a paginated list of Containers
@@ -5699,7 +6101,8 @@ paths:
     delete:
       description: Deletes a list of containers by their identifiers. Returns a summary
         of successful and failed deletions. The user must have Edit permissions on
-        each container.
+        each container. A container that any template still uses is not deleted and
+        is reported as a failure.
       operationId: bulkDeleteContainers
       requestBody:
         content:
@@ -6002,11 +6405,59 @@ paths:
       summary: Removes content from a container
       tags:
       - Containers
+  /v1/containers/dependencies:
+    get:
+      description: "Returns, for each requested container, its data (inode, identifier,\
+        \ title; the working version when looked up by identifier or folder path)\
+        \ and the templates, readable by the requesting user, that use it. Repeat\
+        \ the containerId parameter to ask about several containers in one call (up\
+        \ to 100); the templates are searched once for all of them. A container's\
+        \ list is empty when no template uses it. Intended to be checked before deleting\
+        \ containers. Requires a back-end user. A template uses a container when it\
+        \ references it: a drawn template in its layout, an advanced template with\
+        \ a #parseContainer call, whether or not the container holds content. Archived\
+        \ templates and the hidden layouts that pages save for themselves count too."
+      operationId: getContainerDependencies
+      parameters:
+      - description: "Container identifier, inode or folder path; repeat the parameter\
+          \ for several containers"
+        in: query
+        name: containerId
+        required: true
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContainerDependenciesListView"
+          description: One entry per requested container with its data and the templates
+            that use it
+        "400":
+          description: "Bad request - A container ID is required, and no more than\
+            \ 100 are accepted"
+        "401":
+          description: Unauthorized - User not authenticated or not a back-end user
+        "403":
+          description: Forbidden - User lacks read permission on one of the containers
+        "404":
+          description: One of the containers was not found
+        "500":
+          description: Internal server error
+      summary: Lists the templates that use each of the given containers
+      tags:
+      - Containers
   /v1/containers/form/{formId}:
     get:
-      description: "Returns HTML content for a form rendered within the specified\
-        \ container. The container ID is passed as a query parameter, which is useful\
-        \ for file-asset containers where the container ID is a path."
+      description: "Returns the HTML of a form's widget rendered within the specified\
+        \ container, and the widget itself. The container ID is passed as a query\
+        \ parameter, which is useful for file-asset containers where the container\
+        \ ID is a path. Answers 404 when the form has no widget the user can read\
+        \ yet; the POST on the same path creates it. Requires a back-end user who\
+        \ can read the form."
       operationId: getContainerFormByQueryParam
       parameters:
       - description: Container identifier (UUID or file-asset path)
@@ -6028,14 +6479,56 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityContainerObjectMapView"
           description: Form rendered successfully
         "400":
-          description: Bad request - Invalid parameters
+          description: Bad request - The content type is not a form
+        "401":
+          description: Unauthorized - User not authenticated
+        "403":
+          description: Forbidden - User lacks required permissions
+        "404":
+          description: "Container, form or the form's widget not found"
+      summary: Renders a form with container ID as query param
+      tags:
+      - Containers
+    post:
+      description: "Returns the HTML of a form's widget rendered within the specified\
+        \ container, and the widget itself, creating and publishing the widget as\
+        \ the user when the form has none the user can read. The container ID is passed\
+        \ as a query parameter, which is useful for file-asset containers where the\
+        \ container ID is a path. Requires a back-end user who can read the form and,\
+        \ to create the widget, create and publish widget content."
+      operationId: createContainerFormByQueryParam
+      parameters:
+      - description: Container identifier (UUID or file-asset path)
+        in: query
+        name: containerId
+        schema:
+          type: string
+      - description: Form identifier
+        in: path
+        name: formId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContainerObjectMapView"
+          description: Form rendered successfully
+        "400":
+          description: Bad request - The content type is not a form
         "401":
           description: Unauthorized - User not authenticated
         "403":
           description: Forbidden - User lacks required permissions
         "404":
           description: Container or form not found
-      summary: Renders a form with container ID as query param
+        "409":
+          description: Conflict - The form's widget is being created by another request;
+            try again
+      summary: "Creates a form's widget and renders it, with container ID as query\
+        \ param"
       tags:
       - Containers
   /v1/containers/live:
@@ -6155,8 +6648,11 @@ paths:
       - Containers
   /v1/containers/{containerId}/form/{formId}:
     get:
-      description: Returns HTML content for a form rendered within the specified container.
-        This is used to display forms with container styling and layout.
+      description: "Returns the HTML of a form's widget rendered within the specified\
+        \ container, and the widget itself. This is used to display forms with container\
+        \ styling and layout. Answers 404 when the form has no widget the user can\
+        \ read yet; the POST on the same path creates it. Requires a back-end user\
+        \ who can read the form."
       operationId: containerForm
       parameters:
       - description: Container identifier (UUID or path)
@@ -6179,16 +6675,59 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityContainerObjectMapView"
           description: Form rendered successfully
         "400":
-          description: Bad request - Invalid container or form ID
+          description: Bad request - The content type is not a form
+        "401":
+          description: Unauthorized - User not authenticated
+        "403":
+          description: Forbidden - User lacks required permissions
+        "404":
+          description: "Container, form or the form's widget not found"
+        "500":
+          description: Internal server error
+      summary: Renders a form within a container
+      tags:
+      - Containers
+    post:
+      description: "Returns the HTML of a form's widget rendered within the specified\
+        \ container, and the widget itself, creating and publishing the widget as\
+        \ the user when the form has none the user can read. Requires a back-end user\
+        \ who can read the form and, to create the widget, create and publish widget\
+        \ content."
+      operationId: createContainerForm
+      parameters:
+      - description: Container identifier (UUID or path)
+        in: path
+        name: containerId
+        required: true
+        schema:
+          type: string
+      - description: Form identifier
+        in: path
+        name: formId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContainerObjectMapView"
+          description: Form rendered successfully
+        "400":
+          description: Bad request - The content type is not a form
         "401":
           description: Unauthorized - User not authenticated
         "403":
           description: Forbidden - User lacks required permissions
         "404":
           description: Container or form not found
+        "409":
+          description: Conflict - The form's widget is being created by another request;
+            try again
         "500":
           description: Internal server error
-      summary: Renders a form within a container
+      summary: Creates a form's widget and renders it within a container
       tags:
       - Containers
   /v1/containers/{id}/_copy:
@@ -6255,8 +6794,10 @@ paths:
       - Content
   /v1/content/_canlock/{inodeOrIdentifier}:
     get:
-      description: Checks if the contentlet specified by its inode or identifier can
-        be locked by the current user.
+      description: "Checks if the contentlet specified by its inode or identifier\
+        \ can be locked by the current user, and whether it is locked. When locked,\
+        \ the response includes lockedOn; lockedBy (user id) and lockedByName (full\
+        \ name) are included for back-end users only."
       operationId: canLockContent
       parameters:
       - description: Contentlet inode or identifier
@@ -6367,8 +6908,10 @@ paths:
       - Content
   /v1/content/_import:
     get:
-      description: Fetches a paginated list of all content import jobs regardless
-        of state. Results can be paginated using query parameters.
+      description: "Fetches a paginated list of all content import jobs regardless\
+        \ of state. Returns only the jobs the caller created, or every job for CMS\
+        \ Administrators; the pagination total counts the same jobs. Results can be\
+        \ paginated using query parameters."
       operationId: getContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -6471,6 +7014,44 @@ paths:
       tags:
       - Content Import
       - Content
+  /v1/content/_import/_template:
+    get:
+      description: "Returns a CSV file with one header line naming every field an\
+        \ import row can set, and one sample row showing the format each of those\
+        \ columns takes. Requires READ permission on the Content Type."
+      operationId: downloadContentImportTemplate
+      parameters:
+      - description: The id or the variable name of the Content Type
+        in: query
+        name: contentType
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            text/csv:
+              example: |-
+                title,body
+                "XXX","XXX"
+              schema:
+                type: string
+                description: "A header line of field variable names, and a sample\
+                  \ row."
+          description: "The CSV template, as a file attachment."
+        "400":
+          description: "Bad Request: No Content Type was given."
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: User does not have READ permission on the Content\
+            \ Type."
+        "404":
+          description: "Not Found: The Content Type could not be found."
+      summary: Downloads the CSV template of a Content Type
+      tags:
+      - Content Import
+      - Content
   /v1/content/_import/_validate:
     post:
       description: "Creates and enqueues a content import job in preview mode. This\
@@ -6550,8 +7131,10 @@ paths:
       - Content
   /v1/content/_import/abandoned:
     get:
-      description: Fetches a paginated list of abandoned content import jobs (jobs
-        with state ABANDONED). Results can be paginated using query parameters.
+      description: "Fetches a paginated list of abandoned content import jobs (jobs\
+        \ with state ABANDONED). Returns only the jobs the caller created, or every\
+        \ job for CMS Administrators; the pagination total counts the same jobs. Results\
+        \ can be paginated using query parameters."
       operationId: getAbandonedContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -6591,8 +7174,9 @@ paths:
   /v1/content/_import/active:
     get:
       description: "Fetches a paginated list of active content import jobs (jobs with\
-        \ state NEW, PROCESSING, or WAITING). Results can be paginated using query\
-        \ parameters."
+        \ state NEW, PROCESSING, or WAITING). Returns only the jobs the caller created,\
+        \ or every job for CMS Administrators; the pagination total counts the same\
+        \ jobs. Results can be paginated using query parameters."
       operationId: getActiveContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -6631,8 +7215,10 @@ paths:
       - Content
   /v1/content/_import/canceled:
     get:
-      description: Fetches a paginated list of canceled content import jobs (jobs
-        with state CANCELED). Results can be paginated using query parameters.
+      description: "Fetches a paginated list of canceled content import jobs (jobs\
+        \ with state CANCELED). Returns only the jobs the caller created, or every\
+        \ job for CMS Administrators; the pagination total counts the same jobs. Results\
+        \ can be paginated using query parameters."
       operationId: getCanceledContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -6671,8 +7257,10 @@ paths:
       - Content
   /v1/content/_import/completed:
     get:
-      description: Fetches a paginated list of completed content import jobs (jobs
-        with state COMPLETED). Results can be paginated using query parameters.
+      description: "Fetches a paginated list of completed content import jobs (jobs\
+        \ with state COMPLETED). Returns only the jobs the caller created, or every\
+        \ job for CMS Administrators; the pagination total counts the same jobs. Results\
+        \ can be paginated using query parameters."
       operationId: getCompletedContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -6711,8 +7299,10 @@ paths:
       - Content
   /v1/content/_import/failed:
     get:
-      description: Fetches a paginated list of failed content import jobs (jobs with
-        state FAILED). Results can be paginated using query parameters.
+      description: "Fetches a paginated list of failed content import jobs (jobs with\
+        \ state FAILED). Returns only the jobs the caller created, or every job for\
+        \ CMS Administrators; the pagination total counts the same jobs. Results can\
+        \ be paginated using query parameters."
       operationId: getFailedContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -6751,9 +7341,10 @@ paths:
       - Content
   /v1/content/_import/successful:
     get:
-      description: Fetches a paginated list of successful content import jobs (jobs
-        with state COMPLETED and successful result). Results can be paginated using
-        query parameters.
+      description: "Fetches a paginated list of successful content import jobs (jobs\
+        \ with state COMPLETED and successful result). Returns only the jobs the caller\
+        \ created, or every job for CMS Administrators; the pagination total counts\
+        \ the same jobs. Results can be paginated using query parameters."
       operationId: getSuccessfulContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -6792,8 +7383,10 @@ paths:
       - Content
   /v1/content/_import/{jobId}:
     get:
-      description: Fetches the detailed current status of a specific content import
-        job identified by its ID.
+      description: "Fetches the detailed current status of a specific content import\
+        \ job identified by its ID. Only the user who created the job and CMS Administrators\
+        \ can read it. Parameters the server sets for uploaded files (tempFileId,\
+        \ requestFingerPrint) are not included."
       operationId: getJobStatus
       parameters:
       - description: The unique identifier (UUID) of the job whose status is to be
@@ -6819,7 +7412,8 @@ paths:
           description: "Forbidden: User does not have permissions to view the specified\
             \ job."
         "404":
-          description: "Not Found: Job with the specified ID could not be found."
+          description: "Not Found: No job with the specified ID exists, or the job\
+            \ was not created by the caller (CMS Administrators can read any job)."
         "500":
           description: "Internal Server Error: An unexpected error occurred while\
             \ retrieving the job status."
@@ -6831,6 +7425,7 @@ paths:
     post:
       description: Requests cancellation of a specific content import job identified
         by its ID. Note that cancellation is asynchronous and may not be immediate.
+        Only the user who created the job and CMS Administrators can cancel it.
       operationId: cancelContentImportJob
       parameters:
       - description: The unique identifier (UUID) of the job to be cancelled.
@@ -6861,8 +7456,8 @@ paths:
           description: "Forbidden: User does not have permissions to cancel the specified\
             \ job."
         "404":
-          description: "Not Found: Job with the specified ID could not be found or\
-            \ is already completed/cancelled."
+          description: "Not Found: No job with the specified ID exists, or the job\
+            \ was not created by the caller (CMS Administrators can cancel any job)."
         "500":
           description: "Internal Server Error: An unexpected error occurred while\
             \ attempting to cancel the job."
@@ -6875,11 +7470,11 @@ paths:
       description: "Establishes a Server-Sent Events (SSE) connection to monitor the\
         \ progress of a specific content import job in real-time. This endpoint will\
         \ continuously send updates as the job progresses, including status changes\
-        \ and completion information."
+        \ and completion information. Only the user who created the job and CMS Administrators\
+        \ can monitor it."
       operationId: monitorContentImportJobs
       parameters:
-      - description: The unique identifier (UUID) of the job whose status is to be
-          retrieved.
+      - description: The unique identifier (UUID) of the job to monitor.
         in: path
         name: jobId
         required: true
@@ -6893,15 +7488,15 @@ paths:
             text/event-stream:
               schema:
                 $ref: "#/components/schemas/EventOutput"
-          description: Server-Sent Events stream established successfully. Events
-            will be sent as the job progresses.
+          description: "Server-Sent Events stream established successfully. Events\
+            \ will be sent as the job progresses. If no job with the specified ID\
+            \ exists, or the caller may not monitor it, the stream sends a single\
+            \ job-not-found event with data 404 and closes."
         "401":
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
           description: "Forbidden: User does not have permissions to monitor the specified\
             \ job."
-        "404":
-          description: "Not Found: Job with the specified ID could not be found."
         "500":
           description: "Internal Server Error: An unexpected error occurred while\
             \ establishing the monitoring connection."
@@ -7687,7 +8282,14 @@ paths:
                 type: object
                 description: Content with relationships in JSON format including contentlets
                   and their related content
-          description: Content with relationships retrieved successfully
+          description: "Content with relationships retrieved successfully. Related\
+            \ content the caller cannot read is not included, and an identifier or\
+            \ inode that matches no content returns an empty array"
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the content or its related content could not
+            be loaded
         "401":
           content:
             application/json: {}
@@ -10071,6 +10673,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointsView"
           description: Collection of environments.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenException"
+          description: If the user is not an admin and has no access to the Configuration
+            portlet.
       summary: Returns the endpoints
       tags:
       - Environment
@@ -10120,6 +10729,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointsView"
           description: Collection of environments.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenException"
+          description: If the user is not an admin and has no access to the Configuration
+            portlet.
       summary: Returns the endpoints
       tags:
       - Environment
@@ -10139,6 +10755,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointView"
           description: Collection of environments.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenException"
+          description: If the user is not an admin and has no access to the Configuration
+            portlet.
       summary: Returns the endpoint by id
       tags:
       - Environment
@@ -10553,10 +11176,10 @@ paths:
           content:
             application/javascript:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityViewExperimentsHealthView"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityView"
+                $ref: "#/components/schemas/ResponseEntityViewExperimentsHealthView"
           description: default response
       tags:
       - Experiment
@@ -10587,15 +11210,16 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment cancelled successfully
+        "403":
+          content:
+            application/json: {}
+          description: Feature disabled (FEATURE_DISABLED) — flag=false
       tags:
       - Experiment
   /v1/experiments/{experimentId}:
@@ -10654,15 +11278,16 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityExperimentView"
-          description: default response
+          description: Experiment archived successfully
+        "403":
+          content:
+            application/json: {}
+          description: Feature disabled (FEATURE_DISABLED) — flag=false
       tags:
       - Experiment
   /v1/experiments/{experimentId}/_end:
@@ -10675,15 +11300,12 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment ended successfully
       tags:
       - Experiment
   /v1/experiments/{experimentId}/_start:
@@ -10696,15 +11318,27 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment started successfully
+        "400":
+          content:
+            application/json: {}
+          description: Duration exceeds the 10-day limited-mode cap
+        "403":
+          content:
+            application/json: {}
+          description: "Limited-mode gate rejected the start. errorCode FEATURE_DISABLED:\
+            \ flag=false and the free experiment slot is already occupied. errorCode\
+            \ SCHEDULED_START_NOT_ALLOWED: flag=false and the experiment has a future\
+            \ startDate."
+        "503":
+          content:
+            application/json: {}
+          description: Analytics App not configured for this site (ANALYTICS_NOT_CONFIGURED)
       tags:
       - Experiment
   /v1/experiments/{experimentId}/goals/primary:
@@ -10904,15 +11538,16 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityExperimentResults"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityExperimentResults"
-          description: default response
+          description: Experiment results retrieved
+        "503":
+          content:
+            application/json: {}
+          description: Analytics App not configured for this site
       tags:
       - Experiment
   /v1/fieldTypes:
@@ -11270,8 +11905,8 @@ paths:
       - Folders
   /v1/forgotpassword:
     post:
-      description: Sends a password reset email to the specified user. Returns the
-        email address where the reset link was sent.
+      description: Sends a password reset email to the account matching the submitted
+        user ID or email address. Returns the submitted value.
       operationId: forgotPassword
       requestBody:
         content:
@@ -11286,12 +11921,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityForgotPasswordView"
-          description: Password reset email sent successfully
+          description: Request accepted. The entity is the submitted user ID or email
+            address
         "400":
           content:
             application/json: {}
-          description: Bad request - invalid email address or user not found (if configured
-            to show)
+          description: "Bad request - with login by email address, the submitted value\
+            \ is not a valid email address; or user not found (if configured to show)"
         "500":
           content:
             application/json: {}
@@ -11492,8 +12128,10 @@ paths:
       - Health
   /v1/jobs:
     get:
-      description: Fetches a paginated list of all jobs regardless of state. Results
-        can be paginated using query parameters.
+      description: "Fetches a paginated list of jobs regardless of state. Returns\
+        \ only the jobs the caller created, or every job for CMS Administrators; the\
+        \ pagination total counts the same jobs. Results can be paginated using query\
+        \ parameters."
       operationId: listJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -11530,8 +12168,9 @@ paths:
       - Job Queue
   /v1/jobs/abandoned:
     get:
-      description: Fetches a paginated list of abandoned jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of abandoned jobs. Returns only the jobs\
+        \ the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getAbandonedJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -11568,8 +12207,9 @@ paths:
       - Job Queue
   /v1/jobs/active:
     get:
-      description: Fetches a paginated list of active jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of active jobs. Returns only the jobs\
+        \ the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getActiveJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -11606,8 +12246,9 @@ paths:
       - Job Queue
   /v1/jobs/canceled:
     get:
-      description: Fetches a paginated list of canceled jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of canceled jobs. Returns only the jobs\
+        \ the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getCanceledJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -11643,8 +12284,9 @@ paths:
       - Job Queue
   /v1/jobs/completed:
     get:
-      description: Fetches a paginated list of completed jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of completed jobs. Returns only the jobs\
+        \ the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getCompletedJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -11681,8 +12323,9 @@ paths:
       - Job Queue
   /v1/jobs/failed:
     get:
-      description: Fetches a paginated list of failed jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of failed jobs. Returns only the jobs\
+        \ the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getFailedJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -11740,8 +12383,9 @@ paths:
       - Job Queue
   /v1/jobs/successful:
     get:
-      description: Fetches a paginated list of successful jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of successful jobs. Returns only the\
+        \ jobs the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getSuccessfulJobs
       parameters:
       - description: Page number to retrieve (1-based).
@@ -11780,6 +12424,7 @@ paths:
     post:
       description: Sends an asynchronous cancellation request for the specified job.
         The job may still complete if it has already finished or cannot be interrupted.
+        Only the user who created the job and CMS Administrators can cancel it.
       operationId: cancelJobQueueJob
       parameters:
       - description: Unique identifier (UUID) of the job to cancel.
@@ -11804,8 +12449,8 @@ paths:
         "403":
           description: "Forbidden: User does not have permission to cancel this job."
         "404":
-          description: "Not Found: Job with the specified ID does not exist or is\
-            \ already completed/cancelled."
+          description: "Not Found: No job with the specified ID exists, or the job\
+            \ was not created by the caller (CMS Administrators can cancel any job)."
         "500":
           description: "Internal Server Error: An unexpected error occurred while\
             \ attempting to cancel the job."
@@ -11815,13 +12460,13 @@ paths:
   /v1/jobs/{jobId}/monitor:
     get:
       description: "Establishes a Server-Sent Events (SSE) connection to monitor the\
-        \ progress of a specific  job in real-time. This endpoint will continuously\
+        \ progress of a specific job in real-time. This endpoint will continuously\
         \ send updates as the job progresses, including status changes and completion\
-        \ information."
+        \ information. Only the user who created the job and CMS Administrators can\
+        \ monitor it."
       operationId: monitorJob
       parameters:
-      - description: The unique identifier (UUID) of the job whose status is to be
-          retrieved.
+      - description: The unique identifier (UUID) of the job to monitor.
         in: path
         name: jobId
         required: true
@@ -11835,15 +12480,15 @@ paths:
             text/event-stream:
               schema:
                 $ref: "#/components/schemas/EventOutput"
-          description: Server-Sent Events stream established successfully. Events
-            will be sent as the job progresses.
+          description: "Server-Sent Events stream established successfully. Events\
+            \ will be sent as the job progresses. If no job with the specified ID\
+            \ exists, or the caller may not monitor it, the stream sends a single\
+            \ job-not-found event with data 404 and closes."
         "401":
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
           description: "Forbidden: User does not have permissions to monitor the specified\
             \ job."
-        "404":
-          description: "Not Found: Job with the specified ID could not be found."
         "500":
           description: "Internal Server Error: An unexpected error occurred while\
             \ establishing the monitoring connection."
@@ -11853,7 +12498,9 @@ paths:
   /v1/jobs/{jobId}/status:
     get:
       description: "Returns detailed status information for a specific job including\
-        \ progress, state, and results."
+        \ progress, state, and results. Only the user who created the job and CMS\
+        \ Administrators can read it. Parameters the server sets for uploaded files\
+        \ (tempFileId, requestFingerPrint) are not included."
       operationId: getJobStatus_1
       parameters:
       - description: Unique identifier (UUID) of the job.
@@ -11878,7 +12525,8 @@ paths:
         "403":
           description: Forbidden - User lacks required permissions
         "404":
-          description: Job not found
+          description: "Not Found: No job with the specified ID exists, or the job\
+            \ was not created by the caller (CMS Administrators can read any job)."
         "500":
           description: Internal server error
       summary: Retrieves job status information
@@ -11922,12 +12570,14 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityJobStatusView"
           description: Job created successfully
         "400":
-          description: "Bad Request: Invalid parameters or malformed JSON."
+          description: "Bad Request: Invalid parameters or malformed JSON. The job\
+            \ parameters may not include tempFileId or requestFingerPrint."
         "401":
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
           description: "Forbidden: User lacks permission to enqueue jobs in the specified\
-            \ queue."
+            \ queue, or the queue has a dedicated endpoint (the message names it)\
+            \ and does not accept jobs through this one."
         "404":
           description: "Not Found: Queue with the specified name does not exist."
         "500":
@@ -11938,8 +12588,10 @@ paths:
       - Job Queue
   /v1/jobs/{queueName}/active:
     get:
-      description: Fetches a paginated list of active jobs. Results can be paginated
-        using query parameters.for the specified queue.
+      description: "Fetches a paginated list of active jobs for the specified queue.\
+        \ Returns only the jobs the caller created, or every job for CMS Administrators;\
+        \ the pagination total counts the same jobs. Results can be paginated using\
+        \ query parameters."
       operationId: getActiveJobsByQueue
       parameters:
       - description: Logical name of the queue.
@@ -12034,12 +12686,14 @@ paths:
           description: Job created successfully
         "400":
           description: "Bad Request: Invalid parameters, malformed multipart payload,\
-            \ or file issues."
+            \ or file issues. The job parameters may not include tempFileId or requestFingerPrint;\
+            \ the server sets these when a file is uploaded with the request."
         "401":
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
           description: "Forbidden: User lacks permission to enqueue jobs in the specified\
-            \ queue."
+            \ queue, or the queue has a dedicated endpoint (the message names it)\
+            \ and does not accept jobs through this one."
         "404":
           description: "Not Found: Queue with the specified name does not exist."
         "500":
@@ -12107,6 +12761,369 @@ paths:
       summary: Get internationalized messages
       tags:
       - Language
+  /v1/layouts:
+    get:
+      description: "Returns every navigation section (layout) in the order the back-end\
+        \ left menu shows them. Each section carries its id, name, icon, position,\
+        \ the ordered ids of its tools and one localized title per tool id, aligned\
+        \ with portletIds. Sections holding tools the tools catalog hides are still\
+        \ returned as stored. Requires an authenticated back-end user with access\
+        \ to the tools portlet, or the CMS Administrator role."
+      operationId: listNavigationSections
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySectionListView"
+          description: Sections retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - authentication required, or the caller does\
+            \ not hold the tools portlet and is not a CMS Administrator"
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: List every navigation section
+      tags:
+      - Administration
+    post:
+      description: "Creates a section from a name and an icon. Unless tabOrder is\
+        \ sent, the new section is placed after every existing section; unless portletIds\
+        \ is sent, it holds no tools. The section, its position and its tools are\
+        \ saved in one transaction, so a failed create leaves nothing behind. The\
+        \ name is trimmed, must be present, at most 255 characters and unique among\
+        \ sections; the icon is at most 255 characters and may be empty; the tool\
+        \ ids follow the same rules as setting a section's tools. Requires a CMS Administrator\
+        \ who also holds the tools portlet."
+      operationId: createNavigationSection
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SectionForm"
+        description: "Name and icon of the new section, optionally its position and\
+          \ tools"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySectionView"
+          description: Section created
+        "400":
+          content:
+            application/json: {}
+          description: "Bad request - blank or over-long name, over-long icon, duplicate\
+            \ name, or an unknown, repeated or disallowed tool id"
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - authentication required, or no tools portlet"
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Create a navigation section
+      tags:
+      - Administration
+  /v1/layouts/_reorder:
+    put:
+      description: "Rewrites the position of every section from one full ordered list\
+        \ of section ids. The list must contain every existing section id exactly\
+        \ once; a missing, unknown or repeated id is rejected and no position changes.\
+        \ Positions are written strictly increasing in the order sent, in one transaction,\
+        \ and open sessions receive a single refresh. Requires a CMS Administrator\
+        \ who also holds the tools portlet."
+      operationId: reorderNavigationSections
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SectionOrderForm"
+        description: "Every section id exactly once, in the new navigation order"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySectionListView"
+          description: Sections reordered; the full list is returned in the new order
+        "400":
+          content:
+            application/json: {}
+          description: "Bad request - an id is missing, unknown or repeated; nothing\
+            \ was written"
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - authentication required, or no tools portlet"
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Reorder every navigation section
+      tags:
+      - Administration
+  /v1/layouts/{layoutId}:
+    delete:
+      description: "Removes the section, its tool list and every grant of it to a\
+        \ role or a user, so users who reached a tool only through this section lose\
+        \ it from their menu. The Getting Started section cannot be deleted. Returns\
+        \ the remaining sections in navigation order. Requires a CMS Administrator\
+        \ who also holds the tools portlet."
+      operationId: deleteNavigationSection
+      parameters:
+      - description: Navigation section id
+        in: path
+        name: layoutId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySectionListView"
+          description: Section deleted; the remaining sections are returned
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the Getting Started section cannot be deleted
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - authentication required, or no tools portlet"
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "404":
+          content:
+            application/json: {}
+          description: Not found - no section has that id
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Delete a navigation section
+      tags:
+      - Administration
+    put:
+      description: "Changes a section's name and icon together; its position and its\
+        \ tools are untouched, and sending tabOrder or portletIds is refused. Same\
+        \ name and icon rules as create. Getting Started may be renamed and re-iconed.\
+        \ Requires a CMS Administrator who also holds the tools portlet."
+      operationId: updateNavigationSection
+      parameters:
+      - description: Navigation section id
+        in: path
+        name: layoutId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SectionForm"
+        description: New name and icon
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySectionView"
+          description: Section updated
+        "400":
+          content:
+            application/json: {}
+          description: "Bad request - blank or over-long name, over-long icon, duplicate\
+            \ name, or a position or tools sent"
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - authentication required, or no tools portlet"
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "404":
+          content:
+            application/json: {}
+          description: Not found - no section has that id
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Rename and re-icon a navigation section
+      tags:
+      - Administration
+  /v1/layouts/{layoutId}/portlets:
+    put:
+      description: "Replaces the section's tools with the full ordered list sent,\
+        \ which covers adding, removing and reordering in one call. Every id must\
+        \ name a registered portlet the product allows in a section and may appear\
+        \ once; otherwise the request is rejected naming the id and the section is\
+        \ unchanged. Registered tools the tools catalog hides are accepted. An empty\
+        \ list is accepted for every section except Getting Started. Requires a CMS\
+        \ Administrator who also holds the tools portlet."
+      operationId: setNavigationSectionTools
+      parameters:
+      - description: Navigation section id
+        in: path
+        name: layoutId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SectionToolsForm"
+        description: Full ordered list of tool ids; may be empty
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntitySectionListView"
+          description: Tools replaced; the full section list is returned
+        "400":
+          content:
+            application/json: {}
+          description: "Bad request - an id is unregistered, not placeable or repeated,\
+            \ or the list would empty the Getting Started section"
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - authentication required, or no tools portlet"
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - CMS Administrator role required
+        "404":
+          content:
+            application/json: {}
+          description: Not found - no section has that id
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Replace the ordered tools of a navigation section
+      tags:
+      - Administration
+  /v1/link-checker/_run:
+    post:
+      description: "Queues one run of the link-check job, which refreshes the broken\
+        \ links stored for the contentlets. Nothing is queued when the caller is refused.\
+        \ Requires an authenticated back-end user with access to the link-checker\
+        \ tool; CMS Administrators included."
+      operationId: runLinkCheck
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Link check queued
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - authentication required, or the caller is not\
+            \ a back-end user"
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - the caller has no access to the link-checker tool
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: Run the link check now
+      tags:
+      - Administration
+  /v1/link-checker/broken-links:
+    get:
+      description: "Returns one page of the broken links the link-check job found\
+        \ in the contentlets of the given content type. Only the rows whose contentlet\
+        \ the caller can read are returned, and total counts those same rows. Paging\
+        \ uses offset (0 or greater) and limit (1 to 100). The last editor appears\
+        \ by full name only. An unknown content type, or one with no broken links,\
+        \ answers an empty list with total 0. Requires an authenticated back-end user\
+        \ with access to the link-checker tool; CMS Administrators included."
+      operationId: listBrokenLinks
+      parameters:
+      - description: Id of the content type whose broken links are listed; an id that
+          matches no content type answers an empty list
+        example: 2a3e91e4-fbbf-4876-8c5b-2233c1739b05
+        in: query
+        name: contentType
+        required: true
+        schema:
+          type: string
+      - description: Zero-based index of the first row to return
+        example: 0
+        in: query
+        name: offset
+        schema:
+          type: integer
+          format: int64
+          default: 0
+          minimum: 0
+      - description: "Maximum number of rows to return, 1 to 100"
+        example: 25
+        in: query
+        name: limit
+        schema:
+          type: integer
+          format: int64
+          default: 25
+          maximum: 100
+          minimum: 1
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBrokenLinksView"
+          description: Broken links retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: "Bad request - blank content type, offset not a whole number\
+            \ of 0 or more, or limit not a whole number between 1 and 100"
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - authentication required, or the caller is not\
+            \ a back-end user"
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - the caller has no access to the link-checker tool
+        "500":
+          content:
+            application/json: {}
+          description: Internal server error
+      summary: List broken links of a content type
+      tags:
+      - Administration
   /v1/logger:
     get:
       operationId: getLoggers
@@ -12502,8 +13519,9 @@ paths:
   /v1/maintenance/_sessions:
     delete:
       description: "Walks every active HTTP session tracked by SessionMonitor, skips\
-        \ the caller's own session, and invalidates the rest. Returns the count of\
-        \ invalidated sessions."
+        \ the caller's own session, and invalidates the rest. The login tokens of\
+        \ every user whose session was invalidated are invalidated as well, so those\
+        \ clients must log in again. Returns the count of invalidated sessions."
       operationId: killAllSessions
       responses:
         "200":
@@ -12551,10 +13569,12 @@ paths:
       - Maintenance
   /v1/maintenance/_sessions/{token}:
     delete:
-      description: Invalidates the session whose HMAC-obfuscated token is supplied.
-        The caller's own session cannot be invalidated this way. The CSRF secret must
-        have been issued by GET /v1/maintenance/_sessions within the last 15 minutes
-        — otherwise this endpoint returns 403 and the client must re-list to refresh.
+      description: "Invalidates the session whose HMAC-obfuscated token is supplied.\
+        \ The login tokens issued to the session's user are invalidated as well, so\
+        \ that user's clients must log in again. The caller's own session cannot be\
+        \ invalidated this way. The CSRF secret must have been issued by GET /v1/maintenance/_sessions\
+        \ within the last 15 minutes — otherwise this endpoint returns 403 and the\
+        \ client must re-list to refresh."
       operationId: killSession
       parameters:
       - description: HMAC-obfuscated session token returned by GET /_sessions
@@ -12573,7 +13593,9 @@ paths:
         "400":
           content:
             application/json: {}
-          description: Bad request - attempting to invalidate caller's own session
+          description: "Bad request - attempting to invalidate caller's own session,\
+            \ or the login tokens of the session's user could not be invalidated (the\
+            \ session is left untouched)"
         "401":
           content:
             application/json: {}
@@ -12932,12 +13954,6 @@ paths:
   /v1/notification/getNewNotificationsCount:
     get:
       operationId: getNewNotificationsCount
-      parameters:
-      - in: path
-        name: params
-        required: true
-        schema:
-          type: string
       responses:
         default:
           content:
@@ -13498,7 +14514,7 @@ paths:
   /v1/page/render/{uri}:
     get:
       description: |-
-        Returns the metadata of an HTML Page including its rendered HTML code and container content in JSON format based on the specified URI. If the URI maps to a Vanity URL, a 200 Forward returns the actual rendered page, while a 301/302 redirect returns an empty page JSON with Vanity URL properties. Supports Time Machine via the publishDate parameter (ISO 8601 format). For EMA (Enterprise Marketing Automation) requests, this may delegate to the JSON endpoint when the rendered attribute is not required.
+        Returns the metadata of an HTML Page including its rendered HTML code and container content in JSON format based on the specified URI. If the URI maps to a Vanity URL, a 200 Forward returns the actual rendered page, while a 301/302 redirect returns an empty page JSON with Vanity URL properties. Supports Time Machine via the publishDate parameter (ISO 8601 format).
 
         The URI must be a plain page path (no embedded host). To render a page on a NON-default site, pass the `host_id` query parameter (backend users only); without it the current/default site is used. The `//host/uri` path form is NOT supported.
       operationId: getPageRenderByUri
@@ -13794,7 +14810,9 @@ paths:
       description: "Returns the multi-tree data associated with a page, which represents\
         \ the mapping between containers, contentlets, and their positions on the\
         \ page. Each entry includes the page ID, container ID, contentlet ID, relation\
-        \ type, tree order, personalization, and variant ID."
+        \ type, tree order, personalization, and variant ID. Only entries whose contentlet\
+        \ the user can read are returned; entries whose contentlet cannot be loaded\
+        \ are returned to CMS administrators only."
       operationId: getPageContentTree
       parameters:
       - description: Identifier of the HTML Page
@@ -13809,13 +14827,12 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityMulitreeView"
-          description: Content tree retrieved successfully
+          description: "Content tree retrieved successfully, limited to the entries\
+            \ the user can read"
         "401":
-          description: Authentication required
-        "403":
-          description: User does not have required permissions
+          description: "Authentication required, or the user is not a back-end user"
         "404":
-          description: Page not found
+          description: "Page not found, or the user cannot read it"
       summary: Get the multi-tree content structure of a page
       tags:
       - Page
@@ -13899,7 +14916,8 @@ paths:
     get:
       description: Returns a paginated list of personas with a flag indicating whether
         each persona has been customized (personalized) on the specified page. Useful
-        for identifying which personas have page-specific content variations.
+        for identifying which personas have page-specific content variations. Only
+        content the user can read counts towards the flag.
       operationId: getPersonalizedPersonasOnPage
       parameters:
       - description: Filter text to narrow persona results
@@ -13955,11 +14973,9 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityListPersonalizationPersonaPageView"
           description: Personas with personalization flags retrieved successfully
         "401":
-          description: Authentication required
-        "403":
-          description: User does not have required permissions
+          description: "Authentication required, or the user is not a back-end user"
         "404":
-          description: Page not found
+          description: "Page not found, or the user cannot read it"
       summary: Get personalized personas for a page
       tags:
       - Page
@@ -14308,7 +15324,7 @@ paths:
         "404":
           content:
             application/json: {}
-          description: User not found
+          description: User or individual role not found
       summary: Get user permissions
       tags:
       - Permissions
@@ -14530,9 +15546,11 @@ paths:
       - Permissions
   /v1/personalization/pagepersonas:
     post:
-      description: Copies the current content associated to page containers with default
-        personalization and creates a new set with the specified persona personalization.
-        Requires edit permission on the page.
+      description: "Copies the current content associated to page containers with\
+        \ default personalization and creates a new set with the specified persona\
+        \ personalization. Returns the copied rows whose content the user can read.\
+        \ If the page already has content for that persona, nothing is copied and\
+        \ an empty list is returned. Requires edit permission on the page."
       operationId: personalizePageContainers
       requestBody:
         content:
@@ -14720,8 +15738,36 @@ paths:
           description: default response
       tags:
       - Portlets
+  /v1/portlet/_catalog:
+    get:
+      description: "Every portlet that can be added to a section, with the same inclusion\
+        \ rules as the legacy Roles & Tools tool picker: portlets excluded from layouts\
+        \ are omitted, and the old Languages tool is omitted while FEATURE_FLAG_LOCALES_HIDE_OLD_LANGUAGES_PORTLET\
+        \ is on. Sorted by title ignoring letter case. Each row carries the id, the\
+        \ localized title and an isCustom flag that is true only for tools an admin\
+        \ created through New Tool. Requires an authenticated back-end user with access\
+        \ to the tools portlet, or the CMS Administrator role."
+      operationId: getToolsCatalog
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityToolCatalogView"
+          description: Catalog retrieved
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - no authenticated back-end user, or the caller\
+            \ does not hold the tools portlet and is not a CMS Administrator"
+      summary: List the tools that can be placed in a navigation section
+      tags:
+      - Portlets
   /v1/portlet/custom:
     post:
+      description: "Creates a custom content tool that lists the given base types\
+        \ and/or content types. Requires an authenticated back-end user with access\
+        \ to the roles, roles-legacy or tools portlet, or the CMS Administrator role."
       operationId: saveNew
       requestBody:
         content:
@@ -14729,14 +15775,32 @@ paths:
             schema:
               $ref: "#/components/schemas/CustomPortletForm"
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapStringStringView"
+          description: Created; the entity carries the stored portlet id under "portlet"
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: "Validation failure (missing name or view mode, unknown content\
+            \ type, ...)"
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - no authenticated back-end user, or the caller\
+            \ holds none of the roles, roles-legacy or tools portlets and is not a\
+            \ CMS Administrator"
+      summary: Create a custom content tool
       tags:
       - Portlets
     put:
+      description: "Replaces the name, base types, content types and data view mode\
+        \ of an existing custom content tool. Refuses, with 404 and no change, an\
+        \ id that is not a custom content tool: tools shipped with the product cannot\
+        \ be rewritten this way. Requires an authenticated back-end user with access\
+        \ to the roles, roles-legacy or tools portlet, or the CMS Administrator role."
       operationId: updatePortlet
       requestBody:
         content:
@@ -14744,28 +15808,92 @@ paths:
             schema:
               $ref: "#/components/schemas/CustomPortletForm"
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapStringStringView"
+          description: Updated; the entity carries the stored portlet id under "portlet"
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: "Unauthorized - no authenticated back-end user, or the caller\
+            \ holds none of the roles, roles-legacy or tools portlets and is not a\
+            \ CMS Administrator"
+        "404":
+          content:
+            application/json: {}
+          description: "No portlet has the given id, or it is a tool shipped with\
+            \ the product"
+      summary: Update a custom content tool
       tags:
       - Portlets
   /v1/portlet/custom/{portletId}:
     delete:
+      description: "Removes the custom content tool and takes it out of every navigation\
+        \ section that contained it. Refuses, with 404 and no change, any id that\
+        \ is not a custom content tool: tools shipped with the product cannot be removed\
+        \ this way. Requires an authenticated back-end user with access to the roles,\
+        \ roles-legacy or tools portlet, or the CMS Administrator role."
       operationId: deleteCustomPortlet
       parameters:
-      - in: path
+      - description: "Stored id of the custom tool, c_ prefix included"
+        in: path
         name: portletId
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityMapStringStringView"
+          description: Deleted; the entity carries a confirmation under "message"
+        "401":
+          content:
             application/json: {}
-          description: default response
+          description: "Unauthorized - no authenticated back-end user, or the caller\
+            \ holds none of the roles, roles-legacy or tools portlets and is not a\
+            \ CMS Administrator"
+        "404":
+          content:
+            application/json: {}
+          description: "No portlet has this id, or it is a tool shipped with the product"
+      summary: Delete a custom content tool
+      tags:
+      - Portlets
+    get:
+      description: "Returns the editable configuration of a custom content tool: id,\
+        \ name, base types, content types and data view mode. Requires an authenticated\
+        \ back-end user with access to the tools portlet, or the CMS Administrator\
+        \ role."
+      operationId: getCustomTool
+      parameters:
+      - description: "Stored id of the custom tool, c_ prefix included"
+        in: path
+        name: portletId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityCustomToolView"
+          description: Custom tool found
+        "401":
+          content:
+            application/json: {}
+          description: "Unauthorized - no authenticated back-end user, or the caller\
+            \ does not hold the tools portlet and is not a CMS Administrator"
+        "404":
+          content:
+            application/json: {}
+          description: "No portlet has this id, or it is a tool shipped with the product\
+            \ and has no custom configuration"
+      summary: Read one custom content tool's configuration
       tags:
       - Portlets
   /v1/portlet/custom/{portletId}/_addtolayout/{layoutId}:
@@ -14901,7 +16029,8 @@ paths:
           \ FAILED_TO_SENT, FAILED_TO_SEND_TO_ALL_GROUPS, FAILED_TO_SEND_TO_SOME_GROUPS,\
           \ FAILED_TO_PUBLISH, FAILED_INTEGRITY_CHECK, INVALID_TOKEN, LICENSE_REQUIRED.\
           \ SCHEDULED = bundles pushed with a future publishDate not yet picked up\
-          \ by the publisher cron."
+          \ by the publisher cron. BUNDLE_REQUESTED also includes queued bundles whose\
+          \ publishDate is already due but that the publisher has not picked up yet."
         example: "SUCCESS,FAILED_TO_PUBLISH"
         in: query
         name: status
@@ -15517,6 +16646,11 @@ paths:
           content:
             application/json: {}
           description: Forbidden - admin permissions required
+        "409":
+          content:
+            application/json: {}
+          description: "Conflict - duplicate role key, or duplicate role name under\
+            \ the same parent"
       summary: Create new role
       tags:
       - Roles
@@ -15581,7 +16715,9 @@ paths:
       - Roles
   /v1/roles/checkuserroles/userid/{userId}/roleids/{roleIds}:
     get:
-      description: Verifies that a user is assigned to one of the specified role IDs
+      description: Verifies that a user is assigned to one of the specified role IDs.
+        Any back-end user can check their own roles; checking another user's roles
+        requires an administrator or access to both the Roles and the Users portlets.
       operationId: checkUserRoles
       parameters:
       - description: User ID to check
@@ -15610,7 +16746,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: "Forbidden - checking another user's roles requires an administrator,\
+            \ or Roles and Users portlet access"
         "500":
           content:
             application/json: {}
@@ -15913,10 +17050,80 @@ paths:
       summary: Update a role
       tags:
       - Roles
+  /v1/roles/{roleid}/_lock:
+    put:
+      description: Locks a role. A locked role cannot be updated or deleted until
+        it is unlocked. Locking a role that is already locked changes nothing.
+      operationId: lockRole
+      parameters:
+      - description: Id of the role to lock
+        in: path
+        name: roleid
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleDetailView"
+          description: Role locked
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin permissions required
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+      summary: Lock a role
+      tags:
+      - Roles
+  /v1/roles/{roleid}/_unlock:
+    put:
+      description: Unlocks a role so it can be updated and deleted again. Unlocking
+        a role that is not locked changes nothing.
+      operationId: unlockRole
+      parameters:
+      - description: Id of the role to unlock
+        in: path
+        name: roleid
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleDetailView"
+          description: Role unlocked
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - admin permissions required
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+      summary: Unlock a role
+      tags:
+      - Roles
   /v1/roles/{roleid}/rolehierarchyanduserroles:
     get:
-      description: Load the user and roles by role id with optional hierarchy and
-        filtering
+      description: "Load the user and roles by role id with optional hierarchy and\
+        \ filtering. The caller must be an administrator, have access to both the\
+        \ Roles and the Users portlets, or hold a workflow action that assigns to\
+        \ the role."
       operationId: loadUsersAndRolesByRoleId
       parameters:
       - description: Role ID
@@ -15954,7 +17161,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - backend user required
+          description: Forbidden - membership privilege or an assigning workflow action
+            required
         "404":
           content:
             application/json: {}
@@ -16023,7 +17231,8 @@ paths:
     get:
       description: "Returns the paginated list of users directly granted the given\
         \ role, using the standard user serialization (email address included). Grants\
-        \ inherited through the role hierarchy are not included."
+        \ inherited through the role hierarchy are not included. The caller must be\
+        \ an administrator or have access to both the Roles and the Users portlets."
       operationId: loadUsersByRoleId
       parameters:
       - description: Id of the role to list users for
@@ -16081,7 +17290,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - roles portlet access required
+          description: "Forbidden - administrator, or Roles and Users portlet access,\
+            \ required"
         "404":
           content:
             application/json: {}
@@ -17355,7 +18565,9 @@ paths:
     post:
       description: "Saves or updates the value of a key in the system table. The change\
         \ is applied cluster wide: every node is notified and re-resolves the key,\
-        \ so the request does not need to be repeated against each node."
+        \ so the request does not need to be repeated against each node. Keys the\
+        \ server reads from the environment or the properties file only are refused\
+        \ with a 400, since a value stored for them would have no effect."
       operationId: save
       requestBody:
         content:
@@ -17379,7 +18591,9 @@ paths:
       description: "Updates the value of an existing key in the system table, or returns\
         \ a 404 if the key does not exist. The change is applied cluster wide: every\
         \ node is notified and re-resolves the key, so the request does not need to\
-        \ be repeated against each node."
+        \ be repeated against each node. Keys the server reads from the environment\
+        \ or the properties file only are refused with a 400, since a value stored\
+        \ for them would have no effect."
       operationId: update_8
       requestBody:
         content:
@@ -17485,50 +18699,6 @@ paths:
           description: default response
       tags:
       - Internationalization
-  /v1/system/request-draining-test/long-request:
-    get:
-      operationId: longRunningRequest
-      parameters:
-      - in: query
-        name: duration
-        schema:
-          type: integer
-          format: int64
-          default: 5000
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
-  /v1/system/request-draining-test/simulate-active-requests:
-    get:
-      operationId: simulateActiveRequests
-      parameters:
-      - in: query
-        name: count
-        schema:
-          type: integer
-          format: int32
-          default: 1
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
-  /v1/system/request-draining-test/status:
-    get:
-      operationId: getShutdownStatus
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
   /v1/system/ruleengine/actionlets:
     get:
       operationId: list_8
@@ -17726,8 +18896,9 @@ paths:
       - Tag (v1)
     get:
       deprecated: true
-      description: Retrieves all tag-inode associations for a given inode. This endpoint
-        is deprecated - use v2 TagResource instead.
+      description: "Retrieves all tag-inode associations for a given inode. Needs\
+        \ READ permission on the content; for a user id, the same access as reading\
+        \ that user's tags. This endpoint is deprecated - use v2 TagResource instead."
       operationId: findTagsByInodeV1
       parameters:
       - description: Inode identifier to retrieve associated tags for
@@ -17743,6 +18914,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagInodesView"
           description: Tag-inode associations retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the user's access could not be resolved
         "401":
           content:
             application/json: {}
@@ -17750,7 +18925,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: "Forbidden - no access to the Tags portlet, or no READ permission\
+            \ on the inode"
         "404":
           content:
             application/json: {}
@@ -17808,9 +18984,10 @@ paths:
   /v1/tags/user/{userId}:
     get:
       deprecated: true
-      description: Retrieves all tags owned by a given user. Returns tags that were
-        assigned an owner during creation. This endpoint is deprecated - use v2 TagResource
-        instead.
+      description: "Retrieves all tags owned by a given user. Returns tags that were\
+        \ assigned an owner during creation. Available to the user themselves, admins,\
+        \ and users with access to a Users portlet. This endpoint is deprecated -\
+        \ use v2 TagResource instead."
       operationId: getTagsByUserIdV1
       parameters:
       - description: User identifier to retrieve owned tags for
@@ -17826,6 +19003,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagsView"
           description: Tags retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the user's access could not be resolved
         "401":
           content:
             application/json: {}
@@ -17833,7 +19014,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: "Forbidden - no access to the Tags portlet, or not allowed\
+            \ to see this user's tags"
         "404":
           content:
             application/json: {}
@@ -17971,7 +19153,7 @@ paths:
   /v1/temp/byUrl:
     post:
       description: |-
-        Downloads a file from the specified remote URL and stores it as a temporary resource. The temporary file can then be referenced when creating content. The URL must pass validation to prevent SSRF attacks. Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property.
+        Downloads a file from the specified remote URL and stores it as a temporary resource. The temporary file can then be referenced when creating content. The URL must pass validation to prevent SSRF attacks. Anonymous access can be allowed via the TEMP_RESOURCE_ALLOW_ANONYMOUS configuration property, and TEMP_RESOURCE_BY_URL_ADMIN_ONLY restricts downloads by URL to administrators. The stored file name's extension must be on TEMP_RESOURCE_BY_URL_ALLOWED_EXTENSIONS (by default images, SVG and PDF) and the content the remote server returns must match it; otherwise the call returns 400.
 
         **Use this endpoint to supply files for binary and image fields** (`ImmutableBinaryField`, `ImmutableImageField`) when a file is already accessible by URL. Send `{"remoteUrl": "https://example.com/image.jpg"}` and pass `tempFiles[0].id` (e.g. `"temp_5311313004"`) as the field value in the workflow fire endpoint. See `PUT /api/v1/workflow/actions/default/fire/{systemAction}` for the full pattern.
       operationId: createTempFileFromUrl
@@ -18002,9 +19184,12 @@ paths:
                 $ref: "#/components/schemas/TempFilesView"
           description: Temporary file created from URL successfully
         "400":
-          description: "Invalid URL, missing URL, or invalid origin/referer"
+          description: "Invalid URL, missing URL, invalid origin/referer, file extension\
+            \ not allowed, or content that does not match the file name's extension"
         "401":
           description: Authentication required (when anonymous access is disabled)
+        "403":
+          description: Downloads by URL are restricted to administrators (TEMP_RESOURCE_BY_URL_ADMIN_ONLY)
         "404":
           description: Temp file resource is not enabled
       summary: Create temporary file from a remote URL
@@ -18712,8 +19897,8 @@ paths:
       - Usage
   /v1/users:
     post:
-      description: "Creates a new user. Requires admin privileges or access to Users\
-        \ and Roles portlets. FirstName, LastName, Email and Password are required"
+      description: "Creates a new user. Requires a CMS Administrator. FirstName, LastName,\
+        \ Email and Password are required"
       operationId: createUser
       requestBody:
         content:
@@ -18740,7 +19925,7 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions to create users
+          description: Forbidden - only a CMS Administrator can create users
         "409":
           content:
             application/json: {}
@@ -18794,7 +19979,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseSiteVariablesEntityView"
           description: "If the user is not an admin or access to the role + user layouts\
-            \ or does have permission, it will return a 403."
+            \ or does have permission, it will return a 403. Changing the user's roles\
+            \ also requires a CMS Administrator; otherwise nothing is changed and\
+            \ a 403 is returned."
         "404":
           content:
             application/json:
@@ -18941,13 +20128,21 @@ paths:
   /v1/users/filter:
     get:
       description: "Returns a list of dotCMS users based on specified search criteria\
-        \ with pagination support. Each item is the user's data map. When `includeRoles=true`\
-        \ is passed, each item additionally carries a `roles` array listing the user's\
-        \ directly assigned roles as `{id, name, roleKey}` objects (`roleKey` may\
-        \ be null for roles created without a key); roles held through the role hierarchy\
-        \ and the user's personal role are not included. Requesting roles requires\
-        \ being a CMS Administrator or having access to both the Roles and Users portlets\
-        \ (403 otherwise). Without the flag the payload is unchanged."
+        \ with pagination support. Each item is the user's data map. CMS Administrators\
+        \ and users with access to the Users portlet receive the complete map; any\
+        \ other back-end user receives only the directory fields of each user (`userId`,\
+        \ `id`, `firstName`, `lastName`, `fullName`, `name`, `emailAddress`, `emailaddress`,\
+        \ `gravitar`, `type`). When `includeRoles=true` is passed, each item additionally\
+        \ carries a `roles` array listing the user's directly assigned roles as `{id,\
+        \ name, roleKey}` objects (`roleKey` may be null for roles created without\
+        \ a key); roles held through the role hierarchy and the user's personal role\
+        \ are not included. Requesting roles requires being a CMS Administrator or\
+        \ having access to both the Roles and Users portlets (403 otherwise). Without\
+        \ the flag the payload is unchanged. Results can be restricted to users directly\
+        \ holding any of the given roles through `roleKey` and/or `roleId`; filtering\
+        \ by role requires that same privilege. The `admin` flag on each item is only\
+        \ returned to callers with that same privilege; for anyone else it is left\
+        \ out."
       operationId: filterUsers
       parameters:
       - description: "Filter users by user ID, first name, last name, email address,\
@@ -18970,7 +20165,10 @@ paths:
           type: integer
           format: int32
           default: 40
-      - description: Column name for sorting results
+      - description: "Field to sort by. Supported: `firstName` (ties broken by last\
+          \ name), `emailAddress`, `lastLoginDate` (users without a recorded login\
+          \ sort last). Unsupported values fall back to the default order (full name\
+          \ ascending)"
         in: query
         name: orderby
         schema:
@@ -19003,9 +20201,21 @@ paths:
           type: integer
           format: int32
       - description: "Role key(s) to restrict results to users holding any of them;\
-          \ repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER"
+          \ repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER (exact\
+          \ match). Requires CMS Administrator or Roles+Users portlet access (403\
+          \ otherwise)"
         in: query
         name: roleKey
+        schema:
+          type: array
+          items:
+            type: string
+      - description: "Role ID(s) to restrict results to users directly holding any\
+          \ of them, combined with roleKey; repeatable and/or comma-separated. Also\
+          \ matches roles created without a key. Requires CMS Administrator or Roles+Users\
+          \ portlet access (403 otherwise)"
+        in: query
+        name: roleId
         schema:
           type: array
           items:
@@ -19029,8 +20239,8 @@ paths:
         "400":
           content:
             application/json: {}
-          description: Bad request - a provided roleKey does not match any existing
-            Role
+          description: Bad request - a provided roleKey or roleId does not match any
+            existing Role
         "401":
           content:
             application/json: {}
@@ -19039,7 +20249,8 @@ paths:
           content:
             application/json: {}
           description: "Forbidden - insufficient permissions, or includeRoles=true\
-            \ requested without CMS Administrator / Roles+Users portlet access"
+            \ / a role filter requested without CMS Administrator / Roles+Users portlet\
+            \ access"
       summary: Filter users
       tags:
       - Users
@@ -23278,19 +24489,34 @@ paths:
       - Internationalization
   /v2/languages/{language}/keys:
     get:
+      description: "Returns the merged properties, language keys and CMS language\
+        \ variables for the resolved admin locale. The top-level languageBundleVersion\
+        \ matches config.languageBundleVersion in /api/v1/appconfiguration and is\
+        \ not a translation key. Access remains subject to the existing READ anonymous-access\
+        \ policy and authentication checks."
       operationId: getAllMessages
       parameters:
-      - in: path
+      - description: "Language code or language_country code, for example en or en_US.\
+          \ Unsupported locales fall back to the configured default locale."
+        in: path
         name: language
         required: true
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
-            application/json: {}
-          description: default response
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityLanguageMessagesView"
+          description: Language messages and build-derived bundle version
+        "401":
+          description: Authentication required or invalid credentials
+        "403":
+          description: Access denied by the configured access policy
+        "500":
+          description: Unable to retrieve language messages
+      summary: Get all language messages
       tags:
       - Internationalization
   /v2/tags:
@@ -23458,7 +24684,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - User does not have access to Tags portlet
+          description: "Forbidden - User does not have access to Tags portlet, or\
+            \ cannot add tags to the given owner"
         "500":
           content:
             application/json: {}
@@ -23629,8 +24856,9 @@ paths:
       tags:
       - Tags
     get:
-      description: Retrieves all tags associated with a given inode. Returns tag-inode
-        relationships for the specified content.
+      description: "Retrieves all tags associated with a given inode. Returns tag-inode\
+        \ relationships for the specified content. Needs READ permission on the content;\
+        \ for a user id, the same access as reading that user's tags."
       operationId: getTagsByInode
       parameters:
       - description: Inode to retrieve tags for
@@ -23646,6 +24874,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagInodesMapView"
           description: Tags retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the user's access could not be resolved
         "401":
           content:
             application/json: {}
@@ -23653,7 +24885,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions to access tags
+          description: "Forbidden - no access to the Tags portlet, or no READ permission\
+            \ on the inode"
         "404":
           content:
             application/json: {}
@@ -23716,8 +24949,9 @@ paths:
       - Tags
   /v2/tags/user/{userId}:
     get:
-      description: Retrieves all tags owned by a specific user. Returns tags that
-        were explicitly linked to the user during creation.
+      description: "Retrieves all tags owned by a specific user. Returns tags that\
+        \ were explicitly linked to the user during creation. Available to the user\
+        \ themselves, admins, and users with access to a Users portlet."
       operationId: getTagsByUserId
       parameters:
       - description: User ID to retrieve tags for
@@ -23733,6 +24967,10 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityTagMapView"
           description: User tags retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the user's access could not be resolved
         "401":
           content:
             application/json: {}
@@ -23740,7 +24978,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions to access tags
+          description: "Forbidden - no access to the Tags portlet, or not allowed\
+            \ to see this user's tags"
         "404":
           content:
             application/json: {}
@@ -23796,7 +25035,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - User does not have access to Tags portlet
+          description: "Forbidden - User does not have access to Tags portlet, or\
+            \ cannot edit all the content that carries the tag"
         "404":
           content:
             application/json: {}
@@ -25361,6 +26601,23 @@ components:
           example: false
       required:
       - assetPath
+    AssetsSectionView:
+      type: object
+      description: Shared assets folder as a server sees it
+      nullable: true
+      properties:
+        canRead:
+          type: boolean
+          description: Whether the server can read the folder
+          nullable: true
+        canWrite:
+          type: boolean
+          description: Whether the server can write to the folder
+          nullable: true
+        path:
+          type: string
+          description: Assets folder path
+          nullable: true
     AssignCommentBean:
       type: object
       description: Assignee and comment to attach to the workflow task created when
@@ -25553,6 +26810,62 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TemplateLayoutRowView"
+    BrokenLinkView:
+      type: object
+      description: A broken link found in a contentlet the requesting user can read
+      properties:
+        contentTitle:
+          type: string
+          description: Title of the contentlet
+          example: Sample title
+        contentType:
+          type: string
+          description: Name of the contentlet's content type
+          example: Blog
+        field:
+          type: string
+          description: Name of the field that holds the link
+          example: Body
+        inode:
+          type: string
+          description: Inode of the contentlet that holds the link
+          example: 6a8a1f2c-3b4d-4e5f-8a9b-0c1d2e3f4a5b
+        linkTitle:
+          type: string
+          description: Title of the link
+          example: Read more
+        modDate:
+          type: string
+          description: "Last modification date, formatted as MM/dd/yyyy hh:mm a"
+          example: 03/14/2026 09:30 AM
+        modUserName:
+          type: string
+          description: Full name of the last editor; empty when the editor cannot
+            be resolved
+          example: Jane Doe
+        status:
+          type: string
+          description: "Contentlet status: archived, live, working or empty"
+          example: live
+        url:
+          type: string
+          description: URL of the link
+          example: https://example.com/page
+    BrokenLinksView:
+      type: object
+      description: A page of broken links and the total number of rows the requesting
+        user can read
+      properties:
+        list:
+          type: array
+          description: Rows of the requested page
+          items:
+            $ref: "#/components/schemas/BrokenLinkView"
+        total:
+          type: integer
+          format: int32
+          description: Number of rows the requesting user can read across all pages
+          example: 42
     BrowserQueryForm:
       type: object
       properties:
@@ -25662,6 +26975,16 @@ components:
         successCount:
           type: integer
           format: int64
+    BulkUploadSubmitResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        statusUrl:
+          type: string
+        submitted:
+          type: integer
+          format: int32
     BulkWorkflowSchemeView:
       type: object
       properties:
@@ -25767,6 +27090,50 @@ components:
       - columns
       - providerName
       - stats
+    CacheSectionView:
+      type: object
+      description: Cache transport details of a server; a null value means unknown
+        or not applicable
+      nullable: true
+      properties:
+        address:
+          type: string
+          description: "Transport address; null for transports without one, such as\
+            \ PubSub"
+          nullable: true
+        clusterName:
+          type: string
+          description: Cache cluster name
+          nullable: true
+        numberOfNodes:
+          type: integer
+          format: int32
+          description: Number of servers the transport sees
+          nullable: true
+        open:
+          type: boolean
+          description: Whether the transport is open
+          nullable: true
+        port:
+          type: integer
+          format: int32
+          description: "Transport port; null for transports without one, such as PubSub"
+          nullable: true
+        receivedBytes:
+          type: integer
+          format: int64
+          description: Bytes received
+          nullable: true
+        sentBytes:
+          type: integer
+          format: int64
+          description: Bytes sent
+          nullable: true
+        transport:
+          type: string
+          description: Cache transport
+          example: PubSub
+          nullable: true
     CacheStatsView:
       type: object
       properties:
@@ -26048,6 +27415,82 @@ components:
           type: string
         name:
           type: string
+    ChatCompletionRequestView:
+      type: object
+      description: Chat completion request in the OpenAI-compatible shape
+      properties:
+        max_tokens:
+          type: integer
+          format: int32
+          description: Maximum tokens to generate
+        messages:
+          type: array
+          description: "The conversation, oldest first"
+          items:
+            $ref: "#/components/schemas/MessageView"
+        model:
+          type: string
+          description: "Model id, as listed by GET /models"
+          example: gpt-4o
+        "n":
+          type: integer
+          format: int32
+          description: Number of choices; not supported
+        response_format:
+          $ref: "#/components/schemas/JsonNode"
+        stop:
+          type: array
+          description: Stop sequences
+          items:
+            type: string
+            description: Stop sequences
+        stream:
+          type: boolean
+          description: Stream the answer as server-sent events
+        stream_options:
+          $ref: "#/components/schemas/StreamOptionsView"
+        temperature:
+          type: number
+          format: double
+          description: Sampling temperature
+        tool_choice:
+          $ref: "#/components/schemas/JsonNode"
+        tools:
+          type: array
+          description: Tools the model may call
+          items:
+            $ref: "#/components/schemas/ToolView"
+        top_p:
+          type: number
+          format: double
+          description: Nucleus sampling
+    ChatCompletionView:
+      type: object
+      description: Chat completion response in the OpenAI-compatible shape
+      properties:
+        choices:
+          type: array
+          description: The answers
+          items:
+            $ref: "#/components/schemas/ChoiceView"
+        created:
+          type: integer
+          format: int64
+          description: Epoch seconds
+        id:
+          type: string
+          description: Completion id
+          example: chatcmpl-8f3a
+        model:
+          type: string
+          description: Model that served the request
+          example: gpt-4o
+        object:
+          type: string
+          description: Object type
+          example: chat.completion
+        usage:
+          $ref: "#/components/schemas/UsageView"
     CheckboxField:
       type: object
       allOf:
@@ -26112,6 +27555,88 @@ components:
             type: string
           variable:
             type: string
+    ChoiceView:
+      type: object
+      description: The answers
+      properties:
+        finish_reason:
+          type: string
+        index:
+          type: integer
+          format: int32
+        message:
+          $ref: "#/components/schemas/MessageView"
+    ClusterNodeView:
+      type: object
+      description: One server of the cluster
+      properties:
+        assets:
+          $ref: "#/components/schemas/AssetsSectionView"
+        cache:
+          $ref: "#/components/schemas/CacheSectionView"
+        clusterName:
+          type: string
+          description: Cluster id the server belongs to (cluster_server.cluster_id)
+          nullable: true
+        displayServerId:
+          type: string
+          description: Short id shown in the server list
+        ipAddress:
+          type: string
+          description: IP address
+          nullable: true
+        lastContactSeconds:
+          type: integer
+          format: int64
+          description: "Seconds since the server's last heartbeat; never null, never\
+            \ negative"
+        name:
+          type: string
+          description: "Friendly name, shown as the host name"
+          nullable: true
+        responded:
+          type: boolean
+          description: True when the server answered this call's status request within
+            the wait window
+        search:
+          $ref: "#/components/schemas/SearchSectionView"
+        serverId:
+          type: string
+          description: Full server id
+        status:
+          type: string
+          description: "UP: answered with a fresh heartbeat. LAGGING: only one of\
+            \ the two. DOWN: neither, or answered with a failed assets check"
+          enum:
+          - UP
+          - LAGGING
+          - DOWN
+        version:
+          type: string
+          description: dotCMS version the server runs
+          nullable: true
+      required:
+      - displayServerId
+      - lastContactSeconds
+      - responded
+      - serverId
+      - status
+    ClusterNodesView:
+      type: object
+      description: The servers of the cluster with their status
+      properties:
+        currentServerId:
+          type: string
+          description: Id of the server that handled the request
+        nodes:
+          type: array
+          description: "Every server with a recent heartbeat, ordered by startup time,\
+            \ then server id"
+          items:
+            $ref: "#/components/schemas/ClusterNodeView"
+      required:
+      - currentServerId
+      - nodes
     ColumnField:
       type: object
       allOf:
@@ -26201,9 +27726,10 @@ components:
           example: "#3C1361"
         backgroundImage:
           type: string
-          description: Background image path (dotAsset path starting with /dA). Cleared
-            if omitted.
-          example: /dA/abc123/background.png
+          description: "Login background: a dotAsset path starting with /dA/, one\
+            \ of the bundled backgrounds /html/images/backgrounds/bg-1.jpg to bg-11.jpg,\
+            \ or the value already stored. Cleared if omitted."
+          example: /html/images/backgrounds/bg-11.jpg
         emailAddress:
           type: string
           description: Company email address used as the system sender. Accepts plain
@@ -26258,8 +27784,10 @@ components:
           example: "#3C1361"
         backgroundImage:
           type: string
-          description: Background image path (dotAsset path starting with /dA)
-          example: /dA/abc123/background.png
+          description: "Stored login background: a /dA path, a bundled background\
+            \ /html/images/backgrounds/bg-1.jpg to bg-11.jpg, or a legacy URL; null\
+            \ when none is set"
+          example: /html/images/backgrounds/bg-11.jpg
         companyId:
           type: string
           description: Company identifier
@@ -26550,6 +28078,24 @@ components:
           type: string
         working:
           type: boolean
+    ContainerDependenciesView:
+      type: object
+      description: A container and the templates that use it
+      properties:
+        identifier:
+          type: string
+          description: Container identifier
+        inode:
+          type: string
+          description: Container inode
+        templates:
+          type: array
+          description: Templates that use the container; empty when none does
+          items:
+            $ref: "#/components/schemas/TemplateDependencyView"
+        title:
+          type: string
+          description: "Container title, as saved"
     ContainerEntry:
       type: object
       properties:
@@ -27436,6 +28982,36 @@ components:
           type: string
         portletName:
           type: string
+    CustomToolView:
+      type: object
+      description: Editable configuration of a custom content tool
+      properties:
+        baseTypes:
+          type: array
+          description: "Base type names as stored (CONTENT, WIDGET, PERSONA, FILEASSET,\
+            \ HTMLPAGE, VANITY_URL, DOTASSET, FORM, KEY_VALUE); empty when none"
+          items:
+            type: string
+            description: "Base type names as stored (CONTENT, WIDGET, PERSONA, FILEASSET,\
+              \ HTMLPAGE, VANITY_URL, DOTASSET, FORM, KEY_VALUE); empty when none"
+        contentTypes:
+          type: array
+          description: Content type variable names; empty when none
+          items:
+            type: string
+            description: Content type variable names; empty when none
+        dataViewMode:
+          type: string
+          description: "list or card, as stored"
+          example: card
+        portletId:
+          type: string
+          description: Stored id including the c_ prefix
+          example: c_press-releases
+        portletName:
+          type: string
+          description: Display name of the tool
+          example: Press Releases
     DateField:
       type: object
       allOf:
@@ -27843,6 +29419,8 @@ components:
             type: object
         hostId:
           type: string
+        hostName:
+          type: string
         inherited:
           type: boolean
         protocol:
@@ -27902,6 +29480,44 @@ components:
       required:
       - deletedCount
       - success
+    EmbeddingListView:
+      type: object
+      description: Embeddings response in the OpenAI-compatible shape
+      properties:
+        data:
+          type: array
+          description: One entry per input
+          items:
+            $ref: "#/components/schemas/EmbeddingView"
+        model:
+          type: string
+          description: Model that served the request
+          example: text-embedding-3-small
+        object:
+          type: string
+          description: Object type
+          example: list
+        usage:
+          $ref: "#/components/schemas/UsageView"
+    EmbeddingView:
+      type: object
+      description: One embedding
+      properties:
+        embedding:
+          type: array
+          description: The vector
+          items:
+            type: number
+            format: float
+            description: The vector
+        index:
+          type: integer
+          format: int32
+          description: Position of the input this vector embeds
+        object:
+          type: string
+          description: Object type
+          example: embedding
     EmbeddingsForm:
       type: object
       properties:
@@ -27930,6 +29546,16 @@ components:
           type: string
         velocityTemplate:
           type: string
+    EmbeddingsRequestView:
+      type: object
+      description: Embeddings request in the OpenAI-compatible shape
+      properties:
+        input:
+          $ref: "#/components/schemas/JsonNode"
+        model:
+          type: string
+          description: "Model id, as configured for this site's embeddings"
+          example: text-embedding-3-small
     EmptyField:
       type: object
       allOf:
@@ -28332,6 +29958,86 @@ components:
       properties:
         description:
           type: string
+    ExperimentView:
+      type: object
+      properties:
+        createdBy:
+          type: string
+        createdByUserName:
+          type: string
+          description: "Display name of the user who created the experiment. Reports\
+            \ \"System\" for the system user and \"unknown\" when the user cannot\
+            \ be resolved or has no name set, so the value is never empty."
+          example: Admin User
+        creationDate:
+          type: string
+          format: date-time
+        description:
+          type: string
+        goals:
+          $ref: "#/components/schemas/Goals"
+        id:
+          type: string
+        lastModifiedBy:
+          type: string
+        lookBackWindowExpireTime:
+          type: integer
+          format: int64
+        modDate:
+          type: string
+          format: date-time
+        name:
+          type: string
+        pageId:
+          type: string
+        runningIds:
+          $ref: "#/components/schemas/RunningIds"
+        scheduling:
+          $ref: "#/components/schemas/Scheduling"
+        status:
+          type: string
+          enum:
+          - RUNNING
+          - SCHEDULED
+          - ENDED
+          - DRAFT
+          - ARCHIVED
+        targetingConditions:
+          type: array
+          items:
+            $ref: "#/components/schemas/TargetingCondition"
+        trafficAllocation:
+          type: number
+          format: float
+        trafficProportion:
+          $ref: "#/components/schemas/TrafficProportion"
+    ExperimentsHealthView:
+      type: object
+      properties:
+        freeExperimentUsed:
+          type: boolean
+          description: Whether the single free experiment slot is already occupied.
+            Present only when tier="limited"; null when tier="full".
+        health:
+          type: string
+          description: Current health state of the experiments / analytics configuration
+          enum:
+          - OK
+          - NOT_CONFIGURED
+          - CONFIGURATION_ERROR
+        tier:
+          type: string
+          description: "License tier: \"full\" when experiments are fully enabled,\
+            \ \"limited\" when restricted to one free experiment"
+          enum:
+          - full
+          - limited
+        warning:
+          type: string
+          description: Warning code present when the Analytics App is not configured
+            for the site. Absent when configured.
+          enum:
+          - analytics_disabled
     ExportSecretForm:
       type: object
       properties:
@@ -29031,6 +30737,70 @@ components:
           type: string
         type:
           type: string
+    FolderBulkDeleteForm:
+      type: object
+      properties:
+        assetPaths:
+          type: array
+          description: "The selected folders, in the same site-qualified path form\
+            \ the single-folder delete accepts"
+          example:
+          - //demo.dotcms.com/old-projects/
+          items:
+            type: string
+            description: "The selected folders, in the same site-qualified path form\
+              \ the single-folder delete accepts"
+            example: "[\"//demo.dotcms.com/old-projects/\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+    FolderBulkDeleteSubmitResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        statusUrl:
+          type: string
+        submitted:
+          type: integer
+          format: int32
+    FolderBulkDuplicateForm:
+      type: object
+      properties:
+        assetPaths:
+          type: array
+          description: "The selected folders, as site-qualified paths. Each is duplicated\
+            \ beside its original, in the same parent"
+          example:
+          - //demo.dotcms.com/blogs/alpha/
+          items:
+            type: string
+            description: "The selected folders, as site-qualified paths. Each is duplicated\
+              \ beside its original, in the same parent"
+            example: "[\"//demo.dotcms.com/blogs/alpha/\"]"
+          properties:
+            empty:
+              type: boolean
+            first:
+              type: string
+            last:
+              type: string
+      required:
+      - assetPaths
+    FolderBulkDuplicateSubmitResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        statusUrl:
+          type: string
+        submitted:
+          type: integer
+          format: int32
     FolderDeletionRequestForm:
       type: object
       properties:
@@ -29650,6 +31420,22 @@ components:
           $ref: "#/components/schemas/MultiPart"
         providers:
           type: object
+    FunctionCallView:
+      type: object
+      properties:
+        arguments:
+          type: string
+        name:
+          type: string
+    FunctionDefView:
+      type: object
+      properties:
+        description:
+          type: string
+        name:
+          type: string
+        parameters:
+          $ref: "#/components/schemas/JsonNode"
     GenerateBundleForm:
       type: object
       properties:
@@ -30305,6 +32091,50 @@ components:
             type: string
           variable:
             type: string
+    ImageGenerationRequestView:
+      type: object
+      description: Image generation request in the OpenAI-compatible shape
+      properties:
+        model:
+          type: string
+          description: "Model id, as configured for this site's images"
+          example: dall-e-3
+        "n":
+          type: integer
+          format: int32
+          description: "Number of images; at least 1, defaults to 1"
+          example: 1
+        prompt:
+          type: string
+          description: What to generate
+          example: A cat in a hammock
+        size:
+          type: string
+          description: Image size
+          example: 1024x1024
+    ImageGenerationView:
+      type: object
+      description: Image generation response in the OpenAI-compatible shape
+      properties:
+        created:
+          type: integer
+          format: int64
+          description: Epoch seconds
+        data:
+          type: array
+          description: The generated images
+          items:
+            $ref: "#/components/schemas/ImageView"
+    ImageView:
+      type: object
+      description: "One generated image, delivered inline as base64"
+      properties:
+        b64_json:
+          type: string
+          description: "The image bytes, base64 encoded"
+        revised_prompt:
+          type: string
+          description: The prompt the provider actually used
     ImmutableListAssetPreviewView:
       type: array
       description: Preview of first 3 assets in the bundle
@@ -30702,6 +32532,12 @@ components:
         empty:
           type: boolean
       uniqueItems: true
+    InferenceErrorView:
+      type: object
+      description: Error response in the OpenAI-compatible error shape
+      properties:
+        error:
+          $ref: "#/components/schemas/Body"
     JSONObject:
       type: object
       additionalProperties:
@@ -31152,6 +32988,31 @@ components:
           type: array
           items:
             type: string
+    LicenseInfoView:
+      type: object
+      properties:
+        changeDate:
+          type: string
+          description: When the license changes to the Change License
+          example: "Four years from August 01, 2025"
+        changeLicense:
+          type: string
+          description: License that applies after the Change Date
+          example: GNU General Public License (GPL) v3
+        licensor:
+          type: string
+          description: Licensor named in the license
+          example: dotCMS LLC
+        text:
+          type: string
+          description: Full license text
+        title:
+          type: string
+          description: License name and version
+          example: dotCMS Business Source License 1.1
+      required:
+      - text
+      - title
     LineDividerField:
       type: object
       allOf:
@@ -31280,6 +33141,22 @@ components:
       properties:
         message:
           type: string
+    MessageView:
+      type: object
+      description: "The conversation, oldest first"
+      properties:
+        content:
+          $ref: "#/components/schemas/JsonNode"
+        name:
+          type: string
+        role:
+          type: string
+        tool_call_id:
+          type: string
+        tool_calls:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolCallView"
     Metric:
       type: object
       properties:
@@ -31304,6 +33181,52 @@ components:
           - EXIT_RATE
           - BOUNCE_RATE
           - URL_PARAMETER
+    ModelListView:
+      type: object
+      description: Model listing in the OpenAI-compatible shape
+      properties:
+        data:
+          type: array
+          description: "The configured models, primary first"
+          items:
+            $ref: "#/components/schemas/ModelView"
+        object:
+          type: string
+          description: Object type
+          example: list
+    ModelView:
+      type: object
+      description: One configured model
+      properties:
+        created:
+          type: integer
+          format: int64
+          description: Epoch seconds
+        id:
+          type: string
+          description: Model id
+          example: gpt-4o
+        object:
+          type: string
+          description: Object type
+          example: model
+        owned_by:
+          type: string
+          description: Owner
+          example: dotcms
+        type:
+          type: string
+          description: "The operation this model serves: chat completions, embeddings\
+            \ or image generation. Taken from the section of the site's configuration\
+            \ the model is listed in; a model listed in more than one section reports\
+            \ the first, in the order chat, embeddings, image. Any other operation\
+            \ refuses the model with a 404 unless the site configured it for that\
+            \ operation too."
+          enum:
+          - chat
+          - embedding
+          - image
+          example: chat
     MoveFieldsForm:
       type: object
     MulitreeView:
@@ -32189,15 +34112,6 @@ components:
       properties:
         address:
           type: string
-        authKey:
-          type: object
-          properties:
-            empty:
-              type: boolean
-            length:
-              type: integer
-              format: int32
-              writeOnly: true
         enabled:
           type: boolean
         groupId:
@@ -33035,6 +34949,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityBrokenLinksView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/BrokenLinksView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityBulkActionView:
       type: object
       properties:
@@ -33109,6 +35046,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/BulkResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityBulkUploadSubmitView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/BulkUploadSubmitResponse"
         errors:
           type: array
           items:
@@ -33244,11 +35204,59 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityClusterNodesView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ClusterNodesView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityCompanyConfigView:
       type: object
       properties:
         entity:
           $ref: "#/components/schemas/CompanyConfigView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityContainerDependenciesListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContainerDependenciesView"
         errors:
           type: array
           items:
@@ -33526,6 +35534,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/CountView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityCustomToolView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/CustomToolView"
         errors:
           type: array
           items:
@@ -33832,7 +35863,7 @@ components:
         entity:
           type: array
           items:
-            $ref: "#/components/schemas/Experiment"
+            $ref: "#/components/schemas/ExperimentView"
         errors:
           type: array
           items:
@@ -33885,6 +35916,52 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/FileAssetView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityFolderBulkDeleteSubmitView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/FolderBulkDeleteSubmitResponse"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityFolderBulkDuplicateSubmitView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/FolderBulkDuplicateSubmitResponse"
         errors:
           type: array
           items:
@@ -34126,13 +36203,11 @@ components:
           type: array
           items:
             type: string
-    ResponseEntityJwtView:
+    ResponseEntityKillSessionsResultView:
       type: object
       properties:
         entity:
-          type: object
-          additionalProperties:
-            type: object
+          $ref: "#/components/schemas/KillSessionsResultView"
         errors:
           type: array
           items:
@@ -34151,11 +36226,13 @@ components:
           type: array
           items:
             type: string
-    ResponseEntityKillSessionsResultView:
+    ResponseEntityLanguageMessagesView:
       type: object
       properties:
         entity:
-          $ref: "#/components/schemas/KillSessionsResultView"
+          type: object
+          additionalProperties:
+            type: object
         errors:
           type: array
           items:
@@ -34164,6 +36241,13 @@ components:
           type: object
           additionalProperties:
             type: string
+        languageBundleVersion:
+          type: string
+          description: "Build-derived SHA-256 language bundle version, matching config.languageBundleVersion\
+            \ in /api/v1/appconfiguration. This is envelope metadata, not a translation\
+            \ key."
+          pattern: "^[0-9a-f]{64}$"
+          readOnly: true
         messages:
           type: array
           items:
@@ -34206,6 +36290,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Layout"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityLicenseInfoView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/LicenseInfoView"
         errors:
           type: array
           items:
@@ -34456,33 +36563,6 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/LoginFormResultView"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityMapMapView:
-      type: object
-      properties:
-        entity:
-          type: object
-          additionalProperties:
-            type: object
-            additionalProperties:
-              type: object
         errors:
           type: array
           items:
@@ -35354,6 +37434,54 @@ components:
           type: array
           items:
             type: string
+    ResponseEntitySectionListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/SectionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntitySectionView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/SectionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntitySessionListView:
       type: object
       properties:
@@ -35379,6 +37507,38 @@ components:
           type: array
           items:
             type: string
+    ResponseEntitySessionUsersView:
+      type: object
+      properties:
+        entity:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+        sessionLanguageId:
+          type: string
+          description: "Effective admin session locale, or null when no session locale\
+            \ is set"
+          readOnly: true
     ResponseEntitySetStringView:
       type: object
       properties:
@@ -35432,7 +37592,7 @@ components:
       type: object
       properties:
         entity:
-          $ref: "#/components/schemas/Experiment"
+          $ref: "#/components/schemas/ExperimentView"
         errors:
           type: array
           items:
@@ -35916,6 +38076,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityToolCatalogView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ToolCatalogEntryView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityUpdatePermissionsView:
       type: object
       properties:
@@ -36038,6 +38223,29 @@ components:
       properties:
         entity:
           type: object
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityViewExperimentsHealthView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ExperimentsHealthView"
         errors:
           type: array
           items:
@@ -37732,6 +39940,77 @@ components:
           type: string
           description: Optional user id to run the search as (permissions are applied
             for this user). Defaults to the authenticated caller when omitted.
+    SearchSectionView:
+      type: object
+      description: Search engine health as a server reports it; every value is null
+        when its search check failed
+      nullable: true
+      properties:
+        activePrimaryShards:
+          type: integer
+          format: int32
+          nullable: true
+        activeShards:
+          type: integer
+          format: int32
+          nullable: true
+        activeShardsPercent:
+          type: number
+          format: double
+          description: "Percentage of active shards, 0 to 100"
+          nullable: true
+        clusterName:
+          type: string
+          description: Search cluster name
+          nullable: true
+        delayedUnassignedShards:
+          type: integer
+          format: int32
+          nullable: true
+        engine:
+          type: string
+          description: Engine that answered; null when unknown
+          enum:
+          - ELASTICSEARCH
+          - OPENSEARCH
+          nullable: true
+        initializingShards:
+          type: integer
+          format: int32
+          nullable: true
+        numberOfDataNodes:
+          type: integer
+          format: int32
+          nullable: true
+        numberOfInFlightFetch:
+          type: integer
+          format: int32
+          nullable: true
+        numberOfNodes:
+          type: integer
+          format: int32
+          nullable: true
+        numberOfPendingTasks:
+          type: integer
+          format: int32
+          nullable: true
+        relocatingShards:
+          type: integer
+          format: int32
+          nullable: true
+        taskMaxWaitingInQueueMillis:
+          type: integer
+          format: int64
+          description: "How long the oldest pending task has waited, in milliseconds"
+          nullable: true
+        timedOut:
+          type: boolean
+          description: Whether the health request timed out
+          nullable: true
+        unassignedShards:
+          type: integer
+          format: int32
+          nullable: true
     SearchSiteByNameForm:
       type: object
       properties:
@@ -37751,8 +40030,107 @@ components:
         resultsSize:
           type: integer
           format: int64
+        warnings:
+          type: array
+          description: "Notes about how the contentlets were rendered, such as widget\
+            \ field values returned as text because widget field scripting is off.\
+            \ Empty when there is nothing to report."
+          items:
+            type: string
+            description: "Notes about how the contentlets were rendered, such as widget\
+              \ field values returned as text because widget field scripting is off.\
+              \ Empty when there is nothing to report."
     SecretForm:
       type: object
+    SectionForm:
+      type: object
+      description: Name and icon of a navigation section
+      properties:
+        icon:
+          type: string
+          description: "Icon name, at most 255 characters; may be empty"
+          example: campaign
+        name:
+          type: string
+          description: "Section name, unique among sections, at most 255 characters"
+          example: Marketing
+        portletIds:
+          type: array
+          description: "Create only: tool (portlet) ids the section holds, in order;\
+            \ defaults to none"
+          items:
+            type: string
+            description: "Create only: tool (portlet) ids the section holds, in order;\
+              \ defaults to none"
+        tabOrder:
+          type: integer
+          format: int32
+          description: "Create only: position of the section in the navigation; defaults\
+            \ to after every existing section"
+          example: 3
+      required:
+      - name
+    SectionOrderForm:
+      type: object
+      description: "Every navigation section id exactly once, in the new order"
+      properties:
+        layoutIds:
+          type: array
+          description: Section ids in the new navigation order; must contain every
+            existing section exactly once
+          items:
+            type: string
+            description: Section ids in the new navigation order; must contain every
+              existing section exactly once
+      required:
+      - layoutIds
+    SectionToolsForm:
+      type: object
+      description: Full ordered list of the tool (portlet) ids a section holds
+      properties:
+        portletIds:
+          type: array
+          description: Tool ids in the order they appear in the section; may be empty
+          items:
+            type: string
+            description: Tool ids in the order they appear in the section; may be
+              empty
+      required:
+      - portletIds
+    SectionView:
+      type: object
+      description: A navigation section (layout) with its ordered tools and their
+        localized titles
+      properties:
+        icon:
+          type: string
+          description: Icon name shown next to the section
+          example: campaign
+        id:
+          type: string
+          description: Section id
+          example: 2df9f117-b140-44bf-93d7-5b10a36fb7f9
+        name:
+          type: string
+          description: "Section name, unique among sections"
+          example: Marketing
+        portletIds:
+          type: array
+          description: "Tool (portlet) ids in the section, in stored order"
+          items:
+            type: string
+            description: "Tool (portlet) ids in the section, in stored order"
+        portletTitles:
+          type: array
+          description: "Localized title of each tool, aligned with portletIds"
+          items:
+            type: string
+            description: "Localized title of each tool, aligned with portletIds"
+        tabOrder:
+          type: integer
+          format: int32
+          description: Position in the navigation; only the relative order is meaningful
+          example: 3
     SelectField:
       type: object
       allOf:
@@ -38245,6 +40623,12 @@ components:
             type: string
           variable:
             type: string
+    StreamOptionsView:
+      type: object
+      description: Streaming options
+      properties:
+        include_usage:
+          type: boolean
     SystemActionWorkflowActionMapping:
       type: object
       properties:
@@ -38564,6 +40948,24 @@ components:
           type: string
         working:
           type: boolean
+    TemplateDependencyView:
+      type: object
+      description: A template that uses the container
+      properties:
+        identifier:
+          type: string
+          description: Template identifier
+        inode:
+          type: string
+          description: Template inode
+        siteName:
+          type: string
+          description: Host name of the template's site; null when the site is not
+            resolvable for the requesting user
+          nullable: true
+        title:
+          type: string
+          description: "Template title, as saved"
     TemplateForm:
       type: object
       description: Form used to create or update a Template in dotCMS. A Template
@@ -39346,6 +41748,41 @@ components:
           example: 2026-01-15T10:31:22Z
       required:
       - createDate
+    ToolCallView:
+      type: object
+      properties:
+        function:
+          $ref: "#/components/schemas/FunctionCallView"
+        id:
+          type: string
+        type:
+          type: string
+    ToolCatalogEntryView:
+      type: object
+      description: One tool that can be placed in a navigation section
+      properties:
+        id:
+          type: string
+          description: "Portlet id, e.g. roles or c_press-releases"
+          example: c_press-releases
+        isCustom:
+          type: boolean
+          description: "True only for tools created through New Tool: registered in\
+            \ the database and not declared in the product's portlet id registry.\
+            \ False for every shipped tool, Language Variables included"
+        title:
+          type: string
+          description: "Title in the caller's language; falls back to the registered\
+            \ name, then to the id"
+          example: Press Releases
+    ToolView:
+      type: object
+      description: Tools the model may call
+      properties:
+        function:
+          $ref: "#/components/schemas/FunctionDefView"
+        type:
+          type: string
     TotalSession:
       type: object
       properties:
@@ -39656,6 +42093,18 @@ components:
             type: object
             additionalProperties:
               type: object
+    UsageView:
+      type: object
+      description: Tokens consumed
+      properties:
+        prompt_tokens:
+          type: integer
+          format: int32
+          description: Tokens across every input
+        total_tokens:
+          type: integer
+          format: int32
+          description: Total tokens
     User:
       type: object
       properties:

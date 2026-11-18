@@ -2,11 +2,10 @@ package com.dotcms.rest.api.v1.maintenance;
 
 import com.dotcms.business.SystemTable;
 import com.dotcms.rest.InitDataObject;
-import com.dotcms.util.ObfuscationUtil;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.util.ObfuscationUtil;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.util.ReleaseInfo;
@@ -46,6 +45,15 @@ public class JVMInfoResource implements Serializable {
     @Deprecated
     public static final Pattern obfuscatePattern = ObfuscationUtil.CUSTOM_PATTERN;
 
+    /**
+     * Returns release, host, JVM, environment, configuration override and system property
+     * information for this node. Requires a CMS Administrator.
+     *
+     * @param request  the current {@link HttpServletRequest}
+     * @param response the current {@link HttpServletResponse}
+     * @return a map with the {@code release}, {@code host}, {@code jvm}, {@code environment},
+     *         {@code configOverrides} and {@code system} sections
+     */
     @Path("/")
     @GET
     @JSONP
@@ -56,6 +64,7 @@ public class JVMInfoResource implements Serializable {
 
         final InitDataObject initData = new WebResource.InitBuilder(request, response)
                         .requiredBackendUser(true)
+                        .requireAdmin(true)
                         .requestAndResponse(request, response)
                         .rejectWhenNoUser(true)
                         .requiredPortlet("maintenance")

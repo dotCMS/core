@@ -1,6 +1,7 @@
 {
     "name": "@dotcms/analytics",
     "version": "0.0.1-beta.2",
+    "type": "module",
     "description": "Official JavaScript library for Content Analytics with DotCMS.",
     "repository": {
         "type": "git",
@@ -24,11 +25,12 @@
         "@analytics/queue-utils": "^0.1.3",
         "@analytics/router-utils": "^0.1.1",
         "@analytics/storage-utils": "^0.4.0",
-        "@dotcms/uve": "latest",
         "analytics": "^0.8.0"
     },
     "peerDependencies": {
-        "react": "^18 || ^19"
+        "react": "^18 || ^19",
+        "@dotcms/uve": "0.0.0",
+        "next": ">=13"
     },
     "devDependencies": {
         "@dotcms/types": "latest",
@@ -50,13 +52,23 @@
         }
     },
     "exports": {
+        "./package.json": "./package.json",
         ".": {
-            "import": "./index.js",
-            "types": "./index.d.ts"
+            "types": "./index.d.ts",
+            "import": "./index.js"
         },
         "./react": {
-            "import": "./react/index.js",
-            "types": "./lib/react/index.d.ts"
+            "types": "./lib/react/index.d.ts",
+            "import": "./react/index.js"
+        }
+    },
+    "sideEffects": false,
+    "peerDependenciesMeta": {
+        "next": {
+            "optional": true
+        },
+        "react": {
+            "optional": true
         }
     }
 }

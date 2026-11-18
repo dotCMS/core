@@ -1,6 +1,6 @@
-import { beforeEach, describe, expect, it } from '@jest/globals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -31,6 +31,7 @@ import {
 } from '@dotcms/utils-testing';
 
 import { UVEStore } from './dot-uve.store';
+import { UVE_EDIT_PANEL_TABS } from './features/editor/models';
 import { Orientation } from './models';
 
 import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
@@ -77,7 +78,7 @@ describe('UVEStore - Integration Tests ', () => {
                     get: () => of(MOCK_RESPONSE_HEADLESS),
                     getClientPage: () => of({}),
                     getGraphQLPage: () => of({}),
-                    save: jest.fn()
+                    save: vi.fn()
                 }
             },
             {
@@ -87,8 +88,8 @@ describe('UVEStore - Integration Tests ', () => {
             {
                 provide: DotContentletLockerService,
                 useValue: {
-                    lock: jest.fn().mockReturnValue(of({})),
-                    unlock: jest.fn().mockReturnValue(of({}))
+                    lock: vi.fn().mockReturnValue(of({})),
+                    unlock: vi.fn().mockReturnValue(of({}))
                 }
             },
             {
@@ -110,14 +111,14 @@ describe('UVEStore - Integration Tests ', () => {
             {
                 provide: DotAnalyticsTrackerService,
                 useValue: {
-                    track: jest.fn()
+                    track: vi.fn()
                 }
             },
             {
                 provide: DotPageLayoutService,
                 useValue: {
-                    save: jest.fn().mockReturnValue(of({})),
-                    updateFromRowToContainers: jest.fn().mockReturnValue([])
+                    save: vi.fn().mockReturnValue(of({})),
+                    updateFromRowToContainers: vi.fn().mockReturnValue([])
                 }
             },
             {
@@ -128,10 +129,10 @@ describe('UVEStore - Integration Tests ', () => {
                 getSystemConfig: () => of({})
             }),
             mockProvider(DotWorkflowActionsFireService, {
-                saveContentlet: jest.fn().mockReturnValue(of({}))
+                saveContentlet: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotContentTypeService, {
-                getContentType: jest.fn().mockReturnValue(of({}))
+                getContentType: vi.fn().mockReturnValue(of({}))
             }),
             {
                 provide: GlobalStore,
@@ -156,6 +157,10 @@ describe('UVEStore - Integration Tests ', () => {
             it('should initialize panels with default values', () => {
                 expect(store.editorPaletteOpen()).toBe(true); // Default: palette open
                 expect(store.editorEditPanelOpen()).toBe(false); // Default: sidebar closed
+            });
+
+            it('should open the edit panel on the quick-edit tab by default', () => {
+                expect(store.editorEditPanelTab()).toBe(UVE_EDIT_PANEL_TABS.QUICK_EDIT);
             });
 
             it('should update palette.open via setPaletteOpen', () => {
@@ -311,6 +316,40 @@ describe('UVEStore - Integration Tests ', () => {
             // Panel state should be preserved (user preferences)
             expect(store.editorPaletteOpen()).toBe(paletteWasOpen);
             expect(store.editorEditPanelOpen()).toBe(sidebarWasOpen);
+        });
+
+        it('should save through the page API when a contentlet is inserted into a container', () => {
+            // Inserting saves through withPageApi's editorSave, so this only holds when the root
+            // store composes the two in the right order.
+            const save = spectator.inject(DotPageApiService).save as ReturnType<typeof vi.fn>;
+            save.mockReturnValue(of({}));
+
+            store.editorInsertContentlet(
+                {
+                    ...ACTION_PAYLOAD_MOCK,
+                    position: undefined,
+                    pageContainers: [{ identifier: 'container-1', uuid: '1', contentletsId: [] }],
+                    container: {
+                        identifier: 'container-1',
+                        uuid: '1',
+                        acceptTypes: '*',
+                        maxContentlets: 5,
+                        contentletsId: []
+                    }
+                },
+                'new-1'
+            );
+
+            expect(save).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    pageContainers: [
+                        expect.objectContaining({
+                            identifier: 'container-1',
+                            contentletsId: ['new-1']
+                        })
+                    ]
+                })
+            );
         });
     });
 

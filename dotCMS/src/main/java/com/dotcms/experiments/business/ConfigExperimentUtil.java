@@ -24,13 +24,16 @@ public enum ConfigExperimentUtil implements EventSubscriber<SystemTableUpdatedKe
 
     private static final String FEATURE_FLAG_EXPERIMENTS_KEY = FeatureFlagName.FEATURE_FLAG_EXPERIMENTS;
     private static final String ENABLE_EXPERIMENTS_AUTO_JS_INJECTION_KEY = "ENABLE_EXPERIMENTS_AUTO_JS_INJECTION";
+    private static final String FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS_KEY = FeatureFlagName.FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS;
 
     private final AtomicBoolean featureFlagExperiments;
     private final AtomicBoolean enableExperimentsAutoJsInjection;
+    private final AtomicBoolean caemExperimentResults;
 
     ConfigExperimentUtil() {
         featureFlagExperiments = new AtomicBoolean(resolveFeatureFlag());
         enableExperimentsAutoJsInjection = new AtomicBoolean(resolveEnableAutoJsInjection());
+        caemExperimentResults = new AtomicBoolean(resolveCaemExperimentResults());
         APILocator.getLocalSystemEventsAPI().subscribe(SystemTableUpdatedKeyEvent.class, this);
     }
 
@@ -53,12 +56,26 @@ public enum ConfigExperimentUtil implements EventSubscriber<SystemTableUpdatedKe
     }
 
     /**
-     * Return true if the FEATURE_FLAG_EXPERIMENTS is set to true, this mean that
-     * we are going to support Experiment features.
+     * Set the FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS FLAG into a Testing Environment
+     * @param enabled
+     */
+    @VisibleForTesting
+    public void setCaemExperimentResultsEnabled(final boolean enabled) {
+        caemExperimentResults.set(enabled);
+    }
+
+    /**
+     * Returns {@code true} when {@code FEATURE_FLAG_EXPERIMENTS} is set to {@code true}, enabling
+     * full experiment functionality. When {@code false}, the system operates in limited mode —
+     * one free experiment with a 10-day maximum duration.
      *
-     * The default value is FALSE
+     * <p>The value is read once at startup from the system config and held in an
+     * {@link java.util.concurrent.atomic.AtomicBoolean}. It is <em>not</em> refreshed at runtime;
+     * a server restart is required for changes to take effect.
      *
-     * @return
+     * <p>The default value is {@code false}.
+     *
+     * @return {@code true} if experiments are fully enabled; {@code false} for limited mode
      */
     public boolean isExperimentEnabled() {
         return featureFlagExperiments.get();
@@ -76,12 +93,26 @@ public enum ConfigExperimentUtil implements EventSubscriber<SystemTableUpdatedKe
         return enableExperimentsAutoJsInjection.get();
     }
 
+    /**
+     * Return true if the FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS is set to true, meaning that
+     * experiment result queries will be served from the CAEM analytics backend instead of CubeJS.
+     *
+     * The default value is FALSE
+     *
+     * @return
+     */
+    public boolean isCaemExperimentResultsEnabled() {
+        return caemExperimentResults.get();
+    }
+
     @Override
     public void notify(final SystemTableUpdatedKeyEvent event) {
-        if (event.getKey().contains(FEATURE_FLAG_EXPERIMENTS_KEY)) {
-            featureFlagExperiments.set(resolveFeatureFlag());
-        } else if (event.getKey().contains(ENABLE_EXPERIMENTS_AUTO_JS_INJECTION_KEY)) {
+        // FEATURE_FLAG_EXPERIMENTS intentionally omitted: live-toggle removed in Oct 2026.
+        // A server restart is required for changes to that flag to take effect (FR-010).
+        if (event.getKey().contains(ENABLE_EXPERIMENTS_AUTO_JS_INJECTION_KEY)) {
             enableExperimentsAutoJsInjection.set(resolveEnableAutoJsInjection());
+        } else if (event.getKey().contains(FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS_KEY)) {
+            caemExperimentResults.set(resolveCaemExperimentResults());
         }
     }
 
@@ -110,10 +141,14 @@ public enum ConfigExperimentUtil implements EventSubscriber<SystemTableUpdatedKe
     }
 
     private boolean resolveFeatureFlag() {
-        return Config.getBooleanProperty(FEATURE_FLAG_EXPERIMENTS_KEY, true);
+        return Config.getBooleanProperty(FEATURE_FLAG_EXPERIMENTS_KEY, false);
     }
 
     private boolean resolveEnableAutoJsInjection() {
         return Config.getBooleanProperty(ENABLE_EXPERIMENTS_AUTO_JS_INJECTION_KEY, false);
+    }
+
+    private boolean resolveCaemExperimentResults() {
+        return Config.getBooleanProperty(FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS_KEY, false);
     }
 }

@@ -135,7 +135,24 @@ public interface RoleAPI {
 	 * @throws DotStateException
 	 */
 	 void removeRoleFromUser(Role role, User user) throws DotDataException, DotStateException;
-	
+
+	/**
+	 * Verifies that the acting user may apply the given change to the target user's roles. Only the
+	 * system user and CMS Administrators may add or remove roles. An empty change is always allowed,
+	 * so saving a user without changing their roles never fails here.
+	 * <p>This method only validates; it never adds or removes a role.</p>
+	 *
+	 * @param actingUser    The user requesting the change.
+	 * @param targetUser    The user whose roles would change. It may not be persisted yet.
+	 * @param rolesToAdd    The roles the request would add. May be empty.
+	 * @param rolesToRemove The roles the request would remove. May be empty.
+	 *
+	 * @throws DotSecurityException The acting user may not apply a non-empty change.
+	 * @throws DotDataException     An error occurred when resolving the acting user's roles.
+	 */
+	void checkUserRolesChange(User actingUser, User targetUser, Collection<Role> rolesToAdd,
+			Collection<Role> rolesToRemove) throws DotSecurityException, DotDataException;
+
 	/**
 	 * Add a role to a user
 	 * @param role
@@ -372,6 +389,20 @@ public interface RoleAPI {
 	 Role loadRoleByKey(String key) throws DotDataException;
 
 	/**
+	 * Loads a role by its key or by its id, for callers that accept either, such as the roles an
+	 * endpoint requires or the entries of a user's {@code roles} payload. Neither lookup caches a
+	 * miss, so the order matters: a value shaped like a UUID is tried as an id first and anything
+	 * else as a key first, and the other lookup only runs when the first one finds nothing.
+	 *
+	 * @param keyOrId the role key, or the role id
+	 *
+	 * @return the {@link Role}, or {@code null} if the value is blank or neither lookup finds one
+	 *
+	 * @throws DotDataException if a lookup fails
+	 */
+	 Role loadRoleByKeyOrId(String keyOrId) throws DotDataException;
+
+	/**
 	 * Retrieves the special role for user
 	 * @param user
 	 * @return
@@ -393,6 +424,36 @@ public interface RoleAPI {
 	 *         {@code true}. Otherwise, returns {@code false}.
 	 */
 	 boolean doesUserHaveRoles(String userId, List<String> roleIds);
+
+	/**
+	 * Tells whether the user with the given id holds at least one of the given roles, on behalf of
+	 * a requesting user. Any requesting user can check their own roles. Checking another user's
+	 * roles takes the role membership privilege (see {@link #canReadRoleMembership(User)}); without
+	 * it the request is rejected before any user or role is looked up.
+	 *
+	 * @param userId         the id of the {@link User} whose roles are checked; it must be the
+	 *                       exact user id, an email address counts as another user
+	 * @param roleIds        the ids of the roles to look for
+	 * @param requestingUser the {@link User} asking
+	 * @return {@code true} if the user holds at least one of the roles
+	 * @throws DotSecurityException if there is no requesting user, or if {@code userId} is not the
+	 *                              requesting user's id and the requesting user does not have the
+	 *                              role membership privilege
+	 * @throws DotDataException     if the requesting user's portlet access cannot be resolved
+	 */
+	boolean doesUserHaveRoles(String userId, List<String> roleIds, User requestingUser)
+			throws DotDataException, DotSecurityException;
+
+	/**
+	 * Whether a user may see which users hold a role and which roles a user holds: a CMS
+	 * Administrator, or a user with access to both a Roles screen ({@code roles} or the old
+	 * {@code roles-legacy}) and a Users screen ({@code users} or the old {@code users-legacy}).
+	 *
+	 * @param user the {@link User} making the request
+	 * @return {@code true} when the user may read role membership
+	 * @throws DotDataException if the user's portlet access cannot be resolved
+	 */
+	boolean canReadRoleMembership(User user) throws DotDataException;
 
     /**
      * Checks if the first role parameter is indeed a parent of the second role parameter.

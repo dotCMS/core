@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
+import { Mock, vi } from 'vitest';
 
 import * as utils from '@dotcms/uve/internal';
 
@@ -8,16 +9,16 @@ import { Container } from '../../components/Container/Container';
 import { DotCMSPageContext, DotCMSPageContextProps } from '../../contexts/DotCMSPageContext';
 import { EMPTY_PAGE_ASSET, MOCK_CONTAINER, MOCK_PAGE_ASSET, MOCK_CONTAINER_DATA } from '../mock';
 
-jest.mock('../../components/Contentlet/Contentlet', () => ({
+vi.mock('../../components/Contentlet/Contentlet', () => ({
     Contentlet: ({ contentlet }: { contentlet: any }) => (
         <div data-testid="mock-contentlet">{contentlet.identifier}</div>
     )
 }));
 
-jest.mock('@dotcms/uve/internal', () => ({
-    getContainersData: jest.fn(),
-    getDotContainerAttributes: jest.fn(),
-    getContentletsInContainer: jest.fn(),
+vi.mock('@dotcms/uve/internal', () => ({
+    getContainersData: vi.fn(),
+    getDotContainerAttributes: vi.fn(),
+    getContentletsInContainer: vi.fn(),
     EMPTY_CONTAINER_STYLE_REACT: {
         width: '100%',
         backgroundColor: '#ECF0FD',
@@ -31,29 +32,39 @@ jest.mock('@dotcms/uve/internal', () => ({
     PRODUCTION_MODE: 'production'
 }));
 
-const DEFAULT_CONTEXT_VALUE: DotCMSPageContextProps = {
+/**
+ * `isDevMode` and `isAnalyticsActive` are resolved once by DotCMSPageProvider and shared
+ * through the context, so tests supply them rather than the components deriving their own.
+ * They default from `mode` below, which is what the provider does outside the UVE.
+ */
+type TestContextValue = Omit<DotCMSPageContextProps, 'isDevMode' | 'isAnalyticsActive'> &
+    Partial<Pick<DotCMSPageContextProps, 'isDevMode' | 'isAnalyticsActive'>>;
+
+const DEFAULT_CONTEXT_VALUE: TestContextValue = {
     pageAsset: MOCK_PAGE_ASSET,
     mode: 'production',
     userComponents: {}
 };
 
 describe('Container', () => {
-    const getContainersDataMock = utils.getContainersData as jest.Mock;
-    const getContentletsInContainerMock = utils.getContentletsInContainer as jest.Mock;
+    const getContainersDataMock = utils.getContainersData as Mock;
+    const getContentletsInContainerMock = utils.getContentletsInContainer as Mock;
 
-    const renderWithContext = (
-        component: React.ReactNode,
-        contextValue: DotCMSPageContextProps
-    ) => {
+    const renderWithContext = (component: React.ReactNode, contextValue: TestContextValue) => {
         return render(
-            <DotCMSPageContext.Provider value={contextValue}>
+            <DotCMSPageContext.Provider
+                value={{
+                    isDevMode: contextValue.mode === 'development',
+                    isAnalyticsActive: false,
+                    ...contextValue
+                }}>
                 {component}
             </DotCMSPageContext.Provider>
         );
     };
 
     beforeEach(() => {
-        jest.spyOn(utils, 'getDotContainerAttributes').mockReturnValue({
+        vi.spyOn(utils, 'getDotContainerAttributes').mockReturnValue({
             'data-dot-object': 'container',
             'data-dot-identifier': 'test-container-id',
             'data-dot-accept-types': 'test-accept-types',
@@ -64,7 +75,7 @@ describe('Container', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('WITH CONTENT', () => {

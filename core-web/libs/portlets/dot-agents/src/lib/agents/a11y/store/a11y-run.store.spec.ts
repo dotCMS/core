@@ -1,6 +1,7 @@
 import { patchState } from '@ngrx/signals';
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { concat, NEVER, Observable, of, throwError } from 'rxjs';
+import { Mocked, vi } from 'vitest';
 
 import { createEnvironmentInjector, EnvironmentInjector } from '@angular/core';
 
@@ -138,30 +139,28 @@ const OTHER_ROW: StudioPageRow = {
 describe('A11yRunStore', () => {
     let spectator: SpectatorService<InstanceType<typeof A11yRunStore>>;
     let store: InstanceType<typeof A11yRunStore>;
-    let scannerService: jest.Mocked<DotPageScannerService>;
-    let agentService: jest.Mocked<DotA11yAgentService>;
+    let scannerService: Mocked<DotPageScannerService>;
+    let agentService: Mocked<DotA11yAgentService>;
 
     const createService = createServiceFactory({
         service: A11yRunStore,
         providers: [
             mockProvider(DotPageScannerService, {
-                checkA11y: jest.fn().mockReturnValue(of(MOCK_SCAN_RESPONSE))
+                checkA11y: vi.fn().mockReturnValue(of(MOCK_SCAN_RESPONSE))
             }),
             mockProvider(DotA11yAgentService, {
-                fixStream: jest.fn().mockReturnValue(of(...MOCK_FIX_STREAM)),
-                stop: jest.fn().mockReturnValue(of(null))
+                fixStream: vi.fn().mockReturnValue(of(...MOCK_FIX_STREAM)),
+                stop: vi.fn().mockReturnValue(of(null))
             })
         ]
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createService();
         store = spectator.service;
-        scannerService = spectator.inject(
-            DotPageScannerService
-        ) as jest.Mocked<DotPageScannerService>;
-        agentService = spectator.inject(DotA11yAgentService) as jest.Mocked<DotA11yAgentService>;
+        scannerService = spectator.inject(DotPageScannerService) as Mocked<DotPageScannerService>;
+        agentService = spectator.inject(DotA11yAgentService) as Mocked<DotA11yAgentService>;
     });
 
     /** Open the default page (id-1, /about-us) the way the page list hands it over. */
@@ -700,7 +699,7 @@ describe('A11yRunStore', () => {
         });
 
         it('aborts an in-flight fix stream when the store is destroyed', () => {
-            const fixTeardown = jest.fn();
+            const fixTeardown = vi.fn();
             agentService.fixStream.mockReturnValue(new Observable(() => fixTeardown));
 
             scopedStore.openSelectedPage(MOCK_ROW);
@@ -714,8 +713,8 @@ describe('A11yRunStore', () => {
         });
 
         it('aborts both in-flight scans when the store is destroyed', () => {
-            const previewTeardown = jest.fn();
-            const liveTeardown = jest.fn();
+            const previewTeardown = vi.fn();
+            const liveTeardown = vi.fn();
             scannerService.checkA11y
                 .mockReturnValueOnce(new Observable(() => previewTeardown))
                 .mockReturnValueOnce(new Observable(() => liveTeardown));

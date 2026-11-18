@@ -1,4 +1,4 @@
-import { mockProvider, createDirectiveFactory } from '@openng/spectator/jest';
+import { mockProvider, createDirectiveFactory } from '@openng/spectator/vitest';
 
 import { ViewContainerRef } from '@angular/core';
 

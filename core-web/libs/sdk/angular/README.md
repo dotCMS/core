@@ -103,13 +103,24 @@ For detailed instructions, please refer to the [dotCMS API Documentation - Read-
 
 ### Installation
 
+`@dotcms/angular` requires **Angular 21.2 or newer** (`@angular/core`, `@angular/common` and `@angular/router`). It is built with Angular 21.2, so a single version works on every Angular from 21.2 up. On an older Angular, npm 7+ refuses the install with a peer-dependency error, and package managers that don't enforce peer dependencies only warn.
+
 ```bash
 npm install @dotcms/angular@latest
 ```
 
-This will automatically install the required dependencies:
+You also need to install these packages yourself:
 - `@dotcms/uve`: Enables interaction with the [Universal Visual Editor](https://dev.dotcms.com/docs/uve-headless-config) for real-time content editing
 - `@dotcms/client`: Provides the core client functionality for fetching and managing dotCMS data
+- `@dotcms/types`: TypeScript definitions used throughout the API
+
+```bash
+npm install @dotcms/uve @dotcms/client @dotcms/types
+```
+
+> npm 7+ and pnpm install these automatically as peer dependencies alongside `@dotcms/angular`.
+> **Yarn Classic (1.x) and npm below v7 do not** — they only print a warning if one is missing,
+> so on those package managers you must add them explicitly as shown above.
 
 ## Configuration
 
@@ -724,6 +735,14 @@ export class PageComponent implements OnInit, OnDestroy {
 ## Troubleshooting
 
 ### Common Issues & Solutions
+
+#### Build Errors
+
+1. **`Unsupported change detection strategy`**: `ng build` or `ng serve` fails with this error, pointing at `node_modules/@dotcms/angular/fesm2022/dotcms-angular.mjs`
+    - **Cause**: your app is on an Angular older than 21.2. `@dotcms/angular` 26.8.7-1 and later use `ChangeDetectionStrategy.Eager`, which Angular 21.1 and older can't read, even though releases up to 26.9.23-1 declared support for Angular 17 and up.
+    - **Solutions**:
+        - On Angular 21.0 or 21.1: update your app to Angular 21.2 or newer, a minor update within Angular 21.
+        - On Angular 20 or older: upgrade your app to Angular 21.2 or newer. No current release supports older versions.
 
 #### Universal Visual Editor (UVE)
 

@@ -4,14 +4,15 @@ import {
     mockProvider,
     Spectator,
     SpyObject
-} from '@openng/spectator/jest';
+} from '@openng/spectator/vitest';
 import { BehaviorSubject } from 'rxjs';
+import { vi } from 'vitest';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotNavHeaderComponent } from './dot-nav-header.component';
+import { DotNavLogoService } from '@dotcms/data-access';
 
-import { DotNavLogoService } from '../../../../../api/services/dot-nav-logo/dot-nav-logo.service';
+import { DotNavHeaderComponent } from './dot-nav-header.component';
 
 describe('DotNavHeaderComponent', () => {
     let spectator: Spectator<DotNavHeaderComponent>;
@@ -23,7 +24,7 @@ describe('DotNavHeaderComponent', () => {
         imports: [ButtonModule],
         providers: [
             mockProvider(DotNavLogoService, {
-                navBarLogo$: new BehaviorSubject<string>('')
+                navBarLogo$: new BehaviorSubject<string | null>('')
             })
         ]
     });
@@ -69,7 +70,7 @@ describe('DotNavHeaderComponent', () => {
         });
 
         it('should emit toggle event when button is clicked', () => {
-            const spy = jest.spyOn(component.toggle, 'emit');
+            const spy = vi.spyOn(component.toggle, 'emit');
 
             const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
             spectator.click(toggleButton);
@@ -78,7 +79,7 @@ describe('DotNavHeaderComponent', () => {
         });
 
         it('should emit toggle event with no parameters', () => {
-            const spy = jest.spyOn(component.toggle, 'emit');
+            const spy = vi.spyOn(component.toggle, 'emit');
 
             const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
             spectator.click(toggleButton);
@@ -149,7 +150,9 @@ describe('DotNavHeaderComponent', () => {
                 spectator.detectChanges();
 
                 const whitelabelLogo = spectator.query(byTestId('whitelabel-logo')) as HTMLElement;
-                expect(whitelabelLogo.style.backgroundImage).toBe('url(/dA/logo.png)');
+                // Quoted, matching the input: the DOM preserves the url()'s quotes on
+                // serialisation rather than stripping them.
+                expect(whitelabelLogo.style.backgroundImage).toBe('url("/dA/logo.png")');
             });
         });
 
@@ -308,7 +311,7 @@ describe('DotNavHeaderComponent', () => {
             dotNavLogoService.navBarLogo$.next(null);
             spectator.detectChanges();
 
-            const spy = jest.spyOn(component.toggle, 'emit');
+            const spy = vi.spyOn(component.toggle, 'emit');
             const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
 
             // Click multiple times
@@ -324,7 +327,7 @@ describe('DotNavHeaderComponent', () => {
             dotNavLogoService.navBarLogo$.next(null);
             spectator.detectChanges();
 
-            const spy = jest.spyOn(component.toggle, 'emit');
+            const spy = vi.spyOn(component.toggle, 'emit');
             const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
 
             spectator.click(toggleButton);
@@ -347,7 +350,7 @@ describe('DotNavHeaderComponent', () => {
         });
 
         it('should maintain button functionality across logo changes', () => {
-            const spy = jest.spyOn(component.toggle, 'emit');
+            const spy = vi.spyOn(component.toggle, 'emit');
             const toggleButton = spectator.query(byTestId('dot-nav-header-toggle-button'));
 
             // Test with default logo

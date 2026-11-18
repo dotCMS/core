@@ -28,7 +28,7 @@ import { TagModule } from 'primeng/tag';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotAiService, DotMessageService } from '@dotcms/data-access';
+import { DotAiConfigService, DotMessageService } from '@dotcms/data-access';
 import {
     DotAiProviderField,
     DotAiProviderMetadata,
@@ -75,7 +75,7 @@ export type DotAiCapabilitySectionValue = Record<string, unknown> & { provider?:
     ]
 })
 export class DotAiCapabilityCardComponent implements OnInit {
-    private readonly dotAiService = inject(DotAiService);
+    private readonly dotAiService = inject(DotAiConfigService);
     private readonly dotMessageService = inject(DotMessageService);
     private readonly destroyRef = inject(DestroyRef);
 

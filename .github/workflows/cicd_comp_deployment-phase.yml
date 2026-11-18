@@ -7,7 +7,7 @@
 # - Configurable deployment environment
 # - Use of Docker environments to enable per-deployment environment secrets
 # - Docker image building and pushing (including dev images)
-# - Artifact deployment to JFrog Artifactory
+# - Artifact deployment to the S3-compatible Maven repository
 # - CLI publishing to NPM
 # - Slack notifications for Docker image and CLI deployments
 #
@@ -102,6 +102,17 @@ on:
         required: false
         type: string
         default: ''
+      docker-cache-scope-prefix:
+        description: |
+          When set, give each image built here a stable BuildKit cache scope
+          instead of relying on BuildKit's implicit ref-keyed one. Release refs
+          are new every time, so a ref-keyed cache is always cold. The generated
+          scope includes the Java variant and the image identity, and deliberately
+          excludes the release version, commit and run id so the cache stays warm
+          across releases. Empty (default) preserves existing behaviour.
+        required: false
+        type: string
+        default: ''
     outputs:
       docker_tags:
         description: 'Docker image tags that were built'
@@ -116,12 +127,12 @@ on:
       DOCKER_TOKEN:
         required: false
         description: 'Docker.io token'
-      EE_REPO_USERNAME:
+      MAVEN_BUNNY_RW_USERNAME:
         required: false
-        description: 'Artifactory username'
-      EE_REPO_PASSWORD:
+        description: 'BunnyCDN storage-zone name (S3 access key id)'
+      MAVEN_BUNNY_RW_PASSWORD:
         required: false
-        description: 'Artifactory password'
+        description: 'BunnyCDN storage-zone password (S3 secret key)'
       SLACK_BOT_TOKEN:
         required: false
         description: 'Slack webhook for developers'
@@ -165,22 +176,37 @@ jobs:
           # version dashes (e.g., "25.02.16-01_java-25_abc123" vs "25.02.16-01-java-25-abc123").
           # This convention may be revisited in future.
 
-          # Use provided java-version if set, otherwise read from .sdkmanrc
+          # SDKMAN version: explicit override, otherwise .sdkmanrc (source of truth)
           if [ -n "${{ inputs.java-version }}" ]; then
             SDKMAN_JAVA_VERSION="${{ inputs.java-version }}"
             echo "Using override Java version: ${SDKMAN_JAVA_VERSION}"
+          elif [ -f .sdkmanrc ]; then
+            SDKMAN_JAVA_VERSION=$(awk -F "=" '/^java=/ {print $2}' .sdkmanrc)
+            echo "Using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
+          else
+            echo "No .sdkmanrc file found"
+            exit 1
+          fi
 
-            # Compute Java suffix for artifact isolation
-            # Priority: explicit artifact-suffix > derived from java-version major
-            if [ -n "${{ inputs.artifact-suffix }}" ]; then
-              RAW_SUFFIX="${{ inputs.artifact-suffix }}"
-              echo "Using explicit artifact suffix: ${RAW_SUFFIX}"
-            else
-              JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
-              RAW_SUFFIX="java-${JAVA_MAJOR}"
-              echo "Using derived artifact suffix: ${RAW_SUFFIX}"
-            fi
+          # Artifact suffix is resolved independently of how the Java version was
+          # found: an explicit artifact-suffix wins outright, otherwise derive
+          # java-<major> from an explicit java-version. A baseline run (no override)
+          # carries no suffix. maven-job resolves it this same way — previously this
+          # step only honoured artifact-suffix when java-version was also set, so a
+          # caller supplying only artifact-suffix had the build publish
+          # maven-repo-<suffix> while this job looked for an unsuffixed artifact.
+          if [ -n "${{ inputs.artifact-suffix }}" ]; then
+            RAW_SUFFIX="${{ inputs.artifact-suffix }}"
+            echo "Using explicit artifact suffix: ${RAW_SUFFIX}"
+          elif [ -n "${{ inputs.java-version }}" ]; then
+            JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
+            RAW_SUFFIX="java-${JAVA_MAJOR}"
+            echo "Using derived artifact suffix: ${RAW_SUFFIX}"
+          else
+            RAW_SUFFIX=""
+          fi
 
+          if [ -n "${RAW_SUFFIX}" ]; then
             # Normalize: strip any leading separators, then add appropriate separator
             while [[ "${RAW_SUFFIX}" =~ ^[-_] ]]; do
               RAW_SUFFIX="${RAW_SUFFIX:1}"
@@ -190,20 +216,18 @@ jobs:
             MAVEN_SUFFIX="-${RAW_SUFFIX}"
             # For Docker tags: use underscore separator
             DOCKER_SUFFIX="_${RAW_SUFFIX}"
-
-            echo "Raw suffix: '${RAW_SUFFIX}'"
-            echo "Maven suffix: '${MAVEN_SUFFIX}'"
-            echo "Docker suffix: '${DOCKER_SUFFIX}'"
-          elif [ -f .sdkmanrc ]; then
-            SDKMAN_JAVA_VERSION=$(awk -F "=" '/^java=/ {print $2}' .sdkmanrc)
-            echo "Using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
-            RAW_SUFFIX=""
+          else
             MAVEN_SUFFIX=""
             DOCKER_SUFFIX=""
-          else
-            echo "No .sdkmanrc file found"
-            exit 1
           fi
+
+          echo "Raw suffix: '${RAW_SUFFIX}'"
+          echo "Maven suffix: '${MAVEN_SUFFIX}'"
+          echo "Docker suffix: '${DOCKER_SUFFIX}'"
+
+          # Used as the dotcms/java-base docker tag (FROM dotcms/java-base:<tag>), which
+          # cannot contain '+' - convert SDKMAN's '+' to '-' (e.g. 25.0.4+1-ms -> 25.0.4-1-ms)
+          SDKMAN_JAVA_VERSION="${SDKMAN_JAVA_VERSION//+/-}"
 
           {
             echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}"
@@ -241,6 +265,38 @@ jobs:
           fi
           echo "identifier_tag=${IDENTIFIER_TAG}" >> "$GITHUB_OUTPUT"
 
+      # Must run before the builds below: they consume these scopes.
+      - name: Compute Docker Cache Scopes
+        id: docker-cache-scopes
+        shell: bash
+        env:
+          PREFIX: ${{ inputs.docker-cache-scope-prefix }}
+          VARIANT: ${{ steps.get-sdkman-version.outputs.raw_suffix }}
+          SDKMAN_JAVA: ${{ steps.get-sdkman-version.outputs.SDKMAN_JAVA_VERSION }}
+        run: |
+          # No prefix -> leave the scope alone and let BuildKit key on the ref,
+          # which is what every caller had before this input existed.
+          if [[ -z "$PREFIX" ]]; then
+            {
+              echo "main=buildkit"
+              echo "dev=buildkit"
+            } >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # Stable by construction: the release version, commit and run id are
+          # excluded so each release warms the cache the next one reuses, while
+          # the variant and image identity keep unrelated builds (and the main and
+          # dev images themselves) apart.
+          # get-sdkman-version already normalises '+' to '-'; this is belt and
+          # braces so the scope can never contain a character Docker rejects.
+          variant="${VARIANT:-primary}"
+          java="${SDKMAN_JAVA//+/-}"
+          {
+            echo "main=${PREFIX}-main-${variant}-${java}"
+            echo "dev=${PREFIX}-dev-${variant}-${java}"
+          } >> "$GITHUB_OUTPUT"
+
       # Build and push the main Docker image.
       # All tags (base, sha, identifier alias, custom) are applied in a single build.
       - name: Build/Push Docker Image
@@ -260,6 +316,7 @@ jobs:
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           pull: true
+          cache-scope: ${{ steps.docker-cache-scopes.outputs.main }}
           artifact_suffix: ${{ steps.get-sdkman-version.outputs.maven_suffix }}
           build_args: |
             DOTCMS_DOCKER_TAG=${{ steps.docker-tags.outputs.base_tag }}
@@ -304,6 +361,7 @@ jobs:
           docker_io_token: ${{ secrets.DOCKER_TOKEN }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           pull: true
+          cache-scope: ${{ steps.docker-cache-scopes.outputs.dev }}
           build_args: |
             DOTCMS_DOCKER_TAG=${{ steps.docker-tags.outputs.base_tag }}
             DEV_REQUEST_TOKEN=${{ secrets.DEV_REQUEST_TOKEN }}
@@ -311,17 +369,30 @@ jobs:
           identifier-tag: ${{ steps.docker-tags.outputs.identifier_tag }}
           extra-tags: ${{ steps.get-sdkman-version.outputs.raw_suffix != '' && format('type=raw,value={0},enable=true', steps.get-sdkman-version.outputs.raw_suffix) || '' }}
 
-      # Deploy CLI artifacts to JFrog Artifactory
+      # Deploy CLI Maven artifacts to the S3-compatible repository
       # Skipped when java-version is overridden (CLI not built due to GraalVM/Quarkus compatibility)
       # Skipped when deploy-cli is false (e.g., manual builds should not publish CLI artifacts)
+      # Not continue-on-error: a missing CLI artifact should be visible. Trunk/nightly
+      # publish snapshots, which publish-to-s3 rejects before requiring credentials,
+      # so this only fails when a real (release) publish is misconfigured.
       - name: CLI Deploy
-        continue-on-error: true
         id: cli_deploy
         if: inputs.deploy-cli && steps.get-sdkman-version.outputs.java_suffix == ''
-        uses: ./.github/actions/core-cicd/deployment/deploy-jfrog
+        uses: ./.github/actions/core-cicd/deployment/deploy-bunny-maven-s3
         with:
-          artifactory-username: ${{ secrets.EE_REPO_USERNAME }}
-          artifactory-password: ${{ secrets.EE_REPO_PASSWORD }}
+          # Release builds carry the real version from the release build; other
+          # environments publish the project version (e.g. 1.0.0-SNAPSHOT).
+          version: ${{ inputs.omit-environment-prefix && inputs.tag-identifier || '' }}
+          # This step exists to publish the CLI Maven artifact. The full release
+          # repository is published by the release phase; restricting here avoids
+          # uploading every module twice.
+          modules: 'dotcms-cli'
+          access-key-id: ${{ secrets.MAVEN_BUNNY_RW_USERNAME }}
+          secret-access-key: ${{ secrets.MAVEN_BUNNY_RW_PASSWORD }}
+          bucket: ${{ vars.MAVEN_S3_BUCKET }}
+          prefix: ${{ vars.MAVEN_S3_PREFIX }}
+          endpoint: ${{ vars.MAVEN_S3_ENDPOINT }}
+          region: ${{ vars.MAVEN_S3_REGION }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           artifact-run-id: ${{ inputs.artifact-run-id }}
 

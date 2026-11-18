@@ -7,13 +7,16 @@ import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.util.ObfuscationUtil;
 import com.dotcms.rest.api.v1.pagescanner.PageScannerResource;
+import com.dotcms.config.SystemTableConfigSource;
 import com.dotmarketing.util.StringUtils;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple2;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -32,7 +35,12 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import org.glassfish.jersey.server.JSONP;
+import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.exception.BadRequestException;
+import com.dotmarketing.util.PortletID;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -89,13 +97,13 @@ public class ConfigurationResource implements Serializable {
             FeatureFlagName.FEATURE_FLAG_UVE_TOGGLE_LOCK,
             FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR,
             FeatureFlagName.FEATURE_FLAG_PAGE_SCANNER,
-            FeatureFlagName.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION,
             FeatureFlagName.FEATURE_FLAG_NEW_BLOCK_EDITOR,
             FeatureFlagName.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED,
             FeatureFlagName.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL,
             // libvips engine toggle: the new image editor reads it to gate AVIF output.
             FeatureFlagName.IMAGE_API_USE_LIBVIPS,
-            FeatureFlagName.FEATURE_FLAG_DOTAI_CONFIG_UI);
+            FeatureFlagName.FEATURE_FLAG_DOTAI_CONFIG_UI,
+            FeatureFlagName.FEATURE_FLAG_EXPERIMENTS_PORTLET);
 
 	private static final Set<String> WHITE_LIST = ImmutableSet.copyOf(
 			Config.getStringArrayProperty("CONFIGURATION_WHITE_LIST",
@@ -107,14 +115,17 @@ public class ConfigurationResource implements Serializable {
 							FeatureFlagName.FEATURE_FLAG_UVE_PREVIEW_MODE, FeatureFlagName.FEATURE_FLAG_UVE_TOGGLE_LOCK, FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR,
 							FeatureFlagName.FEATURE_FLAG_PAGE_SCANNER,
 							PageScannerResource.API_URL_PROPERTY,
-                            FeatureFlagName.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION,
                             FeatureFlagName.FEATURE_FLAG_NEW_BLOCK_EDITOR,
                             REPORT_ISSUE_INCLUDE_USER_PII,
                             FeatureFlagName.FEATURE_FLAG_REPORT_ISSUE_ENABLED,
                             FeatureFlagName.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL,
                             // libvips engine toggle: the new image editor reads it to gate AVIF output.
                             FeatureFlagName.IMAGE_API_USE_LIBVIPS,
-                            FeatureFlagName.FEATURE_FLAG_DOTAI_CONFIG_UI }));
+                            FeatureFlagName.FEATURE_FLAG_DOTAI_CONFIG_UI,
+                            // UVE Experiments entry-point switch (#37005). Must be in BOTH
+                            // sets: omitted here the key is silently dropped from the
+                            // response and the frontend reads the switch as enabled.
+                            FeatureFlagName.FEATURE_FLAG_EXPERIMENTS_PORTLET }));
 
 	private boolean isOnBlackList(final String key) {
 		return ObfuscationUtil.matchesCustomPattern(key);
@@ -296,10 +307,16 @@ public class ConfigurationResource implements Serializable {
 	}
 
 	/**
-	 * Set value to config properties in runtime
+	 * Sets configuration properties at runtime. Keys the server reads from the environment or
+	 * the properties file only are refused as a whole request, before any value is set, since a
+	 * runtime value for them would have no effect after a restart and must not differ from what
+	 * was provisioned.
 	 *
-	 * @param request
-	 * @return
+	 * @param request    the HTTP request
+	 * @param response   the HTTP response
+	 * @param properties the keys and values to set
+	 * @return 200 once every property is set
+	 * @throws BadRequestException if any key is a provisioning key
 	 */
 	@PUT
 	@JSONP
@@ -317,6 +334,7 @@ public class ConfigurationResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init();
 
+		rejectProvisioningKeys(properties.keySet());
 		for (Map.Entry<String, String> entry : properties.entrySet()) {
 			Config.setProperty(entry.getKey(), entry.getValue());
 		}
@@ -324,21 +342,79 @@ public class ConfigurationResource implements Serializable {
 		return Response.ok().build();
 	}
 
+	/**
+	 * Refuses the request when any of the given keys is a provisioning key (see
+	 * {@link SystemTableConfigSource#PROVISIONING_KEYS}), before any value is set, so a request
+	 * is applied whole or not at all.
+	 *
+	 * @param keys the keys the request wants to set; {@code null} passes
+	 * @throws BadRequestException if any key is a provisioning key, however it is spelled
+	 */
+	@VisibleForTesting
+	static void rejectProvisioningKeys(final Collection<String> keys) {
+		if (keys == null) {
+			return;
+		}
+		for (final String key : keys) {
+			if (SystemTableConfigSource.isProvisioningKey(key)) {
+				throw new BadRequestException("Key not allowed: " + key
+						+ " is set in the environment or the properties file only");
+			}
+		}
+	}
+
+	/**
+	 * Sends a test e-mail from the given sender address to the logged-in user, to check the
+	 * company's outbound mail settings. The e-mail is sent in the background; its result
+	 * arrives later as a system message.
+	 *
+	 * @param request  the HTTP request
+	 * @param response the HTTP response
+	 * @param form     the sender address, plain or in {@code Name <address>} form
+	 * @return {@code {"entity":"Ok"}} once the e-mail is queued
+	 */
+	@Operation(
+			summary = "Send a test e-mail from the company address",
+			description = "Queues a test e-mail from the given sender to the logged-in user. "
+					+ "The result is delivered later as a system message."
+	)
+	@ApiResponses(value = {
+			@ApiResponse(responseCode = "200",
+					description = "Test e-mail queued",
+					content = @Content(mediaType = "application/json",
+							schema = @Schema(implementation = ResponseEntityStringView.class))),
+			@ApiResponse(responseCode = "400",
+					description = "Missing body, or the sender is not a valid e-mail address",
+					content = @Content(mediaType = "application/json")),
+			@ApiResponse(responseCode = "401",
+					description = "Unauthorized - not authenticated, or not a CMS Administrator",
+					content = @Content(mediaType = "text/plain"))
+	})
 	@POST
 	@Path("/_validateCompanyEmail")
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Consumes(MediaType.APPLICATION_JSON)
 	public Response validateEmail(
-			@Context final HttpServletRequest request,
-			@Context final HttpServletResponse response,
+			@Parameter(hidden = true) @Context final HttpServletRequest request,
+			@Parameter(hidden = true) @Context final HttpServletResponse response,
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(
+					description = "Sender address to send the test e-mail from",
+					required = true,
+					content = @Content(schema = @Schema(implementation = CompanyEmailForm.class))
+			)
 			final CompanyEmailForm form) throws ExecutionException, InterruptedException {
 
 		final InitDataObject dataObject = new InitBuilder(request, response)
 				.requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
-				.requiredPortlet("maintenance")
+				.requiredPortlet(PortletID.CONFIGURATION.toString())
 				.rejectWhenNoUser(true)
 				.init();
+
+		if (form == null) {
+			throw new BadRequestException("Request body is required");
+		}
 
 		final Tuple2<String, String> mailAndSender = helper.parseMailAndSender(form.getSenderAndEmail());
 		helper.sendValidationEmail(mailAndSender._1, mailAndSender._2, dataObject.getUser());

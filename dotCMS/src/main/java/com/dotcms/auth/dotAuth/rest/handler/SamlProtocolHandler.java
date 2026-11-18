@@ -2,13 +2,16 @@ package com.dotcms.auth.dotAuth.rest.handler;
 
 import com.dotcms.auth.dotAuth.DotAuthConstants;
 import com.dotcms.auth.dotAuth.rest.DotAuthProtocol;
+import com.dotcms.saml.DotIdentityProviderConfigurationImpl;
 import com.dotcms.saml.DotSamlProxyFactory;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotmarketing.util.UtilMethods;
 import com.dotcms.security.apps.Secret;
 import io.vavr.control.Try;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -23,6 +26,7 @@ public final class SamlProtocolHandler implements ProtocolHandler {
             "idpName",
             "sPIssuerURL",
             "sPEndpointHostname",
+            "additionalAcsUrls",
             "signatureValidationType",
             "idPMetadataFile",
             "publicCert",
@@ -31,7 +35,18 @@ public final class SamlProtocolHandler implements ProtocolHandler {
 
     private static final Set<String> HIDDEN_KEYS = Set.of("privateKey");
 
+    /**
+     * Request-only flag: when true and both key fields are empty, replace the stored SP
+     * keypair. Never persisted. Without it, clearing both fields on a config that already
+     * holds a keypair is rejected so the IdP is not silently left with a stale certificate.
+     */
+    public static final String REGENERATE_KEYPAIR_KEY = "regenerateKeypair";
+
     private static final Set<String> BOOLEAN_KEYS = Set.of("enable");
+
+    private static final String SIGNATURE_VALIDATION_TYPE_KEY = "signatureValidationType";
+
+    private static final String ADDITIONAL_ACS_URLS_KEY = "additionalAcsUrls";
 
     /**
      * Extra-key names must be identifier-shaped. Bars whitespace tricks like
@@ -110,6 +125,10 @@ public final class SamlProtocolHandler implements ProtocolHandler {
             if (raw == null) continue;
             if (BOOLEAN_KEYS.contains(key)) {
                 builder.withSecret(key, Boolean.parseBoolean(String.valueOf(raw)));
+            } else if (SIGNATURE_VALIDATION_TYPE_KEY.equals(key)) {
+                builder.withSecret(key, validSignatureValidationType(String.valueOf(raw)));
+            } else if (ADDITIONAL_ACS_URLS_KEY.equals(key)) {
+                builder.withSecret(key, validAdditionalAcsUrls(String.valueOf(raw)));
             } else {
                 builder.withSecret(key, String.valueOf(raw));
                 if ("publicCert".equals(key) && UtilMethods.isSet(String.valueOf(raw))) {
@@ -126,6 +145,16 @@ public final class SamlProtocolHandler implements ProtocolHandler {
                     : "A private key was supplied without its public certificate — supply both, or neither to auto-generate a keypair");
         }
         if (!hasPrivateKey && !hasPublicCert) {
+            final boolean regenerate = Boolean.parseBoolean(
+                    String.valueOf(incoming.get(REGENERATE_KEYPAIR_KEY)));
+            final boolean keypairStored = existing.map(AppSecrets::getSecrets)
+                    .filter(m -> m.containsKey("privateKey") || m.containsKey("publicCert"))
+                    .isPresent();
+            if (keypairStored && !regenerate) {
+                throw new BadRequestException("An SP keypair is already stored. Leave the private key "
+                        + "and certificate as they are, or confirm regeneration ("
+                        + REGENERATE_KEYPAIR_KEY + "=true) and upload the new certificate to your IdP");
+            }
             final String hostname = incoming.get("sPEndpointHostname") != null
                     ? String.valueOf(incoming.get("sPEndpointHostname"))
                     : null;
@@ -142,6 +171,7 @@ public final class SamlProtocolHandler implements ProtocolHandler {
             final String key = entry.getKey();
             if (SAML_SECRET_KEYS.contains(key)
                     || DotAuthConstants.LAST_SAVED_PROTOCOL_AT_KEY.equals(key)
+                    || REGENERATE_KEYPAIR_KEY.equals(key)
                     || entry.getValue() == null) continue;
             if (!EXTRA_KEY_NAME.matcher(key).matches()) {
                 throw new BadRequestException("Invalid SAML extra-attribute key '" + key
@@ -156,5 +186,40 @@ public final class SamlProtocolHandler implements ProtocolHandler {
             builder.withSecret(key, str);
         }
         return builder.build();
+    }
+
+    /**
+     * The SAML runtime only accepts an additional assertion consumer URL that matches the Response
+     * Destination and Recipient exactly, so each comma-separated entry must be an absolute http(s) URL.
+     * A wildcard would never match and would only mislead the administrator, so it is rejected.
+     */
+    private static String validAdditionalAcsUrls(final String value) {
+        for (final String entry : value.split(",")) {
+            final String url = entry.trim();
+            if (url.isEmpty()) continue;
+            final URI uri = Try.of(() -> new URI(url)).getOrNull();
+            final String scheme = uri == null || uri.getScheme() == null
+                    ? "" : uri.getScheme().toLowerCase(Locale.ROOT);
+            if (url.contains("*") || uri == null || uri.getHost() == null
+                    || !("https".equals(scheme) || "http".equals(scheme))) {
+                throw new BadRequestException(ADDITIONAL_ACS_URLS_KEY + " entry '" + url
+                        + "' must be a full http(s) URL such as https://example.com/dotsaml/login/<site id>;"
+                        + " wildcards are not supported");
+            }
+        }
+        return value.trim();
+    }
+
+    /**
+     * Only "response", "assertion" and "responseandassertion" can be stored: SAML responses
+     * are never accepted without an IdP signature.
+     */
+    private static String validSignatureValidationType(final String value) {
+        final String normalized = value.trim().toLowerCase(Locale.ROOT);
+        if (!normalized.equals(DotIdentityProviderConfigurationImpl.resolveSignatureValidationType(normalized))) {
+            throw new BadRequestException(SIGNATURE_VALIDATION_TYPE_KEY
+                    + " must be one of response, assertion or responseandassertion");
+        }
+        return normalized;
     }
 }

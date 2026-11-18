@@ -219,29 +219,78 @@ public class LayoutAPIImpl implements LayoutAPI {
 	}
 	
 
+	/** The welcome tool the Getting Started section is created with. */
+	private static final String STARTER_PORTLET_ID = "starter";
+
 	@CloseDBIfOpened
 	@Override
     public Layout findGettingStartedLayout() {
-	    final Layout layout = Try.of(() -> findLayoutByName(GETTING_STARTED_LAYOUT_NAME)).getOrElseThrow(e->new DotRuntimeException(e));
-	    return layout.getPortletIds().isEmpty()  ? this.createGettingStartedLayout() : layout ;
+		// A lookup failure must surface as such, never be mistaken for "not found" and trigger a create.
+		Layout layout = Try.of(() -> loadLayout(GETTING_STARTED_LAYOUT_ID)).getOrElseThrow(DotRuntimeException::new);
+		if (!isPersisted(layout)) {
+			// Installs that predate the fixed id hold the section under another id: adopt it as it is.
+			final Layout byName = Try.of(() -> layoutFactory.findLayoutByName(GETTING_STARTED_LAYOUT_NAME))
+					.getOrElseThrow(DotRuntimeException::new);
+			if (isPersisted(byName)) {
+				layout = Try.of(() -> loadLayout(byName.getId())).getOrElseThrow(DotRuntimeException::new);
+			}
+		}
+		if (!isPersisted(layout)) {
+			return this.createGettingStartedLayout();
+		}
+		if (layout.getPortletIds().isEmpty()) {
+			// Keep the section usable without touching its name, icon or position.
+			final Layout target = layout;
+			Try.run(() -> setPortletIdsToLayout(target, List.of(STARTER_PORTLET_ID))).onFailure(LayoutAPIImpl::accept);
+			return Try.of(() -> loadLayout(target.getId())).getOrElseThrow(e -> new DotRuntimeException(e));
+		}
+		return layout;
     }
-	
+
+	private static boolean isPersisted(final Layout layout) {
+		return null != layout && UtilMethods.isSet(layout.getId());
+	}
+
+    /**
+     * Creates the Getting Started section with its defaults: fixed id and name, the
+     * {@code whatshot} icon, the position that keeps it first, and the welcome tool. Called only
+     * when no section holds the fixed id and none carries the name.
+     *
+     * @return the created section
+     */
     @WrapInTransaction
     private synchronized Layout createGettingStartedLayout() {
         final Layout gettingStarted = new Layout();
         gettingStarted.setId(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
         gettingStarted.setName(LayoutAPI.GETTING_STARTED_LAYOUT_NAME);
         gettingStarted.setDescription("whatshot");
-        gettingStarted.setPortletIds(List.of("starter"));
+        gettingStarted.setPortletIds(List.of(STARTER_PORTLET_ID));
         gettingStarted.setTabOrder(-320000);
         Try.run(() -> {
             layoutFactory.saveLayout(gettingStarted);
-            layoutFactory.setPortletsToLayout(gettingStarted, List.of("starter"));
+            layoutFactory.setPortletsToLayout(gettingStarted, List.of(STARTER_PORTLET_ID));
         }).onFailure(LayoutAPIImpl::accept);
 
         return gettingStarted;
     }
 	
+	@Override
+	@WrapInTransaction
+	public void setTabOrders(final Map<String, Integer> tabOrderByLayoutId) throws DotDataException {
+		for (final Map.Entry<String, Integer> entry : tabOrderByLayoutId.entrySet()) {
+			final Layout layout = layoutFactory.findLayout(entry.getKey());
+			if (!isPersisted(layout)) {
+				// Inside the transaction: nothing written so far survives.
+				throw new DotDataException("Layout '" + entry.getKey() + "' does not exist; no position was changed");
+			}
+			// findLayout may return the instance Hibernate cached in this session; update it so a
+			// read later in the same request sees the new position.
+			layout.setTabOrder(entry.getValue());
+		}
+		layoutFactory.setTabOrders(tabOrderByLayoutId);
+		APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload());
+	}
+
     @Override
 	@WrapInTransaction
 	public void addLayoutForUser(final Layout layout, final User user) throws DotDataException {

@@ -1,7 +1,13 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
 import { MockComponent, MockInstance } from 'ng-mocks';
 import { Observable, of, throwError } from 'rxjs';
+import { Mock, Mocked, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
@@ -32,9 +38,9 @@ let loadResult: (url: string) => Observable<string>;
 // jsdom has no ResizeObserver; the canvas observes the displayed image to track
 // its rendered rect, so provide a no-op implementation for the suite.
 class MockResizeObserver {
-    observe = jest.fn();
-    unobserve = jest.fn();
-    disconnect = jest.fn();
+    observe = vi.fn();
+    unobserve = vi.fn();
+    disconnect = vi.fn();
 }
 Object.defineProperty(window, 'ResizeObserver', {
     writable: true,
@@ -43,15 +49,15 @@ Object.defineProperty(window, 'ResizeObserver', {
 });
 
 // jsdom has no object-URL API; the canvas revokes object URLs it no longer shows.
-URL.createObjectURL = jest.fn(
+URL.createObjectURL = vi.fn(
     (blob: Blob) => `blob:${(blob as unknown as { name?: string }).name ?? 'mock'}`
 );
-URL.revokeObjectURL = jest.fn();
+URL.revokeObjectURL = vi.fn();
 
 // jsdom implements neither HTMLImageElement.decode() nor real natural dimensions;
 // stub them so the canvas's decode()-based completeness check resolves with a
 // valid, sized image. Individual tests override decode() to simulate failures.
-HTMLImageElement.prototype.decode = jest.fn().mockResolvedValue(undefined);
+HTMLImageElement.prototype.decode = vi.fn().mockResolvedValue(undefined);
 Object.defineProperty(HTMLImageElement.prototype, 'naturalWidth', {
     configurable: true,
     get: () => 800
@@ -72,11 +78,11 @@ describe('DotImageEditorCanvasComponent', () => {
     // test can drive, `setNaturalCropSize` a spy to assert the canvas forwards edits.
     MockInstance.scope();
     const overlayCropSize = signal({ width: 0, height: 0 });
-    const setNaturalCropSize = jest.fn();
+    const setNaturalCropSize = vi.fn();
 
     let spectator: Spectator<DotImageEditorCanvasComponent>;
     let dispatcher: Dispatcher;
-    let service: jest.Mocked<DotImageEditorService>;
+    let service: Mocked<DotImageEditorService>;
 
     const previewUrl = signal(PREVIEW_URL);
     const previewStatus = signal<PreviewStatus>('idle');
@@ -89,10 +95,10 @@ describe('DotImageEditorCanvasComponent', () => {
         providers: [
             provideNoopAnimations(),
             Dispatcher,
-            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
             mockProvider(DotImageEditorService, {
                 // Stable fn that delegates to the per-test strategy (see `loadResult`).
-                loadPreviewImage: jest.fn((url: string) => loadResult(url))
+                loadPreviewImage: vi.fn((url: string) => loadResult(url))
             })
         ],
         componentProviders: [
@@ -148,18 +154,15 @@ describe('DotImageEditorCanvasComponent', () => {
         previewStatus.set('idle');
         zoom.set({ level: 100, fitToScreen: true });
         activeTool.set('move');
-        (HTMLImageElement.prototype.decode as jest.Mock).mockResolvedValue(undefined);
+        (HTMLImageElement.prototype.decode as Mock).mockResolvedValue(undefined);
         // Default strategy: every preview resolves to a complete object URL. Set
         // before createComponent so the component's initial fetch uses it.
         loadResult = (url: string) => of(objectUrlFor(url));
 
         spectator = createComponent();
         dispatcher = spectator.inject(Dispatcher, true);
-        service = spectator.inject(
-            DotImageEditorService,
-            true
-        ) as jest.Mocked<DotImageEditorService>;
-        jest.spyOn(dispatcher, 'dispatch');
+        service = spectator.inject(DotImageEditorService, true) as Mocked<DotImageEditorService>;
+        vi.spyOn(dispatcher, 'dispatch');
     });
 
     it('should render the canvas stage and child components', () => {
@@ -255,7 +258,7 @@ describe('DotImageEditorCanvasComponent', () => {
     });
 
     it('should report previewErrored when the loaded image fails to decode', async () => {
-        (HTMLImageElement.prototype.decode as jest.Mock).mockRejectedValueOnce(
+        (HTMLImageElement.prototype.decode as Mock).mockRejectedValueOnce(
             new Error('decode failed')
         );
 
@@ -415,8 +418,8 @@ describe('DotImageEditorCanvasComponent', () => {
             spectator.detectChanges();
 
             const cropOverlay = spectator.query(DotImageEditorCropOverlayComponent)!;
-            const applySpy = jest.spyOn(cropOverlay, 'applyCrop');
-            const cancelSpy = jest.spyOn(cropOverlay, 'cancelCrop');
+            const applySpy = vi.spyOn(cropOverlay, 'applyCrop');
+            const cancelSpy = vi.spyOn(cropOverlay, 'cancelCrop');
 
             const applyBtn = spectator.query(byTestId('image-editor-crop-apply-btn'));
             spectator.click(applyBtn!.querySelector('button')!);
@@ -505,7 +508,7 @@ describe('DotImageEditorCanvasComponent', () => {
 
     /** Finds the first dispatched event whose type matches the given suffix. */
     function dispatchedEvent(typeSuffix: string): { type: string; payload?: unknown } | undefined {
-        const call = (dispatcher.dispatch as jest.Mock).mock.calls.find(([dispatched]) =>
+        const call = (dispatcher.dispatch as Mock).mock.calls.find(([dispatched]) =>
             dispatched.type.includes(typeSuffix)
         );
 

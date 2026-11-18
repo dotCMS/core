@@ -1,5 +1,12 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
+import { Dispatcher } from '@ngrx/signals/events';
+import {
+    createServiceFactory,
+    mockProvider,
+    SpectatorService,
+    SpyObject
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -7,12 +14,14 @@ import { MessageService } from 'primeng/api';
 
 import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
-import { DotCMSUVEAction } from '@dotcms/types';
+import { DotCMSInlineEditingPayload, DotCMSUVEAction } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService } from '@dotcms/ui';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotUveActionsHandlerService } from './dot-uve-actions-handler.service';
 
+import { uveContentEditorEvents } from '../../edit-ema-editor/components/dot-uve-content-editor/dot-uve-content-editor.events';
 import { UpdatedContentlet } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE, UVE_STATUS } from '../../shared/enums';
 import { UVEStore } from '../../store/dot-uve.store';
@@ -34,9 +43,11 @@ const MOCK_UPDATED_CONTENTLET: UpdatedContentlet = {
 function buildMockStore(variantId = DEFAULT_VARIANT_ID) {
     return {
         pageVariantId: signal(variantId),
-        setEditorState: jest.fn(),
-        setUveStatus: jest.fn(),
-        pageReload: jest.fn()
+        // Edit mode, with edit permission on the page.
+        editorCanEditContent: signal(true),
+        setEditorState: vi.fn(),
+        setUveStatus: vi.fn(),
+        pageReload: vi.fn()
     };
 }
 
@@ -49,7 +60,7 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
         service: DotUveActionsHandlerService,
         providers: [
             mockProvider(DotWorkflowActionsFireService, {
-                saveContentlet: jest.fn().mockReturnValue(of({}))
+                saveContentlet: vi.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotMessageService),
             mockProvider(MessageService),
@@ -62,7 +73,7 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createService();
         service = spectator.service;
         dotWorkflowActionsFireService = spectator.inject(DotWorkflowActionsFireService);
@@ -78,11 +89,10 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
@@ -101,11 +111,10 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
@@ -124,11 +133,10 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
@@ -143,11 +151,10 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             { action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING, payload: null },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
@@ -156,7 +163,7 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
     });
 
     it('should show an error toast when saveContentlet fails', () => {
-        jest.spyOn(dotWorkflowActionsFireService, 'saveContentlet').mockReturnValue(
+        vi.spyOn(dotWorkflowActionsFireService, 'saveContentlet').mockReturnValue(
             throwError(() => new Error('save failed'))
         );
         const messageService = spectator.inject(MessageService);
@@ -169,17 +176,69 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
         expect(messageService.add).toHaveBeenCalledWith(
             expect.objectContaining({ severity: 'error' })
         );
+    });
+});
+
+// #38575: a page on a newer SDK reports its scrollY with every scroll; the store needs it to move
+// the drop targets with the page during a drag.
+describe('DotUveActionsHandlerService – IFRAME_SCROLL', () => {
+    let spectator: SpectatorService<DotUveActionsHandlerService>;
+    let service: DotUveActionsHandlerService;
+    let uveStore: ReturnType<typeof buildMockStore> & { updateEditorScrollState: Mock };
+
+    const createService = createServiceFactory({
+        service: DotUveActionsHandlerService,
+        providers: [
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotMessageService),
+            mockProvider(MessageService),
+            mockProvider(DotCopyContentModalService),
+            // Not used by a scroll report; the handler's dependencies require one.
+            mockProvider(InlineEditService),
+            { provide: UVEStore, useValue: buildMockStore() }
+        ]
+    });
+
+    /** The page tells the editor it scrolled, with what its SDK sends along. */
+    const pageScrolled = (payload?: { scrollY: number }) =>
+        service.handleAction(
+            { action: DotCMSUVEAction.IFRAME_SCROLL, payload },
+            {
+                uveStore: uveStore as unknown as InstanceType<typeof UVEStore>,
+                inlineEditingService: spectator.inject(InlineEditService),
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: vi.fn()
+            }
+        );
+
+    beforeEach(() => {
+        spectator = createService();
+        service = spectator.service;
+        uveStore = { ...buildMockStore(), updateEditorScrollState: vi.fn() };
+    });
+
+    it('should hand the page scrollY to the store', () => {
+        pageScrolled({ scrollY: 840 });
+
+        expect(uveStore.updateEditorScrollState).toHaveBeenCalledWith(840);
+    });
+
+    it('should tell the store about the scroll without a scrollY when an older SDK sends none', () => {
+        pageScrolled();
+
+        expect(uveStore.updateEditorScrollState).toHaveBeenCalledTimes(1);
+        expect(uveStore.updateEditorScrollState).toHaveBeenCalledWith(undefined);
     });
 });
 
@@ -203,77 +262,56 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
         service = spectator.service;
     });
 
-    it('should call onSectionOffset with the payload when the action is SECTION_OFFSET', () => {
-        const onSectionOffset = jest.fn();
-        const payload = { sectionIndex: 2, offsetTop: 450 };
-
+    /** Answers a scroll-to-section request the way the SDK does, with the section's offset. */
+    const handleSectionOffset = (offsetTop: number, contentWindow: Window | null) =>
         service.handleAction(
-            { action: DotCMSUVEAction.SECTION_OFFSET, payload },
+            {
+                action: DotCMSUVEAction.SECTION_OFFSET,
+                payload: { sectionIndex: 2, offsetTop }
+            },
             {
                 uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
-                contentWindow: null,
+                contentWindow,
                 host: 'http://localhost',
-                onCopyContent: jest.fn(),
-                onSectionOffset
+                onCopyContent: vi.fn()
             }
         );
 
-        expect(onSectionOffset).toHaveBeenCalledWith(payload);
-    });
+    it('should scroll the page in the iframe smoothly to the section the SDK reports', () => {
+        const contentWindow = { scrollTo: vi.fn() } as unknown as Window;
 
-    it('should not throw when onSectionOffset is not provided', () => {
-        expect(() => {
-            service.handleAction(
-                {
-                    action: DotCMSUVEAction.SECTION_OFFSET,
-                    payload: { sectionIndex: 1, offsetTop: 100 }
-                },
-                {
-                    uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
-                    dialog: null,
-                    inlineEditingService: null,
-                    contentWindow: null,
-                    host: 'http://localhost',
-                    onCopyContent: jest.fn()
-                }
-            );
-        }).not.toThrow();
-    });
+        handleSectionOffset(450, contentWindow);
 
-    it('should call dialog.createContentletFromPalette when action is CREATE_CONTENTLET', () => {
-        const createContentletFromPalette = jest.fn();
-        const mockStore = {
-            ...buildMockStore(),
-            pageLanguageId: signal(1)
-        };
-
-        service.handleAction(
-            { action: DotCMSUVEAction.CREATE_CONTENTLET, payload: { contentType: 'Event' } },
-            {
-                uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: { createContentletFromPalette } as never,
-                inlineEditingService: null,
-                contentWindow: null,
-                host: 'http://localhost',
-                onCopyContent: jest.fn()
-            }
-        );
-
-        expect(createContentletFromPalette).toHaveBeenCalledWith({
-            variable: 'Event',
-            name: 'Event',
-            language_id: 1
+        expect(contentWindow.scrollTo).toHaveBeenCalledWith({
+            top: 450,
+            left: 0,
+            behavior: 'smooth'
         });
+    });
+
+    it('should scroll to the top of the page when the SDK reports a negative offset', () => {
+        const contentWindow = { scrollTo: vi.fn() } as unknown as Window;
+
+        handleSectionOffset(-100, contentWindow);
+
+        expect(contentWindow.scrollTo).toHaveBeenCalledWith({
+            top: 0,
+            left: 0,
+            behavior: 'smooth'
+        });
+    });
+
+    it('should do nothing when the iframe window is unavailable', () => {
+        expect(() => handleSectionOffset(450, null)).not.toThrow();
     });
 
     describe('NAVIGATION_UPDATE', () => {
         it('should call pageLoad when navigating to a different page', () => {
-            const pageLoad = jest.fn();
+            const pageLoad = vi.fn();
             const mockStore = {
                 ...buildMockStore(),
-                pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                pageParams: vi.fn().mockReturnValue({ url: '/home' }),
                 pageLoad
             };
 
@@ -284,11 +322,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                 },
                 {
                     uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                    dialog: null,
                     inlineEditingService: null,
                     contentWindow: null,
                     host: 'http://localhost',
-                    onCopyContent: jest.fn()
+                    onCopyContent: vi.fn()
                 }
             );
 
@@ -299,10 +336,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
         });
 
         it('should call pageLoad when navigating to a different page with hash', () => {
-            const pageLoad = jest.fn();
+            const pageLoad = vi.fn();
             const mockStore = {
                 ...buildMockStore(),
-                pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                pageParams: vi.fn().mockReturnValue({ url: '/home' }),
                 pageLoad
             };
 
@@ -313,11 +350,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                 },
                 {
                     uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                    dialog: null,
                     inlineEditingService: null,
                     contentWindow: null,
                     host: 'http://localhost',
-                    onCopyContent: jest.fn()
+                    onCopyContent: vi.fn()
                 }
             );
 
@@ -328,11 +364,11 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
 
         describe('same-page navigation', () => {
             it('should not call pageLoad for hash-only navigation on same page', () => {
-                const pageLoad = jest.fn();
-                const setEditorState = jest.fn();
+                const pageLoad = vi.fn();
+                const setEditorState = vi.fn();
                 const mockStore = {
                     ...buildMockStore(),
-                    pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                    pageParams: vi.fn().mockReturnValue({ url: '/home' }),
                     pageLoad,
                     setEditorState
                 };
@@ -344,11 +380,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
-                        onCopyContent: jest.fn()
+                        onCopyContent: vi.fn()
                     }
                 );
 
@@ -357,10 +392,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
             });
 
             it('should not call pageLoad for hash with full path on same page', () => {
-                const pageLoad = jest.fn();
+                const pageLoad = vi.fn();
                 const mockStore = {
                     ...buildMockStore(),
-                    pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                    pageParams: vi.fn().mockReturnValue({ url: '/home' }),
                     pageLoad
                 };
 
@@ -371,11 +406,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
-                        onCopyContent: jest.fn()
+                        onCopyContent: vi.fn()
                     }
                 );
 
@@ -383,10 +417,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
             });
 
             it('should not call pageLoad for query-only navigation on same page', () => {
-                const pageLoad = jest.fn();
+                const pageLoad = vi.fn();
                 const mockStore = {
                     ...buildMockStore(),
-                    pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                    pageParams: vi.fn().mockReturnValue({ url: '/home' }),
                     pageLoad
                 };
 
@@ -397,11 +431,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
-                        onCopyContent: jest.fn()
+                        onCopyContent: vi.fn()
                     }
                 );
 
@@ -409,10 +442,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
             });
 
             it('should not call pageLoad for multiple query params on same page', () => {
-                const pageLoad = jest.fn();
+                const pageLoad = vi.fn();
                 const mockStore = {
                     ...buildMockStore(),
-                    pageParams: jest.fn().mockReturnValue({ url: '/search' }),
+                    pageParams: vi.fn().mockReturnValue({ url: '/search' }),
                     pageLoad
                 };
 
@@ -423,11 +456,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
-                        onCopyContent: jest.fn()
+                        onCopyContent: vi.fn()
                     }
                 );
 
@@ -435,12 +467,12 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
             });
 
             it('should not call pageLoad or setEditorState when both hash and query are present on same page', () => {
-                const pageLoad = jest.fn();
-                const setEditorState = jest.fn();
+                const pageLoad = vi.fn();
+                const setEditorState = vi.fn();
                 const mockStore = {
                     ...buildMockStore(),
                     setEditorState,
-                    pageParams: jest.fn().mockReturnValue({ url: '/home' }),
+                    pageParams: vi.fn().mockReturnValue({ url: '/home' }),
                     pageLoad
                 };
 
@@ -451,11 +483,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
-                        onCopyContent: jest.fn()
+                        onCopyContent: vi.fn()
                     }
                 );
 
@@ -464,10 +495,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
             });
 
             it('should handle root path hash navigation', () => {
-                const pageLoad = jest.fn();
+                const pageLoad = vi.fn();
                 const mockStore = {
                     ...buildMockStore(),
-                    pageParams: jest.fn().mockReturnValue({ url: '/' }),
+                    pageParams: vi.fn().mockReturnValue({ url: '/' }),
                     pageLoad
                 };
 
@@ -478,11 +509,10 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
-                        onCopyContent: jest.fn()
+                        onCopyContent: vi.fn()
                     }
                 );
 
@@ -511,14 +541,14 @@ describe('DotUveActionsHandlerService – REGISTER_STYLE_SCHEMAS', () => {
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createService();
         service = spectator.service;
     });
 
     it('should call setStyleSchemas on the store with the received schemas', () => {
         const mockSchemas = [{ variable: 'Banner', schema: { color: { type: 'color' } } }];
-        const setStyleSchemas = jest.fn();
+        const setStyleSchemas = vi.fn();
         const mockStore = { ...buildMockStore(), setStyleSchemas };
 
         service.handleAction(
@@ -528,15 +558,222 @@ describe('DotUveActionsHandlerService – REGISTER_STYLE_SCHEMAS', () => {
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
         expect(setStyleSchemas).toHaveBeenCalledWith(mockSchemas);
+    });
+});
+
+describe('DotUveActionsHandlerService – EDIT_CONTENTLET', () => {
+    let spectator: SpectatorService<DotUveActionsHandlerService>;
+    let service: DotUveActionsHandlerService;
+    let dispatcher: SpyObject<Dispatcher>;
+
+    const createService = createServiceFactory({
+        service: DotUveActionsHandlerService,
+        providers: [
+            Dispatcher,
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotMessageService),
+            mockProvider(MessageService),
+            mockProvider(DotCopyContentModalService),
+            { provide: UVEStore, useValue: buildMockStore() }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        service = spectator.service;
+        dispatcher = spectator.inject(Dispatcher);
+        vi.spyOn(dispatcher, 'dispatch');
+    });
+
+    it("should ask the content editor to edit the client's contentlet", () => {
+        // The same request every other edit sends: the content editor picks the editor from the
+        // content type, so the SDK's editContentlet() no longer forces the legacy dialog.
+        const contentlet = createFakeContentlet({ inode: 'sdk-inode', contentType: 'Blog' });
+
+        service.handleAction(
+            { action: DotCMSUVEAction.EDIT_CONTENTLET, payload: contentlet },
+            {
+                uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
+                // Not used by EDIT_CONTENTLET.
+                inlineEditingService: {} as InlineEditService,
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: vi.fn()
+            }
+        );
+
+        expect(dispatcher.dispatch).toHaveBeenCalledWith(
+            uveContentEditorEvents.uveEditContentRequested({ contentlet }),
+            { scope: 'self' }
+        );
+    });
+
+    it('should not ask the content editor to edit the contentlet when the user cannot edit content', () => {
+        // Preview or live mode, or no edit permission on the page. The SDK sends the request
+        // without checking either, so the page's request has to open nothing here.
+        const uveStore = buildMockStore();
+        uveStore.editorCanEditContent.set(false);
+
+        service.handleAction(
+            {
+                action: DotCMSUVEAction.EDIT_CONTENTLET,
+                payload: createFakeContentlet({ inode: 'sdk-inode', contentType: 'Blog' })
+            },
+            {
+                uveStore: uveStore as unknown as InstanceType<typeof UVEStore>,
+                // Not used by EDIT_CONTENTLET.
+                inlineEditingService: {} as InlineEditService,
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: vi.fn()
+            }
+        );
+
+        expect(dispatcher.dispatch).not.toHaveBeenCalled();
+    });
+});
+
+describe('DotUveActionsHandlerService – CREATE_CONTENTLET', () => {
+    let spectator: SpectatorService<DotUveActionsHandlerService>;
+    let service: DotUveActionsHandlerService;
+    let dispatcher: SpyObject<Dispatcher>;
+
+    const createService = createServiceFactory({
+        service: DotUveActionsHandlerService,
+        providers: [
+            Dispatcher,
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotMessageService),
+            mockProvider(MessageService),
+            mockProvider(DotCopyContentModalService),
+            { provide: UVEStore, useValue: buildMockStore() }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        service = spectator.service;
+        dispatcher = spectator.inject(Dispatcher);
+        vi.spyOn(dispatcher, 'dispatch');
+    });
+
+    it('should ask the content editor to create a contentlet of the content type', () => {
+        // The same request a palette drop sends, without a container position: the contentlet is
+        // only created, and the page reloads once it is saved. The content editor picks the
+        // editor from the content type, so the SDK's createContentlet() no longer forces the
+        // legacy dialog.
+        service.handleAction(
+            { action: DotCMSUVEAction.CREATE_CONTENTLET, payload: { contentType: 'Event' } },
+            {
+                uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
+                // Not used by CREATE_CONTENTLET.
+                inlineEditingService: {} as InlineEditService,
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: vi.fn()
+            }
+        );
+
+        expect(dispatcher.dispatch).toHaveBeenCalledWith(
+            uveContentEditorEvents.uveCreateContentRequested({
+                contentType: { variable: 'Event', name: 'Event' }
+            }),
+            { scope: 'self' }
+        );
+    });
+
+    it('should not ask the content editor to create a contentlet when the user cannot edit content', () => {
+        // Preview or live mode, or no edit permission on the page.
+        const uveStore = buildMockStore();
+        uveStore.editorCanEditContent.set(false);
+
+        service.handleAction(
+            { action: DotCMSUVEAction.CREATE_CONTENTLET, payload: { contentType: 'Event' } },
+            {
+                uveStore: uveStore as unknown as InstanceType<typeof UVEStore>,
+                // Not used by CREATE_CONTENTLET.
+                inlineEditingService: {} as InlineEditService,
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: vi.fn()
+            }
+        );
+
+        expect(dispatcher.dispatch).not.toHaveBeenCalled();
+    });
+});
+
+describe('DotUveActionsHandlerService – REORDER_MENU', () => {
+    let spectator: SpectatorService<DotUveActionsHandlerService>;
+    let service: DotUveActionsHandlerService;
+    let dispatcher: SpyObject<Dispatcher>;
+
+    const createService = createServiceFactory({
+        service: DotUveActionsHandlerService,
+        providers: [
+            Dispatcher,
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotMessageService),
+            mockProvider(MessageService),
+            mockProvider(DotCopyContentModalService),
+            { provide: UVEStore, useValue: buildMockStore() }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        service = spectator.service;
+        dispatcher = spectator.inject(Dispatcher);
+        vi.spyOn(dispatcher, 'dispatch');
+    });
+
+    it("should ask the content editor to open the menu reorder for the client's start level and depth", () => {
+        // The content editor owns the legacy dialog, and builds the reorder screen's URL from the
+        // page it shows.
+        service.handleAction(
+            { action: DotCMSUVEAction.REORDER_MENU, payload: { startLevel: 1, depth: 2 } },
+            {
+                uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
+                // Not used by REORDER_MENU.
+                inlineEditingService: {} as InlineEditService,
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: vi.fn()
+            }
+        );
+
+        expect(dispatcher.dispatch).toHaveBeenCalledWith(
+            uveContentEditorEvents.uveReorderMenuRequested({ startLevel: 1, depth: 2 }),
+            { scope: 'self' }
+        );
+    });
+
+    it('should not ask the content editor to open the menu reorder when the user cannot edit content', () => {
+        // Preview or live mode, or no edit permission on the page.
+        const uveStore = buildMockStore();
+        uveStore.editorCanEditContent.set(false);
+
+        service.handleAction(
+            { action: DotCMSUVEAction.REORDER_MENU, payload: { startLevel: 1, depth: 2 } },
+            {
+                uveStore: uveStore as unknown as InstanceType<typeof UVEStore>,
+                // Not used by REORDER_MENU.
+                inlineEditingService: {} as InlineEditService,
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: vi.fn()
+            }
+        );
+
+        expect(dispatcher.dispatch).not.toHaveBeenCalled();
     });
 });
 
@@ -560,9 +797,9 @@ describe('DotUveActionsHandlerService – CLIENT_READY', () => {
 
     const buildClientReadyStore = (isClientReady: boolean) => ({
         ...buildMockStore(),
-        isClientReady: jest.fn().mockReturnValue(isClientReady),
-        setCustomClient: jest.fn(),
-        setIsClientReady: jest.fn()
+        isClientReady: vi.fn().mockReturnValue(isClientReady),
+        setCustomClient: vi.fn(),
+        setIsClientReady: vi.fn()
     });
 
     const CLIENT_READY_PAYLOAD = {
@@ -574,15 +811,14 @@ describe('DotUveActionsHandlerService – CLIENT_READY', () => {
 
     const buildDeps = (mockStore: ReturnType<typeof buildClientReadyStore>) => ({
         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-        dialog: null,
         inlineEditingService: null,
         contentWindow: null,
         host: 'http://localhost',
-        onCopyContent: jest.fn()
+        onCopyContent: vi.fn()
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createService();
         service = spectator.service;
     });
@@ -665,7 +901,7 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
             payload: { contentlet: { inode: INODE }, container: { identifier: 'container-1' } }
         }),
         pageType: signal(pageType),
-        getCurrentTreeNode: jest.fn().mockReturnValue({})
+        getCurrentTreeNode: vi.fn().mockReturnValue({})
     });
 
     const buildDataset = (inode: string) => ({
@@ -673,7 +909,7 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
     });
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         spectator = createService();
         service = spectator.service;
     });
@@ -681,7 +917,7 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
     it('should move focus to the clicked field without re-opening the copy dialog when switching fields on the same contentlet (headless)', () => {
         const mockStore = buildInlineEditingStore(PageType.HEADLESS);
         const copyModal = spectator.inject(DotCopyContentModalService);
-        const contentWindow = { postMessage: jest.fn() } as unknown as Window;
+        const contentWindow = { postMessage: vi.fn() } as unknown as Window;
 
         service.handleAction(
             {
@@ -690,11 +926,10 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
                 contentWindow,
                 host: HOST,
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
@@ -718,8 +953,8 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
         const mockStore = buildInlineEditingStore(PageType.TRADITIONAL);
         const copyModal = spectator.inject(DotCopyContentModalService);
         const inlineEditingService = {
-            setTargetInlineMCEDataset: jest.fn(),
-            initEditor: jest.fn()
+            setTargetInlineMCEDataset: vi.fn(),
+            initEditor: vi.fn()
         } as unknown as InlineEditService;
 
         service.handleAction(
@@ -729,11 +964,10 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService,
                 contentWindow: null,
                 host: HOST,
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
@@ -751,7 +985,7 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
     it('should ignore the click when already inline-editing a different contentlet', () => {
         const mockStore = buildInlineEditingStore(PageType.HEADLESS);
         const copyModal = spectator.inject(DotCopyContentModalService);
-        const contentWindow = { postMessage: jest.fn() } as unknown as Window;
+        const contentWindow = { postMessage: vi.fn() } as unknown as Window;
 
         service.handleAction(
             {
@@ -760,15 +994,156 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
                 contentWindow,
                 host: HOST,
-                onCopyContent: jest.fn()
+                onCopyContent: vi.fn()
             }
         );
 
         expect(copyModal.open).not.toHaveBeenCalled();
         expect(contentWindow.postMessage).not.toHaveBeenCalled();
+    });
+});
+
+describe('DotUveActionsHandlerService – INIT_INLINE_EDITING permission gate (#37376)', () => {
+    let spectator: SpectatorService<DotUveActionsHandlerService>;
+    let service: DotUveActionsHandlerService;
+    let messageService: MessageService;
+    let dispatcher: SpyObject<Dispatcher>;
+    let inlineEditingService: { initEditor: Mock };
+
+    /** The Block Editor field the user clicked. */
+    const BLOCK_EDITOR_FIELD: DotCMSInlineEditingPayload = {
+        inode: 'inode-123',
+        fieldName: 'body',
+        language: 1,
+        contentType: 'Blog',
+        content: { type: 'doc', content: [] }
+    };
+
+    /** Whether the content editor was asked to open the block editor sidebar on that field. */
+    const expectBlockEditorRequested = () =>
+        expect(dispatcher.dispatch).toHaveBeenCalledWith(
+            uveContentEditorEvents.uveEditBlockEditorFieldRequested(BLOCK_EDITOR_FIELD),
+            { scope: 'self' }
+        );
+
+    const createService = createServiceFactory({
+        service: DotUveActionsHandlerService,
+        providers: [
+            Dispatcher,
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotMessageService, { get: (key: string) => key }),
+            mockProvider(MessageService),
+            mockProvider(DotCopyContentModalService),
+            { provide: UVEStore, useValue: buildMockStore() }
+        ]
+    });
+
+    /**
+     * Build an iframe-like document containing one contentlet wrapper with the
+     * given permission, mirroring what the Velocity container renderer emits.
+     */
+    const buildContentWindow = (canEdit?: string): Window => {
+        const doc = document.implementation.createHTMLDocument('iframe');
+        const wrapper = doc.createElement('div');
+        wrapper.dataset['dotObject'] = 'contentlet';
+        wrapper.dataset['dotInode'] = 'inode-123';
+        if (canEdit !== undefined) {
+            wrapper.dataset['dotCanEdit'] = canEdit;
+        }
+
+        const field = doc.createElement('div');
+        field.dataset['inode'] = 'inode-123';
+        field.dataset['fieldName'] = 'body';
+        wrapper.appendChild(field);
+        doc.body.appendChild(wrapper);
+
+        return { document: doc } as unknown as Window;
+    };
+
+    /**
+     * A cross-origin iframe's window, as the browser exposes it to the parent:
+     * reading `document` throws a SecurityError instead of returning null.
+     */
+    const buildCrossOriginContentWindow = (): Window =>
+        Object.defineProperty({ postMessage: vi.fn() }, 'document', {
+            get: () => {
+                throw new DOMException(
+                    "Failed to read a named property 'document' from 'Window'",
+                    'SecurityError'
+                );
+            }
+        }) as unknown as Window;
+
+    const fireBlockEditor = (
+        canEdit?: string,
+        contentWindow: Window = buildContentWindow(canEdit)
+    ) => {
+        service.handleAction(
+            {
+                action: DotCMSUVEAction.INIT_INLINE_EDITING,
+                payload: { type: 'BLOCK_EDITOR', data: BLOCK_EDITOR_FIELD }
+            } as never,
+            {
+                uveStore: buildMockStore() as never,
+                inlineEditingService: inlineEditingService as never,
+                contentWindow,
+                host: 'http://localhost',
+                onCopyContent: () => of({}) as never
+            }
+        );
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        spectator = createService();
+        service = spectator.service;
+        messageService = spectator.inject(MessageService);
+        dispatcher = spectator.inject(Dispatcher);
+        vi.spyOn(dispatcher, 'dispatch');
+        inlineEditingService = { initEditor: vi.fn() };
+    });
+
+    it('should not ask to open the block editor sidebar for a contentlet the user cannot edit', () => {
+        fireBlockEditor('false');
+
+        expect(dispatcher.dispatch).not.toHaveBeenCalled();
+    });
+
+    it('should tell the user why with a toast instead of failing silently', () => {
+        // An inline field has no control to grey out and no hover target for a
+        // tooltip. A click that does nothing reads as a broken editor and
+        // becomes a support ticket, so the refusal must be visible.
+        fireBlockEditor('false');
+
+        expect(messageService.add).toHaveBeenCalledWith(
+            expect.objectContaining({ detail: 'uve.contentlet.no.edit.permission' })
+        );
+    });
+
+    it('should ask the content editor to open the block editor sidebar on the field when the user can edit', () => {
+        fireBlockEditor('true');
+
+        expectBlockEditorRequested();
+        expect(messageService.add).not.toHaveBeenCalled();
+    });
+
+    it('should ask the content editor to open the block editor sidebar when the permission attribute is absent', () => {
+        // Headless pages never emit the attribute; fail open.
+        fireBlockEditor(undefined);
+
+        expectBlockEditorRequested();
+    });
+
+    it('should ask the content editor to open the block editor sidebar when the iframe is cross-origin (#37820)', () => {
+        // Headless apps are served from another origin, so the iframe document
+        // cannot be read. That must fail open like a missing attribute, not
+        // throw and leave the click doing nothing.
+        expect(() => fireBlockEditor(undefined, buildCrossOriginContentWindow())).not.toThrow();
+
+        expectBlockEditorRequested();
+        expect(messageService.add).not.toHaveBeenCalled();
     });
 });

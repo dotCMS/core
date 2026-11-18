@@ -1,4 +1,4 @@
-import { createDotCMSClient } from '@dotcms/client';
+import type { createDotCMSClient } from '@dotcms/client';
 import {
     DotCMSAISearchContentletData,
     DotCMSAISearchParams,

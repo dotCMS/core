@@ -1,4 +1,4 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 
 import { BUNDLE_STATE, BundleMap } from './bundle-map.model';
 import { DotOsgiService } from './dot-osgi.service';

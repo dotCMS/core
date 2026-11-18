@@ -1,4 +1,4 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 
 import { DotFolder, DotFolderEntity, DotPagination, FolderSearchView } from '@dotcms/dotcms-models';
 import { createFakeFolder } from '@dotcms/utils-testing';
@@ -27,6 +27,42 @@ describe('DotFolderService', () => {
 
     beforeEach(() => {
         spectator = createHttp();
+    });
+
+    // A folder named only by its identifier, as a Content Drive `editFolder` link does (#37759,
+    // FR-031). Looked up by id, never through the deprecated `byPath` (ADR-0020).
+    describe('getFolderById', () => {
+        it('should read the folder from GET /api/v1/folder/{id}', () =>
+            new Promise<void>((done) => {
+                const bean = {
+                    identifier: 'folder-1',
+                    inode: 'folder-inode-1',
+                    name: 'blog',
+                    title: 'Blog',
+                    path: '/blog/',
+                    hostId: 'site-1',
+                    sortOrder: 2,
+                    showOnMenu: true,
+                    filesMasks: '*.jpg',
+                    defaultFileType: 'FileAsset',
+                    defaultBaseType: null
+                };
+
+                spectator.service.getFolderById('folder-1').subscribe((folder) => {
+                    expect(folder).toEqual(bean);
+                    done();
+                });
+
+                spectator
+                    .expectOne('/api/v1/folder/folder-1', HttpMethod.GET)
+                    .flush({ entity: bean });
+            }));
+
+        it('should encode the identifier into the path', () => {
+            spectator.service.getFolderById('a/b c').subscribe();
+
+            spectator.expectOne('/api/v1/folder/a%2Fb%20c', HttpMethod.GET);
+        });
     });
 
     describe('getFolders', () => {

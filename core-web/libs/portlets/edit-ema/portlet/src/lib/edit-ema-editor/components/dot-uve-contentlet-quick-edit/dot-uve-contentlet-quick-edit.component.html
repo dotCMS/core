@@ -12,7 +12,7 @@
             [data]="data()"
             [fields]="$fields()"
             [loading]="loading()"
-            (openFullEditor)="openFullEditor.emit()"
+            (openFullEditor)="openFullEditor()"
             (closed)="closePanel()" />
     }
     @case ('empty') {
@@ -25,6 +25,16 @@
             </div>
             <p class="m-0 text-sm text-gray-800">
                 {{ 'uve.quick-edit.empty.empty-container.description' | dm }}
+            </p>
+        </div>
+    }
+    @case ('no-permission') {
+        <div
+            data-testid="quick-edit-no-permission"
+            class="flex size-full flex-col items-center justify-center gap-3 px-6 text-center">
+            <span class="material-symbols-outlined text-[5rem]! text-gray-300">lock</span>
+            <p class="m-0 text-sm text-gray-800">
+                {{ 'uve.contentlet.no.edit.permission' | dm }}
             </p>
         </div>
     }
@@ -44,7 +54,7 @@
                 size="small"
                 [label]="'uve.quick-edit.empty.no-fields.open-full-editor' | dm"
                 data-testid="empty-open-full-editor-button"
-                (onClick)="openFullEditor.emit()" />
+                (onClick)="openFullEditor()" />
         </div>
     }
     @default {

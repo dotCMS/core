@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
+import { signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
@@ -15,7 +17,9 @@ import {
     DotMessageService,
     DotRouterService
 } from '@dotcms/data-access';
-import { Auth, DotcmsConfigService, LoginService, User } from '@dotcms/dotcms-js';
+import { Auth, LoginService, User } from '@dotcms/dotcms-js';
+import { DotSystemConfig } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 
 import { DotMyAccountComponent } from './dot-my-account.component';
 
@@ -66,20 +70,102 @@ describe('DotMyAccountComponent', () => {
             mockProvider(DotHttpErrorManagerService, {
                 handle: () => of({})
             }),
-            mockProvider(DotcmsConfigService, {
-                getConfig: () =>
-                    of({ emailRegex: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$' })
-            }),
+            {
+                provide: GlobalStore,
+                useValue: {
+                    waitForSessionReady: vi.fn(() => of(void 0)),
+                    systemConfig: signal({
+                        emailRegex: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$'
+                    })
+                }
+            },
             mockProvider(ConfirmationService)
         ]
     });
 
-    beforeEach(() => {
+    function initializeComponent(): void {
         spectator = createComponent();
         component = spectator.component;
+    }
+
+    describe('Configuration recovery', () => {
+        const regex = '^[^@]+@dotcms\\.com$';
+        let $systemConfig: ReturnType<typeof signal<DotSystemConfig | null>>;
+        let waitForSessionReady: ReturnType<typeof vi.fn>;
+
+        beforeEach(() => {
+            $systemConfig = signal<DotSystemConfig | null>(null);
+            waitForSessionReady = vi.fn(() => of(void 0));
+            spectator = createComponent({
+                providers: [
+                    {
+                        provide: GlobalStore,
+                        useValue: { systemConfig: $systemConfig, waitForSessionReady }
+                    }
+                ]
+            });
+            component = spectator.component;
+        });
+
+        it('installs email validation when the shared store recovers after a configuration failure', () => {
+            const emailControl = component.form.get('email');
+            if (!emailControl) {
+                throw new Error('Email control must exist');
+            }
+            emailControl.setValue('invalid-email');
+            expect(emailControl.valid).toBe(true);
+
+            $systemConfig.set({ emailRegex: regex } as DotSystemConfig);
+            spectator.detectChanges();
+
+            expect(component.emailRegex).toBe(regex);
+            expect(emailControl.hasError('pattern')).toBe(true);
+            emailControl.setValue('admin@dotcms.com');
+            expect(emailControl.valid).toBe(true);
+            emailControl.setValue('');
+            expect(emailControl.hasError('required')).toBe(true);
+        });
+
+        it('retries shared configuration once per opening without requiring route navigation', () => {
+            expect(waitForSessionReady).not.toHaveBeenCalled();
+            spectator.setInput('visible', true);
+            spectator.detectChanges();
+            expect(waitForSessionReady).toHaveBeenCalledOnce();
+            spectator.detectChanges();
+            expect(waitForSessionReady).toHaveBeenCalledOnce();
+            spectator.setInput('visible', false);
+            spectator.detectChanges();
+            waitForSessionReady.mockImplementation(() => {
+                $systemConfig.set({ emailRegex: regex } as DotSystemConfig);
+                return of(void 0);
+            });
+            spectator.setInput('visible', true);
+            spectator.detectChanges();
+            expect(waitForSessionReady).toHaveBeenCalledTimes(2);
+            component.form.get('email')?.setValue('invalid-email');
+            expect(component.form.get('email')?.hasError('pattern')).toBe(true);
+        });
+
+        it('retains the installed validator when a later configuration refresh fails', () => {
+            $systemConfig.set({ emailRegex: regex } as DotSystemConfig);
+            spectator.detectChanges();
+            $systemConfig.set(null);
+            spectator.detectChanges();
+            component.form.get('email')?.setValue('invalid-email');
+            expect(component.form.get('email')?.hasError('pattern')).toBe(true);
+            expect(component.emailRegex).toBe(regex);
+        });
+
+        it('stops reacting to configuration after destruction', () => {
+            spectator.fixture.destroy();
+            $systemConfig.set({ emailRegex: regex } as DotSystemConfig);
+            spectator.flushEffects();
+            expect(component.emailRegex).toBe('');
+        });
     });
 
     describe('Dialog Visibility', () => {
+        beforeEach(initializeComponent);
         it('should be hidden by default', () => {
             // Check that the dialog has visible=false
             expect(component.visible()).toBe(false);
@@ -108,7 +194,7 @@ describe('DotMyAccountComponent', () => {
         });
 
         it('should emit shutdown when dialog is closed', () => {
-            jest.spyOn(component.shutdown, 'emit');
+            vi.spyOn(component.shutdown, 'emit');
             component.visible.set(true);
             spectator.detectChanges();
 
@@ -118,6 +204,7 @@ describe('DotMyAccountComponent', () => {
     });
 
     describe('Form Fields', () => {
+        beforeEach(initializeComponent);
         beforeEach(() => {
             component.visible.set(true);
             spectator.detectChanges();
@@ -199,6 +286,7 @@ describe('DotMyAccountComponent', () => {
     });
 
     describe('Password Change', () => {
+        beforeEach(initializeComponent);
         beforeEach(() => {
             component.visible.set(true);
             spectator.detectChanges();
@@ -275,6 +363,7 @@ describe('DotMyAccountComponent', () => {
     });
 
     describe('Starter Checkbox', () => {
+        beforeEach(initializeComponent);
         beforeEach(() => {
             component.visible.set(true);
             spectator.detectChanges();
@@ -282,7 +371,7 @@ describe('DotMyAccountComponent', () => {
 
         it('should call addStarterPage when checkbox is checked', () => {
             const accountService = spectator.inject(DotAccountService);
-            jest.spyOn(accountService, 'addStarterPage').mockReturnValue(of('') as any);
+            vi.spyOn(accountService, 'addStarterPage').mockReturnValue(of('') as any);
 
             // First set showStarter to false
             component.showStarter.set(false);
@@ -298,7 +387,7 @@ describe('DotMyAccountComponent', () => {
 
         it('should call removeStarterPage when checkbox is unchecked', () => {
             const accountService = spectator.inject(DotAccountService);
-            jest.spyOn(accountService, 'removeStarterPage').mockReturnValue(of('') as any);
+            vi.spyOn(accountService, 'removeStarterPage').mockReturnValue(of('') as any);
 
             // First set showStarter to true
             component.showStarter.set(true);
@@ -314,6 +403,7 @@ describe('DotMyAccountComponent', () => {
     });
 
     describe('Form Submission', () => {
+        beforeEach(initializeComponent);
         beforeEach(() => {
             component.visible.set(true);
             spectator.detectChanges();
@@ -325,10 +415,10 @@ describe('DotMyAccountComponent', () => {
             const loginService = spectator.inject(LoginService);
 
             // Spy on updateUser and setAuth methods
-            const updateUserSpy = jest
+            const updateUserSpy = vi
                 .spyOn(accountService, 'updateUser')
                 .mockReturnValue(of({ user: mockUser, reauthenticate: false }) as any);
-            const setAuthSpy = jest.spyOn(loginService, 'setAuth');
+            const setAuthSpy = vi.spyOn(loginService, 'setAuth');
 
             // Fill form with valid data
             component.form.patchValue({
@@ -370,16 +460,42 @@ describe('DotMyAccountComponent', () => {
             // Verify setAuth was called with correct data
             expect(setAuthSpy).toHaveBeenCalledWith({
                 loginAsUser: null,
-                user: mockUser
+                user: mockUser,
+                sessionLanguageId: loginService.sessionLanguageId
             });
 
             // Verify form status was reset
             expect(component.formStatus()).not.toBe('saving');
         }));
 
+        it('should preserve the selected session locale when updating the user', () => {
+            const loginService = spectator.inject(LoginService);
+            const updatedUser = { ...mockUser, languageId: 'en_US' };
+            vi.spyOn(loginService, 'sessionLanguageId', 'get').mockReturnValue('es_ES');
+            vi.spyOn(spectator.inject(DotAccountService), 'updateUser').mockReturnValue(
+                of({ user: updatedUser, userID: updatedUser.userId, reauthenticate: false })
+            );
+            const setAuthSpy = vi.spyOn(loginService, 'setAuth');
+            component.form.patchValue({
+                userId: '1',
+                givenName: 'John',
+                surname: 'Doe',
+                email: 'john@doe.com',
+                currentPassword: 'currentPass'
+            });
+
+            component.save();
+
+            expect(setAuthSpy).toHaveBeenCalledExactlyOnceWith({
+                loginAsUser: null,
+                user: updatedUser,
+                sessionLanguageId: 'es_ES'
+            });
+        });
+
         it('should handle current password error', fakeAsync(() => {
             const accountService = spectator.inject(DotAccountService);
-            jest.spyOn(accountService, 'updateUser').mockReturnValue(
+            vi.spyOn(accountService, 'updateUser').mockReturnValue(
                 throwError(() => ({
                     status: 400,
                     error: {
@@ -433,7 +549,7 @@ describe('DotMyAccountComponent', () => {
 
         it('should handle new password error', fakeAsync(() => {
             const accountService = spectator.inject(DotAccountService);
-            jest.spyOn(accountService, 'updateUser').mockReturnValue(
+            vi.spyOn(accountService, 'updateUser').mockReturnValue(
                 throwError(() => ({
                     status: 400,
                     error: {
@@ -494,7 +610,7 @@ describe('DotMyAccountComponent', () => {
         it('should handle generic error', fakeAsync(() => {
             const accountService = spectator.inject(DotAccountService);
             const errorService = spectator.inject(DotHttpErrorManagerService);
-            jest.spyOn(accountService, 'updateUser').mockReturnValue(
+            vi.spyOn(accountService, 'updateUser').mockReturnValue(
                 throwError(() => ({
                     status: 500,
                     error: {
@@ -507,7 +623,7 @@ describe('DotMyAccountComponent', () => {
                     }
                 }))
             );
-            jest.spyOn(errorService, 'handle').mockReturnValue(
+            vi.spyOn(errorService, 'handle').mockReturnValue(
                 of({ redirected: false, status: 500 }) as any
             );
 
@@ -544,10 +660,10 @@ describe('DotMyAccountComponent', () => {
         it('should handle reauthentication requirement', fakeAsync(() => {
             const accountService = spectator.inject(DotAccountService);
             const routerService = spectator.inject(DotRouterService);
-            jest.spyOn(accountService, 'updateUser').mockReturnValue(
+            vi.spyOn(accountService, 'updateUser').mockReturnValue(
                 of({ user: mockUser, reauthenticate: true }) as any
             );
-            jest.spyOn(routerService, 'doLogOut');
+            vi.spyOn(routerService, 'doLogOut');
 
             // Fill form with valid data
             component.form.patchValue({

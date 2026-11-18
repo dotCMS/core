@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createComponentFactory, mockProvider, Spectator, byTestId } from '@openng/spectator/jest';
+import {
+    createComponentFactory,
+    mockProvider,
+    Spectator,
+    byTestId
+} from '@openng/spectator/vitest';
 import { of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { signal, WritableSignal } from '@angular/core';
 
@@ -12,7 +18,6 @@ import { DotUveIframeComponent } from './dot-uve-iframe.component';
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
-import { SDK_EDITOR_SCRIPT_SOURCE } from '../../../utils/ema-legacy-script-injection';
 
 describe('DotUveIframeComponent', () => {
     let spectator: Spectator<DotUveIframeComponent>;
@@ -25,7 +30,6 @@ describe('DotUveIframeComponent', () => {
     let pageTypeSignal: WritableSignal<PageType>;
     let pageRenderSignal: WritableSignal<string>;
     let editorEnableInlineEditSignal: WritableSignal<boolean>;
-    let legacyScriptInjectionEnabledSignal: WritableSignal<boolean>;
 
     const mockPageRender = '<html><head></head><body>Test Content</body></html>';
     const mockSeoResults: SeoMetaTagsResult[] = [
@@ -49,14 +53,14 @@ describe('DotUveIframeComponent', () => {
         component: DotUveIframeComponent,
         providers: [
             mockProvider(DotSeoMetaTagsService, {
-                getMetaTagsResults: jest.fn().mockReturnValue(of(mockSeoResults))
+                getMetaTagsResults: vi.fn().mockReturnValue(of(mockSeoResults))
             }),
             mockProvider(DotSeoMetaTagsUtilService, {
-                getMetaTags: jest.fn().mockReturnValue(mockOgTags)
+                getMetaTags: vi.fn().mockReturnValue(mockOgTags)
             }),
             mockProvider(InlineEditService, {
-                injectInlineEdit: jest.fn(),
-                removeInlineEdit: jest.fn()
+                injectInlineEdit: vi.fn(),
+                removeInlineEdit: vi.fn()
             }),
             {
                 provide: UVEStore,
@@ -64,8 +68,7 @@ describe('DotUveIframeComponent', () => {
                     $pageRender: pageRenderSignal,
                     editorEnableInlineEdit: editorEnableInlineEditSignal,
                     pageType: pageTypeSignal,
-                    $isEmaLegacyScriptInjectionEnabled: legacyScriptInjectionEnabledSignal,
-                    setSeoData: jest.fn()
+                    setSeoData: vi.fn()
                 })
             }
         ]
@@ -75,7 +78,6 @@ describe('DotUveIframeComponent', () => {
         pageTypeSignal = signal(PageType.HEADLESS);
         pageRenderSignal = signal(mockPageRender);
         editorEnableInlineEditSignal = signal(false);
-        legacyScriptInjectionEnabledSignal = signal(false);
 
         spectator = createComponent({
             props: {
@@ -95,7 +97,7 @@ describe('DotUveIframeComponent', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     describe('Component Creation', () => {
@@ -167,13 +169,13 @@ describe('DotUveIframeComponent', () => {
         });
 
         it('should emit load event for HEADLESS page type', () => {
-            const loadSpy = jest.spyOn(component.load, 'emit');
+            const loadSpy = vi.spyOn(component.load, 'emit');
             component.onIframeLoad();
             expect(loadSpy).toHaveBeenCalledTimes(1);
         });
 
         it('should not insert page content for HEADLESS page type', () => {
-            const insertSpy = jest.spyOn(component as any, 'insertPageContent');
+            const insertSpy = vi.spyOn(component as any, 'insertPageContent');
             component.onIframeLoad();
             expect(insertSpy).not.toHaveBeenCalled();
         });
@@ -191,8 +193,8 @@ describe('DotUveIframeComponent', () => {
             mockIframe = document.createElement('iframe');
             mockDoc = document.implementation.createHTMLDocument();
             mockWindow = {
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn()
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn()
             } as unknown as Window;
 
             Object.defineProperty(mockIframe, 'contentDocument', {
@@ -208,19 +210,19 @@ describe('DotUveIframeComponent', () => {
         });
 
         it('should emit load event for TRADITIONAL page type', () => {
-            const loadSpy = jest.spyOn(component.load, 'emit');
+            const loadSpy = vi.spyOn(component.load, 'emit');
             component.onIframeLoad();
             expect(loadSpy).toHaveBeenCalledTimes(1);
         });
 
         it('should insert page content for TRADITIONAL page type', () => {
-            const insertSpy = jest.spyOn(component as any, 'insertPageContent');
+            const insertSpy = vi.spyOn(component as any, 'insertPageContent');
             component.onIframeLoad();
             expect(insertSpy).toHaveBeenCalledWith(mockPageRender, false);
         });
 
         it('should set SEO data for TRADITIONAL page type', () => {
-            const setSeoSpy = jest.spyOn(component as any, 'setSeoData');
+            const setSeoSpy = vi.spyOn(component as any, 'setSeoData');
             component.onIframeLoad();
             expect(setSeoSpy).toHaveBeenCalledTimes(1);
         });
@@ -235,35 +237,41 @@ describe('DotUveIframeComponent', () => {
             component.onIframeLoad();
             expect(mockIframe.srcdoc).toBe('');
         });
-
-        describe('legacy script injection (FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION)', () => {
-            it('should inject the UVE script when the flag is enabled', () => {
-                legacyScriptInjectionEnabledSignal.set(true);
-                component.onIframeLoad();
-                expect(mockIframe.srcdoc).toContain(
-                    `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
-                );
-            });
-
-            it('should NOT inject the UVE script when the flag is disabled', () => {
-                legacyScriptInjectionEnabledSignal.set(false);
-                component.onIframeLoad();
-                expect(mockIframe.srcdoc).not.toContain(
-                    `<script src="${SDK_EDITOR_SCRIPT_SOURCE}"></script>`
-                );
-            });
-        });
     });
 
     describe('handleInlineScripts', () => {
         let mockIframe: HTMLIFrameElement;
         let mockWindow: Window;
+        let captureClickHandler: ((e: MouseEvent) => void) | undefined;
+        let bubbleClickHandler: ((e: MouseEvent) => void) | undefined;
 
         beforeEach(() => {
             mockIframe = document.createElement('iframe');
+            captureClickHandler = undefined;
+            bubbleClickHandler = undefined;
+
             mockWindow = {
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn()
+                addEventListener: vi
+                    .fn()
+                    .mockImplementation(
+                        (
+                            event: string,
+                            handler: (e: MouseEvent) => void,
+                            options?: boolean | AddEventListenerOptions
+                        ) => {
+                            if (event !== 'click') return;
+
+                            const isCapture =
+                                typeof options === 'object' && options?.capture === true;
+
+                            if (isCapture) {
+                                captureClickHandler = handler;
+                            } else {
+                                bubbleClickHandler = handler;
+                            }
+                        }
+                    ),
+                removeEventListener: vi.fn()
             } as unknown as Window;
 
             Object.defineProperty(mockIframe, 'contentWindow', {
@@ -274,68 +282,325 @@ describe('DotUveIframeComponent', () => {
             component.iframe = { nativeElement: mockIframe } as any;
         });
 
+        function createClickWithTarget(element: HTMLElement): MouseEvent {
+            const ev = new MouseEvent('click', { bubbles: true });
+            Object.defineProperty(ev, 'target', { value: element, writable: false });
+            return ev;
+        }
+
         it('should subscribe to click events on iframe window', () => {
-            (mockWindow.addEventListener as jest.Mock).mockClear();
+            (mockWindow.addEventListener as Mock).mockClear();
             (component as any).handleInlineScripts(false);
             expect(mockWindow.addEventListener).toHaveBeenCalled();
-            expect((mockWindow.addEventListener as jest.Mock).mock.calls[0][0]).toBe('click');
-            expect(typeof (mockWindow.addEventListener as jest.Mock).mock.calls[0][1]).toBe(
-                'function'
-            );
+            expect((mockWindow.addEventListener as Mock).mock.calls[0][0]).toBe('click');
+            expect(typeof (mockWindow.addEventListener as Mock).mock.calls[0][1]).toBe('function');
+        });
+
+        it('should subscribe on the capture phase, not the bubble phase', () => {
+            // Capture traverses window -> document -> ... -> target, so a
+            // listener on `window` always runs first. Bubble traverses the
+            // reverse, letting a page-owned listener on a node closer to the
+            // target (e.g. `document`) run before this one regardless of
+            // registration order — the exact gap that let a page's own
+            // click-delegation script win the race and navigate the iframe
+            // natively, bypassing the SPA (dotCMS/core#37961).
+            (mockWindow.addEventListener as Mock).mockClear();
+            (component as any).handleInlineScripts(false);
+            const options = (mockWindow.addEventListener as Mock).mock.calls[0][2];
+            expect(options).toEqual(expect.objectContaining({ capture: true }));
+        });
+
+        it('should stop propagation for a click that resolves to a link', () => {
+            // Confirms the narrowed condition (QA regression fix, see below)
+            // still protects the original scenario (dotCMS/core#37961): a
+            // click that resolves to a real link — including via
+            // resolveClickedAnchor's pointer-events:none descendant fallback,
+            // e.g. a delegate wrapper around a link a page's own router
+            // treats as "this click means navigate" — must never reach the
+            // page's own bubble-phase handlers, or that handler could
+            // perform its own `location.href` navigation and bypass the SPA.
+            (component as any).handleInlineScripts(false);
+
+            const linkTarget = document.createElement('a');
+            linkTarget.setAttribute('href', '/some-page');
+            const clickEvent = createClickWithTarget(linkTarget);
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            captureClickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).toHaveBeenCalled();
+        });
+
+        it('should not stop propagation for a click that does not resolve to a link or an editable target', () => {
+            // Regression test: QA verification on dotCMS/core#37961 failed
+            // the first version of this fix — stopping every unrecognized
+            // click, not just link clicks, silenced page-owned, non-navigating
+            // UI in the editor preview. Repro'd with a real Usercentrics
+            // cookie-consent dialog: its Accept/Reject buttons stopped
+            // responding, because neither is a link nor one of this iframe's
+            // own four target types. Only a click that resolves to a link
+            // needs stopping.
+            (component as any).handleInlineScripts(false);
+
+            const plainDiv = document.createElement('div');
+            const clickEvent = createClickWithTarget(plainDiv);
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            captureClickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not stop propagation for a click on a hash-only anchor', () => {
+            // Regression test: a second QA verification round on
+            // dotCMS/core#37961 failed the link-scoped fix above — `#…`
+            // anchors never navigate anywhere, but still counted as
+            // `hasLink`, so a page's own link-shaped toggle (an inline
+            // `onclick` accordion, a Bootstrap-style `data-toggle="collapse"`
+            // delegate on `document`) never got the click.
+            // The hash branch (below the stopPropagation check) still runs
+            // and scrolls the iframe, hence the document/scrollTo stubs.
+            Object.assign(mockWindow, {
+                document: document.implementation.createHTMLDocument(),
+                scrollTo: vi.fn()
+            });
+            (component as any).handleInlineScripts(false);
+
+            const hashLink = document.createElement('a');
+            hashLink.setAttribute('href', '#panel');
+            const clickEvent = createClickWithTarget(hashLink);
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            captureClickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not stop propagation for a click on a javascript:-href anchor', () => {
+            // Same QA regression as the hash-only case above: `javascript:…`
+            // is a page's own click handler invoked via the href itself
+            // (instead of a real `onclick`/listener), not a navigation —
+            // e.g. `<a href="javascript:void(0)" onclick="toggle()">`.
+            (component as any).handleInlineScripts(false);
+
+            const jsVoidLink = document.createElement('a');
+            jsVoidLink.setAttribute('href', 'javascript:void(0)');
+            const clickEvent = createClickWithTarget(jsVoidLink);
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            captureClickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not stop propagation for a link click inside a block-editor inline-edit target', () => {
+            // Regression test for the block-editor inline-editing regression
+            // introduced while fixing dotCMS/core#37961: the `@dotcms/uve` SDK
+            // wires block-editor fields with its own bubble-phase `click`
+            // listener directly on the [data-block-editor-content] node. Since
+            // this listener runs on `window` during the capture phase — before
+            // the event ever reaches that node — stopping propagation here
+            // (even for a click that resolves to a link, e.g. one embedded in
+            // the block's rich content) would prevent the SDK's handler from
+            // ever firing, silently breaking block-editor inline editing.
+            (component as any).handleInlineScripts(false);
+
+            const blockEditorWrapper = document.createElement('div');
+            blockEditorWrapper.setAttribute('data-block-editor-content', '');
+            const embeddedLink = document.createElement('a');
+            embeddedLink.setAttribute('href', '/page');
+            blockEditorWrapper.appendChild(embeddedLink);
+            const clickEvent = createClickWithTarget(embeddedLink);
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            captureClickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not stop propagation for a link click inside a WYSIWYG [data-mode] inline-edit target', () => {
+            // Regression test: TinyMCE (configured `inline: true` in
+            // inline-edit.service.ts) binds its content click dispatch
+            // directly on the editable [data-mode] node itself
+            // (`editor.getBody()`). Stopping propagation here — even for a
+            // click that resolves to a link embedded in the field's rich
+            // text — would prevent that native click from ever reaching the
+            // editable element, breaking selection/click-reactive behavior
+            // inside the WYSIWYG field.
+            (component as any).handleInlineScripts(false);
+
+            const wysiwygWrapper = document.createElement('div');
+            wysiwygWrapper.setAttribute('data-mode', 'edit');
+            const embeddedLink = document.createElement('a');
+            embeddedLink.setAttribute('href', '/page');
+            wysiwygWrapper.appendChild(embeddedLink);
+            const clickEvent = createClickWithTarget(embeddedLink);
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            captureClickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
+        });
+
+        it("should not stop propagation for a link click on TinyMCE's own floating toolbar UI", () => {
+            // Regression test: TinyMCE's UI framework (modern skin,
+            // classPrefix "mce-") renders every control — toolbar, buttons,
+            // menus — with an id prefixed "mceu_", and that floating toolbar
+            // is appended to <body> as a SIBLING of the editable [data-mode]
+            // node, not a descendant of it. Its buttons wire native click
+            // listeners directly on themselves, so stopping propagation at
+            // the window capture phase would silently break every toolbar
+            // button (Bold, Italic, Link, etc.) even though the click never
+            // lands inside [data-mode].
+            (component as any).handleInlineScripts(false);
+
+            const toolbarButton = document.createElement('button');
+            toolbarButton.setAttribute('id', 'mceu_42');
+            const embeddedLink = document.createElement('a');
+            embeddedLink.setAttribute('href', '/page');
+            toolbarButton.appendChild(embeddedLink);
+            const clickEvent = createClickWithTarget(embeddedLink);
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            captureClickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not stop propagation for a link click on a dotCMS contentlet selection target', () => {
+            // Regression test (CRITICAL): the `@dotcms/uve` SDK's
+            // onContentletClicked() binds its own capture-phase click listener
+            // on `document.documentElement`, not `window`, to drive contentlet
+            // selection (libs/sdk/uve/src/internal/events.ts). Since capture
+            // traverses window -> document -> documentElement -> ... -> target,
+            // this component's window-level listener runs first; stopping
+            // propagation there — even for a click that resolves to a link —
+            // would prevent the SDK's listener from ever seeing the click,
+            // breaking contentlet selection on every traditional (VTL) page.
+            (component as any).handleInlineScripts(false);
+
+            const contentletWrapper = document.createElement('div');
+            contentletWrapper.setAttribute('data-dot-object', 'contentlet');
+            const embeddedLink = document.createElement('a');
+            embeddedLink.setAttribute('href', '/page');
+            contentletWrapper.appendChild(embeddedLink);
+            const clickEvent = createClickWithTarget(embeddedLink);
+            const stopPropagationSpy = vi.spyOn(clickEvent, 'stopPropagation');
+
+            captureClickHandler?.(clickEvent);
+
+            expect(stopPropagationSpy).not.toHaveBeenCalled();
+        });
+
+        it('should defer internalNav/inlineEditing for a link inside a contentlet to the bubble-phase listener', () => {
+            // Regression test (HIGH): onContentletClicked() (events.ts) selects
+            // a contentlet on the first click — calling its own
+            // preventDefault()+stopPropagation() on document.documentElement —
+            // and only lets a second click on the already-selected contentlet
+            // continue. Emitting internalNav from the capture-phase listener
+            // unconditionally for a link inside a contentlet would race ahead
+            // of that decision and navigate on the first click instead of
+            // letting the SDK select. The capture listener must stay silent for
+            // this exact case; the plain bubble-phase listener (which only
+            // ever runs after the SDK's capture listener has acted) is the one
+            // that should emit.
+            (component as any).handleInlineScripts(false);
+
+            const contentletLink = document.createElement('a');
+            contentletLink.setAttribute('href', '/blog/some-post');
+            const contentletWrapper = document.createElement('div');
+            contentletWrapper.setAttribute('data-dot-object', 'contentlet');
+            contentletWrapper.appendChild(contentletLink);
+
+            const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+            const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
+
+            captureClickHandler?.(createClickWithTarget(contentletLink));
+            expect(internalNavSpy).not.toHaveBeenCalled();
+            expect(inlineEditingSpy).not.toHaveBeenCalled();
+
+            bubbleClickHandler?.(createClickWithTarget(contentletLink));
+            expect(internalNavSpy).toHaveBeenCalledTimes(1);
+            expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('should defer to the bubble-phase listener for a pointer-events-disabled link inside a contentlet, resolving the descendant anchor', () => {
+            // Combines both fixes: a `.nav-row`-style wrapper (the click's
+            // real target, since a `pointer-events: none` anchor always
+            // hit-tests to its wrapper) nested inside a contentlet. Same
+            // defer-to-bubble timing as the plain-link case above, but the
+            // href must be resolved from the descendant anchor, not an
+            // ancestor one.
+            (component as any).handleInlineScripts(false);
+
+            const contentletLink = document.createElement('a');
+            contentletLink.setAttribute('href', '/qa-a');
+            contentletLink.style.pointerEvents = 'none';
+            const navRow = document.createElement('div');
+            navRow.className = 'nav-row';
+            navRow.appendChild(contentletLink);
+            const contentletWrapper = document.createElement('div');
+            contentletWrapper.setAttribute('data-dot-object', 'contentlet');
+            contentletWrapper.appendChild(navRow);
+
+            const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+            const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
+
+            captureClickHandler?.(createClickWithTarget(navRow));
+            expect(internalNavSpy).not.toHaveBeenCalled();
+            expect(inlineEditingSpy).not.toHaveBeenCalled();
+
+            bubbleClickHandler?.(createClickWithTarget(navRow));
+            expect(internalNavSpy).toHaveBeenCalledTimes(1);
+            expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not defer a javascript:-href anchor inside a contentlet to the bubble-phase listener', () => {
+            // The bubble-phase listener applies the same navigability check as
+            // the capture-phase one above — a `javascript:…` href inside a
+            // contentlet is page-owned UI, not a second click confirming
+            // navigation, so neither listener should ever emit for it.
+            (component as any).handleInlineScripts(false);
+
+            const contentletLink = document.createElement('a');
+            contentletLink.setAttribute('href', 'javascript:void(0)');
+            const contentletWrapper = document.createElement('div');
+            contentletWrapper.setAttribute('data-dot-object', 'contentlet');
+            contentletWrapper.appendChild(contentletLink);
+
+            const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+            const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
+
+            bubbleClickHandler?.(createClickWithTarget(contentletLink));
+
+            expect(internalNavSpy).not.toHaveBeenCalled();
+            expect(inlineEditingSpy).not.toHaveBeenCalled();
         });
 
         it('should emit internalNav on click', () => {
-            const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
-            let clickHandler: ((e: MouseEvent) => void) | undefined;
-
-            (mockWindow.addEventListener as jest.Mock).mockImplementation(
-                (event: string, handler: (e: MouseEvent) => void) => {
-                    if (event === 'click') {
-                        clickHandler = handler;
-                    }
-                }
-            );
+            const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
 
             (component as any).handleInlineScripts(false);
 
-            if (clickHandler) {
-                const linkTarget = document.createElement('a');
-                linkTarget.setAttribute('href', '/test');
-                const clickEvent = new MouseEvent('click', { bubbles: true });
-                Object.defineProperty(clickEvent, 'target', {
-                    value: linkTarget,
-                    writable: false
-                });
-                clickHandler(clickEvent);
-                expect(internalNavSpy).toHaveBeenCalledWith(clickEvent);
-            }
+            const linkTarget = document.createElement('a');
+            linkTarget.setAttribute('href', '/test');
+            const clickEvent = createClickWithTarget(linkTarget);
+            captureClickHandler?.(clickEvent);
+
+            expect(internalNavSpy).toHaveBeenCalledWith(clickEvent);
         });
 
         it('should emit inlineEditing on click', () => {
-            const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
-            let clickHandler: ((e: MouseEvent) => void) | undefined;
-
-            (mockWindow.addEventListener as jest.Mock).mockImplementation(
-                (event: string, handler: (e: MouseEvent) => void) => {
-                    if (event === 'click') {
-                        clickHandler = handler;
-                    }
-                }
-            );
+            const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
 
             (component as any).handleInlineScripts(false);
 
-            if (clickHandler) {
-                const linkTarget = document.createElement('a');
-                linkTarget.setAttribute('href', '/test');
-                const clickEvent = new MouseEvent('click', { bubbles: true });
-                Object.defineProperty(clickEvent, 'target', {
-                    value: linkTarget,
-                    writable: false
-                });
-                clickHandler(clickEvent);
-                expect(inlineEditingSpy).toHaveBeenCalledWith(clickEvent);
-            }
+            const linkTarget = document.createElement('a');
+            linkTarget.setAttribute('href', '/test');
+            const clickEvent = createClickWithTarget(linkTarget);
+            captureClickHandler?.(clickEvent);
+
+            expect(inlineEditingSpy).toHaveBeenCalledWith(clickEvent);
         });
 
         it('should inject inline edit when enabled', () => {
@@ -349,33 +614,20 @@ describe('DotUveIframeComponent', () => {
         });
 
         it('should not handle scripts if contentWindow is not available', () => {
-            (mockInlineEditService.injectInlineEdit as jest.Mock).mockClear();
+            (mockInlineEditService.injectInlineEdit as Mock).mockClear();
             component.iframe = undefined as any;
             (component as any).handleInlineScripts(true);
             expect(mockInlineEditService.injectInlineEdit).not.toHaveBeenCalled();
         });
 
         describe('click filter', () => {
-            let clickHandler: ((e: MouseEvent) => void) | undefined;
             let doc: Document;
 
             beforeEach(() => {
                 doc = document.implementation.createHTMLDocument();
-                (mockWindow.addEventListener as jest.Mock).mockImplementation(
-                    (event: string, handler: (e: MouseEvent) => void) => {
-                        if (event === 'click') {
-                            clickHandler = handler;
-                        }
-                    }
-                );
+                Object.assign(mockWindow, { document: doc, scrollTo: vi.fn(), scrollY: 0 });
                 (component as any).handleInlineScripts(false);
             });
-
-            function createClickWithTarget(element: HTMLElement): MouseEvent {
-                const ev = new MouseEvent('click', { bubbles: true });
-                Object.defineProperty(ev, 'target', { value: element, writable: false });
-                return ev;
-            }
 
             it('should emit internalNav and inlineEditing when click target is inside an anchor with href', () => {
                 const a = doc.createElement('a');
@@ -383,10 +635,10 @@ describe('DotUveIframeComponent', () => {
                 const span = doc.createElement('span');
                 a.appendChild(span);
 
-                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
-                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
 
-                clickHandler?.(createClickWithTarget(span));
+                captureClickHandler?.(createClickWithTarget(span));
 
                 expect(internalNavSpy).toHaveBeenCalledTimes(1);
                 expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
@@ -396,23 +648,82 @@ describe('DotUveIframeComponent', () => {
                 const a = doc.createElement('a');
                 a.setAttribute('href', '/page');
 
-                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
-                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
 
-                clickHandler?.(createClickWithTarget(a));
+                captureClickHandler?.(createClickWithTarget(a));
 
                 expect(internalNavSpy).toHaveBeenCalledTimes(1);
                 expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
+            });
+
+            it('should emit internalNav and inlineEditing when the click lands on a wrapper around a single pointer-events-none descendant anchor', () => {
+                // Mirrors a real pattern: an anchor styled `pointer-events: none`,
+                // with a page-authored wrapper div making it clickable instead
+                // (confirmed live in dotCMS/core#37962's follow-up: hit-testing
+                // such an anchor always resolves to the wrapper, never the
+                // anchor itself, however precisely the click lands).
+                const wrapper = doc.createElement('div');
+                const a = doc.createElement('a');
+                a.setAttribute('href', '/page');
+                a.style.pointerEvents = 'none';
+                wrapper.appendChild(a);
+
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
+
+                captureClickHandler?.(createClickWithTarget(wrapper));
+
+                expect(internalNavSpy).toHaveBeenCalledTimes(1);
+                expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
+            });
+
+            it('should not emit when the click lands on a large container that merely happens to contain one normal, clickable link', () => {
+                // Regression test (MEDIUM, review feedback on #37962): without
+                // the pointer-events check, clicking padding/whitespace inside
+                // any container with exactly one descendant anchor — a card, a
+                // section, a footer — would wrongly resolve to that anchor and
+                // navigate, even though the click landed nowhere near it and
+                // the anchor was always perfectly clickable on its own.
+                const wrapper = doc.createElement('div');
+                const a = doc.createElement('a');
+                a.setAttribute('href', '/unrelated-page');
+                wrapper.appendChild(a);
+
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
+
+                captureClickHandler?.(createClickWithTarget(wrapper));
+
+                expect(internalNavSpy).not.toHaveBeenCalled();
+                expect(inlineEditingSpy).not.toHaveBeenCalled();
+            });
+
+            it('should not emit when the click lands on a wrapper with more than one descendant anchor', () => {
+                const wrapper = doc.createElement('div');
+                const a1 = doc.createElement('a');
+                a1.setAttribute('href', '/page-1');
+                const a2 = doc.createElement('a');
+                a2.setAttribute('href', '/page-2');
+                wrapper.append(a1, a2);
+
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
+
+                captureClickHandler?.(createClickWithTarget(wrapper));
+
+                expect(internalNavSpy).not.toHaveBeenCalled();
+                expect(inlineEditingSpy).not.toHaveBeenCalled();
             });
 
             it('should emit internalNav and inlineEditing when click target has data-mode', () => {
                 const div = doc.createElement('div');
                 div.dataset.mode = 'edit';
 
-                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
-                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
 
-                clickHandler?.(createClickWithTarget(div));
+                captureClickHandler?.(createClickWithTarget(div));
 
                 expect(internalNavSpy).toHaveBeenCalledTimes(1);
                 expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
@@ -424,10 +735,10 @@ describe('DotUveIframeComponent', () => {
                 const inner = doc.createElement('span');
                 wrapper.appendChild(inner);
 
-                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
-                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
 
-                clickHandler?.(createClickWithTarget(inner));
+                captureClickHandler?.(createClickWithTarget(inner));
 
                 expect(internalNavSpy).toHaveBeenCalledTimes(1);
                 expect(inlineEditingSpy).toHaveBeenCalledTimes(1);
@@ -436,10 +747,10 @@ describe('DotUveIframeComponent', () => {
             it('should not emit when click target is a plain element (no link, no data-mode)', () => {
                 const div = doc.createElement('div');
 
-                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
-                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
 
-                clickHandler?.(createClickWithTarget(div));
+                captureClickHandler?.(createClickWithTarget(div));
 
                 expect(internalNavSpy).not.toHaveBeenCalled();
                 expect(inlineEditingSpy).not.toHaveBeenCalled();
@@ -450,26 +761,44 @@ describe('DotUveIframeComponent', () => {
                 const span = doc.createElement('span');
                 a.appendChild(span);
 
-                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
-                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
 
-                clickHandler?.(createClickWithTarget(span));
+                captureClickHandler?.(createClickWithTarget(span));
 
                 expect(internalNavSpy).not.toHaveBeenCalled();
                 expect(inlineEditingSpy).not.toHaveBeenCalled();
             });
 
-            it('should not emit for hash-only anchors (browser handles same-page scroll)', () => {
+            it('should not emit for hash-only anchors', () => {
                 const a = doc.createElement('a');
                 a.setAttribute('href', '#page-section');
 
-                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
-                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
 
-                clickHandler?.(createClickWithTarget(a));
+                captureClickHandler?.(createClickWithTarget(a));
 
                 expect(internalNavSpy).not.toHaveBeenCalled();
                 expect(inlineEditingSpy).not.toHaveBeenCalled();
+            });
+
+            // The srcdoc's base URL is the admin's, so a browser-handled
+            // "#section" would load the admin inside the canvas.
+            it('should cancel a hash-only anchor and scroll the iframe to its target', () => {
+                const target = doc.createElement('div');
+                target.id = 'page-section';
+                target.getBoundingClientRect = () => ({ top: 320 }) as DOMRect;
+                doc.body.appendChild(target);
+                const a = doc.createElement('a');
+                a.setAttribute('href', '#page-section');
+                const click = createClickWithTarget(a);
+                const preventDefaultSpy = vi.spyOn(click, 'preventDefault');
+
+                captureClickHandler?.(click);
+
+                expect(preventDefaultSpy).toHaveBeenCalled();
+                expect(mockWindow.scrollTo).toHaveBeenCalledWith({ top: 320, left: 0 });
             });
 
             // Anchor links are commonly placed inside an editable contentlet area
@@ -482,10 +811,28 @@ describe('DotUveIframeComponent', () => {
                 a.setAttribute('href', '#page-section');
                 wrapper.appendChild(a);
 
-                const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
-                const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
 
-                clickHandler?.(createClickWithTarget(a));
+                captureClickHandler?.(createClickWithTarget(a));
+
+                expect(internalNavSpy).not.toHaveBeenCalled();
+                expect(inlineEditingSpy).not.toHaveBeenCalled();
+            });
+
+            it('should not emit for javascript:-href anchors', () => {
+                // Regression test: a `javascript:…` href never navigates —
+                // it's a page's own click handler invoked via the href itself
+                // — so, unlike a real link, a click on one should neither
+                // stop propagation (covered above) nor be treated as
+                // navigation here.
+                const a = doc.createElement('a');
+                a.setAttribute('href', 'javascript:void(0)');
+
+                const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
+                const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
+
+                captureClickHandler?.(createClickWithTarget(a));
 
                 expect(internalNavSpy).not.toHaveBeenCalled();
                 expect(inlineEditingSpy).not.toHaveBeenCalled();
@@ -529,14 +876,14 @@ describe('DotUveIframeComponent', () => {
         });
 
         it('should not set SEO data if iframe element is not available', () => {
-            (mockDotSeoMetaTagsService.getMetaTagsResults as jest.Mock).mockClear();
+            (mockDotSeoMetaTagsService.getMetaTagsResults as Mock).mockClear();
             component.iframe = undefined as any;
             (component as any).setSeoData();
             expect(mockDotSeoMetaTagsService.getMetaTagsResults).not.toHaveBeenCalled();
         });
 
         it('should not set SEO data if contentDocument is not available', () => {
-            (mockDotSeoMetaTagsService.getMetaTagsResults as jest.Mock).mockClear();
+            (mockDotSeoMetaTagsService.getMetaTagsResults as Mock).mockClear();
             Object.defineProperty(mockIframe, 'contentDocument', {
                 value: null,
                 writable: true
@@ -555,8 +902,8 @@ describe('DotUveIframeComponent', () => {
 
             mockIframe = document.createElement('iframe');
             mockWindow = {
-                addEventListener: jest.fn(),
-                removeEventListener: jest.fn()
+                addEventListener: vi.fn(),
+                removeEventListener: vi.fn()
             } as unknown as Window;
 
             Object.defineProperty(mockIframe, 'contentWindow', {
@@ -598,8 +945,27 @@ describe('DotUveIframeComponent', () => {
             expect(mockIframe.srcdoc).toBe(mockPageRender);
         });
 
+        it('should re-write srcdoc when src is a new object reference with the same stringified value (traditional-page reset)', () => {
+            // Mirrors withEditor.ts's $iframeURL: TRADITIONAL pages always feed a
+            // brand-new `String('')` object on every load — even a re-navigation to
+            // the same page with byte-identical content — to force a native iframe
+            // reset. The dedup guard must not be fooled by two distinct String
+            // objects that stringify to the same value; otherwise the native reset
+            // wipes the iframe and the srcdoc write is wrongly skipped, leaving the
+            // canvas permanently blank (issue #37327).
+            spectator.setInput('src', new String('') as unknown as string);
+            component.onIframeLoad();
+            expect(mockIframe.srcdoc).toBe(mockPageRender);
+
+            mockIframe.srcdoc = 'SENTINEL';
+            spectator.setInput('src', new String('') as unknown as string);
+            component.onIframeLoad();
+
+            expect(mockIframe.srcdoc).toBe(mockPageRender);
+        });
+
         it('should still call handleInlineScripts on de-duplicated calls', () => {
-            const handleSpy = jest.spyOn(component as any, 'handleInlineScripts');
+            const handleSpy = vi.spyOn(component as any, 'handleInlineScripts');
             component.onIframeLoad();
             component.onIframeLoad();
 
@@ -625,14 +991,14 @@ describe('DotUveIframeComponent', () => {
         });
 
         it('should insert page content when pageType changes to TRADITIONAL', () => {
-            const insertSpy = jest.spyOn(component as any, 'insertPageContent');
+            const insertSpy = vi.spyOn(component as any, 'insertPageContent');
             pageTypeSignal.set(PageType.TRADITIONAL);
             spectator.detectChanges();
             expect(insertSpy).toHaveBeenCalled();
         });
 
         it('should not insert page content when pageType is HEADLESS', () => {
-            const insertSpy = jest.spyOn(component as any, 'insertPageContent');
+            const insertSpy = vi.spyOn(component as any, 'insertPageContent');
             spectator.detectChanges();
             expect(insertSpy).not.toHaveBeenCalled();
         });
@@ -640,21 +1006,21 @@ describe('DotUveIframeComponent', () => {
 
     describe('Output Events', () => {
         it('should emit load event', () => {
-            const loadSpy = jest.spyOn(component.load, 'emit');
+            const loadSpy = vi.spyOn(component.load, 'emit');
             component.onIframeLoad();
             expect(loadSpy).toHaveBeenCalledTimes(1);
         });
 
         it('should emit internalNav event', () => {
             const mockEvent = new MouseEvent('click');
-            const internalNavSpy = jest.spyOn(component.internalNav, 'emit');
+            const internalNavSpy = vi.spyOn(component.internalNav, 'emit');
             component.internalNav.emit(mockEvent);
             expect(internalNavSpy).toHaveBeenCalledWith(mockEvent);
         });
 
         it('should emit inlineEditing event', () => {
             const mockEvent = new MouseEvent('click');
-            const inlineEditingSpy = jest.spyOn(component.inlineEditing, 'emit');
+            const inlineEditingSpy = vi.spyOn(component.inlineEditing, 'emit');
             component.inlineEditing.emit(mockEvent);
             expect(inlineEditingSpy).toHaveBeenCalledWith(mockEvent);
         });

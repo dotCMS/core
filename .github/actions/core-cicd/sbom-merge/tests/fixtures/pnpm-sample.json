@@ -1,0 +1,248 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:72227478-0981-4eeb-ac29-ffb4ae79b4dd",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-09-18T14:43:11.485Z",
+    "lifecycles": [
+      {
+        "phase": "pre-build"
+      }
+    ],
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "name": "pnpm",
+          "version": "12.4.2"
+        }
+      ]
+    },
+    "component": {
+      "type": "library",
+      "name": "core-web",
+      "version": "23.4.0-next.1",
+      "purl": "pkg:npm/core-web@23.4.0-next.1",
+      "bom-ref": "pkg:npm/core-web@23.4.0-next.1",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ]
+    }
+  },
+  "components": [
+    {
+      "type": "library",
+      "name": "tinymce",
+      "version": "6.8.3",
+      "purl": "pkg:npm/tinymce@6.8.3",
+      "bom-ref": "pkg:npm/tinymce@6.8.3",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tinymce/-/tinymce-6.8.3.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "ddf0872807aa4fec4dc0154449fea20db0d5d1537064d99fae4c7d73fe86cf9881f2988c7da3bab3b16fa224eb8f585fd6055b7f22d39f3d43a2823a0e180835"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ora",
+      "version": "9.0.0",
+      "purl": "pkg:npm/ora@9.0.0",
+      "bom-ref": "pkg:npm/ora@9.0.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/ora/-/ora-9.0.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "9b4a60db3b1c6d88166ea451e800606b9737b19744a27edb4a08e79570bae24c6dc4b3b28d171b6d490b8fb1c5cb2fc54c3f8fdb17415aef2c9c68582348dce0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "strip-ansi",
+      "version": "7.2.0",
+      "purl": "pkg:npm/strip-ansi@7.2.0",
+      "bom-ref": "pkg:npm/strip-ansi@7.2.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-7.2.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "c833cc363a785b27d80641e78c844b7dc6b58ba28cc860adb1582829eff3d7eeafba481a10d76018166df9998a3dce206afbc46793a01df1ddadace180dc86ef"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "rxjs",
+      "version": "7.8.2",
+      "purl": "pkg:npm/rxjs@7.8.2",
+      "bom-ref": "pkg:npm/rxjs@7.8.2",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/rxjs/-/rxjs-7.8.2.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "76129ff74dd4fcf41963a6e834db4019d59b1bce5601b8d3ff5c58a19202ec5018d3259aa4e05056c56b0e5e7c5bcebffded55a4c341b5157831a5df74cc9214"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tslib",
+      "version": "2.3.0",
+      "purl": "pkg:npm/tslib@2.3.0",
+      "bom-ref": "pkg:npm/tslib@2.3.0",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tslib/-/tslib-2.3.0.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "37cda8a32c55366ea1d6b88b0a8c92f5eddfb89dc0306db3219b3619dd404dc4858d2036dd0d1fce38d97a1d236c9bd65436747094fcc9a34d69a5c7cee78d8e"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "zone.js",
+      "version": "0.15.1",
+      "purl": "pkg:npm/zone.js@0.15.1",
+      "bom-ref": "pkg:npm/zone.js@0.15.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/zone.js/-/zone.js-0.15.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "5c4f7a9f9e8842924cecd0285ecc18dd744b716156f37c5ed0188039e303ecae64e7179c39eba5dd0729c7a1aa11e7873645b90d62f9ccec936c47c1e1eb62f3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tslib",
+      "version": "2.8.1",
+      "purl": "pkg:npm/tslib@2.8.1",
+      "bom-ref": "pkg:npm/tslib@2.8.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "a0916ef781d06fe29576e49440bef09e99aa9df98bb0e03f9c087a6fa107d30084a0ad3f98f79753a737c0a0d5f373243ae1cf447b525ca294f7d2016b34bfdb"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "strip-ansi",
+      "version": "6.0.1",
+      "purl": "pkg:npm/strip-ansi@6.0.1",
+      "bom-ref": "pkg:npm/strip-ansi@6.0.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "637f153d21dcaa416b0a916743dbee4979aabaebf9a1738aa46793e9a1abaf7a3719cf409556ba2417d448e0a76f1186645fbfd28a08ecaacfb944b3b54754e4"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ora",
+      "version": "5.4.1",
+      "purl": "pkg:npm/ora@5.4.1",
+      "bom-ref": "pkg:npm/ora@5.4.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/ora/-/ora-5.4.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "e5be98f39b4fc5967b432b4ef81433cac5b7d47264bb6edc4489646c05da371f8175c562f8b951166557cde17a6bb242c09a72c397386fe61254899022b069b9"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "ora",
+      "version": "9.4.1",
+      "purl": "pkg:npm/ora@9.4.1",
+      "bom-ref": "pkg:npm/ora@9.4.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/ora/-/ora-9.4.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "e95954f4c2d76e35500f4e00642317dbc855b40e5b52869dbd4a8eefa3140950348a5c096cc887b084d13dfc959baa7f042d00bff05732e8f1dfd5827b52c4ab"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "library",
+      "name": "tslib",
+      "version": "1.14.1",
+      "purl": "pkg:npm/tslib@1.14.1",
+      "bom-ref": "pkg:npm/tslib@1.14.1",
+      "externalReferences": [
+        {
+          "type": "distribution",
+          "url": "https://registry.npmjs.org/tslib/-/tslib-1.14.1.tgz",
+          "hashes": [
+            {
+              "alg": "SHA-512",
+              "content": "5e78b7e4d2b38e032bc1ebf2b074c202bb4b0e93efc9ef3357fd04e04c989f8dcfeffeeabd0c0f87d0469077b06ccba5567b5b8a099c4fbadd5f704da3dc1126"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

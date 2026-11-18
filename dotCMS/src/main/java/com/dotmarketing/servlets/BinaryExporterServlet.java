@@ -34,7 +34,6 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -245,14 +244,6 @@ public class BinaryExporterServlet extends HttpServlet {
 
 			BinaryContentExporter.BinaryContentExporterData data = null;
 			File inputFile = null;
-			HttpSession session = req.getSession(false);
-			List<String> tempBinaryImageInodes = null;
-			if ( session != null && session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST ) != null ) {
-				tempBinaryImageInodes = (List<String>) session.getAttribute( Contentlet.TEMP_BINARY_IMAGE_INODES_LIST );
-			} else {
-				tempBinaryImageInodes = new ArrayList<>();
-			}
-			boolean isTempBinaryImage = tempBinaryImageInodes.contains(assetInode);
 
 			user = ServletUtils.getUserAndAuthenticateIfRequired(
 						this.webResource, req, resp);
@@ -264,20 +255,15 @@ public class BinaryExporterServlet extends HttpServlet {
 			if (isContent){
 				Contentlet content = null;
 				if(byInode) {
-
-					if (isTempBinaryImage)
-						content = contentAPI.find(assetInode, APILocator.getUserAPI().getSystemUser(), mode.respectAnonPerms);
-					else {
-						try {
-							content = contentAPI.find(
-									assetInode, user, ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
-							);
-						} catch(DotSecurityException e) {
-							if (!mode.respectAnonPerms) {
-								content = getContentletLiveVersion(assetInode, user, lang);
-							} else {
-								throw e;
-							}
+					try {
+						content = contentAPI.find(
+								assetInode, user, ALWAYS_RESPECT_ANONYMOUS_PERMISSIONS
+						);
+					} catch(DotSecurityException e) {
+						if (!mode.respectAnonPerms) {
+							content = getContentletLiveVersion(assetInode, user, lang);
+						} else {
+							throw e;
 						}
 					}
 				} else {
@@ -339,9 +325,26 @@ public class BinaryExporterServlet extends HttpServlet {
 					assetInode = content.getInode();
 				}
 
+				// A missing inode resolves to no version at all, and every gate below reads one.
+				if (content == null) {
+					Logger.debug(this, "Content '" + fieldVarName + "' with inode: " + assetInode
+							+ " was not found");
+					resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+					return;
+				}
+
+				// A lookup by inode resolves no variant of its own, so the version the caller named
+				// may live in one it cannot be served.
+				if (!WebAPILocator.getVariantWebAPI()
+						.canReadVariant(content.getVariantId(), user)) {
+					Logger.debug(this, "Content '" + fieldVarName + "' with inode: " + content.getInode()
+							+ " belongs to a variant that cannot be served to this user");
+					resp.sendError(HttpServletResponse.SC_NOT_FOUND);
+					return;
+				}
+
                 // If the user is NOT logged in the backend then we cannot show content that is NOT live.
-                // Temporal files should be allowed any time
-                if(!isTempBinaryImage && !WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
+                if(!WebAPILocator.getUserWebAPI().isLoggedToBackend(req)) {
                     if (!APILocator.getVersionableAPI().hasLiveVersion(content) && mode.respectAnonPerms) {
 						Logger.debug(this, "Content '" + fieldVarName + "' with inode: " + content.getInode() + " is not published");
 						resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -362,10 +365,7 @@ public class BinaryExporterServlet extends HttpServlet {
 					return;
 				}
 
-				if(isTempBinaryImage)
-					inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), APILocator.getUserAPI().getSystemUser());
-				else
-					inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), user);
+				inputFile = contentAPI.getBinaryFile(content.getInode(), field.variable(), user);
 				if(inputFile == null){
 					Logger.debug(this,"Binary file '" + fieldVarName + "' does not exist for inode " + content.getInode());
 					resp.sendError(HttpServletResponse.SC_NOT_FOUND);
@@ -707,11 +707,26 @@ public class BinaryExporterServlet extends HttpServlet {
 
 	}
 
+	/**
+	 * Finds the version of a content item an asset request should be served from, by identifier.
+	 *
+	 * <p>The variant is only resolved from the request for a back-end user; any other caller is
+	 * served the default variant, whatever the request carries. The lookup then falls back to the
+	 * version with no variant of its own when the resolved variant holds none.
+	 *
+	 * @param pageMode the {@link PageMode} the request is being served in
+	 * @param identifier the content item's identifier
+	 * @param languageId the language the asset is requested in
+	 * @param user the {@link User} the request is served for
+	 * @return the matching {@link Contentlet}, or null when there is none
+	 * @throws DotDataException if the lookup fails
+	 * @throws DotSecurityException if the user cannot read the content item
+	 */
 	private Contentlet getContentletByIdentifier(final PageMode pageMode,
 			final String identifier, final long languageId, final User user)
 			throws DotDataException, DotSecurityException {
 
-		final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+		final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId(user);
 
 		final Contentlet contentletByIdentifier = contentAPI.findContentletByIdentifier(
 				identifier, pageMode.showLive, languageId, currentVariantId, user,

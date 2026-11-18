@@ -5,8 +5,8 @@ import static org.mockito.Mockito.when;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
-import com.dotcms.ema.proxy.MockHttpCaptureResponse;
-import com.dotcms.ema.proxy.MockPrintWriter;
+import com.dotcms.mock.response.MockHttpCaptureResponse;
+import com.dotcms.mock.response.MockPrintWriter;
 import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.util.ConfigTestHelper;
@@ -21,6 +21,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.util.StringPool;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -160,7 +161,8 @@ public class CSSPreProcessServletIT extends IntegrationTestBase {
             final HttpServletRequest mockRequest = hydrateMockedRequest(inputScssFile);
             ((com.dotcms.mock.request.DotCMSMockRequest) mockRequest).setParameterMap(
                     java.util.Map.of("sourcemap", new String[]{"true"}));
-            final MockHttpCaptureResponse mockResponse = new MockHttpCaptureResponse(new MockHttpResponse()) {
+            final ByteArrayOutputStream body = new ByteArrayOutputStream();
+            final MockHttpCaptureResponse mockResponse = new MockHttpCaptureResponse(new MockHttpResponse(), body) {
                 @Override
                 public PrintWriter getWriter() {
                     return new MockPrintWriter(getOutputStream());
@@ -168,7 +170,7 @@ public class CSSPreProcessServletIT extends IntegrationTestBase {
             };
             final CSSPreProcessServlet servlet = new CSSPreProcessServlet();
             servlet.doGet(mockRequest, mockResponse);
-            return new String(mockResponse.getBytes(), StandardCharsets.UTF_8);
+            return body.toString(StandardCharsets.UTF_8);
         } catch (final ServletException | IOException | DotDataException | DotSecurityException e) {
             Assert.fail(String.format("An error occurred when compiling the test SCSS file '%s' with a source map. " +
                     "Aborting test execution...", inputScssFile));
@@ -208,7 +210,8 @@ public class CSSPreProcessServletIT extends IntegrationTestBase {
         try {
             // Initialization
             final HttpServletRequest mockRequest = hydrateMockedRequest(inputScssFile);
-            final MockHttpCaptureResponse mockResponse = new MockHttpCaptureResponse(new MockHttpResponse()){
+            final ByteArrayOutputStream body = new ByteArrayOutputStream();
+            final MockHttpCaptureResponse mockResponse = new MockHttpCaptureResponse(new MockHttpResponse(), body) {
                 @Override
                 public PrintWriter getWriter() {
                     return new MockPrintWriter(getOutputStream());
@@ -218,7 +221,7 @@ public class CSSPreProcessServletIT extends IntegrationTestBase {
 
             // Test data generation
             servlet.doGet(mockRequest, mockResponse);
-            cssCode = new String(mockResponse.getBytes(), StandardCharsets.UTF_8);
+            cssCode = body.toString(StandardCharsets.UTF_8);
             status = mockResponse.getStatus();
         } catch (final ServletException | IOException | DotDataException | DotSecurityException e) {
             Assert.fail(String.format("An error occurred when compiling the test SCSS file '%s'. Aborting test " +

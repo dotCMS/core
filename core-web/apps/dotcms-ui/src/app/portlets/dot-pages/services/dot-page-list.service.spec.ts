@@ -1,4 +1,4 @@
-import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -110,15 +110,16 @@ describe('DotPageListService', () => {
             req.flush({ entity: MOCK_ES_CONTENT });
         });
 
-        it('should return ESContent from response entity', (done) => {
-            spectator.service.getPages(DEFAULT_LIST_PARAMS).subscribe((result) => {
-                expect(result).toEqual(MOCK_ES_CONTENT);
-                done();
-            });
+        it('should return ESContent from response entity', () =>
+            new Promise<void>((done) => {
+                spectator.service.getPages(DEFAULT_LIST_PARAMS).subscribe((result) => {
+                    expect(result).toEqual(MOCK_ES_CONTENT);
+                    done();
+                });
 
-            const req = httpMock.expectOne('/api/content/_search');
-            req.flush({ entity: MOCK_ES_CONTENT });
-        });
+                const req = httpMock.expectOne('/api/content/_search');
+                req.flush({ entity: MOCK_ES_CONTENT });
+            }));
 
         it('should include search term in query when provided', () => {
             const paramsWithSearch: ListPagesParams = {
@@ -351,17 +352,18 @@ describe('DotPageListService', () => {
             req.flush({ entity: MOCK_ES_CONTENT });
         });
 
-        it('should return ESContent from response entity', (done) => {
-            spectator.service
-                .getFavoritePages(DEFAULT_LIST_PARAMS, 'user-123')
-                .subscribe((result) => {
-                    expect(result).toEqual(MOCK_ES_CONTENT);
-                    done();
-                });
+        it('should return ESContent from response entity', () =>
+            new Promise<void>((done) => {
+                spectator.service
+                    .getFavoritePages(DEFAULT_LIST_PARAMS, 'user-123')
+                    .subscribe((result) => {
+                        expect(result).toEqual(MOCK_ES_CONTENT);
+                        done();
+                    });
 
-            const req = httpMock.expectOne('/api/content/_search');
-            req.flush({ entity: MOCK_ES_CONTENT });
-        });
+                const req = httpMock.expectOne('/api/content/_search');
+                req.flush({ entity: MOCK_ES_CONTENT });
+            }));
     });
 
     describe('getSinglePage', () => {
@@ -415,23 +417,24 @@ describe('DotPageListService', () => {
             });
         });
 
-        it('should return first contentlet from response', (done) => {
-            spectator.service.getSinglePage('page-1').subscribe((result) => {
-                expect(result).toEqual(MOCK_SINGLE_PAGE);
-                expect(result.identifier).toBe('page-1');
-                expect(result.title).toBe('Home Page');
-                done();
-            });
+        it('should return first contentlet from response', () =>
+            new Promise<void>((done) => {
+                spectator.service.getSinglePage('page-1').subscribe((result) => {
+                    expect(result).toEqual(MOCK_SINGLE_PAGE);
+                    expect(result.identifier).toBe('page-1');
+                    expect(result.title).toBe('Home Page');
+                    done();
+                });
 
-            const req = httpMock.expectOne('/api/content/_search');
-            req.flush({
-                entity: {
-                    jsonObjectView: {
-                        contentlets: [MOCK_SINGLE_PAGE]
+                const req = httpMock.expectOne('/api/content/_search');
+                req.flush({
+                    entity: {
+                        jsonObjectView: {
+                            contentlets: [MOCK_SINGLE_PAGE]
+                        }
                     }
-                }
-            });
-        });
+                });
+            }));
 
         it('should handle identifier with special characters', () => {
             const specialIdentifier = 'page-with-special-chars-123-abc';
@@ -506,47 +509,50 @@ describe('DotPageListService', () => {
     });
 
     describe('Error Handling', () => {
-        it('should propagate HTTP errors from getPages', (done) => {
-            spectator.service.getPages(DEFAULT_LIST_PARAMS).subscribe({
-                next: () => fail('Should have failed'),
-                error: (error) => {
-                    expect(error.status).toBe(500);
-                    expect(error.statusText).toBe('Server Error');
-                    done();
-                }
-            });
+        it('should propagate HTTP errors from getPages', () =>
+            new Promise<void>((done) => {
+                spectator.service.getPages(DEFAULT_LIST_PARAMS).subscribe({
+                    next: () => expect.fail('Should have failed'),
+                    error: (error) => {
+                        expect(error.status).toBe(500);
+                        expect(error.statusText).toBe('Server Error');
+                        done();
+                    }
+                });
 
-            const req = httpMock.expectOne('/api/content/_search');
-            req.flush('Server error', { status: 500, statusText: 'Server Error' });
-        });
+                const req = httpMock.expectOne('/api/content/_search');
+                req.flush('Server error', { status: 500, statusText: 'Server Error' });
+            }));
 
-        it('should propagate HTTP errors from getFavoritePages', (done) => {
-            spectator.service.getFavoritePages(DEFAULT_LIST_PARAMS, 'user-123').subscribe({
-                next: () => fail('Should have failed'),
-                error: (error) => {
-                    expect(error.status).toBe(404);
-                    expect(error.statusText).toBe('Not Found');
-                    done();
-                }
-            });
+        it('should propagate HTTP errors from getFavoritePages', () =>
+            new Promise<void>((done) => {
+                spectator.service.getFavoritePages(DEFAULT_LIST_PARAMS, 'user-123').subscribe({
+                    next: () => expect.fail('Should have failed'),
+                    error: (error) => {
+                        expect(error.status).toBe(404);
+                        expect(error.statusText).toBe('Not Found');
+                        done();
+                    }
+                });
 
-            const req = httpMock.expectOne('/api/content/_search');
-            req.flush('Not found', { status: 404, statusText: 'Not Found' });
-        });
+                const req = httpMock.expectOne('/api/content/_search');
+                req.flush('Not found', { status: 404, statusText: 'Not Found' });
+            }));
 
-        it('should propagate HTTP errors from getSinglePage', (done) => {
-            spectator.service.getSinglePage('invalid-id').subscribe({
-                next: () => fail('Should have failed'),
-                error: (error) => {
-                    expect(error.status).toBe(403);
-                    expect(error.statusText).toBe('Forbidden');
-                    done();
-                }
-            });
+        it('should propagate HTTP errors from getSinglePage', () =>
+            new Promise<void>((done) => {
+                spectator.service.getSinglePage('invalid-id').subscribe({
+                    next: () => expect.fail('Should have failed'),
+                    error: (error) => {
+                        expect(error.status).toBe(403);
+                        expect(error.statusText).toBe('Forbidden');
+                        done();
+                    }
+                });
 
-            const req = httpMock.expectOne('/api/content/_search');
-            req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
-        });
+                const req = httpMock.expectOne('/api/content/_search');
+                req.flush('Forbidden', { status: 403, statusText: 'Forbidden' });
+            }));
     });
 
     describe('Edge Cases', () => {
@@ -628,21 +634,22 @@ describe('DotPageListService', () => {
             });
         });
 
-        it('should handle response with empty contentlets array', (done) => {
-            spectator.service.getSinglePage('page-1').subscribe((result) => {
-                expect(result).toBeUndefined();
-                done();
-            });
+        it('should handle response with empty contentlets array', () =>
+            new Promise<void>((done) => {
+                spectator.service.getSinglePage('page-1').subscribe((result) => {
+                    expect(result).toBeUndefined();
+                    done();
+                });
 
-            const req = httpMock.expectOne('/api/content/_search');
-            req.flush({
-                entity: {
-                    jsonObjectView: {
-                        contentlets: []
+                const req = httpMock.expectOne('/api/content/_search');
+                req.flush({
+                    entity: {
+                        jsonObjectView: {
+                            contentlets: []
+                        }
                     }
-                }
-            });
-        });
+                });
+            }));
     });
 
     describe('Integration Workflows', () => {

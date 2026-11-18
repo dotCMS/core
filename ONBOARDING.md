@@ -154,20 +154,14 @@ just test-integration-stop    # tear down when done
 **Debug the running app:** `just dev-run-debug-suspend` starts dotCMS in Docker
 waiting on debug port **5005** for your IDE to attach.
 
-### API tests — Postman & Karate
+### API tests — Postman
 
-dotCMS uses two API testing frameworks: **Postman** (legacy) and **Karate** (the
-modern replacement, in `test-karate/` — prefer it for new API tests).
+dotCMS API tests are Postman collections in `dotcms-postman/`.
 
 ```bash
 # Postman
 just test-postman ai          # a single collection (recommended)
 just test-postman all         # all collections (slower)
-
-# Karate
-just test-karate                          # default collection
-just test-karate KarateCITests#defaults   # a specific runner/collection
-just test-karate-ide                      # boot services to run Karate from your IDE
 ```
 
 More detail: [`docs/testing/API_TESTING.md`](docs/testing/API_TESTING.md).
@@ -226,8 +220,8 @@ More detail: [`docs/testing/`](docs/testing/) and [`docs/frontend/TESTING_FRONTE
     [`dotCMS/src/main/java/com/dotcms/featureflag/FeatureFlagName.java`](dotCMS/src/main/java/com/dotcms/featureflag/FeatureFlagName.java).
 - **Starter site:** a **starter** is a ZIP of seed content (sites, content types,
   pages, assets) that dotCMS loads on first startup to give you a populated instance
-  instead of an empty one. Published starters live in our Artifactory:
-  [`repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/`](https://repo.dotcms.com/artifactory/libs-release-local/com/dotcms/starter/).
+  instead of an empty one. Published starters live in our Maven repository on
+  BunnyCDN: [`dotcms-repo.b-cdn.net/libs-release/com/dotcms/starter/`](https://dotcms-repo.b-cdn.net/libs-release/com/dotcms/starter/).
   To pick one, set the `<starter.deploy.version>` property in `parent/pom.xml`, drop a
   renamed `starter.zip` into `dotCMS/target/starter/`, or point `DOT_STARTER_DATA_LOAD`
   at a starter URL. Full details in [`dotBackendOnboarding.md`](dotBackendOnboarding.md).

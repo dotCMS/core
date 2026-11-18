@@ -1,7 +1,7 @@
 # Release Phase Workflow
 #
 # This reusable workflow handles release-specific finalization operations:
-# - Deploying artifacts to Artifactory (Maven repository)
+# - Publishing Maven artifacts to the BunnyCDN S3-compatible repository
 # - Generating and uploading Javadocs to S3
 # - Triggering plugin repository updates
 # - Generating and uploading SBOM (Software Bill of Materials)
@@ -37,7 +37,7 @@ on:
         type: string
         default: ${{ github.run_id }}
       deploy_artifact:
-        description: 'Deploy artifact to Artifactory'
+        description: 'Publish Maven artifacts to the S3 repository'
         type: boolean
         default: true
       upload_javadocs:
@@ -58,17 +58,30 @@ on:
         type: string
         default: ''
       artifact-suffix:
-        description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java25).'
+        description: 'Artifact suffix without leading separator (e.g., java-25, java-25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java-25).'
         required: false
         type: string
         default: ''
+      reuse-build-artifacts:
+        description: |
+          Publish the Maven outputs restored from artifact_run_id instead of
+          running a second full reactor install first. The caller must have built
+          them with the build phase release-build input, so the restored
+          repository already holds release_version (+ any Java variant suffix).
+          The restored repository is validated before anything is published, and
+          it is cleared before restoring so a warm runner cannot contribute
+          artifacts to a release. Default false keeps the legacy
+          "rebuild, then publish" behaviour for callers that have not opted in.
+        required: false
+        type: boolean
+        default: false
     secrets:
-      EE_REPO_USERNAME:
+      MAVEN_BUNNY_RW_USERNAME:
         required: false
-        description: 'Artifactory username'
-      EE_REPO_PASSWORD:
+        description: 'BunnyCDN storage-zone name (S3 access key id)'
+      MAVEN_BUNNY_RW_PASSWORD:
         required: false
-        description: 'Artifactory password'
+        description: 'BunnyCDN storage-zone password (S3 secret key)'
       AWS_ACCESS_KEY_ID:
         required: false
         description: 'AWS access key ID'
@@ -78,9 +91,12 @@ on:
       CI_MACHINE_TOKEN:
         required: false
         description: 'CI machine token for GitHub API operations'
+      CI_MACHINE_PLUGIN_EXAMPLES_TOKEN:
+        required: false
+        description: 'Fine-grained PAT owned by dotcms-community (plugin-examples, Contents RW) for the plugins release dispatch'
 
 jobs:
-  # Deploy release artifacts to Artifactory and S3
+  # Publish release artifacts to the S3 repository and upload Javadocs to S3
   release-artifacts:
     name: Release Artifacts
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
@@ -100,40 +116,45 @@ jobs:
         shell: bash
         run: |
           # Naming Convention for Java Variants:
-          # - User input: suffix without leading separator (e.g., "java25" or "java25-ms")
-          # - Maven artifacts: use dash separator (e.g., "-java25")
-          # - Docker tags: use underscore separator (e.g., "_java25")
+          # - User input: suffix without leading separator (e.g., "java-25" or "java-25-ms")
+          # - Maven artifacts: use dash separator (e.g., "-java-25")
+          # - Docker tags: use underscore separator (e.g., "_java-25")
           #
           # Note: Underscore in Docker tags is non-standard but follows existing dotCMS convention.
           # Docker typically uses dash or no separator, but we use underscore to distinguish from
-          # version dashes (e.g., "25.02.16-01_java25_abc123" vs "25.02.16-01-java25-abc123").
+          # version dashes (e.g., "25.02.16-01_java-25_abc123" vs "25.02.16-01-java-25-abc123").
           # This convention may be revisited in future.
+          #
+          # Derived form is "java-<major>", matching RELEASE_JAVA_VARIANT_SUFFIX
+          # and cicd_comp_deployment-phase.
 
-          if [ -n "${{ inputs.java-version }}" ]; then
-            # Priority: explicit artifact-suffix > derived from java-version major
-            if [ -n "${{ inputs.artifact-suffix }}" ]; then
-              RAW_SUFFIX="${{ inputs.artifact-suffix }}"
-              echo "Using explicit artifact suffix: ${RAW_SUFFIX}"
-            else
-              JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
-              RAW_SUFFIX="java${JAVA_MAJOR}"
-              echo "Using derived artifact suffix: ${RAW_SUFFIX}"
-            fi
+          # Resolved independently of java-version, exactly as maven-job and
+          # cicd_comp_deployment-phase do: an explicit artifact-suffix wins
+          # outright, otherwise derive java-<major> from an explicit java-version,
+          # otherwise no suffix (a primary release).
+          if [ -n "${{ inputs.artifact-suffix }}" ]; then
+            RAW_SUFFIX="${{ inputs.artifact-suffix }}"
+            echo "Using explicit artifact suffix: ${RAW_SUFFIX}"
+          elif [ -n "${{ inputs.java-version }}" ]; then
+            JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
+            RAW_SUFFIX="java-${JAVA_MAJOR}"
+            echo "Using derived artifact suffix: ${RAW_SUFFIX}"
+          else
+            RAW_SUFFIX=""
+          fi
 
-            # Normalize: strip any leading separators, then add appropriate separator
+          if [ -n "${RAW_SUFFIX}" ]; then
+            # Normalize: strip any leading separators, then add the dash separator
             while [[ "${RAW_SUFFIX}" =~ ^[-_] ]]; do
               RAW_SUFFIX="${RAW_SUFFIX:1}"
             done
-
-            # For Maven artifacts: use dash separator
             MAVEN_SUFFIX="-${RAW_SUFFIX}"
-
-            echo "Raw suffix: '${RAW_SUFFIX}'"
-            echo "Maven suffix: '${MAVEN_SUFFIX}'"
           else
-            RAW_SUFFIX=""
             MAVEN_SUFFIX=""
           fi
+
+          echo "Raw suffix: '${RAW_SUFFIX}'"
+          echo "Maven suffix: '${MAVEN_SUFFIX}'"
           echo "suffix=${MAVEN_SUFFIX}" >> "$GITHUB_OUTPUT"
           echo "raw_suffix=${RAW_SUFFIX}" >> "$GITHUB_OUTPUT"
 
@@ -143,17 +164,25 @@ jobs:
         with:
           java-version: ${{ inputs.java-version }}
 
+      # In reuse mode the restored repository IS the publication source, so start
+      # from an empty directory: a warm runner or a half-populated cache must not
+      # be able to contribute artifacts to a release. Without reuse, the install
+      # below overwrites whatever is here and this is unnecessary.
+      - name: Prepare Maven Repository
+        if: inputs.reuse-build-artifacts == true
+        shell: bash
+        run: rm -rf "$HOME/.m2/repository"
+
       - name: Restore Maven Repository
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           digest-mismatch: error
+          # Pinned to the selected run rather than implicitly to this one, so the
+          # source of the published artifacts is always explicit.
+          run-id: ${{ inputs.artifact_run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           name: maven-repo${{ steps.java-suffix.outputs.suffix }}
           path: ~/.m2/repository
-
-      - name: Configure Maven Settings
-        uses: whelk-io/maven-settings-xml-action@v20
-        with:
-          servers: '[{ "id": "dotcms-libs-local", "username": "${{ secrets.EE_REPO_USERNAME }}", "password": "${{ secrets.EE_REPO_PASSWORD }}" }]'
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -163,7 +192,15 @@ jobs:
           aws-region: ${{ env.AWS_REGION }}
         if: inputs.upload_javadocs == true
 
-      - name: Deploy Release Artifacts to Artifactory
+      # Publish locally (install) instead of deploying. The maven-deploy-plugin
+      # no longer has an Artifactory target; the S3 publish step below uploads the
+      # artifacts from ~/.m2/repository, preserving the Maven layout.
+      #
+      # Skipped in reuse mode: the build phase already installed these
+      # coordinates (release-build applies the changelist), so this second full
+      # reactor build is what made the release slow. See #37607.
+      - name: Install Release Artifacts
+        if: inputs.deploy_artifact == true && !inputs.reuse-build-artifacts
         run: |
           # Add changelist suffix for alternate Java versions
           CHANGELIST_ARG=""
@@ -179,8 +216,110 @@ jobs:
             -Dprod=true \
             -DskipTests=true \
             ${CHANGELIST_ARG} \
-            deploy
+            install
+
+      # Fail closed BEFORE publishing, and AFTER Install: in legacy mode it is
+      # Install's `-Dchangelist` that creates the suffixed coordinates, so
+      # validating any earlier would reject every Java-variant release. In reuse
+      # mode the build already installed them and Install is skipped.
+      #
+      # `publish.sh maven` publishes whatever versions it finds under com/dotcms
+      # and exits 0 when it finds none, so without this a partial maven-repo
+      # would "succeed" by publishing an incomplete release - and would have
+      # already rewritten the shared maven-metadata.xml.
+      - name: Validate Release Artifacts
+        id: validate-release-artifacts
         if: inputs.deploy_artifact == true
+        shell: bash
+        env:
+          VERSION: ${{ inputs.release_version }}${{ steps.java-suffix.outputs.suffix }}
+          # The built-in coordinates below are always required; the repo variable
+          # only ADDS to them, so it cannot weaken the guard. Space or comma
+          # separated groupId:artifactId.
+          REQUIRED_COORDINATES: com.dotcms:dotcms-core com.dotcms:dotcms-core-web com.dotcms.samlbundle:com.dotcms.samlbundle ${{ vars.RELEASE_REQUIRED_COORDINATES }}
+        run: |
+          set -uo pipefail
+
+          repo="${MAVEN_REPO:-$HOME/.m2/repository}"
+          version="${VERSION:?VERSION is required}"
+          # A release must include core, its webapp, and the matching SAML bundle.
+          coords="${REQUIRED_COORDINATES:-com.dotcms:dotcms-core com.dotcms:dotcms-core-web com.dotcms.samlbundle:com.dotcms.samlbundle}"
+          coords="${coords//,/ }"
+
+          rc=0
+          for coord in $coords; do
+            # Old release tags have no in-reactor SAML and retain their standalone pin.
+            if [[ "$coord" == com.dotcms.samlbundle:com.dotcms.samlbundle &&
+                  ! -f independent-projects/core-plugins/saml-plugin/pom.xml ]]; then
+              continue
+            fi
+            group="${coord%%:*}"
+            artifact="${coord##*:}"
+            if [[ "$coord" != *:* || -z "$group" || -z "$artifact" ]]; then
+              echo "::error::'$coord' is not groupId:artifactId"
+              rc=1
+              continue
+            fi
+            group_path="$(printf '%s' "$group" | tr '.' '/')"
+            dir="$repo/$group_path/$artifact/$version"
+
+            if [[ ! -d "$dir" ]]; then
+              echo "::error::$coord has no $version directory at $dir"
+              rc=1
+              continue
+            fi
+            # Match the exact primary artifact. A pom alone means the module
+            # installed but its archive did not, and a -sources.jar or
+            # -javadoc.jar must not stand in for the real archive.
+            if [[ ! -f "$dir/$artifact-$version.pom" ]]; then
+              echo "::error::$coord: no $artifact-$version.pom in $dir"
+              rc=1
+              continue
+            fi
+            if [[ ! -f "$dir/$artifact-$version.jar" && ! -f "$dir/$artifact-$version.war" ]]; then
+              echo "::error::$coord: no $artifact-$version.jar or .war in $dir"
+              rc=1
+            fi
+          done
+
+          if [[ $rc -ne 0 ]]; then
+            echo "::error::refusing to publish $version: the Maven repository is incomplete"
+            exit 1
+          fi
+          echo "Validated release artifacts for $version in $repo"
+
+      - name: Publish Release Artifacts to S3
+        if: inputs.deploy_artifact == true
+        env:
+          MAVEN_BUNNY_RW_USERNAME: ${{ secrets.MAVEN_BUNNY_RW_USERNAME }}
+          MAVEN_BUNNY_RW_PASSWORD: ${{ secrets.MAVEN_BUNNY_RW_PASSWORD }}
+          MAVEN_S3_ENDPOINT: ${{ vars.MAVEN_S3_ENDPOINT }}
+          MAVEN_S3_REGION: ${{ vars.MAVEN_S3_REGION }}
+          MAVEN_S3_BUCKET: ${{ vars.MAVEN_S3_BUCKET }}
+          MAVEN_S3_PREFIX: ${{ vars.MAVEN_S3_PREFIX }}
+          # Alternate Java variants append their changelist (e.g. -java-25) to the version.
+          VERSION: ${{ inputs.release_version }}${{ steps.java-suffix.outputs.suffix }}
+        run: |
+          echo "::group::Publish Release Artifacts to S3"
+          ./.github/scripts/publish-to-s3/publish.sh maven --version "$VERSION"
+          echo "::endgroup::"
+
+      # In reuse mode ~/.m2/repository holds only the release coordinates the build
+      # installed (the maven-repo artifact no longer carries third-party jars), so the
+      # Javadoc run below would download all of dotcms-core's dependencies (~700 MB)
+      # from Maven Central. Restore them from the shared dependency cache instead. This is
+      # deliberately AFTER the validate and publish steps: those read the repository as the
+      # publication source, which must hold nothing but the artifact. The cache holds no
+      # installed builds (the build job removes them before saving), so it cannot overwrite
+      # a release coordinate; on a miss, Maven downloads as before.
+      - name: Restore Maven Dependency Cache for Javadocs
+        if: inputs.upload_javadocs == true && inputs.java-version == '' && inputs.reuse-build-artifacts == true
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-mavencore-v2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-mavencore-v2-
 
       - name: Generate and Upload Javadocs
         run: |
@@ -211,14 +350,15 @@ jobs:
       - name: Trigger Plugin Repository Update
         env:
           RELEASE_VERSION: ${{ inputs.release_version }}
-          CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+          # A fine-grained PAT has one resource owner, so the dotCMS-owned CI_MACHINE_TOKEN can't reach the dotcms-community org
+          CI_MACHINE_PLUGIN_EXAMPLES_TOKEN: ${{ secrets.CI_MACHINE_PLUGIN_EXAMPLES_TOKEN }}
         run: |
           # shellcheck disable=SC2153
           release_version="${RELEASE_VERSION}"
           response=$(curl -L \
             -X POST \
             -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${CI_MACHINE_TOKEN}" \
+            -H "Authorization: Bearer ${CI_MACHINE_PLUGIN_EXAMPLES_TOKEN}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/dotcms-community/plugin-examples/dispatches \
             -d "{\"event_type\": \"on-plugins-release\", \"client_payload\": {\"release_version\": \"${release_version}\"}}" \
@@ -226,7 +366,7 @@ jobs:
             -s)
           http_code=$(echo "$response" | tail -n1)
           if [ "${http_code}" != "204" ]; then
-            echo "Failed to dispatch workflow. HTTP code: $http_code"
+            echo "::warning title=Plugin dispatch failed::dotcms-community/plugin-examples dispatch returned HTTP ${http_code}"
             echo "Response: $response"
           fi
         if: inputs.update_plugins == true && inputs.java-version == ''
@@ -247,6 +387,8 @@ jobs:
         with:
           dotcms_version: ${{ inputs.release_version }}
           github_token: ${{ secrets.CI_MACHINE_TOKEN }}
+          # The frontend SBOM reads core-web's lockfile, which must be the released one.
+          release_ref: ${{ inputs.release_tag }}
 
       - name: Download SBOM Artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
@@ -275,7 +417,7 @@ jobs:
           echo "::endgroup::"
 
   # Update GitHub labels for release tracking
-  # Only updates labels if release-artifacts (Artifactory/Javadocs) succeeded.
+  # Only updates labels if release-artifacts (S3/Javadocs) succeeded.
   # The calling workflow's dependency chain ensures deployment also succeeded.
   release-labeling:
     name: Release Labeling

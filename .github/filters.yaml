@@ -4,15 +4,32 @@ full_build_test: &full_build_test
   - '.nvmrc'
 
 backend: &backend
-  - '.github/workflows/cicd_comp_*.yml'
+  # CI files that run or configure the PR / merge-queue test suites, listed one by one.
+  # Release, deploy, labeling and notification workflows are left out on purpose: changing
+  # them must not trigger the full test suite. If a workflow or action is added to the test
+  # pipeline (called from the initialize/build/test/finalize phases), list it here, or
+  # changes to it will run no tests.
   - '.github/workflows/cicd_1-pr.yml'
-  - '.github/actions/core-cicd/**/action.yml'
+  - '.github/workflows/cicd_2-merge-queue.yml'
+  - '.github/workflows/cicd_comp_initialize-phase.yml'
+  - '.github/workflows/cicd_comp_build-phase.yml'
+  - '.github/workflows/cicd_manual_build-java-base.yml'
+  - '.github/scripts/java-base/**'
+  - '.github/workflows/cicd_comp_test-phase.yml'
+  - '.github/workflows/cicd_comp_finalize-phase.yml'
+  - '.github/actions/core-cicd/maven-job/**'
+  - '.github/actions/core-cicd/build-cache-remote/**'
+  - '.github/actions/core-cicd/prepare-runner/**'
+  - '.github/actions/core-cicd/setup-java/**'
+  - '.github/actions/core-cicd/setup-pnpm/**'
+  - '.github/actions/core-cicd/cleanup-runner/**'
+  - '.github/test-matrix.yml'
+  - '.github/filters.yaml'
   - 'bom/**'
   - 'build-parent/**'
   - 'core-web/pom.xml'
   - 'dotCMS/src/main/webapp/html/**/!(*.{css,js})'
   - 'dotcms-postman/**'
-  - 'test-karate/**'
   - 'e2e/**'
   - 'dotCMS/src/main/webapp/WEB-INF/messages/**/!(Language*.properties)'
   # Exclude html/ and WEB-INF/messages/ from backend triggering via per-segment
@@ -50,6 +67,21 @@ cli: &cli
 sdk_libs:
   - 'core-web/libs/sdk/**'
 
+examples:
+  - 'examples/**'
+
+# The package.json shape guardrail's own source. Deliberately NOT folded into sdk_libs:
+# that filter also gates the trunk npm publish job (cicd_3-trunk.yml), and touching the
+# validator must not trigger an SDK release. Without this key the job that runs the
+# validator is not triggered by changes to the validator — you could break the guardrail
+# and keep a green build.
+sdk_package_shapes:
+  - '.github/scripts/validate-sdk-package-shapes/**'
+  - '.github/scripts/resolve-sdk-pin/**'
+  # resolve-sdk-pin's only caller, and the owner of the CLI's argument contract. Without it,
+  # changing a flag in the workflow does not run the tests that cover the module it invokes.
+  - '.github/workflows/cicd_comp_release-prepare-phase.yml'
+
 # PR area labeling filters
 # These are separate from test-triggering filters to avoid false positives
 # (e.g., workflow changes should trigger backend tests but shouldn't label PR as "Area : Backend")
@@ -70,7 +102,6 @@ area_backend:
   - 'dotCMS/src/main/webapp/WEB-INF/!(messages)/**'
   - 'dotcms-integration/**'
   - 'dotcms-postman/**'
-  - 'test-karate/**'
   - 'bom/**'
   - 'build-parent/**'
   - 'parent/**'

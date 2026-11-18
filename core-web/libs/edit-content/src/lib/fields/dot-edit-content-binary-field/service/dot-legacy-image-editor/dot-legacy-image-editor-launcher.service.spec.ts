@@ -1,5 +1,5 @@
-import { expect } from '@jest/globals';
-import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/jest';
+import { createServiceFactory, SpectatorService, SpyObject } from '@openng/spectator/vitest';
+import { Mock, MockInstance, expect, vi } from 'vitest';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -24,7 +24,7 @@ describe('DotLegacyImageEditorLauncherService', () => {
     const closeEventName = `binaryField-close-image-editor-${variable}`;
 
     beforeEach(() => {
-        dialogRef = { close: jest.fn() } as unknown as DynamicDialogRef;
+        dialogRef = { close: vi.fn() } as unknown as DynamicDialogRef;
         spectator = createService();
         dialogService = spectator.inject(DialogService);
         dialogService.open.mockReturnValue(dialogRef);
@@ -32,7 +32,7 @@ describe('DotLegacyImageEditorLauncherService', () => {
 
     afterEach(() => {
         spectator.service.stopListening();
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     const openEditorDialog = (): void => {
@@ -52,7 +52,7 @@ describe('DotLegacyImageEditorLauncherService', () => {
         );
     };
 
-    const getTempfileDispatches = (dispatchSpy: jest.SpyInstance): CustomEvent[] =>
+    const getTempfileDispatches = (dispatchSpy: MockInstance): CustomEvent[] =>
         dispatchSpy.mock.calls
             .map(([event]) => event)
             .filter(
@@ -79,7 +79,7 @@ describe('DotLegacyImageEditorLauncherService', () => {
     });
 
     it('should re-dispatch tempfile event when postMessage tempfile is received', () => {
-        const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
+        const dispatchSpy = vi.spyOn(document, 'dispatchEvent');
         const tempFile = { id: 'temp-123' } as DotCMSTempFile;
 
         spectator.service.listen(variable);
@@ -99,7 +99,7 @@ describe('DotLegacyImageEditorLauncherService', () => {
     });
 
     it('should re-dispatch close event when postMessage close is received', () => {
-        const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
+        const dispatchSpy = vi.spyOn(document, 'dispatchEvent');
 
         spectator.service.listen(variable);
         openEditorDialog();
@@ -120,7 +120,7 @@ describe('DotLegacyImageEditorLauncherService', () => {
     });
 
     it('should ignore postMessage from a different origin', () => {
-        const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
+        const dispatchSpy = vi.spyOn(document, 'dispatchEvent');
         const invalidOrigin =
             window.location.origin === 'https://evil.example'
                 ? 'http://evil.example'
@@ -146,7 +146,7 @@ describe('DotLegacyImageEditorLauncherService', () => {
     });
 
     it('should ignore postMessage when dialog is not open', () => {
-        const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
+        const dispatchSpy = vi.spyOn(document, 'dispatchEvent');
 
         spectator.service.listen(variable);
         dispatchSpy.mockClear();
@@ -162,7 +162,7 @@ describe('DotLegacyImageEditorLauncherService', () => {
     });
 
     it('should ignore postMessage when variable does not match', () => {
-        const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
+        const dispatchSpy = vi.spyOn(document, 'dispatchEvent');
 
         spectator.service.listen(variable);
         openEditorDialog();
@@ -179,7 +179,7 @@ describe('DotLegacyImageEditorLauncherService', () => {
     });
 
     it('should ignore postMessage after the editor dialog closes', () => {
-        const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
+        const dispatchSpy = vi.spyOn(document, 'dispatchEvent');
         const tempFile = { id: 'temp-123' } as DotCMSTempFile;
 
         spectator.service.listen(variable);
@@ -196,7 +196,7 @@ describe('DotLegacyImageEditorLauncherService', () => {
         expect(dialogRef.close).toHaveBeenCalledTimes(1);
 
         dispatchSpy.mockClear();
-        (dialogRef.close as jest.Mock).mockClear();
+        (dialogRef.close as Mock).mockClear();
 
         dispatchPostMessage({
             source: 'dot-image-editor',

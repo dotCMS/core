@@ -20,7 +20,26 @@
             (buttonAction)="onRetry()" />
     </div>
 } @else {
-    <p-toolbar class="justify-start gap-1 border-x-0! border-t-0! px-3">
+    @if (store.isLimitedMode()) {
+        <p-message
+            [severity]="store.isSlotUsed() ? 'warn' : 'info'"
+            styleClass="w-full rounded-none! border-x-0! border-t-0!"
+            data-testid="experiments-limited-mode-banner">
+            <span>
+                {{
+                    (store.isSlotUsed()
+                        ? 'experiments.list.limited-mode.banner.slot-used'
+                        : 'experiments.list.limited-mode.banner'
+                    ) | dm
+                }}
+            </span>
+        </p-message>
+    }
+
+    <p-toolbar
+        class="justify-start gap-1 border-x-0! border-t-0!"
+        [class.px-3]="!$inPanel"
+        [class.px-5!]="$inPanel">
         <div class="flex w-full items-center gap-2 py-3">
             <p-iconField iconPosition="left">
                 <p-inputIcon>
@@ -50,21 +69,50 @@
                 }
             </p-iconField>
 
-            <dot-experiment-list-filter
-                [title]="'experiments.list.filter.status' | dm"
-                [emptyLabel]="'experiments.list.filter.all' | dm"
-                [options]="$statusFilterOptions()"
-                [selected]="store.selectedStatuses()"
-                (selectionChange)="onStatusesChange($event)"
-                data-testid="experiments-status-filter" />
+            <dot-filter-bar>
+                <dot-experiment-list-filter
+                    [title]="'experiments.list.filter.status' | dm"
+                    [emptyLabel]="'experiments.list.filter.all' | dm"
+                    [options]="$statusFilterOptions()"
+                    [selected]="store.selectedStatuses()"
+                    (selectionChange)="onStatusesChange($event)"
+                    data-filter-chip="status"
+                    data-testid="experiments-status-filter" />
 
-            <dot-experiment-list-filter
-                [title]="'experiments.list.filter.goal' | dm"
-                [emptyLabel]="'experiments.list.filter.all' | dm"
-                [options]="$goalFilterOptions()"
-                [selected]="store.selectedGoals()"
-                (selectionChange)="onGoalsChange($event)"
-                data-testid="experiments-goal-filter" />
+                <dot-experiment-list-filter
+                    [title]="'experiments.list.filter.goal' | dm"
+                    [emptyLabel]="'experiments.list.filter.all' | dm"
+                    [options]="$goalFilterOptions()"
+                    [selected]="store.selectedGoals()"
+                    (selectionChange)="onGoalsChange($event)"
+                    data-filter-chip="goal"
+                    data-testid="experiments-goal-filter" />
+
+                <dot-experiment-schedule-filter
+                    [from]="store.scheduleFrom()"
+                    [to]="store.scheduleTo()"
+                    (selectionChange)="onScheduleChange($event)"
+                    data-filter-chip="schedule"
+                    data-testid="experiments-schedule-filter" />
+
+                <dot-user-filter
+                    titleKey="experiments.list.filter.created-by"
+                    emptyLabelKey="experiments.list.filter.all"
+                    [selected]="store.selectedCreators()"
+                    (selectionChange)="onCreatorsChange($event)"
+                    (loadFailed)="onDirectoryError($event)"
+                    data-filter-chip="createdBy"
+                    data-testid="experiments-created-by-filter" />
+
+                @if (store.isScheduleRangeUnusable()) {
+                    <small
+                        class="text-red-500"
+                        role="status"
+                        data-testid="experiments-schedule-range-error">
+                        {{ 'experiments.list.filter.schedule.invalid-range' | dm }}
+                    </small>
+                }
+            </dot-filter-bar>
 
             <p-button
                 class="ml-auto"
@@ -81,11 +129,9 @@
             <div class="flex min-h-0 flex-1 items-center justify-center p-6">
                 <dot-empty-container
                     [configuration]="$emptyConfiguration()"
-                    [buttonLabel]="
-                        $hasActiveFilters() ? ('experiments.list.no-results.clear' | dm) : ''
-                    "
+                    [buttonLabel]="$emptyActionLabel()"
                     [secondaryButton]="true"
-                    (buttonAction)="onClearFilters()"
+                    (buttonAction)="onEmptyAction()"
                     [hideContactUsLink]="true"
                     data-testid="experiments-empty-state" />
             </div>
@@ -96,6 +142,7 @@
                 [lazy]="true"
                 (onLazyLoad)="onLazyLoad($event)"
                 [paginator]="true"
+                [alwaysShowPaginator]="false"
                 [showFirstLastIcon]="false"
                 [showPageLinks]="false"
                 [showCurrentPageReport]="true"
@@ -103,8 +150,10 @@
                 [rows]="store.perPage()"
                 [totalRecords]="store.totalRecords()"
                 [first]="(store.page() - 1) * store.perPage()"
+                [lazyLoadOnInit]="true"
                 dataKey="experiment.id"
-                [rowsPerPageOptions]="$rowsPerPageOptions()"
+                [rowsPerPageOptions]="ROWS_PER_PAGE_OPTIONS"
+                paginatorDropdownAppendTo="body"
                 [rowHover]="true"
                 [scrollable]="true"
                 scrollHeight="flex"
@@ -117,16 +166,23 @@
                             {{ 'experiments.list.header.name' | dm }}
                             <p-sortIcon field="name" />
                         </th>
-                        <th class="w-56" pSortableColumn="page">
-                            {{ 'experiments.list.header.page' | dm }}
-                            <p-sortIcon field="page" />
-                        </th>
+                        @if (!$inPanel) {
+                            <th class="w-56" pSortableColumn="page">
+                                {{ 'experiments.list.header.page' | dm }}
+                                <p-sortIcon field="page" />
+                            </th>
+                        }
                         <th class="w-44 whitespace-nowrap" pSortableColumn="goal">
                             {{ 'experiments.list.header.goal' | dm }}
                             <p-sortIcon field="goal" />
                         </th>
                         <th class="w-28 text-center! whitespace-nowrap">
                             {{ 'experiments.list.header.variants' | dm }}
+                        </th>
+                        <th
+                            class="w-40 whitespace-nowrap"
+                            data-testid="experiments-header-created-by">
+                            {{ 'experiments.list.header.created-by' | dm }}
                         </th>
                         <th class="w-60 whitespace-nowrap" pSortableColumn="schedule">
                             {{ 'experiments.list.header.schedule' | dm }}
@@ -158,7 +214,14 @@
                             }
                         </tr>
                     } @else {
-                        <tr class="group" data-testid="experiment-row">
+                        <tr
+                            class="group cursor-pointer"
+                            data-testid="experiment-row"
+                            role="button"
+                            tabindex="0"
+                            (click)="onRowClick(row.experiment)"
+                            (keydown.enter)="onRowClick(row.experiment)"
+                            (keydown.space)="onRowClick(row.experiment); $event.preventDefault()">
                             <td class="max-w-0" data-testid="experiment-name">
                                 <div class="flex min-w-0 flex-col">
                                     <span
@@ -175,19 +238,29 @@
                                     }
                                 </div>
                             </td>
-                            <td
-                                class="max-w-56 truncate font-mono text-sm"
-                                [title]="row.pagePath"
-                                data-testid="experiment-page">
-                                {{ row.pagePath }}
-                            </td>
+                            @if (!$inPanel) {
+                                <td
+                                    class="max-w-56 truncate font-mono text-sm"
+                                    [title]="row.pagePath"
+                                    data-testid="experiment-page">
+                                    {{ row.pagePath }}
+                                </td>
+                            }
                             <td class="whitespace-nowrap" data-testid="experiment-goal">
                                 {{
-                                    row.goalLabelKey ? (row.goalLabelKey | dm) : NO_GOAL_PLACEHOLDER
+                                    row.goalLabelKey
+                                        ? (row.goalLabelKey | dm)
+                                        : EMPTY_CELL_PLACEHOLDER
                                 }}
                             </td>
                             <td class="text-center!" data-testid="experiment-variants">
                                 {{ row.variants }}
+                            </td>
+                            <td
+                                class="max-w-40 truncate"
+                                [attr.title]="row.createdByName"
+                                data-testid="experiment-created-by">
+                                {{ row.createdByName ?? EMPTY_CELL_PLACEHOLDER }}
                             </td>
                             <td class="whitespace-nowrap" data-testid="experiment-schedule">
                                 {{ row.schedule }}
@@ -201,16 +274,18 @@
                             <td class="whitespace-nowrap" data-testid="experiment-modified">
                                 {{ row.experiment.modDate | date: 'MMM d, y' }}
                             </td>
-                            <td>
-                                <!-- The design leads this cell with "View Results" / "Configure";
-                                 Configure is the first entry of the kebab and View Results lands
-                                 with the reports screen. -->
+                            <td
+                                (click)="$event.stopPropagation()"
+                                (keydown)="$event.stopPropagation()">
                                 <div
                                     class="flex items-center justify-end gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
+                                    <!-- Square, so `[rounded]` reads as a circle rather than a
+                                         pill — see the configuration header's kebab. -->
                                     <p-button
                                         [text]="true"
                                         [rounded]="true"
                                         size="small"
+                                        styleClass="w-9 h-9 min-w-9 p-0"
                                         (onClick)="
                                             onRowMenuToggle(row.experiment); rowMenu.toggle($event)
                                         "

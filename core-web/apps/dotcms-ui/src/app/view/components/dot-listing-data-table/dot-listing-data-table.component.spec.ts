@@ -2,6 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { of } from 'rxjs';
+import { vi } from 'vitest';
 
 import { HttpHeaders, provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
@@ -96,15 +97,15 @@ class TestHostComponent {
 
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
-    value: jest.fn().mockImplementation((query) => ({
+    value: vi.fn().mockImplementation((query) => ({
         matches: false,
         media: query,
         onchange: null,
-        addListener: jest.fn(), // deprecated
-        removeListener: jest.fn(), // deprecated
-        addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn()
+        addListener: vi.fn(), // deprecated
+        removeListener: vi.fn(), // deprecated
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        dispatchEvent: vi.fn()
     }))
 });
 
@@ -446,7 +447,7 @@ describe('DotListingDataTableComponent', () => {
         hostFixture.detectChanges();
         const actionButton = de.query(By.css('dot-action-menu-button'));
 
-        const spy = jest.spyOn(fakeActions[0].menuItem, 'command');
+        const spy = vi.spyOn(fakeActions[0].menuItem, 'command');
 
         actionButton.nativeElement.children[0].click();
 
@@ -479,7 +480,7 @@ describe('DotListingDataTableComponent', () => {
     }));
 
     it('should focus first row on arrowDown in Global Search Input', fakeAsync(() => {
-        jest.spyOn(comp, 'focusFirstRow');
+        vi.spyOn(comp, 'focusFirstRow');
         hostFixture.detectChanges();
         flushHttpRequest(items);
         tick(1);
@@ -511,7 +512,7 @@ describe('DotListingDataTableComponent', () => {
     }));
 
     it('should emit when a row is clicked or enter', fakeAsync(() => {
-        jest.spyOn(comp.rowWasClicked, 'emit');
+        vi.spyOn(comp.rowWasClicked, 'emit');
         hostFixture.detectChanges();
         flushHttpRequest(items);
         tick(1);
@@ -524,7 +525,7 @@ describe('DotListingDataTableComponent', () => {
     }));
 
     it('should never emit when a SYSTEM TEMPLATE row is clicked or enter', fakeAsync(() => {
-        jest.spyOn(comp.rowWasClicked, 'emit');
+        vi.spyOn(comp.rowWasClicked, 'emit');
         hostFixture.detectChanges();
         flushHttpRequest(items);
         tick(1);
@@ -538,7 +539,7 @@ describe('DotListingDataTableComponent', () => {
     }));
 
     it('should set pContextMenuRowDisabled correctly', fakeAsync(() => {
-        jest.spyOn(comp.rowWasClicked, 'emit');
+        vi.spyOn(comp.rowWasClicked, 'emit');
         hostFixture.detectChanges();
         flushHttpRequest(items);
         tick(1);

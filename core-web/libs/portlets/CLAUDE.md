@@ -65,6 +65,8 @@ this.dialogService.open(MyFormComponent, { width: '700px', ... });
 
 **Modal dialogs (default)**: List component opens `DialogService.open(CreateComponent, ...)`. The dialog closes with the form value; the list component passes it to the store. This is the pattern used in `dot-tags` and should be the default for new portlets.
 
+**Dialogs whose submit can fail into the form (exception)**: when a submit can be rejected in a way that is *a correction to a field the dialog is still holding* — a Lucene or GraphQL query the server parses, say — `close(formValue)` loses the input at the moment the user needs it, and the error surfaces on the screen behind a modal that has already gone. Such a dialog keeps ownership of the submit: it calls the store itself, renders the failure inline, and closes only on success. Keep the request state local to the dialog rather than adding an in-flight flag to portlet state, and clear any unrendered outcome in the dialog's `DestroyRef.onDestroy` — PrimeNG's header X and the Escape key call `DynamicDialogRef.close` directly and never reach your own cancel handler. See `dot-ai`'s `dot-ai-index-create`. `close(formValue)` stays the default for every dialog whose submit cannot fail into the form.
+
 **Routed CRUD (rare)**: Separate route for create/edit pages. Use only when the form is too complex for a dialog (many tabs, nested data). See `dot-experiments` for this pattern.
 
 ## When the CRUD Pattern Is Not Enough
@@ -204,9 +206,17 @@ pnpm nx generate @nx/angular:library --name=portlet \
 1. **tsconfig alias** in `core-web/tsconfig.base.json`: change generated `"portlet"` → `"@dotcms/portlets/dot-{feature}/portlet"`
 2. **project.json** `name`: change to `portlets-dot-{feature}-portlet`
 3. **jest.config.ts** `displayName`: change to `portlets-dot-{feature}-portlet`
-4. **tsconfig.spec.json**: add `isolatedModules: true` in transform options (required for transitive deps)
+4. **tsconfig.spec.json**: add `isolatedModules: true` in `compilerOptions` (required for transitive deps) — not in the jest transform block
 5. **tsconfig.spec.json**: keep minimal — only `module`, `target`, `types`
 6. **Delete** generated `README.md` and boilerplate component in `src/lib/portlet/`
+7. **Add the lib to the `@nx/jest/plugin` `include` list in `core-web/nx.json`** — that plugin
+   is scoped to an explicit allowlist, so until the new path is listed the project gets **no
+   `test` target at all** and `nx test <project>` fails with "Cannot find configuration for
+   task". Nothing warns you; the target is simply absent.
+8. **Revert the generator's incidental reformatting.** `@nx/angular:library` rewrites
+   `nx.json`, `tsconfig.base.json` and `.vscode/extensions.json` from 4-space to 2-space
+   indentation. Only the tsconfig alias is a real change — restore the other files and add the
+   alias by hand, or the diff buries the feature under hundreds of formatting lines.
 
 ## Making the portlet reachable
 
@@ -216,10 +226,12 @@ portlet never reaches the menu, `MenuGuardService` rejects the route, and the ap
 first portlet instead. The symptom is a route that "does not exist" with nothing in the console.
 
 1. Declare it in `dotCMS/src/main/webapp/WEB-INF/portlet.xml`.
-2. **Bump the count in `SerializationHelperTest.testFromXmlFile`** — it asserts an exact number of
-   declared portlets, so adding one turns it red (`expected:<N> but was:<N+1>`). Pin the new
-   portlet by id there too, as the existing entries do; the count alone would still pass if some
-   other portlet were swapped for yours. This has been part of every portlet migration.
+2. **Pin the new portlet by id in `SerializationHelperTest.testFromXmlFile`** — optional but
+   worth it. The test asserts **containment only**; an exact count was deliberately rejected
+   (see the comment at the top of `testFromXmlFile`), so there is **no count to bump**. Adding
+   a portlet does not turn it red. If you want the migration protected against a silent revert,
+   add an exactness block asserting the portlet's class, as the `categories` entries do —
+   containment alone still passes if someone swaps the class back.
 3. The portlet id must equal the **whole first URL segment** of the route: `MenuGuardService`
    matches that segment against `/api/v1/menu`.
 
@@ -252,7 +264,7 @@ and fail later on `SerializationHelperTest`.
 | Missing `untracked()` in effect | Wrap store method calls in `untracked()` |
 | Missing `isolatedModules: true` in jest config | Add it — transitive deps fail without it |
 | Adding `"strict": true` to tsconfig.json | Omit — causes issues with Angular compiler |
-| Adding `"module": "preserve"` to tsconfig.spec.json | Use `"module": "commonjs"` |
+| Omitting `isolatedModules: true` from tsconfig.spec.json `compilerOptions` | Add it — transitive deps fail without it |
 | Hardcoded text in templates | Use `DotMessagePipe` (`| dm`) for all user-facing text |
 | Custom error dialogs | Use `DotHttpErrorManagerService.handle(error)` everywhere |
 | `@Input()` / `@Output()` decorators | Use `input()` / `output()` signal functions |
@@ -264,5 +276,5 @@ and fail later on `SerializationHelperTest`.
 - **`dot-experiments`** — Full CRUD with guards, resolvers, shell, routed create/edit
 - **`dot-analytics`** — Enterprise license checking, lazy loading
 - **`dot-content-drive`** — Complex nested routing, reference for test config
-- **`edit-ema/portlet`** — Reference for complex portlets: feature slice decomposition, Container/Presentational pattern, flat prefixed state
+- **`edit-ema/portlet`** — Reference for complex portlets: feature slice decomposition, flat prefixed state, and a screen split into regions. `EditEmaEditorComponent` is layout only: it places the regions, decides which show in edit and preview mode, and injects only `UVEStore`. The toolbar, palette, browser toolbar, canvas, SEO results, edit panel and content editor each read and write `UVEStore` directly, with no inputs or outputs between them and the editor, and ask for a content editor by dispatching a `uveContentEditorEvents` request that only the content editor listens to. What each region owns, the store state it uses and the requests it sends: [`edit-ema/ARCHITECTURE.md` → Where to find things](edit-ema/ARCHITECTURE.md#where-to-find-things)
 - **`dot-locales`** — Legacy pattern only (uses `ComponentStore`). Do not use as a model for new work

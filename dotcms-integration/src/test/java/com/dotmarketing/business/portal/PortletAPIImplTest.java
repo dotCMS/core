@@ -7,12 +7,18 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.LayoutDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.Portlet;
@@ -27,11 +33,13 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import javax.xml.parsers.ParserConfigurationException;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -44,6 +52,9 @@ public class PortletAPIImplTest {
     private static final String PORTLET_ID = "testCustomPortlet";
     private static PortletAPI portletApi;
     private static User systemUser;
+    private static final List<User> usersToClean = new ArrayList<>();
+    private static final List<Role> rolesToClean = new ArrayList<>();
+    private static final List<Layout> layoutsToClean = new ArrayList<>();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -307,6 +318,170 @@ public class PortletAPIImplTest {
         }finally {
             if(portlet!=null){
                 portletApi.deletePortlet(portlet.getPortletId());
+            }
+        }
+    }
+
+    // ==================== isCustomContentPortlet (#37574) ====================
+
+    /**
+     * Builds an in-memory portlet carrying the {@code portletSource=db} marker that
+     * {@link PortletAPI#savePortlet} writes for every custom content tool. Nothing is persisted.
+     */
+    private static Portlet dbRegisteredPortlet(final String portletId) {
+        final Map<String, String> initParams = new java.util.HashMap<>();
+        initParams.put("portletSource", "db");
+        initParams.put("name", "QA " + portletId);
+        initParams.put("dataViewMode", "list");
+        return new Portlet(portletId, StrutsPortlet.class.getName(), initParams);
+    }
+
+    /**
+     * Method to test: {@link PortletAPI#isCustomContentPortlet(Portlet)}
+     * Given Scenario: a tool defined in portlet.xml.
+     * ExpectedResult: not custom, because it carries no database registration marker.
+     */
+    @Test
+    public void test_isCustomContentPortlet_xmlPortlet_false() {
+        final Portlet roles = portletApi.findPortlet(PortletID.ROLES.toString());
+        Assert.assertNotNull(roles);
+        Assert.assertFalse(portletApi.isCustomContentPortlet(roles));
+    }
+
+    /**
+     * Method to test: {@link PortletAPI#isCustomContentPortlet(Portlet)}
+     * Given Scenario: a database-registered tool whose id the product does not declare.
+     * ExpectedResult: custom.
+     */
+    @Test
+    public void test_isCustomContentPortlet_dbMarkerUndeclared_true() {
+        Assert.assertTrue(portletApi.isCustomContentPortlet(
+                dbRegisteredPortlet("c_qa" + System.nanoTime())));
+    }
+
+    /**
+     * Method to test: {@link PortletAPI#isCustomContentPortlet(Portlet)}
+     * Given Scenario: a database-registered tool whose id lacks the conventional {@code c_} prefix.
+     * ExpectedResult: still custom; the flag comes from the registration, not the id spelling.
+     */
+    @Test
+    public void test_isCustomContentPortlet_dbMarkerWithoutPrefix_true() {
+        Assert.assertTrue(portletApi.isCustomContentPortlet(
+                dbRegisteredPortlet("qa-no-prefix" + System.nanoTime())));
+    }
+
+    /**
+     * Method to test: {@link PortletAPI#isCustomContentPortlet(Portlet)}
+     * Given Scenario: Language Variables, a product tool stored as a database row with the
+     * {@code db} marker.
+     * ExpectedResult: not custom, because the product declares its id in {@link PortletID}.
+     */
+    @Test
+    public void test_isCustomContentPortlet_languageVariables_false() {
+        Assert.assertFalse(portletApi.isCustomContentPortlet(
+                dbRegisteredPortlet(PortletID.LANGUAGE_VARIABLES.toString())));
+    }
+
+    /**
+     * Method to test: {@link PortletAPI#isCustomContentPortlet(Portlet)}
+     * Given Scenario: a portlet with a {@code c_} id but no registration marker, the shape an
+     * OSGi plugin portlet stored in the database has.
+     * ExpectedResult: not custom.
+     */
+    @Test
+    public void test_isCustomContentPortlet_noMarker_false() {
+        final Map<String, String> initParams = new java.util.HashMap<>();
+        initParams.put("name", "Looks custom");
+        Assert.assertFalse(portletApi.isCustomContentPortlet(
+                new Portlet("c_looks-custom", StrutsPortlet.class.getName(), initParams)));
+    }
+
+    /**
+     * Method to test: {@link PortletAPI#isCustomContentPortlet(Portlet)}
+     * Given Scenario: a null portlet.
+     * ExpectedResult: not custom, no exception.
+     */
+    @Test
+    public void test_isCustomContentPortlet_null_false() {
+        Assert.assertFalse(portletApi.isCustomContentPortlet(null));
+    }
+
+    /**
+     * Method to test: {@link PortletAPI#hasUserAdminRights(User)}
+     * Given Scenario: a back-end user whose only portlet is {@code users}.
+     * ExpectedResult: true. This is the baseline for the {@code users-legacy} case below.
+     */
+    @Test
+    public void test_hasUserAdminRights_usersPortletHolder_true() throws DotDataException {
+        assertTrue(portletApi.hasUserAdminRights(backendUserWithOnly(PortletID.USERS.toString())));
+    }
+
+    /**
+     * Method to test: {@link PortletAPI#hasUserAdminRights(User)}
+     * Given Scenario: a back-end user whose only portlet is the old Users screen, kept as
+     * {@code users-legacy} after the Angular portlet took over {@code users}.
+     * ExpectedResult: true, exactly as for a holder of {@code users}, so the screens that ask this
+     * question keep working for a role that kept the old screen.
+     */
+    @Test
+    public void test_hasUserAdminRights_usersLegacyPortletHolder_true() throws DotDataException {
+        assertTrue(portletApi.hasUserAdminRights(backendUserWithOnly(PortletID.USERS_LEGACY.toString())));
+    }
+
+    /**
+     * Method to test: {@link PortletAPI#hasUserAdminRights(User)}
+     * Given Scenario: a back-end user whose only portlet is unrelated to user administration.
+     * ExpectedResult: false.
+     */
+    @Test
+    public void test_hasUserAdminRights_otherPortletHolder_false() throws DotDataException {
+        Assert.assertFalse(portletApi.hasUserAdminRights(backendUserWithOnly(PortletID.CONTENT.toString())));
+    }
+
+    /**
+     * Creates a back-end user whose only portlet is the given one, through a layout and role of
+     * their own, all tracked for clean-up.
+     *
+     * @param portletId the id of the only portlet the user will hold
+     * @return the persisted {@link User}
+     * @throws DotDataException if the back-end role cannot be loaded
+     */
+    private static User backendUserWithOnly(final String portletId) throws DotDataException {
+        final Layout layout = new LayoutDataGen().portletIds(portletId).nextPersisted();
+        layoutsToClean.add(layout);
+        final Role portletRole = new RoleDataGen().layout(layout).nextPersisted();
+        rolesToClean.add(portletRole);
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole(), portletRole).nextPersisted();
+        usersToClean.add(user);
+        return user;
+    }
+
+    /**
+     * Removes the users, roles and layouts the admin-rights tests created, in that order. A failure
+     * on one entry does not strand the rest.
+     */
+    @AfterClass
+    public static void cleanUp() {
+        for (final User user : usersToClean) {
+            try {
+                UserDataGen.remove(user);
+            } catch (final Exception e) {
+                Logger.warn(PortletAPIImplTest.class, "Unable to delete test user: " + e.getMessage());
+            }
+        }
+        for (final Role role : rolesToClean) {
+            try {
+                RoleDataGen.remove(role);
+            } catch (final Exception e) {
+                Logger.warn(PortletAPIImplTest.class, "Unable to delete test role: " + e.getMessage());
+            }
+        }
+        for (final Layout layout : layoutsToClean) {
+            try {
+                APILocator.getLayoutAPI().removeLayout(APILocator.getLayoutAPI().findLayout(layout.getId()));
+            } catch (final Exception e) {
+                Logger.warn(PortletAPIImplTest.class, "Unable to delete test layout: " + e.getMessage());
             }
         }
     }

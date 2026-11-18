@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    mockProvider,
+    Spectator
+} from '@openng/spectator/vitest';
+import { vi } from 'vitest';
 
 import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 
@@ -23,13 +29,13 @@ describe('DotPublishingQueueToolbarComponent', () => {
 
     function makeStoreStub() {
         return {
-            search: jest.fn().mockReturnValue(''),
-            setSearch: jest.fn(),
-            refresh: jest.fn(),
+            search: vi.fn().mockReturnValue(''),
+            setSearch: vi.fn(),
+            refresh: vi.fn(),
             bundlesSelectedIds,
             bundlesTotal,
             draftBundlesTotal,
-            retryBundles: jest.fn()
+            retryBundles: vi.fn()
         };
     }
 
@@ -68,7 +74,7 @@ describe('DotPublishingQueueToolbarComponent', () => {
     });
 
     beforeEach(() => {
-        jest.useFakeTimers();
+        vi.useFakeTimers();
         bundlesSelectedIds.set([]);
         bundlesTotal.set(0);
         draftBundlesTotal.set(null);
@@ -76,11 +82,11 @@ describe('DotPublishingQueueToolbarComponent', () => {
         store = spectator.inject(DotPublishingQueueStore, true) as unknown as ReturnType<
             typeof makeStoreStub
         >;
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     afterEach(() => {
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 
     describe('layout', () => {
@@ -182,14 +188,14 @@ describe('DotPublishingQueueToolbarComponent', () => {
         });
 
         it('Upload item → emits uploadClick', () => {
-            const emit = jest.fn();
+            const emit = vi.fn();
             spectator.component.$uploadClick.subscribe(emit);
             spectator.component.addBundleItems[1].command?.({} as never);
             expect(emit).toHaveBeenCalled();
         });
 
         it('Select Bundle item → emits selectBundleClick (placeholder for future dialog)', () => {
-            const emit = jest.fn();
+            const emit = vi.fn();
             spectator.component.$selectBundleClick.subscribe(emit);
             spectator.component.addBundleItems[0].command?.({} as never);
             expect(emit).toHaveBeenCalled();
@@ -199,20 +205,20 @@ describe('DotPublishingQueueToolbarComponent', () => {
     describe('search debounce', () => {
         it('calls store.setSearch only after 300ms', () => {
             spectator.component.onSearch('hello');
-            jest.advanceTimersByTime(299);
+            vi.advanceTimersByTime(299);
             expect(store.setSearch).not.toHaveBeenCalled();
 
-            jest.advanceTimersByTime(1);
+            vi.advanceTimersByTime(1);
             expect(store.setSearch).toHaveBeenCalledWith('hello');
         });
 
         it('coalesces rapid typing', () => {
             spectator.component.onSearch('a');
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
             spectator.component.onSearch('ab');
-            jest.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100);
             spectator.component.onSearch('abc');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(store.setSearch).toHaveBeenCalledTimes(1);
             expect(store.setSearch).toHaveBeenCalledWith('abc');
@@ -220,9 +226,9 @@ describe('DotPublishingQueueToolbarComponent', () => {
 
         it('skips duplicate values (distinctUntilChanged)', () => {
             spectator.component.onSearch('x');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
             spectator.component.onSearch('x');
-            jest.advanceTimersByTime(300);
+            vi.advanceTimersByTime(300);
 
             expect(store.setSearch).toHaveBeenCalledTimes(1);
         });
@@ -283,7 +289,7 @@ describe('DotPublishingQueueToolbarComponent', () => {
         it('emits deleteClick when clicked', () => {
             bundlesSelectedIds.set(['b1']);
             spectator.detectChanges();
-            const emit = jest.fn();
+            const emit = vi.fn();
             spectator.component.$deleteClick.subscribe(emit);
             const btn = spectator.query(byTestId('pq-bulk-delete'));
             spectator.click(btn as HTMLButtonElement);

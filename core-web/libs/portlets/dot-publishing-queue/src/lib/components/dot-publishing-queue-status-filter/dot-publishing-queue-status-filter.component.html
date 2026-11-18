@@ -1,6 +1,6 @@
 <dot-chip-filter
     [title]="'publishing-queue.filter.status' | dm"
-    [selections]="$selected()"
+    [selections]="$selectedLabels()"
     (clicked)="popover.toggle($event)"
     (removed)="onRemoveAll()"
     data-testid="pq-status-filter-chip" />
@@ -20,7 +20,9 @@
         optionValue="value"
         (onChange)="onChange()">
         <ng-template let-item pTemplate="item">
-            <dot-filter-list-item [label]="item.label" data-testid="pq-status-filter-item" />
+            <dot-filter-list-item
+                [label]="item.label"
+                [attr.data-testid]="'pq-status-filter-item-' + item.value" />
         </ng-template>
     </p-listbox>
 </p-popover>

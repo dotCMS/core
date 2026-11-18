@@ -1,6 +1,5 @@
 package com.dotmarketing.common.reindex;
 
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -8,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexTimestamp;
 import com.dotcms.content.index.MigrationIndexVisibility;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.IndexStats;
@@ -84,9 +84,15 @@ public class IndexResourceHelper {
     }
     
 
-    private Date indexDate(String indexName) {
-        
-        return Try.of(()->new SimpleDateFormat("yyyyMMddHHmmss").parse(indexName.split("_")[1])).getOrElse(new Date());
+    /**
+     * Reads the creation date encoded in an index name's suffix.
+     *
+     * @param indexName the index name
+     * @return the creation date, or the current date when the name carries no valid timestamp
+     */
+    private Date indexDate(final String indexName) {
+        // Same UTC reading as the switchover uses (issue #37282).
+        return Try.of(() -> Date.from(IndexTimestamp.createdAt(indexName))).getOrElse(new Date());
         
         
         

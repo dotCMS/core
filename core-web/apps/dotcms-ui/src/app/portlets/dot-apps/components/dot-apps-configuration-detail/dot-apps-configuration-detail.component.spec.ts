@@ -1,8 +1,9 @@
 import { MarkdownService } from 'ngx-markdown';
 import { Observable, of } from 'rxjs';
+import { Mock, vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Injectable, Input, Output, input, output } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
@@ -118,10 +119,9 @@ class MockDotAppsService {
     standalone: true
 })
 class MockDotKeyValueComponent {
-    @Input() autoFocus: boolean;
-    @Input() showHiddenField: string;
-    @Input() variables: DotKeyValue[];
-    @Output() updatedList = new EventEmitter<DotKeyValue[]>();
+    $showHiddenField = input<boolean>(false, { alias: 'showHiddenField' });
+    $variables = input<DotKeyValue[]>([], { alias: 'variables' });
+    updatedList = output<DotKeyValue[]>();
 }
 
 @Component({
@@ -131,6 +131,7 @@ class MockDotKeyValueComponent {
 })
 class MockDotAppsConfigurationDetailFormComponent {
     @Input() appConfigured: boolean;
+    @Input() appKey = '';
     @Input() formFields: DotAppsSecret[];
     @Output() data = new EventEmitter<{ [key: string]: string }>();
     @Output() valid = new EventEmitter<boolean>();
@@ -230,12 +231,18 @@ describe('DotAppsConfigurationDetailComponent', () => {
             component = fixture.debugElement.componentInstance;
             appsServices = TestBed.inject(DotAppsService);
             routerService = TestBed.inject(DotRouterService);
-            jest.spyOn(appsServices, 'saveSiteConfiguration');
+            vi.spyOn(appsServices, 'saveSiteConfiguration');
             fixture.detectChanges();
         }));
 
         it('should set App from resolver', () => {
             expect(component.apps).toBe(appData);
+        });
+
+        // #37191 FR-035 — an app whose descriptor forbids extra params must not
+        // show the Custom Properties section at all.
+        it('should not render the key/value editor when extra params are not allowed', () => {
+            expect(fixture.debugElement.query(By.css('dot-key-value-ng'))).toBeNull();
         });
 
         it('should set labels and buttons with right values', () => {
@@ -271,6 +278,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
             ).componentInstance;
             expect(formComponent.formFields).toEqual(sites[0].secrets);
             expect(formComponent.appConfigured).toEqual(sites[0].configured);
+            expect(formComponent.appKey).toEqual(appData.key);
         });
 
         it('should update formData and formValid fields when dot-apps-configuration-detail-form changed', () => {
@@ -375,16 +383,15 @@ describe('DotAppsConfigurationDetailComponent', () => {
             fixture = TestBed.createComponent(DotAppsConfigurationDetailComponent);
             component = fixture.debugElement.componentInstance;
             appsServices = TestBed.inject(DotAppsService);
-            jest.spyOn(appsServices, 'saveSiteConfiguration');
+            vi.spyOn(appsServices, 'saveSiteConfiguration');
             fixture.detectChanges();
         }));
 
         it('should show DotKeyValue component with right values', () => {
             const keyValue = fixture.debugElement.query(By.css('dot-key-value-ng'));
             expect(keyValue).toBeTruthy();
-            expect(keyValue.componentInstance.autoFocus).toBe(false);
-            expect(keyValue.componentInstance.showHiddenField).toBe(true);
-            expect(keyValue.componentInstance.variables).toEqual([
+            expect(keyValue.componentInstance.$showHiddenField()).toBe(true);
+            expect(keyValue.componentInstance.$variables()).toEqual([
                 { key: 'custom', hidden: false, value: 'test' }
             ]);
         });
@@ -401,6 +408,38 @@ describe('DotAppsConfigurationDetailComponent', () => {
             const keyValue = fixture.debugElement.query(By.css('dot-key-value-ng'));
             keyValue.componentInstance.updatedList.emit([]);
             expect(component.dynamicVariables.length).toEqual(0);
+        });
+
+        // #37191 US3 — this is the only consumer that offers hidden values.
+
+        it('should preserve the hidden flag on every pair it receives', () => {
+            const keyValue = fixture.debugElement.query(By.css('dot-key-value-ng'));
+            keyValue.componentInstance.updatedList.emit([
+                { key: 'apiToken', hidden: true, value: 'secret' },
+                { key: 'theme', hidden: false, value: 'dark' }
+            ]);
+
+            expect(component.dynamicVariables).toEqual([
+                { key: 'apiToken', hidden: true, value: 'secret' },
+                { key: 'theme', hidden: false, value: 'dark' }
+            ]);
+        });
+
+        it('should carry hidden pairs into the payload sent on save', () => {
+            // The declared fields arrive from the form child; only the custom
+            // properties come from the key/value editor.
+            component.formData = {};
+
+            const keyValue = fixture.debugElement.query(By.css('dot-key-value-ng'));
+            keyValue.componentInstance.updatedList.emit([
+                { key: 'apiToken', hidden: true, value: 'secret' }
+            ]);
+
+            component.onSubmit();
+
+            const [, , payload] = (appsServices.saveSiteConfiguration as unknown as Mock).mock
+                .calls[0];
+            expect(payload.apiToken).toEqual({ hidden: true, value: 'secret' });
         });
 
         it('should save configuration when Save button clicked', () => {
