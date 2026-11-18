@@ -13,6 +13,7 @@ import com.dotcms.publishing.manifest.ManifestUtil;
 import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.util.PathContainmentUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -48,6 +49,7 @@ import java.time.Instant;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 
 public class BundlerUtil {
 
@@ -92,6 +94,39 @@ public class BundlerUtil {
         }
 		return dir;
 	}
+
+    /**
+     * Finds the compressed archive of a bundle in the configured bundles directory, following the
+     * rules of {@link #findBundleArchive(File, String)}. Resolving the configured directory creates
+     * it when it does not exist yet.
+     *
+     * @param bundleId the id of the bundle
+     * @return the bundle's {@code .tar.gz} file, or empty when there is none
+     */
+    public static Optional<File> findBundleArchive(final String bundleId) {
+        return findBundleArchive(new File(ConfigUtils.getBundlePath()), bundleId);
+    }
+
+    /**
+     * Finds the compressed archive of a bundle in the given bundles directory. The id must be a
+     * single plain path segment, and the archive must be a regular file located directly inside
+     * {@code bundleDir} once links are resolved. Nothing is created on disk.
+     *
+     * @param bundleDir the directory that holds the bundle archives
+     * @param bundleId  the id of the bundle
+     * @return the bundle's {@code .tar.gz} file, or empty when the id is not a plain segment or
+     * there is no such archive in the directory
+     */
+    public static Optional<File> findBundleArchive(final File bundleDir, final String bundleId) {
+        if (!PathContainmentUtil.isPlainSegment(bundleId)) {
+            return Optional.empty();
+        }
+        final File archive = new File(bundleDir, bundleId + ".tar.gz");
+        if (!archive.isFile() || !PathContainmentUtil.isContainedIn(bundleDir, archive)) {
+            return Optional.empty();
+        }
+        return Optional.of(archive);
+    }
 
     public static File getStaticBundleRoot(String name) {
         return getStaticBundleRoot(name, true);

@@ -481,7 +481,9 @@ public class RemotePublishAjaxAction extends AjaxAction {
     }
 
     /**
-     * Downloads a Bundle file for a given bundle id.
+     * Downloads the compressed file of the bundle named by the {@code bid} URI parameter. The id
+     * must be a plain bundle id; when it is not, or there is no archive for it in the bundles
+     * directory, the response is a 404.
      *
      * @param request  HttpRequest
      * @param response HttpResponse
@@ -498,43 +500,23 @@ public class RemotePublishAjaxAction extends AjaxAction {
 			response.sendError(401);
 			return;
 		}
-        Map<String, String> map = getURIParams();
-        response.setContentType( "application/x-tgz" );
+        final Map<String, String> map = getURIParams();
+        final String bid = map.get( "bid" );
 
-        String bid = map.get( "bid" );
-
-        PublisherConfig config = new PublisherConfig();
-        config.setId( bid );
-        File bundleRoot = BundlerUtil.getBundleRoot( config );
-
-        ArrayList<File> list = new ArrayList<>( 1 );
-        list.add( bundleRoot );
-        File bundle = new File( bundleRoot + File.separator + ".." + File.separator + config.getId() + ".tar.gz" );
-        if ( !bundle.exists() ) {
-            response.sendError( 500, "No Bundle Found" );
+        final Optional<File> bundle = BundlerUtil.findBundleArchive( bid );
+        if ( bundle.isEmpty() ) {
+            response.sendError( 404, "No Bundle Found" );
             return;
         }
 
-        response.setHeader( "Content-Disposition", "attachment; filename=" + config.getId() + ".tar.gz" );
-        BufferedInputStream in = null;
+        response.setContentType( "application/x-tgz" );
+        response.setHeader( "Content-Disposition", "attachment; filename=" + bundle.get().getName().replaceAll( "[^\\w.-]", "_" ) );
+        response.setContentLengthLong( bundle.get().length() );
         try {
-            in = new BufferedInputStream( Files.newInputStream(bundle.toPath()) );
-            byte[] buf = new byte[4096];
-            int len;
-
-            while ( (len = in.read( buf, 0, buf.length )) != -1 ) {
-                response.getOutputStream().write( buf, 0, len );
-            }
+            Files.copy( bundle.get().toPath(), response.getOutputStream() );
         } catch ( Exception e ) {
             Logger.warn( this.getClass(), "Error Downloading Bundle.", e );
-        } finally {
-            try {
-                in.close();
-            } catch ( Exception ex ) {
-                Logger.warn( this.getClass(), "Error Closing Stream.", ex );
-            }
         }
-        return;
     }
 
     /**
