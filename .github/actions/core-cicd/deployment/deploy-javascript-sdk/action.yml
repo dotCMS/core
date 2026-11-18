@@ -46,6 +46,9 @@ outputs:
   published:
     description: 'SDK libs - Published (true if all packages published successfully)'
     value: ${{ steps.deployment_status.outputs.published }}
+  stable:
+    description: 'Every package has this version or newer on npm latest'
+    value: ${{ steps.publish_packages.outputs.stable }}
 runs:
   using: "composite"
   steps:
@@ -207,6 +210,7 @@ runs:
         echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
 
         PUBLISH_SUCCESS=true
+        stable=true
 
         for sdk in $(find . -maxdepth 1 -mindepth 1 -type d -exec basename {} \;); do
           cd "$sdk"
@@ -246,11 +250,22 @@ runs:
             fi
           fi
 
+          if [[ "$VERIFY_EXISTING" == "true" ]]; then
+            latest=$(npm view "${PKG_NAME}@latest" version --prefer-online) || latest=""
+            if [[ ! "$latest" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$ ]] ||
+               [[ "$(printf '%s\n' "$latest" "$RELEASE_VERSION" | sort -V | tail -1)" != "$latest" ]]; then
+              stable=false
+              echo "::warning::npm latest for $PKG_NAME does not cover $RELEASE_VERSION."
+            fi
+          fi
           cd ..
           echo ""
         done
 
-        echo "actual_published=$PUBLISH_SUCCESS" >> $GITHUB_OUTPUT
+        {
+          echo "actual_published=$PUBLISH_SUCCESS"
+          echo "stable=$stable"
+        } >> "$GITHUB_OUTPUT"
 
         if [ "$PUBLISH_SUCCESS" = "true" ]; then
           echo "🎉 All SDK packages published successfully!"

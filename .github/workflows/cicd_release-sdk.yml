@@ -200,10 +200,13 @@ jobs:
           npm-token: ${{ secrets.NPM_ORG_TOKEN }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      # A successful manual dry run must not be mistaken for publication.
-      - name: SDK publication receipt (${{ steps.sdk-source.outputs.commit }})
-        if: steps.deploy-javascript-sdk.outputs.published == 'true'
-        run: echo 'SDK publication confirmed'
+      - name: SDK recovery receipt (${{ steps.sdk-source.outputs.commit }})
+        if: inputs.recovery && steps.deploy-javascript-sdk.outputs.published == 'true'
+        run: echo 'SDK recovery confirmed'
+
+      - name: SDK stable publication receipt (${{ steps.sdk-source.outputs.commit }})
+        if: steps.deploy-javascript-sdk.outputs.published == 'true' && steps.deploy-javascript-sdk.outputs.stable == 'true'
+        run: echo 'npm latest covers the verified SDK release'
 
       - name: 'Slack Notification (SDK release announcement)'
         if: success() && steps.deploy-javascript-sdk.outputs.published == 'true'

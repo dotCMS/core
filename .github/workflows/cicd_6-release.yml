@@ -163,10 +163,12 @@ jobs:
             | sort -k1,1Vr)
           PREV_TAG=""
           sdk_retry_tag=""
+          docker_retry_tag=""
+          later_promotion=false
           while read -r version run_id flavor; do
             [[ -n "${run_id}" && "${run_id}" != "${GITHUB_RUN_ID}" && "${flavor}" == "default" ]] || continue
             jobs=$(gh api --paginate "repos/${REPO}/actions/runs/${run_id}/jobs?filter=all&per_page=100" \
-              --jq '.jobs[] | select(.name == "Deployment / deployment" or .name == "Release / Release Artifacts")')
+              --jq '.jobs[] | select(.name == "Deployment / deployment" or .name == "Release / Release Artifacts" or .name == "Promote latest tag")')
             primary_pushed=$(jq -rs 'any(.[]; .name == "Deployment / deployment" and
               (if any(.steps[]; .name == "Primary Docker image pushed") then
                 any(.steps[]; .name == "Primary Docker image pushed" and .conclusion == "success")
@@ -192,7 +194,17 @@ jobs:
               fi
             fi
 
+            promoted=$(jq -rs 'any(.[]; .name == "Promote latest tag" and .conclusion == "success")' <<< "${jobs}")
+            if [[ "${promoted}" == "true" ]]; then
+              later_promotion=true
+            fi
             [[ "${candidate_status}" == "behind" || "${candidate_status}" == "identical" ]] || continue
+            promotion_failed=$(jq -rs 'any(.[]; .name == "Promote latest tag" and
+              (.conclusion == "failure" or .conclusion == "cancelled" or .conclusion == "timed_out"))' <<< "${jobs}")
+            if [[ "${later_promotion}" != "true" && "${promotion_failed}" == "true" ]]; then
+              docker_retry_tag="${docker_retry_tag:-${tag}}"
+              continue
+            fi
             # A partial Docker deployment can set the floor but is not a complete release.
             fully_deployed=$(jq -rs 'any(.[]; .name == "Deployment / deployment" and .conclusion == "success")' <<< "${jobs}")
             [[ "${fully_deployed}" == "true" ]] || continue
@@ -209,14 +221,16 @@ jobs:
 
             while read -r sdk_sha sdk_run; do
               [[ -n "${sdk_run}" && ( "${sdk_sha}" == "${tag_sha}" || "${sdk_sha}" == "manual" ) ]] || continue
-              step="Publish SDK packages to NPM"
-              if [[ "${sdk_sha}" == "manual" ]]; then
-                step="SDK publication receipt (${tag_sha})"
+              sdk_steps=$(gh api --paginate "repos/${REPO}/actions/runs/${sdk_run}/jobs?filter=all&per_page=100" \
+                --jq '.jobs[] | select(.name == "Publish SDK Packages") | .steps[]')
+              published=$(jq -rs --arg receipt "SDK stable publication receipt (${tag_sha})" '. as $steps |
+                any($steps[]; .name == $receipt and .conclusion == "success")' <<< "${sdk_steps}")
+              # Old release-event runs did not emit receipts; manual recovery never uses this fallback.
+              if [[ "${sdk_sha}" != "manual" && "${published}" != "true" ]]; then
+                published=$(jq -rs 'if any(.[]; .name | startswith("SDK stable publication receipt")) then false
+                  else any(.[]; .name == "Publish SDK packages to NPM" and .conclusion == "success") end' <<< "${sdk_steps}")
               fi
-              published=$(gh api --paginate "repos/${REPO}/actions/runs/${sdk_run}/jobs?filter=all&per_page=100" \
-                --jq ".jobs[] | select(.name == \"Publish SDK Packages\") | .steps[] |
-                  select(.name == \"${step}\" and .conclusion == \"success\") | .number")
-              if [[ -n "${published}" ]]; then
+              if [[ "${published}" == "true" ]]; then
                 echo "already_shipped=true" >> "${GITHUB_OUTPUT}"
                 echo "The approved commit is already in ${tag}; no release needed." >> "${GITHUB_STEP_SUMMARY}"
                 exit 0
@@ -237,8 +251,12 @@ jobs:
             echo "::error::No pushed standard release image found. For manual bootstrap recovery, verify that no standard image has shipped before setting confirm_bootstrap."
             exit 1
           fi
+          if [[ -n "${docker_retry_tag}" ]]; then
+            echo "::error::Docker latest promotion failed for ${docker_retry_tag}. Complete or supersede the promotion, then retry."
+            exit 1
+          fi
           if [[ -n "${sdk_retry_tag}" ]]; then
-            echo "::error::npm publication is not confirmed for ${sdk_retry_tag}. Run Release - SDK in recovery mode with version ${sdk_retry_tag#v} and ref ${sdk_retry_tag}, then retry."
+            echo "::error::npm publication is not confirmed for ${sdk_retry_tag}. Use Release - SDK recovery for version ${sdk_retry_tag#v} and ref ${sdk_retry_tag}. Confirm npm latest covers that version before retrying."
             exit 1
           fi
           if [[ "${STATUS}" != "ahead" && "${STATUS}" != "identical" ]]; then
