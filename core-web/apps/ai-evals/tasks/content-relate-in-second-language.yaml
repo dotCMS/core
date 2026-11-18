@@ -1,0 +1,111 @@
+id: content-relate-in-second-language
+category: content
+description: Relate content in a second language to an item that only exists in the default language
+difficulty: hard
+runs: 5
+max_steps: 15
+
+# A relationship is resolved in the language being read: content in language B that points at
+# an item with no language-B version comes back with an empty relationship. The setup creates
+# an author in the default language only; the task asks for a post in a second language. If the
+# instance has a single language, setup adds one and cleanup removes it.
+setup: |
+    const suffix = Date.now().toString(36) + run;
+    const author = 'EvalAuthor' + suffix;
+    const post = 'EvalPost' + suffix;
+    const headers = { Authorization: `Bearer ${token}`, Accept: 'application/json', 'Content-Type': 'application/json' };
+    const call = async (method, path, body) => {
+        const r = await fetch(new URL(path, url), { method, headers, body: body && JSON.stringify(body) });
+        const json = await r.json().catch(() => null);
+        if (!r.ok) throw new Error(`${method} ${path} -> ${r.status} ${JSON.stringify(json).slice(0, 300)}`);
+        return json;
+    };
+    const languages = (await call('GET', '/api/v2/languages')).entity;
+    const base = languages.find((l) => l.defaultLanguage) ?? languages[0];
+    let second = languages.find((l) => l.id !== base.id);
+    let createdLanguage = '';
+    if (!second) {
+        second = (await call('POST', '/api/v2/languages', { languageCode: 'fr', countryCode: 'FR', language: 'French', country: 'France' })).entity;
+        createdLanguage = String(second.id);
+    }
+    const sites = (await call('GET', '/api/v1/site?per_page=100')).entity;
+    const site = sites.find((s) => s.hostname === 'default') ?? sites.find((s) => s.default);
+    const F = (name) => 'com.dotcms.contenttype.model.field.Immutable' + name + 'Field';
+    const title = { clazz: F('Text'), name: 'Title', variable: 'title', dataType: 'TEXT', required: true, indexed: true, listed: true };
+    const type = (variable, fields) => call('POST', '/api/v1/contenttype', {
+        clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+        name: variable, variable, host: site.identifier, workflow: ['d61a59e1-a49c-46f2-a929-db2b4bfa88b2'], fields
+    });
+    await type(author, [title]);
+    await type(post, [title, { clazz: F('Relationship'), name: 'Author', variable: 'author', relationType: author, values: '3', indexed: true, listed: false }]);
+    const existing = await call('PUT', '/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR', {
+        contentlet: { contentType: author, title: 'Ada Lovelace', contentHost: site.identifier, languageId: base.id }
+    });
+    return {
+        author, post, site: site.hostname,
+        authorId: existing.entity.identifier,
+        languageId: second.id,
+        language: `${second.language} (${second.isoCode ?? second.languageCode}, id ${second.id})`,
+        createdLanguage
+    };
+
+prompt: |
+    On the site "{{site}}", create and publish a {{post}} contentlet in {{language}} titled
+    "Notes on the Analytical Engine". Its author is Ada Lovelace, who already exists as
+    {{author}} content. When you are done, the post read in that language must show
+    Ada Lovelace as its author.
+
+assertions:
+    - type: custom
+      name: author-not-duplicated
+      script: |
+          const r = await fetch(new URL('/api/content/_search', url), {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ query: `+contentType:${vars.author} +deleted:false`, limit: 50 })
+          });
+          const ids = new Set(((await r.json()).entity?.jsonObjectView?.contentlets ?? []).map((c) => c.identifier));
+          return ids.size === 1 && ids.has(vars.authorId);
+
+    - type: custom
+      name: relationship-resolves-in-the-second-language
+      timeout_ms: 45000
+      script: |
+          // Resolution can lag a few seconds behind the write, so poll before failing.
+          const query = `+contentType:${vars.post} +languageId:${vars.languageId} +deleted:false +live:true`;
+          for (let attempt = 0; attempt < 8; attempt++) {
+              const r = await fetch(new URL('/api/content/_search', url), {
+                  method: 'POST',
+                  headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ query, depth: 1, limit: 10 })
+              });
+              const posts = (await r.json()).entity?.jsonObjectView?.contentlets ?? [];
+              const related = [].concat(posts[0]?.author ?? []).map((a) => a?.identifier ?? a);
+              if (posts.length === 1 && related.includes(vars.authorId)) return true;
+              await new Promise((done) => setTimeout(done, 5000));
+          }
+          return false;
+
+cleanup:
+    - method: DELETE
+      path: /api/v1/contenttype/id/{{post}}
+    - method: DELETE
+      path: /api/v1/contenttype/id/{{author}}
+    - script: |
+          if (!vars.createdLanguage) return;
+          // Content type deletion finishes in the background; the language can only go once
+          // its content is gone, so retry for a while.
+          for (let attempt = 0; attempt < 10; attempt++) {
+              await new Promise((done) => setTimeout(done, 3000));
+              const r = await fetch(new URL(`/api/v2/languages/${vars.createdLanguage}`, url), {
+                  method: 'DELETE',
+                  headers: { Authorization: `Bearer ${token}` }
+              });
+              const list = await fetch(new URL('/api/v2/languages', url), { headers: { Authorization: `Bearer ${token}` } });
+              const ids = ((await list.json()).entity ?? []).map((l) => String(l.id));
+              if (r.ok && !ids.includes(vars.createdLanguage)) return;
+          }
+          throw new Error(`language ${vars.createdLanguage} could not be removed`);
+
+tags: [content, relationships, languages, lookup]
+requires_fixture: Creates a second language when the instance has only one, and removes it afterwards

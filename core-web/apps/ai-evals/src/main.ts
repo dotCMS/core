@@ -6,6 +6,9 @@ import path from 'node:path';
 
 import { runTask } from './harness';
 import { loadTask, loadTasksFromDir } from './loader';
+import { TOOLSETS, type Toolset } from './tools';
+
+import type { TaskResult } from './types';
 
 // ── Env validation ────────────────────────────────────────────────────────────
 
@@ -32,6 +35,10 @@ async function main() {
     const args = process.argv.slice(2);
     const verbose = args.includes('--verbose') || !!process.env['VERBOSE'];
     const positional = args.filter((a) => !a.startsWith('--'));
+    const toolsets = parseToolsets(
+        args.find((a) => a.startsWith('--toolset='))?.slice('--toolset='.length) ??
+            process.env['TOOLSET']
+    );
     const tasksDir = path.resolve(__dirname, '../tasks');
 
     const tasks = positional[0] ? [loadTask(positional[0])] : loadTasksFromDir(tasksDir);
@@ -44,23 +51,33 @@ async function main() {
     console.log(`\n=== dotCMS ai-evals ===`);
     console.log(`Model  : ${MODEL_ID}`);
     console.log(`Target : ${DOTCMS_URL}`);
+    console.log(`Tools  : ${toolsets.join(', ')}`);
     console.log(`Tasks  : ${tasks.length}\n`);
 
-    const results = [];
+    const results: TaskResult[] = [];
     for (const task of tasks) {
-        console.log(`\n── ${task.id} (${task.runs} runs) ──`);
-        console.log(`   ${task.description}`);
+        for (const toolset of toolsets) {
+            console.log(`\n── ${task.id} [${toolset}] (${task.runs} runs) ──`);
+            console.log(`   ${task.description}`);
 
-        const result = await runTask(
-            { task, model, modelId: MODEL_ID, dotcmsUrl: DOTCMS_URL, authToken: AUTH_TOKEN },
-            verbose
-        );
-        results.push(result);
+            const result = await runTask(
+                {
+                    task,
+                    model,
+                    modelId: MODEL_ID,
+                    dotcmsUrl: DOTCMS_URL,
+                    authToken: AUTH_TOKEN,
+                    toolset
+                },
+                verbose
+            );
+            results.push(result);
 
-        const pct = (result.pass_rate * 100).toFixed(0);
-        console.log(
-            `\n   Result: ${result.passed}/${result.total} (${pct}%) | $${result.estimated_cost_usd.toFixed(4)}`
-        );
+            const pct = (result.pass_rate * 100).toFixed(0);
+            console.log(
+                `\n   Result: ${result.passed}/${result.total} (${pct}%) | $${result.estimated_cost_usd.toFixed(4)}`
+            );
+        }
     }
 
     // Summary
@@ -69,11 +86,26 @@ async function main() {
     for (const r of results) {
         const pct = (r.pass_rate * 100).toFixed(0);
         const status = r.pass_rate === 1 ? 'PASS' : 'FAIL';
-        console.log(`[${status}] ${r.task_id}: ${r.passed}/${r.total} (${pct}%)`);
+        const steps = (
+            r.runs.reduce((sum, run) => sum + run.steps.length, 0) / r.runs.length
+        ).toFixed(1);
+        console.log(
+            `[${status}] ${r.task_id} [${r.toolset}]: ${r.passed}/${r.total} (${pct}%) | ` +
+                `${steps} steps/run | $${r.estimated_cost_usd.toFixed(4)}`
+        );
         if (r.pass_rate < 1) anyFailed = true;
     }
 
     if (anyFailed) process.exit(1);
+}
+
+/** `code` (default, the two code tools), `tools` (the full tool set), or `both`. */
+function parseToolsets(value: string | undefined): Toolset[] {
+    if (!value) return ['code'];
+    if (value === 'both') return [...TOOLSETS];
+    if ((TOOLSETS as readonly string[]).includes(value)) return [value as Toolset];
+    console.error(`Unknown toolset "${value}". Use one of: ${TOOLSETS.join(', ')}, both`);
+    process.exit(1);
 }
 
 main().catch((e) => {

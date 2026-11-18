@@ -1,0 +1,73 @@
+id: content-type-create-usable-fields
+category: content-model
+description: Create a content type whose field names collide with system properties, then check content saves
+difficulty: medium
+runs: 5
+max_steps: 15
+
+# "Sort Order" and "Folder" are natural field names whose obvious variables (`sortOrder`,
+# `folder`) are contentlet properties: a field created with them is accepted, but its value
+# breaks saving content (for `sortOrder`, the second save fails). The task passes when the type
+# is created and a contentlet can be saved twice, keeping its values.
+setup: |
+    const sites = await fetch(new URL('/api/v1/site?per_page=100', url), { headers: { Authorization: `Bearer ${token}` } });
+    const list = (await sites.json()).entity;
+    const site = list.find((s) => s.hostname === 'default') ?? list.find((s) => s.default);
+    return { type: 'EvalEvent' + Date.now().toString(36) + run, site: site.hostname, siteId: site.identifier };
+
+prompt: |
+    Create a content type named {{type}} (variable {{type}}) on the site "{{site}}" for events,
+    with these fields:
+      - Title: text, required
+      - Sort Order: a whole number used to order events
+      - Folder: text, the name of the archive folder the event belongs to
+      - Starts: date and time
+
+assertions:
+    - type: http_get
+      path: /api/v1/contenttype/id/{{type}}
+      expect: ok
+
+    - type: custom
+      name: content-keeps-sort-order-and-folder-values
+      timeout_ms: 30000
+      script: |
+          const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+          const typeResponse = await fetch(new URL(`/api/v1/contenttype/id/${vars.type}`, url), { headers });
+          const fields = (await typeResponse.json()).entity?.fields ?? [];
+          const sort = fields.find((f) => /sort/i.test(f.name) && f.dataType === 'INTEGER');
+          const folder = fields.find((f) => /folder/i.test(f.name) && f.clazz?.endsWith('TextField'));
+          const titleField = fields.find((f) => /title/i.test(f.name));
+          if (!sort || !folder || !titleField) return false;
+
+          const save = async (values) => {
+              const r = await fetch(new URL('/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR', url), {
+                  method: 'PUT',
+                  headers,
+                  body: JSON.stringify({
+                      contentlet: {
+                          contentType: vars.type,
+                          contentHost: vars.siteId,
+                          languageId: 1,
+                          ...Object.fromEntries(fields.filter((f) => f.required && f.dataType === 'DATE').map((f) => [f.variable, '2026-01-01 10:00:00'])),
+                          ...values
+                      }
+                  })
+              });
+              return r.ok ? (await r.json()).entity : null;
+          };
+          const keeps = (saved, sortValue, folderValue) =>
+              !!saved && String(saved[sort.variable]) === sortValue && saved[folder.variable] === folderValue;
+
+          // Create, then save the same contentlet again: a field that collides with a system
+          // property can pass the first save and fail the second.
+          const first = await save({ [titleField.variable]: 'Launch', [sort.variable]: 7, [folder.variable]: 'archive-2026' });
+          if (!keeps(first, '7', 'archive-2026')) return false;
+          const second = await save({ identifier: first.identifier, [titleField.variable]: 'Launch', [sort.variable]: 8, [folder.variable]: 'archive-2027' });
+          return keeps(second, '8', 'archive-2027');
+
+cleanup:
+    - method: DELETE
+      path: /api/v1/contenttype/id/{{type}}
+
+tags: [content-model, content-types, fields]

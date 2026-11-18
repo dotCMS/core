@@ -4,6 +4,18 @@ import { z } from 'zod/v4';
 import { createApiAdapter } from '@dotcms/ai/adapter';
 import { createExecutor, formatSandboxResult } from '@dotcms/ai/sandbox';
 import { getSpec } from '@dotcms/ai/spec';
+import {
+    createContentTypeTool,
+    dotcmsConnection,
+    executeTool,
+    lookupTool,
+    pageCreateTool,
+    pagePlaceContentTool,
+    pageVerifyTool,
+    searchTool,
+    updateContentTypeTool,
+    upsertContentTool
+} from '@dotcms/ai/tools';
 
 export function makeTools(dotcmsUrl: string, authToken: string) {
     // nosemgrep: detect-vercelai -- internal LLM eval harness (ai-evals), not shipped runtime code; Vercel AI SDK usage is intentional
@@ -52,4 +64,33 @@ export function makeTools(dotcmsUrl: string, authToken: string) {
     });
 
     return { search: searchTool, execute: executeTool };
+}
+
+/**
+ * Which tools a run gives the model.
+ *  - `code`: `search` + `execute` only. The model finds and calls the REST endpoints itself.
+ *  - `tools`: the `@dotcms/ai/tools` set the MCP server exposes (purpose-built tools next to
+ *    `search` + `execute`). Asset tools are left out: they read and write the local disk.
+ *
+ * Running the same task with both measures what the purpose-built tools change.
+ */
+export type Toolset = 'code' | 'tools';
+
+export const TOOLSETS: readonly Toolset[] = ['code', 'tools'];
+
+export function makeToolset(toolset: Toolset, dotcmsUrl: string, authToken: string) {
+    if (toolset === 'code') return makeTools(dotcmsUrl, authToken);
+
+    const dotcms = dotcmsConnection({ url: dotcmsUrl, token: authToken });
+    return {
+        search: searchTool(dotcms),
+        execute: executeTool(dotcms),
+        page_create: pageCreateTool(dotcms),
+        page_place_content: pagePlaceContentTool(dotcms),
+        page_verify: pageVerifyTool(dotcms),
+        lookup: lookupTool(dotcms),
+        upsert_content: upsertContentTool(dotcms),
+        create_content_type: createContentTypeTool(dotcms),
+        update_content_type: updateContentTypeTool(dotcms)
+    };
 }

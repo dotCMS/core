@@ -17,7 +17,7 @@ YAML task file
      │
      ├── executeRun()
      │       ├── generateText()    model loop (up to 10 steps)
-     │       │       └── tools.ts  search + execute
+     │       │       └── tools.ts  search + execute (+ the @dotcms/ai/tools set)
      │       ├── assertions        http_get | custom
      │       └── cleanup           best-effort
      │
@@ -33,7 +33,7 @@ YAML task file
 | `main.ts` | Env validation, CLI arg parsing, task loop, summary output |
 | `loader.ts` | YAML → `TaskDefinition`, basic field validation |
 | `harness.ts` | `runTask`, `executeRun`, assertion runners, cleanup, cost estimation |
-| `tools.ts` | `makeTools(url, token)` — the two AI SDK tools the model can call |
+| `tools.ts` | `makeToolset(toolset, url, token)` — `code`: the two code tools (`makeTools`); `tools`: the `@dotcms/ai/tools` set |
 | `types.ts` | All TypeScript interfaces — single source of truth for data shapes |
 
 ---
@@ -43,10 +43,12 @@ YAML task file
 ```
 executeRun(index, options)
   │
-  ├── makeTools(dotcmsUrl, authToken)
-  │     └── returns { search, execute } — fresh tools per run
+  ├── setup script (optional)  →  vars for {{name}} in prompt, paths and scripts
   │
-  ├── generateText({ model, prompt, tools, stopWhen: stepCountIs(10) })
+  ├── makeToolset(toolset, dotcmsUrl, authToken)
+  │     └── code: { search, execute } · tools: the @dotcms/ai/tools set — fresh per run
+  │
+  ├── generateText({ model, prompt, tools, stopWhen: stepCountIs(max_steps ?? 10) })
   │     │
   │     └── model loop:
   │           step 1: model calls search({ code })
