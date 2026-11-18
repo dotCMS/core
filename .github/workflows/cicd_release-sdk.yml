@@ -151,15 +151,30 @@ jobs:
     needs: [ precheck ]
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
-      # Required before referencing any local (./) action — the runner's workspace is
-      # empty otherwise, so GitHub can't even locate deploy-javascript-sdk's action.yml.
-      # The composite action re-checks-out internally at the correct ref for the actual
-      # build/publish; this checkout only needs to make the action definition resolvable.
-      - name: 'Checkout'
-        id: sdk-source
+      # Historical tags supply build sources, not the current publisher.
+      - name: Checkout the publisher
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: ${{ needs.precheck.outputs.REF }}
+          ref: ${{ github.workflow_sha }}
+
+      - name: Resolve SDK source SHA
+        id: sdk-source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REF: ${{ needs.precheck.outputs.REF }}
+          RECOVERY: ${{ inputs.recovery }}
+        run: |
+          set -euo pipefail
+          if [[ "$GITHUB_EVENT_NAME" == "release" || "$RECOVERY" == "true" ]]; then
+            REF="refs/tags/$REF"
+          fi
+          encoded_ref=$(jq -rn --arg ref "$REF" '$ref | @uri')
+          commit=$(gh api "repos/$GITHUB_REPOSITORY/commits/$encoded_ref" --jq '.sha')
+          if [[ ! "$commit" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Could not resolve the SDK source commit."
+            exit 1
+          fi
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
 
       - name: 'LTS skip notice'
         if: needs.precheck.outputs.IS_LTS == 'true'

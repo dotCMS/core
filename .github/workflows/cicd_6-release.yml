@@ -64,6 +64,10 @@ on:
         type: boolean
         default: false
         required: false
+      confirm_bootstrap:
+        description: 'Manual recovery only: confirm no standard Docker image has ever shipped.'
+        type: boolean
+        default: false
       sdk_bump_mode:
         description: 'Use auto to detect SDK-breaking PRs in this release. Manual uses the checkbox above.'
         type: choice
@@ -129,6 +133,7 @@ jobs:
           RELEASE_VERSION: ${{ github.event.inputs.release_version }}
           BUMP_MIN_SDK_VERSION: ${{ github.event.inputs.bump_min_sdk_version }}
           SDK_BUMP_MODE: ${{ inputs.sdk_bump_mode }}
+          CONFIRM_BOOTSTRAP: ${{ inputs.confirm_bootstrap }}
           REQUESTED_COMMIT: ${{ inputs.release_commit }}
         run: |
           set -euo pipefail
@@ -223,12 +228,13 @@ jobs:
           if [[ -z "${PREV_TAG}" ]]; then
             if [[ "${SDK_BUMP_MODE}" == "manual" ]]; then
               STANDARD_TAGS=$(git ls-remote --tags --refs "${GITHUB_SERVER_URL}/${REPO}.git" 'refs/tags/v*-*')
-              if ! grep -qE 'refs/tags/v[0-9]{2}\.[0-9]{2}\.[0-9]{2}-[0-9]{1,2}$' <<< "${STANDARD_TAGS}"; then
+              if [[ "${CONFIRM_BOOTSTRAP}" == "true" ]] ||
+                 ! grep -qE 'refs/tags/v[0-9]{2}\.[0-9]{2}\.[0-9]{2}-[0-9]{1,2}$' <<< "${STANDARD_TAGS}"; then
                 echo "bump=${BUMP_MIN_SDK_VERSION}" >> "${GITHUB_OUTPUT}"
                 exit 0
               fi
             fi
-            echo "::error::No pushed standard release image found; cannot verify SDK compatibility."
+            echo "::error::No pushed standard release image found. For manual bootstrap recovery, verify that no standard image has shipped before setting confirm_bootstrap."
             exit 1
           fi
           if [[ -n "${sdk_retry_tag}" ]]; then
