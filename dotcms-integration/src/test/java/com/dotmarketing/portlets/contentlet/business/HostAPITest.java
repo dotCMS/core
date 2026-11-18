@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -35,6 +36,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPI;
 import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableFactory;
 import com.dotmarketing.portlets.hostvariable.model.HostVariable;
@@ -1962,6 +1964,119 @@ public class HostAPITest extends IntegrationTestBase  {
                 deleteHost(testSite, systemUser);
             }
         }
+    }
+
+    /**
+     * Method to test: the Site Copy job ({@link HostAssetsJobProxy}) when it copies folders.
+     * Given: a source site with one folder that has permissions of its own, for an owner role,
+     * and one folder that has none, and a destination site that gives a second role READ on its
+     * folders.
+     * Expected: the first copied folder has the same permissions as its source, so only the
+     * owner role applies to it, and the second copied folder takes its permissions from the
+     * destination site.
+     */
+    @Test
+    public void copySite_folderKeepsItsOwnPermissions() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        Host sourceSite = null;
+        Host destinationSite = null;
+        Role ownerRole = null;
+        Role role = null;
+        User user = null;
+        try {
+            ownerRole = new RoleDataGen().nextPersisted();
+            role = new RoleDataGen().nextPersisted();
+            user = new UserDataGen().roles(role).nextPersisted();
+            sourceSite = new SiteDataGen().nextPersisted();
+            final Folder folderWithPermissions = new FolderDataGen().site(sourceSite)
+                    .name("owned" + System.currentTimeMillis()).nextPersisted();
+            final Folder inheritingFolder = new FolderDataGen().site(sourceSite)
+                    .name("inheriting" + System.currentTimeMillis()).nextPersisted();
+            permissionAPI.save(List.of(
+                    new Permission(folderWithPermissions.getPermissionId(), ownerRole.getId(),
+                            PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true)),
+                    folderWithPermissions, systemUser, false);
+
+            destinationSite = createSite("copy" + System.currentTimeMillis() + ".dotcms.com",
+                    systemUser);
+            permissionAPI.save(List.of(
+                    new Permission(destinationSite.getPermissionId(), role.getId(),
+                            PermissionAPI.PERMISSION_READ, true),
+                    new Permission(Folder.class.getCanonicalName(),
+                            destinationSite.getPermissionId(), role.getId(),
+                            PermissionAPI.PERMISSION_READ, true)),
+                    destinationSite, systemUser, false);
+
+            runSiteCopyJob(sourceSite, destinationSite, user,
+                    new HostCopyOptions(false, true, false, false, false, false, false));
+
+            final Folder copiedWithPermissions = APILocator.getFolderAPI().findFolderByPath(
+                    folderWithPermissions.getPath(), destinationSite, systemUser, false);
+            final Folder copiedInheriting = APILocator.getFolderAPI().findFolderByPath(
+                    inheritingFolder.getPath(), destinationSite, systemUser, false);
+            assertNotNull(copiedWithPermissions.getInode());
+            assertNotNull(copiedInheriting.getInode());
+            assertNotEquals(folderWithPermissions.getInode(), copiedWithPermissions.getInode());
+
+            assertFalse("The copied folder has the source folder's permissions",
+                    permissionAPI.doesUserHavePermission(copiedWithPermissions,
+                            PermissionAPI.PERMISSION_READ, user, false));
+            assertTrue("A copied folder without permissions of its own uses the new site's",
+                    permissionAPI.doesUserHavePermission(copiedInheriting,
+                            PermissionAPI.PERMISSION_READ, user, false));
+            assertEquals(permissionAPI.getPermissions(folderWithPermissions, true, true).size(),
+                    permissionAPI.getPermissions(copiedWithPermissions, true, true).size());
+        } finally {
+            if (destinationSite != null) {
+                archiveHost(destinationSite, systemUser);
+                deleteHost(destinationSite, systemUser);
+            }
+            if (sourceSite != null) {
+                unpublishHost(sourceSite, systemUser);
+                archiveHost(sourceSite, systemUser);
+                deleteHost(sourceSite, systemUser);
+            }
+            if (user != null) {
+                UserDataGen.remove(user);
+            }
+            if (role != null) {
+                RoleDataGen.remove(role);
+            }
+            if (ownerRole != null) {
+                RoleDataGen.remove(ownerRole);
+            }
+        }
+    }
+
+    /**
+     * Runs the Site Copy job synchronously, the way Quartz would, for the given sites and options.
+     *
+     * @param sourceSite      the site to copy from
+     * @param destinationSite the site to copy into
+     * @param user            the user who asked for the copy
+     * @param copyOptions     what to copy
+     */
+    private void runSiteCopyJob(final Host sourceSite, final Host destinationSite,
+            final User user, final HostCopyOptions copyOptions) throws Exception {
+        final JobDetail jobDetail = mock(JobDetail.class);
+        final JobExecutionContext jobExecutionContext = mock(JobExecutionContext.class);
+        final Trigger trigger = mock(Trigger.class);
+        when(jobExecutionContext.getJobDetail()).thenReturn(jobDetail);
+        when(jobDetail.getName()).thenReturn("setup-host-" + destinationSite.getIdentifier());
+        when(jobDetail.getGroup()).thenReturn("setup-host-group");
+        when(jobExecutionContext.getTrigger()).thenReturn(trigger);
+
+        final Map<Object, Object> dataMap = new HashMap<>();
+        dataMap.put(HostAssetsJobProxy.USER_ID, user.getUserId());
+        dataMap.put(HostAssetsJobProxy.SOURCE_HOST_ID, sourceSite.getIdentifier());
+        dataMap.put(HostAssetsJobProxy.DESTINATION_HOST_ID, destinationSite.getIdentifier());
+        dataMap.put(HostAssetsJobProxy.COPY_OPTIONS, copyOptions);
+
+        final HostAssetsJobProxy hostAssetsJobProxy = Mockito.spy(new HostAssetsJobProxy());
+        doReturn(dataMap).when(hostAssetsJobProxy).getExecutionData(trigger);
+        hostAssetsJobProxy.execute(jobExecutionContext);
+        CacheLocator.getPermissionCache().clearCache();
     }
 
 }

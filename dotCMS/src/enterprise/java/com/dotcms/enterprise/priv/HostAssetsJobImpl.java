@@ -1074,6 +1074,10 @@ public class HostAssetsJobImpl extends ParentProxy{
 	 * method will update the Map folderMappingsBySourceId with the new id of the generated folder
 	 * If the folder already exist this method will skip copying it and will still return the
 	 * folder object that was copied.
+	 * <p>
+	 * The new folder gets the source folder's own permissions, the same way copied templates,
+	 * containers, menu links and contentlets do. A folder with no permissions of its own keeps
+	 * inheriting from its parent in the new site.
 	 *
 	 * @param sourceFolder             Source original site folder
 	 * @param destinationSite          Target site folder
@@ -1098,6 +1102,7 @@ public class HostAssetsJobImpl extends ParentProxy{
 			newFolder.setShowOnMenu(true);
 		}
 		this.folderAPI.save(newFolder, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
+		APILocator.getPermissionAPI().copyPermissions(sourceFolder, newFolder);
 		folderMappingsBySourceId.put(sourceFolder.getInode(), new FolderMapping(sourceFolder, newFolder));
 		return newFolder;
 	}
