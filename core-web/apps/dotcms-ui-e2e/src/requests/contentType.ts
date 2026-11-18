@@ -100,6 +100,37 @@ export async function createContentType(
     return entity as ContentType;
 }
 
+/**
+ * Turns a content type's "new edit content screen" (`metadata.CONTENT_EDITOR2_ENABLED`) on or off,
+ * as the content type form's toggle does: reads the full type and sends it back with the flag set.
+ * The endpoint returns `workflows` (objects) but takes `workflow` (ids).
+ *
+ * @param request The API context.
+ * @param id The content type's id.
+ * @param enabled Whether the type opens in the new editor.
+ */
+export async function setNewContentEditor(
+    request: APIRequestContext,
+    id: string,
+    enabled: boolean
+): Promise<void> {
+    const getResponse = await request.get(`/api/v1/contenttype/id/${id}`, {
+        headers: authHeaders()
+    });
+    expect(getResponse.status()).toBe(200);
+    const { entity } = await getResponse.json();
+
+    const putResponse = await request.put(`/api/v1/contenttype/id/${id}`, {
+        data: {
+            ...entity,
+            metadata: { ...entity.metadata, CONTENT_EDITOR2_ENABLED: enabled },
+            workflow: (entity.workflows ?? []).map((workflow: { id: string }) => workflow.id)
+        },
+        headers: authHeaders()
+    });
+    expect(putResponse.status()).toBe(200);
+}
+
 export async function deleteContentType(request: APIRequestContext, id: string) {
     const response = await request.delete(`/api/v1/contenttype/id/${id}`, {
         headers: authHeaders()
