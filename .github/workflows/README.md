@@ -89,6 +89,13 @@ Offline tests: `bash .github/workflows/tests/pr-cloud-control.test.sh` (also run
 
 See [How to Trigger a Release](WORKFLOW_ARCHITECTURE.md#how-to-trigger-a-release) for details.
 
+**Releasing after a merge:** Label the PR `PR: Release after merge` before merging into
+`main`. The trigger waits for an independent human review before it dispatches the
+release at the approved merge commit. Configure the `release-approval` environment with
+required release reviewers, self-review prevention, and administrator bypass disabled.
+Without a recorded approval from someone other than the PR author or triggering actor,
+the trigger fails without dispatching. Manual releases do not use this gate.
+
 ### For DevOps/Maintainers
 
 **Adding a New Test Suite:**

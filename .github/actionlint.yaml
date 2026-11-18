@@ -21,15 +21,10 @@ paths:
     ignore:
       - '^unexpected key "queue" for "concurrency" section[.]'
 
-  .github/workflows/cicd_comp_release-prepare-phase.yml:
-    ignore:
-      - '^unexpected key "queue" for "concurrency" section[.]'
-
-  # 11 workflow_dispatch inputs against GitHub's documented maximum of 10. This
-  # needs a human decision (merge or drop an input, or confirm GitHub no longer
-  # enforces the limit), not a lint fix.
+  # GitHub now allows 25 workflow_dispatch inputs; actionlint still checks for 10.
   .github/workflows/cicd_6-release.yml:
     ignore:
+      - '^unexpected key "queue" for "concurrency" section[.]'
       - 'maximum number of inputs for "workflow_dispatch"'
 
   # shellcheck style/info findings inside one large pre-existing inline script.

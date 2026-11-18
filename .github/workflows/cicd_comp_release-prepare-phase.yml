@@ -30,6 +30,10 @@ on:
         required: false
         type: string
         default: ''
+      previous_standard_tag:
+        description: 'Last successfully deployed standard release tag'
+        type: string
+        default: ''
       bump_min_sdk_version:
         description: >-
           Does this release include a change that breaks SDK compatibility? If true, bumps
@@ -67,10 +71,6 @@ on:
 jobs:
   prepare:
     name: Prepare Release
-    # Standard cuts must see the floor recorded by the previous cut's tag.
-    concurrency:
-      group: release-prepare-${{ contains(inputs.release_version, '_lts_') && inputs.release_version || 'standard' }}
-      queue: max
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     outputs:
       release_version: ${{ steps.set-version.outputs.release_version }}
@@ -226,7 +226,7 @@ jobs:
         env:
           TARGET_COMMIT: ${{ steps.set-version.outputs.release_commit }}
           TARGET_VERSION: ${{ steps.set-version.outputs.release_version }}
-          STANDARD_RELEASE: ${{ steps.set-version.outputs.is_latest }}
+          PREVIOUS_STANDARD_TAG: ${{ inputs.previous_standard_tag }}
           BUMP_MIN_SDK: ${{ inputs.bump_min_sdk_version }}
         run: |
           set -eo pipefail
@@ -243,22 +243,18 @@ jobs:
           release_branch="release-${release_version}"
 
           MIN_SDK_FILE="dotCMS/src/main/java/com/dotcms/rest/config/MinSdkVersion.java"
-          if [[ "${STANDARD_RELEASE}" == "true" ]]; then
-            refs=$(git ls-remote --tags --refs --sort=-version:refname origin 'refs/tags/v*')
-            previous_ref=$(awk '$2 ~ /^refs\/tags\/v[0-9][0-9]\.[0-9][0-9]\.[0-9][0-9]-[0-9][0-9]?$/ { print $2; exit }' <<< "${refs}")
-            if [[ -n "${previous_ref}" ]]; then
-              git fetch --no-tags --depth=1 origin "${previous_ref}"
-              previous_floor=$(git show "FETCH_HEAD:${MIN_SDK_FILE}" | grep -oP '(?<=VALUE = ")[^"]+')
-              if [[ "${BUMP_MIN_SDK}" == "true" ]]; then
-                next_floor="${release_version}"
-              else
-                next_floor=$(grep -oP '(?<=VALUE = ")[^"]+' "${MIN_SDK_FILE}")
-              fi
-              lowest_floor=$(printf '%s\n' "${previous_floor}" "${next_floor}" | sort -V | head -1)
-              if [[ "${lowest_floor}" != "${previous_floor}" ]]; then
-                echo "::error::Refusing to lower the SDK compatibility floor from ${previous_floor} to ${next_floor}. Merge the previous SDK floor bump before releasing."
-                exit 1
-              fi
+          if [[ -n "${PREVIOUS_STANDARD_TAG}" ]]; then
+            git fetch --no-tags --depth=1 origin "refs/tags/${PREVIOUS_STANDARD_TAG}"
+            previous_floor=$(git show "FETCH_HEAD:${MIN_SDK_FILE}" | grep -oP '(?<=VALUE = ")[^"]+')
+            if [[ "${BUMP_MIN_SDK}" == "true" ]]; then
+              next_floor="${release_version}"
+            else
+              next_floor=$(grep -oP '(?<=VALUE = ")[^"]+' "${MIN_SDK_FILE}")
+            fi
+            lowest_floor=$(printf '%s\n' "${previous_floor}" "${next_floor}" | sort -V | head -1)
+            if [[ "${lowest_floor}" != "${previous_floor}" ]]; then
+              echo "::error::Refusing to lower the SDK compatibility floor from ${previous_floor} to ${next_floor}. Merge the previous SDK floor bump before releasing."
+              exit 1
             fi
           fi
 

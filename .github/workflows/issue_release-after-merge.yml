@@ -17,7 +17,7 @@
 # - Label must be present at merge time (labels added after close don't fire).
 # - Only PRs merged into main are released; the Release workflow hard-fails on
 #   non-main refs anyway (verify-branch job).
-# - Only qualifying jobs join the dispatch queue.
+# - Only approved jobs join the dispatch queue.
 # - Dispatch uses the repository's CI_MACHINE_TOKEN, per #37383.
 #
 
@@ -33,12 +33,39 @@ permissions:
   contents: read
 
 jobs:
-  trigger-release:
-    name: Queue Release
+  approve-release:
+    name: Approve release
     if: >-
       github.event.pull_request.merged == true &&
       github.event.pull_request.base.ref == 'main' &&
       contains(github.event.pull_request.labels.*.name, 'PR: Release after merge')
+    environment:
+      name: release-approval
+      url: ${{ github.event.pull_request.html_url }}
+    permissions:
+      actions: read
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Verify a separate reviewer approved this run
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
+        run: |
+          set -euo pipefail
+          # An unconfigured environment lets jobs start without a review.
+          APPROVALS=$(gh api "repos/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}/approvals")
+          if ! jq -e --arg actor "${GITHUB_ACTOR}" --arg author "${PR_AUTHOR}" '
+            any(.[]; .state == "approved" and .user.type == "User"
+              and .user.login != $actor and .user.login != $author
+              and any(.environments[]; .name == "release-approval"))
+          ' <<< "${APPROVALS}" >/dev/null; then
+            echo "::error::Configure release-approval and obtain approval from a separate reviewer."
+            exit 1
+          fi
+
+  trigger-release:
+    name: Queue Release
+    needs: approve-release
     concurrency:
       group: auto-release-after-merge
       queue: max
@@ -54,7 +81,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
           REPO: ${{ github.repository }}
-          SDK_BREAKING: ${{ contains(github.event.pull_request.labels.*.name, 'SDK Breaking Change') }}
+          MERGE_COMMIT: ${{ github.event.pull_request.merge_commit_sha }}
         run: |
           set -euo pipefail
 
@@ -118,14 +145,18 @@ jobs:
           done
           echo "Next release version: ${NEXT_VERSION}"
 
-          # The Release workflow also validates breaking PRs and the previous SDK floor.
-          BUMP_MIN_SDK="${SDK_BREAKING}"
+          # Release the reviewed snapshot, not a main tip that may have advanced.
+          if [[ ! "${MERGE_COMMIT}" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::The approved merge has no valid commit SHA."
+            exit 1
+          fi
 
           DISPATCH=$(gh api --method POST "repos/${REPO}/actions/workflows/cicd_6-release.yml/dispatches" \
             -H 'X-GitHub-Api-Version: 2026-03-10' \
             -f ref=main \
             -f "inputs[release_version]=${NEXT_VERSION}" \
-            -f "inputs[bump_min_sdk_version]=${BUMP_MIN_SDK}")
+            -f "inputs[release_commit]=${MERGE_COMMIT}" \
+            -f 'inputs[sdk_bump_mode]=auto')
           RUN_ID=$(jq -er '.workflow_run_id' <<< "${DISPATCH}")
           RUN_URL=$(jq -er '.html_url' <<< "${DISPATCH}")
           {
