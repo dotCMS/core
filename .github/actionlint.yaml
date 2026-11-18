@@ -17,6 +17,14 @@ paths:
     ignore:
       - '^unexpected key "queue" for "concurrency" section[.]'
 
+  .github/workflows/issue_release-after-merge.yml:
+    ignore:
+      - '^unexpected key "queue" for "concurrency" section[.]'
+
+  .github/workflows/cicd_comp_release-prepare-phase.yml:
+    ignore:
+      - '^unexpected key "queue" for "concurrency" section[.]'
+
   # 11 workflow_dispatch inputs against GitHub's documented maximum of 10. This
   # needs a human decision (merge or drop an input, or confirm GitHub no longer
   # enforces the limit), not a lint fix.

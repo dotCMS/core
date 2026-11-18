@@ -67,6 +67,10 @@ on:
 jobs:
   prepare:
     name: Prepare Release
+    # Standard cuts must see the floor recorded by the previous cut's tag.
+    concurrency:
+      group: release-prepare-${{ contains(inputs.release_version, '_lts_') && inputs.release_version || 'standard' }}
+      queue: max
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     outputs:
       release_version: ${{ steps.set-version.outputs.release_version }}
@@ -219,8 +223,14 @@ jobs:
 
       - name: Create Release Branch and Tag
         id: create-branch
+        env:
+          TARGET_COMMIT: ${{ steps.set-version.outputs.release_commit }}
+          TARGET_VERSION: ${{ steps.set-version.outputs.release_version }}
+          STANDARD_RELEASE: ${{ steps.set-version.outputs.is_latest }}
+          BUMP_MIN_SDK: ${{ inputs.bump_min_sdk_version }}
         run: |
-          release_commit=${{ steps.set-version.outputs.release_commit }}
+          set -eo pipefail
+          release_commit="${TARGET_COMMIT}"
           # Shallow checkout (fetch-depth: 1) only guarantees HEAD of the default
           # branch. When an explicit release commit was supplied, fetch just that
           # commit (GitHub enables uploadpack.allowAnySHA1InWant) before resetting.
@@ -229,15 +239,35 @@ jobs:
             git fetch --depth=1 origin "${release_commit}"
           fi
           git reset --hard "${release_commit}"
-          release_version=${{ steps.set-version.outputs.release_version }}
-          release_branch=${{ steps.set-version.outputs.release_branch }}
+          release_version="${TARGET_VERSION}"
+          release_branch="release-${release_version}"
+
+          MIN_SDK_FILE="dotCMS/src/main/java/com/dotcms/rest/config/MinSdkVersion.java"
+          if [[ "${STANDARD_RELEASE}" == "true" ]]; then
+            refs=$(git ls-remote --tags --refs --sort=-version:refname origin 'refs/tags/v*')
+            previous_ref=$(awk '$2 ~ /^refs\/tags\/v[0-9][0-9]\.[0-9][0-9]\.[0-9][0-9]-[0-9][0-9]?$/ { print $2; exit }' <<< "${refs}")
+            if [[ -n "${previous_ref}" ]]; then
+              git fetch --no-tags --depth=1 origin "${previous_ref}"
+              previous_floor=$(git show "FETCH_HEAD:${MIN_SDK_FILE}" | grep -oP '(?<=VALUE = ")[^"]+')
+              if [[ "${BUMP_MIN_SDK}" == "true" ]]; then
+                next_floor="${release_version}"
+              else
+                next_floor=$(grep -oP '(?<=VALUE = ")[^"]+' "${MIN_SDK_FILE}")
+              fi
+              lowest_floor=$(printf '%s\n' "${previous_floor}" "${next_floor}" | sort -V | head -1)
+              if [[ "${lowest_floor}" != "${previous_floor}" ]]; then
+                echo "::error::Refusing to lower the SDK compatibility floor from ${previous_floor} to ${next_floor}. Merge the previous SDK floor bump before releasing."
+                exit 1
+              fi
+            fi
+          fi
 
           remote=$(git ls-remote --heads https://github.com/dotCMS/core.git "${release_branch}" | wc -l | tr -d '[:space:]')
           if [[ "${remote}" == '1' ]]; then
             echo "Release branch ${release_branch} already exists, removing it"
-            git push origin :${release_branch}
+            git push origin ":${release_branch}"
           fi
-          git checkout -b ${release_branch}
+          git checkout -b "${release_branch}"
 
           # set version in .mvn/maven.config
           echo "-Dprod=true" > .mvn/maven.config
@@ -264,8 +294,7 @@ jobs:
           # version that never actually shipped. Persisting the bump forward to main, so
           # future releases inherit it, is still handled separately by the post-success
           # bump-min-sdk-version job in cicd_6-release.yml.
-          if [[ "${{ inputs.bump_min_sdk_version }}" == "true" && "${{ steps.set-version.outputs.is_lts }}" != "true" ]]; then
-            MIN_SDK_FILE="dotCMS/src/main/java/com/dotcms/rest/config/MinSdkVersion.java"
+          if [[ "${BUMP_MIN_SDK}" == "true" && "${{ steps.set-version.outputs.is_lts }}" != "true" ]]; then
             sed -i "s/VALUE = \"[^\"]*\"/VALUE = \"${release_version}\"/" "${MIN_SDK_FILE}"
 
             # Verify the substitution actually landed, same guard as the post-release bump
@@ -345,14 +374,14 @@ jobs:
 
           git status
           git commit -a -m "🏁 Publishing release version [${release_version}]"
-          git push origin ${release_branch}
+          git push origin "${release_branch}"
 
           release_commit=$(git log -1 --pretty=%H)
           echo "release_commit=${release_commit}" >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub Release
         run: |
-          curl -X POST \
+          curl --fail-with-body -sS -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             -H "Authorization: Bearer ${{ secrets.CI_MACHINE_TOKEN || github.token }}" \
