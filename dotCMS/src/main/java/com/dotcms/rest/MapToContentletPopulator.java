@@ -998,11 +998,12 @@ public class MapToContentletPopulator  {
                         // branch searches as the given user, so the explicit READ filter below is
                         // what closes the gap for both value shapes. Batch-filter in one
                         // round-trip (see JAVA_STANDARDS permission checks: batch vs scalar).
-                        // This populate (query) leg does not apply front-end roles: filterContentlet
-                        // searches with respectFrontendRoles=false and the checkin preservation net
-                        // (addRestrictedContentForLimitedUser) uses false as well, so the subsystem
-                        // ignores front-end roles here. Front-end-role-sensitive establishment is
-                        // handled on the checkin/identifier leg, which threads respectFrontendRoles.
+                        // This relationship-resolution subsystem does not apply front-end roles:
+                        // filterContentlet searches with respectFrontendRoles=false and the checkin
+                        // preservation net (addRestrictedContentForLimitedUser) uses false as well,
+                        // so the gate is evaluated against the user's back-end roles only. Both the
+                        // populate (REST-reachable) leg here and the checkin identifier leg in
+                        // ESContentletAPIImpl.getContentletRelationships filter the same way.
                         final List<Contentlet> resolvedContentlets = RelationshipUtil
                                 .filterContentlet(contentlet.getLanguageId(), query, user, false);
                         final List<Contentlet> contentlets = APILocator.getPermissionAPI()

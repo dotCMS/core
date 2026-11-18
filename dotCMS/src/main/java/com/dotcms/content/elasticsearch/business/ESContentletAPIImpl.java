@@ -5945,7 +5945,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         if (contentRelationships == null) {
 
             //Obtain all relationships
-            contentRelationships = getContentletRelationships(contentlet, user, respectFrontendRoles);
+            contentRelationships = getContentletRelationships(contentlet, user);
 
             if (contentRelationships != null) {
                 getAllRelationships(contentlet, contentRelationships);
@@ -7364,7 +7364,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotSecurityException
      */
     private ContentletRelationships getContentletRelationships(final Contentlet contentlet,
-            final User user, final boolean respectFrontendRoles)
+            final User user)
             throws DotDataException, DotSecurityException {
         ContentletRelationships contentRelationships = null;
 
@@ -7403,16 +7403,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
                             // findContentletForLanguage -- while its Lucene branch searches as the
                             // given user. The explicit READ filter below is therefore the gate that
                             // keeps a save from relating content the user cannot see
-                            // (private-issues#930). respectFrontendRoles is threaded through from
-                            // checkin so a front-end submission still relates content the user can
-                            // read through a front-end role. Mirrors the CSV-import path
+                            // (private-issues#930). Mirrors the CSV-import path
                             // RelationshipUtil.getRelatedContentFromQuery (#35222).
+                            // This relationship-resolution subsystem does not apply front-end roles:
+                            // filterContentlet searches with respectFrontendRoles=false and the
+                            // checkin preservation net (addRestrictedContentForLimitedUser) uses
+                            // false as well, so the gate is evaluated against the user's back-end
+                            // roles only. The populate leg (MapToContentletPopulator) matches this.
                             final List<Contentlet> resolved = RelationshipUtil.filterContentlet(
-                                    contentlet.getLanguageId(), (String) fieldValue, null, user,
-                                    respectFrontendRoles, false);
+                                    contentlet.getLanguageId(), (String) fieldValue, user, false);
                             relationshipRecords.getRecords().addAll(permissionAPI.filterCollection(
-                                    resolved, PermissionAPI.PERMISSION_READ, user,
-                                    respectFrontendRoles));
+                                    resolved, PermissionAPI.PERMISSION_READ, user, false));
                         } catch (DotDataException | DotSecurityException | DotStateException e) {
                             Logger.warn(this, "Could not resolve relationship field '"
                                     + field.variable() + "': " + e.getMessage());

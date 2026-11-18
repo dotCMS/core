@@ -1002,6 +1002,86 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link MapToContentletPopulator#populate(Contentlet, Map)} and its
+     * {@code resolveSavingUser()} fallback when a request is in scope but carries no logged-in user
+     * (an anonymous save).
+     * <p>
+     * Given Scenario: A request with no logged-in user is bound to the thread, as for an anonymous
+     * content submission. The save payload relates a child readable only through a back-end role, so
+     * the anonymous user cannot READ it.
+     * <p>
+     * ExpectedResult: The anonymous save is gated against the anonymous user, so the unreadable child
+     * is dropped (private-issues#930). The same child resolves for the system user with no request in
+     * scope, proving the difference is that the save resolves as the anonymous user rather than
+     * falling back to the system user and skipping the gate.
+     */
+    @Test
+    public void Test_populate_anonymous_request_gates_against_the_anonymous_user_not_system()
+            throws DotDataException, DotSecurityException {
+
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final HttpServletRequest originalRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        Role otherRole   = null;
+        Contentlet secretChild = null;
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType930c");
+            childContentType  = createAndSaveSimpleContentType("childContentType930c");
+            final Field relationshipField = createAndSaveRelationshipField(
+                    "related930c", parentContentType.id(), childContentType.variable());
+
+            // The child is granted READ to an unrelated back-end role, so the anonymous user, whose
+            // roles do not include it, cannot read it.
+            otherRole = new RoleDataGen().nextPersisted();
+            secretChild = new ContentletDataGen(childContentType.id())
+                    .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                    .nextPersisted();
+            final int readEdit = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT;
+            permissionAPI.save(new Permission(secretChild.getPermissionId(), otherRole.getId(),
+                    readEdit, true), secretChild, user, false);
+
+            final User anonymousUser = APILocator.getUserAPI().getAnonymousUser();
+            assertFalse("The anonymous user must not be able to READ the child",
+                    permissionAPI.doesUserHavePermission(secretChild,
+                            PermissionAPI.PERMISSION_READ, anonymousUser, false));
+
+            // Bind a request with NO logged-in user; resolveSavingUser must resolve the anonymous user
+            bindRequestWithoutUser();
+            Contentlet parentAnon = createContentlet(parentContentType);
+            parentAnon = populator.populate(parentAnon, relationshipProps(
+                    parentContentType, relationshipField, secretChild.getIdentifier()));
+            assertNull("An anonymous save must gate against the anonymous user, so a child it cannot"
+                    + " read must not be populated", parentAnon.get(Contentlet.RELATIONSHIP_KEY));
+
+            // Control: with no request in scope the save falls back to the system user, which resolves
+            // the child -- proving the drop above is the anonymous-user gate, not a broken fixture.
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+            Contentlet parentAsSystem = createContentlet(parentContentType);
+            parentAsSystem = populator.populate(parentAsSystem, relationshipProps(
+                    parentContentType, relationshipField, secretChild.getIdentifier()));
+            assertNotNull("The system user (no request) must still resolve the child",
+                    parentAsSystem.get(Contentlet.RELATIONSHIP_KEY));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(originalRequest);
+            if (UtilMethods.isSet(secretChild) && UtilMethods.isSet(secretChild.getInode())) {
+                ContentletDataGen.remove(secretChild);
+            }
+            if (UtilMethods.isSet(otherRole)) {
+                RoleDataGen.remove(otherRole);
+            }
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
     private Map<String, Object> relationshipProps(final ContentType parentType, final Field relField,
             final String value) {
         final Map<String, Object> properties = new HashMap<>();
@@ -1016,6 +1096,13 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
                         new MockHttpRequestIntegrationTest("localhost", "/").request()).request()).request());
         request.setAttribute(WebKeys.USER, actingUser);
         request.setAttribute(WebKeys.USER_ID, actingUser.getUserId());
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+    }
+
+    private void bindRequestWithoutUser() {
+        final MockHeaderRequest request = new MockHeaderRequest(new MockSessionRequest(
+                new MockAttributeRequest(
+                        new MockHttpRequestIntegrationTest("localhost", "/").request()).request()).request());
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
     }
 
