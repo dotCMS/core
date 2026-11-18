@@ -100,20 +100,55 @@ describe('DotContentletEditUrlService', () => {
                 });
             }));
 
-        it('asks the server once per content type', () =>
+        it('asks the server again for the same content type, every time', () =>
             new Promise<void>((done) => {
                 getContentTypeSpy.mockReturnValue(of(NEW_EDITOR_TYPE));
 
                 spectator.service.resolveEditor('Blog').subscribe(() => {
                     spectator.service.resolveEditor('Blog').subscribe((choice) => {
                         expect(choice.editor).toBe('new');
-                        expect(getContentTypeSpy).toHaveBeenCalledTimes(1);
+                        expect(getContentTypeSpy).toHaveBeenCalledTimes(2);
                         done();
                     });
                 });
             }));
 
-        it('does not cache a failed lookup, so the next call asks again', () =>
+        it('follows the flag when it is turned off between two opens: new, then legacy', () =>
+            new Promise<void>((done) => {
+                getContentTypeSpy.mockReturnValueOnce(of(NEW_EDITOR_TYPE));
+                getContentTypeSpy.mockReturnValueOnce(of({ ...NEW_EDITOR_TYPE, metadata: {} }));
+
+                spectator.service.resolveEditor('Blog').subscribe((first) => {
+                    expect(first.editor).toBe('new');
+
+                    spectator.service.resolveEditor('Blog').subscribe((second) => {
+                        expect(second.editor).toBe('legacy');
+                        done();
+                    });
+                });
+            }));
+
+        it('follows the flag when it is turned on between two opens: legacy, then new', () =>
+            new Promise<void>((done) => {
+                getContentTypeSpy.mockReturnValueOnce(of(LEGACY_TYPE));
+                getContentTypeSpy.mockReturnValueOnce(
+                    of({
+                        ...LEGACY_TYPE,
+                        metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
+                    })
+                );
+
+                spectator.service.resolveEditor('Banner').subscribe((first) => {
+                    expect(first.editor).toBe('legacy');
+
+                    spectator.service.resolveEditor('Banner').subscribe((second) => {
+                        expect(second.editor).toBe('new');
+                        done();
+                    });
+                });
+            }));
+
+        it('asks again after a failed lookup', () =>
             new Promise<void>((done) => {
                 getContentTypeSpy.mockReturnValueOnce(throwError(() => new Error('boom')));
                 getContentTypeSpy.mockReturnValueOnce(of(NEW_EDITOR_TYPE));
@@ -195,58 +230,52 @@ describe('DotContentletEditUrlService', () => {
             }));
     });
 
-    describe('Caching', () => {
-        it('only hits getContentType once for repeated resolutions of the same content type', () =>
+    /**
+     * The choice is read fresh on every call, so a "new edit content screen" toggled on a content
+     * type takes effect on the next open, without a reload (#38303, T176).
+     */
+    describe('A toggled flag', () => {
+        it('opens the same content type in the legacy editor once the flag is turned off', () =>
             new Promise<void>((done) => {
-                getContentTypeSpy.mockReturnValue(
-                    of({
-                        metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
-                    })
-                );
+                getContentTypeSpy.mockReturnValueOnce(of(NEW_EDITOR_TYPE));
+                getContentTypeSpy.mockReturnValueOnce(of({ ...NEW_EDITOR_TYPE, metadata: {} }));
 
-                spectator.service.resolveEditUrl(REGULAR_CONTENTLET).subscribe(() => {
-                    spectator.service
-                        .resolveEditUrl({ ...REGULAR_CONTENTLET, inode: 'another-inode' })
-                        .subscribe((url) => {
-                            expect(url).toBe('/dotAdmin/#/content/another-inode');
-                            expect(getContentTypeSpy).toHaveBeenCalledTimes(1);
-                            done();
-                        });
+                spectator.service.resolveEditUrl(REGULAR_CONTENTLET).subscribe((first) => {
+                    expect(first).toBe('/dotAdmin/#/content/content-inode');
+
+                    spectator.service.resolveEditUrl(REGULAR_CONTENTLET).subscribe((second) => {
+                        expect(second).toBe('/dotAdmin/#/c/content/content-inode');
+                        expect(getContentTypeSpy).toHaveBeenCalledTimes(2);
+                        done();
+                    });
                 });
             }));
 
-        it('caches independently per content type', () =>
+        it('opens the same content type in the new editor once the flag is turned on', () =>
             new Promise<void>((done) => {
-                getContentTypeSpy.mockImplementation((ct: string) =>
-                    of({
-                        metadata: {
-                            [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: ct === 'Modern'
-                        }
-                    })
-                );
+                getContentTypeSpy.mockReturnValueOnce(of({ ...NEW_EDITOR_TYPE, metadata: {} }));
+                getContentTypeSpy.mockReturnValueOnce(of(NEW_EDITOR_TYPE));
 
-                spectator.service
-                    .resolveEditUrl({ ...REGULAR_CONTENTLET, contentType: 'Modern' })
-                    .subscribe((modernUrl) => {
-                        expect(modernUrl).toBe('/dotAdmin/#/content/content-inode');
-                        spectator.service
-                            .resolveEditUrl({ ...REGULAR_CONTENTLET, contentType: 'Legacy' })
-                            .subscribe((legacyUrl) => {
-                                expect(legacyUrl).toBe('/dotAdmin/#/c/content/content-inode');
-                                expect(getContentTypeSpy).toHaveBeenCalledTimes(2);
-                                done();
-                            });
+                spectator.service.resolveEditUrl(REGULAR_CONTENTLET).subscribe((first) => {
+                    expect(first).toBe('/dotAdmin/#/c/content/content-inode');
+
+                    spectator.service.resolveEditUrl(REGULAR_CONTENTLET).subscribe((second) => {
+                        expect(second).toBe('/dotAdmin/#/content/content-inode');
+                        done();
                     });
+                });
             }));
 
-        it('shares one cache between resolveEditor and resolveEditUrl', () =>
+        it('reads the flag fresh for resolveEditUrl after resolveEditor read it', () =>
             new Promise<void>((done) => {
-                getContentTypeSpy.mockReturnValue(of(NEW_EDITOR_TYPE));
+                getContentTypeSpy.mockReturnValueOnce(of(NEW_EDITOR_TYPE));
+                getContentTypeSpy.mockReturnValueOnce(of({ ...NEW_EDITOR_TYPE, metadata: {} }));
 
-                spectator.service.resolveEditor('Blog').subscribe(() => {
+                spectator.service.resolveEditor('Blog').subscribe((choice) => {
+                    expect(choice.editor).toBe('new');
+
                     spectator.service.resolveEditUrl(REGULAR_CONTENTLET).subscribe((url) => {
-                        expect(url).toBe('/dotAdmin/#/content/content-inode');
-                        expect(getContentTypeSpy).toHaveBeenCalledTimes(1);
+                        expect(url).toBe('/dotAdmin/#/c/content/content-inode');
                         done();
                     });
                 });
