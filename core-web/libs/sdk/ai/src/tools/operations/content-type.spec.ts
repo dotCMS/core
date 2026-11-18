@@ -2,7 +2,7 @@ import { vi } from 'vitest';
 
 import { CREATE_CONTENT_TYPE_ENDPOINTS, createContentType } from './content-type-create';
 import { UPDATE_CONTENT_TYPE_ENDPOINTS, updateContentType } from './content-type-update';
-import { variableProblem } from './shared/content-type-fields';
+import { deriveVariable, prepareFields, variableProblem } from './shared/content-type-fields';
 
 import { HttpError, ValidationError, type DotCMSRuntime, type RequestOptions } from '../../runtime';
 import { unlistedCalls } from '../toolkit/endpoints';
@@ -141,6 +141,61 @@ const AUTHOR: StoredType = {
     ],
     workflows: [{ id: 'wf-system', name: 'System Workflow' }]
 };
+
+describe('deriveVariable', () => {
+    it.each([
+        ['Sort Order', 'sortOrder'],
+        ['Folder', 'folder'],
+        ['Reading time (min)', 'readingTimeMin'],
+        ['2nd Title', 'ndTitle'],
+        ['alreadyCamel', 'alreadyCamel']
+    ])('derives %s → %s, as dotCMS does', (name, variable) => {
+        expect(deriveVariable(name)).toBe(variable);
+    });
+});
+
+describe('prepareFields — variables derived from the name', () => {
+    const prepare = (fields: Parameters<typeof prepareFields>[1]) => {
+        const warnings: string[] = [];
+        const prepared = prepareFields('Event', fields, {
+            relationshipTargets: new Map(),
+            warnings
+        });
+        return { bodies: prepared.map((field) => field.body), warnings };
+    };
+
+    it('replaces a derived variable that is a system property, and says so', () => {
+        const { bodies, warnings } = prepare([
+            { name: 'Sort Order', type: 'integer' },
+            { name: 'Folder', type: 'text' }
+        ]);
+
+        expect(bodies.map((body) => body['variable'])).toEqual(['eventSortOrder', 'eventFolder']);
+        expect(warnings).toEqual([
+            expect.stringMatching(
+                /Sort Order: "sortOrder" is a contentlet system property.*"eventSortOrder"/
+            ),
+            expect.stringMatching(/Folder: "folder" .*"eventFolder"/)
+        ]);
+    });
+
+    it('leaves other names for dotCMS to derive', () => {
+        const { bodies, warnings } = prepare([{ name: 'Starts', type: 'date-time' }]);
+
+        expect(bodies[0]).not.toHaveProperty('variable');
+        expect(warnings).toEqual([]);
+    });
+
+    it('refuses a replacement that collides with an existing variable', () => {
+        expect(() =>
+            prepareFields('Event', [{ name: 'Sort Order', type: 'integer' }], {
+                relationshipTargets: new Map(),
+                takenVariables: ['eventSortOrder'],
+                warnings: []
+            })
+        ).toThrow(/"eventSortOrder" already exists on Event/);
+    });
+});
 
 describe('variableProblem', () => {
     it.each(['sortOrder', 'host', 'identifier', 'folder', 'LanguageId'])(

@@ -185,6 +185,21 @@ export function suggestVariable(typeVariable: string, variable: string): string 
     return `${lowerFirst(typeVariable)}${upperFirst(variable)}`;
 }
 
+/**
+ * The variable dotCMS derives from a field name when none is given (`StringUtils.camelCaseLower`
+ * in the core): "Sort Order" → `sortOrder`.
+ */
+export function deriveVariable(name: string): string {
+    if (/^[a-z][a-zA-Z0-9]*$/.test(name)) return name;
+    const words = name
+        .toLowerCase()
+        .replace(/[^a-z\d]/g, '-')
+        .replace(/^[-\d]+/, '')
+        .split('-')
+        .filter(Boolean);
+    return words.map((word, i) => (i === 0 ? word : upperFirst(word))).join('');
+}
+
 /** Validate a field variable; returns the problem, or undefined when it is fine. */
 export function variableProblem(typeVariable: string, variable: string): string | undefined {
     if (!VARIABLE_PATTERN.test(variable)) {
@@ -239,24 +254,38 @@ export function prepareFields(
             continue;
         }
 
-        if (input.variable !== undefined) {
-            const problem = variableProblem(typeVariable, input.variable);
+        // Without a variable, dotCMS derives one from the name and checks it against its own
+        // reserved list only — "Sort Order" becomes `sortOrder`. Pick a safe one here instead.
+        let variable = input.variable;
+        if (variable === undefined) {
+            const derived = deriveVariable(input.name.trim());
+            if (derived && RESERVED_FIELD_VARIABLES.has(derived.toLowerCase())) {
+                variable = suggestVariable(typeVariable, derived);
+                options.warnings.push(
+                    `${input.name.trim()}: "${derived}" is a contentlet system property, so the ` +
+                        `field variable is "${variable}".`
+                );
+            }
+        }
+
+        if (variable !== undefined) {
+            const problem = variableProblem(typeVariable, variable);
             if (problem) {
                 fail(problem);
             }
 
-            const key = input.variable.toLowerCase();
+            const key = variable.toLowerCase();
             if (seen.has(key)) {
-                fail(`variable "${input.variable}" is used twice in this request.`);
+                fail(`variable "${variable}" is used twice in this request.`);
             }
             if (taken.has(key)) {
-                fail(`variable "${input.variable}" already exists on ${typeVariable}.`);
+                fail(`variable "${variable}" already exists on ${typeVariable}.`);
             }
             seen.add(key);
 
             const shadow = SHADOWING_FIELD_VARIABLES[key];
             if (shadow) {
-                options.warnings.push(`${input.variable}: ${shadow}.`);
+                options.warnings.push(`${variable}: ${shadow}.`);
             }
         }
 
@@ -269,7 +298,7 @@ export function prepareFields(
             searchable: input.searchable ?? false,
             unique: input.unique ?? false
         };
-        if (input.variable) body['variable'] = input.variable;
+        if (variable) body['variable'] = variable;
         if (mapping.dataType) body['dataType'] = mapping.dataType;
         if (input.hint) body['hint'] = input.hint;
         if (input.defaultValue !== undefined) body['defaultValue'] = input.defaultValue;
@@ -310,7 +339,9 @@ export function prepareFields(
         if (input.type === 'relationship') {
             const relationship = input.relationship;
             if (!relationship?.target || !relationship.cardinality) {
-                fail('a relationship field needs relationship.target and relationship.cardinality.');
+                fail(
+                    'a relationship field needs relationship.target and relationship.cardinality.'
+                );
             } else {
                 target = relationship.target === 'self' ? typeVariable : relationship.target;
                 if (relationship.target !== 'self' && !options.relationshipTargets.get(target)) {
