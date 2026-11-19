@@ -177,7 +177,13 @@ export class DotEditContentOpenerService {
 
         const $contentlet = signal<DotCMSContentlet | null>(null);
         const $typeName = signal<string | null>(null);
-        const $request = computed(() => withContentlet($source(), $contentlet()));
+        // An edit named by identifier keeps the language it asked for, which the new editor
+        // offers as a translation when the version found is in another. The legacy editor offers
+        // none, so once it is the editor the request names the version it shows.
+        const $keepAskedLanguage = signal(true);
+        const $request = computed(() =>
+            withContentlet($source(), $contentlet(), $keepAskedLanguage())
+        );
 
         // Read by the outlet only once the content has loaded, so the inputs a given editor takes
         // are added below, before its component is handed over.
@@ -223,7 +229,7 @@ export class DotEditContentOpenerService {
 
         this.#fetchContentlet(initial, fetch)
             .pipe(
-                tap((contentlet) => url?.found(ref, withContentlet(initial, contentlet))),
+                tap((contentlet) => url?.found(ref, withContentlet(initial, contentlet, true))),
                 switchMap((contentlet) => this.#resolve(initial, contentlet, options.editor)),
                 takeUntil(ref.closed)
             )
@@ -232,6 +238,11 @@ export class DotEditContentOpenerService {
                     $contentlet.set(contentlet);
                     $typeName.set(contentType?.name ?? null);
                     options.editorResolved?.(editor);
+
+                    if (editor === 'legacy') {
+                        $keepAskedLanguage.set(false);
+                        url?.found(ref, withContentlet(initial, contentlet, false));
+                    }
 
                     if (editor === 'new') {
                         showEditor(loadDotEditContentSidePanel());
@@ -601,21 +612,25 @@ function isOpenable(request: DotEditContentRequest): boolean {
 /**
  * Fills what an edit request left out from the contentlet fetched for it, keeping everything the
  * request did say. An edit named only by identifier opens the version that was found, so its inode
- * and language are that version's, even when the request asked for a language it lacks.
+ * is that version's. Its language is the one the request asked for, when it asked for one and
+ * `keepAskedLanguage` is set (the new editor then offers that translation); otherwise the found
+ * version's.
  *
  * @param request The request.
  * @param contentlet The contentlet fetched for it, if one was.
+ * @param keepAskedLanguage Whether an edit named by identifier keeps the language it asked for.
  * @returns The request, completed.
  */
 function withContentlet(
     request: DotEditContentRequest,
-    contentlet: DotCMSContentlet | null
+    contentlet: DotCMSContentlet | null,
+    keepAskedLanguage: boolean
 ): DotEditContentRequest {
     if (!contentlet) {
         return request;
     }
 
-    const found = !request.inode;
+    const found = !request.inode && !(keepAskedLanguage && request.languageId);
 
     return {
         ...request,
