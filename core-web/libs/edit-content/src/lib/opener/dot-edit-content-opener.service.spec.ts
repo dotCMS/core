@@ -329,6 +329,38 @@ describe('DotEditContentOpenerService', () => {
     });
 
     /**
+     * The caller learns which editor shows, once it is known, so it can treat the two apart: the
+     * UVE reloads on close only for the legacy editor, whose workflow actions report nothing.
+     */
+    describe('editorResolved', () => {
+        it.each([
+            ['the new editor for a type that uses it', 'Blog', undefined, 'new'],
+            ['the legacy editor for a type that does not', 'Banner', undefined, 'legacy'],
+            ['the legacy editor when the caller forced it', 'Blog', 'legacy', 'legacy']
+        ] as const)('reports %s', async (_label, contentType, editor, expected) => {
+            const editorResolved = vi.fn();
+
+            spectator.service.open(
+                { ...EDIT_REQUEST, contentType },
+                { injector, editor, editorResolved }
+            );
+            await lastOpen();
+
+            expect(editorResolved).toHaveBeenCalledTimes(1);
+            expect(editorResolved).toHaveBeenCalledWith(expected);
+        });
+
+        it('reports nothing when the server refuses the request', async () => {
+            getContentletByInode.mockReturnValue(throwError(() => new Error('404')));
+            const editorResolved = vi.fn();
+
+            spectator.service.open({ mode: 'edit', inode: 'abc' }, { injector, editorResolved });
+
+            expect(editorResolved).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
      * "Switch to the old editor" reopens content whose type was just set back to the legacy
      * editor while its old choice is still remembered, so it forces the legacy editor (#38303).
      */

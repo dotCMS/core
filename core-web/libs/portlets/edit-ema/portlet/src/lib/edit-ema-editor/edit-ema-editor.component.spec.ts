@@ -2088,13 +2088,27 @@ describe('EditEmaEditorComponent', () => {
 
                         // The safety net for workflow actions run in the legacy editor, which report
                         // nothing the page can use (#38303, R4).
-                        it('should reload the page and clear the request when the panel closes itself', () => {
+                        it('should reload the page and clear the request when a legacy editor panel closes itself', () => {
                             const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
                             const panel = openEdit();
+                            panel.options.editorResolved?.('legacy');
 
                             panel.ref.close();
 
                             expect(pageReloadSpy).toHaveBeenCalledTimes(1);
+                            expect(editRequest()).toBeNull();
+                        });
+
+                        // The new editor reports every save, and a delete reloads on its own, so a
+                        // close has nothing left to show.
+                        it('should clear the request without reloading when a new editor panel closes itself', () => {
+                            const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+                            const panel = openEdit();
+                            panel.options.editorResolved?.('new');
+
+                            panel.ref.close();
+
+                            expect(pageReloadSpy).not.toHaveBeenCalled();
                             expect(editRequest()).toBeNull();
                         });
                     });
