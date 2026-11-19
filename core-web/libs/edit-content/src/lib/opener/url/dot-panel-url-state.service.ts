@@ -230,7 +230,8 @@ export class DotPanelUrlStateService {
     /**
      * Back or Forward moved the URL. On the surface's own path, the front panel is checked once the
      * router has answered the move: at once when the router has never navigated, since then no
-     * navigation answers it.
+     * navigation answers it. With no panel open, an entry that still names one has its params
+     * cleared, once the router has answered and the surface had its chance to reopen a panel.
      *
      * Under hash routing `Location` reports a `hashchange` after the `popstate` of the same move;
      * the router answers only the `popstate`, and so does this.
@@ -238,7 +239,13 @@ export class DotPanelUrlStateService {
     #onHistoryMove({ url, type }: PopStateEvent): void {
         const front = this.#front();
 
-        if (type === 'hashchange' || this.#settling || !front) {
+        if (type === 'hashchange' || this.#settling) {
+            return;
+        }
+
+        if (!front) {
+            this.#afterRouter(() => this.#clearUnowned());
+
             return;
         }
 
@@ -246,16 +253,43 @@ export class DotPanelUrlStateService {
             return;
         }
 
+        this.#afterRouter(() => this.#restoreFront());
+    }
+
+    /**
+     * Runs `then` once the router has answered a Back or Forward: at once when it has never
+     * navigated, since then no navigation answers it.
+     */
+    #afterRouter(then: () => void): void {
         if (!this.#router.navigated) {
-            this.#restoreFront();
+            then();
 
             return;
         }
 
         this.#settling = this.#router.events.pipe(filter(endsNavigation), take(1)).subscribe(() => {
             this.#settling = null;
-            this.#restoreFront();
+            then();
         });
+    }
+
+    /**
+     * Back or Forward landed on an entry that names a panel while none is open: the entry a panel
+     * pushed keeps its params after Back closes the panel, and so does a surface left with a panel
+     * open. Nothing opens from it (a closed panel stays closed on Forward), so the params are
+     * cleared in place rather than left naming nothing (#38303). A panel the landing surface
+     * opened again in the meantime keeps them.
+     */
+    #clearUnowned(): void {
+        if (this.#front()) {
+            return;
+        }
+
+        const { queryParams } = this.#serializer.parse(this.#location.path(true));
+
+        if (PANEL_PARAMS.some((key) => key in queryParams)) {
+            this.#write('replace');
+        }
     }
 
     /** The front panel's entry, if any panel is open. */
