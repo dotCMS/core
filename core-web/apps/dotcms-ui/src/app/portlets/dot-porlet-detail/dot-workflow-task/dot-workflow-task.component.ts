@@ -56,10 +56,14 @@ export class DotWorkflowTaskComponent implements OnInit {
      * also names.
      */
     ngOnInit() {
-        // The task is viewed again once a side panel closes, whichever path opened it: "Edit
-        // Content", or the task's URL, which the portlet behind reopens (#38303, FR-025a).
+        // The task is viewed again on every save in a side panel, with the panel still open, and
+        // on a close after the legacy editor, whichever path opened the panel: "Edit Content", or
+        // the task's URL, which the portlet behind reopens (#38303, FR-025a).
         this.#destroyRef.onDestroy(
-            this.dotCustomEventHandlerService.onPanelClosed(() => this.#viewTask())
+            this.dotCustomEventHandlerService.onPanelEvents({
+                saved: () => this.#viewTask(),
+                closed: () => this.#viewTask()
+            })
         );
 
         this.dotMessageService.ready$
@@ -136,9 +140,9 @@ export class DotWorkflowTaskComponent implements OnInit {
 
     /**
      * The detail's "Edit Content" (`view_workflow_task.jsp`, `doEdit`) opens the content in the
-     * side panel, above the dialog and written to the task's URL (#38303, FR-025a). Once the panel
-     * closes, after the task list behind the dialog reloads, the task is viewed again (registered
-     * in {@link ngOnInit}), so the detail shows the content's current step.
+     * side panel, above the dialog and written to the task's URL (#38303, FR-025a). The task is
+     * viewed again on every save in the panel, and on a close after the legacy editor (registered
+     * in {@link ngOnInit}), so the detail shows the content's current title and step.
      *
      * @param data The content's inode and content type, as the detail sent them.
      */
