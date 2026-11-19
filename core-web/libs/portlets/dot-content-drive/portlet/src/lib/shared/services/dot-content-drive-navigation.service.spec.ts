@@ -732,42 +732,30 @@ describe('DotContentDriveNavigationService', () => {
 
             /**
              * The request names no editor and the opener remembers the type's old choice, so the
-             * reopen forces the legacy editor, and holds the panel closed for one tick so the panel
-             * helper closes the new editor before it opens the fresh request (#38303).
+             * reopen forces the legacy editor; the panel helper reopens the panel when the forced
+             * editor changes (#38303).
              */
             describe('reopening in the legacy editor', () => {
-                beforeEach(() => vi.useFakeTimers());
-                afterEach(() => vi.useRealTimers());
-
-                it('forces the legacy editor and holds the panel closed until the next tick', () => {
+                it('forces the legacy editor on the same content', () => {
                     openEdit();
 
                     service.switchToLegacyEditor({ inode: 'inode-1' }, BLOG_POST, 'blog');
 
-                    expect(service.$forceLegacyEditor()).toBe(true);
-                    expect(service.$reopeningPanel()).toBe(true);
-
-                    vi.runAllTimers();
-
-                    expect(service.$reopeningPanel()).toBe(false);
-                    // Still forced: the panel reopens after the hold, and reads it then.
                     expect(service.$forceLegacyEditor()).toBe(true);
                     expect(service.$editPanelRequest()).toEqual(
                         expect.objectContaining({ mode: 'edit', inode: 'inode-1' })
                     );
                 });
 
-                it('holds nothing and forces nothing on an ordinary open', () => {
+                it('forces nothing on an ordinary open', () => {
                     openEdit();
 
                     expect(service.$forceLegacyEditor()).toBe(false);
-                    expect(service.$reopeningPanel()).toBe(false);
                 });
 
                 it('drops the forced editor on the next open', () => {
                     openEdit();
                     service.switchToLegacyEditor({ inode: 'inode-1' }, BLOG_POST, 'blog');
-                    vi.runAllTimers();
 
                     service.editContent(createFakeContentlet({ inode: 'inode-2' }));
 
@@ -777,7 +765,6 @@ describe('DotContentDriveNavigationService', () => {
                 it('drops the forced editor on close', () => {
                     openEdit();
                     service.switchToLegacyEditor({ inode: 'inode-1' }, BLOG_POST, 'blog');
-                    vi.runAllTimers();
 
                     service.closeEditPanel();
 

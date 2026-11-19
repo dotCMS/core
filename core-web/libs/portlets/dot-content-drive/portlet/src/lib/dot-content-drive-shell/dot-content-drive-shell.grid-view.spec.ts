@@ -194,7 +194,6 @@ describe('DotContentDriveShellComponent — grid view', () => {
                 panelLanguageChanged: vi.fn(),
                 $editPanelRequest: editPanelRequestSignal,
                 $forceLegacyEditor: signal(false),
-                $reopeningPanel: signal(false),
                 $panelLocation: panelLocationSignal
             }),
             LoggerService,

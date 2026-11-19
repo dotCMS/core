@@ -161,7 +161,6 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 openEditByIdentifier,
                 $editPanelRequest: signal(null),
                 $forceLegacyEditor: signal(false),
-                $reopeningPanel: signal(false),
                 $panelLocation: signal(null)
             }),
             LoggerService,

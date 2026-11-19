@@ -355,19 +355,11 @@ export class DotContentDriveShellComponent implements OnDestroy {
     protected readonly $editPanelRequest = this.#navigationService.$editPanelRequest;
 
     /**
-     * What the panel binds: the request, except while the navigation service reopens the panel
-     * ("switch to the old editor"), when it is `null` for one tick so the open panel closes first.
-     */
-    readonly #panelRequest = computed(() =>
-        this.#navigationService.$reopeningPanel() ? null : this.$editPanelRequest()
-    );
-
-    /**
      * The Edit Content side panel, open while the navigation service names content to edit or
      * create (#38303). The opener picks the editor from the content type, so one binding serves
      * both editors, and loads each editor on its first open.
      */
-    readonly #editPanel = injectEditContentPanel(this.#panelRequest, this.#editPanelBinding());
+    readonly #editPanel = injectEditContentPanel(this.$editPanelRequest, this.#editPanelBinding());
 
     /** The file open in the Edit Code panel, from the store. */
     protected readonly $sourceEditorRequest = this.#store.sourceEditor;
@@ -419,8 +411,9 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * the close catches it (#38303, FR-017). A restored version arrives as a save, and a delete is
      * followed by the close that refreshes.
      *
-     * `editor` is a getter, read each time the panel opens, so "switch to the old editor" can reopen
-     * the content in the legacy editor. Remove the getter with the legacy editor.
+     * `editor` is a getter that reads the forced editor, so "switch to the old editor" reopens the
+     * content in the legacy editor: the panel helper reopens when it changes. Remove the getter with
+     * the legacy editor.
      *
      * @returns The binding.
      */

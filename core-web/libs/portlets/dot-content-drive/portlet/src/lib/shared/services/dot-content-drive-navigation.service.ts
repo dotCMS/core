@@ -60,16 +60,6 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
      */
     readonly $forceLegacyEditor = this.#forceLegacyEditor.asReadonly();
 
-    readonly #reopeningPanel = signal(false);
-
-    /**
-     * True for the one tick in which the open panel must close so it can reopen on a fresh
-     * request. The panel helper keeps a panel open while its request changes, so the shell binds
-     * `null` while this is set and the panel closes first. {@link $editPanelRequest} never goes
-     * `null` meanwhile, so the URL keeps naming the content. Remove with the legacy editor.
-     */
-    readonly $reopeningPanel = this.#reopeningPanel.asReadonly();
-
     readonly #panelLocation = signal<DotContentDrivePanelLocation | null>(null);
 
     /**
@@ -215,8 +205,8 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
      * language the create started in.
      *
      * The request names no editor (#38303), and the opener remembers the type's old choice, so the
-     * reopen forces the legacy editor ({@link $forceLegacyEditor}) and closes the open panel for
-     * one tick first ({@link $reopeningPanel}).
+     * reopen forces the legacy editor ({@link $forceLegacyEditor}). The panel helper reopens the
+     * panel when the forced editor changes, so the same content reopens in the legacy editor.
      *
      * Content Drive answers only for the panel it opened. Any other editor that inherits the
      * override (a related content opened from a relationship field) is declined, and navigates as
@@ -244,7 +234,6 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
 
         this.#forceLegacyEditor.set(true);
         this.#panelRequest.set(request);
-        this.#reopenPanel();
 
         // Inside the panel, related content opens in place, so the content switched can differ
         // from the one the URL names. The URL follows what reopens (FR-020).
@@ -263,17 +252,6 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
         }
 
         return true;
-    }
-
-    /**
-     * Has the shell close the open panel and reopen it on the current request. The panel closes
-     * on this tick and reopens on the next, once its helper has seen it cleared. A timer, not a
-     * microtask: change detection runs on a timer, so a microtask would release the panel before
-     * it ever saw the hold. Remove with the legacy editor.
-     */
-    #reopenPanel(): void {
-        this.#reopeningPanel.set(true);
-        setTimeout(() => this.#reopeningPanel.set(false));
     }
 
     /**

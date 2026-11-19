@@ -119,10 +119,9 @@ const editPanelRequestSignal: WritableSignal<DotEditContentRequest | null> = sig
 // Backs the mock's `$panelLocation`: what the URL must say about the open panel. The shell's URL
 // sync and its Back guard read this, not the request (#37759).
 const panelLocationSignal: WritableSignal<DotContentDrivePanelLocation | null> = signal(null);
-// Back the mock's `$forceLegacyEditor` and `$reopeningPanel`: "switch to the old editor" forces the
-// legacy editor and holds the panel closed for one tick so it reopens (#38303).
+// Backs the mock's `$forceLegacyEditor`: "switch to the old editor" forces the legacy editor, and the
+// panel reopens in it (#38303).
 const forceLegacyEditorSignal = signal(false);
-const reopeningPanelSignal = signal(false);
 /**
  * The Edit Permissions dialog the shell opens through `DialogService` (#37759, FR-030). `onClose`
  * is a subject so a test can close it the way PrimeNG does.
@@ -310,7 +309,6 @@ describe('DotContentDriveShellComponent', () => {
                 panelLanguageChanged: vi.fn(),
                 $editPanelRequest: editPanelRequestSignal,
                 $forceLegacyEditor: forceLegacyEditorSignal,
-                $reopeningPanel: reopeningPanelSignal,
                 $panelLocation: panelLocationSignal
             }),
             LoggerService,
@@ -379,7 +377,6 @@ describe('DotContentDriveShellComponent', () => {
         editPanelRequestSignal.set(null);
         panelLocationSignal.set(null);
         forceLegacyEditorSignal.set(false);
-        reopeningPanelSignal.set(false);
         sourceEditorSignal.set(null);
         permissionsDialogClose$ = new Subject<unknown>();
         dialogServiceOpen.mockClear();

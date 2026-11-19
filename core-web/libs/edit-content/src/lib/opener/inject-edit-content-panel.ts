@@ -27,8 +27,9 @@ export interface DotEditContentPanelBinding extends DotEditContentPanelHandlers 
 
     /**
      * Shows the legacy editor whatever the content type says; see `DotEditContentOpenOptions`.
-     * Read each time the panel opens, so a getter can decide per open. Remove with the legacy
-     * editor.
+     * Read each time the panel opens, so a getter can decide per open. A getter that reads a signal
+     * is tracked: when its answer changes while the panel is open, the panel reopens in that editor.
+     * Remove with the legacy editor.
      */
     editor?: 'legacy';
 }
@@ -51,8 +52,10 @@ export interface DotEditContentPanelHandle {
  * request in step while it stays set, and closes it, with no guard, when the request is cleared.
  * Same shape as `injectSidePanel`, for content.
  *
- * A request that changes while the panel is open does not reopen it, so a surface that wants a
- * fresh editor for another content clears the request first.
+ * A request that changes while the panel is open keeps the panel when it still names the same
+ * content (its `mode`, `inode` and `contentType`) in the same editor, as a new title does. One that
+ * names other content, or a binding whose `editor` changes, closes the panel, with no guard and no
+ * `closed`, and opens a fresh one in the same pass.
  *
  * Call it from a constructor or a field initializer: it needs an injection context, and the panel
  * closes when the surface is destroyed.
@@ -73,6 +76,8 @@ export function injectEditContentPanel(
     const shown = signal<DotEditContentRequest | null>(null);
     const current = computed(() => shown() as DotEditContentRequest);
     const panel = signal<DotSidePanelRef | null>(null);
+    // What the open panel was opened for, so a request naming other content reopens it.
+    let openedFor: string | null = null;
 
     // The surface is going away: forget the panel before closing it, so the close is not reported to
     // a screen that no longer exists. Registered before any panel opens, so it runs before the
@@ -118,10 +123,21 @@ export function injectEditContentPanel(
 
     effect(() => {
         const value = request();
+        // Tracked, so a getter that reads a signal reopens the panel in the editor it now names.
+        const editor = binding.editor;
 
         untracked(() => {
             if (value !== null && value !== undefined) {
+                const identity = identityOf(value, editor);
+                const showing = panel();
+
+                if (showing && identity !== openedFor) {
+                    panel.set(null);
+                    showing.close();
+                }
+
                 shown.set(value);
+                openedFor = identity;
 
                 if (!panel()) {
                     open();
@@ -142,4 +158,16 @@ export function injectEditContentPanel(
         isOpen: computed(() => panel() !== null),
         requestClose: () => panel()?.requestClose()
     };
+}
+
+/**
+ * What a panel was opened for: the content it shows and the editor it shows it in. A change to
+ * anything else in the request, such as its title, keeps the panel.
+ *
+ * @param request What the panel shows.
+ * @param editor The editor the binding forces, if any.
+ * @returns A key that differs whenever the panel must reopen.
+ */
+function identityOf(request: DotEditContentRequest, editor: 'legacy' | undefined): string {
+    return JSON.stringify([request.mode, request.inode, request.contentType, editor]);
 }
