@@ -2148,7 +2148,8 @@ public class HostAPITest extends IntegrationTestBase  {
      * template, where {@code /application} has permissions of its own for an owner role.
      * Expected: copying the container creates {@code /application} in the destination as a parent
      * folder, and when the folder sweep reaches {@code /application} later it still gets the
-     * source folder's permissions, so a role that can read the destination's folders cannot read it.
+     * source folder's permissions, so a role that can read the destination's folders cannot read it,
+     * and permission decisions cached before the copy are dropped once it commits.
      */
     @Test
     public void copySite_parentFolderCreatedByContainerCopyKeepsItsPermissions() throws Exception {
@@ -2191,9 +2192,19 @@ public class HostAPITest extends IntegrationTestBase  {
                             PermissionAPI.PERMISSION_READ, true)),
                     destinationSite, systemUser, false);
 
-            runSiteCopyJob(sourceSite, destinationSite, user,
-                    new HostCopyOptions(true, true, false, false, false, false, false));
+            // a permission decision cached before the copy must not outlive it
+            permissionAPI.doesUserHavePermission(application, PermissionAPI.PERMISSION_READ, user,
+                    false);
+            assertTrue(CacheLocator.getPermissionCache().doesUserHavePermission(application,
+                    String.valueOf(PermissionAPI.PERMISSION_READ), user, false, null).isPresent());
 
+            runSiteCopyJob(sourceSite, destinationSite, user,
+                    new HostCopyOptions(true, true, false, false, false, false, false), false);
+
+            assertFalse("The copy drops permission decisions cached before it",
+                    CacheLocator.getPermissionCache().doesUserHavePermission(application,
+                            String.valueOf(PermissionAPI.PERMISSION_READ), user, false, null)
+                            .isPresent());
             final Folder copiedApplication = APILocator.getFolderAPI().findFolderByPath(
                     "/application/", destinationSite, systemUser, false);
             assertNotNull(copiedApplication.getInode());
@@ -2236,6 +2247,22 @@ public class HostAPITest extends IntegrationTestBase  {
      */
     private void runSiteCopyJob(final Host sourceSite, final Host destinationSite,
             final User user, final HostCopyOptions copyOptions) throws Exception {
+        runSiteCopyJob(sourceSite, destinationSite, user, copyOptions, true);
+    }
+
+    /**
+     * Runs the Site Copy job synchronously, the way Quartz would, for the given sites and options.
+     *
+     * @param sourceSite           the site to copy from
+     * @param destinationSite      the site to copy into
+     * @param user                 the user who asked for the copy
+     * @param copyOptions          what to copy
+     * @param clearPermissionCache whether to drop every cached permission lookup after the job;
+     *                             pass {@code false} to check what the job itself leaves cached
+     */
+    private void runSiteCopyJob(final Host sourceSite, final Host destinationSite,
+            final User user, final HostCopyOptions copyOptions,
+            final boolean clearPermissionCache) throws Exception {
         final JobDetail jobDetail = mock(JobDetail.class);
         final JobExecutionContext jobExecutionContext = mock(JobExecutionContext.class);
         final Trigger trigger = mock(Trigger.class);
@@ -2253,9 +2280,11 @@ public class HostAPITest extends IntegrationTestBase  {
         final HostAssetsJobProxy hostAssetsJobProxy = Mockito.spy(new HostAssetsJobProxy());
         doReturn(dataMap).when(hostAssetsJobProxy).getExecutionData(trigger);
         hostAssetsJobProxy.execute(jobExecutionContext);
-        // The job writes permission rows directly; the tests check permissions right after it, so
-        // drop any cached permission lookups made before the copy.
-        CacheLocator.getPermissionCache().clearCache();
+        if (clearPermissionCache) {
+            // The job writes permission rows directly; the tests check permissions right after
+            // it, so drop any cached permission lookups made before the copy.
+            CacheLocator.getPermissionCache().clearCache();
+        }
     }
 
 }

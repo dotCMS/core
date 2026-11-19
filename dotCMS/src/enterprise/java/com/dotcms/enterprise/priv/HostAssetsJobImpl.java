@@ -34,6 +34,7 @@ import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.SiteCreatedEvent;
 import com.dotmarketing.beans.Tree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.UserAPI;
@@ -1121,6 +1122,11 @@ public class HostAssetsJobImpl extends ParentProxy{
 		if (this.foldersCreatedByThisCopy.contains(newFolder.getInode())
 				&& !permissionAPI.isInheritingPermissions(sourceFolder)) {
 			permissionAPI.copyPermissions(sourceFolder, newFolder);
+			// Saving permissions only evicts the cached permission rows. A yes/no decision on this
+			// folder cached since an earlier phase created it would keep its old answer for a while,
+			// so drop those decisions once this phase commits (one flush per transaction).
+			HibernateUtil.addCommitListener("site-copy-flush-permission-decisions",
+					() -> CacheLocator.getPermissionCache().flushShortTermCache());
 		}
 		folderMappingsBySourceId.put(sourceFolder.getInode(), new FolderMapping(sourceFolder, newFolder));
 		return newFolder;
