@@ -28,6 +28,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
@@ -72,6 +73,9 @@ import java.util.stream.Collectors;
 @Tag(name = "Publishing", description = "Push publishing job management endpoints")
 public class PublishingResource {
 
+    /** Portlets that give access to these operations: the Publishing Queue and its new UI. */
+    private static final List<String> PUBLISHING_QUEUE_PORTLETS =
+            List.of(PortletID.PUBLISHING_QUEUE.toString(), PortletID.PUBLISHING_QUEUE_BETA.toString());
     private static final int DEFAULT_PAGE = 1;
     private static final int DEFAULT_PER_PAGE = 50;
     private static final int MAX_PER_PAGE = 500;
@@ -142,6 +146,8 @@ public class PublishingResource {
      *   <li>Search by name: {@code ?filter=staging}</li>
      * </ul>
      *
+     * <p>The caller needs the Publishing Queue portlet, in its legacy or new UI.</p>
+     *
      * @param request   The HTTP request
      * @param response  The HTTP response
      * @param page      Page number (starts from 1, default: 1)
@@ -172,7 +178,7 @@ public class PublishingResource {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - authentication required",
+                    description = "Unauthorized - authentication required, or no access to the Publishing Queue portlet",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)
             ),
             @ApiResponse(
@@ -222,6 +228,7 @@ public class PublishingResource {
         // Initialize request context and authenticate user
         new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
+                .requiredPortlet(PUBLISHING_QUEUE_PORTLETS.toArray(String[]::new))
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
@@ -329,6 +336,8 @@ public class PublishingResource {
      * <p>This endpoint provides complete environment/endpoint breakdown with individual
      * success/failure status, error messages, and stack traces for failed endpoints.</p>
      *
+     * <p>The caller needs the Publishing Queue portlet, in its legacy or new UI.</p>
+     *
      * @param request   The HTTP request
      * @param response  The HTTP response
      * @param bundleId  The bundle identifier
@@ -356,7 +365,7 @@ public class PublishingResource {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - authentication required",
+                    description = "Unauthorized - authentication required, or no access to the Publishing Queue portlet",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)
             ),
             @ApiResponse(
@@ -388,6 +397,7 @@ public class PublishingResource {
         // Initialize request context and authenticate user
         new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
+                .requiredPortlet(PUBLISHING_QUEUE_PORTLETS.toArray(String[]::new))
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
@@ -443,6 +453,8 @@ public class PublishingResource {
      *   <li>PUBLISHING_BUNDLE - Applying at receiver</li>
      * </ul>
      *
+     * <p>The caller needs the Publishing Queue portlet, in its legacy or new UI.</p>
+     *
      * @param request   The HTTP request
      * @param response  The HTTP response
      * @param bundleId  The bundle identifier to delete
@@ -466,7 +478,7 @@ public class PublishingResource {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - authentication required",
+                    description = "Unauthorized - authentication required, or no access to the Publishing Queue portlet",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)
             ),
             @ApiResponse(
@@ -503,6 +515,7 @@ public class PublishingResource {
         // Initialize request context and authenticate user (requires backend user)
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
+                .requiredPortlet(PUBLISHING_QUEUE_PORTLETS.toArray(String[]::new))
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
@@ -562,6 +575,8 @@ public class PublishingResource {
      *   <li>WAITING_FOR_PUBLISHING - Already queued</li>
      * </ul>
      *
+     * <p>The caller needs the Publishing Queue portlet, in its legacy or new UI.</p>
+     *
      * @param request   The HTTP request
      * @param response  The HTTP response
      * @param form      Request body containing bundleIds, forcePush, and deliveryStrategy
@@ -589,7 +604,7 @@ public class PublishingResource {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - authentication required",
+                    description = "Unauthorized - authentication required, or no access to the Publishing Queue portlet",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)
             ),
             @ApiResponse(
@@ -620,6 +635,7 @@ public class PublishingResource {
         // Initialize request context and authenticate user
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
+                .requiredPortlet(PUBLISHING_QUEUE_PORTLETS.toArray(String[]::new))
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
@@ -708,6 +724,8 @@ public class PublishingResource {
      * <p>All dates must be in ISO 8601 format with timezone offset:
      * {@code YYYY-MM-DDTHH:mm:ss±HH:MM} (e.g., {@code 2025-03-15T14:30:00-05:00})</p>
      *
+     * <p>The caller needs the Publishing Queue portlet, in its legacy or new UI.</p>
+     *
      * @param request   The HTTP request
      * @param response  The HTTP response
      * @param bundleId  The existing bundle identifier
@@ -736,7 +754,7 @@ public class PublishingResource {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - authentication required",
+                    description = "Unauthorized - authentication required, or no access to the Publishing Queue portlet",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)
             ),
             @ApiResponse(
@@ -778,6 +796,7 @@ public class PublishingResource {
         // 1. Authenticate backend user
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
+                .requiredPortlet(PUBLISHING_QUEUE_PORTLETS.toArray(String[]::new))
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
@@ -902,6 +921,8 @@ public class PublishingResource {
      *   <li>PUBLISHING_BUNDLE - Applying at receiver</li>
      * </ul>
      *
+     * <p>The caller needs the Publishing Queue portlet, in its legacy or new UI.</p>
+     *
      * @param request  The HTTP request
      * @param response The HTTP response
      * @param status   Comma-separated status values to purge (optional)
@@ -933,7 +954,7 @@ public class PublishingResource {
             ),
             @ApiResponse(
                     responseCode = "401",
-                    description = "Unauthorized - authentication required",
+                    description = "Unauthorized - authentication required, or no access to the Publishing Queue portlet",
                     content = @Content(mediaType = MediaType.APPLICATION_JSON)
             ),
             @ApiResponse(
@@ -967,6 +988,7 @@ public class PublishingResource {
         // Initialize request context and authenticate user (requires backend user)
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
+                .requiredPortlet(PUBLISHING_QUEUE_PORTLETS.toArray(String[]::new))
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)

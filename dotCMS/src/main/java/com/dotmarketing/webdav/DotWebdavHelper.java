@@ -155,6 +155,23 @@ public class DotWebdavHelper {
 
 	}
 
+	/**
+	 * Tells whether a lookup should see live versions: only in the live tree and only while the
+	 * current WebDAV request reads (GET, HEAD, PROPFIND...). Requests that write, and lookups made
+	 * outside a WebDAV request, see working versions in both trees. The tree itself still decides
+	 * the paths and the publish behavior of the resources returned.
+	 *
+	 * @param inLiveTree {@code true} when the lookup is in the live tree
+	 * @return {@code true} when live versions should be used
+	 */
+	public static boolean servesLiveVersions(final boolean inLiveTree) {
+		if (!inLiveTree) {
+			return false;
+		}
+		final Request request = HttpManager.request();
+		return request != null && request.getMethod() != null && !request.getMethod().isWrite;
+	}
+
 	//Check if the contentlets to upload are going to be live or working
 	public boolean isAutoPub(String path){
 		if(legacyPath){
@@ -444,7 +461,29 @@ public class DotWebdavHelper {
 		return returnValue;
 	}
 
+	/**
+	 * Loads the working version of the file at the given WebDAV URL.
+	 *
+	 * @param url  WebDAV URL of the file
+	 * @param user User loading the file
+	 * @return the file, or {@code null} when there is none at that URL
+	 * @throws IOException if the URL's site cannot be loaded
+	 */
 	public IFileAsset loadFile(String url, User user) throws IOException, DotDataException, DotSecurityException{
+		return loadFile(url, user, false);
+	}
+
+	/**
+	 * Loads the file at the given WebDAV URL, in its live or its working version.
+	 *
+	 * @param url  WebDAV URL of the file
+	 * @param user User loading the file
+	 * @param live {@code true} to load the live version, {@code false} for the working version
+	 * @return the file, or {@code null} when there is none at that URL or it has no version of the
+	 *         requested kind (e.g. a file that was never published, when {@code live} is set)
+	 * @throws IOException if the URL's site cannot be loaded
+	 */
+	public IFileAsset loadFile(String url, final User user, final boolean live) throws IOException, DotDataException, DotSecurityException{
 		url = stripMapping(url);
 		String hostName = getHostname(url);
 		url = getPath(url);
@@ -467,7 +506,7 @@ public class DotWebdavHelper {
 			id = APILocator.getIdentifierAPI().find(host, url);
 			if(id!=null && InodeUtils.isSet(id.getId())) {
 				if(id.getAssetType().equals("contentlet")){
-					cont = conAPI.findContentletByIdentifier(id.getId(), false, defaultLang, user, false);
+					cont = conAPI.findContentletByIdentifier(id.getId(), live, defaultLang, user, false);
 					if(cont!=null && InodeUtils.isSet(cont.getIdentifier()) && !APILocator.getVersionableAPI().isDeleted(cont)){
 						f = APILocator.getFileAssetAPI().fromContentlet(cont);
 					}
@@ -533,13 +572,16 @@ public class DotWebdavHelper {
 	}
 
 	/**
-	 * Returns a collection of child Resources for a given folder
+	 * Returns a collection of child Resources for a given folder. While a request reads the live
+	 * tree, it lists the live version of each file, so files that were never published are left
+	 * out; otherwise it lists the working versions (see {@link #servesLiveVersions(boolean)}).
 	 *
 	 * @param parentFolder Parent folder
 	 * @param user         Authenticated user
-	 * @param isAutoPub
-	 * @return
-	 * @throws IOException
+	 * @param isAutoPub    {@code true} for the live tree, {@code false} for the working tree
+	 * @param lang         Language of the files to list
+	 * @return the sub-folders and files of the folder, plus any temporary resources stored for it
+	 * @throws IOException if the folder's site cannot be loaded
 	 */
 	public List<Resource> getChildrenOfFolder ( Folder parentFolder, User user, boolean isAutoPub, long lang ) throws IOException {
 
@@ -580,7 +622,7 @@ public class DotWebdavHelper {
 			//Search for child files
 			List<Versionable> filesListSubChildren = new ArrayList<>();
 			try {
-				filesListSubChildren.addAll( APILocator.getFileAssetAPI().findFileAssetsByDB(FileAssetSearcher.builder().folder(parentFolder).user(user).respectFrontendRoles(false).build()) );
+				filesListSubChildren.addAll( APILocator.getFileAssetAPI().findFileAssetsByDB(FileAssetSearcher.builder().folder(parentFolder).user(user).live(servesLiveVersions(isAutoPub)).respectFrontendRoles(false).build()) );
 			} catch ( Exception e2 ) {
 				Logger.error( this, "Could not load files : ", e2 );
 			}

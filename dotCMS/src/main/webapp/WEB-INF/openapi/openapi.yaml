@@ -16051,7 +16051,8 @@ paths:
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: "Unauthorized - authentication required, or no access to the\
+            \ Publishing Queue portlet"
         "403":
           content:
             application/json: {}
@@ -16097,7 +16098,8 @@ paths:
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: "Unauthorized - authentication required, or no access to the\
+            \ Publishing Queue portlet"
         "403":
           content:
             application/json: {}
@@ -16142,7 +16144,8 @@ paths:
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: "Unauthorized - authentication required, or no access to the\
+            \ Publishing Queue portlet"
         "403":
           content:
             application/json: {}
@@ -16182,7 +16185,8 @@ paths:
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: "Unauthorized - authentication required, or no access to the\
+            \ Publishing Queue portlet"
         "403":
           content:
             application/json: {}
@@ -16216,7 +16220,8 @@ paths:
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: "Unauthorized - authentication required, or no access to the\
+            \ Publishing Queue portlet"
         "403":
           content:
             application/json: {}
@@ -16260,7 +16265,8 @@ paths:
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: "Unauthorized - authentication required, or no access to the\
+            \ Publishing Queue portlet"
         "403":
           content:
             application/json: {}
@@ -17589,7 +17595,8 @@ paths:
     put:
       description: Switches the current user's active site to the specified site.
         The 'id' path parameter represents the site identifier (also referred to as
-        'siteId' or 'hostId' in the API).
+        'siteId' or 'hostId' in the API). The user needs READ permission on the site
+        as a back-end user.
       operationId: switchSiteById
       parameters:
       - description: Identifier of the site to switch to (siteId/hostId are used interchangeably)

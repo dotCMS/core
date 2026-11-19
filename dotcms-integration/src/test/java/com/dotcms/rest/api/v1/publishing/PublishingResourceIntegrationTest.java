@@ -6,6 +6,7 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.EnvironmentDataGen;
 import com.dotcms.datagen.FilterDescriptorDataGen;
 import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
@@ -25,6 +26,7 @@ import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Layout;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
@@ -53,6 +55,7 @@ import com.dotcms.publishing.PublisherConfig.DeliveryStrategy;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.NotFoundException;
+import com.dotcms.rest.exception.SecurityException;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
@@ -88,6 +91,7 @@ public class PublishingResourceIntegrationTest {
     private static List<String> createdEnvironmentIds;
     private static List<String> createdFilterKeys;
     private static List<User> createdUsers;
+    private static List<Layout> createdLayouts;
     private static PublishingResource publishingResource;
     private static HttpServletResponse response;
 
@@ -105,6 +109,7 @@ public class PublishingResourceIntegrationTest {
         createdEnvironmentIds = new ArrayList<>();
         createdFilterKeys = new ArrayList<>();
         createdUsers = new ArrayList<>();
+        createdLayouts = new ArrayList<>();
         publishingResource = new PublishingResource();
         response = new MockHttpResponse();
     }
@@ -137,12 +142,25 @@ public class PublishingResourceIntegrationTest {
             }
         }
 
+        // Cleanup layouts created by tests
+        if (createdLayouts != null) {
+            for (final Layout layout : createdLayouts) {
+                try {
+                    APILocator.getLayoutAPI().removeLayout(
+                            APILocator.getLayoutAPI().findLayout(layout.getId()));
+                } catch (Exception e) {
+                    // Ignore cleanup errors
+                }
+            }
+        }
+
         // Cleanup users created by tests
         if (createdUsers != null) {
             for (final User user : createdUsers) {
                 UserDataGen.remove(user, Boolean.TRUE);
             }
         }
+
 
         // Note: Filters are stored in memory and will be cleared on restart
     }
@@ -1297,6 +1315,30 @@ public class PublishingResourceIntegrationTest {
         return mockAuthenticatedRequest(adminUser);
     }
 
+    /**
+     * Creates a non-admin back-end user whose personal role holds a layout with the given portlets.
+     * Pass no portlets for a user with no layout at all. The user and the layout are removed after
+     * the class runs.
+     *
+     * @param portletIds the portlets to put in the user's layout
+     * @return the persisted user
+     */
+    private User createBackendUserWithPortlets(final String... portletIds) throws DotDataException {
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole())
+                .nextPersisted();
+        createdUsers.add(user);
+        if (portletIds.length > 0) {
+            final Layout layout = new LayoutDataGen()
+                    .name("publishing-access-" + System.nanoTime())
+                    .portletIds(portletIds)
+                    .nextPersisted();
+            createdLayouts.add(layout);
+            APILocator.getRoleAPI().addLayoutToRole(layout, APILocator.getRoleAPI().getUserRole(user));
+        }
+        return user;
+    }
+
     private HttpServletRequest mockAuthenticatedRequest(final User user) {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
@@ -1555,6 +1597,117 @@ public class PublishingResourceIntegrationTest {
     }
 
     /**
+     * Given: a back-end user with no layout
+     * When:  the user lists publishing jobs
+     * Then:  the request is refused because the Publishing Queue portlet is required
+     */
+    @Test
+    public void test_listPublishingJobs_userWithoutPublishingQueuePortlet_isRejected() throws Exception {
+        final User user = createBackendUserWithPortlets();
+
+        assertThrows(SecurityException.class, () -> publishingResource.listPublishingJobs(
+                mockAuthenticatedRequest(user), response, 1, 50, null, null));
+    }
+
+    /**
+     * Given: a bundle and a back-end user with no layout
+     * When:  the user reads the bundle's publishing job details
+     * Then:  the request is refused because the Publishing Queue portlet is required
+     */
+    @Test
+    public void test_getPublishingJobDetails_userWithoutPublishingQueuePortlet_isRejected() throws Exception {
+        final String bundleId = createBundleWithStatus("detail-portlet-required", Status.SUCCESS);
+        final User user = createBackendUserWithPortlets();
+
+        assertThrows(SecurityException.class, () -> publishingResource.getPublishingJobDetails(
+                mockAuthenticatedRequest(user), response, bundleId));
+    }
+
+    /**
+     * Given: a bundle and a back-end user with no layout
+     * When:  the user deletes the bundle's publishing job
+     * Then:  the request is refused because the Publishing Queue portlet is required, and the
+     *        bundle is still there
+     */
+    @Test
+    public void test_deletePublishingJob_userWithoutPublishingQueuePortlet_isRejected() throws Exception {
+        final String bundleId = createBundleWithStatus("delete-portlet-required", Status.SUCCESS);
+        final User user = createBackendUserWithPortlets();
+
+        assertThrows(SecurityException.class, () -> publishingResource.deletePublishingJob(
+                mockAuthenticatedRequest(user), response, bundleId));
+        assertNotNull(APILocator.getBundleAPI().getBundleById(bundleId));
+    }
+
+    /**
+     * Given: a failed bundle and a back-end user with no layout
+     * When:  the user retries the bundle
+     * Then:  the request is refused because the Publishing Queue portlet is required
+     */
+    @Test
+    public void test_retryBundles_userWithoutPublishingQueuePortlet_isRejected() throws Exception {
+        final String bundleId = createBundleWithStatus("retry-portlet-required", Status.FAILED_TO_PUBLISH);
+        final User user = createBackendUserWithPortlets();
+        final RetryBundlesForm form = RetryBundlesForm.builder()
+                .bundleIds(List.of(bundleId))
+                .forcePush(false)
+                .deliveryStrategy(DeliveryStrategy.ALL_ENDPOINTS)
+                .build();
+
+        assertThrows(SecurityException.class, () -> publishingResource.retryBundles(
+                mockAuthenticatedRequest(user), response, form));
+    }
+
+    /**
+     * Given: a bundle and a back-end user with no layout
+     * When:  the user pushes the bundle
+     * Then:  the request is refused because the Publishing Queue portlet is required
+     */
+    @Test
+    public void test_pushBundle_userWithoutPublishingQueuePortlet_isRejected() throws Exception {
+        final String bundleId = createBundleWithStatus("push-portlet-required", Status.SUCCESS);
+        final User user = createBackendUserWithPortlets();
+
+        assertThrows(SecurityException.class, () -> publishingResource.pushBundle(
+                mockAuthenticatedRequest(user), response, bundleId, null));
+    }
+
+    /**
+     * Given: a bundle and a back-end user with no layout
+     * When:  the user purges publishing jobs
+     * Then:  the request is refused because the Publishing Queue portlet is required, and the
+     *        bundle is still there
+     */
+    @Test
+    public void test_purgePublishingJobs_userWithoutPublishingQueuePortlet_isRejected() throws Exception {
+        final String bundleId = createBundleWithStatus("purge-portlet-required", Status.SUCCESS);
+        final User user = createBackendUserWithPortlets();
+
+        assertThrows(SecurityException.class, () -> publishingResource.purgePublishingJobs(
+                mockAuthenticatedRequest(user), response, null));
+        assertNotNull(APILocator.getBundleAPI().getBundleById(bundleId));
+    }
+
+    /**
+     * Given: a bundle and a non-admin back-end user whose layout holds only the new Publishing Queue UI
+     * When:  the user lists publishing jobs and reads the bundle's details
+     * Then:  both calls succeed
+     */
+    @Test
+    public void test_publishingJobs_userWithPublishingQueueBetaPortlet_isAllowed() throws Exception {
+        final String bundleId = createBundleWithStatus("beta-portlet-allowed", Status.SUCCESS);
+        final User user = createBackendUserWithPortlets("publishing-queue-beta");
+
+        final ResponseEntityPublishingJobsView list = publishingResource.listPublishingJobs(
+                mockAuthenticatedRequest(user), response, 1, 50, null, null);
+        assertNotNull(list.getEntity());
+
+        final ResponseEntityPublishingJobDetailView detail = publishingResource.getPublishingJobDetails(
+                mockAuthenticatedRequest(user), response, bundleId);
+        assertEquals(bundleId, detail.getEntity().bundleId());
+    }
+
+    /**
      * Reproduces the authorization gap in issue #36414.
      *
      * <p>Retry re-sends a bundle to every environment it targets. Before the fix, the endpoint
@@ -1585,11 +1738,8 @@ public class PublishingResourceIntegrationTest {
         publishAuditAPI.insertPublishAuditStatus(auditStatus);
         publishAuditAPI.updatePublishAuditStatus(bundleId, Status.FAILED_TO_PUBLISH, history);
 
-        // A non-admin backend user with no permission on the environment
-        final User limitedUser = new UserDataGen()
-                .roles(APILocator.getRoleAPI().loadBackEndUserRole())
-                .nextPersisted();
-        createdUsers.add(limitedUser);
+        // A non-admin backend user with the Publishing Queue portlet but no permission on the environment
+        final User limitedUser = createBackendUserWithPortlets("publishing-queue");
 
         final RetryBundlesForm form = RetryBundlesForm.builder()
                 .bundleIds(List.of(bundleId))
