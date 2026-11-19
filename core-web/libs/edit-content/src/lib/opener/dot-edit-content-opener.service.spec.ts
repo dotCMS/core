@@ -568,6 +568,43 @@ describe('DotEditContentOpenerService', () => {
     });
 
     /**
+     * A caller that already knows the answers hands them over, so the opener does not ask the
+     * server again: the UVE's translate has looked the page type's editor up, and has the
+     * translate screen for the legacy one (stack review L7-8, L7-9).
+     */
+    describe('answers the caller already has', () => {
+        it('uses the editor choice the caller passes, without asking for it', async () => {
+            const choice = { editor: 'new' as const, contentType: NEW_TYPE };
+
+            spectator.service.open(EDIT_REQUEST, { injector, resolved: choice });
+            const { config, component } = await lastOpen();
+
+            expect(resolveEditor).not.toHaveBeenCalled();
+            expect(component).toBe(NewEditorStub);
+            expect(heading(config)).toBe('My post');
+        });
+
+        it('uses the create screen the caller passes for a legacy create, without asking for it', async () => {
+            const TRANSLATE_URL = '/c/portal/layout?p_p_id=content&_content_cmd=edit&lang=2';
+
+            spectator.service.open(
+                { mode: 'new', contentType: 'htmlpageasset', languageId: 2, title: 'Page' },
+                {
+                    injector,
+                    resolved: { editor: 'legacy', contentType: LEGACY_TYPE },
+                    createUrl: TRANSLATE_URL
+                }
+            );
+            const { config, component } = await lastOpen();
+
+            expect(resolveEditor).not.toHaveBeenCalled();
+            expect(getCreateContentletUrl).not.toHaveBeenCalled();
+            expect(component).toBe(LegacyEditorStub);
+            expect(input<string>(config, 'createUrl')).toBe(TRANSLATE_URL);
+        });
+    });
+
+    /**
      * The caller learns which editor shows, once it is known, so it can treat the two apart: the
      * UVE reloads on close only for the legacy editor, whose workflow actions report nothing.
      */

@@ -11,7 +11,7 @@ import { Mock, MockInstance, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { EventEmitter, Injector, Input, Output, Signal, signal, Component } from '@angular/core';
+import { EventEmitter, Input, Output, Signal, signal, Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -67,8 +67,7 @@ import {
     DotEditContentOpenOptions,
     DotEditContentRequest,
     DotLegacyScreenEvent,
-    DotLegacyScreenRequest,
-    loadDotLegacyEditorSidePanel
+    DotLegacyScreenRequest
 } from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
@@ -2838,39 +2837,41 @@ describe('EditEmaEditorComponent', () => {
                         spectator.detectChanges();
                     };
 
-                    /** The legacy editor panel the translation opened in: the one given a create screen. */
-                    const translatePanel = (): OpenedPanel => {
-                        const panel = sidePanels
-                            .filter((opened) => 'createUrl' in (opened.config.inputs ?? {}))
+                    /**
+                     * The translation, opened through the opener with the translate screen as its
+                     * create screen (stack review L7-9), so it nests and notifies as any panel.
+                     */
+                    const translatePanel = (): OpenedContent => {
+                        const panel = opener.opened
+                            .filter((opened) => !!opened.options.createUrl)
                             .at(-1);
 
                         expect(
                             panel,
-                            'the editor opens the translation in the legacy editor panel'
+                            'the editor opens the translation through the opener'
                         ).toBeDefined();
 
-                        return panel as OpenedPanel;
+                        return panel as OpenedContent;
                     };
 
-                    /** Emits one of the translate panel's outputs, as the legacy editor would. */
+                    /** Runs one of the translation's handlers, as the legacy editor would. */
                     const emit = <T>(name: string, value?: T): void => {
-                        const handler = translatePanel().config.outputs?.[name] as
-                            | ((value?: T) => void)
-                            | undefined;
+                        const handler = (
+                            translatePanel().options as unknown as Record<string, unknown>
+                        )[name] as ((value?: T) => void) | undefined;
 
-                        expect(handler, `the translate panel binds ${name}`).toEqual(
+                        expect(handler, `the translation handles ${name}`).toEqual(
                             expect.any(Function)
                         );
                         handler?.(value);
                         spectator.detectChanges();
                     };
 
-                    it('should open the legacy editor panel on the translate screen', async () => {
+                    it('should open the translate screen through the opener, in the legacy editor', () => {
                         translate();
                         const panel = translatePanel();
 
-                        expect(await panel.component).toBe(await loadDotLegacyEditorSidePanel());
-                        expect(inputOf(panel, 'request')).toEqual({
+                        expect(panel.request).toEqual({
                             mode: 'new',
                             contentType: 'htmlpageasset',
                             languageId: 2,
@@ -2878,7 +2879,23 @@ describe('EditEmaEditorComponent', () => {
                             siteId: siteId(),
                             portletId: 'edit-page'
                         });
-                        expect(inputOf(panel, 'createUrl')).toBe(translateUrl());
+                        expect(panel.options.createUrl).toBe(translateUrl());
+                        // The editor is decided already: the opener does not ask again (L7-8).
+                        expect(panel.options.resolved).toEqual({
+                            editor: 'legacy',
+                            contentType: null
+                        });
+                        expect(panel.options.url).toBeUndefined();
+                    });
+
+                    it('should open no legacy editor panel of its own', () => {
+                        translate();
+
+                        expect(
+                            sidePanels.filter(
+                                (opened) => 'createUrl' in (opened.config.inputs ?? {})
+                            )
+                        ).toHaveLength(0);
                     });
 
                     it('should not open the generic legacy-screen panel', () => {
@@ -2940,35 +2957,10 @@ describe('EditEmaEditorComponent', () => {
                         expect(pageLoadSpy).not.toHaveBeenCalled();
                     });
 
-                    /**
-                     * A block editor inside the translate form asks to edit embedded content the
-                     * way it does in any legacy editor panel: the content stacks over the
-                     * translate panel, under that panel's own injector, so it closes with it.
-                     */
-                    it('should stack content the translate form asks for over the translate panel', () => {
-                        translate();
-                        const panelInjector = Injector.create({
-                            providers: [],
-                            parent: spectator.inject(Injector)
-                        });
-                        const request: DotEditContentRequest = {
-                            mode: 'edit',
-                            inode: 'embedded-inode',
-                            contentType: 'Blog',
-                            title: 'Embedded'
-                        };
-
-                        emit('openContent', { request, injector: panelInjector });
-
-                        const stacked = opener.opened.at(-1);
-                        expect(stacked?.request).toEqual(request);
-                        // Compared by identity: printing an injector runs the worker out of memory.
-                        expect(stacked?.options.injector === panelInjector).toBe(true);
-                    });
-
-                    it('should ask which editor the page type uses', () => {
+                    it('should ask which editor the page type uses, once', () => {
                         translate();
 
+                        expect(resolveEditor).toHaveBeenCalledTimes(1);
                         expect(resolveEditor).toHaveBeenCalledWith('htmlpageasset');
                     });
 
@@ -3009,6 +3001,17 @@ describe('EditEmaEditorComponent', () => {
                                 portletId: 'edit-page'
                             });
                             expect(openedTranslation().options.url).toBeUndefined();
+                        });
+
+                        // Asked once, here; the opener is handed the answer (stack review L7-8).
+                        it('should hand the opener the editor it found, so it does not ask again', () => {
+                            translate();
+
+                            expect(resolveEditor).toHaveBeenCalledTimes(1);
+                            expect(openedTranslation().options.resolved).toEqual({
+                                editor: 'new',
+                                contentType: null
+                            });
                         });
 
                         it('should not open the legacy editor panel', () => {
