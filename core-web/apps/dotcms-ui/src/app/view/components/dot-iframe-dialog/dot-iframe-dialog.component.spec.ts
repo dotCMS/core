@@ -225,6 +225,19 @@ describe('DotIframeDialogComponent', () => {
                     }
                 });
 
+                // Emitted once PrimeNG has stacked the dialog, so a panel opened after it goes
+                // above it (#38303, stack review L7-6).
+                it('should emit shown when the dialog has shown', () => {
+                    const shown = vi.fn();
+                    (
+                        component as unknown as { shown?: { subscribe: (fn: () => void) => void } }
+                    ).shown?.subscribe(shown);
+
+                    dialogDeEvents?.triggerEventHandler('onShow', {});
+
+                    expect(shown).toHaveBeenCalledTimes(1);
+                });
+
                 describe('dot-iframe', () => {
                     it('should emit events from dot-iframe', () => {
                         const mockEvent = fakeEvent();
