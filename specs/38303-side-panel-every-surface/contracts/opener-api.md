@@ -44,6 +44,10 @@ export interface DotEditContentOpenOptions extends DotEditContentPanelHandlers {
      * for a refused request. The UVE reloads the page on close only for the legacy editor.
      */
     editorResolved?: (editor: DotContentEditor) => void;
+    /** The editor choice the caller already has; the opener does not look the type up again. */
+    resolved?: DotContentEditorChoice;
+    /** A legacy create's screen the caller already has (the UVE's translate screen); not asked for. */
+    createUrl?: string;
 }
 
 @Injectable({ providedIn: 'root' })
