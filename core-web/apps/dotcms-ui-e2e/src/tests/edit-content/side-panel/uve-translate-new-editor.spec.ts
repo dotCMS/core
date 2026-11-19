@@ -71,12 +71,15 @@ test.describe('The UVE translates a page in the editor its type uses', () => {
         await startWith.getByRole('button', { name: 'Continue' }).click();
         await expect(startWith).toBeHidden();
 
-        const title = sidePanel.front.getByTestId('title');
-        await expect(title).toHaveValue(created.page.title);
+        // Copied from the page: its URL is already there.
+        await expect(sidePanel.front.getByTestId('url')).toHaveValue(
+            new RegExp(created.page.title)
+        );
 
         await sidePanel.form.save();
 
-        // The translation exists, and the UVE shows the page in that language.
+        // The translation exists, copied from the page, and the UVE shows the page in that
+        // language.
         await expect
             .poll(
                 async () =>
@@ -85,10 +88,10 @@ test.describe('The UVE translates a page in the editor its type uses', () => {
                             identifier: created.page.identifier,
                             languageId: otherLanguage.id
                         })
-                    )?.languageId ?? null,
+                    )?.title ?? null,
                 { timeout: 20000 }
             )
-            .toBe(otherLanguage.id);
+            .toBe(created.page.title);
         await expect(page).toHaveURL(new RegExp(`language_id=${otherLanguage.id}`));
         await expect(createVersion).toBeHidden();
     });

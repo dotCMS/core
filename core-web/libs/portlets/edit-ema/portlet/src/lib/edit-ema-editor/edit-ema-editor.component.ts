@@ -39,6 +39,7 @@ import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
 
 import {
     DotContentEditor,
+    DotContentletEditUrlService,
     DotContentletService,
     DotCopyContentService,
     DotHttpErrorManagerService,
@@ -304,6 +305,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     private readonly window = inject(WINDOW);
     readonly #sidePanels = inject(DotSidePanelService);
     readonly #opener = inject(DotEditContentOpenerService);
+    readonly #editUrl = inject(DotContentletEditUrlService);
     readonly #injector = inject(Injector);
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotCopyContentService = inject(DotCopyContentService);
@@ -2071,20 +2073,81 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Opens the page's translation into another language in the legacy editor panel (#38303). The
-     * translate screen is the legacy editor's create form pre-filled from the page, so it gets the
-     * workflow wizard, compare and the unsaved-changes prompt that panel handles. It opens directly
-     * rather than through the opener, which would ask the server for the type's create screen: here
-     * the create screen is the translate URL.
+     * Opens the page's translation into another language, in the editor the page's type uses
+     * (#38303, T178): {@link #translateInNewEditor} or {@link #translateInLegacyEditor}.
+     *
+     * @param event The page and the language to translate it into.
+     */
+    translatePage({ page, newLanguage }: { page: DotCMSPage; newLanguage: number }) {
+        this.#editUrl
+            .resolveEditor(page.contentType)
+            .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+            .subscribe(({ editor }) =>
+                editor === 'new'
+                    ? this.#translateInNewEditor(page, newLanguage)
+                    : this.#translateInLegacyEditor(page, newLanguage)
+            );
+    }
+
+    /**
+     * Opens the page in the new editor, through the opener, asking for the language to translate
+     * it into. The page has no version in it, so the editor opens the page as it is and offers the
+     * translation: copied from the page, or from scratch; its first save creates it.
+     *
+     * A save loads the translation and keeps the panel open. Closing reloads the page only once
+     * something was saved. Not written to the URL: the page editor keeps its panels out of it.
+     *
+     * @param page The page to translate.
+     * @param newLanguage The language to translate it into.
+     */
+    #translateInNewEditor(page: DotCMSPage, newLanguage: number): void {
+        const request = withPageContext(
+            {
+                mode: 'edit',
+                inode: page.inode,
+                identifier: page.identifier,
+                contentType: page.contentType,
+                languageId: newLanguage,
+                title: page.title
+            },
+            {
+                variantId: this.uveStore.pageVariantId(),
+                siteId: this.uveStore.pageAsset()?.site?.identifier,
+                languageId: newLanguage
+            }
+        );
+        let saved = false;
+
+        this.#opener.open(request, {
+            injector: this.#injector,
+            saved: (contentlet) => {
+                saved = true;
+                this.#loadTranslation(contentlet);
+            },
+            closed: () => {
+                if (saved) {
+                    this.#pageApi.pageReload();
+                }
+            }
+        });
+    }
+
+    /**
+     * Opens the page's translation in the legacy editor panel (#38303). The translate screen is
+     * the legacy editor's create form pre-filled from the page, so it gets the workflow wizard,
+     * compare and the unsaved-changes prompt that panel handles. It opens directly rather than
+     * through the opener, which would ask the server for the type's create screen: here the create
+     * screen is the translate URL.
      *
      * A save loads the translation and keeps the panel open; the editor's redirect after a first
      * save closes it and loads that page. Closing reloads the page only once something was saved.
      * Content a block editor in the form asks for stacks over the panel through the opener, under
      * the panel's own injector, as it does over any legacy editor panel the opener opens.
      *
-     * @param event The page and the language to translate it into.
+     * @param page The page to translate.
+     * @param newLanguage The language to translate it into.
      */
-    translatePage({ page, newLanguage }: { page: DotCMSPage; newLanguage: number }) {
+    #translateInLegacyEditor(page: DotCMSPage, newLanguage: number): void {
         const variantId = this.uveStore.pageVariantId();
         const siteId = this.uveStore.pageAsset()?.site?.identifier;
         const request = withPageContext(
