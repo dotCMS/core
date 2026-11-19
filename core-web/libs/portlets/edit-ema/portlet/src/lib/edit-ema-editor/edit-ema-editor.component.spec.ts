@@ -109,6 +109,7 @@ import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-pal
 import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-toolbar/components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
+import { EmaDragItem } from './components/ema-page-dropzone/types';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
@@ -133,7 +134,13 @@ import {
     dotPropertiesServiceMock,
     mockCurrentUser
 } from '../shared/mocks';
-import { ActionPayload, ContentletPayload, PositionPayload, VTLFile } from '../shared/models';
+import {
+    ActionPayload,
+    ContainerPayload,
+    ContentletPayload,
+    PositionPayload,
+    VTLFile
+} from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
 import { IframeAccessMode, PageType } from '../store/models';
@@ -2025,6 +2032,114 @@ describe('EditEmaEditorComponent', () => {
                         expect(editRequest()).toBe(request);
                     });
 
+                    /**
+                     * Every placement path reports a refused insert the same way: a warning for a
+                     * full container, a notice for a contentlet already there, and no page save.
+                     */
+                    describe('a placement the container refuses', () => {
+                        const filledContainer = () => {
+                            const position = fullContainerPosition();
+                            const existing = store
+                                .$pageData()
+                                .containers.find(
+                                    (container) =>
+                                        container.identifier === position.container?.identifier
+                                )?.contentletsId[0] as string;
+
+                            return { position, existing };
+                        };
+
+                        const contentletDrop = (identifier: string): EmaDragItem => ({
+                            baseType: 'CONTENT',
+                            contentType: 'Blog',
+                            draggedPayload: {
+                                type: 'contentlet',
+                                item: {
+                                    contentlet: {
+                                        identifier,
+                                        inode: `${identifier}-inode`,
+                                        title: 'Dragged',
+                                        contentType: 'Blog'
+                                    }
+                                },
+                                move: false
+                            }
+                        });
+
+                        const tempDrop: EmaDragItem = {
+                            baseType: 'CONTENT',
+                            contentType: 'Blog',
+                            draggedPayload: { type: 'temp' }
+                        };
+
+                        const warnings = () =>
+                            addMessageSpy.mock.calls.filter(
+                                ([message]) => message?.severity === 'warn'
+                            );
+
+                        it('should warn and save nothing when a contentlet is dropped in a full container', () => {
+                            const editorSaveSpy = vi.spyOn(pageApi(), 'editorSave');
+
+                            spectator.component.placeItem(
+                                fullContainerPosition(),
+                                contentletDrop('dragged-identifier')
+                            );
+
+                            expect(warnings()).toHaveLength(1);
+                            expect(editorSaveSpy).not.toHaveBeenCalled();
+                        });
+
+                        it('should tell the author and save nothing when the dropped contentlet is already there', () => {
+                            const editorSaveSpy = vi.spyOn(pageApi(), 'editorSave');
+                            const { position, existing } = filledContainer();
+
+                            spectator.component.placeItem(
+                                {
+                                    container: {
+                                        ...(position.container as ContainerPayload),
+                                        maxContentlets: 99
+                                    }
+                                },
+                                contentletDrop(existing)
+                            );
+
+                            expect(addMessageSpy).toHaveBeenCalledWith(
+                                expect.objectContaining({ severity: 'info' })
+                            );
+                            expect(editorSaveSpy).not.toHaveBeenCalled();
+                        });
+
+                        it('should warn and save nothing when a temporary contentlet is dropped in a full container', () => {
+                            const editorSaveSpy = vi.spyOn(pageApi(), 'editorSave');
+
+                            spectator.component.placeItem(
+                                {
+                                    ...fullContainerPosition(),
+                                    newContentlet: { identifier: 'temp-identifier' }
+                                } as PositionPayload,
+                                tempDrop
+                            );
+
+                            expect(warnings()).toHaveLength(1);
+                            expect(editorSaveSpy).not.toHaveBeenCalled();
+                        });
+
+                        it('should save the page when a temporary contentlet is dropped where there is room', () => {
+                            const editorSaveSpy = vi.spyOn(pageApi(), 'editorSave');
+
+                            spectator.component.placeItem(
+                                {
+                                    ...structuredClone(DROP_POSITION),
+                                    newContentlet: { identifier: 'temp-identifier' }
+                                } as PositionPayload,
+                                tempDrop
+                            );
+
+                            expect(editorSaveSpy).toHaveBeenCalledTimes(1);
+                            expect(warnings()).toHaveLength(0);
+                        });
+                    });
+
                     describe('after an edit', () => {
                         const openEdit = () => {
                             spectator.component['handleEditWithCopyDecision'](
@@ -2571,6 +2686,24 @@ describe('EditEmaEditorComponent', () => {
                             })
                         ]);
                         expect(formPanel().ref.isClosed).toBe(true);
+                    });
+
+                    it('should warn, keep the selector open and leave the page usable when the container is full', () => {
+                        const pageApiService = spectator.inject(DotPageApiService);
+                        Object.assign(pageApiService, {
+                            getFormIndetifier: vi.fn().mockReturnValue(of('form-content-id'))
+                        });
+                        const editorSaveSpy = vi.spyOn(pageApi(), 'editorSave');
+                        addContent('form', containerPayload(1));
+
+                        selectForm('form-id');
+
+                        expect(addMessageSpy).toHaveBeenCalledWith(
+                            expect.objectContaining({ severity: 'warn' })
+                        );
+                        expect(editorSaveSpy).not.toHaveBeenCalled();
+                        expect(formPanel().ref.isClosed).toBe(false);
+                        expect(store.uveStatus()).toBe(UVE_STATUS.LOADED);
                     });
 
                     it('should keep the selector open when the form cannot be resolved', () => {
