@@ -39,6 +39,11 @@ export interface DotEditContentOpenOptions extends DotEditContentPanelHandlers {
      * panel closes when it is destroyed. Required.
      */
     injector: Injector;
+    /**
+     * Called once with the editor the panel shows, as soon as it is known and before it loads; never
+     * for a refused request. The UVE reloads the page on close only for the legacy editor.
+     */
+    editorResolved?: (editor: DotContentEditor) => void;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -59,9 +64,10 @@ Behaviour of `open()`:
 2. `mode: 'edit'` without `contentType` or without `title` → fetch the contentlet by inode, fill `contentType`, `identifier`, `title`, `languageId` from it where the request left them out.
 3. `resolveEditor(request.contentType)`.
 4. `editor === 'legacy'` and `mode === 'new'` → `DotActionUrlService.getCreateContentletUrl(contentType, languageId)`. A failure → standard error, close the pending panel.
-5. Call `DotSidePanelService.open(componentPromise, { heading, inputs: { request, createUrl? }, outputs, injector })`, where `componentPromise` resolves to `loadDotEditContentSidePanel()` or `loadDotLegacyEditorSidePanel()` only after steps 2 to 4 complete. The panel's spinner shows meanwhile.
-6. Wire outputs: the five events to the caller's handlers; `openContent` (from either panel, see open-content-from-fields.md) to a nested `open()` with the hosting panel's injector, which the panel puts on the event (`DotOpenContentEvent.injector`), so the stacked panel closes when its host does; routing that panel's `saved` to the event's `onSaved`.
-7. `closed` is taken from the ref, so it fires even when the content component never loaded.
+5. Report the editor to `editorResolved`, if the caller passed one.
+6. Call `DotSidePanelService.open(componentPromise, { heading, inputs: { request, createUrl? }, outputs, injector })`, where `componentPromise` resolves to `loadDotEditContentSidePanel()` or `loadDotLegacyEditorSidePanel()` only after steps 2 to 4 complete. The panel's spinner shows meanwhile.
+7. Wire outputs: the five events to the caller's handlers; `openContent` (from either panel, see open-content-from-fields.md) to a nested `open()` with the hosting panel's injector, which the panel puts on the event (`DotOpenContentEvent.injector`), so the stacked panel closes when its host does; routing that panel's `saved` to the event's `onSaved`.
+8. `closed` is taken from the ref, so it fires even when the content component never loaded.
 
 ## The signal helper
 
