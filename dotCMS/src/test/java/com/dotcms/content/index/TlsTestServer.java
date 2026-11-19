@@ -46,7 +46,20 @@ public final class TlsTestServer implements AutoCloseable {
      */
     public static TlsTestServer start(final String commonName, final String subjectAltNames,
             final String responseBody) throws Exception {
-        return start(commonName, subjectAltNames, responseBody, false);
+        return start(commonName, subjectAltNames, responseBody, false, false, true);
+    }
+
+    /**
+     * Starts a server presenting a self-signed certificate that expired two days ago, to exercise
+     * {@code OS_TLS_ON_EXPIRED_CERT}.
+     *
+     * @param commonName the subject common name of the generated certificate
+     * @param subjectAltNames value for keytool's {@code -ext san=...}
+     * @param responseBody JSON returned for every request
+     */
+    public static TlsTestServer startExpired(final String commonName, final String subjectAltNames,
+            final String responseBody) throws Exception {
+        return start(commonName, subjectAltNames, responseBody, false, true, true);
     }
 
     /**
@@ -59,11 +72,26 @@ public final class TlsTestServer implements AutoCloseable {
      */
     public static TlsTestServer startSignedByCa(final String commonName, final String subjectAltNames,
             final String responseBody) throws Exception {
-        return start(commonName, subjectAltNames, responseBody, true);
+        return start(commonName, subjectAltNames, responseBody, true, false, true);
+    }
+
+    /**
+     * Starts a server whose certificate is signed by a freshly generated CA but which presents that
+     * certificate <em>alone</em>, without the CA — a chain of one that is not self-signed. This is
+     * the shape httpclient5's {@code TrustSelfSignedStrategy} used to accept.
+     *
+     * @param commonName the subject common name of the server certificate
+     * @param subjectAltNames value for keytool's {@code -ext san=...}; must not be {@code null}
+     * @param responseBody JSON returned for every request
+     */
+    public static TlsTestServer startSignedByCaWithoutChain(final String commonName,
+            final String subjectAltNames, final String responseBody) throws Exception {
+        return start(commonName, subjectAltNames, responseBody, true, false, false);
     }
 
     private static TlsTestServer start(final String commonName, final String subjectAltNames,
-            final String responseBody, final boolean signedByCa) throws Exception {
+            final String responseBody, final boolean signedByCa, final boolean expired,
+            final boolean sendChain) throws Exception {
         final Path dir = Files.createTempDirectory("tls-test-server");
         final Path keystore = dir.resolve("server.p12");
         final Path pem = dir.resolve("server.pem");
@@ -78,7 +106,7 @@ public final class TlsTestServer implements AutoCloseable {
                         "-keysize", "2048", "-dname", "CN=" + commonName, "-ext", "san=" + subjectAltNames,
                         "-validity", "2", "-keystore", keystore.toString(), "-storetype", "PKCS12",
                         "-storepass", STORE_PASSWORD, "-keypass", STORE_PASSWORD};
-        run(generate);
+        run(expired ? withExpiredDates(generate) : generate);
         if (signedByCa) {
             signWithNewCa(keytool, dir, keystore, subjectAltNames, pem);
         } else {
@@ -89,6 +117,9 @@ public final class TlsTestServer implements AutoCloseable {
         final KeyStore store = KeyStore.getInstance("PKCS12");
         try (FileInputStream in = new FileInputStream(keystore.toFile())) {
             store.load(in, STORE_PASSWORD.toCharArray());
+        }
+        if (signedByCa && !sendChain) {
+            keepOnlyTheLeaf(store, dir.resolve("server-signed.pem"));
         }
         final KeyManagerFactory keys = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         keys.init(store, STORE_PASSWORD.toCharArray());
@@ -107,6 +138,46 @@ public final class TlsTestServer implements AutoCloseable {
         });
         https.start();
         return new TlsTestServer(https, dir, pem);
+    }
+
+    /**
+     * Rewrites a keytool {@code -genkeypair} command so the certificate it produces was valid from
+     * three days ago for one day, which puts its expiry two days in the past.
+     *
+     * @param command the original keytool invocation
+     * @return the same invocation with the back-dated validity window
+     */
+    private static String[] withExpiredDates(final String[] command) {
+        final java.util.List<String> dated = new java.util.ArrayList<>();
+        for (int i = 0; i < command.length; i++) {
+            if ("-validity".equals(command[i])) {
+                i++;
+                continue;
+            }
+            dated.add(command[i]);
+        }
+        dated.add("-startdate");
+        dated.add("-3d");
+        dated.add("-validity");
+        dated.add("1");
+        return dated.toArray(new String[0]);
+    }
+
+    /**
+     * Rewrites the key entry so its certificate chain holds the server certificate only, which
+     * makes the server present a single certificate it did not sign itself.
+     *
+     * @param store the loaded key store
+     * @param signedPem the PEM of the CA-signed server certificate
+     */
+    private static void keepOnlyTheLeaf(final KeyStore store, final Path signedPem) throws Exception {
+        final java.security.Key key = store.getKey("server", STORE_PASSWORD.toCharArray());
+        final java.security.cert.Certificate leaf;
+        try (java.io.InputStream in = Files.newInputStream(signedPem)) {
+            leaf = java.security.cert.CertificateFactory.getInstance("X.509").generateCertificate(in);
+        }
+        store.setKeyEntry("server", key, STORE_PASSWORD.toCharArray(),
+                new java.security.cert.Certificate[]{leaf});
     }
 
     private static void signWithNewCa(final Path keytool, final Path dir, final Path keystore,

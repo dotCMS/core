@@ -163,12 +163,37 @@ public class IndexStartupValidator {
                 "  Migration phase   : " + phase,
                 "  OS endpoints      : " + config.endpoints(),
                 "  Authentication    : " + authSummary,
-                "  TLS enabled       : " + config.tlsEnabled(),
+                "  TLS in use        : " + tlsSummary(config),
                 "  TLS cert required : " + config.certRequired(),
                 "  TLS trust selfsign: " + config.trustSelfSigned(),
                 "  TLS CA cert       : " + config.caCertPath().orElse("(not set)"),
+                "  TLS expired cert  : " + config.expiredCertPolicy(),
                 "  (connectivity + OS version are verified by the checks that follow)",
                 "================================================================="));
+    }
+
+    /**
+     * Describes whether the connection actually runs over TLS, which is not the same as the value
+     * of {@code OS_TLS_ENABLED}: TLS is also applied when an endpoint uses the {@code https}
+     * scheme, so the flag alone used to print {@code false} on a connection that was encrypted and
+     * validated, and read as if none of the TLS settings below applied.
+     *
+     * @param config the resolved client configuration
+     * @return a short description naming what turned TLS on, or {@code no} when it is off
+     */
+    private static String tlsSummary(final OSClientConfig config) {
+        final boolean httpsEndpoint = config.endpoints().stream()
+                .anyMatch(endpoint -> endpoint.toLowerCase().startsWith("https://"));
+        if (config.tlsEnabled() && httpsEndpoint) {
+            return "yes (OS_TLS_ENABLED and https endpoint)";
+        }
+        if (config.tlsEnabled()) {
+            return "yes (OS_TLS_ENABLED)";
+        }
+        if (httpsEndpoint) {
+            return "yes (https endpoint; OS_TLS_ENABLED is false and not needed)";
+        }
+        return "no";
     }
 
     // -------------------------------------------------------------------------

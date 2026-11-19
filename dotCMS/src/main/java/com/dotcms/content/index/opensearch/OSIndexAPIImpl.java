@@ -774,6 +774,18 @@ public class OSIndexAPIImpl implements IndexAPI {
             Pattern.compile("(?<![0-9])(401|403)(?![0-9])");
 
     public enum ConnectionFailureKind {
+        TLS_CERT_EXPIRED("the server certificate is outside its validity window — renew it on the"
+                + " OpenSearch side. OS_TLS_ON_EXPIRED_CERT=WARN connects anyway and logs the"
+                + " expiry, which is the default; this refusal means it was set to REJECT."),
+        TLS_UNTRUSTED_CERT("the server certificate is not trusted — a certification path to it"
+                + " could not be built, so its issuer is unknown to the JVM. Set OS_TLS_CA_CERT to"
+                + " the PEM file of the CA that signed it (the certificate itself when it is"
+                + " self-signed), or add that CA to the JVM truststore. OS_TLS_CERT_REQUIRED=false"
+                + " switches validation off altogether and is a last resort, not the fix."),
+        TLS_HOSTNAME_MISMATCH("the server certificate is readable but does not carry the name used"
+                + " to connect — compare the host in OS_ENDPOINTS with the certificate's subject"
+                + " alternative names. Connect by a name the certificate carries, or reissue the"
+                + " certificate with the name in use."),
         TLS_SCHEME_MISMATCH("TLS/scheme mismatch — the client scheme likely does not match the"
                 + " server (e.g. http:// against an https-only OS port, or https:// against a"
                 + " plaintext port). Align OS_PROTOCOL / OS_TLS_ENABLED with the server's scheme"
@@ -802,8 +814,10 @@ public class OSIndexAPIImpl implements IndexAPI {
      * Apache HttpClient's {@code ConnectionClosedException}) and remains unit-testable with plain
      * synthetic exception chains.
      *
-     * <p>Order matters: TLS/scheme is checked first (its symptoms — closed connection, SSL/plaintext
-     * — otherwise look like a generic unreachable), then auth (401/403), then unreachable.</p>
+     * <p>Order matters: a certificate problem is identified first and split into "not trusted" and
+     * "name does not match", because each has its own fix; then the generic TLS/scheme bucket (its
+     * symptoms — closed connection, SSL/plaintext — otherwise look like a generic unreachable),
+     * then auth (401/403), then unreachable.</p>
      *
      * @param error the last connection or operation error observed, or {@code null}
      * @return the inferred {@link ConnectionFailureKind}; never {@code null}
@@ -844,6 +858,38 @@ public class OSIndexAPIImpl implements IndexAPI {
         final String type = typeName == null ? "" : typeName.toLowerCase(Locale.ROOT);
         final String msg  = message == null ? "" : message.toLowerCase(Locale.ROOT);
 
+        // A certificate problem is reported before the generic TLS/scheme bucket, because the two
+        // need opposite remediations: a scheme mismatch is fixed by changing the protocol, an
+        // untrusted or misnamed certificate by configuring a trust anchor. Reporting both as a
+        // scheme mismatch sent operators to OS_PROTOCOL / OS_TLS_ENABLED, which cannot fix either,
+        // and from there to switching validation off.
+        // "validity check failed" is what PKIX reports on the outermost exception when a
+        // certificate in the path has expired; the NotAfter detail is two causes deeper and would
+        // never be reached, so an expired certificate used to be reported as an unknown issuer.
+        if (msg.contains("os_tls_on_expired_cert")
+                || msg.contains("validity check failed")
+                || msg.contains("certificate_expired")
+                || msg.contains("notafter")
+                || msg.contains("notbefore")) {
+            return ConnectionFailureKind.TLS_CERT_EXPIRED;
+        }
+        // The last two are DefaultHostnameVerifier's wording for a certificate with no subject
+        // alternative names, matched against its common name.
+        if (msg.contains("subject alternative name")
+                || msg.contains("no name matching")
+                || msg.contains("hostname verification")
+                || msg.contains("doesn't match common name")
+                || msg.contains("does not have alternative names")) {
+            return ConnectionFailureKind.TLS_HOSTNAME_MISMATCH;
+        }
+        if (msg.contains("pkix")
+                || msg.contains("certification path")
+                || msg.contains("certificate_unknown")
+                || msg.contains("self-signed certificate")
+                || msg.contains("self signed certificate")
+                || msg.contains("certificat")) { // certificate / certificado-style wordings
+            return ConnectionFailureKind.TLS_UNTRUSTED_CERT;
+        }
         // TLS / scheme mismatch: SSL handshake errors, or a connection closed with no response
         // (the classic symptom of speaking http:// to an https-only port).
         if (type.contains("sslexception")
@@ -852,8 +898,6 @@ public class OSIndexAPIImpl implements IndexAPI {
                 || msg.contains("unrecognized ssl message")
                 || msg.contains("plaintext")
                 || msg.contains("ssl")
-                || msg.contains("certificat") // certificate / certification path (PKIX)
-                || msg.contains("pkix")
                 || msg.contains("connection closed")) {
             return ConnectionFailureKind.TLS_SCHEME_MISMATCH;
         }

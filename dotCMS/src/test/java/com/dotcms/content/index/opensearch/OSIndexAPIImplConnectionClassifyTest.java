@@ -1,6 +1,8 @@
 package com.dotcms.content.index.opensearch;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertNotEquals;
 
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl.ConnectionFailureKind;
@@ -53,9 +55,52 @@ public class OSIndexAPIImplConnectionClassifyTest {
     }
 
     @Test
-    public void certificateMessage_isTlsSchemeMismatch() {
-        assertEquals(ConnectionFailureKind.TLS_SCHEME_MISMATCH,
+    public void certificationPathMessage_isUntrustedCertificate() {
+        assertEquals(ConnectionFailureKind.TLS_UNTRUSTED_CERT,
                 classify(new IOException("unable to find valid certification path to requested target")));
+    }
+
+    @Test
+    public void untrustedCertificate_remediationNamesTheCaProperty() {
+        assertTrue(ConnectionFailureKind.TLS_UNTRUSTED_CERT.remediation().contains("OS_TLS_CA_CERT"));
+    }
+
+    @Test
+    public void expiredCertificateMessage_isCertExpiredAndNotUntrusted() {
+        assertEquals(ConnectionFailureKind.TLS_CERT_EXPIRED,
+                classify(new SSLException("The OpenSearch server certificate 'CN=os' is not valid:"
+                        + " NotAfter: Sun Feb 01 00:00:00 UTC 2026. The connection was refused"
+                        + " because OS_TLS_ON_EXPIRED_CERT=REJECT.")));
+    }
+
+    @Test
+    public void expiredCertificate_remediationDoesNotSendTheOperatorToTheCaProperty() {
+        assertTrue(ConnectionFailureKind.TLS_CERT_EXPIRED.remediation()
+                .contains("OS_TLS_ON_EXPIRED_CERT"));
+        assertFalse(ConnectionFailureKind.TLS_CERT_EXPIRED.remediation().contains("OS_TLS_CA_CERT"));
+    }
+
+    /** What PKIX reports on the outermost exception when a certificate in the path has expired. */
+    @Test
+    public void pkixValidityCheckFailed_isCertExpired() {
+        assertEquals(ConnectionFailureKind.TLS_CERT_EXPIRED,
+                classify(new SSLException("PKIX path validation failed:"
+                        + " java.security.cert.CertPathValidatorException: validity check failed")));
+    }
+
+    /** DefaultHostnameVerifier's wording for a certificate with no subject alternative names. */
+    @Test
+    public void commonNameMismatchMessage_isHostnameMismatch() {
+        assertEquals(ConnectionFailureKind.TLS_HOSTNAME_MISMATCH,
+                classify(new SSLException("Certificate for <os.example> doesn't match common name"
+                        + " of the certificate subject: other.example")));
+    }
+
+    @Test
+    public void subjectAlternativeNameMessage_isHostnameMismatch() {
+        assertEquals(ConnectionFailureKind.TLS_HOSTNAME_MISMATCH,
+                classify(new SSLException(
+                        "Certificate for <os.example> doesn't match any of the subject alternative names: [other]")));
     }
 
     // ---- Auth -----------------------------------------------------------------------------------
@@ -152,10 +197,10 @@ public class OSIndexAPIImplConnectionClassifyTest {
     // ---- Cause-chain walking & fallback ---------------------------------------------------------
 
     @Test
-    public void walksCauseChain_wrappedSslException_isTlsSchemeMismatch() {
+    public void walksCauseChain_wrappedCertificateException_isUntrustedCertificate() {
         final Throwable wrapped = new RuntimeException("io error",
                 new IOException("handshake failed", new SSLException("bad_certificate")));
-        assertEquals(ConnectionFailureKind.TLS_SCHEME_MISMATCH, classify(wrapped));
+        assertEquals(ConnectionFailureKind.TLS_UNTRUSTED_CERT, classify(wrapped));
     }
 
     @Test
