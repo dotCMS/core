@@ -75,6 +75,22 @@ describe('DotWorkflowTaskDetailService', () => {
         expect(again).toContain('&_workflow_taskId=999');
     });
 
+    // The task component sets the header once the app's messages load, after the task is viewed
+    // (#38303, T177): the dialog's header changes and the task is not loaded again.
+    it('should change the header alone, without viewing the task again', () => {
+        const urls: string[] = [];
+        const headers: string[] = [];
+        service.viewUrl$.subscribe((url: string) => urls.push(url));
+        service.header$.subscribe((header: string) => headers.push(header));
+
+        service.view({ id: '999' });
+        const viewed = urls.length;
+        service.setHeader('Task Detail');
+
+        expect(headers.at(-1)).toEqual('Task Detail');
+        expect(urls.length).toBe(viewed);
+    });
+
     it('should clear url and undbind', () => {
         service.viewUrl$.subscribe((url: string) => {
             expect(url).toEqual('');
