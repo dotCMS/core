@@ -537,6 +537,74 @@ describe('DotPanelUrlStateService', () => {
          * without the guard (the surface is gone, as it is for an Angular surface), and writes
          * nothing.
          */
+        /**
+         * An entry can still name a panel that is no longer open: the one a panel pushed keeps its
+         * params after Back closes the panel, and a surface left with a panel open keeps them too.
+         * Landing there with Back or Forward opens nothing (a closed panel stays closed on
+         * Forward), so the params are cleared in place once the router has answered, rather than
+         * left naming nothing (stack review L7-3).
+         */
+        describe('landing on an entry that names a panel no longer open', () => {
+            const PANEL = { editContent: ID_1, editContentLang: '1' };
+
+            const openAndClose = () => {
+                const ref = newRef();
+                spectator.service.register(ref, PANEL);
+                ref.close();
+                location.replaceState.mockClear();
+            };
+
+            it("clears the panel params in place, keeping the surface's own", () => {
+                start();
+                openAndClose();
+
+                back(surfaceUrlWith(PANEL));
+
+                expect(serviceReplaces(1)).toBe(1);
+                expect(lastWrite(location.replaceState)).toEqual({
+                    path: '/c/query-tool',
+                    params: SURFACE_PARAMS
+                });
+            });
+
+            it('waits for the router to answer, so its own write cannot put them back', () => {
+                start();
+                openAndClose();
+
+                location.pop(surfaceUrlWith(PANEL));
+
+                expect(location.replaceState).not.toHaveBeenCalled();
+
+                routerAnswersBack(surfaceUrlWith(PANEL));
+
+                expect(lastWrite(location.replaceState).params).toEqual(SURFACE_PARAMS);
+            });
+
+            it('writes nothing for an entry that names no panel', () => {
+                start();
+                openAndClose();
+
+                back(SURFACE_URL);
+
+                expect(serviceReplaces(1)).toBe(0);
+            });
+
+            it('leaves the params to a panel the landing surface opens again', () => {
+                start();
+                openAndClose();
+                location.pop(surfaceUrlWith(PANEL));
+                // The surface reopens what its URL names while the router activates it.
+                spectator.service.register(newRef(), PANEL);
+
+                routerAnswersBack(surfaceUrlWith(PANEL));
+
+                expect(lastWrite(location.replaceState).params).toEqual({
+                    ...SURFACE_PARAMS,
+                    ...PANEL
+                });
+            });
+        });
+
         describe('when Back leaves the surface', () => {
             /** A page on another route, which happens to name a panel of its own. */
             const OTHER_ROUTE_URL = `/c/content-drive?path=%2Fblog&editContent=${ID_2}`;
