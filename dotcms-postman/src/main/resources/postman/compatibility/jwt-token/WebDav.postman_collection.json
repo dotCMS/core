@@ -109,7 +109,9 @@
 									"pm.test(\"Validate the XML response\", function () {",
 									"    var responseXML = xml2Json(pm.response.text());",
 									"    var expectedHrefValue = pm.variables.replaceIn(\"/webdav/live/1/{{hostName}}/\");",
-									"    var hrefValue = responseXML['d:multistatus']['d:response'][0]['d:href'];",
+									"    // One response when the folder lists no children, a list otherwise",
+									"    var responses = [].concat(responseXML['d:multistatus']['d:response']);",
+									"    var hrefValue = responses[0]['d:href'];",
 									"    pm.expect(hrefValue).to.eql(expectedHrefValue);",
 									"});"
 								],
