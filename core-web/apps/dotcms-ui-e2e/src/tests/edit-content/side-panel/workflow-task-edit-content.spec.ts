@@ -7,6 +7,7 @@ import { getLegacyFrame } from '@utils/iframe';
 import { Portlet } from '@utils/portlets';
 import { uniqueSuffix } from '@utils/utils';
 
+import { loadMessagesLate } from './helpers/messages';
 import { SidePanel } from './helpers/side-panel';
 
 /**
@@ -171,6 +172,9 @@ test.describe('Workflow Tasks opens task content in the side panel over the task
         const sidePanel = new SidePanel(page);
         const taskId = await getWorkflowTaskId(request, inode);
 
+        // T177: the dialog opens on a fresh load, before the app's messages arrive; its header
+        // waits for them, so it reads "Task Detail" and not its key.
+        await loadMessagesLate(page);
         await page.goto(
             `${Portlet.WorkflowTasks}/${taskId}?editContent=${identifier}&editContentLang=1`
         );
