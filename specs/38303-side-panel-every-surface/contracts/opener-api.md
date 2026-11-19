@@ -87,7 +87,7 @@ export function injectEditContentPanel(
 ): DotEditContentPanelHandle;
 ```
 
-Behaviour notes carried over from `injectSidePanel`: a request that changes while the panel is open does not reopen it, so a surface that wants a fresh editor for a different inode clears the signal first; the editor panel's `@for` tracks `inode ?? contentType`, so the layout and its store are recreated when the identity changes.
+Behaviour notes: a request that changes while the panel is open keeps the panel when it names the same content (`mode`, `inode`, `contentType`) in the same editor, as a new title does; one that names other content, or a binding whose `editor` getter changes, closes the panel (no guard, no `closed`) and opens a fresh one in the same pass. The editor panel's `@for` tracks `inode ?? contentType`, so the layout and its store are recreated when the identity changes.
 
 ## Who uses which
 
