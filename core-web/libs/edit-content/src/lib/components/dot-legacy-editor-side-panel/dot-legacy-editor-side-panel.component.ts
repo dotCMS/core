@@ -234,7 +234,7 @@ export class DotLegacyEditorSidePanelComponent implements DotSidePanelContent {
 
         if (this.#restoreInFlight) {
             this.#restoreInFlight = false;
-            this.#reportSaved(search.get('inode'));
+            this.#reportSaved(restoredInode(search));
         }
 
         // The editor calls this hook, not an `ng-event`, when the content it saved no longer
@@ -481,6 +481,24 @@ function withFolder(url: string, folderInode: string | undefined): string {
     const separator = url.includes('?') ? '&' : '?';
 
     return `${url}${separator}folder=${encodeURIComponent(folderInode)}`;
+}
+
+/**
+ * The inode the editor reloaded with after a Bring Back. The server redirects with
+ * `PortletURLUtil.getActionURL`, which prefixes every param with the portlet namespace
+ * (`_content_inode`); a plain `inode` is read too, as the panel's own edit URL names it.
+ *
+ * @param search The query string the editor reloaded with.
+ * @returns The inode, or `null` when the reload names none.
+ */
+function restoredInode(search: URLSearchParams): string | null {
+    for (const [key, value] of search) {
+        if (value && /^_.+_inode$/.test(key)) {
+            return value;
+        }
+    }
+
+    return search.get('inode') || null;
 }
 
 /**
