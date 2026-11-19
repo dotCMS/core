@@ -1,4 +1,3 @@
-import { DOCUMENT } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -14,7 +13,12 @@ import {
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { DotUiColorsService } from '@dotcms/data-access';
-import { DotSidePanelContent, DotSidePanelRef } from '@dotcms/ui';
+import {
+    DotSidePanelContent,
+    DotSidePanelRef,
+    DotSidePanelService,
+    hasOverlayAbove
+} from '@dotcms/ui';
 import { isSameOriginRelativeUrl } from '@dotcms/utils';
 
 import { DotLegacyScreenEvent, DotLegacyScreenRequest } from '../../models/dot-legacy-screen.model';
@@ -25,8 +29,8 @@ import { DotLegacyScreenEvent, DotLegacyScreenRequest } from '../../models/dot-l
  * this one (`DotLegacyEditorSidePanelComponent`).
  *
  * It only loads the screen and reports what the screen says. It applies the admin UI colors, covers
- * the iframe while a document loads, forwards an Escape pressed inside the screen to the admin page
- * so the panel's own Escape rule decides, and passes every `ng-event` the screen dispatches through
+ * the iframe while a document loads, closes its own panel on an Escape pressed inside the screen,
+ * by the same rules the drawer applies to Escape on the admin page, and passes every `ng-event` the screen dispatches through
  * {@link legacyEvent}, unchanged. What an event means is up to whoever opened the screen.
  */
 @Component({
@@ -37,7 +41,8 @@ import { DotLegacyScreenEvent, DotLegacyScreenRequest } from '../../models/dot-l
 })
 export class DotLegacyScreenSidePanelComponent implements DotSidePanelContent, OnDestroy {
     readonly #panel = inject(DotSidePanelRef);
-    readonly #document = inject(DOCUMENT);
+    readonly #sidePanels = inject(DotSidePanelService);
+    readonly #host = inject<ElementRef<HTMLElement>>(ElementRef);
     readonly #uiColors = inject(DotUiColorsService);
     readonly #sanitizer = inject(DomSanitizer);
     readonly #zone = inject(NgZone);
@@ -122,20 +127,11 @@ export class DotLegacyScreenSidePanelComponent implements DotSidePanelContent, O
             );
 
         // A keydown inside the iframe never reaches the admin page, so the shortcut registry cannot
-        // see it: press Escape again on the admin page, where the side panel's own Escape rules
-        // decide. Not one the screen already handled: a dialog inside the screen that closes on
+        // see it. Not one the screen already handled: a dialog inside the screen that closes on
         // Escape is only told apart by having consumed the key.
         const onKeydown = (event: KeyboardEvent) => {
             if (event.key === 'Escape' && !event.defaultPrevented) {
-                this.#zone.run(() =>
-                    this.#document.dispatchEvent(
-                        new KeyboardEvent('keydown', {
-                            key: 'Escape',
-                            bubbles: true,
-                            cancelable: true
-                        })
-                    )
-                );
+                this.#zone.run(() => this.#escape());
             }
         };
 
@@ -153,6 +149,20 @@ export class DotLegacyScreenSidePanelComponent implements DotSidePanelContent, O
         };
 
         this.loaded.emit(screenWindow);
+    }
+
+    /**
+     * Escape pressed inside this screen. It asks this panel to close, never the one in front, by
+     * the drawer's own rules: only while this panel is in front and no overlay sits above it. The
+     * panel's `requestClose` runs the guard of the content built on top, such as the legacy editor.
+     */
+    #escape(): void {
+        const inFront = this.#sidePanels.panels().at(-1)?.ref === this.#panel;
+        const drawer = this.#host.nativeElement.closest('.p-drawer');
+
+        if (inFront && !hasOverlayAbove(drawer)) {
+            this.#panel.requestClose();
+        }
     }
 
     /** Drops the iframe listeners. The side panel releases its own registrations. */
