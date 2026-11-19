@@ -9,8 +9,10 @@ import { Mock, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
+import { ZIndexUtils } from 'primeng/utils';
+
 import { DotUiColorsService } from '@dotcms/data-access';
-import { DotSidePanelRef } from '@dotcms/ui';
+import { DotSidePanelEntry, DotSidePanelRef, DotSidePanelService } from '@dotcms/ui';
 
 import { DotLegacyScreenSidePanelComponent } from './dot-legacy-screen-side-panel.component';
 
@@ -43,6 +45,7 @@ describe('DotLegacyScreenSidePanelComponent', () => {
     let spectator: Spectator<DotLegacyScreenSidePanelComponent>;
     let panel: {
         close: Mock;
+        requestClose: Mock;
         contentStyleClass: ReturnType<typeof signal<string>>;
         closed: Subject<void>;
     };
@@ -53,10 +56,23 @@ describe('DotLegacyScreenSidePanelComponent', () => {
         detectChanges: false
     });
 
+    /** The panels the side-panel service has open, in open order: the last is in front. */
+    const openPanels = signal<DotSidePanelEntry[]>([]);
+    const entry = (ref: unknown): DotSidePanelEntry => ({ ref }) as unknown as DotSidePanelEntry;
+
     beforeEach(() => {
-        panel = { close: vi.fn(), contentStyleClass: signal('p-0!'), closed: new Subject<void>() };
+        panel = {
+            close: vi.fn(),
+            requestClose: vi.fn(),
+            contentStyleClass: signal('p-0!'),
+            closed: new Subject<void>()
+        };
+        openPanels.set([entry(panel)]);
         spectator = createComponent({
-            providers: [{ provide: DotSidePanelRef, useValue: panel }]
+            providers: [
+                { provide: DotSidePanelRef, useValue: panel },
+                { provide: DotSidePanelService, useValue: { panels: openPanels } }
+            ]
         });
         vi.clearAllMocks();
     });
@@ -187,41 +203,62 @@ describe('DotLegacyScreenSidePanelComponent', () => {
             expect(panel.close).toHaveBeenCalledTimes(1);
         });
 
-        /** Every keydown on the admin page while `run` runs. */
-        const keysOnAdminPage = (run: () => void): KeyboardEvent[] => {
-            const keys: KeyboardEvent[] = [];
-            const listener = (event: Event) => keys.push(event as KeyboardEvent);
-            document.addEventListener('keydown', listener);
-            run();
-            document.removeEventListener('keydown', listener);
-
-            return keys;
+        const pressEscape = (doc: Document, handled = false): void => {
+            const event = new KeyboardEvent('keydown', {
+                key: 'Escape',
+                bubbles: true,
+                cancelable: true
+            });
+            if (handled) {
+                event.preventDefault();
+            }
+            doc.dispatchEvent(event);
         };
 
-        it('presses Escape again on the admin page when it is pressed inside the screen', () => {
+        afterEach(() => vi.restoreAllMocks());
+
+        it('asks this panel to close when Escape is pressed inside the screen', () => {
             open();
             const { doc } = loadFrame();
 
-            const keys = keysOnAdminPage(() =>
-                doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
-            );
+            pressEscape(doc);
 
-            expect(keys).toEqual([expect.objectContaining({ key: 'Escape', cancelable: true })]);
+            expect(panel.requestClose).toHaveBeenCalledTimes(1);
+        });
+
+        it('closes this panel, not the one in front, when another panel is stacked above', () => {
+            open();
+            const { doc } = loadFrame();
+            const front = { requestClose: vi.fn() };
+            openPanels.set([entry(panel), entry(front)]);
+            const keysOnAdminPage = vi.fn();
+            document.addEventListener('keydown', keysOnAdminPage);
+
+            pressEscape(doc);
+
+            document.removeEventListener('keydown', keysOnAdminPage);
+            expect(panel.requestClose).not.toHaveBeenCalled();
+            expect(front.requestClose).not.toHaveBeenCalled();
+            expect(keysOnAdminPage).not.toHaveBeenCalled();
+        });
+
+        it('leaves the key to an overlay open above the panel', () => {
+            open();
+            const { doc } = loadFrame();
+            vi.spyOn(ZIndexUtils, 'getCurrent').mockReturnValue(1200);
+
+            pressEscape(doc);
+
+            expect(panel.requestClose).not.toHaveBeenCalled();
         });
 
         it('keeps an Escape the screen already handled to itself', () => {
             open();
             const { doc } = loadFrame();
-            const handled = new KeyboardEvent('keydown', {
-                key: 'Escape',
-                bubbles: true,
-                cancelable: true
-            });
-            handled.preventDefault();
 
-            const keys = keysOnAdminPage(() => doc.dispatchEvent(handled));
+            pressEscape(doc, true);
 
-            expect(keys).toEqual([]);
+            expect(panel.requestClose).not.toHaveBeenCalled();
         });
     });
 
