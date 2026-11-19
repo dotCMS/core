@@ -265,7 +265,26 @@ describe('DotEditContentOpenerService', () => {
                 query: `+identifier:${IDENTIFIER} +working:true`,
                 limit: 1
             });
-            // The version that opened, not the one asked for.
+            // The version found opens, and the request keeps the language asked for, so the new
+            // editor offers that translation ("Copy from …" or "Start from scratch").
+            expect(input<DotEditContentRequest>(config, 'request')).toEqual(
+                expect.objectContaining({ inode: 'en-inode', languageId: 2 })
+            );
+        });
+
+        // The legacy editor offers no translation: it shows the version found, and says so.
+        it('names the language of the version found when the legacy editor shows it', async () => {
+            searchContent
+                .mockReturnValueOnce(searchResult())
+                .mockReturnValueOnce(searchResult({ ...ENGLISH, contentType: 'Banner' }));
+
+            spectator.service.open(
+                { mode: 'edit', identifier: IDENTIFIER, languageId: 2 },
+                { injector }
+            );
+            const { config, component } = await lastOpen();
+
+            expect(component).toBe(LegacyEditorStub);
             expect(input<DotEditContentRequest>(config, 'request')).toEqual(
                 expect.objectContaining({ inode: 'en-inode', languageId: 1 })
             );
@@ -325,19 +344,35 @@ describe('DotEditContentOpenerService', () => {
             expect(ref.isClosed).toBe(true);
         });
 
-        it('renames the panel in place to the version found in another language', () => {
+        // The new editor offers the language asked for, so the URL keeps naming it.
+        it('keeps the language asked for in the URL when the new editor shows a version in another', async () => {
             const urlState = spectator.inject(DotPanelUrlStateService);
-            resolveEditor.mockReturnValue(NEVER);
             searchContent
                 .mockReturnValueOnce(searchResult())
                 .mockReturnValueOnce(searchResult(ENGLISH));
+
+            spectator.service.open(
+                { mode: 'edit', identifier: IDENTIFIER, languageId: 2 },
+                { injector, url: {} }
+            );
+            await lastOpen();
+
+            expect(urlState.register).toHaveBeenCalledTimes(1);
+            expect(urlState.update).not.toHaveBeenCalled();
+        });
+
+        it('renames the panel in place to the version found when the legacy editor shows it', async () => {
+            const urlState = spectator.inject(DotPanelUrlStateService);
+            searchContent
+                .mockReturnValueOnce(searchResult())
+                .mockReturnValueOnce(searchResult({ ...ENGLISH, contentType: 'Banner' }));
 
             const ref = spectator.service.open(
                 { mode: 'edit', identifier: IDENTIFIER, languageId: 2 },
                 { injector, url: {} }
             );
+            await lastOpen();
 
-            expect(urlState.register).toHaveBeenCalledTimes(1);
             expect(urlState.update).toHaveBeenCalledTimes(1);
             const [renamed, params] = (urlState.update as Mock).mock.calls[0];
             expect(renamed === ref).toBe(true);
