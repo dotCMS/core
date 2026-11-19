@@ -38,7 +38,7 @@ import {
     compareUrlPaths,
     convertClientParamsToPageParams,
     createReorderMenuURL,
-    EditPageRequestContext,
+    pageRequestContext,
     isSamePageNavigation,
     withPageContext
 } from '../../utils';
@@ -352,7 +352,7 @@ export class DotUveActionsHandlerService {
                             languageId: contentlet.languageId,
                             title: contentlet.title
                         },
-                        this.#pageContext(uveStore)
+                        pageRequestContext(uveStore)
                     )
                 );
             },
@@ -372,7 +372,7 @@ export class DotUveActionsHandlerService {
                 openContent(
                     withPageContext(
                         { mode: 'new', contentType, languageId: uveStore.pageLanguageId() },
-                        this.#pageContext(uveStore)
+                        pageRequestContext(uveStore)
                     )
                 );
             },
@@ -457,19 +457,5 @@ export class DotUveActionsHandlerService {
                 console.warn('Unknown block editor type', type);
                 break;
         }
-    }
-
-    /**
-     * The page an SDK action opens content from: its variant, site and language.
-     *
-     * @param uveStore The page editor's store.
-     * @returns The context {@link withPageContext} completes a request with.
-     */
-    #pageContext(uveStore: InstanceType<typeof UVEStore>): EditPageRequestContext {
-        return {
-            variantId: uveStore.pageVariantId(),
-            siteId: uveStore.pageAsset()?.site?.identifier,
-            languageId: uveStore.pageLanguageId()
-        };
     }
 }
