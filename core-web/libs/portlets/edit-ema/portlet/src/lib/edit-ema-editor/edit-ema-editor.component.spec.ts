@@ -2482,6 +2482,32 @@ describe('EditEmaEditorComponent', () => {
                             );
                             expect(panel.ref.isClosed).toBe(false);
                         });
+
+                        /**
+                         * A full container refuses the placement and the panel stays open: the
+                         * created contentlet is not placed yet, so the next save tries again
+                         * instead of only reloading the page.
+                         */
+                        it('should try to place the created contentlet again on the next save after a full container refused it', () => {
+                            const editorSaveSpy = vi.spyOn(pageApi(), 'editorSave');
+                            const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+                            createFromSelector(structuredClone(containerPayload(1)));
+                            const panel = editPanel();
+                            const created = createFakeContentlet({
+                                identifier: 'created-identifier'
+                            });
+
+                            panel.options.saved?.(created);
+                            panel.options.saved?.(created);
+
+                            const limitWarnings = addMessageSpy.mock.calls.filter(
+                                ([message]) => message?.severity === 'warn'
+                            );
+                            expect(limitWarnings).toHaveLength(2);
+                            expect(editorSaveSpy).not.toHaveBeenCalled();
+                            expect(pageReloadSpy).not.toHaveBeenCalled();
+                            expect(panel.ref.isClosed).toBe(false);
+                        });
                     });
                 });
 
