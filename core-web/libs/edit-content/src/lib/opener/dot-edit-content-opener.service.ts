@@ -47,6 +47,13 @@ export interface DotEditContentOpenOptions extends DotEditContentPanelHandlers {
      * the choice to the content type. Remove with the legacy editor.
      */
     editor?: 'legacy';
+
+    /**
+     * Called once with the editor the panel shows, as soon as it is known and before it loads.
+     * Never called for a request the server refuses. The UVE reloads the page on close only for
+     * the legacy editor, whose workflow actions report nothing.
+     */
+    editorResolved?: (editor: DotContentEditor) => void;
 }
 
 /** What the server said about a request before any editor shows. */
@@ -131,6 +138,7 @@ export class DotEditContentOpenerService {
                 next: ({ editor, contentType, contentlet, createUrl }) => {
                     $contentlet.set(contentlet);
                     $typeName.set(contentType?.name ?? null);
+                    options.editorResolved?.(editor);
 
                     if (editor === 'new') {
                         showEditor(loadDotEditContentSidePanel());

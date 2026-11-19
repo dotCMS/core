@@ -38,6 +38,7 @@ import { TooltipModule } from 'primeng/tooltip';
 import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
 
 import {
+    DotContentEditor,
     DotContentletService,
     DotCopyContentService,
     DotHttpErrorManagerService,
@@ -347,6 +348,9 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      */
     #urlMapEdit = false;
 
+    /** The editor the open Edit Content panel shows, once the opener has resolved it. */
+    #panelEditor: DotContentEditor | null = null;
+
     /**
      * The legacy (JSP) screen open in the generic legacy-screen side panel, or `null` while it is
      * closed (#38303): the content selector or the menu reorder screen. Bound
@@ -646,7 +650,8 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 this.#pageApi.pageLoad({ language_id: String(languageId) }),
             pageEditorRequested: (page) => this.#onPageEditorRequested(page),
             deleted: () => this.#pageApi.pageReload(),
-            closed: () => this.#onPanelClosed()
+            closed: () => this.#onPanelClosed(),
+            editorResolved: (editor) => (this.#panelEditor = editor)
         });
 
         // A legacy admin screen, open while `$legacyScreenRequest` is set, in the generic
@@ -1609,6 +1614,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         }
 
         this.#insertion = actionPayload ? { actionPayload, inserted: false } : null;
+        this.#panelEditor = null;
         this.#fromSdkEdit = fromSdk && request.mode === 'edit';
         this.#urlMapEdit = urlMap && request.mode === 'edit';
         this.$editRequest.set(request);
@@ -1711,16 +1717,23 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * The Edit Content panel closed itself: forget the request, then reload the page. The reload
-     * is the safety net for workflow actions run in the legacy editor, which report nothing the
-     * page can use (#38303, R4).
+     * The Edit Content panel closed itself: forget the request, then reload the page unless the new
+     * editor showed. The reload is the safety net for workflow actions run in the legacy editor,
+     * which report nothing the page can use (#38303, R4); the new editor reports every save, and
+     * a delete reloads on its own. A panel closed before its editor was known reloads too.
      */
     #onPanelClosed(): void {
+        const reload = this.#panelEditor !== 'new';
+
         this.$editRequest.set(null);
         this.#insertion = null;
         this.#fromSdkEdit = false;
         this.#urlMapEdit = false;
-        this.#pageApi.pageReload();
+        this.#panelEditor = null;
+
+        if (reload) {
+            this.#pageApi.pageReload();
+        }
     }
 
     /**
