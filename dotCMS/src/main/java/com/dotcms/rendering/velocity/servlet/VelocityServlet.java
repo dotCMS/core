@@ -6,7 +6,9 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.business.CloseDB;
 import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
+import com.dotcms.util.CdnTagHeader;
 import com.dotcms.util.SecurityUtils;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.UserWebAPIImpl;
@@ -21,10 +23,12 @@ import com.dotmarketing.portlets.htmlpageasset.business.render.PageContextBuilde
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.LoginMode;
 import com.dotmarketing.util.PageMode;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import java.io.IOException;
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -177,6 +181,9 @@ public class VelocityServlet extends HttpServlet {
 
             Logger.debug(this, "VelocityServlet_service pageHtml: " + pageHtml);
             APILocator.getRequestCostAPI().addCostHeader(request, response);
+            if (mode == PageMode.LIVE) {
+                tagDeliveredPage(request, response);
+            }
             response.getOutputStream().write(pageHtml.getBytes());
         } catch (ResourceNotFoundException rnfe) {
             Logger.warnAndDebug(this.getClass(), "ResourceNotFoundException" + rnfe.toString(), rnfe);
@@ -202,6 +209,24 @@ public class VelocityServlet extends HttpServlet {
             
         }
         
+    }
+
+    /**
+     * Tags the live HTTP response after rendering, when the final page status is known.
+     * A custom error forward may retain the failed URL map's content ID and must not emit it.
+     */
+    private void tagDeliveredPage(final HttpServletRequest request,
+            final HttpServletResponse response) {
+        if (response.isCommitted() || response.getStatus() >= HttpServletResponse.SC_BAD_REQUEST
+                || request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE) != null) {
+            return;
+        }
+
+        if (request.getAttribute(VelocityLiveMode.RESOLVED_PAGE_ATTRIBUTE) instanceof Identifier page) {
+            final String mappedContentId = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET);
+            CdnTagHeader.set(response,
+                    UtilMethods.isSet(mappedContentId) ? mappedContentId : page.getId());
+        }
     }
 
     @Override

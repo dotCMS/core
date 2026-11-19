@@ -10,7 +10,6 @@ import com.dotcms.rendering.util.HtmlMinifier;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.security.ContentSecurityPolicyUtil;
-import com.dotcms.util.CdnTagHeader;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
@@ -60,6 +59,8 @@ import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.velocity.context.Context;
 
 public class VelocityLiveMode extends VelocityModeHandler {
+
+    static final String RESOLVED_PAGE_ATTRIBUTE = "idInode";
 
     /**
      * Initial size of the in-memory buffer used when minification is on. Big enough that a typical
@@ -122,7 +123,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
             return;
         } else {
-            request.setAttribute("idInode", id);
+            request.setAttribute(RESOLVED_PAGE_ATTRIBUTE, id);
         }
 
         response.setContentType(CHARSET);
@@ -330,18 +331,10 @@ public class VelocityLiveMode extends VelocityModeHandler {
     }
 
     /**
-     * Sets response headers, tagging URL-mapped pages by the content item they render.
-     *
-     * @param page the {@link IHTMLPage} being rendered
+     * Add headers to the response
+     * @param page
      */
     private void addHeaders(IHTMLPage page) {
-        // Custom error forwards can still carry the failed page's mapped content ID.
-        if (response.getStatus() < HttpServletResponse.SC_BAD_REQUEST
-                && request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE) == null) {
-            final String mappedContentId = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET);
-            CdnTagHeader.set(response,
-                    UtilMethods.isSet(mappedContentId) ? mappedContentId : page.getIdentifier());
-        }
 
         if (response.getHeader("Cache-Control") == null) {
             // set cache control headers based on page cache
