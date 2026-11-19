@@ -11,13 +11,11 @@ import {
     DotLanguage,
     DotSite
 } from '@dotcms/dotcms-models';
-import { EditContentDialogData } from '@dotcms/edit-content';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotUploadBaseType, DotUploadSelection, DotUploadSelectorPayload } from '@dotcms/ui';
 
 import { DIALOG_TYPE } from './constants';
-import { DotLegacyEditorRequest } from './legacy-editor.models';
 
 /**
  * The parameters for the buildTreeFolderNodes function.
@@ -171,15 +169,6 @@ export interface DotContentDriveDialog {
 export interface DotContentDriveFolderPermissionsPayload {
     identifier: string;
 }
-
-/**
- * What Content Drive has asked a side panel to open, and in which editor (#37759). The content
- * type's editor setting alone picks the editor; each kind has its own panel.
- */
-export type DotContentDrivePanelRequest =
-    | { editor: 'new'; data: EditContentDialogData }
-    // Remove with the legacy editor.
-    | { editor: 'legacy'; data: DotLegacyEditorRequest };
 
 /**
  * What the Content Drive URL must say about the open side panel, for either editor (#37759, FR-020).
