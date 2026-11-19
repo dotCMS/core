@@ -335,9 +335,13 @@ public class VelocityLiveMode extends VelocityModeHandler {
      * @param page the {@link IHTMLPage} being rendered
      */
     private void addHeaders(IHTMLPage page) {
-        final String mappedContentId = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET);
-        CdnTagHeader.set(response,
-                UtilMethods.isSet(mappedContentId) ? mappedContentId : page.getIdentifier());
+        // Custom error forwards can still carry the failed page's mapped content ID.
+        if (response.getStatus() < HttpServletResponse.SC_BAD_REQUEST
+                && request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE) == null) {
+            final String mappedContentId = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET);
+            CdnTagHeader.set(response,
+                    UtilMethods.isSet(mappedContentId) ? mappedContentId : page.getIdentifier());
+        }
 
         if (response.getHeader("Cache-Control") == null) {
             // set cache control headers based on page cache
