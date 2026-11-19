@@ -91,8 +91,8 @@ describe('DotWorkflowTaskComponent', () => {
     let dotWorkflowTaskDetailService: DotWorkflowTaskDetailService;
     let dotCustomEventHandlerService: DotCustomEventHandlerService;
     let taskDetail: DebugElement;
-    /** What `onPanelClosed` hands back; the component calls it when it goes away. */
-    let releasePanelClosed: Mock;
+    /** What `onPanelEvents` hands back; the component calls it when it goes away. */
+    let releasePanelEvents: Mock;
 
     /**
      * Builds the component and runs its first change detection, which views the route's task.
@@ -186,9 +186,9 @@ describe('DotWorkflowTaskComponent', () => {
         dotRouterService = TestBed.inject(DotRouterService);
         dotIframeService = TestBed.inject(DotIframeService);
         dotCustomEventHandlerService = TestBed.inject(DotCustomEventHandlerService);
-        releasePanelClosed = vi.fn();
+        releasePanelEvents = vi.fn();
         Object.assign(dotCustomEventHandlerService, {
-            onPanelClosed: vi.fn().mockReturnValue(releasePanelClosed)
+            onPanelEvents: vi.fn().mockReturnValue(releasePanelEvents)
         });
         vi.spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
@@ -315,9 +315,10 @@ describe('DotWorkflowTaskComponent', () => {
 
     /**
      * The detail's "Edit Content" sends `edit-contentlet` (`view_workflow_task.jsp`, `doEdit`):
-     * the content opens in the side panel above the task dialog. The detail is viewed again once,
-     * when a panel closes, so it shows the content's current step; the handler is registered with
-     * `DotCustomEventHandlerService`, so a panel the task's URL reopens gets it too (#38303,
+     * the content opens in the side panel above the task dialog. The detail is viewed again on
+     * every save in a panel, and on a close `DotCustomEventHandlerService` reports (after the
+     * legacy editor only), so it shows the content's current title and step; the handlers are
+     * registered with that service, so a panel the task's URL reopens gets them too (#38303,
      * FR-025a, stack review L7-2).
      */
     describe('edit-contentlet from the task detail', () => {
@@ -346,41 +347,48 @@ describe('DotWorkflowTaskComponent', () => {
         });
     });
 
-    describe('when a side panel closes', () => {
+    describe('when a side panel saves or closes', () => {
         const TASK = { id: TASK_ID };
 
-        /** The close handler the component registered on init. */
-        const registered = (): (() => void) => {
-            const onPanelClosed = (
-                dotCustomEventHandlerService as unknown as { onPanelClosed: Mock }
-            ).onPanelClosed;
+        /** The panel handlers the component registered on init. */
+        const registered = (): { saved: () => void; closed: () => void } => {
+            const onPanelEvents = (
+                dotCustomEventHandlerService as unknown as { onPanelEvents: Mock }
+            ).onPanelEvents;
 
-            expect(onPanelClosed, 'the component registers a close handler').toHaveBeenCalledTimes(
-                1
-            );
+            expect(
+                onPanelEvents,
+                'the component registers its panel handlers'
+            ).toHaveBeenCalledTimes(1);
 
-            return onPanelClosed.mock.calls[0][0];
+            return onPanelEvents.mock.calls[0][0];
         };
 
-        it('should view the same task again, once', () => {
-            registered()();
+        it.each(['saved', 'closed'] as const)(
+            'should view the same task again, once, when a panel reports %s',
+            (event) => {
+                registered()[event]();
 
-            expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledTimes(2);
-            expect(dotWorkflowTaskDetailService.view).toHaveBeenLastCalledWith(TASK);
-        });
+                expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledTimes(2);
+                expect(dotWorkflowTaskDetailService.view).toHaveBeenLastCalledWith(TASK);
+            }
+        );
 
-        it('should keep the task open, not return to the task list', () => {
-            registered()();
+        it.each(['saved', 'closed'] as const)(
+            'should keep the task open when a panel reports %s, not return to the task list',
+            (event) => {
+                registered()[event]();
 
-            expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
-        });
+                expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
+            }
+        );
 
-        it('should release the handler when the task closes', () => {
+        it('should release the handlers when the task closes', () => {
             registered();
 
             fixture.destroy();
 
-            expect(releasePanelClosed).toHaveBeenCalledTimes(1);
+            expect(releasePanelEvents).toHaveBeenCalledTimes(1);
         });
     });
 
