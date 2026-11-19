@@ -2,30 +2,22 @@ package com.dotcms.util;
 
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
-import java.util.Locale;
-import java.util.Set;
-import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletResponse;
 
 /** Writes the cache tag used by CDNs to purge pages and files by resource identifier. */
 public final class CdnTagHeader {
 
     private static final String HEADER_PROPERTY = "cdn.tag.header";
-    private static final String DEFAULT_HEADER = "cdn-tag";
+    private static final String HEADER_NAME = "cdn-tag";
     private static final String DISABLED = "NONE";
-    private static final Set<String> RESERVED_HEADERS = Set.of(
-            "strict-transport-security", "x-frame-options", "x-content-type-options",
-            "content-security-policy", "content-security-policy-report-only",
-            "set-cookie", "set-cookie2", "content-type");
-    private static final Pattern HTTP_TOKEN = Pattern.compile("[!#$%&'*+\\-.^_`|~0-9A-Za-z]+");
 
     private CdnTagHeader() {
     }
 
     /**
      * Tags a delivered resource with its stable identifier, not its version inode.
-     * Use {@value #DISABLED} to suppress the header. A blank, invalid, or reserved header name
-     * falls back to {@value #DEFAULT_HEADER}.
+     * The header name is always {@value #HEADER_NAME}. Set {@value #HEADER_PROPERTY}
+     * to {@value #DISABLED} to suppress it.
      *
      * @param response the response serving the resource
      * @param identifier the resource identifier, or null for a file without one
@@ -35,13 +27,10 @@ public final class CdnTagHeader {
             return;
         }
 
-        final String header = Config.getStringProperty(HEADER_PROPERTY, DEFAULT_HEADER);
-        if (DISABLED.equalsIgnoreCase(header)) {
+        if (DISABLED.equalsIgnoreCase(Config.getStringProperty(HEADER_PROPERTY, HEADER_NAME))) {
             return;
         }
 
-        final boolean usable = HTTP_TOKEN.matcher(header).matches()
-                && !RESERVED_HEADERS.contains(header.toLowerCase(Locale.ROOT));
-        response.setHeader(usable ? header : DEFAULT_HEADER, identifier);
+        response.setHeader(HEADER_NAME, identifier);
     }
 }
