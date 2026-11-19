@@ -561,6 +561,52 @@ public class PublisherQueueJobTest {
     }
 
     /**
+     * Method to test: {@link PublisherQueueJob} merging of a polled remote history.
+     * <p>
+     * Given scenario: an {@code http} endpoint is moved to another environment while its bundle is
+     * publishing, so the audit tracks it under the old environment and the endpoint now belongs to
+     * the new one; the receiver answers SUCCESS.
+     * <p>
+     * Expected result: the answer is merged under the environment the audit tracks the endpoint
+     * under, so the tracked entry becomes SUCCESS and no entry appears under the new environment
+     * (issue #34434, review of PR 38578). Before the fix the answer was written under the new
+     * environment while the old entry kept being counted.
+     */
+    @Test
+    public void test_merge_endpointMovedWhilePublishing_resultStaysUnderTrackedEnvironment() throws Exception {
+        final PublishAuditHistory remote = new PublishAuditHistory();
+        remote.addOrUpdateEndpoint("127.0.0.1", "127.0.0.1", endpointDetail(Status.SUCCESS, "installed"));
+
+        try (AuditStub stub = new AuditStub(list(remote.getSerialized()))) {
+            final User user = TestUserUtils.getAdminUser();
+            final Environment environment = PublisherTestUtil.createEnvironment(user, true);
+            final Environment newEnvironment = PublisherTestUtil.createEnvironment(user, true);
+            final PublishingEndPoint http = PublisherTestUtil.createEndpoint(environment);
+            http.setPort(String.valueOf(stub.port()));
+            APILocator.getPublisherEndPointAPI().updateEndPoint(http);
+            final Bundle bundle = PublisherTestUtil.createBundle("bundle-" + System.nanoTime(), user, environment);
+            try {
+                seedAudit(bundle, environment, Map.of(http.getId(), Status.BUNDLE_SENT_SUCCESSFULLY));
+                http.setGroupId(newEnvironment.getId());
+                APILocator.getPublisherEndPointAPI().updateEndPoint(http);
+
+                invokeUpdateAuditStatus();
+
+                final Map<String, Map<String, EndpointDetail>> all = APILocator.getPublishAuditAPI()
+                        .getPublishAuditStatus(bundle.getId()).getStatusPojo().getEndpointsMap();
+                assertEquals(Status.SUCCESS.getCode(),
+                        all.get(environment.getId()).get(http.getId()).getStatus());
+                assertFalse("The result must not be written under the new environment: " + all.keySet(),
+                        all.containsKey(newEnvironment.getId()));
+            } finally {
+                cleanUpAudit(bundle);
+                PublisherTestUtil.cleanBundleEndpointEnv(bundle, http, environment);
+                APILocator.getEnvironmentAPI().deleteEnvironment(newEnvironment.getId());
+            }
+        }
+    }
+
+    /**
      * Method to test: {@code PublisherQueueJob#getPublishersForBundle}
      * Given scenario: an environment with an {@code awss3}, a {@code static} and an {@code http}
      * endpoint, created in that order (#34434, US4).

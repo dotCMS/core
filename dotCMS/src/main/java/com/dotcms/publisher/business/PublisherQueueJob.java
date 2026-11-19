@@ -396,13 +396,13 @@ public class PublisherQueueJob implements StatefulJob {
 							&& !StaticPublisher.PROTOCOL_STATIC.equalsIgnoreCase(targetEndpoint.getProtocol())) {
 
 						final BundlesToSent bundleToSend = bundlesToSent.computeIfAbsent(targetEndpoint.getId(),
-								key -> new BundlesToSent(targetEndpoint));
+								key -> new BundlesToSent(targetEndpoint, groupID));
 
 						bundleToSend.add(bundleAudit.getBundleId());
 
 						if (bundleToSend.limitReach()) {
 							sendBundle(bundleToSend.bundleIds,  bundleToSend.targetEndpoint,
-									client, localHistory);
+									bundleToSend.groupId, client, localHistory);
 							bundleToSend.reset();
 						}
 					}
@@ -419,7 +419,7 @@ public class PublisherQueueJob implements StatefulJob {
 			List<List<String>> partitions = Lists.partition(toSent.bundleIds, MAX_SIZE_PP_AUDIT_PAYLOAD);
 
 			for (List<String> partition : partitions) {
-				sendBundle(partition, toSent.targetEndpoint, client, localHistory);
+				sendBundle(partition, toSent.targetEndpoint, toSent.groupId, client, localHistory);
 			}
 		}
 
@@ -442,12 +442,13 @@ public class PublisherQueueJob implements StatefulJob {
 	 *
 	 * @param bundleIds      the bundles to ask about
 	 * @param targetEndpoint the endpoint to ask
+	 * @param groupID        the environment the audit tracks the endpoint under
 	 * @param client         the REST client used for the call
 	 * @param localHistory   the local audit history that receives the remote details
 	 * @throws DotDataException the endpoint could not be reached or its answer was not readable
 	 */
-	private void sendBundle(List<String> bundleIds, PublishingEndPoint targetEndpoint, Client client,
-							PublishAuditHistory localHistory)
+	private void sendBundle(List<String> bundleIds, PublishingEndPoint targetEndpoint, String groupID,
+							Client client, PublishAuditHistory localHistory)
 			throws DotDataException {
 
 			// Try to get the status of the remote end-points to
@@ -456,7 +457,7 @@ public class PublisherQueueJob implements StatefulJob {
 					 .stream()
 					 .filter(Objects::nonNull)
 					 .forEach(remoteHistory -> {
-						 sendBundle(bundleIds, targetEndpoint, localHistory, remoteHistory);
+						 sendBundle(bundleIds, targetEndpoint, groupID, localHistory, remoteHistory);
 					 });
 
 	}
@@ -467,14 +468,17 @@ public class PublisherQueueJob implements StatefulJob {
 	 *
 	 * @param bundleIds      the bundles that were asked about
 	 * @param targetEndpoint the endpoint the answer came from
+	 * @param groupID        the environment the audit tracks the endpoint under. It can differ from
+	 *                       the endpoint's current environment when the endpoint was moved while
+	 *                       the bundle was publishing, and the result must land where it is counted
 	 * @param localHistory   the local audit history to update
 	 * @param remoteHistory  the history the endpoint returned
 	 */
-	private void sendBundle(List<String> bundleIds, PublishingEndPoint targetEndpoint, PublishAuditHistory localHistory,
-							PublishAuditHistory remoteHistory) {
+	private void sendBundle(List<String> bundleIds, PublishingEndPoint targetEndpoint, String groupID,
+							PublishAuditHistory localHistory, PublishAuditHistory remoteHistory) {
 		try {
 			updateLocalPublishDatesFromRemote(localHistory, remoteHistory);
-			updateLocalEndpointDetailFromRemote(localHistory, targetEndpoint.getGroupId(), targetEndpoint.getId(), remoteHistory);
+			updateLocalEndpointDetailFromRemote(localHistory, groupID, targetEndpoint.getId(), remoteHistory);
 		} catch (final Exception e) {
 			// An error occurred when retrieving the end-point's audit info.
 			// Usually caused by a network problem.
@@ -486,7 +490,7 @@ public class PublisherQueueJob implements StatefulJob {
 			detail.setStatus(Status.FAILED_TO_PUBLISH.getCode());
 			detail.setInfo("Could not update the audit status from the endpoint: "
 					+ ExceptionUtil.getErrorMessage(e));
-			localHistory.addOrUpdateEndpoint(targetEndpoint.getGroupId(), targetEndpoint.getId(), detail);
+			localHistory.addOrUpdateEndpoint(groupID, targetEndpoint.getId(), detail);
 			PushPublishLogger.log(this.getClass(), "Status update: Failed to update bundle audit status.");
 		}
 	}
@@ -979,11 +983,14 @@ public class PublisherQueueJob implements StatefulJob {
 
 	private static class BundlesToSent {
 		final PublishingEndPoint targetEndpoint;
+		// The environment the audit tracks the endpoint under
+		final String groupId;
 		List<String>  bundleIds;
 
 
-		public BundlesToSent(final PublishingEndPoint targetEndpoint) {
+		public BundlesToSent(final PublishingEndPoint targetEndpoint, final String groupId) {
 			this.targetEndpoint = targetEndpoint;
+			this.groupId = groupId;
 			this.bundleIds = new ArrayList<>();
 		}
 
