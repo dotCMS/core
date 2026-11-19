@@ -27,6 +27,7 @@ import {
     DotAlertConfirmService,
     DotAnalyticsTrackerService,
     DotContentTypeService,
+    DotContentletEditUrlService,
     DotContentletLockerService,
     DotContentletService,
     DotCopyContentService,
@@ -233,6 +234,9 @@ const createOpenerFake = () => {
 
 // Re-created before each test and read through a factory, so each test gets its own.
 let opener: ReturnType<typeof createOpenerFake>;
+
+/** Which editor a content type uses, as `DotContentletEditUrlService` answers it; set per test. */
+const resolveEditor = vi.fn();
 
 /**
  * Where a content type is dropped: a container the page does not list yet, with room. The editor
@@ -450,6 +454,10 @@ const createRouting = () =>
             DotSeoMetaTagsUtilService,
             DialogService,
             { provide: DotEditContentOpenerService, useFactory: () => opener },
+            {
+                provide: DotContentletEditUrlService,
+                useValue: { resolveEditor: (variable: string) => resolveEditor(variable) }
+            },
             DotCopyContentService,
             DotCopyContentModalService,
             DotWorkflowActionsFireService,
@@ -2589,6 +2597,11 @@ describe('EditEmaEditorComponent', () => {
                         contentType: 'htmlpageasset'
                     } as unknown as DotCMSPage;
 
+                    beforeEach(() => {
+                        resolveEditor.mockReset();
+                        resolveEditor.mockReturnValue(of({ editor: 'legacy', contentType: null }));
+                    });
+
                     /** The legacy translate screen's URL, exactly as the page editor's dialog built it. */
                     const translateUrl = () => {
                         const params = new URLSearchParams({
@@ -2750,6 +2763,97 @@ describe('EditEmaEditorComponent', () => {
                         expect(stacked?.request).toEqual(request);
                         // Compared by identity: printing an injector runs the worker out of memory.
                         expect(stacked?.options.injector === panelInjector).toBe(true);
+                    });
+
+                    it('should ask which editor the page type uses', () => {
+                        translate();
+
+                        expect(resolveEditor).toHaveBeenCalledWith('htmlpageasset');
+                    });
+
+                    /**
+                     * A page type on the new editor translates in it (#38303, T178): the page opens
+                     * through the opener in the asked language, and the editor offers to populate
+                     * the translation from the page, as its own locale switch does.
+                     */
+                    describe('on a page type that uses the new editor', () => {
+                        beforeEach(() => {
+                            resolveEditor.mockReturnValue(of({ editor: 'new', contentType: null }));
+                        });
+
+                        /** The panel the translation opened through the opener. */
+                        const openedTranslation = (): OpenedContent => {
+                            const panel = opener.opened.at(-1);
+
+                            expect(
+                                panel,
+                                'the editor opens the page through the opener'
+                            ).toBeDefined();
+
+                            return panel as OpenedContent;
+                        };
+
+                        it('should open the page through the opener in the asked language', () => {
+                            translate();
+
+                            expect(opener.opened.length).toBe(1);
+                            expect(openedTranslation().request).toEqual({
+                                mode: 'edit',
+                                inode: 'inode-123',
+                                identifier: 'test-page-123',
+                                contentType: 'htmlpageasset',
+                                languageId: 2,
+                                title: 'Translated page',
+                                siteId: siteId(),
+                                portletId: 'edit-page'
+                            });
+                            expect(openedTranslation().options.url).toBeUndefined();
+                        });
+
+                        it('should not open the legacy editor panel', () => {
+                            translate();
+
+                            expect(
+                                sidePanels.filter(
+                                    (opened) => 'createUrl' in (opened.config.inputs ?? {})
+                                )
+                            ).toHaveLength(0);
+                        });
+
+                        it('should load the saved translation at its URL and in its language', () => {
+                            translate();
+                            const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
+
+                            openedTranslation().options.saved?.(
+                                createFakeContentlet({ languageId: 2, url: '/translated-page' })
+                            );
+
+                            expect(pageLoadSpy).toHaveBeenCalledWith({
+                                language_id: '2',
+                                url: '/translated-page'
+                            });
+                        });
+
+                        it('should reload the page when the panel closes after a save', () => {
+                            translate();
+                            openedTranslation().options.saved?.(
+                                createFakeContentlet({ languageId: 2, url: '/translated-page' })
+                            );
+                            const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+
+                            openedTranslation().ref.close();
+
+                            expect(pageReloadSpy).toHaveBeenCalledTimes(1);
+                        });
+
+                        it('should leave the page alone when the panel closes without a save', () => {
+                            translate();
+                            const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+
+                            openedTranslation().ref.close();
+
+                            expect(pageReloadSpy).not.toHaveBeenCalled();
+                        });
                     });
                 });
 

@@ -6,7 +6,8 @@ import { getSites } from './sites';
 
 export interface Page {
     identifier: string;
-    contentType: 'htmlpageasset';
+    /** `htmlpageasset`, or the variable of another page content type. */
+    contentType: string;
     title: string;
     url: string;
     hostFolder: string;
