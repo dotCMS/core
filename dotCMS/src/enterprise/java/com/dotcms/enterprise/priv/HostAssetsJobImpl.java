@@ -30,6 +30,7 @@ import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
 import com.dotcms.rest.ErrorEntity;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.SiteCreatedEvent;
 import com.dotmarketing.beans.Tree;
@@ -1126,7 +1127,9 @@ public class HostAssetsJobImpl extends ParentProxy{
 		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 		if (createdByThisCopy && !permissionAPI.isInheritingPermissions(sourceFolder)) {
 			permissionAPI.copyPermissions(sourceFolder, newFolder);
-			evictCachedPermissionsAfterCommit(newFolder.getPermissionId());
+		}
+		if (createdByThisCopy) {
+			evictCachesAfterCommit(newFolder);
 		}
 		folderMappingsBySourceId.put(sourceFolder.getInode(), new FolderMapping(sourceFolder, newFolder));
 		return newFolder;
@@ -1497,47 +1500,54 @@ public class HostAssetsJobImpl extends ParentProxy{
     }
 
 	/**
-	 * Drops the cached permissions of a folder whose permissions this copy just replaced, once the
-	 * current transaction commits.
+	 * Drops what the caches hold for a folder this copy created and then changed, once the current
+	 * transaction commits.
 	 * <p>
-	 * Saving permission rows evicts them from the cache before the commit, so a request reading
-	 * them in between can cache the old rows again, and cached yes/no permission decisions are not
-	 * evicted at all. The eviction therefore runs again after the commit, on this thread, for
-	 * every folder of the transaction at once, and also drops the cached decisions.
+	 * A folder can be created in one phase of the copy (copying a container-as-file creates its
+	 * parent folders) and committed, then get its owner and permissions in a later phase. Saves
+	 * evict the caches before their transaction commits, so a request in between can cache the
+	 * folder, its permissions, or the permissions its children inherit from it, as they were before
+	 * the change. After the commit, on this thread and once per transaction, the copied folders are
+	 * removed from the folder cache and the permission cache is cleared: rows inherited by
+	 * descendants are cached under each descendant's id, so evicting them one by one would mean
+	 * walking every subtree. The copy only clears it once per phase.
 	 *
-	 * @param permissionId the permission id of the folder whose permissions were copied
+	 * @param folder a folder this copy created
 	 */
-	private void evictCachedPermissionsAfterCommit(final String permissionId) {
-		HibernateUtil.getOrAddSyncCommitListener("site-copy-evict-folder-permissions",
-						PermissionCacheEviction::new)
-				.ifPresentOrElse(eviction -> eviction.add(permissionId),
-						() -> new PermissionCacheEviction(permissionId).run());
+	private void evictCachesAfterCommit(final Folder folder) {
+		HibernateUtil.getOrAddSyncCommitListener("site-copy-evict-copied-folders",
+						CopiedFolderCacheEviction::new)
+				.ifPresentOrElse(eviction -> eviction.add(folder),
+						() -> new CopiedFolderCacheEviction(folder).run());
 	}
 
 	/**
-	 * Evicts the cached permissions of the given permissionables and every cached permission
-	 * decision.
+	 * Removes the given folders from the folder cache and clears the permission cache.
 	 */
-	private static final class PermissionCacheEviction implements Runnable {
+	private static final class CopiedFolderCacheEviction implements Runnable {
 
-		private final Set<String> permissionIds = new HashSet<>();
+		private final Map<String, Folder> foldersByInode = new HashMap<>();
 
-		private PermissionCacheEviction() {
+		private CopiedFolderCacheEviction() {
 		}
 
-		private PermissionCacheEviction(final String permissionId) {
-			this.permissionIds.add(permissionId);
+		private CopiedFolderCacheEviction(final Folder folder) {
+			add(folder);
 		}
 
-		private void add(final String permissionId) {
-			this.permissionIds.add(permissionId);
+		private void add(final Folder folder) {
+			this.foldersByInode.put(folder.getInode(), folder);
 		}
 
 		@Override
 		public void run() {
-			final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-			this.permissionIds.forEach(permissionAPI::removePermissionableFromCache);
-			CacheLocator.getPermissionCache().flushShortTermCache();
+			for (final Folder folder : this.foldersByInode.values()) {
+				final Identifier identifier = Try.of(
+						() -> APILocator.getIdentifierAPI().find(folder.getIdentifier()))
+						.getOrNull();
+				CacheLocator.getFolderCache().removeFolder(folder, identifier);
+			}
+			CacheLocator.getPermissionCache().clearCache();
 		}
 
 	}
