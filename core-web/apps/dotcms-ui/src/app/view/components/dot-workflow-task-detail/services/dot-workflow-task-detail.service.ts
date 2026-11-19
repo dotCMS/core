@@ -52,6 +52,16 @@ export class DotWorkflowTaskDetailService {
     }
 
     /**
+     * Changes the dialog's header without viewing the task again. The task component sets it once
+     * the app's messages have loaded, after it has shown the task (#38303, T177).
+     *
+     * @param header The dialog's header.
+     */
+    setHeader(header: string): void {
+        this._header.next(header);
+    }
+
+    /**
      * Clear data to add a workflow task
      *
      * @memberof DotAddContentletService

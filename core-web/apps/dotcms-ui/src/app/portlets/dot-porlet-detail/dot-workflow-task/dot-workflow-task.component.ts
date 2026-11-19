@@ -2,7 +2,7 @@ import { Component, DestroyRef, OnInit, inject, ChangeDetectionStrategy } from '
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
-import { distinctUntilChanged, map } from 'rxjs/operators';
+import { distinctUntilChanged, map, take } from 'rxjs/operators';
 
 import { DotMessageService, DotRouterService, DotIframeService } from '@dotcms/data-access';
 
@@ -35,8 +35,21 @@ export class DotWorkflowTaskComponent implements OnInit {
      * across tasks (no `reuseRoute: false`, so Back with this task's side panel open does not
      * rebuild the dialog under the panel, #38303). A navigation that keeps the task shows nothing
      * again.
+     *
+     * The dialog's header is set once the app's messages have loaded: on a fresh load of a task's
+     * URL they are still loading, and `get` would answer with the key (#38303, T177). The task
+     * itself shows at once, so the dialog opens before, and stays under, a side panel the URL
+     * also names.
      */
     ngOnInit() {
+        this.dotMessageService.ready$
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() =>
+                this.dotWorkflowTaskDetailService.setHeader(
+                    this.dotMessageService.get('workflow.task.dialog.header')
+                )
+            );
+
         this.route.params
             .pipe(
                 map((params) => params['asset'] as string),
@@ -97,9 +110,6 @@ export class DotWorkflowTaskComponent implements OnInit {
 
     /** Shows the route's task in the dialog, or loads it again when it is shown already. */
     #viewTask(): void {
-        this.dotWorkflowTaskDetailService.view({
-            header: this.dotMessageService.get('workflow.task.dialog.header'),
-            id: this.#taskId
-        });
+        this.dotWorkflowTaskDetailService.view({ id: this.#taskId });
     }
 }
