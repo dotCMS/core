@@ -157,7 +157,8 @@ const PAGE_CONTENTLET = {
     title: 'About us',
     contentType: 'htmlpageasset',
     baseType: 'HTMLPAGE',
-    languageId: 1
+    languageId: 1,
+    url: '/about-us'
 };
 
 const buildStoreMock = (overrides: Partial<Record<string, Mock>> = {}) => ({
@@ -534,6 +535,24 @@ describe('DotQueryToolPageComponent', () => {
                 clickResult(PAGE_CONTENTLET);
 
                 expect(opener.open.mock.calls.length).toBe(0);
+            });
+
+            /**
+             * A page result without `url` or `urlMap` has no page editor URL to open, and asking
+             * the server for one would open the tab outside the click, where the popup blocker
+             * stops it. It opens in the side panel instead (stack review L7-5).
+             */
+            it('opens a page without a URL in the side panel, not a tab', () => {
+                resolveEditUrl.mockClear();
+
+                clickResult({ ...PAGE_CONTENTLET, url: undefined });
+
+                expect(resolveEditUrl.mock.calls.length).toBe(0);
+                expect(windowOpenSpy.mock.calls.length).toBe(0);
+                expect(opener.open.mock.calls.length).toBe(1);
+                expect(requestOf(opener.opened[0].request)).toEqual(
+                    expect.objectContaining({ mode: 'edit', inode: PAGE_CONTENTLET.inode })
+                );
             });
         });
 
