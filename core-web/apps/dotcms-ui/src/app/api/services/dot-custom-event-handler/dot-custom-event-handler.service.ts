@@ -131,17 +131,20 @@ export class DotCustomEventHandlerService {
 
     /**
      * A legacy portlet asked to create content of a type, maybe in a folder. The JSP's `url` is
-     * read for its `lang` only, the language the content search or the Site Browser shows; the
-     * opener resolves the create screen itself.
+     * read for its `lang`, the language the content search or the Site Browser shows, and its
+     * `folder`, the folder inode the Site Browser names for the legacy editor, which reads no
+     * `folderPath`; the opener resolves the create screen itself.
      */
     private createContentlet($event: CustomEvent): void {
         const { url, contentType, folderPath } = $event.detail.data;
         const languageId = languageOf(url);
+        const folderInode = paramOf(url, 'folder');
 
         this.#openInSidePanel({
             mode: 'new',
             contentType,
             folderPath,
+            ...(folderInode ? { folderInode } : {}),
             ...(languageId ? { languageId } : {})
         });
     }
@@ -242,14 +245,26 @@ export class DotCustomEventHandlerService {
  * @returns The language id, or `undefined` when the URL names none.
  */
 function languageOf(url: unknown): number | undefined {
+    const languageId = Number(paramOf(url, 'lang'));
+
+    return Number.isInteger(languageId) && languageId > 0 ? languageId : undefined;
+}
+
+/**
+ * A plain (not portlet-namespaced) query param of a legacy create URL, such as the `lang` and the
+ * `folder` the JSPs append after the portlet's action URL.
+ *
+ * @param url The `url` of a `create-contentlet` event, if it has one.
+ * @param name The param to read.
+ * @returns Its value, or `undefined` when the URL is missing, unparseable or has it empty.
+ */
+function paramOf(url: unknown, name: string): string | undefined {
     if (typeof url !== 'string' || !url) {
         return undefined;
     }
 
     try {
-        const languageId = Number(new URL(url, window.location.origin).searchParams.get('lang'));
-
-        return Number.isInteger(languageId) && languageId > 0 ? languageId : undefined;
+        return new URL(url, window.location.origin).searchParams.get(name) || undefined;
     } catch {
         return undefined;
     }
