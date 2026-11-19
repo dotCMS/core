@@ -325,6 +325,10 @@ public class AjaxDirectorServletIntegrationTest {
             verify(response, never()).sendError(anyInt());
             verify(response, never()).sendError(anyInt(), any());
             assertArrayEquals("The archive should be streamed as stored", content, body.toByteArray());
+            verify(response).setContentType("application/x-tgz");
+            verify(response).setHeader("Content-Disposition",
+                    "attachment; filename=" + bundleId + ".tar.gz");
+            verify(response).setContentLengthLong(content.length);
             assertFalse("No bundle directory should be created",
                     new File(bundlesDir, bundleId).exists());
         } finally {
@@ -333,7 +337,31 @@ public class AjaxDirectorServletIntegrationTest {
     }
 
     /**
-     * Given: an archive one level above the bundles directory
+     * Given: a plain bundle id with no archive in the bundles directory
+     * When: the legacy download action is asked for it
+     * Then: 404, nothing is streamed, and no bundle directory is created
+     */
+    @Test
+    public void test_downloadBundle_missingArchive_returns404() throws Exception {
+        final String bundleId = "download-missing-" + System.currentTimeMillis();
+        final File bundleDir = new File(ConfigUtils.getBundlePath(), bundleId);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        try {
+            new AjaxDirectorServlet(downloadWebResource()).service(downloadRequest(
+                    "/DotAjaxDirector/com.dotcms.publisher.ajax.RemotePublishAjaxAction/cmd/downloadBundle/bid/"
+                            + bundleId, null), response);
+
+            verify(response).sendError(HttpServletResponse.SC_NOT_FOUND, "No Bundle Found");
+            verify(response, never()).getOutputStream();
+            assertFalse("No bundle directory should be created", bundleDir.exists());
+        } finally {
+            Files.deleteIfExists(bundleDir.toPath());
+        }
+    }
+
+    /**
+     * Given: an archive two levels above the bundles directory
      * When: the legacy download action gets a bundle id made of a parent segment and that
      * archive's name
      * Then: 404, nothing is streamed, and no directory is created for the id
@@ -342,7 +370,7 @@ public class AjaxDirectorServletIntegrationTest {
     public void test_downloadBundle_idWithParentSegment_returns404() throws Exception {
         final String name = "download-parent-" + System.currentTimeMillis();
         final File bundlesDir = new File(ConfigUtils.getBundlePath());
-        final File archive = new File(bundlesDir.getParentFile(), name + ".tar.gz");
+        final File archive = new File(bundlesDir.getParentFile().getParentFile(), name + ".tar.gz");
         Files.write(archive.toPath(), "archive".getBytes(StandardCharsets.UTF_8));
         final File expectedNotCreated = new File(bundlesDir.getParentFile(), name);
 
