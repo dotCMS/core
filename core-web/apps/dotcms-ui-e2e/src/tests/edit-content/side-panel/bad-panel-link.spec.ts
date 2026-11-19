@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { Portlet } from '@utils/portlets';
 
+import { loadMessagesLate } from './helpers/messages';
 import { SidePanel } from './helpers/side-panel';
 
 /**
@@ -17,11 +18,7 @@ import { SidePanel } from './helpers/side-panel';
  */
 test.describe('A malformed panel link', () => {
     test.beforeEach(async ({ page }) => {
-        await page.addInitScript(() => localStorage.removeItem('dotMessagesKeys'));
-        await page.route('**/api/v2/languages/*/keys', async (route) => {
-            await new Promise((resolve) => setTimeout(resolve, 2000));
-            await route.continue();
-        });
+        await loadMessagesLate(page);
     });
 
     test('shows the not-found error and leaves the URL without the panel params @critical', async ({
