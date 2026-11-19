@@ -170,8 +170,9 @@ export class DotEditContentOpenerService {
 
     /**
      * Asks the server what the request needs before an editor shows: the contentlet, when an edit
-     * names no content type or no title for the heading; which editor the type uses, unless the
-     * caller forced the legacy one; and the create screen for a legacy create.
+     * names no content type or no title for the heading; the content type, for its name and for
+     * which editor it uses, unless the caller forced the legacy one; and the create screen for a
+     * legacy create.
      *
      * @param request A request that passed {@link isOpenable}.
      * @param forced The editor the caller forced, if any.
@@ -190,10 +191,15 @@ export class DotEditContentOpenerService {
         return contentlet$.pipe(
             switchMap((contentlet) => {
                 const variable = (request.contentType || contentlet?.contentType) as string;
-                const choice$: Observable<DotContentEditorChoice> =
-                    forced === 'legacy'
-                        ? of({ editor: 'legacy', contentType: null })
-                        : this.#editUrl.resolveEditor(variable);
+                // A forced editor still resolves the type, for the heading's name; only the
+                // choice is overridden.
+                const choice$: Observable<DotContentEditorChoice> = this.#editUrl
+                    .resolveEditor(variable)
+                    .pipe(
+                        map((choice) =>
+                            forced === 'legacy' ? { ...choice, editor: 'legacy' as const } : choice
+                        )
+                    );
 
                 return choice$.pipe(
                     switchMap(({ editor, contentType }) => {
