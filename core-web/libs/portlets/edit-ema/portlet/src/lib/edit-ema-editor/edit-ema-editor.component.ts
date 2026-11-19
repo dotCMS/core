@@ -1626,8 +1626,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         const insertion = this.#insertion;
 
         if (insertion && !insertion.inserted) {
-            insertion.inserted = true;
-            this.#placeCreatedContentlet(insertion.actionPayload, contentlet.identifier);
+            // Only once it is placed: a refused placement leaves the panel open, and the next
+            // save tries again.
+            insertion.inserted = this.#placeCreatedContentlet(
+                insertion.actionPayload,
+                contentlet.identifier
+            );
 
             return;
         }
@@ -1651,8 +1655,9 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      *
      * @param actionPayload Where the contentlet goes.
      * @param newContentletId The created contentlet.
+     * @returns Whether it was placed.
      */
-    #placeCreatedContentlet(actionPayload: ActionPayload, newContentletId: string): void {
+    #placeCreatedContentlet(actionPayload: ActionPayload, newContentletId: string): boolean {
         const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
             ...actionPayload,
             newContentletId
@@ -1665,11 +1670,13 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 this.handleDuplicatedContentlet();
             }
 
-            return;
+            return false;
         }
 
         this.#checkAndResetActiveContentlet(pageContainers);
         this.#pageApi.editorSave(pageContainers);
+
+        return true;
     }
 
     /**
