@@ -15,7 +15,8 @@ public final class CdnTagHeader {
     private static final String DISABLED = "NONE";
     private static final Set<String> SECURITY_HEADERS = Set.of(
             "strict-transport-security", "x-frame-options", "x-content-type-options",
-            "content-security-policy", "content-security-policy-report-only");
+            "content-security-policy", "content-security-policy-report-only",
+            "set-cookie", "set-cookie2");
     private static final Pattern HTTP_TOKEN = Pattern.compile("[!#$%&'*+\\-.^_`|~0-9A-Za-z]+");
 
     private CdnTagHeader() {
