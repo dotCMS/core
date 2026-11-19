@@ -177,6 +177,39 @@ public class PublishAuditMixedEndpointsTest {
         }
     }
 
+    /**
+     * Method to test: {@link StaticPublisher#process(com.dotcms.publishing.PublishStatus)}
+     * Given scenario: an earlier publisher of the same run (S3) already recorded a failed endpoint
+     * in the audit, and the static publisher then succeeds on its own endpoint
+     * Expected result: the overall status says that some endpoints failed
+     * ({@code FAILED_TO_SEND_TO_SOME_GROUPS}) instead of {@code BUNDLE_SAVED_SUCCESSFULLY}. Today the
+     * static publisher only counts its own environments, so the failed S3 endpoint is hidden behind
+     * a saved status (issue #34434, review of PR 38578).
+     */
+    @Test
+    public void test_static_earlierEndpointFailed_overallStatusIsNotSaved() throws Exception {
+        final MixedEndpointEnvironment fixture = PublisherTestUtil.createMixedEndpointEnvironment(
+                order(StaticPublisher.class), false);
+        try {
+            final PublishAuditAPI auditAPI = PublishAuditAPI.getInstance();
+            final PublishAuditHistory history =
+                    auditAPI.getPublishAuditStatus(fixture.bundle.getId()).getStatusPojo();
+            history.addOrUpdateEndpoint(fixture.environment.getId(), "failed-s3-endpoint",
+                    detail(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode(), "S3 upload failed"));
+            auditAPI.updatePublishAuditStatus(fixture.bundle.getId(),
+                    PublishAuditStatus.Status.SENDING_TO_ENDPOINTS, history);
+
+            new PublisherAPIImpl().publish(fixture.config);
+
+            final PublishAuditStatus.Status overall = auditAPI
+                    .getPublishAuditStatus(fixture.bundle.getId()).getStatus();
+            assertEquals("The failed S3 endpoint must not be hidden behind a saved status",
+                    PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS, overall);
+        } finally {
+            fixture.cleanUp();
+        }
+    }
+
     private static EndpointDetail detail(final int status, final String info) {
         final EndpointDetail detail = new EndpointDetail();
         detail.setStatus(status);

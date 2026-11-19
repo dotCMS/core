@@ -172,7 +172,15 @@ public class StaticPublisher extends Publisher {
                 }
             }
 
-            if (failedEnvironmentCounter == 0) {
+            if (failedEnvironmentCounter == 0 && hasFailedEndpoint(currentStatusHistory)) {
+                // Every static endpoint got the bundle, but an earlier publisher of this run (S3)
+                // left a failed endpoint in the audit. Saying "saved" and deleting the queue entry
+                // would hide it, because the queue job never looks at the bundle again (#34434)
+                PushPublishLogger.log(this.getClass(),
+                        "Status Update: Static endpoints saved, an earlier endpoint failed");
+                this.publishAuditAPI.updatePublishAuditStatus(config.getId(),
+                    PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS, currentStatusHistory);
+            } else if (failedEnvironmentCounter == 0) {
                 //Updating Audit table
                 PushPublishLogger.log(this.getClass(), bundleWasEmpty
                         ? "Status Update: Bundle is empty, nothing to send"
@@ -359,6 +367,30 @@ public class StaticPublisher extends Publisher {
 
         return endpoints;
     } //getStaticEndpointsByEnviroment.
+
+    /**
+     * Tells whether the audit already holds a failed endpoint, the same way the queue job counts
+     * them: a failed publish, a bundle that could not be sent, a refused token or a missing license.
+     * The static endpoints of this run are already recorded when this is called, so a failure found
+     * here belongs to an earlier publisher of the run.
+     *
+     * @param history the audit history of the bundle
+     * @return true when at least one endpoint of any environment is recorded as failed
+     */
+    private boolean hasFailedEndpoint(final PublishAuditHistory history) {
+        for (final Map<String, EndpointDetail> endpoints : history.getEndpointsMap().values()) {
+            for (final EndpointDetail detail : endpoints.values()) {
+                final int code = detail.getStatus();
+                if (code == Status.FAILED_TO_PUBLISH.getCode()
+                        || code == Status.FAILED_TO_SENT.getCode()
+                        || code == Status.INVALID_TOKEN.getCode()
+                        || code == Status.LICENSE_REQUIRED.getCode()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 
     /**
      * 1. Gets {@link PublishAuditHistory} status based on the config id.

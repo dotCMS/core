@@ -111,6 +111,11 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
             // (issue #34434).
             final boolean isRealRetry = publishAuditAPI.isPublishRetry(config.getId());
 
+            // Bundle locations built by an earlier publisher of this run. S3 and static share one
+            // directory, so on a retry the second must still run its own bundlers there: the
+            // directory has content only because the first one just built it (issue #34434)
+            final Set<String> outputsBuiltInThisRun = new HashSet<>();
+
             // init publishers
             for ( Class<? extends IPublisher> c : config.getPublishers() ) {
                 // Process config
@@ -149,7 +154,10 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
                                 config.getOperation().name());
                     }
 
-                    if (!output.bundleFileExists() || !isRealRetry) {
+                    final String outputLocation = String.valueOf(output.getFile());
+                    if (!output.bundleFileExists() || !isRealRetry
+                            || outputsBuiltInThisRun.contains(outputLocation)) {
+                        outputsBuiltInThisRun.add(outputLocation);
                         output.create();
                         config.setManifestBuilder(manifestBuilder);
                         status.addOutput(output);

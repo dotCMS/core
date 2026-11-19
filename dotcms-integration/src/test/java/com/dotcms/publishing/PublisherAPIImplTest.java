@@ -46,6 +46,7 @@ import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher;
 import com.dotcms.publisher.business.PublisherTestUtil;
 import com.dotcms.publisher.business.PublisherTestUtil.MixedEndpointEnvironment;
 import com.dotcms.publisher.pusher.PushPublisher;
+import com.dotcms.publishing.output.BundleOutput;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.util.PusheableAsset;
 import com.dotcms.publisher.util.dependencies.DependencyManager;
@@ -104,6 +105,7 @@ import org.junit.runner.RunWith;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -130,6 +132,7 @@ import static com.dotcms.util.CollectionsUtils.list;
 import static com.dotcms.util.CollectionsUtils.set;
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 
@@ -1722,6 +1725,144 @@ public class PublisherAPIImplTest {
                     filesIn(staticRoot).size() > 1);
         } finally {
             fixture.cleanUp();
+        }
+    }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: a real retry finds the shared static bundle directory deleted, and two publishers that
+     * share that directory run one after the other, each with a bundler of its own (this is the
+     * S3 then static case, where only the static publisher has the folder bundler)
+     * Should: run the bundlers of both publishers. Today the first publisher rebuilds the directory,
+     * the second one finds it with content and skips its own bundlers (issue #34434).
+     */
+    @Test
+    public void test_publish_realRetry_deletedSharedBundle_bothPublishersRunTheirBundlers()
+            throws Exception {
+        final MixedEndpointEnvironment fixture = PublisherTestUtil.createMixedEndpointEnvironment(
+                publishers(FirstSharedDirPublisher.class, SecondSharedDirPublisher.class), false);
+        try {
+            markAsRetry(fixture);
+            final File staticRoot = staticBundleRoot(fixture);
+            org.apache.commons.io.FileUtils.deleteDirectory(staticRoot);
+
+            new PublisherAPIImpl().publish(fixture.config);
+
+            assertTrue("The first publisher's bundler must run: " + filesIn(staticRoot),
+                    new File(staticRoot, FirstSharedDirPublisher.MARKER).exists());
+            assertTrue("The second publisher's bundler must run too: " + filesIn(staticRoot),
+                    new File(staticRoot, SecondSharedDirPublisher.MARKER).exists());
+        } finally {
+            fixture.cleanUp();
+        }
+    }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: a real retry finds the shared bundle directory with content, with two publishers that
+     * share it
+     * Should: not run the bundlers of either, so the existing bundle is reused (guards that the
+     * rebuild tracking does not turn every retry into a rebuild)
+     */
+    @Test
+    public void test_publish_realRetry_existingSharedBundle_noPublisherRebuildsIt()
+            throws Exception {
+        final MixedEndpointEnvironment fixture = PublisherTestUtil.createMixedEndpointEnvironment(
+                publishers(FirstSharedDirPublisher.class, SecondSharedDirPublisher.class), false);
+        try {
+            markAsRetry(fixture);
+            final File staticRoot = staticBundleRoot(fixture);
+            assertTrue(staticRoot.mkdirs() || staticRoot.exists());
+            assertTrue(new File(staticRoot, "marker.txt").createNewFile());
+
+            new PublisherAPIImpl().publish(fixture.config);
+
+            assertFalse(new File(staticRoot, FirstSharedDirPublisher.MARKER).exists());
+            assertFalse(new File(staticRoot, SecondSharedDirPublisher.MARKER).exists());
+        } finally {
+            fixture.cleanUp();
+        }
+    }
+
+    /** Test publisher whose only bundler leaves a marker directory in the shared static bundle. */
+    public static class FirstSharedDirPublisher extends Publisher {
+        static final String MARKER = "first-publisher";
+
+        @Override
+        public PublisherConfig init(final PublisherConfig config) throws DotPublishingException {
+            try {
+                final PublisherConfig staticConfig = (PublisherConfig) config.clone();
+                staticConfig.setStatic(true);
+                return super.init(staticConfig);
+            } catch (final CloneNotSupportedException e) {
+                throw new DotPublishingException(e.getMessage());
+            }
+        }
+
+        @Override
+        public PublisherConfig process(final PublishStatus status) {
+            return config;
+        }
+
+        @Override
+        public List<Class> getBundlers() {
+            return Collections.singletonList(FirstMarkerBundler.class);
+        }
+    }
+
+    /** Same as {@link FirstSharedDirPublisher}, with a different marker. */
+    public static class SecondSharedDirPublisher extends FirstSharedDirPublisher {
+        static final String MARKER = "second-publisher";
+
+        @Override
+        public List<Class> getBundlers() {
+            return Collections.singletonList(SecondMarkerBundler.class);
+        }
+    }
+
+    /** Bundler that writes the {@link FirstSharedDirPublisher#MARKER} directory. */
+    public static class FirstMarkerBundler extends MarkerBundler {
+        public FirstMarkerBundler() {
+            super(FirstSharedDirPublisher.MARKER);
+        }
+    }
+
+    /** Bundler that writes the {@link SecondSharedDirPublisher#MARKER} directory. */
+    public static class SecondMarkerBundler extends MarkerBundler {
+        public SecondMarkerBundler() {
+            super(SecondSharedDirPublisher.MARKER);
+        }
+    }
+
+    /** Bundler that only creates one directory in the bundle output. */
+    public abstract static class MarkerBundler implements IBundler {
+        private final String marker;
+
+        protected MarkerBundler(final String marker) {
+            this.marker = marker;
+        }
+
+        @Override
+        public String getName() {
+            return marker;
+        }
+
+        @Override
+        public void setConfig(final PublisherConfig pc) {
+        }
+
+        @Override
+        public void setPublisher(final IPublisher publisher) {
+        }
+
+        @Override
+        public void generate(final BundleOutput output, final BundlerStatus status) {
+            output.mkdirs(File.separator + marker);
+        }
+
+        @Override
+        public FileFilter getFileFilter() {
+            return null;
         }
     }
 
