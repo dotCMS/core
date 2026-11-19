@@ -61,3 +61,16 @@ export interface DotEditContentRequest {
         isParent: boolean;
     };
 }
+
+/**
+ * Drops the keys a request left `undefined`, so a request built from optional values (a legacy
+ * event, a URL, a store) names only what was actually said. Falsy values that were set are kept.
+ *
+ * @param request The request, possibly with `undefined` values.
+ * @returns A copy without them.
+ */
+export function withoutUnset(request: DotEditContentRequest): DotEditContentRequest {
+    return Object.fromEntries(
+        Object.entries(request).filter(([, value]) => value !== undefined)
+    ) as unknown as DotEditContentRequest;
+}

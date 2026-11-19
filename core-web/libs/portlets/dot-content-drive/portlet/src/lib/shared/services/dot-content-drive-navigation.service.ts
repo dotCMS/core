@@ -15,7 +15,8 @@ import {
     DotEditContentRequest,
     EDIT_CONTENT_NAVIGATION_OVERRIDE,
     EditContentIdentity,
-    EditContentNavigationOverride
+    EditContentNavigationOverride,
+    withoutUnset
 } from '@dotcms/edit-content';
 import { DotFolderTreeNodeContentData } from '@dotcms/portlets/content-drive/ui';
 
@@ -472,18 +473,6 @@ function locationOf(request: DotEditContentRequest): DotContentDrivePanelLocatio
               editContentLang: request.languageId
           }
         : { kind: 'create', createContent: request.contentType ?? '' };
-}
-
-/**
- * Drops the keys a request left unset, so it names only what Content Drive knows.
- *
- * @param request The request, possibly with `undefined` values.
- * @returns The same request without them.
- */
-function withoutUnset(request: DotEditContentRequest): DotEditContentRequest {
-    return Object.fromEntries(
-        Object.entries(request).filter(([, value]) => value !== undefined)
-    ) as unknown as DotEditContentRequest;
 }
 
 /**

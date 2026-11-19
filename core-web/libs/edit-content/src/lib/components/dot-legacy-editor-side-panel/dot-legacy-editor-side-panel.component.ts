@@ -36,7 +36,7 @@ import {
 import { DotSidePanelContent, DotSidePanelRef, DotSidePanelService } from '@dotcms/ui';
 
 import { DotPageEditorRequest } from '../../models/dot-edit-content-panel-events.model';
-import { DotEditContentRequest } from '../../models/dot-edit-content-request.model';
+import { DotEditContentRequest, withoutUnset } from '../../models/dot-edit-content-request.model';
 import { DotLegacyScreenEvent, DotLegacyScreenRequest } from '../../models/dot-legacy-screen.model';
 import { DotOpenContentEvent } from '../../models/dot-open-content-event.model';
 import { DotLegacyScreenSidePanelComponent } from '../dot-legacy-screen-side-panel/dot-legacy-screen-side-panel.component';
@@ -499,19 +499,6 @@ function restoredInode(search: URLSearchParams): string | null {
     }
 
     return search.get('inode') || null;
-}
-
-/**
- * Drops the keys a legacy event left unset, so a request built from one names only what the event
- * actually said.
- *
- * @param request The request, possibly with `undefined` values.
- * @returns The same request without them.
- */
-function withoutUnset(request: DotEditContentRequest): DotEditContentRequest {
-    return Object.fromEntries(
-        Object.entries(request).filter(([, value]) => value !== undefined)
-    ) as unknown as DotEditContentRequest;
 }
 
 /** A legacy event value as a non-empty string, or `undefined`. */
