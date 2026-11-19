@@ -39,6 +39,7 @@ import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
 
 import {
     DotContentEditor,
+    DotContentEditorChoice,
     DotContentletEditUrlService,
     DotContentletService,
     DotCopyContentService,
@@ -2074,7 +2075,8 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     /**
      * Opens the page's translation into another language, in the editor the page's type uses
-     * (#38303, T178): {@link #translateInNewEditor} or {@link #translateInLegacyEditor}.
+     * (#38303, T178): {@link #translateInNewEditor} or {@link #translateInLegacyEditor}. The
+     * choice is handed to the opener, so it does not look the type up again.
      *
      * @param event The page and the language to translate it into.
      */
@@ -2082,9 +2084,9 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         this.#editUrl
             .resolveEditor(page.contentType)
             .pipe(take(1), takeUntilDestroyed(this.destroyRef))
-            .subscribe(({ editor }) =>
-                editor === 'new'
-                    ? this.#translateInNewEditor(page, newLanguage)
+            .subscribe((choice) =>
+                choice.editor === 'new'
+                    ? this.#translateInNewEditor(page, newLanguage, choice)
                     : this.#translateInLegacyEditor(page, newLanguage)
             );
     }
@@ -2099,8 +2101,13 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      *
      * @param page The page to translate.
      * @param newLanguage The language to translate it into.
+     * @param resolved The page type's editor choice, handed to the opener.
      */
-    #translateInNewEditor(page: DotCMSPage, newLanguage: number): void {
+    #translateInNewEditor(
+        page: DotCMSPage,
+        newLanguage: number,
+        resolved: DotContentEditorChoice
+    ): void {
         const request = withPageContext(
             {
                 mode: 'edit',
@@ -2116,6 +2123,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         this.#opener.open(request, {
             injector: this.#injector,
+            resolved,
             saved: (contentlet) => {
                 saved = true;
                 this.#loadTranslation(contentlet);
