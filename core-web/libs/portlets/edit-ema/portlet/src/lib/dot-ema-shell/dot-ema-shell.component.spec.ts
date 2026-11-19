@@ -1125,7 +1125,9 @@ describe('DotEmaShellComponent', () => {
         /**
          * The page's properties, saved in the side panel opened from the layout, rules or
          * experiments route (#38303). A save can change the page's URL, so the shell loads the new
-         * one or reloads the current one, and refreshes the workflow actions; a close reloads.
+         * one or reloads the current one; a close reloads. The workflow actions are not fetched
+         * here: the store fetches them when the reloaded page brings its new inode, and fetching
+         * the inode the panel opened with would ask about the version before the save.
          */
         describe('page properties', () => {
             beforeEach(() => spectator.detectChanges());
@@ -1150,7 +1152,7 @@ describe('DotEmaShellComponent', () => {
                 );
 
                 expect(pageLoadSpy).toHaveBeenCalledWith({ url: '/my-awesome-page' });
-                expect(workflowFetchSpy).toHaveBeenCalledWith('123');
+                expect(workflowFetchSpy).not.toHaveBeenCalled();
             });
 
             it('should reload the page when the save kept its URL', () => {
@@ -1165,7 +1167,7 @@ describe('DotEmaShellComponent', () => {
 
                 expect(pageReloadSpy).toHaveBeenCalledTimes(1);
                 expect(pageLoadSpy).not.toHaveBeenCalled();
-                expect(workflowFetchSpy).toHaveBeenCalledWith('123');
+                expect(workflowFetchSpy).not.toHaveBeenCalled();
             });
 
             it('should reload the page when the panel closes', () => {
