@@ -89,6 +89,8 @@ describe('DotWorkflowTaskComponent', () => {
     let dotWorkflowTaskDetailService: DotWorkflowTaskDetailService;
     let dotCustomEventHandlerService: DotCustomEventHandlerService;
     let taskDetail: DebugElement;
+    /** What `onPanelClosed` hands back; the component calls it when it goes away. */
+    let releasePanelClosed: Mock;
 
     /**
      * Builds the component and runs its first change detection, which views the route's task.
@@ -177,6 +179,10 @@ describe('DotWorkflowTaskComponent', () => {
         dotRouterService = TestBed.inject(DotRouterService);
         dotIframeService = TestBed.inject(DotIframeService);
         dotCustomEventHandlerService = TestBed.inject(DotCustomEventHandlerService);
+        releasePanelClosed = vi.fn();
+        Object.assign(dotCustomEventHandlerService, {
+            onPanelClosed: vi.fn().mockReturnValue(releasePanelClosed)
+        });
         vi.spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
         taskDetail = de.query(By.css('dot-workflow-task-detail'));
@@ -302,23 +308,13 @@ describe('DotWorkflowTaskComponent', () => {
 
     /**
      * The detail's "Edit Content" sends `edit-contentlet` (`view_workflow_task.jsp`, `doEdit`):
-     * the content opens in the side panel above the task dialog, and the detail is viewed again
-     * once the panel saves or closes, so it shows the content's current step (#38303, FR-025a).
+     * the content opens in the side panel above the task dialog. The detail is viewed again once,
+     * when a panel closes, so it shows the content's current step; the handler is registered with
+     * `DotCustomEventHandlerService`, so a panel the task's URL reopens gets it too (#38303,
+     * FR-025a, stack review L7-2).
      */
     describe('edit-contentlet from the task detail', () => {
-        const TASK = { id: TASK_ID };
-
-        /** The handlers the component hands `openContent`, run after the task list reloads. */
-        type AfterPanel = { saved?: () => void; closed?: () => void };
-
         let openContent: Mock;
-
-        /** What the component handed `openContent` besides the request, on its only call. */
-        const afterPanel = (): AfterPanel => {
-            expect(openContent.mock.calls.length, 'the component opens one panel').toBe(1);
-
-            return (openContent.mock.calls[0] as unknown[])[1] as AfterPanel;
-        };
 
         beforeEach(() => {
             openContent = vi
@@ -335,32 +331,49 @@ describe('DotWorkflowTaskComponent', () => {
         });
 
         it('should open the content through openContent with the inode and content type the detail sent', () => {
-            expect(openContent).toHaveBeenCalledWith(
-                { mode: 'edit', inode: 'content-inode', contentType: 'Blog' },
-                { saved: expect.any(Function), closed: expect.any(Function) }
-            );
+            expect(openContent).toHaveBeenCalledTimes(1);
+            expect(openContent.mock.calls[0]).toEqual([
+                { mode: 'edit', inode: 'content-inode', contentType: 'Blog' }
+            ]);
             expect(dotCustomEventHandlerService.handle).not.toHaveBeenCalled();
         });
+    });
 
-        it('should view the same task again after the panel saves', () => {
-            afterPanel().saved?.();
+    describe('when a side panel closes', () => {
+        const TASK = { id: TASK_ID };
 
-            expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledTimes(2);
-            expect(dotWorkflowTaskDetailService.view).toHaveBeenLastCalledWith(TASK);
-        });
+        /** The close handler the component registered on init. */
+        const registered = (): (() => void) => {
+            const onPanelClosed = (
+                dotCustomEventHandlerService as unknown as { onPanelClosed: Mock }
+            ).onPanelClosed;
 
-        it('should view the same task again after the panel closes', () => {
-            afterPanel().closed?.();
+            expect(onPanelClosed, 'the component registers a close handler').toHaveBeenCalledTimes(
+                1
+            );
+
+            return onPanelClosed.mock.calls[0][0];
+        };
+
+        it('should view the same task again, once', () => {
+            registered()();
 
             expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledTimes(2);
             expect(dotWorkflowTaskDetailService.view).toHaveBeenLastCalledWith(TASK);
         });
 
         it('should keep the task open, not return to the task list', () => {
-            afterPanel().saved?.();
-            afterPanel().closed?.();
+            registered()();
 
             expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
+        });
+
+        it('should release the handler when the task closes', () => {
+            registered();
+
+            fixture.destroy();
+
+            expect(releasePanelClosed).toHaveBeenCalledTimes(1);
         });
     });
 });

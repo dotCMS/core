@@ -53,7 +53,6 @@ import {
 import { DotSidePanelRef } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
-    createFakeContentlet,
     DotFormatDateServiceMock,
     DotMessageDisplayServiceMock,
     MockDotRouterService
@@ -648,37 +647,48 @@ describe('DotCustomEventHandlerService', () => {
                 expect(reloadData).toHaveBeenCalledWith(PORTLET_ID);
             });
 
-            // The Workflow Tasks detail views its task again on every save, and once the task
-            // list behind it has reloaded on the close (#38303, FR-025a); the save's list reload is
-            // the notification's (T174).
-            it("should run the caller's saved as is, and its closed after reloading the portlet", async () => {
-                const reloadData = vi.spyOn(dotIframeService, 'reloadData');
-                const saved = vi.fn();
-                const closed = vi.fn();
-                const contentlet = createFakeContentlet({ inode: 'saved-inode' });
+            /**
+             * The Workflow Tasks detail views its task again once a panel closes, whichever path
+             * opened the panel: its "Edit Content" or the task's URL, which the portlet behind
+             * reopens before the detail exists (#38303, FR-025a, stack review L7-2). The handler
+             * is read when the panel closes, after the task list behind it reloads.
+             */
+            describe('a close handler the portlet registers', () => {
+                type WithCloseHandler = { onPanelClosed: (handler: () => void) => () => void };
 
-                (
-                    service as unknown as {
-                        openContent: (
-                            r: DotEditContentRequest,
-                            after: Pick<DotEditContentOpenOptions, 'saved' | 'closed'>
-                        ) => void;
-                    }
-                ).openContent(
-                    { mode: 'edit', inode: '123', contentType: 'Blog' },
-                    { saved, closed }
-                );
-                await vi.dynamicImportSettled();
+                it('should run it after reloading the portlet, also for a panel opened before it was registered', async () => {
+                    const reloadData = vi.spyOn(dotIframeService, 'reloadData');
+                    const closed = vi.fn();
+                    await openContent({ mode: 'edit', identifier: IDENTIFIER, languageId: 2 });
 
-                openOptions().saved?.(contentlet);
-                expect(saved).toHaveBeenCalledWith(contentlet);
-                expect(reloadData).not.toHaveBeenCalled();
+                    (service as unknown as WithCloseHandler).onPanelClosed(closed);
+                    openOptions().closed?.();
 
-                openOptions().closed?.();
-                expect(closed).toHaveBeenCalledTimes(1);
-                expect(reloadData.mock.invocationCallOrder[0]).toBeLessThan(
-                    closed.mock.invocationCallOrder[0]
-                );
+                    expect(closed).toHaveBeenCalledTimes(1);
+                    expect(reloadData.mock.invocationCallOrder[0]).toBeLessThan(
+                        closed.mock.invocationCallOrder[0]
+                    );
+                });
+
+                it('should not run it on a save', async () => {
+                    const closed = vi.fn();
+                    (service as unknown as WithCloseHandler).onPanelClosed(closed);
+                    await openContent({ mode: 'edit', inode: '123', contentType: 'Blog' });
+
+                    expect(openOptions().saved).toBeUndefined();
+                    expect(closed).not.toHaveBeenCalled();
+                });
+
+                it('should stop running it once released', async () => {
+                    const closed = vi.fn();
+                    const release = (service as unknown as WithCloseHandler).onPanelClosed(closed);
+                    await openContent({ mode: 'edit', inode: '123', contentType: 'Blog' });
+
+                    release();
+                    openOptions().closed?.();
+
+                    expect(closed).not.toHaveBeenCalled();
+                });
             });
         });
 
