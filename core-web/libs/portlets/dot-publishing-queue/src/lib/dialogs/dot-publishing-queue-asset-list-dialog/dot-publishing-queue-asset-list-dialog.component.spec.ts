@@ -210,6 +210,7 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
             // The panel holds focus while it is open.
             (document.activeElement as HTMLElement | null)?.blur();
 
+            openOptions().editorResolved?.('legacy');
             openOptions().closed?.();
             // The reload, as the store runs it: the list empties, then the assets come back.
             selectedAssets.set([]);
@@ -293,12 +294,25 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
             expect(store.loadAssets).toHaveBeenCalledTimes(2);
         });
 
-        it('reloads the asset list when the panel closes', () => {
+        // The safety net for workflow actions in the legacy editor, which report nothing.
+        it('reloads the asset list when a legacy editor panel closes', () => {
             clickRow(0);
+            openOptions().editorResolved?.('legacy');
 
             openOptions().closed?.();
 
             expect(store.loadAssets).toHaveBeenCalledTimes(1);
+        });
+
+        // The new editor reports every save and delete through the notification, which already
+        // reloaded the list (stack review L7-7).
+        it('reloads nothing when a new editor panel closes', () => {
+            clickRow(0);
+            openOptions().editorResolved?.('new');
+
+            openOptions().closed?.();
+
+            expect(store.loadAssets).not.toHaveBeenCalled();
         });
 
         // The opener writes the panel to the portlet's URL; on load the portlet reopens it over the

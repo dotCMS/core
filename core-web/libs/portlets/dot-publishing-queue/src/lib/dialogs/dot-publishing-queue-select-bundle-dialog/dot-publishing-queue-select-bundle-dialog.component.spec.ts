@@ -389,6 +389,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             // The panel holds focus while it is open.
             (document.activeElement as HTMLElement | null)?.blur();
 
+            openOptions().editorResolved?.('legacy');
             openOptions().closed?.();
             spectator.detectChanges();
 
@@ -462,13 +463,27 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             expect(service.getBundleAssets).toHaveBeenCalledWith('bundle-1');
         });
 
-        it("reloads the active bundle's assets when the panel closes", () => {
+        // The safety net for workflow actions in the legacy editor, which report nothing.
+        it("reloads the active bundle's assets when a legacy editor panel closes", () => {
             clickRow(0);
+            openOptions().editorResolved?.('legacy');
             (service.getBundleAssets as Mock).mockClear();
 
             openOptions().closed?.();
 
             expect(service.getBundleAssets).toHaveBeenCalledWith('bundle-1');
+        });
+
+        // The new editor reports every save and delete through the notification, which already
+        // reloaded the assets (stack review L7-7).
+        it('reloads nothing when a new editor panel closes', () => {
+            clickRow(0);
+            openOptions().editorResolved?.('new');
+            (service.getBundleAssets as Mock).mockClear();
+
+            openOptions().closed?.();
+
+            expect(service.getBundleAssets).not.toHaveBeenCalled();
         });
 
         // The opener writes the panel to the portlet's URL; on load the portlet reopens it over the
