@@ -218,6 +218,16 @@ public abstract class ImageFilter implements ImageFilterIf {
 
 	}
 	
+    /**
+     * Resolve the output path and any effective parameters without rendering. Filters that
+     * need dimensions can read them from the local or shared copy of the input, or return
+     * null when that copy is not available yet.
+     */
+    public File prepare(final File file, final File metadataSource,
+            final Map<String, String[]> parameters) {
+        return getResultsFile(file, parameters);
+    }
+
     public String[] getAcceptedParameters() {
         return new String[] {
         };

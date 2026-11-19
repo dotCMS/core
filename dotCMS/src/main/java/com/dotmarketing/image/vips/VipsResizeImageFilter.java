@@ -3,11 +3,14 @@ package com.dotmarketing.image.vips;
 import app.photofox.vipsffm.VImage;
 import app.photofox.vipsffm.VipsOption;
 import app.photofox.vipsffm.enums.VipsSize;
+import com.dotmarketing.image.filter.ImageFilterAPI;
 import com.dotmarketing.image.filter.ResizeCalc;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import java.awt.Dimension;
 import java.io.File;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * libvips equivalent of {@link com.dotmarketing.image.filter.ResizeImageFilter}.
@@ -43,6 +46,33 @@ public class VipsResizeImageFilter extends VipsImageFilter {
         return super.getResultsFile(file, parameters);
     }
 
+    /** Read display dimensions before looking up a rendition. */
+    @Override
+    public File prepare(final File file, final File metadataSource,
+            final Map<String, String[]> parameters) {
+        if (!metadataSource.isFile()) {
+            return null;
+        }
+        final AtomicReference<Dimension> size = new AtomicReference<>();
+        try {
+            VipsManager.run(arena -> {
+                final VImage image = VImage.newFromFile(arena, metadataSource.getAbsolutePath());
+                final int orientation = "gif".equalsIgnoreCase(UtilMethods.getFileExtension(file.getName()))
+                        ? 1 : VipsManager.metaInt(image, "orientation", 1);
+                size.set(orientation >= 5 && orientation <= 8
+                        ? new Dimension(image.getHeight(), image.getWidth())
+                        : new Dimension(image.getWidth(), image.getHeight()));
+            });
+        } catch (Exception e) {
+            if (!Config.getBooleanProperty("IMAGE_API_LIBVIPS_FALLBACK", true)) {
+                throw e;
+            }
+            size.set(ImageFilterAPI.apiInstance.get().getWidthHeight(metadataSource));
+        }
+        ResizeCalc.normalize(ResizeCalc.target(size.get(), getPrefix(), parameters), getPrefix(), parameters);
+        return getResultsFile(file, parameters);
+    }
+
     /**
      * Resizes static images using upright dimensions so EXIF rotation cannot distort their aspect
      * ratio. Animated GIFs retain their page-strip geometry and animation metadata.
@@ -53,13 +83,6 @@ public class VipsResizeImageFilter extends VipsImageFilter {
      */
     @Override
     protected void transform(final File in, final File out, final Map<String, String[]> parameters) {
-        final int w = intParam(parameters, "w", 0);
-        final int h = intParam(parameters, "h", 0);
-        final int mxw = intParam(parameters, "maxw", 0);
-        final int mxh = intParam(parameters, "maxh", 0);
-        final int mnw = intParam(parameters, "minw", 0);
-        final int mnh = intParam(parameters, "minh", 0);
-
         final boolean animated = "gif".equalsIgnoreCase(UtilMethods.getFileExtension(in.getName()));
 
         VipsManager.run(arena -> {
@@ -74,15 +97,8 @@ public class VipsResizeImageFilter extends VipsImageFilter {
                     ? VipsManager.metaInt(source, "page-height", source.getHeight())
                     : source.getHeight();
 
-            final Dimension newSize = new ResizeCalc.Builder(new Dimension(originalWidth, pageHeight))
-                    .desiredWidth(w)
-                    .desiredHeight(h)
-                    .maxWidth(mxw)
-                    .maxHeight(mxh)
-                    .minWidth(mnw)
-                    .minHeight(mnh)
-                    .build()
-                    .getDim();
+            final Dimension newSize = ResizeCalc.target(new Dimension(originalWidth, pageHeight),
+                    getPrefix(), parameters);
 
             if (newSize.width == originalWidth && newSize.height == pageHeight) {
                 source.writeToFile(out.getAbsolutePath());
