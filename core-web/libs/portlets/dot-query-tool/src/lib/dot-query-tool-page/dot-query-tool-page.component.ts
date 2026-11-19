@@ -306,7 +306,9 @@ export class DotQueryToolPageComponent implements OnInit {
     /**
      * Opens a result for editing (#38303, R13). A page opens the page editor in a new tab, as
      * before; any other result opens in the side panel over the results, in whichever editor its
-     * type uses, which the opener decides.
+     * type uses, which the opener decides. A page without `url` or `urlMap` names no page editor
+     * URL, and the tab must open inside the click, where a server round trip would let the popup
+     * blocker stop it, so it opens in the side panel too.
      *
      * @param contentlet The result whose title was clicked.
      * @param event The click, whose default navigation is cancelled.
@@ -314,7 +316,7 @@ export class DotQueryToolPageComponent implements OnInit {
     onResultClick(contentlet: DotCMSContentlet, event: MouseEvent): void {
         event.preventDefault();
 
-        if (contentlet.baseType === 'HTMLPAGE') {
+        if (contentlet.baseType === 'HTMLPAGE' && (contentlet['urlMap'] || contentlet.url)) {
             this.#editUrlResolver
                 .resolveEditUrl(contentlet)
                 .pipe(take(1))
