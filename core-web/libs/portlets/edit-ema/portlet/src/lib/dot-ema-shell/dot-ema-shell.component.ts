@@ -708,7 +708,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             ),
             {
                 injector: this.#injector,
-                saved: (contentlet) => this.#onPagePropertiesSaved(page, contentlet),
+                saved: (contentlet) => this.#onPagePropertiesSaved(contentlet),
                 closed: () => this.#pageApi.pageReload()
             }
         );
@@ -716,15 +716,13 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
     /**
      * The page's properties were saved. A save can change the page's URL: load the page at its new
-     * URL (its URL map when it has one), else reload it. The workflow actions follow the save.
+     * URL (its URL map when it has one), else reload it. The workflow actions follow on their own:
+     * the store fetches them when the reloaded page brings its new inode.
      *
-     * @param page The page that was opened.
      * @param contentlet The saved page.
      */
-    #onPagePropertiesSaved(page: DotCMSPage, contentlet: DotCMSContentlet): void {
+    #onPagePropertiesSaved(contentlet: DotCMSContentlet): void {
         const url = contentlet?.['URL_MAP_FOR_CONTENT'] || contentlet?.url;
-
-        this.uveStore.workflowFetch(page.inode);
 
         if (shouldNavigate(url, this.uveStore.pageParams()?.url ?? '')) {
             this.#pageApi.pageLoad({ url });
