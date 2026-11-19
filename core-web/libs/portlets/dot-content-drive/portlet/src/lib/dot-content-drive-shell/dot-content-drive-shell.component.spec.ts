@@ -5345,24 +5345,19 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         /**
-         * "Switch to the old editor": the navigation service forces the legacy editor, replaces the
-         * request and holds the panel closed for one tick. The shell closes the open panel, without
-         * reporting a close, and reopens it in the legacy editor once the hold ends (#38303).
+         * "Switch to the old editor": the navigation service forces the legacy editor and replaces
+         * the request in one go. The shell closes the open panel, without reporting a close, and
+         * reopens it in the legacy editor in the same pass, with no tick to wait for (#38303).
          */
         it('reopens the panel in the legacy editor when the navigation service switches to it', () => {
             const first = openOn(EDIT_REQUEST);
 
             forceLegacyEditorSignal.set(true);
             setPanelRequest({ ...EDIT_REQUEST });
-            reopeningPanelSignal.set(true);
             spectator.detectChanges();
 
             expect(first.ref.isClosed).toBe(true);
             expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
-
-            reopeningPanelSignal.set(false);
-            spectator.detectChanges();
-
             expect(opener.open).toHaveBeenCalledTimes(2);
             expect(first.options.editor).toBeUndefined();
             expect(openedContent().options.editor).toBe('legacy');

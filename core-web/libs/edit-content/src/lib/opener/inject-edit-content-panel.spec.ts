@@ -88,6 +88,31 @@ describe('injectEditContentPanel', () => {
         expect(passedRequest().title).toBe('Renamed');
     });
 
+    it('reopens a fresh panel when the request names other content, without reporting a close', () => {
+        request(EDIT_REQUEST);
+
+        request({ ...EDIT_REQUEST, inode: 'other' });
+
+        expect(refs[0].isClosed).toBe(true);
+        expect(spectator.component.closed).not.toHaveBeenCalled();
+        expect(open).toHaveBeenCalledTimes(2);
+        const [passedRequest] = open.mock.calls[1];
+        expect(passedRequest().inode).toBe('other');
+        expect(spectator.component.panel.isOpen()).toBe(true);
+    });
+
+    it.each([
+        ['the mode', { mode: 'new', inode: undefined } as Partial<DotEditContentRequest>],
+        ['the content type', { contentType: 'News' }]
+    ])('reopens a fresh panel when the request changes %s', (_label, change) => {
+        request(EDIT_REQUEST);
+
+        request({ ...EDIT_REQUEST, ...change });
+
+        expect(refs[0].isClosed).toBe(true);
+        expect(open).toHaveBeenCalledTimes(2);
+    });
+
     it('closes the panel when the request is cleared, without reporting a close', () => {
         request(EDIT_REQUEST);
 
@@ -192,6 +217,20 @@ describe('injectEditContentPanel, forcing the legacy editor', () => {
 
         expect(open).toHaveBeenCalledTimes(2);
         expect(open.mock.calls[0][1].editor).toBeUndefined();
+        expect(open.mock.calls[1][1].editor).toBe('legacy');
+    });
+
+    it('reopens the same content in the legacy editor when the binding starts forcing it', () => {
+        spectator.component.request.set(EDIT_REQUEST);
+        spectator.detectChanges();
+        const first = open.mock.results[0].value as DotSidePanelRef;
+
+        spectator.component.forceLegacy.set(true);
+        spectator.component.request.set({ ...EDIT_REQUEST });
+        spectator.detectChanges();
+
+        expect(first.isClosed).toBe(true);
+        expect(open).toHaveBeenCalledTimes(2);
         expect(open.mock.calls[1][1].editor).toBe('legacy');
     });
 });
