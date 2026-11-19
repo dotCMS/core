@@ -5423,18 +5423,34 @@ describe('DotContentDriveShellComponent', () => {
             });
 
             // The first save of a new page in the legacy editor names the page to open, as it does
-            // from Content Search (#37759, FR-008).
-            it('closes the panel, refreshes the list and opens the page editor when the editor names a page', () => {
+            // from Content Search (#37759, FR-008). The editor closes itself right after; the route
+            // change leaves the list, so neither the request nor that close refreshes it.
+            it('closes the panel and opens the page editor when the editor names a page, refreshing nothing', () => {
                 const content = openOn(CREATE_REQUEST);
 
                 content.options.pageEditorRequested?.({ url: '/blog/new-page', languageId: 2 });
+                content.ref.close();
 
-                expect(navigationService.closeEditPanel).toHaveBeenCalledTimes(1);
-                expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
+                expect(navigationService.closeEditPanel).toHaveBeenCalled();
+                expect(store.reloadContentDrive).not.toHaveBeenCalled();
                 expect(routerService.goToEditPage).toHaveBeenCalledWith({
                     url: '/blog/new-page',
                     language_id: 2
                 });
+            });
+
+            it('refreshes the list again on the next close once the page editor was asked for', () => {
+                const content = openOn(CREATE_REQUEST);
+                content.options.pageEditorRequested?.({ url: '/blog/new-page', languageId: 2 });
+                content.ref.close();
+                setPanelRequest(null);
+                spectator.detectChanges();
+
+                const next = openOn(EDIT_REQUEST);
+                next.ref.close();
+
+                expect(store.reloadContentDrive).toHaveBeenCalledTimes(1);
+                expect(store.reloadContentDrive).toHaveBeenCalledWith({ quiet: true });
             });
 
             // The editor closes right after a delete, and that close refreshes the list.
