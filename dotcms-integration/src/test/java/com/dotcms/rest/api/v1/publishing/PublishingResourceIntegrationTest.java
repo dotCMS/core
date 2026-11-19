@@ -27,6 +27,7 @@ import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
@@ -1686,6 +1687,19 @@ public class PublishingResourceIntegrationTest {
         assertThrows(SecurityException.class, () -> publishingResource.purgePublishingJobs(
                 mockAuthenticatedRequest(user), response, null));
         assertNotNull(APILocator.getBundleAPI().getBundleById(bundleId));
+    }
+
+    /**
+     * Given: a back-end user whose layout holds a portlet other than the Publishing Queue
+     * When:  the user lists publishing jobs
+     * Then:  the request is refused because the Publishing Queue portlet is required
+     */
+    @Test
+    public void test_listPublishingJobs_userWithOtherPortletOnly_isRejected() throws Exception {
+        final User user = createBackendUserWithPortlets(PortletID.CONTENT.toString());
+
+        assertThrows(SecurityException.class, () -> publishingResource.listPublishingJobs(
+                mockAuthenticatedRequest(user), response, 1, 50, null, null));
     }
 
     /**

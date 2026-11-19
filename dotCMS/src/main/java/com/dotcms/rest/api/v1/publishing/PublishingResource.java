@@ -73,7 +73,7 @@ import java.util.stream.Collectors;
 @Tag(name = "Publishing", description = "Push publishing job management endpoints")
 public class PublishingResource {
 
-    /** Portlets that give access to these operations: the Publishing Queue and its new UI. */
+    /** Portlets that give access to these operations: {@code publishing-queue} or {@code publishing-queue-beta}. */
     private static final List<String> PUBLISHING_QUEUE_PORTLETS =
             List.of(PortletID.PUBLISHING_QUEUE.toString(), PortletID.PUBLISHING_QUEUE_BETA.toString());
     private static final int DEFAULT_PAGE = 1;
@@ -146,7 +146,7 @@ public class PublishingResource {
      *   <li>Search by name: {@code ?filter=staging}</li>
      * </ul>
      *
-     * <p>The caller needs the Publishing Queue portlet, in its legacy or new UI.</p>
+     * <p>The caller needs the {@code publishing-queue} or {@code publishing-queue-beta} portlet.</p>
      *
      * @param request   The HTTP request
      * @param response  The HTTP response
@@ -336,7 +336,7 @@ public class PublishingResource {
      * <p>This endpoint provides complete environment/endpoint breakdown with individual
      * success/failure status, error messages, and stack traces for failed endpoints.</p>
      *
-     * <p>The caller needs the Publishing Queue portlet, in its legacy or new UI.</p>
+     * <p>The caller needs the {@code publishing-queue} or {@code publishing-queue-beta} portlet.</p>
      *
      * @param request   The HTTP request
      * @param response  The HTTP response
@@ -453,7 +453,7 @@ public class PublishingResource {
      *   <li>PUBLISHING_BUNDLE - Applying at receiver</li>
      * </ul>
      *
-     * <p>The caller needs the Publishing Queue portlet, in its legacy or new UI.</p>
+     * <p>The caller needs the {@code publishing-queue} or {@code publishing-queue-beta} portlet.</p>
      *
      * @param request   The HTTP request
      * @param response  The HTTP response
@@ -575,7 +575,7 @@ public class PublishingResource {
      *   <li>WAITING_FOR_PUBLISHING - Already queued</li>
      * </ul>
      *
-     * <p>The caller needs the Publishing Queue portlet, in its legacy or new UI.</p>
+     * <p>The caller needs the {@code publishing-queue} or {@code publishing-queue-beta} portlet.</p>
      *
      * @param request   The HTTP request
      * @param response  The HTTP response
@@ -724,7 +724,7 @@ public class PublishingResource {
      * <p>All dates must be in ISO 8601 format with timezone offset:
      * {@code YYYY-MM-DDTHH:mm:ss±HH:MM} (e.g., {@code 2025-03-15T14:30:00-05:00})</p>
      *
-     * <p>The caller needs the Publishing Queue portlet, in its legacy or new UI.</p>
+     * <p>The caller needs the {@code publishing-queue} or {@code publishing-queue-beta} portlet.</p>
      *
      * @param request   The HTTP request
      * @param response  The HTTP response
@@ -921,7 +921,7 @@ public class PublishingResource {
      *   <li>PUBLISHING_BUNDLE - Applying at receiver</li>
      * </ul>
      *
-     * <p>The caller needs the Publishing Queue portlet, in its legacy or new UI.</p>
+     * <p>The caller needs the {@code publishing-queue} or {@code publishing-queue-beta} portlet.</p>
      *
      * @param request  The HTTP request
      * @param response The HTTP response
