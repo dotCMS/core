@@ -359,7 +359,8 @@ export class DotPanelUrlStateService {
 
     /**
      * Writes the current URL with every panel param taken out and the front panel's put in, the
-     * surface's own params left as they are. Nothing is written when that changes nothing.
+     * surface's own params left as they are. Nothing is written when that changes no param, in
+     * whatever order the URL lists them: a link that names the panel first is the same URL.
      *
      * @param mode `push` adds a history entry, `replace` rewrites the current one.
      * @param staleKeys Params a panel no longer has, to take out as well.
@@ -375,13 +376,13 @@ export class DotPanelUrlStateService {
 
         Object.assign(params, this.#front()?.params);
 
+        if (sameParams(params, current.queryParams)) {
+            return;
+        }
+
         const next = this.#serializer.serialize(
             new UrlTree(current.root, params, current.fragment)
         );
-
-        if (next === this.#serializer.serialize(current)) {
-            return;
-        }
 
         if (mode === 'push') {
             this.#location.go(next);
@@ -389,4 +390,19 @@ export class DotPanelUrlStateService {
             this.#location.replaceState(next);
         }
     }
+}
+
+/**
+ * Whether two sets of query params hold the same keys and values, whatever their order.
+ *
+ * @param a One set.
+ * @param b The other.
+ */
+function sameParams(a: Params, b: Params): boolean {
+    const keys = Object.keys(a);
+
+    return (
+        keys.length === Object.keys(b).length &&
+        keys.every((key) => key in b && String(a[key]) === String(b[key]))
+    );
 }
