@@ -38,7 +38,8 @@ import {
     isNavigableHref,
     resolveClickedAnchor,
     scrollIframeToFragment,
-    shouldNavigate
+    shouldNavigate,
+    pageRequestContext
 } from '.';
 
 import { DEFAULT_PERSONA, LAYOUT_URL, PERSONA_KEY } from '../shared/consts';
@@ -2002,6 +2003,27 @@ describe('legacy screen URLs', () => {
             expect(createTranslatePageUrl(page, 2, TEST_VARIANT, undefined)).toBe(
                 LAYOUT_URL + '?' + translateParams('123').toString()
             );
+        });
+    });
+
+    /** The page an editor request is opened from, read from the store in one place (#38303). */
+    describe('pageRequestContext', () => {
+        const store = (siteId?: string) => ({
+            pageVariantId: () => 'variant-1',
+            pageAsset: () => (siteId ? { site: { identifier: siteId } } : null),
+            pageLanguageId: () => 2
+        });
+
+        it('should read the variant, the site and the language from the page editor store', () => {
+            expect(pageRequestContext(store('site-1'))).toEqual({
+                variantId: 'variant-1',
+                siteId: 'site-1',
+                languageId: 2
+            });
+        });
+
+        it('should leave the site unset when the page has none', () => {
+            expect(pageRequestContext(store()).siteId).toBeUndefined();
         });
     });
 });
