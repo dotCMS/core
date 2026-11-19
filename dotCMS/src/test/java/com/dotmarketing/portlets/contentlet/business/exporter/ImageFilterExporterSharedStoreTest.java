@@ -6,11 +6,23 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.dotmarketing.image.filter.ResizeImageFilter;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Property;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -19,6 +31,8 @@ import org.junit.jupiter.api.io.TempDir;
  * in {@link ImageFilterExporter}. These exercise the pure, container-free helpers directly.
  */
 class ImageFilterExporterSharedStoreTest {
+
+    private static final String DOTGENERATED_DEFAULT_PATH = "DOTGENERATED_DEFAULT_PATH";
 
     /**
      * Given a rendition under the local dotGenerated base,
@@ -121,11 +135,159 @@ class ImageFilterExporterSharedStoreTest {
         }
     }
 
+    /**
+     * Given the shipped default {@code DOTGENERATED_DEFAULT_PATH=shared} (not a recognized mode),
+     * When the feature gate is read,
+     * Then it behaves as {@code SHARED_COMPLETED} and generation stays under the local dotsecure path.
+     */
+    @Test
+    void isDotGeneratedSharedCompleted_shippedDefaultSharedIsTreatedAsSharedCompleted() {
+        final String original = Config.getStringProperty(DOTGENERATED_DEFAULT_PATH, "LOCAL");
+        try {
+            Config.setProperty(DOTGENERATED_DEFAULT_PATH, "shared");
+
+            assertTrue(ConfigUtils.isDotGeneratedSharedCompleted());
+            assertLocalGenerationPath();
+        } finally {
+            Config.setProperty(DOTGENERATED_DEFAULT_PATH, original);
+        }
+    }
+
+    /** Recognized values are matched case-insensitively and keep their meaning. */
+    @Test
+    void isDotGeneratedSharedCompleted_recognizedValuesAreCaseInsensitive() {
+        final String original = Config.getStringProperty(DOTGENERATED_DEFAULT_PATH, "LOCAL");
+        try {
+            Config.setProperty(DOTGENERATED_DEFAULT_PATH, "local");
+            assertFalse(ConfigUtils.isDotGeneratedSharedCompleted());
+            assertLocalGenerationPath();
+
+            Config.setProperty(DOTGENERATED_DEFAULT_PATH, "shared_completed");
+            assertTrue(ConfigUtils.isDotGeneratedSharedCompleted());
+            assertLocalGenerationPath();
+        } finally {
+            Config.setProperty(DOTGENERATED_DEFAULT_PATH, original);
+        }
+    }
+
+    /**
+     * Given a made-up {@code DOTGENERATED_DEFAULT_PATH} value,
+     * When the feature gate is read several times,
+     * Then it behaves as {@code SHARED_COMPLETED} and a single WARN naming the value is logged.
+     */
+    @Test
+    void isDotGeneratedSharedCompleted_unknownValueWarnsOnceAndIsTreatedAsSharedCompleted() {
+        final String original = Config.getStringProperty(DOTGENERATED_DEFAULT_PATH, "LOCAL");
+        final String unknownMode = "bogus-" + UUID.randomUUID();
+        final Logger configUtilsLogger = (Logger) LogManager.getLogger(ConfigUtils.class);
+        final Level previousLevel = configUtilsLogger.getLevel();
+        final CapturingAppender appender = new CapturingAppender();
+        appender.start();
+        configUtilsLogger.addAppender(appender);
+        configUtilsLogger.setLevel(Level.WARN);
+        try {
+            Config.setProperty(DOTGENERATED_DEFAULT_PATH, unknownMode);
+
+            assertTrue(ConfigUtils.isDotGeneratedSharedCompleted());
+            assertTrue(ConfigUtils.isDotGeneratedSharedCompleted());
+            assertLocalGenerationPath();
+
+            final List<String> warnings = appender.messages(Level.WARN);
+            assertEquals(1, warnings.size(), () -> "warnings: " + warnings);
+            assertTrue(warnings.get(0).contains(unknownMode));
+            assertTrue(warnings.get(0).contains(ConfigUtils.SHARED_COMPLETED));
+        } finally {
+            configUtilsLogger.removeAppender(appender);
+            configUtilsLogger.setLevel(previousLevel);
+            appender.stop();
+            Config.setProperty(DOTGENERATED_DEFAULT_PATH, original);
+        }
+    }
+
+    /**
+     * Given a filter chain whose first stage reads the original binary (stored under its version
+     * inode) while the request names the content by identifier, and any configured mode,
+     * When the result files are resolved for each stage,
+     * Then every stage is written under the local dotGenerated path (never the shared store) and
+     * every stage's name embeds the version inode, so the inode-scoped cleanup can find it.
+     */
+    @Test
+    void getResultsFile_intermediatesAreLocalAndNamedByVersionInode(@TempDir final Path tmp) throws Exception {
+        final String original = Config.getStringProperty(DOTGENERATED_DEFAULT_PATH, "LOCAL");
+        final String inode = UUID.randomUUID().toString();
+        final String identifier = UUID.randomUUID().toString();
+        final File binary = tmp.resolve("assets/" + inode.charAt(0) + "/" + inode.charAt(1) + "/"
+                + inode + "/fileAsset/image.jpg").toFile();
+        final Map<String, String[]> parameters = new HashMap<>();
+        parameters.put("filter", new String[]{"Resize", "Resize"});
+        parameters.put("resize_w", new String[]{"100"});
+        parameters.put("fieldVarName", new String[]{"fileAsset"});
+        parameters.put("assetInodeOrIdentifier", new String[]{identifier});
+        final File bucket = new File(ConfigUtils.getDotGeneratedPath() + File.separator
+                + inode.charAt(0) + File.separator + inode.charAt(1));
+        final boolean bucketExisted = bucket.exists();
+        try {
+            for (final String mode : new String[]{"shared", "LOCAL", "SHARED_COMPLETED", "bogus"}) {
+                Config.setProperty(DOTGENERATED_DEFAULT_PATH, mode);
+
+                final File firstStage = new ResizeImageFilter().getResultsFile(binary, parameters);
+                final File secondStage = new ResizeImageFilter().getResultsFile(firstStage, parameters);
+
+                for (final File stage : new File[]{firstStage, secondStage}) {
+                    assertTrue(stage.getName().startsWith("dotGenerated_" + inode + "_"),
+                            () -> mode + ": unexpected name " + stage.getName());
+                    assertFalse(stage.getName().contains(identifier));
+                    assertTrue(stage.getCanonicalPath().startsWith(
+                                    new File(ConfigUtils.getDotGeneratedPath()).getCanonicalPath()),
+                            () -> mode + ": not under the local dotGenerated path " + stage);
+                }
+            }
+        } finally {
+            Config.setProperty(DOTGENERATED_DEFAULT_PATH, original);
+            if (!bucketExisted) {
+                bucket.delete();
+                bucket.getParentFile().delete();
+            }
+        }
+    }
+
+    /** Whatever the mode, generation happens under the instance-local dynamic content path. */
+    private static void assertLocalGenerationPath() {
+        assertTrue(ConfigUtils.getDotGeneratedPath().startsWith(ConfigUtils.getDynamicContentPath()),
+                () -> "dotGenerated path not local: " + ConfigUtils.getDotGeneratedPath());
+    }
+
     private static void assertNoStrayTmp(final File dir) {
         if (dir == null || !dir.exists()) {
             return;
         }
         final File[] strays = dir.listFiles((d, name) -> name.contains(".tmp"));
         assertTrue(strays == null || strays.length == 0, "stray .tmp file left in " + dir);
+    }
+
+    private static final class CapturingAppender extends AbstractAppender {
+
+        private final List<Level> levels = new ArrayList<>();
+        private final List<String> texts = new ArrayList<>();
+
+        private CapturingAppender() {
+            super("ImageFilterExporterSharedStoreTest-appender", null, null, true, Property.EMPTY_ARRAY);
+        }
+
+        @Override
+        public synchronized void append(final LogEvent event) {
+            levels.add(event.getLevel());
+            texts.add(event.getMessage().getFormattedMessage());
+        }
+
+        private synchronized List<String> messages(final Level level) {
+            final List<String> result = new ArrayList<>();
+            for (int i = 0; i < levels.size(); i++) {
+                if (levels.get(i) == level) {
+                    result.add(texts.get(i));
+                }
+            }
+            return result;
+        }
     }
 }

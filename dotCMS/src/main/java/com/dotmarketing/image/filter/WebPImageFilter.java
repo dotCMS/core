@@ -1,5 +1,6 @@
 package com.dotmarketing.image.filter;
 
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Map;
 import javax.imageio.IIOImage;
@@ -48,9 +49,13 @@ public class WebPImageFilter extends ImageFilter {
 
 
 
-	        writer.setOutput(new FileImageOutputStream(tempResultFile));
-	        writer.write(null, new IIOImage(ImageIO.read(file), null, null), writeParam);
-	        writer.dispose();
+	        final BufferedImage src = StrictImageReader.read(file);
+	        try (FileImageOutputStream output = new FileImageOutputStream(tempResultFile)) {
+	            writer.setOutput(output);
+	            writer.write(null, new IIOImage(src, null, null), writeParam);
+	            writer.dispose();
+	        }
+            StrictImageReader.assertDecodable(tempResultFile);
             tempResultFile.renameTo(resultFile);
         } catch (Exception e) {
             throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);

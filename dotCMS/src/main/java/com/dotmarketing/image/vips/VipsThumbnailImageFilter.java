@@ -49,7 +49,7 @@ public class VipsThumbnailImageFilter extends VipsImageFilter {
         VipsManager.run(arena -> {
             // Fit within the box, maintaining aspect ratio (no FORCE).
             VImage thumb = VImage.thumbnail(arena, in.getAbsolutePath(), boxW,
-                    VipsOption.Int("height", boxH));
+                    VipsOption.Int("height", boxH), VipsManager.FAIL_ON_ERROR);
             // Drop any alpha onto the requested background so the canvas colour shows through.
             if (thumb.hasAlpha()) {
                 thumb = thumb.flatten(VipsOption.ArrayDouble("background", List.of(r, g, b)));

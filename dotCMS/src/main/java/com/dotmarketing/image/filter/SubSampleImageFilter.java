@@ -38,6 +38,7 @@ public class SubSampleImageFilter extends ImageFilter {
 
         try{
             ImageIO.write(srcImage, "png", tempResultFile);
+            StrictImageReader.assertDecodable(tempResultFile);
             tempResultFile.renameTo(resultFile);
         } catch (Exception e) {
             throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);

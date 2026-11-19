@@ -32,7 +32,7 @@ public class RotateImageFilter extends ImageFilter {
 		filter.setEdgeAction(RotateFilter.ZERO);
 
 		try {
-			BufferedImage src = ImageIO.read(file);
+			BufferedImage src = StrictImageReader.read(file);
 			// int w = java.lang.Math.c
 
 			BufferedImage testpass = filter.filter(src, null);
@@ -51,8 +51,14 @@ public class RotateImageFilter extends ImageFilter {
 			 * 
 			 * }
 			 */
-			ImageIO.write(dst, "png", resultFile);
+			final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp");
+			ImageIO.write(dst, "png", tempResultFile);
 			dst.flush();
+			StrictImageReader.assertDecodable(tempResultFile);
+			if (!tempResultFile.renameTo(resultFile)) {
+				tempResultFile.delete();
+				throw new DotRuntimeException("unable to create file:" + resultFile);
+			}
         } catch (Exception e) {
             throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
         }

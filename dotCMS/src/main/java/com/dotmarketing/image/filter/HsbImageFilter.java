@@ -45,11 +45,17 @@ public class HsbImageFilter extends ImageFilter {
 		
 		
 		try {
-			BufferedImage src = ImageIO.read(file);
+			BufferedImage src = StrictImageReader.read(file);
 
 			BufferedImage dst = filter.filter(src, null);
-			ImageIO.write(dst, "png", resultFile);
+			final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp");
+			ImageIO.write(dst, "png", tempResultFile);
 			dst.flush();
+			StrictImageReader.assertDecodable(tempResultFile);
+			if (!tempResultFile.renameTo(resultFile)) {
+				tempResultFile.delete();
+				throw new DotRuntimeException("unable to create file:" + resultFile);
+			}
 	    } catch (Exception e) {
 	        throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);
 	    }

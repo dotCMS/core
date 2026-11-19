@@ -74,6 +74,7 @@ public class ResizeImageFilter extends ImageFilter {
             ImageIO.write(srcImage, "png", tempResultFile);
             srcImage.flush();
             srcImage = null;
+            StrictImageReader.assertDecodable(tempResultFile);
             if(tempResultFile.renameTo(resultFile)) {
                 return resultFile;
             }

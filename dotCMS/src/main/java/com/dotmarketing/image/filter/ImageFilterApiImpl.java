@@ -250,10 +250,10 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
             try {
                 reader.setInput(inputStream, true, true);
                 if (sourceSize.getWidth() == width && sourceSize.getHeight() == height) {
-                    return reader.read(0);
+                    return StrictImageReader.read(reader, null, imageFile);
                 }
 
-                return this.resizeImage(reader.read(0), width, height, resampleOption);
+                return this.resizeImage(StrictImageReader.read(reader, null, imageFile), width, height, resampleOption);
 
             } finally {
                 reader.dispose();
@@ -327,7 +327,7 @@ public class ImageFilterApiImpl implements ImageFilterAPI {
 
         imageReaderParams.setSourceSubsampling(subsampling, subsampling, 0, 0);
 
-        return reader.read(0, imageReaderParams);
+        return StrictImageReader.read(reader, imageReaderParams, inputStream);
 
     }
 

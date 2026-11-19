@@ -4,6 +4,8 @@ import app.photofox.vipsffm.VImage;
 import app.photofox.vipsffm.Vips;
 import app.photofox.vipsffm.VipsError;
 import app.photofox.vipsffm.VipsHelper;
+import app.photofox.vipsffm.VipsOption;
+import app.photofox.vipsffm.enums.VipsFailOn;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -132,10 +134,17 @@ public final class VipsManager {
     }
 
     /**
+     * Load option that makes libvips fail on a decode error or truncated input instead of silently
+     * filling the missing scanlines with black/grey. Pass it to every {@code VImage.newFromFile} and
+     * {@code VImage.thumbnail} call so a bad read reaches the fallback path rather than the cache.
+     */
+    static final VipsOption FAIL_ON_ERROR = VipsOption.Enum("fail_on", VipsFailOn.FAIL_ON_ERROR);
+
+    /**
      * Loads an image for full-frame (random access) operations such as crop, rotate and flip.
      */
     static VImage load(final Arena arena, final java.io.File file) {
-        return VImage.newFromFile(arena, file.getAbsolutePath());
+        return VImage.newFromFile(arena, file.getAbsolutePath(), FAIL_ON_ERROR);
     }
 
     /**

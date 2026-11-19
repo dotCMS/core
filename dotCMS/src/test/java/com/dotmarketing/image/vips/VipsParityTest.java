@@ -18,7 +18,9 @@ import javax.imageio.stream.ImageInputStream;
 import javax.imageio.stream.ImageOutputStream;
 import org.junit.Assume;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 /**
  * Parity tests for the libvips image engine against the legacy AWT/TwelveMonkeys engine.
@@ -41,6 +43,10 @@ import org.junit.Test;
  * the libvips path wired in via {@code -Dvipsffm.libpath.args=...}.</p>
  */
 public class VipsParityTest {
+
+    /** Root for the truncated-input fixtures; JUnit deletes it, and everything under it, after the class. */
+    @ClassRule
+    public static final TemporaryFolder TRUNCATED_ROOT = new TemporaryFolder();
 
     /** Config key (env override {@code DOT_TEST_REQUIRE_LIBVIPS}) that turns skips into failures. */
     private static final String STRICT_PROPERTY = "TEST_REQUIRE_LIBVIPS";
@@ -523,6 +529,204 @@ public class VipsParityTest {
 
         assertTrue("fallback produced a result file", result.exists() && result.length() > 50);
         assertTrue("fallback output is a valid image", ImageIO.read(result) != null);
+    }
+
+    // ---- Truncated input: a failed libvips read must not publish a black/grey rendition --------
+
+    private static final String FALLBACK_PROPERTY = "IMAGE_API_LIBVIPS_FALLBACK";
+
+    /**
+     * Stage a copy of a bundled image cut to {@code keepFraction} of its bytes, named with the
+     * GENERATED_FILE prefix so {@code getResultsFile} writes alongside it in its own directory.
+     *
+     * @param src bundled image name
+     * @param ext extension of the staged copy
+     * @param keepFraction fraction of the original bytes to keep (0-1)
+     * @return the truncated copy
+     * @throws Exception if the copy cannot be written
+     */
+    private File truncated(final String src, final String ext, final double keepFraction) throws Exception {
+        final File dir = TRUNCATED_ROOT.newFolder();
+        final File in = new File(dir, "dotGenerated_truncated." + ext);
+        final byte[] bytes = java.nio.file.Files.readAllBytes(image(src).toPath());
+        java.nio.file.Files.write(in.toPath(),
+                java.util.Arrays.copyOf(bytes, (int) (bytes.length * keepFraction)));
+        return in;
+    }
+
+    /**
+     * @param input a staged input file
+     * @return every file next to {@code input} other than itself, i.e. any rendition left behind
+     */
+    private java.util.List<File> renditionsBesides(final File input) {
+        final File[] files = input.getParentFile().listFiles();
+        final java.util.List<File> others = new java.util.ArrayList<>();
+        if (files != null) {
+            for (final File f : files) {
+                if (!f.equals(input)) {
+                    others.add(f);
+                }
+            }
+        }
+        return others;
+    }
+
+    /**
+     * Resize a truncated image with {@code IMAGE_API_LIBVIPS_FALLBACK=false} and assert it fails
+     * loudly and leaves no rendition behind.
+     *
+     * @param in truncated input staged by {@link #truncated}
+     */
+    private void assertTruncatedFailsWithoutFallback(final File in) {
+        final String previous = Config.getStringProperty(FALLBACK_PROPERTY, null);
+        Config.setProperty(FALLBACK_PROPERTY, false);
+        try {
+            new VipsResizeImageFilter().runFilter(in, params("resize_w", "200", "resize_h", "150"));
+            org.junit.Assert.fail("truncated " + in.getName() + " must not render through libvips");
+        } catch (com.dotmarketing.exception.DotRuntimeException expected) {
+            assertTrue("no rendition may be cached: " + renditionsBesides(in), renditionsBesides(in).isEmpty());
+        } finally {
+            Config.setProperty(FALLBACK_PROPERTY, previous);
+        }
+    }
+
+    /**
+     * Resize a truncated image with {@code IMAGE_API_LIBVIPS_FALLBACK=true}: the libvips failure must
+     * reach the legacy engine. Either the legacy engine returns a fully decodable rendition, or it
+     * fails too and nothing is cached.
+     *
+     * @param in truncated input staged by {@link #truncated}
+     * @throws Exception if the result cannot be read
+     */
+    private void assertTruncatedFallsBackToLegacy(final File in) throws Exception {
+        final String previous = Config.getStringProperty(FALLBACK_PROPERTY, null);
+        Config.setProperty(FALLBACK_PROPERTY, true);
+        try {
+            final File result;
+            try {
+                result = new VipsResizeImageFilter().runFilter(in, params("resize_w", "200", "resize_h", "150"));
+            } catch (RuntimeException legacyAlsoFailed) {
+                assertTrue("legacy failed too, so nothing may be cached: " + renditionsBesides(in),
+                        renditionsBesides(in).isEmpty());
+                return;
+            }
+            assertTrue("legacy fallback produced a result", result.exists() && result.length() > 50);
+            assertTrue("legacy fallback result decodes", ImageIO.read(result) != null);
+        } finally {
+            Config.setProperty(FALLBACK_PROPERTY, previous);
+        }
+    }
+
+    /**
+     * Assert the libvips resize transform itself rejects a truncated input.
+     *
+     * @param in truncated input staged by {@link #truncated}
+     * @throws Exception if the temp output cannot be created
+     */
+    private void assertTransformRejects(final File in) throws Exception {
+        final File out = tempOut("png");
+        try {
+            new VipsResizeImageFilter().transform(in, out, params("resize_w", "200", "resize_h", "150"));
+            org.junit.Assert.fail("libvips must fail on truncated " + in.getName() + " (fail_on=error)");
+        } catch (RuntimeException expected) {
+            // VipsError / DotRuntimeException: the read failed loudly instead of filling rows
+        }
+    }
+
+    @Test
+    public void transform_of_truncated_jpeg_fails_instead_of_filling_grey_rows() throws Exception {
+        assertTransformRejects(truncated("test.jpg", "jpg", 0.35));
+    }
+
+    @Test
+    public void transform_of_truncated_png_fails_instead_of_filling_black_rows() throws Exception {
+        assertTransformRejects(truncated("test.png", "png", 0.35));
+    }
+
+    @Test
+    public void runFilter_truncated_jpeg_without_fallback_throws_and_caches_nothing() throws Exception {
+        assertTruncatedFailsWithoutFallback(truncated("test.jpg", "jpg", 0.35));
+    }
+
+    @Test
+    public void runFilter_truncated_png_without_fallback_throws_and_caches_nothing() throws Exception {
+        assertTruncatedFailsWithoutFallback(truncated("test.png", "png", 0.35));
+    }
+
+    @Test
+    public void runFilter_truncated_jpeg_with_fallback_reaches_legacy_engine() throws Exception {
+        assertTruncatedFallsBackToLegacy(truncated("test.jpg", "jpg", 0.35));
+    }
+
+    @Test
+    public void runFilter_truncated_png_with_fallback_reaches_legacy_engine() throws Exception {
+        assertTruncatedFallsBackToLegacy(truncated("test.png", "png", 0.35));
+    }
+
+    @Test
+    public void runFilter_renders_once_truncated_source_is_healthy_again() throws Exception {
+        final File in = truncated("test.jpg", "jpg", 0.35);
+        assertTruncatedFailsWithoutFallback(in);
+
+        // the source is repaired: the same request must now render instead of serving a bad cache
+        java.nio.file.Files.copy(image("test.jpg").toPath(), in.toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        final File out = new VipsResizeImageFilter().runFilter(in, params("resize_w", "200", "resize_h", "150"));
+        assertEquals(new Dimension(200, 150), dims(out));
+    }
+
+    /**
+     * A libvips GIF filter whose "encode" writes an animated GIF cut inside its later frames, so
+     * frame 0 still decodes. Models a truncated multi-frame write reaching the pre-publish check.
+     */
+    class TruncatedAnimatedGifFilter extends VipsGifImageFilter {
+        @Override
+        protected void transform(final File in, final File out, final Map<String, String[]> parameters) {
+            try {
+                final byte[] singleFrame = readAndDelete(animatedGif(1));
+                final byte[] animated = readAndDelete(animatedGif(4));
+                // keep frame 0 whole (single-frame size minus its trailer byte) and part of the rest
+                final int frameZeroEnd = singleFrame.length - 1;
+                final int keep = frameZeroEnd + (animated.length - frameZeroEnd) / 2;
+                java.nio.file.Files.write(out.toPath(), java.util.Arrays.copyOf(animated, keep));
+            } catch (Exception e) {
+                throw new IllegalStateException("unable to write truncated animated gif", e);
+            }
+        }
+
+        @Override
+        protected String getFilterName() {
+            return "gif";
+        }
+    }
+
+    /**
+     * @param file a scratch file
+     * @return its bytes; the file is deleted so the fixture leaves nothing in the OS temp dir
+     * @throws Exception if the file cannot be read or deleted
+     */
+    private static byte[] readAndDelete(final File file) throws Exception {
+        final byte[] bytes = java.nio.file.Files.readAllBytes(file.toPath());
+        java.nio.file.Files.delete(file.toPath());
+        return bytes;
+    }
+
+    @Test
+    public void runFilter_truncated_animated_gif_result_is_not_cached() throws Exception {
+        final File dir = TRUNCATED_ROOT.newFolder();
+        final File in = new File(dir, "dotGenerated_animated.gif");
+        java.nio.file.Files.write(in.toPath(), readAndDelete(animatedGif(4)));
+
+        final String previous = Config.getStringProperty(FALLBACK_PROPERTY, null);
+        Config.setProperty(FALLBACK_PROPERTY, false);
+        try {
+            new TruncatedAnimatedGifFilter().runFilter(in, new HashMap<>());
+            org.junit.Assert.fail("a truncated animated gif rendition must not be published");
+        } catch (com.dotmarketing.exception.DotRuntimeException expected) {
+            assertTrue("no rendition may be cached: " + renditionsBesides(in), renditionsBesides(in).isEmpty());
+        } finally {
+            Config.setProperty(FALLBACK_PROPERTY, previous);
+        }
     }
 
     @Test

@@ -823,7 +823,9 @@ public class FileAssetAPIImpl implements FileAssetAPI {
                 if (files != null) {
                     for (java.io.File iofile : files) {
                         try {
-                            if (iofile.getName().startsWith("dotGenerated_")) {
+                            // only this version's renditions: the bucket folder is shared by every
+                            // inode starting with the same two characters
+                            if (iofile.getName().startsWith("dotGenerated_" + inode + "_")) {
                                 iofile.delete();
                             }
                         } catch (SecurityException e) {

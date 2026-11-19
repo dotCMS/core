@@ -14,7 +14,8 @@ public class VipsGifImageFilter extends VipsImageFilter {
     @Override
     protected void transform(final File in, final File out, final Map<String, String[]> parameters) {
         VipsManager.run(arena -> {
-            final VImage src = VImage.newFromFile(arena, in.getAbsolutePath(), VipsOption.Int("n", -1));
+            final VImage src = VImage.newFromFile(arena, in.getAbsolutePath(), VipsOption.Int("n", -1),
+                    VipsManager.FAIL_ON_ERROR);
             src.writeToFile(out.getAbsolutePath());
         });
     }

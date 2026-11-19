@@ -43,7 +43,7 @@ public class ResizeGifImageFilter extends ImageFilter {
     resultFile.delete();
 
     try {
-      BufferedImage src = ImageIO.read(file);
+      BufferedImage src = StrictImageReader.read(file);
       if (w == 0 && h == 0) {
         return file;
       } else if (w == 0 && h > 0) {
@@ -57,6 +57,7 @@ public class ResizeGifImageFilter extends ImageFilter {
 
       File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp");
       readWriteGIF(file, tempResultFile, maxFrames, loop, width, height);
+      StrictImageReader.assertDecodable(tempResultFile);
       tempResultFile.renameTo(resultFile);
       return resultFile;
     } catch (Exception e) {
@@ -71,7 +72,7 @@ public class ResizeGifImageFilter extends ImageFilter {
     final GifDecoder decoder = new GifDecoder();
     decoder.read(inputFile.getAbsolutePath());
     if(decoder.getFrameCount()==1) {
-      BufferedImage dst = resampler.filter(ImageIO.read(inputFile), null);
+      BufferedImage dst = resampler.filter(StrictImageReader.read(inputFile), null);
       ImageIO.write(dst, "png", outputFile);
       dst.flush();
       return;
