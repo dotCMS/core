@@ -61,6 +61,12 @@ export interface DotEditContentOpenOptions extends DotEditContentPanelHandlers {
     editorResolved?: (editor: DotContentEditor) => void;
 
     /**
+     * The editor choice the caller already looked up for the request's content type, so the opener
+     * does not ask the server again: the UVE's translate decides which request to open from it.
+     */
+    resolved?: DotContentEditorChoice;
+
+    /**
      * Writes the open panel to the surface's URL, so it can be shared, survives a refresh and
      * closes with browser Back (#38303, FR-044). Every surface except the page editor sets it.
      */
@@ -230,7 +236,7 @@ export class DotEditContentOpenerService {
         this.#fetchContentlet(initial, fetch)
             .pipe(
                 tap((contentlet) => url?.found(ref, withContentlet(initial, contentlet, true))),
-                switchMap((contentlet) => this.#resolve(initial, contentlet, options.editor)),
+                switchMap((contentlet) => this.#resolve(initial, contentlet, options)),
                 takeUntil(ref.closed)
             )
             .subscribe({
@@ -339,28 +345,29 @@ export class DotEditContentOpenerService {
     /**
      * Asks the server the rest of what the request needs before an editor shows: the content type,
      * for its name and for which editor it uses, unless the caller forced the legacy one; and the
-     * create screen for a legacy create.
+     * create screen for a legacy create. What the caller already knows is not asked again.
      *
      * @param request A request that passed {@link isOpenable}.
      * @param contentlet The contentlet fetched for it, if one was.
-     * @param forced The editor the caller forced, if any.
+     * @param options `editor`: the editor the caller forced, if any. `resolved`: the editor choice
+     * the caller already has.
      * @returns The answers, once; errors when the create screen is refused.
      */
     #resolve(
         request: DotEditContentRequest,
         contentlet: DotCMSContentlet | null,
-        forced: 'legacy' | undefined
+        { editor: forced, resolved }: Pick<DotEditContentOpenOptions, 'editor' | 'resolved'>
     ): Observable<DotResolvedRequest> {
         const variable = (request.contentType || contentlet?.contentType) as string;
         // A forced editor still resolves the type, for the heading's name; only the choice is
         // overridden.
-        const choice$: Observable<DotContentEditorChoice> = this.#editUrl
-            .resolveEditor(variable)
-            .pipe(
-                map((choice) =>
-                    forced === 'legacy' ? { ...choice, editor: 'legacy' as const } : choice
-                )
-            );
+        const choice$: Observable<DotContentEditorChoice> = (
+            resolved ? of(resolved) : this.#editUrl.resolveEditor(variable)
+        ).pipe(
+            map((choice) =>
+                forced === 'legacy' ? { ...choice, editor: 'legacy' as const } : choice
+            )
+        );
 
         return choice$.pipe(
             switchMap(({ editor, contentType }) => {
