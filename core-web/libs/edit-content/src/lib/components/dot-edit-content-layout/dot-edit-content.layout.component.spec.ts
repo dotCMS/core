@@ -298,18 +298,30 @@ describe('EditContentLayoutComponent', () => {
             mockEditContentHost.resolveIdentity.mockReturnValue(languageId ? { languageId } : {});
             const fresh = createComponent({ detectChanges: false });
             const freshStore = fresh.inject(DotEditContentStore, true);
+            // Should the store load the locales again, it gets the same ones. The component
+            // provides its own DotLanguagesService, which the store uses.
             fresh
                 .inject(DotContentletService, true)
                 .getLanguages.mockReturnValue(of([ENGLISH, SPANISH, FRENCH]));
-            fresh.inject(DotLanguagesService).getDefault.mockReturnValue(of(ENGLISH));
+            vi.spyOn(fresh.inject(DotLanguagesService, true), 'getDefault').mockReturnValue(
+                of(ENGLISH)
+            );
             const switchLocale = vi
                 .spyOn(freshStore, 'switchLocale')
                 .mockImplementation(() => undefined);
 
             fresh.detectChanges();
+            // English content with its locales loaded, as the store leaves them.
+            const contentlet = { ...MOCK_CONTENTLET_1_TAB, languageId: ENGLISH.id };
             patchState(unprotected(freshStore), {
-                contentlet: { ...MOCK_CONTENTLET_1_TAB, languageId: ENGLISH.id }
+                contentlet,
+                locales: [ENGLISH, FRENCH, SPANISH],
+                currentLocale: ENGLISH,
+                currentIdentifier: contentlet.identifier,
+                localesStatus: { status: ComponentStatus.LOADED, error: '' }
             });
+            // Twice: the first pass schedules the editor's effects on the new state, the second
+            // runs them.
             fresh.detectChanges();
             fresh.detectChanges();
 
@@ -318,7 +330,6 @@ describe('EditContentLayoutComponent', () => {
 
         it('should offer the translation into an untranslated language the request names', () => {
             const { switchLocale } = openAsking(SPANISH.id);
-
             expect(switchLocale).toHaveBeenCalledTimes(1);
             expect(switchLocale).toHaveBeenCalledWith(expect.objectContaining({ id: SPANISH.id }));
         });
