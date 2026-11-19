@@ -27,7 +27,7 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { DotCMSWorkflowAction, DotContentletDepths } from '@dotcms/dotcms-models';
+import { ComponentStatus, DotCMSWorkflowAction, DotContentletDepths } from '@dotcms/dotcms-models';
 import { DotCollapseBreadcrumbComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { FormValues } from '../../models/dot-edit-content-form.interface';
@@ -235,6 +235,8 @@ export class DotEditContentLayoutComponent {
         // editor no longer branches on a "dialog mode".
         this.$store.initialize();
 
+        this.#offerRequestedTranslation();
+
         // Hold the in-place reload overlay until BOTH the new content and the
         // sidebar's data have loaded. Arm when a reload starts (`isReloading`), and
         // disarm only once everything has settled (`isFullyLoaded`) — the window in
@@ -265,6 +267,51 @@ export class DotEditContentLayoutComponent {
             this.#host.reportSaved(success);
 
             this.$store.clearWorkflowActionSuccess();
+        });
+    }
+
+    /**
+     * Offers the translation into the language the opener asked for, when the content has no
+     * version in it (#38303, T178). The opener then hands the editor the content in another
+     * language with the asked one on the request: the UVE's "create a new language version", or a
+     * link naming a language (`editContentLang`). The editor switches to that locale as its own
+     * locale selector does, so the author chooses to copy the content or start from scratch, and
+     * the first save creates the translation.
+     *
+     * Decided once, when the content's locales first load: a later locale switch, or the locales
+     * loading again, does not offer it again. Nothing happens when the request names no language,
+     * the content's own, or one the content has.
+     */
+    #offerRequestedTranslation(): void {
+        let decided = false;
+
+        effect(() => {
+            const contentlet = this.$store.contentlet();
+            const locales = this.$store.locales();
+            const loaded = this.$store.localesStatus().status === ComponentStatus.LOADED;
+
+            if (
+                decided ||
+                !loaded ||
+                !contentlet?.identifier ||
+                this.$store.currentIdentifier() !== contentlet.identifier
+            ) {
+                return;
+            }
+
+            decided = true;
+
+            untracked(() => {
+                const { languageId } = this.#host.resolveIdentity();
+                const locale =
+                    languageId && languageId !== contentlet.languageId
+                        ? locales?.find(({ id }) => id === languageId)
+                        : undefined;
+
+                if (locale && !locale.translated) {
+                    this.$store.switchLocale(locale);
+                }
+            });
         });
     }
 
