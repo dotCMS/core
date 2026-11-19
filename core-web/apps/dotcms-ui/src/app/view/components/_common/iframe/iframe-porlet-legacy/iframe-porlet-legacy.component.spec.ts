@@ -49,8 +49,11 @@ describe('IframePortletLegacyComponent — the panel in the URL', () => {
         detectChanges: false
     });
 
-    /** Mounts the portlet route on a URL with these query params. */
-    const mount = (params: Params) => {
+    /**
+     * Mounts the portlet route on a URL with these query params; `task` mounts the Workflow
+     * portlet with a task detail shown (`/c/workflow/<task>`).
+     */
+    const mount = (params: Params, { task = false } = {}) => {
         queryParams$ = new BehaviorSubject<Params>(params);
         openContent = vi.fn();
         clear = vi.fn();
@@ -63,9 +66,13 @@ describe('IframePortletLegacyComponent — the panel in the URL', () => {
                     useValue: {
                         data: of({ canAccessPortlet: true }),
                         queryParams: queryParams$,
-                        params: of({ id: 'content' }),
+                        params: of({ id: task ? 'workflow' : 'content' }),
                         parent: { url: of([{ path: 'c' }]) },
-                        snapshot: { queryParams: params, params: { id: 'content' } }
+                        snapshot: {
+                            queryParams: params,
+                            params: { id: task ? 'workflow' : 'content' }
+                        },
+                        firstChild: task ? { snapshot: { params: { asset: 'task-1' } } } : null
                     }
                 },
                 mockProvider(DotCustomEventHandlerService, { openContent, handle: vi.fn() }),
@@ -210,6 +217,17 @@ describe('IframePortletLegacyComponent — the panel in the URL', () => {
             identifier: IDENTIFIER,
             languageId: 1
         });
+    });
+
+    /**
+     * A task detail opens what the URL names itself, once its dialog has shown, so the panel
+     * always ends up above the dialog (stack review L7-6).
+     */
+    it('leaves a URL naming a panel to the task detail it shows', async () => {
+        mount({ editContent: IDENTIFIER, editContentLang: '2' }, { task: true });
+        await settle();
+
+        expect(openContent).not.toHaveBeenCalled();
     });
 
     it('opens nothing for a URL that names no panel', async () => {

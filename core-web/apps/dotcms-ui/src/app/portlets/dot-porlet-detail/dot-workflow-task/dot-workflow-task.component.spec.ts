@@ -81,6 +81,8 @@ const TASK_ID = '74cabf7a-0e9d-48b6-ab1c-8f76d0ad31e0';
 describe('DotWorkflowTaskComponent', () => {
     /** The route's params, as the router emits them on each navigation that changes them. */
     let params$: BehaviorSubject<Params>;
+    /** The URL's query params: the panel params a task's link carries. */
+    let queryParams$: BehaviorSubject<Params>;
     let fixture: ComponentFixture<DotWorkflowTaskComponent>;
     let de: DebugElement;
     let component: DotWorkflowTaskComponent;
@@ -110,8 +112,13 @@ describe('DotWorkflowTaskComponent', () => {
                     provide: ActivatedRoute,
                     useFactory: () => {
                         params$ = new BehaviorSubject<Params>({ asset: TASK_ID });
+                        queryParams$ = new BehaviorSubject<Params>({});
 
-                        return { params: params$, snapshot: { params: { asset: TASK_ID } } };
+                        return {
+                            params: params$,
+                            queryParams: queryParams$,
+                            snapshot: { params: { asset: TASK_ID } }
+                        };
                     }
                 },
                 {
@@ -374,6 +381,41 @@ describe('DotWorkflowTaskComponent', () => {
             fixture.destroy();
 
             expect(releasePanelClosed).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    /**
+     * A task's link may also name a side panel. The portlet behind leaves it to the task detail,
+     * which opens it once its dialog has shown: a dialog that shows later stacks above any panel,
+     * so the panel must come second, whichever of the menu call and the panel's chunk is faster
+     * (#38303, stack review L7-6).
+     */
+    describe('a panel the task URL names', () => {
+        const IDENTIFIER = '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57';
+
+        let openContent: Mock;
+
+        beforeEach(() => {
+            openContent = vi
+                .spyOn(dotCustomEventHandlerService, 'openContent')
+                .mockImplementation(() => undefined) as unknown as Mock;
+            queryParams$.next({ editContent: IDENTIFIER, editContentLang: '2' });
+        });
+
+        it('should wait for the task dialog to show', () => {
+            expect(openContent).not.toHaveBeenCalled();
+        });
+
+        it('should open it once the task dialog has shown, once', () => {
+            taskDetail.triggerEventHandler('shown', undefined);
+            taskDetail.triggerEventHandler('shown', undefined);
+
+            expect(openContent).toHaveBeenCalledTimes(1);
+            expect(openContent).toHaveBeenCalledWith({
+                mode: 'edit',
+                identifier: IDENTIFIER,
+                languageId: 2
+            });
         });
     });
 });
