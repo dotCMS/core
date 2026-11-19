@@ -29,7 +29,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { DotContentChangeService, DotMessageService } from '@dotcms/data-access';
+import { DotContentChangeService, DotContentEditor, DotMessageService } from '@dotcms/data-access';
 import { BundleAssetView } from '@dotcms/dotcms-models';
 import { DotEditContentOpenerService } from '@dotcms/edit-content';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -146,9 +146,10 @@ export class DotPublishingQueueAssetListDialogComponent {
 
     /**
      * Opens a contentlet row in the side panel over this dialog, in whichever editor its type uses
-     * (#38303, R12). The close reloads the asset list (FR-017) and puts focus back on the row once
-     * the list has reloaded (FR-039); a save reloads it through the content change notification
-     * (T174). Other rows do nothing.
+     * (#38303, R12). A save or a delete reloads the list through the content change notification
+     * (T174). The close reloads it again only after the legacy editor, whose workflow actions
+     * report nothing (FR-017), and puts focus back on the row once the list has rendered (FR-039).
+     * Other rows do nothing.
      *
      * @param asset The clicked row.
      */
@@ -156,6 +157,8 @@ export class DotPublishingQueueAssetListDialogComponent {
         if (!isEditableContentlet(asset)) {
             return;
         }
+
+        let editor: DotContentEditor | null = null;
 
         this.#opener.open(
             {
@@ -167,8 +170,12 @@ export class DotPublishingQueueAssetListDialogComponent {
             },
             {
                 injector: this.#injector,
+                editorResolved: (resolved) => (editor = resolved),
                 closed: () => {
-                    this.store.loadAssets();
+                    if (editor !== 'new') {
+                        this.store.loadAssets();
+                    }
+
                     this.#focusRowAfterReload(asset.asset);
                 },
                 // In the portlet's URL: on load the portlet reopens the panel over the list (#38303).

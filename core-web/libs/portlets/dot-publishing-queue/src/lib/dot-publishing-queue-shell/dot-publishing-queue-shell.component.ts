@@ -94,11 +94,16 @@ export class DotPublishingQueueShellComponent {
             untracked(() => this.#syncDetail(bundleId));
         });
 
-        // Every save and delete in a side panel, at any depth, reloads the list: a panel opened
-        // over the list, or over one of the dialogs, or stacked from inside either (T174).
+        // Every save and delete in a side panel over the list, at any depth, reloads the list
+        // (T174). Not while the asset list or the bundle wizard is open: a content change moves
+        // no bundle row, and the dialog reloads its own list (#38303).
         inject(DotContentChangeService)
             .changes$.pipe(takeUntilDestroyed())
-            .subscribe(() => this.#store.refresh());
+            .subscribe(() => {
+                if (!this.#store.selectedBundleId() && !this.#selectBundleRef) {
+                    this.#store.refresh();
+                }
+            });
 
         this.#openFromUrl();
     }

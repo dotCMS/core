@@ -44,6 +44,7 @@ import {
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import {
     DotContentChangeService,
+    DotContentEditor,
     DotCurrentUserService,
     DotGlobalMessageService,
     DotHttpErrorManagerService,
@@ -729,9 +730,10 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
     /**
      * Opens a contentlet row in the side panel over this dialog, in whichever editor its type uses
-     * (#38303, R12). The close reloads the bundle's assets (FR-017) and puts focus back on the row
-     * once they have reloaded (FR-039); a save reloads them through the content change
-     * notification (T174). Other rows do nothing.
+     * (#38303, R12). A save or a delete reloads the bundle's assets through the content change
+     * notification (T174). The close reloads them again only after the legacy editor, whose
+     * workflow actions report nothing (FR-017), and puts focus back on the row once they have
+     * rendered (FR-039). Other rows do nothing.
      *
      * @param asset The clicked row.
      */
@@ -741,6 +743,8 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
         if (!isEditableContentlet(asset) || !bundleId) {
             return;
         }
+
+        let editor: DotContentEditor | null = null;
 
         this.#opener.open(
             {
@@ -752,8 +756,12 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
             },
             {
                 injector: this.#injector,
+                editorResolved: (resolved) => (editor = resolved),
                 closed: () => {
-                    this.#loadAssets(bundleId);
+                    if (editor !== 'new') {
+                        this.#loadAssets(bundleId);
+                    }
+
                     this.#focusRowAfterReload(asset.asset);
                 },
                 // In the portlet's URL: on load the portlet reopens the panel over the list (#38303).
