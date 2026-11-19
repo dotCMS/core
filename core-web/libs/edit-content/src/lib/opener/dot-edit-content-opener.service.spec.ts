@@ -333,13 +333,33 @@ describe('DotEditContentOpenerService', () => {
      * editor while its old choice is still remembered, so it forces the legacy editor (#38303).
      */
     describe('a forced legacy editor', () => {
-        it('shows the legacy editor without asking which editor the type uses', async () => {
+        it('shows the legacy editor even for a type that uses the new one', async () => {
             spectator.service.open(EDIT_REQUEST, { injector, editor: 'legacy' });
 
             const { component } = await lastOpen();
 
+            // `Blog` uses the new editor in this suite.
             expect(component).toBe(LegacyEditorStub);
-            expect(resolveEditor).not.toHaveBeenCalled();
+        });
+
+        it("heads a forced legacy create with the type's name, not its variable", async () => {
+            resolveEditor.mockReturnValue(
+                of({
+                    editor: 'new',
+                    contentType: createFakeContentType({ variable: 'blogPost', name: 'Blog Post' })
+                })
+            );
+
+            spectator.service.open(
+                { mode: 'new', contentType: 'blogPost', languageId: 2 },
+                { injector, editor: 'legacy' }
+            );
+
+            const { config, component } = await lastOpen();
+
+            expect(component).toBe(LegacyEditorStub);
+            expect(resolveEditor).toHaveBeenCalledWith('blogPost');
+            expect(heading(config)).toBe('Blog Post');
         });
 
         it('still resolves the create screen for a forced legacy create', async () => {
