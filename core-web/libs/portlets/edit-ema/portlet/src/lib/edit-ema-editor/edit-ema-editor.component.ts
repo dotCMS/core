@@ -2110,11 +2110,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 languageId: newLanguage,
                 title: page.title
             },
-            {
-                variantId: this.uveStore.pageVariantId(),
-                siteId: this.uveStore.pageAsset()?.site?.identifier,
-                languageId: newLanguage
-            }
+            pageRequestContext(this.uveStore)
         );
         let saved = false;
 
@@ -2148,8 +2144,8 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * @param newLanguage The language to translate it into.
      */
     #translateInLegacyEditor(page: DotCMSPage, newLanguage: number): void {
-        const variantId = this.uveStore.pageVariantId();
-        const siteId = this.uveStore.pageAsset()?.site?.identifier;
+        const context = pageRequestContext(this.uveStore);
+        const { variantId, siteId } = context;
         const request = withPageContext(
             {
                 mode: 'new',
@@ -2157,7 +2153,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 languageId: newLanguage,
                 title: page.title
             },
-            { variantId, siteId, languageId: newLanguage }
+            context
         );
         let saved = false;
 
