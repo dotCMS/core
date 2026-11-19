@@ -6,9 +6,8 @@
 # - Single source of truth: the `version` input, supplied by the caller (the dotCMS
 #   release pipeline — see cicd_release-sdk.yml, which derives it from the GitHub
 #   Release tag, mirroring how cicd_release-cli.yml versions @dotcms/dotcli).
-# - Every real-release invocation publishes every SDK package at that exact version to
-#   the `latest` npm dist-tag — including releases where the SDK has no code changes, to
-#   preserve the one-dotCMS-version <-> one-SDK-version invariant.
+# - Every real release publishes exact versions, including releases with no SDK
+#   changes. Only the latest promotion moves forward.
 #
 # `next` TAG (internal dev/QA use only):
 # - cicd_3-trunk.yml also calls this action on merges to main that touch SDK files,
@@ -203,6 +202,15 @@ runs:
         echo "//registry.npmjs.org/:_authToken=${NPM_AUTH_TOKEN}" > ~/.npmrc
 
         PUBLISH_SUCCESS=true
+        packages=()
+        publish_tag="$NPM_TAG"
+        if [[ "$NPM_TAG" == latest ]]; then
+          if [[ ! "$RELEASE_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[0-9]+$ ]]; then
+            echo "::error::Expected a date-based SDK release version, got $RELEASE_VERSION."
+            exit 1
+          fi
+          publish_tag=sdk-staging
+        fi
 
         for sdk in $(find . -maxdepth 1 -mindepth 1 -type d -exec basename {} \;); do
           cd "$sdk"
@@ -214,7 +222,8 @@ runs:
           # match: the first publish succeeded, then every re-run tried to publish a version
           # that already existed and failed the release step. Reading `.name` makes the guard
           # work for any naming scheme, scoped or not.
-          PKG_NAME=$(jq -r '.name' package.json)
+          PKG_NAME=$(jq -er '.name | select(type == "string" and length > 0)' package.json)
+          packages+=("$PKG_NAME")
           echo "📦 Processing ${PKG_NAME}..."
 
           # Idempotency: the version is fixed to the dotCMS release tag and can never be
@@ -225,8 +234,8 @@ runs:
           if npm view "${PKG_NAME}@${RELEASE_VERSION}" version >/dev/null 2>&1; then
             echo "  ⏭️  ${PKG_NAME}@${RELEASE_VERSION} already published — skipping (idempotent re-run)"
           else
-            echo "  🚀 Publishing: ${PKG_NAME}@${RELEASE_VERSION} (tag: ${NPM_TAG})"
-            if npm publish --access public --tag "${NPM_TAG}"; then
+            echo "  🚀 Publishing: ${PKG_NAME}@${RELEASE_VERSION} (tag: ${publish_tag})"
+            if npm publish --access public --tag "$publish_tag"; then
               echo "  ✅ Published"
             else
               echo "  ❌ Failed to publish"
@@ -238,16 +247,33 @@ runs:
           echo ""
         done
 
-        echo "actual_published=$PUBLISH_SUCCESS" >> $GITHUB_OUTPUT
-
-        if [ "$PUBLISH_SUCCESS" = "true" ]; then
-          echo "🎉 All SDK packages published successfully!"
-        else
-          echo "❌ Some publications failed"
-          echo "::endgroup::"
+        if [[ "$PUBLISH_SUCCESS" != true || ${#packages[@]} -eq 0 ]]; then
+          echo "::error::SDK publication did not complete. No latest tags were promoted."
           exit 1
         fi
 
+        # The shared SDK publish job lock protects this read/advance sequence.
+        if [[ "$NPM_TAG" == latest ]]; then
+          for package in "${packages[@]}"; do
+            dist_tags=$(npm view "$package@$RELEASE_VERSION" dist-tags --json --prefer-online)
+            latest=$(jq -er 'if type == "object" then .latest // "" else error("Expected npm dist-tags") end' <<< "$dist_tags")
+            if [[ -n "$latest" ]]; then
+              if [[ ! "$latest" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9]+)?$ ]]; then
+                echo "::error::Cannot safely compare $package latest ($latest) to $RELEASE_VERSION."
+                exit 1
+              fi
+              if [[ "$latest" == "${RELEASE_VERSION%-*}" ||
+                    "$(printf '%s\n' "$latest" "$RELEASE_VERSION" | sort -V | tail -1)" == "$latest" ]]; then
+                echo "Keeping $package latest at $latest."
+                continue
+              fi
+            fi
+            npm dist-tag add "$package@$RELEASE_VERSION" latest
+          done
+        fi
+
+        echo "actual_published=true" >> "$GITHUB_OUTPUT"
+        echo "🎉 All SDK packages published successfully!"
         echo "::endgroup::"
       shell: bash
 

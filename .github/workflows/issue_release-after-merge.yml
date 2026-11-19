@@ -30,6 +30,7 @@ jobs:
           GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
           REPO: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          MERGE_COMMIT: ${{ github.event.pull_request.merge_commit_sha }}
         run: |
           set -euo pipefail
           if [[ -z "$GH_TOKEN" ]]; then
@@ -74,9 +75,17 @@ jobs:
             exit 1
           fi
 
-          # Pin the release to the main commit the SDK scan checked.
-          release_commit=$(git rev-parse HEAD)
-          breaking=$(bash .github/scripts/sdk-breaking-prs.sh "$REPO" "$version" "$release_commit")
+          # A queued job must not pick up later merges.
+          if [[ ! "$MERGE_COMMIT" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::Missing or invalid merge commit for PR #$PR_NUMBER."
+            exit 1
+          fi
+          ancestry=$(gh api "repos/$REPO/compare/$MERGE_COMMIT...main?per_page=1" --jq '.status')
+          if [[ "$ancestry" != "ahead" && "$ancestry" != "identical" ]]; then
+            echo "::error::Merge commit $MERGE_COMMIT is not on main."
+            exit 1
+          fi
+          breaking=$(bash .github/scripts/sdk-breaking-prs.sh "$REPO" "$version" "$MERGE_COMMIT")
           bump=false
           if [[ -n "$breaking" ]]; then
             bump=true
@@ -86,8 +95,8 @@ jobs:
           dispatch=$(gh api --method POST "$workflow_api/dispatches" \
             -H 'X-GitHub-Api-Version: 2026-03-10' \
             -f ref=main -f "inputs[release_version]=$version" \
-            -f "inputs[release_commit]=$release_commit" -f "inputs[bump_min_sdk_version]=$bump" \
-            -f 'inputs[update_github_labels]=false')
+            -f "inputs[release_commit]=$MERGE_COMMIT" -f "inputs[bump_min_sdk_version]=$bump" \
+            -f 'inputs[update_github_labels]=false' -f 'inputs[auto_release]=true')
           run_id=$(jq -er '.workflow_run_id' <<< "$dispatch")
           run_url=$(jq -er '.html_url' <<< "$dispatch")
           echo "Queued release $version: $run_url" >> "$GITHUB_STEP_SUMMARY"
@@ -96,11 +105,11 @@ jobs:
 
           # Let the next queued job see this reservation before it selects a version.
           for _ in {1..12}; do
-            visible=$(gh api "$workflow_api/runs?per_page=100" --jq ".workflow_runs[] | select(.id == $run_id) | .id")
-            if [[ -n "$visible" ]]; then
+            if visible=$(gh api "$workflow_api/runs?per_page=100" --jq ".workflow_runs[] | select(.id == $run_id) | .id") &&
+               [[ -n "$visible" ]]; then
               exit 0
             fi
             sleep 5
           done
-          echo "::error::Release was dispatched but is not yet visible: $run_url"
-          exit 1
+          # GitHub already accepted the dispatch. Do not encourage a duplicate retry.
+          echo "::warning::Release was dispatched but is not yet visible in the run list: $run_url"

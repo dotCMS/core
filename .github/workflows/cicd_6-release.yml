@@ -18,7 +18,7 @@
 #
 
 name: '-6 Release Process'
-run-name: "Release ${{ inputs.release_version }}${{ inputs.java-version && format(' [{0}]', inputs.java-version) || '' }}"
+run-name: "Release ${{ inputs.release_version }}${{ (inputs.artifact-suffix || inputs.java-version) && format(' [{0}]', inputs.artifact-suffix || inputs.java-version) || '' }}"
 
 on:
   workflow_dispatch:
@@ -29,6 +29,10 @@ on:
       release_commit:
         description: 'Commit Hash (default to latest commit)'
         required: false
+      auto_release:
+        description: 'Require automatic release guards (used by the merge trigger).'
+        type: boolean
+        default: false
       deploy_artifact:
         description: 'Publish Maven artifacts to the S3 repository'
         type: boolean
@@ -75,10 +79,10 @@ on:
         required: false
         default: ''
 
-# No concurrency control - releases should complete without interruption
+# Manual and label-triggered releases share the same publishing queue.
 concurrency:
-  group: release-${{ github.event.inputs.release_version }}
-  cancel-in-progress: false
+  group: production-release
+  queue: max
 
 jobs:
   # Enforce that releases are only ever cut from main. The workflow_dispatch
@@ -166,9 +170,23 @@ jobs:
       release_version: ${{ github.event.inputs.release_version }}
       release_commit: ${{ github.event.inputs.release_commit }}
       bump_min_sdk_version: ${{ github.event.inputs.bump_min_sdk_version == 'true' }}
+      auto_release: ${{ inputs.auto_release }}
     secrets:
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
       CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
+
+  # Keep SDK publishing inside the release run so the next release waits for it.
+  publish-sdk:
+    name: Publish SDK
+    needs: [ release-prepare ]
+    if: needs.release-prepare.outputs.is_lts != 'true'
+    uses: ./.github/workflows/cicd_release-sdk.yml
+    with:
+      version: ${{ needs.release-prepare.outputs.release_version }}
+      ref: ${{ needs.release-prepare.outputs.release_tag }}
+    secrets:
+      NPM_ORG_TOKEN: ${{ secrets.NPM_ORG_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
   # Build - standard build phase for artifact generation
   build:
@@ -534,7 +552,7 @@ jobs:
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize, build, deployment, release, bump-min-sdk-version ]
+    needs: [ initialize, build, deployment, release, publish-sdk, bump-min-sdk-version ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ github.run_id }}
