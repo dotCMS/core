@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { mockProvider } from '@openng/spectator/vitest';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject, of, Subject } from 'rxjs';
 import { type Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -89,7 +89,12 @@ describe('DotWorkflowTaskComponent', () => {
     let dotCustomEventHandlerService: DotCustomEventHandlerService;
     let taskDetail: DebugElement;
 
-    beforeEach(() => {
+    /**
+     * Builds the component and runs its first change detection, which views the route's task.
+     *
+     * @param messageService What the app's `DotMessageService` is.
+     */
+    const setup = (messageService: unknown): void => {
         TestBed.configureTestingModule({
             imports: [
                 DotWorkflowTaskDetailComponent,
@@ -108,7 +113,7 @@ describe('DotWorkflowTaskComponent', () => {
                 },
                 {
                     provide: DotMessageService,
-                    useValue: messageServiceMock
+                    useValue: messageService
                 },
                 {
                     provide: LoginService,
@@ -174,6 +179,59 @@ describe('DotWorkflowTaskComponent', () => {
         vi.spyOn(dotIframeService, 'reloadData');
         fixture.detectChanges();
         taskDetail = de.query(By.css('dot-workflow-task-detail'));
+    };
+
+    beforeEach(() => setup(messageServiceMock));
+
+    /**
+     * On a fresh load of a task's URL the dialog opens while the app's messages are still loading,
+     * and `get` answers with the key until then. The dialog's header waits for them, so it reads
+     * "Task Detail", not `workflow.task.dialog.header` (#38303, T177).
+     */
+    describe('before the messages load', () => {
+        let messagesReady$: Subject<void>;
+
+        beforeEach(() => {
+            messagesReady$ = new Subject<void>();
+            let loaded = false;
+            const loading = {
+                ready$: messagesReady$,
+                get: (key: string, ...args: string[]) =>
+                    loaded ? messageServiceMock.get(key, ...args) : key
+            };
+            messagesReady$.subscribe(() => (loaded = true));
+
+            TestBed.resetTestingModule();
+            setup(loading);
+        });
+
+        it('should not show the task until the messages load', () => {
+            expect(dotWorkflowTaskDetailService.view).not.toHaveBeenCalled();
+        });
+
+        it('should show the task with the translated header once the messages load', () => {
+            messagesReady$.next();
+
+            expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledTimes(1);
+            expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledWith({
+                header: 'Task Detail',
+                id: TASK_ID
+            });
+        });
+
+        it('should show each task the route named while they loaded, in order', () => {
+            params$.next({ asset: 'other-task' });
+            messagesReady$.next();
+
+            expect(dotWorkflowTaskDetailService.view).toHaveBeenNthCalledWith(1, {
+                header: 'Task Detail',
+                id: TASK_ID
+            });
+            expect(dotWorkflowTaskDetailService.view).toHaveBeenNthCalledWith(2, {
+                header: 'Task Detail',
+                id: 'other-task'
+            });
+        });
     });
 
     it('should call workflow task modal', () => {
