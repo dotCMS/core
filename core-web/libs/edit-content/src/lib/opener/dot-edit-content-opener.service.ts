@@ -67,6 +67,13 @@ export interface DotEditContentOpenOptions extends DotEditContentPanelHandlers {
     resolved?: DotContentEditorChoice;
 
     /**
+     * The create screen a legacy create opens on, when the caller has its own rather than the
+     * type's: the UVE's translate screen, the page's create form pre-filled from the page. The
+     * opener then does not ask the server for one.
+     */
+    createUrl?: string;
+
+    /**
      * Writes the open panel to the surface's URL, so it can be shared, survives a refresh and
      * closes with browser Back (#38303, FR-044). Every surface except the page editor sets it.
      */
@@ -350,13 +357,17 @@ export class DotEditContentOpenerService {
      * @param request A request that passed {@link isOpenable}.
      * @param contentlet The contentlet fetched for it, if one was.
      * @param options `editor`: the editor the caller forced, if any. `resolved`: the editor choice
-     * the caller already has.
+     * the caller already has. `createUrl`: the create screen the caller already has.
      * @returns The answers, once; errors when the create screen is refused.
      */
     #resolve(
         request: DotEditContentRequest,
         contentlet: DotCMSContentlet | null,
-        { editor: forced, resolved }: Pick<DotEditContentOpenOptions, 'editor' | 'resolved'>
+        {
+            editor: forced,
+            resolved,
+            createUrl: givenCreateUrl
+        }: Pick<DotEditContentOpenOptions, 'editor' | 'resolved' | 'createUrl'>
     ): Observable<DotResolvedRequest> {
         const variable = (request.contentType || contentlet?.contentType) as string;
         // A forced editor still resolves the type, for the heading's name; only the choice is
@@ -371,10 +382,12 @@ export class DotEditContentOpenerService {
 
         return choice$.pipe(
             switchMap(({ editor, contentType }) => {
-                const createUrl$: Observable<string | null> =
-                    editor === 'legacy' && request.mode === 'new'
-                        ? this.#actionUrl.getCreateContentletUrl(variable, request.languageId)
-                        : of(null);
+                const legacyCreate = editor === 'legacy' && request.mode === 'new';
+                const createUrl$: Observable<string | null> = !legacyCreate
+                    ? of(null)
+                    : givenCreateUrl
+                      ? of(givenCreateUrl)
+                      : this.#actionUrl.getCreateContentletUrl(variable, request.languageId);
 
                 return createUrl$.pipe(
                     map((createUrl) => ({ editor, contentType, contentlet, createUrl }))
