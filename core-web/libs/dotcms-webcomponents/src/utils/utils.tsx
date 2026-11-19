@@ -159,14 +159,18 @@ export function decodeChars(value: string): string {
 }
 
 /**
- * Returns a single JSON string formatted as "Key":"Value" separated with commas from a DotKeyValueField array
+ * Returns a single JSON string formatted as "Key":"Value" separated with commas from a DotKeyValueField array.
+ * Keys and values go through JSON.stringify so control chars (tabs, line breaks) are escaped and the result is valid JSON.
  *
  * @param DotKeyValueField[] values
  * @returns string
  */
 export function getJsonStringFromDotKeyArray(values: DotKeyValueField[]): string {
     return `{${values
-        .map((item: DotKeyValueField) => `"${encodeChars(item.key)}":"${encodeChars(item.value)}"`)
+        .map(
+            (item: DotKeyValueField) =>
+                `${JSON.stringify(encodeChars(item.key))}:${JSON.stringify(encodeChars(item.value))}`
+        )
         .join(',')}}`;
 }
 
