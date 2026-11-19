@@ -64,6 +64,7 @@ import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workf
 @Injectable()
 class MockDotWorkflowTaskDetailService {
     view = vi.fn();
+    setHeader = vi.fn();
 }
 
 const messageServiceMock = new MockDotMessageService({
@@ -185,8 +186,10 @@ describe('DotWorkflowTaskComponent', () => {
 
     /**
      * On a fresh load of a task's URL the dialog opens while the app's messages are still loading,
-     * and `get` answers with the key until then. The dialog's header waits for them, so it reads
-     * "Task Detail", not `workflow.task.dialog.header` (#38303, T177).
+     * and `get` answers with the key until then. The task shows at once, so the dialog opens in
+     * the order the URL names it, under a side panel the URL also names; its header is set once
+     * the messages load, so it reads "Task Detail", never `workflow.task.dialog.header` (#38303,
+     * T177).
      */
     describe('before the messages load', () => {
         let messagesReady$: Subject<void>;
@@ -205,43 +208,25 @@ describe('DotWorkflowTaskComponent', () => {
             setup(loading);
         });
 
-        it('should not show the task until the messages load', () => {
-            expect(dotWorkflowTaskDetailService.view).not.toHaveBeenCalled();
-        });
-
-        it('should show the task with the translated header once the messages load', () => {
-            messagesReady$.next();
-
+        it('should show the task at once, without a header', () => {
             expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledTimes(1);
-            expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledWith({
-                header: 'Task Detail',
-                id: TASK_ID
-            });
+            expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledWith({ id: TASK_ID });
+            expect(dotWorkflowTaskDetailService.setHeader).not.toHaveBeenCalled();
         });
 
-        it('should show each task the route named while they loaded, in order', () => {
-            params$.next({ asset: 'other-task' });
+        it('should set the translated header once the messages load, and not show the task again', () => {
             messagesReady$.next();
 
-            expect(dotWorkflowTaskDetailService.view).toHaveBeenNthCalledWith(1, {
-                header: 'Task Detail',
-                id: TASK_ID
-            });
-            expect(dotWorkflowTaskDetailService.view).toHaveBeenNthCalledWith(2, {
-                header: 'Task Detail',
-                id: 'other-task'
-            });
+            expect(dotWorkflowTaskDetailService.setHeader).toHaveBeenCalledTimes(1);
+            expect(dotWorkflowTaskDetailService.setHeader).toHaveBeenCalledWith('Task Detail');
+            expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledTimes(1);
         });
     });
 
     it('should call workflow task modal', () => {
-        const params = {
-            header: 'Task Detail',
-            id: TASK_ID
-        };
-
-        expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledWith(params);
+        expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledWith({ id: TASK_ID });
         expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledTimes(1);
+        expect(dotWorkflowTaskDetailService.setHeader).toHaveBeenCalledWith('Task Detail');
     });
 
     /**
@@ -255,7 +240,6 @@ describe('DotWorkflowTaskComponent', () => {
 
             expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledTimes(2);
             expect(dotWorkflowTaskDetailService.view).toHaveBeenLastCalledWith({
-                header: 'Task Detail',
                 id: 'other-task'
             });
         });
@@ -322,10 +306,7 @@ describe('DotWorkflowTaskComponent', () => {
      * once the panel saves or closes, so it shows the content's current step (#38303, FR-025a).
      */
     describe('edit-contentlet from the task detail', () => {
-        const TASK = {
-            header: 'Task Detail',
-            id: '74cabf7a-0e9d-48b6-ab1c-8f76d0ad31e0'
-        };
+        const TASK = { id: TASK_ID };
 
         /** The handlers the component hands `openContent`, run after the task list reloads. */
         type AfterPanel = { saved?: () => void; closed?: () => void };
