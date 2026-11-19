@@ -14653,6 +14653,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityContentletMapsView"
           description: Pages matching the search criteria
+        "400":
+          description: "The path is missing or blank, or names no site after '//'"
         "401":
           description: Authentication required
         "403":

@@ -102,10 +102,12 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.dotmarketing.util.json.JSONObject;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -152,6 +154,9 @@ public class PageResource {
     public static final String TM_HOST = "tm_host";
     public static final String DOT_CACHE = "dotcache";
     public static final String IS_PAGE_RESOURCE = "pageResource";
+
+    /** Most pages the path search returns in one call. */
+    static final int PAGE_SEARCH_LIMIT = 10;
 
     private final PageResourceHelper pageResourceHelper;
     private final WebResource webResource;
@@ -1229,15 +1234,21 @@ public class PageResource {
     }
 
     /**
-     * Return all the page that contains the path parameter
+     * Returns the pages whose path contains the given text. At most {@value #PAGE_SEARCH_LIMIT}
+     * pages are returned.
      *
-     * @param request
-     * @param path path to filter, if it start with '//' then the path contains the site name
-     * @param liveQueryParam if it is true then return page only with live version, if it is false return both live and working version
-     * @param onlyLiveSites if it is true then filter page only from live sites
-     * @return
-     * @throws DotDataException throw if a DotDataException occur
-     * @throws DotSecurityException throw if the user don't have the right permissions
+     * @param request the current request
+     * @param response the current response
+     * @param path text the page path must contain; when it starts with {@code //}, the segment
+     *             after it is the site name and the rest is the path text. Required.
+     * @param liveQueryParam if true, only live versions are returned; if false, both live and
+     *                       working versions; when absent, the current page mode decides
+     * @param onlyLiveSites if true, only pages from live sites are returned
+     * @return the matching pages, as printable contentlet maps
+     * @throws DotDataException if the search fails
+     * @throws DotSecurityException if the user is not allowed to run the search
+     * @throws BadRequestException if {@code path} is missing or blank, or names no site after
+     *                             {@code //}
      */
     @Operation(
             operationId = "searchPages",
@@ -1250,6 +1261,7 @@ public class PageResource {
             @ApiResponse(responseCode = "200", description = "Pages matching the search criteria",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityContentletMapsView.class))),
+            @ApiResponse(responseCode = "400", description = "The path is missing or blank, or names no site after '//'"),
             @ApiResponse(responseCode = "401", description = "Authentication required"),
             @ApiResponse(responseCode = "403", description = "User does not have required permissions")
     })
@@ -1273,6 +1285,10 @@ public class PageResource {
         final User user = initData.getUser();
 
         final boolean live = (liveQueryParam == null) ? PageMode.get(request).showLive : liveQueryParam;
+
+        if (!UtilMethods.isSet(path)) {
+            throw new BadRequestException("The 'path' query parameter is required");
+        }
 
         final String esQuery = getPageByPathESQuery(path);
 
@@ -1490,28 +1506,61 @@ public class PageResource {
         }
     }
 
+    /**
+     * Builds the content index request that finds the pages whose path contains the given text.
+     * <p>
+     * A value starting with {@code //} names a site first: {@code //demo.dotcms.com/about-us}
+     * matches pages of {@code demo.dotcms.com} whose path contains {@code about-us}. Both parts
+     * are matched as literal text, and the request always asks for the first
+     * {@value #PAGE_SEARCH_LIMIT} hits.
+     *
+     * @param pathParam the path text, optionally prefixed with {@code //<site name>/}
+     * @return the request body, as JSON
+     * @throws BadRequestException if the value starts with {@code //} but names no site
+     */
     private String getPageByPathESQuery(final String pathParam) {
-        String hostFilter = "";
+        String hostName = null;
         String path;
 
         if (pathParam.startsWith("//")) {
             final String[] pathSplit = pathParam.split("/");
-            final String hostName = pathSplit[2];
-            hostFilter = String.format("+conhostName:%s", hostName);
+            if (pathSplit.length < 3 || !UtilMethods.isSet(pathSplit[2])) {
+                throw new BadRequestException("The 'path' query parameter names no site after '//'");
+            }
+            hostName = pathSplit[2];
             path = String.join("/", Arrays.copyOfRange(pathSplit, 3, pathSplit.length));
         } else {
             path = pathParam;
         }
 
-        path = path.replace("/", "\\\\/");
+        final StringBuilder luceneQuery = new StringBuilder("+basetype:5 +path:*")
+                .append(literalTerm(path)).append("* ");
+        if (null != hostName) {
+            luceneQuery.append("+conhostName:").append(literalTerm(hostName)).append(' ');
+        }
+        luceneQuery.append("languageid:1^10");
 
-        return String.format("{"
-                + "query: {"
-                + "query_string: {"
-                + "query: \"+basetype:5 +path:*%s* %s languageid:1^10\""
-                + "}"
-                + "}"
-                + "}", path, hostFilter);
+        return new JSONObject()
+                .put("query", new JSONObject()
+                        .put("query_string", new JSONObject().put("query", luceneQuery.toString())))
+                .put("size", PAGE_SEARCH_LIMIT)
+                .put("from", 0)
+                .toString();
+    }
+
+    /**
+     * Turns a value into a single literal term of a {@code query_string} query, so it is matched
+     * as plain text: {@code <} and {@code >} are left out, because the query syntax reads them as
+     * range signs and offers no way to keep them literal, and every other character with a
+     * meaning in the query syntax, and every whitespace character, is preceded by a backslash.
+     * Neither sign can appear in a page path or a site name.
+     *
+     * @param value the text to match
+     * @return the value, ready to place after {@code field:} in the query
+     */
+    private static String literalTerm(final String value) {
+        return LuceneQueryUtils.escape(value.replaceAll("[<>]", ""))
+                .replaceAll("(\\s)", "\\\\$1");
     }
 
     private Collection<Contentlet> applyFilters(
