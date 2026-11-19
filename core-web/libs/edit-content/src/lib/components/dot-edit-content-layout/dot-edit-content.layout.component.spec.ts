@@ -263,6 +263,100 @@ describe('EditContentLayoutComponent', () => {
         });
     });
 
+    /**
+     * An opener that asks for content in a language it has no version in gets the content in
+     * another language, with the asked one on the request (the UVE's translate, a deep link with
+     * `editContentLang`). The editor then offers that translation, as its own locale switch does:
+     * the populate or manual dialog, once (#38303, T178).
+     */
+    describe('A requested language the content lacks', () => {
+        const ENGLISH = {
+            id: 1,
+            isoCode: 'en-us',
+            language: 'English',
+            translated: true,
+            defaultLanguage: true
+        } as DotLanguage;
+        const SPANISH = {
+            id: 2,
+            isoCode: 'es-es',
+            language: 'Spanish',
+            translated: false
+        } as DotLanguage;
+        const FRENCH = {
+            id: 3,
+            isoCode: 'fr-fr',
+            language: 'French',
+            translated: true
+        } as DotLanguage;
+
+        /**
+         * Opens the editor on English content with the request naming a language, and lets the
+         * store load the content's locales.
+         */
+        const openAsking = (languageId?: number) => {
+            mockEditContentHost.resolveIdentity.mockReturnValue(languageId ? { languageId } : {});
+            const fresh = createComponent({ detectChanges: false });
+            const freshStore = fresh.inject(DotEditContentStore, true);
+            fresh
+                .inject(DotContentletService, true)
+                .getLanguages.mockReturnValue(of([ENGLISH, SPANISH, FRENCH]));
+            fresh.inject(DotLanguagesService).getDefault.mockReturnValue(of(ENGLISH));
+            const switchLocale = vi
+                .spyOn(freshStore, 'switchLocale')
+                .mockImplementation(() => undefined);
+
+            fresh.detectChanges();
+            patchState(unprotected(freshStore), {
+                contentlet: { ...MOCK_CONTENTLET_1_TAB, languageId: ENGLISH.id }
+            });
+            fresh.detectChanges();
+            fresh.detectChanges();
+
+            return { fresh, freshStore, switchLocale };
+        };
+
+        it('should offer the translation into an untranslated language the request names', () => {
+            const { switchLocale } = openAsking(SPANISH.id);
+
+            expect(switchLocale).toHaveBeenCalledTimes(1);
+            expect(switchLocale).toHaveBeenCalledWith(expect.objectContaining({ id: SPANISH.id }));
+        });
+
+        it('should offer it once, though the locales load again', () => {
+            const { fresh, freshStore, switchLocale } = openAsking(SPANISH.id);
+
+            patchState(unprotected(freshStore), {
+                localesStatus: { status: ComponentStatus.LOADING, error: '' }
+            });
+            fresh.detectChanges();
+            patchState(unprotected(freshStore), {
+                localesStatus: { status: ComponentStatus.LOADED, error: '' }
+            });
+            fresh.detectChanges();
+
+            expect(switchLocale).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not offer it when the request names the content’s own language', () => {
+            const { switchLocale } = openAsking(ENGLISH.id);
+
+            expect(switchLocale).not.toHaveBeenCalled();
+        });
+
+        it('should not offer it when the request names a language the content has', () => {
+            const { switchLocale } = openAsking(FRENCH.id);
+
+            expect(switchLocale).not.toHaveBeenCalled();
+        });
+
+        it('should not offer it when the request names no language', () => {
+            const { switchLocale } = openAsking();
+
+            expect(switchLocale).not.toHaveBeenCalled();
+        });
+    });
+
     describe('Component Methods', () => {
         describe('selectWorkflow()', () => {
             it('should set $showDialog to true when selectWorkflow is called', () => {

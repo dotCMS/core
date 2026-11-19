@@ -31,6 +31,8 @@ export interface UvePageContent {
     contentTypeIds: string[];
     /** What to place in the container, in order; empty leaves it empty. */
     contentletIdentifiers?: string[];
+    /** The page's content type's variable; `htmlpageasset` when unset. */
+    pageType?: string;
 }
 
 /**
@@ -53,7 +55,7 @@ export interface UvePageContent {
 export async function createUvePage(
     request: APIRequestContext,
     suffix: string,
-    { contentTypeIds, contentletIdentifiers = [] }: UvePageContent
+    { contentTypeIds, contentletIdentifiers = [], pageType = 'htmlpageasset' }: UvePageContent
 ): Promise<UvePage> {
     const container = await createContainer(request, {
         title: `e2e side-panel container ${suffix}`,
@@ -98,7 +100,7 @@ export async function createUvePage(
         url: title,
         friendlyName: title,
         template: template.identifier,
-        contentType: 'htmlpageasset',
+        contentType: pageType,
         cachettl: 0
     });
 

@@ -101,6 +101,31 @@ export async function createContentType(
 }
 
 /**
+ * Creates a page content type (base type HTMLPAGE) of the test's own, on System Workflow. The server
+ * gives it the fields every page has (title, URL, host or folder, template, ...). A test that needs
+ * pages in a given editor uses its own type rather than changing `htmlpageasset`, which every other
+ * test running beside it uses.
+ *
+ * @param request The API context.
+ * @param name The type's name.
+ * @param newContentEditor Whether its pages open in the new editor.
+ */
+export async function createPageContentType(
+    request: APIRequestContext,
+    name: string,
+    newContentEditor: boolean
+): Promise<ContentType> {
+    return createContentType(request, {
+        clazz: 'com.dotcms.contenttype.model.type.ImmutablePageContentType',
+        name,
+        host: 'SYSTEM_HOST',
+        folder: 'SYSTEM_FOLDER',
+        metadata: { CONTENT_EDITOR2_ENABLED: newContentEditor },
+        workflow: [SYSTEM_WORKFLOW_ID]
+    });
+}
+
+/**
  * Turns a content type's "new edit content screen" (`metadata.CONTENT_EDITOR2_ENABLED`) on or off,
  * as the content type form's toggle does: reads the full type and sends it back with the flag set.
  * The endpoint returns `workflows` (objects) but takes `workflow` (ids).
