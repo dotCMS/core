@@ -13,10 +13,10 @@ public final class CdnTagHeader {
     private static final String HEADER_PROPERTY = "cdn.tag.header";
     private static final String DEFAULT_HEADER = "cdn-tag";
     private static final String DISABLED = "NONE";
-    private static final Set<String> SECURITY_HEADERS = Set.of(
+    private static final Set<String> RESERVED_HEADERS = Set.of(
             "strict-transport-security", "x-frame-options", "x-content-type-options",
             "content-security-policy", "content-security-policy-report-only",
-            "set-cookie", "set-cookie2");
+            "set-cookie", "set-cookie2", "content-type");
     private static final Pattern HTTP_TOKEN = Pattern.compile("[!#$%&'*+\\-.^_`|~0-9A-Za-z]+");
 
     private CdnTagHeader() {
@@ -24,8 +24,8 @@ public final class CdnTagHeader {
 
     /**
      * Tags a delivered resource with its stable identifier, not its version inode.
-     * Use {@value #DISABLED} to suppress the header. A blank, invalid, or reserved security
-     * header name falls back to {@value #DEFAULT_HEADER}.
+     * Use {@value #DISABLED} to suppress the header. A blank, invalid, or reserved header name
+     * falls back to {@value #DEFAULT_HEADER}.
      *
      * @param response the response serving the resource
      * @param identifier the resource identifier, or null for a file without one
@@ -41,7 +41,7 @@ public final class CdnTagHeader {
         }
 
         final boolean usable = HTTP_TOKEN.matcher(header).matches()
-                && !SECURITY_HEADERS.contains(header.toLowerCase(Locale.ROOT));
+                && !RESERVED_HEADERS.contains(header.toLowerCase(Locale.ROOT));
         response.setHeader(usable ? header : DEFAULT_HEADER, identifier);
     }
 }
