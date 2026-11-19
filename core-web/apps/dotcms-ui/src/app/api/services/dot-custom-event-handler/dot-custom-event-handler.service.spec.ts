@@ -492,6 +492,46 @@ describe('DotCustomEventHandlerService', () => {
             });
         });
 
+        /**
+         * The Site Browser names the folder twice: `folderPath` for the new editor and
+         * `&folder=<inode>` on its create URL, which is all the legacy editor reads
+         * (`view_browser_js_inc.jsp`, `getSelectedpageAsset` and `getSelectedfileAsset`).
+         */
+        describe('create-contentlet from the Site Browser', () => {
+            const SITE_BROWSER_URL =
+                '/c/portal/layout?p_l_id=1&p_p_id=site-browser&p_p_action=1&p_p_state=maximized' +
+                '&_site_browser_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet' +
+                '&_site_browser_cmd=new&selectedStructure=st-1&folder=folder-inode-1' +
+                '&referer=%2Fc&lang=1';
+
+            it('should carry the folder inode the create URL names, for the legacy editor', async () => {
+                await send('create-contentlet', {
+                    url: SITE_BROWSER_URL,
+                    contentType: 'htmlpageasset',
+                    folderPath: 'default/level1/'
+                });
+
+                expect(openedRequest()).toEqual({
+                    mode: 'new',
+                    contentType: 'htmlpageasset',
+                    folderPath: 'default/level1/',
+                    folderInode: 'folder-inode-1',
+                    languageId: 1,
+                    portletId: PORTLET_ID
+                });
+            });
+
+            it('should name no folder inode when the create URL has an empty folder', async () => {
+                await send('create-contentlet', {
+                    url: SITE_BROWSER_URL.replace('folder=folder-inode-1', 'folder='),
+                    contentType: 'htmlpageasset',
+                    folderPath: 'default/'
+                });
+
+                expect(openedRequest()).not.toHaveProperty('folderInode');
+            });
+        });
+
         describe('create-host', () => {
             it('should open a create of a site, ignoring the JSP url', async () => {
                 await send('create-host', { url: '/c/portal/layout?p_l_id=1&p_p_id=sites' });
