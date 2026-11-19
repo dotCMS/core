@@ -1117,16 +1117,16 @@ public class HostAssetsJobImpl extends ParentProxy{
 			newFolder.setSortOrder(sourceFolder.getSortOrder());
 			newFolder.setShowOnMenu(true);
 		}
+		final boolean createdByThisCopy = this.foldersCreatedByThisCopy.contains(newFolder.getInode());
+		if (createdByThisCopy) {
+			// grants given to the CMS Owner role only apply to the folder's owner
+			newFolder.setOwner(sourceFolder.getOwner());
+		}
 		this.folderAPI.save(newFolder, this.SYSTEM_USER, DONT_RESPECT_FRONTEND_ROLES);
 		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-		if (this.foldersCreatedByThisCopy.contains(newFolder.getInode())
-				&& !permissionAPI.isInheritingPermissions(sourceFolder)) {
+		if (createdByThisCopy && !permissionAPI.isInheritingPermissions(sourceFolder)) {
 			permissionAPI.copyPermissions(sourceFolder, newFolder);
-			// Saving permissions only evicts the cached permission rows. A yes/no decision on this
-			// folder cached since an earlier phase created it would keep its old answer for a while,
-			// so drop those decisions once this phase commits (one flush per transaction).
-			HibernateUtil.addCommitListener("site-copy-flush-permission-decisions",
-					() -> CacheLocator.getPermissionCache().flushShortTermCache());
+			evictCachedPermissionsAfterCommit(newFolder.getPermissionId());
 		}
 		folderMappingsBySourceId.put(sourceFolder.getInode(), new FolderMapping(sourceFolder, newFolder));
 		return newFolder;
@@ -1495,6 +1495,52 @@ public class HostAssetsJobImpl extends ParentProxy{
             this.destinationContent = destinationContent;
         }
     }
+
+	/**
+	 * Drops the cached permissions of a folder whose permissions this copy just replaced, once the
+	 * current transaction commits.
+	 * <p>
+	 * Saving permission rows evicts them from the cache before the commit, so a request reading
+	 * them in between can cache the old rows again, and cached yes/no permission decisions are not
+	 * evicted at all. The eviction therefore runs again after the commit, on this thread, for
+	 * every folder of the transaction at once, and also drops the cached decisions.
+	 *
+	 * @param permissionId the permission id of the folder whose permissions were copied
+	 */
+	private void evictCachedPermissionsAfterCommit(final String permissionId) {
+		HibernateUtil.getOrAddSyncCommitListener("site-copy-evict-folder-permissions",
+						PermissionCacheEviction::new)
+				.ifPresentOrElse(eviction -> eviction.add(permissionId),
+						() -> new PermissionCacheEviction(permissionId).run());
+	}
+
+	/**
+	 * Evicts the cached permissions of the given permissionables and every cached permission
+	 * decision.
+	 */
+	private static final class PermissionCacheEviction implements Runnable {
+
+		private final Set<String> permissionIds = new HashSet<>();
+
+		private PermissionCacheEviction() {
+		}
+
+		private PermissionCacheEviction(final String permissionId) {
+			this.permissionIds.add(permissionId);
+		}
+
+		private void add(final String permissionId) {
+			this.permissionIds.add(permissionId);
+		}
+
+		@Override
+		public void run() {
+			final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+			this.permissionIds.forEach(permissionAPI::removePermissionableFromCache);
+			CacheLocator.getPermissionCache().flushShortTermCache();
+		}
+
+	}
 
     private static class FolderMapping {
         Folder sourceFolder;

@@ -2142,6 +2142,66 @@ public class HostAPITest extends IntegrationTestBase  {
     }
 
     /**
+     * Method to test: the Site Copy job ({@link HostAssetsJobProxy}) when it copies folders.
+     * Given: a source folder owned by a user, whose own permissions give the CMS Owner role READ.
+     * Expected: the copied folder has the same owner, so the copied CMS Owner grant still lets that
+     * user read it.
+     */
+    @Test
+    public void copySite_copiedFolderKeepsItsOwner() throws Exception {
+        final User systemUser = APILocator.systemUser();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        Host sourceSite = null;
+        Host destinationSite = null;
+        Role role = null;
+        User owner = null;
+        try {
+            role = new RoleDataGen().nextPersisted();
+            owner = new UserDataGen().roles(role).nextPersisted();
+            sourceSite = new SiteDataGen().nextPersisted();
+            final Folder sourceFolder = new FolderDataGen().site(sourceSite).owner(owner)
+                    .name("owned" + System.currentTimeMillis()).nextPersisted();
+            permissionAPI.save(List.of(
+                    new Permission(sourceFolder.getPermissionId(),
+                            APILocator.getRoleAPI().loadCMSOwnerRole().getId(),
+                            PermissionAPI.PERMISSION_READ, true)),
+                    sourceFolder, systemUser, false);
+            assertTrue(permissionAPI.doesUserHavePermission(sourceFolder,
+                    PermissionAPI.PERMISSION_READ, owner, false));
+
+            destinationSite = createSite("copy" + System.currentTimeMillis() + ".dotcms.com",
+                    systemUser);
+
+            runSiteCopyJob(sourceSite, destinationSite, systemUser,
+                    new HostCopyOptions(false, true, false, false, false, false, false));
+
+            final Folder copiedFolder = APILocator.getFolderAPI().findFolderByPath(
+                    sourceFolder.getPath(), destinationSite, systemUser, false);
+            assertNotNull(copiedFolder.getInode());
+            assertEquals(owner.getUserId(), copiedFolder.getOwner());
+            assertTrue("The owner can still read the copied folder through the CMS Owner grant",
+                    permissionAPI.doesUserHavePermission(copiedFolder,
+                            PermissionAPI.PERMISSION_READ, owner, false));
+        } finally {
+            if (destinationSite != null) {
+                archiveHost(destinationSite, systemUser);
+                deleteHost(destinationSite, systemUser);
+            }
+            if (sourceSite != null) {
+                unpublishHost(sourceSite, systemUser);
+                archiveHost(sourceSite, systemUser);
+                deleteHost(sourceSite, systemUser);
+            }
+            if (owner != null) {
+                UserDataGen.remove(owner);
+            }
+            if (role != null) {
+                RoleDataGen.remove(role);
+            }
+        }
+    }
+
+    /**
      * Method to test: the Site Copy job ({@link HostAssetsJobProxy}) when templates, containers and
      * folders are copied together.
      * Given: a source site with a container-as-file under {@code /application/containers}, used by a
