@@ -342,7 +342,7 @@ public class ContentResource {
         final Contentlet tempContentlet = new Contentlet();
         tempContentlet.getMap().putAll(existentContentlet.getMap());
         final Contentlet mergedContentlet = MapToContentletPopulator.INSTANCE.populate(tempContentlet,
-                contentForm.getContentlet());
+                contentForm.getContentlet(), user);
         if (null == mergedContentlet || null == mergedContentlet.getContentType()) {
             throw new DotContentletValidationException(String.format("Contentlet '%s' does not have a specified " +
                                                                              "Content Type",

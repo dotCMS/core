@@ -389,15 +389,52 @@ export function deleteContentletFromContainer(action: ActionPayload): {
 }
 
 /**
- * Check if two containers are equals
+ * Whether moving a contentlet next to a pivot in the container it already sits in changes the
+ * container's order. It does not when the pivot is the moved contentlet itself, when the drop is
+ * right after the contentlet above it or right before the one below it, or when the pivot is not
+ * in the container, so there is nothing to place it next to.
  *
- * @param {PageContainer} currentContainer
- * @param {ContainerPayload} containerToFind
+ * @param contentletsId the container's contentlets, in order, before the move
+ * @param contentletId the contentlet being moved
+ * @param pivotId the contentlet it is dropped next to
+ * @param position which side of the pivot it is dropped on
+ * @returns true when the move leaves a different order
+ */
+export function doesMoveChangeOrder({
+    contentletsId,
+    contentletId,
+    pivotId,
+    position
+}: {
+    contentletsId: string[];
+    contentletId: string;
+    pivotId: string | undefined;
+    position: 'before' | 'after' | undefined;
+}): boolean {
+    const remaining = contentletsId.filter((id) => id !== contentletId);
+    const pivotIndex = pivotId === undefined ? -1 : remaining.indexOf(pivotId);
+
+    if (pivotIndex === -1) {
+        return false;
+    }
+
+    const offset = position === 'before' ? pivotIndex : pivotIndex + 1;
+    const moved = [...remaining.slice(0, offset), contentletId, ...remaining.slice(offset)];
+
+    return moved.some((id, index) => id !== contentletsId[index]);
+}
+
+/**
+ * Check if two containers are equals: the same container, by identifier, in the same place on
+ * the page, by uuid. Takes a page container or a container payload on either side.
+ *
+ * @param {Pick<PageContainer, 'identifier' | 'uuid'>} currentContainer
+ * @param {Pick<ContainerPayload, 'identifier' | 'uuid'>} containerToFind
  * @return {*}  {boolean}
  */
 export function areContainersEquals(
-    currentContainer: PageContainer,
-    containerToFind?: ContainerPayload
+    currentContainer: Pick<PageContainer, 'identifier' | 'uuid'>,
+    containerToFind?: Pick<ContainerPayload, 'identifier' | 'uuid'>
 ): boolean {
     return (
         currentContainer.identifier === containerToFind?.identifier &&
@@ -488,14 +525,21 @@ function insertPositionedContentletInContainer(payload: ActionPayload): {
                 return pageContainer;
             }
 
-            const index = pageContainer.contentletsId.indexOf(contentlet.identifier);
+            const pivotId = contentlet?.identifier;
+            const index = pivotId === undefined ? -1 : pageContainer.contentletsId.indexOf(pivotId);
 
             if (index !== -1) {
                 const offset = position === 'before' ? index : index + 1;
                 pageContainer.contentletsId.splice(offset, 0, newContentletId);
 
                 didInsert = true;
+            } else if (pivotId !== undefined && pivotId === newContentletId) {
+                // A moved contentlet dropped next to itself: its place left with the move, so
+                // there is nothing to place it next to, and it is not appended to the end (#38575).
+                errorCode = CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND;
             } else {
+                // The pivot is gone, as when someone removed it while new content was being
+                // created: the contentlet still goes in, at the end.
                 pageContainer.contentletsId.push(newContentletId);
                 didInsert = true;
             }

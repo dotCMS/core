@@ -45,6 +45,7 @@ const initialState: UVEState = {
     // Editor state (flattened with editor* prefix)
     editorDragItem: null,
     editorBounds: [],
+    editorScrollY: 0,
     editorState: EDITOR_STATE.IDLE,
     editorContentArea: null,
     editorSelected: null,

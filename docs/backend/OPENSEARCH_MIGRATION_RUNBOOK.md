@@ -594,7 +594,7 @@ the source engine's.
 | Setting | Production value |
 |---|---|
 | `OS_ENDPOINTS` | `https://…` — TLS activates from the scheme; you do not also need `OS_TLS_ENABLED` |
-| `OS_TLS_CERT_REQUIRED` | **`true`** (the default is `false`, which skips certificate and hostname verification) |
+| `OS_TLS_CERT_REQUIRED` | **`true`** (the default). `false` skips certificate and hostname verification |
 | `OS_TLS_CA_CERT` | Path to the PEM CA, when the cluster uses a private CA |
 | `OS_TLS_TRUST_SELF_SIGNED` | **Never `true` in production.** Lab only. |
 
@@ -1940,7 +1940,7 @@ the same server but will not be detected as overlapping. Verify by hand.
 | Property | Recommendation |
 |---|---|
 | `OS_ENDPOINTS` | `https://` in production. TLS activates from the scheme; `OS_TLS_ENABLED` is not also needed. |
-| `OS_TLS_CERT_REQUIRED` | `false` by default — verification is **skipped**. Set `true` in production. |
+| `OS_TLS_CERT_REQUIRED` | `true` by default. `false` **skips** certificate and hostname verification; avoid it in production. |
 | `OS_TLS_CA_CERT` | PEM CA path for a private CA / internal PKI. |
 | `OS_TLS_TRUST_SELF_SIGNED` | Dev and lab only. |
 
@@ -2285,7 +2285,7 @@ Only the settings a migration touches. Full connection reference:
 | `OS_ENDPOINTS` | derived from `OS_HOSTNAME`/`OS_PROTOCOL`/`OS_PORT` | **Must be a separate instance from `ES_ENDPOINTS`.** Preferred for multi-node. |
 | `OS_AUTH_TYPE` | `BASIC` | Falls back to `ES_AUTH_TYPE`. |
 | `OS_AUTH_BASIC_USER` / `OS_AUTH_BASIC_PASSWORD` | — | Fall back to the `ES_*` equivalents. **Set explicitly.** |
-| `OS_TLS_CERT_REQUIRED` | `false` | Set `true` in production, with a trusted CA. |
+| `OS_TLS_CERT_REQUIRED` | `true` | Keep `true` in production, with a trusted CA (`OS_TLS_CA_CERT`). |
 | `OS_TLS_CA_CERT` | — | PEM CA path for a private CA. |
 | `OS_TLS_TRUST_SELF_SIGNED` | `false` | Dev/lab only. |
 | `OS_CONNECTION_ATTEMPTS` | `24` | Startup connection retries. |

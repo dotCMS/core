@@ -51,6 +51,7 @@ import org.junit.platform.suite.api.Suite;
 @Suite
 @SelectClasses({
         JobQueueManagerAPICDITest.class,
+        com.dotmarketing.portlets.structure.business.LegacyFieldAPIFieldVariableTest.class,
         PostgresJobQueueIntegrationTest.class,
         com.dotmarketing.factories.PublishAssetPermissionIT.class,
         com.dotmarketing.portlets.links.action.PublishLinksActionIT.class,
@@ -77,6 +78,7 @@ import org.junit.platform.suite.api.Suite;
         FolderBulkDeleteOverlapIT.class,
         com.dotcms.rendering.velocity.viewtools.DotCMSMacroWebAPIGalleryTest.class,
         com.dotmarketing.portlets.links.action.EditLinkActionTest.class,
+        com.dotcms.rest.api.v1.contenttype.FieldVariableResourceDeleteTest.class,
         FolderBulkDeleteAnnouncementIT.class,
         FolderBulkDeleteResumeIT.class,
         FolderBulkDeleteHeartbeatIT.class,

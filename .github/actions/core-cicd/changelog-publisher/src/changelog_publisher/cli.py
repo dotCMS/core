@@ -17,9 +17,9 @@ import sys
 
 import requests
 
-from .client import CorpsitesClient
+from .client import CorpsitesClient, prod_reader
 from .publisher import AmbiguousMatchError, publish
-from .sync import load_state_file, reconcile, sync_with_retries
+from .sync import diff_fields, load_state_file, reconcile, sync_with_retries
 from .version import is_current_track
 
 log = logging.getLogger("changelog_publisher")
@@ -67,6 +67,7 @@ def cmd_publish(args: argparse.Namespace) -> int:
 
     try:
         client = CorpsitesClient()
+        prod = prod_reader()
         result = publish(
             client,
             version=args.version,
@@ -77,10 +78,12 @@ def cmd_publish(args: argparse.Namespace) -> int:
             service_account=service_account or None,
             force=args.force,
             apply=args.apply,
+            prod=prod,
         )
     except (requests.RequestException, AmbiguousMatchError, RuntimeError) as exc:
         # Concise, token-free failure (the token lives in the session header, not the URL/body).
-        # RuntimeError covers a missing DOTCMS_DEVSITE_RELEASENOTES_TOKEN — a clean one-line error, no traceback.
+        # RuntimeError covers a missing setting (auth URL / token / action, prod URL / token)
+        # and a push that never reached prod — a clean one-line error, no traceback.
         log.error("publish failed for %s: %s", args.version, exc)
         return 1
 
@@ -94,11 +97,12 @@ def cmd_publish(args: argparse.Namespace) -> int:
     return 0
 
 
-def _diff_line(field: str, old, new) -> str:
+def _diff_line(field: str, old, new, side: str = "") -> str:
+    """One human-readable diff line; `side` ("" or "prod ") says which record it is."""
     if field == "tainted":
         old, new = set(old or []), set(new or [])
-        return f"  tainted: +{','.join(sorted(new - old))} -{','.join(sorted(old - new))}"
-    return f"  {field}: {old} -> {new}"
+        return f"  {side}tainted: +{','.join(sorted(new - old))} -{','.join(sorted(old - new))}"
+    return f"  {side}{field}: {old} -> {new}"
 
 
 def cmd_sync_site(args: argparse.Namespace) -> int:
@@ -109,19 +113,25 @@ def cmd_sync_site(args: argparse.Namespace) -> int:
         return 2
     try:
         client = CorpsitesClient()
+        prod = prod_reader()
     except RuntimeError as exc:
         print(f"::evergreen-sync-error::{exc}")
         return 1
     try:
-        result = sync_with_retries(client, hub) if args.apply else reconcile(client, hub, apply=False)
+        result = (sync_with_retries(client, hub, prod=prod) if args.apply
+                  else reconcile(client, hub, apply=False, prod=prod))
     except (requests.RequestException, AmbiguousMatchError, RuntimeError) as exc:
         print(f"::evergreen-sync-error::{' '.join(str(exc).split())}")
         return 1
 
     if result.status == "would-update":
         print(f"desired: {json.dumps(result.desired, separators=(',', ':'))}")
-        for f in result.fields:
-            print(_diff_line(f, result.current.get(f), result.desired.get(f)))
+        # Each side's differences on its own lines; prod's are prefixed, since one write
+        # brings both in line with `desired`.
+        for side, cur in (("", result.current), ("prod ", result.prod_current)):
+            if cur is not None:
+                for f in diff_fields(cur, result.desired):
+                    print(_diff_line(f, cur.get(f), result.desired.get(f), side))
     if result.status == "unchanged":
         print("::evergreen-sync::unchanged")
     else:

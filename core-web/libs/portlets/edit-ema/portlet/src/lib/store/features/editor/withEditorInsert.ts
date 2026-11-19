@@ -57,16 +57,26 @@ export function withEditorInsert() {
                     if (!didInsert) {
                         deps.resetEditorProperties();
 
-                        return errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED
-                            ? {
-                                  didInsert: false,
-                                  errorCode: CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED,
-                                  maxContentlets: into.container.maxContentlets
-                              }
-                            : {
-                                  didInsert: false,
-                                  errorCode: CONTAINER_INSERT_ERROR.DUPLICATE_CONTENT
-                              };
+                        if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
+                            return {
+                                didInsert: false,
+                                errorCode: CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED,
+                                maxContentlets: into.container.maxContentlets
+                            };
+                        }
+
+                        // Nothing to place it next to: not the user's mistake, so not a duplicate.
+                        if (errorCode === CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND) {
+                            return {
+                                didInsert: false,
+                                errorCode: CONTAINER_INSERT_ERROR.PIVOT_NOT_FOUND
+                            };
+                        }
+
+                        return {
+                            didInsert: false,
+                            errorCode: CONTAINER_INSERT_ERROR.DUPLICATE_CONTENT
+                        };
                     }
 
                     if (isSelectedContentletGone(store.editorSelected(), pageContainers)) {
