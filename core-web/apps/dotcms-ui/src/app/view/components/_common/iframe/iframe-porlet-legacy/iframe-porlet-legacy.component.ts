@@ -11,7 +11,7 @@ import {
     ChangeDetectionStrategy
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Params, Router, RouterModule, UrlSegment } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule, UrlSegment } from '@angular/router';
 
 import {
     distinctUntilChanged,
@@ -32,79 +32,15 @@ import {
 } from '@dotcms/data-access';
 import { LoggerService } from '@dotcms/dotcms-js';
 import { UI_STORAGE_KEY } from '@dotcms/dotcms-models';
-import type { DotEditContentRequest } from '@dotcms/edit-content';
 import { GlobalStore } from '@dotcms/store';
 import { DotNotLicenseComponent } from '@dotcms/ui';
-import {
-    DotLoadingIndicatorService,
-    isDotIdentifier,
-    panelUrlIntentKey,
-    readPanelUrlIntent
-} from '@dotcms/utils';
+import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { refusePanelUrl } from '../../../../../api/util/open-edit-content-panel';
+import { PORTLET_FOLDER_PARAM, portletPanelUrl$ } from '../../../../../api/util/portlet-panel-url';
 import { IframeComponent } from '../iframe-component/iframe.component';
-
-/**
- * The legacy portlet's create link carries the folder beside the panel params
- * (`/c/:id/new/:contentType?folder=<inode>` redirects here with it). Content Drive's folder is its
- * `path`, so the key is this portlet's own.
- */
-const FOLDER_PARAM = 'folder';
-
-/** What a portlet URL asks the side panel to show, keyed so the same URL is told apart. */
-interface DotUrlPanel {
-    /** The same for the same panel, whatever else the URL carries. */
-    key: string;
-    /** What to open; absent when the URL names nothing, or names a panel the author cannot mean. */
-    request?: DotEditContentRequest;
-    /**
-     * The URL names a panel param of the wrong shape, or two panels: open nothing, show the
-     * standard error, and clear them.
-     */
-    refused?: boolean;
-}
-
-/**
- * Reads what a portlet URL asks the side panel to show (#38303, FR-049): an edit by identifier and
- * language, or a create with the folder an inode-shaped `folder` names.
- *
- * @param params The route's query params.
- */
-function panelFromUrl(params: Params): DotUrlPanel {
-    const intent = readPanelUrlIntent(params);
-    const key = panelUrlIntentKey(intent);
-
-    if (intent.kind === 'edit') {
-        const { identifier, languageId } = intent;
-
-        return {
-            key,
-            request: { mode: 'edit', identifier, ...(languageId ? { languageId } : {}) }
-        };
-    }
-
-    if (intent.kind === 'create') {
-        const folder = params[FOLDER_PARAM];
-        // It reaches the legacy create screen's URL, so only an inode-shaped value is used.
-        const folderInode =
-            typeof folder === 'string' && isDotIdentifier(folder) ? folder.trim() : null;
-
-        return {
-            // The folder is this portlet's own, beside the shared key.
-            key: `${key}:${folderInode ?? ''}`,
-            request: {
-                mode: 'new',
-                contentType: intent.contentType,
-                ...(folderInode ? { folderInode } : {})
-            }
-        };
-    }
-
-    return intent.kind === 'refused' ? { key, refused: true } : { key };
-}
 
 @Component({
     selector: 'dot-iframe-porlet',
@@ -239,7 +175,8 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
      * whose panel did not change opens nothing again, since an app navigation that changes other
      * params carries the panel params the router last saw. A link the author cannot have meant (a
      * panel param of the wrong shape, or two panels) opens nothing, shows the standard error, and
-     * loses its params with the create's folder.
+     * loses its params with the create's folder. While a Workflow task's detail is shown, the detail
+     * opens it instead ({@link #showsTask}).
      */
     #followPanelUrl(): void {
         if (this.#followingPanelUrl) {
@@ -247,21 +184,26 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
         }
 
         this.#followingPanelUrl = true;
-        this.route.queryParams
-            .pipe(
-                // Before the dedup, so a skipped entry is never the one the next URL is compared to.
-                filter(() => this.#router.currentNavigation()?.trigger !== 'popstate'),
-                map(panelFromUrl),
-                distinctUntilChanged((previous, next) => previous.key === next.key),
-                takeUntil(this.destroy$)
-            )
+        portletPanelUrl$(this.route, this.#router, () => !this.#showsTask())
+            .pipe(takeUntil(this.destroy$))
             .subscribe(({ request, refused }) => {
                 if (request) {
                     this.dotCustomEventHandlerService.openContent(request);
                 } else if (refused) {
-                    void refusePanelUrl(this.#injector, [FOLDER_PARAM]);
+                    void refusePanelUrl(this.#injector, [PORTLET_FOLDER_PARAM]);
                 }
             });
+    }
+
+    /**
+     * Whether a Workflow task's detail is shown (`/c/workflow/<task>`). It opens what the URL names
+     * itself, once its dialog has shown, so the panel always lands above the dialog (#38303).
+     */
+    #showsTask(): boolean {
+        return (
+            this.route.snapshot?.params?.['id'] === 'workflow' &&
+            !!this.route.firstChild?.snapshot?.params?.['asset']
+        );
     }
 
     private setIframeSrc(): void {

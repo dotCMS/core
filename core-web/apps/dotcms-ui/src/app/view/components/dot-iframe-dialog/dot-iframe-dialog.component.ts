@@ -53,6 +53,13 @@ export class DotIframeDialogComponent implements OnChanges {
     @Output()
     keyWasDown: EventEmitter<KeyboardEvent> = new EventEmitter();
 
+    /**
+     * The dialog has shown and PrimeNG has stacked it: what opens after this lands above it, a
+     * side panel included (#38303).
+     */
+    @Output()
+    shown: EventEmitter<void> = new EventEmitter();
+
     show: boolean;
 
     ngOnChanges(changes: SimpleChanges) {
