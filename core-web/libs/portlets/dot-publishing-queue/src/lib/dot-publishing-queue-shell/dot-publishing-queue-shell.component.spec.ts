@@ -364,6 +364,36 @@ describe('DotPublishingQueueShellComponent — the panel named in the URL', () =
         expect(refresh).toHaveBeenCalledTimes(3);
     });
 
+    /**
+     * A save in a panel over one of the dialogs changes no bundle row; the dialog reloads its own
+     * list. So while a dialog is open the bundle list is left alone (stack review L7-7).
+     */
+    it.each([
+        [
+            'the asset list',
+            (
+                shell: DotPublishingQueueShellComponent,
+                store: { openAssetList: (id: string) => void }
+            ) => store.openAssetList('B-1')
+        ],
+        ['the bundle wizard', (shell: DotPublishingQueueShellComponent) => shell.openSelectBundle()]
+    ])(
+        'leaves the bundle list alone on a content change while %s is open',
+        (_label, openDialog) => {
+            mount({});
+            dialogOpen.mockReturnValue({ onClose: new Subject() });
+            const store = spectator.inject(DotPublishingQueueStore, true);
+            openDialog(spectator.component, store);
+            const refresh = vi.spyOn(store, 'refresh');
+
+            spectator
+                .inject(DotContentChangeService)
+                .notify({ kind: 'saved', contentlet: { inode: 'saved' } as never, depth: 0 });
+
+            expect(refresh).not.toHaveBeenCalled();
+        }
+    );
+
     it('opens nothing for a URL that names no panel', () => {
         mount({});
 
