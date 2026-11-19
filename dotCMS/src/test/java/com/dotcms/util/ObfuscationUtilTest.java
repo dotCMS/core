@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 
 import com.dotmarketing.util.Config;
 import org.junit.Test;
@@ -10,11 +11,14 @@ import org.junit.Test;
  */
 public class ObfuscationUtilTest {
 
-    @Test
-    public void obfuscatesValueWhenKeyMatchesBuiltInPattern() {
+    private static final String MASK = "*****";
 
-        assertEquals("s*********e", ObfuscationUtil.obfuscateIfNeeded("password", "secretValue"));
-        assertEquals("s*********e", ObfuscationUtil.obfuscateIfNeeded("api.token", "secretValue"));
+    /** Both legacy substring matches and whole-word matches redact the entire value. */
+    @Test
+    public void masksBuiltInKeys() {
+        assertEquals(MASK, ObfuscationUtil.obfuscateIfNeeded("password", "secretValue"));
+        assertEquals(MASK, ObfuscationUtil.obfuscateIfNeeded("api.token", "secretValue"));
+        assertEquals(MASK, ObfuscationUtil.obfuscateIfNeeded("DB_CREDENTIALS", "secretValue"));
     }
 
     @Test
@@ -38,16 +42,18 @@ public class ObfuscationUtilTest {
     @Test
     public void handlesNonStringValues() {
 
-        assertEquals("1*********2", ObfuscationUtil.obfuscateIfNeeded("secret.number", 1234567892));
+        assertEquals(MASK, ObfuscationUtil.obfuscateIfNeeded("secret.number", 1234567892));
     }
 
+    /** The custom-only filter does not inherit the always-on rules. */
     @Test
-    public void customPatternPropertyIsHonored() {
-
+    public void keepsCustomRulesSeparate() {
         final String customPattern = Config.getStringProperty(
                 "OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", ObfuscationUtil.DEFAULT_OBFUSCATE_PATTERN);
-        assertEquals(ObfuscationUtil.CUSTOM_PATTERN.pattern(), customPattern);
-        assertEquals(ObfuscationUtil.BASE_PATTERN.pattern(), ObfuscationUtil.DEFAULT_OBFUSCATE_PATTERN);
+        assertEquals(customPattern, ObfuscationUtil.CUSTOM_PATTERN.pattern());
+        if (ObfuscationUtil.DEFAULT_OBFUSCATE_PATTERN.equals(customPattern)) {
+            assertFalse(ObfuscationUtil.matchesCustomPattern("DB_CREDENTIALS"));
+        }
     }
 
 }
