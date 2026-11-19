@@ -388,6 +388,12 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * phantom entry whose Back puts the just-removed param back with no panel rendered.
      */
     #editPanelUrlWasSet = false;
+
+    /**
+     * The legacy editor named a page to open in the page editor, and the close it sends right after
+     * must not refresh a list the route is leaving.
+     */
+    #leavingForPageEditor = false;
     /**
      * The folder path the URL was last written with, so a genuine folder navigation can be told apart
      * from a filter-only write. `undefined` until the first write, which is what keeps the very first
@@ -2092,6 +2098,15 @@ export class DotContentDriveShellComponent implements OnDestroy {
      */
     protected onEditPanelClosed() {
         this.#navigationService.closeEditPanel();
+
+        // The legacy editor closes itself right after it names a page to open: the route is about
+        // to leave the list, so a refresh would be thrown away.
+        if (this.#leavingForPageEditor) {
+            this.#leavingForPageEditor = false;
+
+            return;
+        }
+
         this.#store.reloadContentDrive({ quiet: true });
     }
 
@@ -2121,15 +2136,15 @@ export class DotContentDriveShellComponent implements OnDestroy {
     }
 
     /**
-     * The first save of a new page in the legacy editor: close the panel, refresh the list, and
-     * open the page in the page editor in the language the editor named, as Content Search does
-     * (#37759, FR-008).
+     * The first save of a new page in the legacy editor: close the panel and open the page in the
+     * page editor in the language the editor named, as Content Search does (#37759, FR-008). The
+     * list is not refreshed, here or on the close the editor sends next: the route leaves it.
      *
      * @param request The page to open and its language.
      */
     protected onEditPanelPageEditor({ url, languageId }: DotPageEditorRequest) {
+        this.#leavingForPageEditor = true;
         this.#navigationService.closeEditPanel();
-        this.#store.reloadContentDrive({ quiet: true });
         this.#dotRouterService.goToEditPage({ url, language_id: languageId });
     }
 
