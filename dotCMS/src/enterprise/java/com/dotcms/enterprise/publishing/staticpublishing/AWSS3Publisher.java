@@ -267,6 +267,7 @@ public class AWSS3Publisher extends Publisher {
 				list.add(bundleToCompress);
 				File bundle = new File(bundleToCompress + File.separator + ".." + File.separator + config.getId() + ".tar.gz");
 				PushUtils.compressFiles(list, bundle, bundleToCompress.getAbsolutePath());
+				recordCompressedBundle(bundle);
         	}
 
         	List<Environment> environments = this.environmentAPI.findEnvironmentsByBundleId(this.config.getId());

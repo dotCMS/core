@@ -54,6 +54,7 @@ import com.dotcms.publishing.manifest.ManifestBuilder;
 import com.dotcms.publishing.manifest.ManifestItem;
 import com.dotcms.publishing.manifest.ManifestItem.ManifestInfoBuilder;
 import com.dotcms.publishing.manifest.ManifestReason;
+import com.dotcms.publishing.output.TarGzipBundleOutput;
 import com.dotcms.test.util.FileTestUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
@@ -126,6 +127,7 @@ import java.util.List;
 import java.util.stream.Stream;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 
 import static com.dotcms.util.CollectionsUtils.list;
@@ -1782,6 +1784,89 @@ public class PublisherAPIImplTest {
         } finally {
             fixture.cleanUp();
         }
+    }
+
+    /**
+     * Method to Test: {@link PublisherAPIImpl#publish(PublisherConfig)}
+     * When: {@code STATIC_PUBLISHING_GENERATE_TAR_GZ} is on, {@link StaticPublisher} runs before
+     * {@link PushPublisher} (the order {@code PublisherQueueJob} uses), and a real retry follows a
+     * first run that built the push archive
+     * Should: leave the push bundle in {@code <bundlePath>/<bundleId>.tar.gz}, the file push sends to
+     * the receiver. Today the static compression writes its own archive to that same path before
+     * push runs, and push reuses it on the retry, so the receiver gets the static archive
+     * (issue #34434).
+     */
+    @Test
+    public void test_publish_realRetry_staticArchiveOn_pushSendsItsOwnBundle() throws Exception {
+        final boolean generateTarGz =
+                Config.getBooleanProperty("STATIC_PUBLISHING_GENERATE_TAR_GZ", false);
+        Config.setProperty("STATIC_PUBLISHING_GENERATE_TAR_GZ", true);
+        final MixedEndpointEnvironment fixture = PublisherTestUtil.createMixedEndpointEnvironment(
+                publishers(StaticPublisher.class, PushPublisher.class), false);
+        try {
+            final File pushArchive =
+                    TarGzipBundleOutput.getBundleTarGzipFile(fixture.bundle.getId());
+
+            // First run: push always builds its own archive, overwriting the static one
+            new PublisherAPIImpl().publish(fixture.config);
+            assertTrue("The first run must build the push archive", pushArchive.exists());
+            final Set<String> pushEntries = archiveEntries(pushArchive);
+
+            // The queue job builds a new config for every run; reusing the first one would carry its
+            // already-added assets over, and the rebuilt bundle would then have no manifest
+            markAsRetry(fixture);
+            new PublisherAPIImpl().publish(newRunConfig(fixture.config));
+
+            assertEquals("On a retry push must send its own bundle, not the static archive",
+                    pushEntries, archiveEntries(pushArchive));
+        } finally {
+            Config.setProperty("STATIC_PUBLISHING_GENERATE_TAR_GZ", generateTarGz);
+            org.apache.commons.io.FileUtils.deleteQuietly(
+                    TarGzipBundleOutput.getBundleTarGzipFile(fixture.bundle.getId()));
+            fixture.cleanUp();
+        }
+    }
+
+    /**
+     * Builds the config of a new publish run for the same bundle, as {@code PublisherQueueJob} does
+     * on every run, so nothing the previous run collected is carried over.
+     *
+     * @param previous the config of the earlier run
+     * @return a new {@link PushPublisherConfig} for the same bundle, assets and publishers
+     */
+    private static PushPublisherConfig newRunConfig(final PushPublisherConfig previous) {
+        final PushPublisherConfig config = new PushPublisherConfig();
+        config.setId(previous.getId());
+        config.setPublishers(new ArrayList<>(previous.getPublishers()));
+        config.setLanguages(previous.getLanguages());
+        config.setAssets(previous.getAssets());
+        config.setOperation(previous.getOperation());
+        config.setDownloading(previous.isDownloading());
+        config.setLuceneQueries(previous.getLuceneQueries());
+        return config;
+    }
+
+    /**
+     * Reads the names of the files in a tar.gz archive, without a leading {@code ./} or {@code /},
+     * so archives written by different code can be compared.
+     *
+     * @param archive the tar.gz file to read
+     * @return the sorted file names, directories left out
+     * @throws IOException the archive could not be read
+     */
+    private static Set<String> archiveEntries(final File archive) throws IOException {
+        final Set<String> names = new TreeSet<>();
+        try (InputStream in = new BufferedInputStream(Files.newInputStream(archive.toPath()));
+                GzipCompressorInputStream gzip = new GzipCompressorInputStream(in);
+                TarArchiveInputStream tar = new TarArchiveInputStream(gzip)) {
+            TarArchiveEntry entry;
+            while ((entry = tar.getNextTarEntry()) != null) {
+                if (!entry.isDirectory()) {
+                    names.add(entry.getName().replaceFirst("^\\./", "").replaceFirst("^/", ""));
+                }
+            }
+        }
+        return names;
     }
 
     /** Test publisher whose only bundler leaves a marker directory in the shared static bundle. */

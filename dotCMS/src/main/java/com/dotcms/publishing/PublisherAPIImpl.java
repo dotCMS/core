@@ -154,7 +154,7 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
                                 config.getOperation().name());
                     }
 
-                    final String outputLocation = String.valueOf(output.getFile());
+                    final String outputLocation = bundleLocation(output.getFile());
                     if (!output.bundleFileExists() || !isRealRetry
                             || outputsBuiltInThisRun.contains(outputLocation)) {
                         outputsBuiltInThisRun.add(outputLocation);
@@ -207,6 +207,12 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
 
                 publisher.process(status);
 
+                // Static and S3 can compress their bundle into <bundleId>.tar.gz, the same file push
+                // sends to its receivers. Counting it as built in this run makes push build its own
+                // archive on a retry instead of sending the static one (issue #34434)
+                publisher.getCompressedBundle().ifPresent(
+                        archive -> outputsBuiltInThisRun.add(bundleLocation(archive)));
+
                 config.setBundlers(confBundlers);
 
                 //Triggering event listener when the publishing process ends
@@ -223,6 +229,17 @@ public class PublisherAPIImpl implements PublisherAPI, DotInitializer {
         }
 
         return status;
+    }
+
+    /**
+     * Returns the absolute, normalized path of a bundle location, so two paths that name the same
+     * file compare equal (the static archive is written through {@code <bundleId>-static/..}).
+     *
+     * @param location the bundle file or directory, may be null
+     * @return the normalized path, or an empty string when there is no location
+     */
+    private static String bundleLocation(final File location) {
+        return location == null ? "" : location.toPath().toAbsolutePath().normalize().toString();
     }
 
     private void addBundleXMLIntoBundle(final PublisherConfig config, final BundleOutput output) {
