@@ -1,12 +1,21 @@
-import { Component, DestroyRef, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import {
+    Component,
+    DestroyRef,
+    Injector,
+    OnInit,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { distinctUntilChanged, map, take } from 'rxjs/operators';
 
 import { DotMessageService, DotRouterService, DotIframeService } from '@dotcms/data-access';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
+import { refusePanelUrl } from '../../../api/util/open-edit-content-panel';
+import { PORTLET_FOLDER_PARAM, portletPanelUrl$ } from '../../../api/util/portlet-panel-url';
 import { DotWorkflowTaskDetailComponent } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.component';
 import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
 
@@ -14,7 +23,7 @@ import { DotWorkflowTaskDetailService } from '../../../view/components/dot-workf
     selector: 'dot-workflow-task',
     providers: [DotWorkflowTaskDetailService],
     template:
-        '<dot-workflow-task-detail (shutdown)="onCloseWorkflowTaskEditor()" (custom)="onCustomEvent($event)" />',
+        '<dot-workflow-task-detail (shutdown)="onCloseWorkflowTaskEditor()" (custom)="onCustomEvent($event)" (shown)="onTaskShown()" />',
     changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotWorkflowTaskDetailComponent]
 })
@@ -26,9 +35,14 @@ export class DotWorkflowTaskComponent implements OnInit {
     private dotIframeService = inject(DotIframeService);
     private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #router = inject(Router);
+    readonly #injector = inject(Injector);
 
     /** The task the route names. */
     #taskId = '';
+
+    /** Whether the panel the URL names is followed; from the task dialog's first show on. */
+    #followingPanelUrl = false;
 
     /**
      * Shows the task the route names, and the next one a navigation names: the route is reused
@@ -65,6 +79,29 @@ export class DotWorkflowTaskComponent implements OnInit {
             .subscribe((taskId) => {
                 this.#taskId = taskId;
                 this.#viewTask();
+            });
+    }
+
+    /**
+     * The task dialog has shown. A side panel the task's URL names opens now, and on every app
+     * navigation that changes it, through the same path as "Edit Content": after the dialog, so
+     * the panel lands above it whichever loaded first, the menu call the dialog waits for or the
+     * panel's chunk (#38303, FR-025a). The portlet behind leaves it to this while the task shows.
+     */
+    onTaskShown(): void {
+        if (this.#followingPanelUrl) {
+            return;
+        }
+
+        this.#followingPanelUrl = true;
+        portletPanelUrl$(this.route, this.#router)
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(({ request, refused }) => {
+                if (request) {
+                    this.dotCustomEventHandlerService.openContent(request);
+                } else if (refused) {
+                    void refusePanelUrl(this.#injector, [PORTLET_FOLDER_PARAM]);
+                }
             });
     }
 
