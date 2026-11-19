@@ -224,6 +224,17 @@ describe('DotPanelUrlStateService', () => {
 
         // Content Drive's switch to the old editor closes the panel and reopens it at once: the
         // reopened panel takes the entry the closed one had, so Back still leaves in one step.
+        // A link may name the panel before the surface's own params; the write would put them
+        // last, which is the same URL, so Back must still need one press (stack review L7-4).
+        it('writes nothing when the URL names the panel before the surface params', () => {
+            start(`/c/query-tool?editContent=${ID_1}&editContentLang=1&q=%2Blive%3Atrue&limit=20`);
+
+            spectator.service.register(newRef(), { editContent: ID_1, editContentLang: '1' });
+
+            expect(location.go).not.toHaveBeenCalled();
+            expect(location.replaceState).not.toHaveBeenCalled();
+        });
+
         it('rewrites the current entry instead of adding one for a panel registered in place', () => {
             start();
             const first = newRef();
