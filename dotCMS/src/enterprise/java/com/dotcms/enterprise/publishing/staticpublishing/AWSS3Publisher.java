@@ -459,8 +459,9 @@ public class AWSS3Publisher extends Publisher {
                         currentStatusHistory.setPublishEnd(new Date());
                     }
 
-                    // Record the endpoint when it has no entry yet or it failed (issue #34434).
-                    if (failedEnvironment || !currentStatusHistory.hasEndpoint(environment.getId(), endpoint.getId())) {
+                    // Record the endpoint when it has no entry yet, this run failed, or the entry is a
+                    // failure from an earlier attempt that this run replaces (issue #34434).
+                    if (failedEnvironment || !currentStatusHistory.hasEndpointWithoutFailure(environment.getId(), endpoint.getId())) {
                         currentStatusHistory.addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);
                     }
 

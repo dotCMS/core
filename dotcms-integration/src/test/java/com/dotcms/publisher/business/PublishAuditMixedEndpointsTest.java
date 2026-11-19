@@ -210,6 +210,39 @@ public class PublishAuditMixedEndpointsTest {
         }
     }
 
+    /**
+     * Method to test: {@link StaticPublisher#process(com.dotcms.publishing.PublishStatus)}
+     * Given scenario: a retry where the static endpoint has a FAILED entry from the earlier attempt
+     * and the static publisher now succeeds
+     * Expected result: the endpoint's entry is replaced by this run's success and the overall status
+     * is saved. Before the fix the old failure stayed, so the bundle kept reporting failed and stayed
+     * queued until the retries ran out (issue #34434, review of PR 38578).
+     */
+    @Test
+    public void test_retry_staticFailedEarlier_nowSucceeds_failureIsReplaced() throws Exception {
+        final MixedEndpointEnvironment fixture = PublisherTestUtil.createMixedEndpointEnvironment(
+                order(StaticPublisher.class), false);
+        try {
+            final PublishAuditAPI auditAPI = PublishAuditAPI.getInstance();
+            final PublishAuditHistory history =
+                    auditAPI.getPublishAuditStatus(fixture.bundle.getId()).getStatusPojo();
+            history.setNumTries(1);
+            history.addOrUpdateEndpoint(fixture.environment.getId(), fixture.staticEndpoint.getId(),
+                    detail(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode(), "earlier failure"));
+            auditAPI.updatePublishAuditStatus(fixture.bundle.getId(),
+                    PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS, history);
+
+            new PublisherAPIImpl().publish(fixture.config);
+
+            assertEquals(PublishAuditStatus.Status.BUNDLE_SAVED_SUCCESSFULLY.getCode(),
+                    endpointsOf(fixture).get(fixture.staticEndpoint.getId()).getStatus());
+            assertEquals(PublishAuditStatus.Status.BUNDLE_SAVED_SUCCESSFULLY,
+                    auditAPI.getPublishAuditStatus(fixture.bundle.getId()).getStatus());
+        } finally {
+            fixture.cleanUp();
+        }
+    }
+
     private static EndpointDetail detail(final int status, final String info) {
         final EndpointDetail detail = new EndpointDetail();
         detail.setStatus(status);

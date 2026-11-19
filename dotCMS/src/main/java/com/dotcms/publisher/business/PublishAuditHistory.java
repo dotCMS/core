@@ -125,6 +125,38 @@ public class PublishAuditHistory implements Serializable {
 		return groupMap != null && groupMap.containsKey(endpointId);
 	}
 
+	/**
+	 * Tells whether this history holds a result for the endpoint that is not a failure. A publisher
+	 * keeps such a result (for example one the queue job merged from a receiver) and replaces a
+	 * failed one, so an endpoint that failed on an earlier attempt and works now does not stay failed.
+	 * A failure is a failed publish, a bundle that could not be sent, a refused token or a missing
+	 * license, the same results the queue job counts as failed.
+	 *
+	 * @param groupId    the id of the environment the endpoint belongs to
+	 * @param endpointId the id of the endpoint
+	 * @return true if the endpoint has an entry and that entry is not a failure
+	 */
+	public boolean hasEndpointWithoutFailure(final String groupId, final String endpointId) {
+		final Map<String, EndpointDetail> groupMap = endpointsMap.get(groupId);
+		final EndpointDetail detail = groupMap != null ? groupMap.get(endpointId) : null;
+		return detail != null && !isFailed(detail);
+	}
+
+	/**
+	 * Tells whether an endpoint result is a failure: a failed publish, a bundle that could not be
+	 * sent, a refused token or a missing license.
+	 *
+	 * @param detail the result of one endpoint
+	 * @return true if the result is one of those failures
+	 */
+	public static boolean isFailed(final EndpointDetail detail) {
+		final int code = detail.getStatus();
+		return code == PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode()
+				|| code == PublishAuditStatus.Status.FAILED_TO_SENT.getCode()
+				|| code == PublishAuditStatus.Status.INVALID_TOKEN.getCode()
+				|| code == PublishAuditStatus.Status.LICENSE_REQUIRED.getCode();
+	}
+
 	static final XStreamHandler.Cached xstream = new XStreamHandler.Cached(null, null);
 	public String getSerialized() {
 

@@ -279,10 +279,12 @@ public class StaticPublisher extends Publisher {
                 currentStatusHistory.setPublishEnd(new Date());
             }
 
-            // Record the endpoint when it has no entry yet or it failed; don't overwrite a result
-            // already set via the PublisherQueueJob (issue #34434).
+            // Record the endpoint when it has no entry yet, this run failed, or the entry is a failure
+            // from an earlier attempt that this run replaces; don't overwrite a result already set
+            // via the PublisherQueueJob (issue #34434).
             if (hasEnvironmentFailed
-                    || !currentStatusHistory.hasEndpoint(environment.getId(), endpoint.getId())) {
+                    || !currentStatusHistory.hasEndpointWithoutFailure(environment.getId(),
+                            endpoint.getId())) {
                 currentStatusHistory
                     .addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);
             }
@@ -369,8 +371,8 @@ public class StaticPublisher extends Publisher {
     } //getStaticEndpointsByEnviroment.
 
     /**
-     * Tells whether the audit already holds a failed endpoint, the same way the queue job counts
-     * them: a failed publish, a bundle that could not be sent, a refused token or a missing license.
+     * Tells whether the audit already holds a failed endpoint, counted the same way the queue job
+     * does (see {@link PublishAuditHistory#isFailed(EndpointDetail)}).
      * The static endpoints of this run are already recorded when this is called, so a failure found
      * here belongs to an earlier publisher of the run.
      *
@@ -380,11 +382,7 @@ public class StaticPublisher extends Publisher {
     private boolean hasFailedEndpoint(final PublishAuditHistory history) {
         for (final Map<String, EndpointDetail> endpoints : history.getEndpointsMap().values()) {
             for (final EndpointDetail detail : endpoints.values()) {
-                final int code = detail.getStatus();
-                if (code == Status.FAILED_TO_PUBLISH.getCode()
-                        || code == Status.FAILED_TO_SENT.getCode()
-                        || code == Status.INVALID_TOKEN.getCode()
-                        || code == Status.LICENSE_REQUIRED.getCode()) {
+                if (PublishAuditHistory.isFailed(detail)) {
                     return true;
                 }
             }

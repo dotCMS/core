@@ -31,6 +31,33 @@ public class PublishAuditHistoryTest {
     }
 
     /**
+     * Method to test: {@link PublishAuditHistory#hasEndpointWithoutFailure(String, String)}
+     * Given scenario: no entry, then an entry for every kind of failed result, then entries that
+     * are not failures
+     * Expected result: true only when the endpoint has an entry that is not a failure, so a
+     * publisher replaces a failed result and keeps any other one (issue #34434)
+     */
+    @Test
+    public void test_hasEndpointWithoutFailure_onlyForEntriesThatAreNotFailures() {
+        final PublishAuditHistory history = new PublishAuditHistory();
+        assertFalse(history.hasEndpointWithoutFailure("env-1", "ep-1"));
+
+        for (final PublishAuditStatus.Status failed : new PublishAuditStatus.Status[] {
+                PublishAuditStatus.Status.FAILED_TO_PUBLISH, PublishAuditStatus.Status.FAILED_TO_SENT,
+                PublishAuditStatus.Status.INVALID_TOKEN, PublishAuditStatus.Status.LICENSE_REQUIRED}) {
+            history.addOrUpdateEndpoint("env-1", "ep-1", detail(failed.getCode(), "failed"));
+            assertFalse(failed.name(), history.hasEndpointWithoutFailure("env-1", "ep-1"));
+        }
+
+        for (final PublishAuditStatus.Status kept : new PublishAuditStatus.Status[] {
+                PublishAuditStatus.Status.SUCCESS, PublishAuditStatus.Status.BUNDLE_SAVED_SUCCESSFULLY,
+                PublishAuditStatus.Status.PUBLISHING_BUNDLE}) {
+            history.addOrUpdateEndpoint("env-1", "ep-1", detail(kept.getCode(), "kept"));
+            assertTrue(kept.name(), history.hasEndpointWithoutFailure("env-1", "ep-1"));
+        }
+    }
+
+    /**
      * Method to test: {@link PublishAuditHistory#hasEndpoint(String, String)}
      * Given scenario: the environment is present but holds only another endpoint
      * Expected result: false for the missing endpoint, true for the recorded one

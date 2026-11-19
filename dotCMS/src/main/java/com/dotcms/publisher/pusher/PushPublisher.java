@@ -304,10 +304,11 @@ public class PushPublisher extends Publisher {
 						ThreadContext.remove(ENDPOINT_NAME);
 						ThreadContext.remove(BUNDLE_ID);
 					}
-					// Record the result when this endpoint has no entry yet, or when it failed. An
+					// Record the result when this endpoint has no entry yet, when it failed, or when the
+					// entry is a failure from an earlier attempt that this run replaces. Any other
 					// existing entry is left alone so a result merged by the PublisherQueueJob is not
 					// overwritten (issue #34434).
-					if (failedEnvironment || !currentStatusHistory.hasEndpoint(environment.getId(), endpoint.getId())) {
+					if (failedEnvironment || !currentStatusHistory.hasEndpointWithoutFailure(environment.getId(), endpoint.getId())) {
 						currentStatusHistory.addOrUpdateEndpoint(environment.getId(), endpoint.getId(), detail);
 					}
 				}

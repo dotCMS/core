@@ -136,6 +136,32 @@ public class AWSS3PublisherTest {
      * @return the detail the publisher recorded for the endpoint
      */
     private EndpointDetail processBundleWithoutLiveFolder(final boolean aliasesEnabled) throws Exception {
+        return processBundleWithoutLiveFolder(aliasesEnabled, null);
+    }
+
+    /**
+     * Method to test: {@link AWSS3Publisher#process(PublishStatus)}
+     * Given Scenario: a retry where the S3 endpoint has a FAILED entry from the earlier attempt and
+     *                 the upload now works
+     * ExpectedResult: the entry is replaced by this run's success. Before the fix the old failure
+     *                 stayed, so the bundle kept reporting failed after S3 recovered (issue #34434)
+     */
+    @Test
+    public void test_process_retryAfterFailure_failedEntryIsReplacedBySuccess() throws Exception {
+        final EndpointDetail detail = processBundleWithoutLiveFolder(false,
+                PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
+
+        Assert.assertEquals(PublishAuditStatus.Status.SUCCESS.getCode(), detail.getStatus());
+    }
+
+    /**
+     * Same as {@link #processBundleWithoutLiveFolder(boolean)}, with an earlier result already
+     * recorded for the endpoint.
+     *
+     * @param previousStatus status code of the earlier result, or null for a first attempt
+     */
+    private EndpointDetail processBundleWithoutLiveFolder(final boolean aliasesEnabled,
+            final Integer previousStatus) throws Exception {
         final String environmentId = "environment-" + UUIDUtil.uuid();
         final String endPointId = "endpoint-" + UUIDUtil.uuid();
         final String configId = UUIDUtil.uuid();
@@ -145,6 +171,12 @@ public class AWSS3PublisherTest {
         config.setOperation(PublisherConfig.Operation.PUBLISH);
 
         final PublishAuditHistory history = new PublishAuditHistory();
+        if (previousStatus != null) {
+            final EndpointDetail previous = new EndpointDetail();
+            previous.setStatus(previousStatus);
+            previous.setInfo("earlier attempt");
+            history.addOrUpdateEndpoint(environmentId, endPointId, previous);
+        }
         final PublishAuditStatus auditStatus = new PublishAuditStatus(configId);
         auditStatus.setStatusPojo(history);
         final PublishAuditAPI publishAuditAPI = mock(PublishAuditAPI.class);
