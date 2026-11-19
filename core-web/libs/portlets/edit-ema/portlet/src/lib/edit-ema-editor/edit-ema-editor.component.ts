@@ -1168,18 +1168,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 });
             }
 
-            const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
-                ...payload,
-                newContentletId: draggedPayload.item.contentlet.identifier
-            });
+            const pageContainers = this.#insertOrReport(
+                payload,
+                draggedPayload.item.contentlet.identifier
+            );
 
-            if (!didInsert) {
-                if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
-                    this.handleContainerLimitReached(payload.container.maxContentlets);
-                } else {
-                    this.handleDuplicatedContentlet();
-                }
-
+            if (!pageContainers) {
                 return;
             }
 
@@ -1208,18 +1202,9 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 { actionPayload: payload }
             );
         } else if (dragItem.draggedPayload.type === 'temp') {
-            const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
-                ...payload,
-                newContentletId: payload.newContentlet.identifier
-            });
+            const pageContainers = this.#insertOrReport(payload, payload.newContentlet.identifier);
 
-            if (!didInsert) {
-                if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
-                    this.handleContainerLimitReached(payload.container.maxContentlets);
-                } else {
-                    this.handleDuplicatedContentlet();
-                }
-
+            if (!pageContainers) {
                 return;
             }
 
@@ -1367,18 +1352,9 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
-            ...actionPayload,
-            newContentletId: identifier
-        });
+        const pageContainers = this.#insertOrReport(actionPayload, identifier);
 
-        if (!didInsert) {
-            if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
-                this.handleContainerLimitReached(actionPayload.container.maxContentlets);
-            } else {
-                this.handleDuplicatedContentlet();
-            }
-
+        if (!pageContainers) {
             return;
         }
 
@@ -1419,19 +1395,9 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             )
             .subscribe({
                 next: (newContentletId) => {
-                    const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
-                        ...actionPayload,
-                        newContentletId
-                    });
+                    const pageContainers = this.#insertOrReport(actionPayload, newContentletId);
 
-                    if (!didInsert) {
-                        if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
-                            this.handleContainerLimitReached(
-                                actionPayload.container.maxContentlets
-                            );
-                        } else {
-                            this.handleDuplicatedContentlet();
-                        }
+                    if (!pageContainers) {
                         this.uveStore.setUveStatus(UVE_STATUS.LOADED);
 
                         return;
@@ -1656,6 +1622,34 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
+     * Inserts a contentlet in the container the payload names, or reports why it cannot: a warning
+     * for a full container, a notice for one already there. Every placement path goes through
+     * it; saving the page, and what else follows, is the caller's.
+     *
+     * @param actionPayload Where the contentlet goes.
+     * @param newContentletId The contentlet to insert.
+     * @returns The page's containers with it inserted, or `null` when it was refused.
+     */
+    #insertOrReport(actionPayload: ActionPayload, newContentletId: string): PageContainer[] | null {
+        const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
+            ...actionPayload,
+            newContentletId
+        });
+
+        if (didInsert) {
+            return pageContainers;
+        }
+
+        if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
+            this.handleContainerLimitReached(actionPayload.container.maxContentlets);
+        } else {
+            this.handleDuplicatedContentlet();
+        }
+
+        return null;
+    }
+
+    /**
      * Places a created contentlet in the container it was created for and saves the page. A
      * duplicate or a full container is reported, and the panel stays open.
      *
@@ -1664,18 +1658,9 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * @returns Whether it was placed.
      */
     #placeCreatedContentlet(actionPayload: ActionPayload, newContentletId: string): boolean {
-        const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
-            ...actionPayload,
-            newContentletId
-        });
+        const pageContainers = this.#insertOrReport(actionPayload, newContentletId);
 
-        if (!didInsert) {
-            if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
-                this.handleContainerLimitReached(actionPayload.container.maxContentlets);
-            } else {
-                this.handleDuplicatedContentlet();
-            }
-
+        if (!pageContainers) {
             return false;
         }
 
