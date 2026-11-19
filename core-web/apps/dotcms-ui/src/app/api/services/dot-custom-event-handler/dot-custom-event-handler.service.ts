@@ -12,7 +12,7 @@ import {
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, DotUiColors } from '@dotcms/dotcms-js';
 import { DotContentCompareEvent } from '@dotcms/dotcms-models';
-import type { DotEditContentOpenOptions, DotEditContentRequest } from '@dotcms/edit-content';
+import type { DotEditContentRequest } from '@dotcms/edit-content';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { openEditContentPanel } from '../../util/open-edit-content-panel';
@@ -62,6 +62,9 @@ export class DotCustomEventHandlerService {
      * would fail inside.
      */
     #panelInjector: Injector | null = null;
+
+    /** What runs once a side panel this service opened closes; see {@link onPanelClosed}. */
+    #panelClosed: (() => void) | null = null;
 
     private handlers: Record<string, ($event: CustomEvent) => void> = {
         'edit-page': this.goToEditPage.bind(this),
@@ -159,6 +162,25 @@ export class DotCustomEventHandlerService {
     }
 
     /**
+     * Registers what runs once a side panel this service opened closes, after the portlet's list
+     * reloads: the Workflow Tasks detail views its task again, so it shows the content's current
+     * step, whichever path opened the panel (its "Edit Content", or the task's URL, which the
+     * portlet behind reopens) (#38303, FR-025a). One at a time; the last registered wins.
+     *
+     * @param handler What to run.
+     * @returns Releases the handler; call it when the registering screen goes away.
+     */
+    onPanelClosed(handler: () => void): () => void {
+        this.#panelClosed = handler;
+
+        return () => {
+            if (this.#panelClosed === handler) {
+                this.#panelClosed = null;
+            }
+        };
+    }
+
+    /**
      * Opens a request in the side panel for the current legacy portlet (#38303, R11): for the
      * portlet's events, for what the portlet's URL names on load (`IframePortletLegacyComponent`,
      * FR-049), and for the Workflow Tasks detail's "Edit Content" (`DotWorkflowTaskComponent`,
@@ -170,14 +192,11 @@ export class DotCustomEventHandlerService {
      * Nothing opens until `DotSidePanelHostComponent` has registered its injector, which it does
      * before any portlet can send an event; a request before then is logged as an error.
      *
+     * A close runs the handler {@link onPanelClosed} registered, after the portlet's list reloads.
+     *
      * @param request What to open, without the portlet.
-     * @param after The caller's own `saved`, passed on as it is, and `closed`, run after the
-     * portlet's list reloads: the Workflow Tasks detail views its task again in them.
      */
-    openContent(
-        request: DotEditContentRequest,
-        after: Pick<DotEditContentOpenOptions, 'saved' | 'closed'> = {}
-    ): void {
+    openContent(request: DotEditContentRequest): void {
         const injector = this.#panelInjector;
 
         if (!injector) {
@@ -194,13 +213,14 @@ export class DotCustomEventHandlerService {
             { ...request, portletId },
             {
                 injector,
-                saved: after.saved,
                 closed: () => {
                     if (portletId) {
                         this.dotIframeService.reloadData(portletId);
                     }
 
-                    after.closed?.();
+                    // Read now, not when the panel opened: a panel the URL reopens opens before
+                    // the Workflow Tasks detail that registers it exists.
+                    this.#panelClosed?.();
                 },
                 url: {}
             }
