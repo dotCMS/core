@@ -5,7 +5,6 @@ import static com.dotmarketing.image.focalpoint.FocalPointAPIImpl.TMP;
 import static com.liferay.util.HttpHeaders.CACHE_CONTROL;
 import static com.liferay.util.HttpHeaders.EXPIRES;
 
-import com.dotcms.filters.DotHttpHeaderSecurityFilter;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.storage.FileMetadataAPI;
@@ -41,6 +40,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
+import com.dotcms.util.CdnTagHeader;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.DownloadUtil;
 import com.dotcms.util.SecurityUtils;
@@ -482,7 +482,7 @@ public class BinaryExporterServlet extends HttpServlet {
 				mimeType = "application/octet-stream";
 			}
 
-			DotHttpHeaderSecurityFilter.setCdnTag(resp, servedIdentifier);
+			CdnTagHeader.set(resp, servedIdentifier);
 			resp.setHeader("Content-Disposition", "inline; filename=\"" + UtilMethods.encodeURL(downloadName) + "\"" );
 			resp.setHeader("Content-Length", String.valueOf(_fileLength));
 

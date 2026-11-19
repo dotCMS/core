@@ -6,11 +6,11 @@ import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
-import com.dotcms.filters.DotHttpHeaderSecurityFilter;
 import com.dotcms.rendering.util.HtmlMinifier;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.security.ContentSecurityPolicyUtil;
+import com.dotcms.util.CdnTagHeader;
 import com.dotcms.vanityurl.model.CachedVanityUrl;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
@@ -330,11 +330,14 @@ public class VelocityLiveMode extends VelocityModeHandler {
     }
 
     /**
-     * Add headers to the response
-     * @param page
+     * Sets response headers, tagging URL-mapped pages by the content item they render.
+     *
+     * @param page the {@link IHTMLPage} being rendered
      */
     private void addHeaders(IHTMLPage page) {
-        DotHttpHeaderSecurityFilter.setCdnTag(response, page.getIdentifier());
+        final String mappedContentId = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET);
+        CdnTagHeader.set(response,
+                UtilMethods.isSet(mappedContentId) ? mappedContentId : page.getIdentifier());
 
         if (response.getHeader("Cache-Control") == null) {
             // set cache control headers based on page cache
