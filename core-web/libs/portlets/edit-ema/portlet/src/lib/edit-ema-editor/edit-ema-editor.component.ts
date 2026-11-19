@@ -145,6 +145,7 @@ import {
     resolveClickedAnchor,
     scrollIframeToFragment,
     shouldNavigate,
+    pageRequestContext,
     withPageContext
 } from '../utils';
 
@@ -1547,11 +1548,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * @returns The completed request.
      */
     #buildRequest(request: DotEditContentRequest): DotEditContentRequest {
-        return withPageContext(request, {
-            variantId: this.uveStore.pageVariantId(),
-            siteId: this.uveStore.pageAsset()?.site?.identifier,
-            languageId: this.uveStore.pageLanguageId()
-        });
+        return withPageContext(request, pageRequestContext(this.uveStore));
     }
 
     /**

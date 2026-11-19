@@ -1015,6 +1015,28 @@ export interface EditPageRequestContext {
     languageId: number;
 }
 
+/** What {@link pageRequestContext} reads from the page editor's store. */
+export interface EditPageContextSource {
+    pageVariantId: () => string;
+    pageAsset: () => { site?: { identifier?: string } | null } | null | undefined;
+    pageLanguageId: () => number;
+}
+
+/**
+ * The page an editor request is opened from, as the page editor's store holds it: its variant,
+ * site and language. The one place every editor entry point reads it, for {@link withPageContext}.
+ *
+ * @param uveStore The page editor's store.
+ * @returns The context a request is completed with.
+ */
+export function pageRequestContext(uveStore: EditPageContextSource): EditPageRequestContext {
+    return {
+        variantId: uveStore.pageVariantId(),
+        siteId: uveStore.pageAsset()?.site?.identifier,
+        languageId: uveStore.pageLanguageId()
+    };
+}
+
 /**
  * Completes a request the page editor opens in the side panel with the page it is opened from: the
  * page editor as the portlet, the site, the page's language when the content names none, and the

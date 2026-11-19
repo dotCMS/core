@@ -63,6 +63,7 @@ import {
     normalizeQueryParams,
     sanitizeURL,
     shouldNavigate,
+    pageRequestContext,
     withPageContext
 } from '../utils';
 import { readExperimentsPortletSwitch } from '../utils/experiments-portlet-switch.util';
@@ -700,11 +701,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
                     contentType: page.contentType,
                     title: page.title
                 },
-                {
-                    variantId: this.uveStore.pageVariantId(),
-                    siteId: this.uveStore.pageAsset()?.site?.identifier,
-                    languageId: this.uveStore.pageLanguageId()
-                }
+                pageRequestContext(this.uveStore)
             ),
             {
                 injector: this.#injector,
