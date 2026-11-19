@@ -568,8 +568,14 @@ describe('DotLegacyEditorSidePanelComponent', () => {
 
             expect(saved).not.toHaveBeenCalled();
 
-            loadFrame('?p_p_id=content&inode=v1-restored&lang=1');
-            loadFrame('?p_p_id=content&inode=v1-restored&lang=1');
+            // The server's redirect after `getversionback` (`EditContentletAction` builds it with
+            // `PortletURLUtil.getActionURL`), which namespaces every param with the portlet id.
+            const redirect =
+                '?p_l_id=layout-1&p_p_id=content&p_p_action=1&p_p_state=maximized' +
+                '&_content_struts_action=%2Fext%2Fcontentlet%2Fedit_contentlet' +
+                '&_content_inode=v1-restored&_content_cmd=edit&_content_referer=';
+            loadFrame(redirect);
+            loadFrame(redirect);
 
             expect(
                 spectator.inject(DotContentletService).getContentletByInode
