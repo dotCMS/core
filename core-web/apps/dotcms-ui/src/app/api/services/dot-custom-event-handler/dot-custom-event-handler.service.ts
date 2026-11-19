@@ -1,6 +1,7 @@
 import { Injectable, Injector, inject } from '@angular/core';
 
 import {
+    DotContentEditor,
     DotEventsService,
     DotGenerateSecurePasswordService,
     DotIframeService,
@@ -28,6 +29,14 @@ export interface DotCMSEditPageEvent {
         languageId: string;
         hostId: string;
     };
+}
+
+/** What a screen runs when a side panel {@link DotCustomEventHandlerService} opened reports. */
+export interface DotPortletPanelEvents {
+    /** On every save, with the panel still open. */
+    saved: () => void;
+    /** On a close after the legacy editor, once the portlet's list has reloaded. */
+    closed: () => void;
 }
 
 /**
@@ -63,8 +72,8 @@ export class DotCustomEventHandlerService {
      */
     #panelInjector: Injector | null = null;
 
-    /** What runs once a side panel this service opened closes; see {@link onPanelClosed}. */
-    #panelClosed: (() => void) | null = null;
+    /** What runs when a side panel this service opened saves or closes; see {@link onPanelEvents}. */
+    #panelEvents: DotPortletPanelEvents | null = null;
 
     private handlers: Record<string, ($event: CustomEvent) => void> = {
         'edit-page': this.goToEditPage.bind(this),
@@ -162,20 +171,23 @@ export class DotCustomEventHandlerService {
     }
 
     /**
-     * Registers what runs once a side panel this service opened closes, after the portlet's list
-     * reloads: the Workflow Tasks detail views its task again, so it shows the content's current
-     * step, whichever path opened the panel (its "Edit Content", or the task's URL, which the
-     * portlet behind reopens) (#38303, FR-025a). One at a time; the last registered wins.
+     * Registers what runs when a side panel this service opened saves or closes: the Workflow
+     * Tasks detail views its task again, so it shows the content's current title and step,
+     * whichever path opened the panel (its "Edit Content", or the task's URL, which the portlet
+     * behind reopens) (#38303, FR-025a). `saved` runs on every save, with the panel still open.
+     * `closed` runs after the portlet's list reloads, and only when the panel showed the legacy
+     * editor, whose workflow actions report nothing; the new editor reports each one as a save.
+     * One registration at a time; the last one wins.
      *
-     * @param handler What to run.
-     * @returns Releases the handler; call it when the registering screen goes away.
+     * @param handlers What to run on a save and on a close.
+     * @returns Releases the handlers; call it when the registering screen goes away.
      */
-    onPanelClosed(handler: () => void): () => void {
-        this.#panelClosed = handler;
+    onPanelEvents(handlers: DotPortletPanelEvents): () => void {
+        this.#panelEvents = handlers;
 
         return () => {
-            if (this.#panelClosed === handler) {
-                this.#panelClosed = null;
+            if (this.#panelEvents === handlers) {
+                this.#panelEvents = null;
             }
         };
     }
@@ -192,7 +204,8 @@ export class DotCustomEventHandlerService {
      * Nothing opens until `DotSidePanelHostComponent` has registered its injector, which it does
      * before any portlet can send an event; a request before then is logged as an error.
      *
-     * A close runs the handler {@link onPanelClosed} registered, after the portlet's list reloads.
+     * A save runs the `saved` handler {@link onPanelEvents} registered. A close runs its `closed`
+     * handler after the portlet's list reloads, when the panel showed the legacy editor.
      *
      * @param request What to open, without the portlet.
      */
@@ -208,19 +221,24 @@ export class DotCustomEventHandlerService {
         }
 
         const portletId = this.dotRouterService.currentPortlet.id;
+        let editor: DotContentEditor | null = null;
 
+        // The handlers are read when the panel reports, not when it opened: a panel the URL
+        // reopens opens before the Workflow Tasks detail that registers them exists.
         void openEditContentPanel(
             { ...request, portletId },
             {
                 injector,
+                editorResolved: (resolved) => (editor = resolved),
+                saved: () => this.#panelEvents?.saved(),
                 closed: () => {
                     if (portletId) {
                         this.dotIframeService.reloadData(portletId);
                     }
 
-                    // Read now, not when the panel opened: a panel the URL reopens opens before
-                    // the Workflow Tasks detail that registers it exists.
-                    this.#panelClosed?.();
+                    if (editor !== 'new') {
+                        this.#panelEvents?.closed();
+                    }
                 },
                 url: {}
             }
