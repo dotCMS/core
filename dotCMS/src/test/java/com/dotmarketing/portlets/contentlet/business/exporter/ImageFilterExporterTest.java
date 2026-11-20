@@ -130,9 +130,27 @@ class ImageFilterExporterTest {
         final byte[] png = png();
         Files.write(intermediate.toPath(), Arrays.copyOf(png, png.length / 4));
 
-        ImageFilterExporter.discardBrokenIntermediate(intermediate);
+        ImageFilterExporter.discardBrokenIntermediate(intermediate, dir.toFile());
 
         assertFalse(intermediate.exists(), "a damaged intermediate must be removed so it is regenerated");
+    }
+
+    /**
+     * Given a damaged file named like an intermediate but outside the rendition cache (an upload
+     * whose name starts with dotGenerated_, passed straight to the exporter),
+     * When the chain that read it fails,
+     * Then it is not deleted: only files inside the local rendition cache are ever discarded.
+     */
+    @Test
+    void discardBrokenIntermediate_neverDeletesFilesOutsideTheRenditionCache(@TempDir final Path dir) throws Exception {
+        final File cache = Files.createDirectory(dir.resolve("dotGenerated")).toFile();
+        final File upload = dir.resolve("dotGenerated_upload.png").toFile();
+        final byte[] png = png();
+        Files.write(upload.toPath(), Arrays.copyOf(png, png.length / 4));
+
+        ImageFilterExporter.discardBrokenIntermediate(upload, cache);
+
+        assertTrue(upload.exists(), "a file outside the rendition cache must never be deleted");
     }
 
     /**
@@ -148,8 +166,8 @@ class ImageFilterExporterTest {
         final File source = dir.resolve("hero.png").toFile();
         Files.write(source.toPath(), Arrays.copyOf(png, png.length / 4));
 
-        ImageFilterExporter.discardBrokenIntermediate(healthy);
-        ImageFilterExporter.discardBrokenIntermediate(source);
+        ImageFilterExporter.discardBrokenIntermediate(healthy, dir.toFile());
+        ImageFilterExporter.discardBrokenIntermediate(source, dir.toFile());
 
         assertTrue(healthy.exists(), "a healthy intermediate must be kept");
         assertTrue(source.exists(), "the asset's own binary must never be deleted");

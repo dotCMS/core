@@ -51,13 +51,18 @@ public class RotateImageFilter extends ImageFilter {
 			 * 
 			 * }
 			 */
-			final File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp");
-			ImageIO.write(dst, "png", tempResultFile);
-			dst.flush();
-			StrictImageReader.assertDecodable(tempResultFile);
-			if (!tempResultFile.renameTo(resultFile)) {
-				tempResultFile.delete();
-				throw new DotRuntimeException("unable to create file:" + resultFile);
+			// a staging file unique to this call: concurrent renders of the same rendition never share one
+			final File tempResultFile = java.nio.file.Files.createTempFile(
+					resultFile.getAbsoluteFile().getParentFile().toPath(), resultFile.getName() + "_", ".tmp").toFile();
+			try {
+				ImageIO.write(dst, "png", tempResultFile);
+				dst.flush();
+				if (!tempResultFile.renameTo(resultFile)) {
+					throw new DotRuntimeException("unable to create file:" + resultFile);
+				}
+			} finally {
+				// already gone after a successful rename; removes a partial file on any failure
+				java.nio.file.Files.deleteIfExists(tempResultFile.toPath());
 			}
         } catch (Exception e) {
             throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);

@@ -41,7 +41,6 @@ public class PngImageFilter extends ImageFilter {
     			ios.flush();
     			writer.dispose();
 			}
-            StrictImageReader.assertDecodable(tempResultFile);
             if (!tempResultFile.renameTo(resultFile)) {
                 throw new DotRuntimeException("unable to create file:" + resultFile);
             }

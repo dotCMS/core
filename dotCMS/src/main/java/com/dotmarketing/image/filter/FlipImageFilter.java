@@ -45,7 +45,6 @@ public class FlipImageFilter extends ImageFilter {
 			BufferedImage dst = filter.filter(src, null);
 			ImageIO.write(dst, "png", tempResultFile);
 			dst.flush();
-            StrictImageReader.assertDecodable(tempResultFile);
             tempResultFile.renameTo(resultFile);
 			 
 		} catch (IOException e) {

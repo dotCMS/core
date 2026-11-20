@@ -63,13 +63,14 @@ public class VipsTruncatedImageIntegrationTest {
     @BeforeClass
     public static void setup() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        // capture before any skip: @AfterClass still runs when the class is skipped and restores these
+        previousUseLibvips = Config.getStringProperty(VipsManager.USE_LIBVIPS, null);
+        previousFallback = Config.getStringProperty(FALLBACK_PROPERTY, null);
         final boolean available = VipsManager.isAvailable();
         assertTrue("native libvips is required when DOT_TEST_REQUIRE_LIBVIPS=true",
                 available || !Config.getBooleanProperty("TEST_REQUIRE_LIBVIPS", false));
         Assume.assumeTrue("native libvips is not available on this host", available);
 
-        previousUseLibvips = Config.getStringProperty(VipsManager.USE_LIBVIPS, null);
-        previousFallback = Config.getStringProperty(FALLBACK_PROPERTY, null);
         Config.setProperty(VipsManager.USE_LIBVIPS, true);
         sourceRoot = Files.createTempDirectory("vips-truncated-it").toFile();
     }

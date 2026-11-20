@@ -1,13 +1,10 @@
 package com.dotmarketing.image.vips;
 
-import app.photofox.vipsffm.VImage;
-import app.photofox.vipsffm.VipsOption;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.image.filter.ImageFilter;
 import com.dotmarketing.util.Logger;
 import java.io.File;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Base class for all libvips-backed filters.
@@ -22,9 +19,6 @@ import java.util.Set;
  * {@code crop_w} / {@code crop_h} URL parameters resolve unchanged.</p>
  */
 public abstract class VipsImageFilter extends ImageFilter {
-
-    /** Rendition extensions whose libvips loader accepts {@code n}, i.e. may hold several frames. */
-    private static final Set<String> MULTI_PAGE_EXTENSIONS = Set.of("gif", "webp");
 
     /**
      * Performs the actual libvips transform, reading {@code in} and writing the finished image to
@@ -60,7 +54,6 @@ public abstract class VipsImageFilter extends ImageFilter {
                 new File(resultFile.getAbsoluteFile() + "_" + System.nanoTime() + "." + ext);
         try {
             transform(file, tempResultFile, parameters);
-            assertFullyDecodable(tempResultFile);
             if (!tempResultFile.renameTo(resultFile)) {
                 throw new DotRuntimeException("unable to create file: " + resultFile);
             }
@@ -72,49 +65,22 @@ public abstract class VipsImageFilter extends ImageFilter {
     }
 
     /**
-     * Re-reads a freshly written rendition and decodes every pixel before it is published to the
-     * cache, so a partial or corrupt write never reaches {@code dotGenerated}. A header-only open is
-     * not enough: {@code avg()} forces libvips to walk every scanline, and {@code fail_on=error} turns
-     * any decode error or truncation into a {@link DotRuntimeException}.
+     * When a libvips operation fails because of the engine (a delegate such as PDF/AVIF not built into
+     * the host libvips, an operation bug), degrade to the equivalent legacy filter rather than serving
+     * an error. This is enabled by default and can be disabled with {@code IMAGE_API_LIBVIPS_FALLBACK=false}.
      *
-     * <p>Multi-page formats (animated GIF/WebP) are loaded with {@code n=-1} so every frame is
-     * decoded: corrupt data inside a later frame fails the check, where a frame-0 load would pass.</p>
-     *
-     * <p>Known limit: a GIF cut off after its first complete frame is not detected. libvips' bundled
-     * libnsgif turns "end of data" into success once one frame is complete ({@code nsgif_data_scan}),
-     * so the image loads with fewer frames and no error at any {@code fail_on} level. A truncated
-     * WebP is rejected by libwebp itself, whichever frames are loaded.</p>
-     *
-     * @param rendition the written temp file about to be renamed into place
-     */
-    private static void assertFullyDecodable(final File rendition) {
-        if (isMultiPageFormat(rendition)) {
-            VipsManager.run(arena -> VImage.newFromFile(arena, rendition.getAbsolutePath(),
-                    VipsOption.Int("n", -1), VipsManager.FAIL_ON_ERROR).avg());
-        } else {
-            VipsManager.run(arena -> VipsManager.load(arena, rendition).avg());
-        }
-    }
-
-    /**
-     * Tells whether a rendition may hold several frames, so its check must decode all of them.
-     *
-     * @param rendition a written rendition
-     * @return true when its extension names a format whose libvips loader accepts {@code n} (pages)
-     */
-    private static boolean isMultiPageFormat(final File rendition) {
-        final String ext = com.dotmarketing.util.UtilMethods.getFileExtension(rendition.getName());
-        return MULTI_PAGE_EXTENSIONS.contains(ext == null ? "" : ext.toLowerCase());
-    }
-
-    /**
-     * When a libvips operation fails (corrupt image, a delegate such as PDF/AVIF not built into the
-     * host libvips, etc.) degrade to the equivalent legacy filter rather than serving an error. This
-     * is enabled by default and can be disabled with {@code IMAGE_API_LIBVIPS_FALLBACK=false}.
+     * <p>No fallback when the input itself is damaged: libvips recognises its format but cannot decode
+     * it ({@code fail_on=error}). The legacy engine would decode the same bad bytes into the JVM heap
+     * only to fail again, so the error is raised directly.</p>
      */
     private File fallbackOrThrow(final File file, final Map<String, String[]> parameters, final Exception cause) {
         final boolean fallbackEnabled =
                 com.dotmarketing.util.Config.getBooleanProperty("IMAGE_API_LIBVIPS_FALLBACK", true);
+        if (fallbackEnabled && isDamagedInput(file)) {
+            Logger.warnAndDebug(this.getClass(), "libvips filter '" + getFilterName() + "' failed for " + file
+                    + "; the input does not decode, so the legacy engine is skipped: " + cause.getMessage(), cause);
+            throw new DotRuntimeException("unable to convert file: " + file + " : " + cause.getMessage(), cause);
+        }
         if (fallbackEnabled) {
             final java.util.Optional<com.dotmarketing.image.filter.ImageFilter> legacy =
                     VipsLegacyFilters.forName(getFilterName());
@@ -127,6 +93,17 @@ public abstract class VipsImageFilter extends ImageFilter {
         }
         Logger.warnAndDebug(this.getClass(), "libvips filter failed for " + file + ": " + cause.getMessage(), cause);
         throw new DotRuntimeException("unable to convert file: " + file + " : " + cause.getMessage(), cause);
+    }
+
+    /**
+     * Tells whether a failed filter's input is damaged rather than unsupported: libvips has a loader
+     * for it but cannot decode every pixel. Runs only after a failure, entirely in native memory.
+     *
+     * @param file the input the failed filter was reading
+     * @return true when the input is in a format libvips reads and does not decode fully
+     */
+    private static boolean isDamagedInput(final File file) {
+        return VipsManager.hasLoader(file) && !VipsManager.decodesFully(file);
     }
 
     /** Parse an int parameter under this filter's prefix, with a default. */

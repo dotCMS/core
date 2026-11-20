@@ -55,7 +55,6 @@ public class WebPImageFilter extends ImageFilter {
 	            writer.write(null, new IIOImage(src, null, null), writeParam);
 	            writer.dispose();
 	        }
-            StrictImageReader.assertDecodable(tempResultFile);
             tempResultFile.renameTo(resultFile);
         } catch (Exception e) {
             throw new DotRuntimeException("unable to convert file:" +file + " : " +  e.getMessage(),e);

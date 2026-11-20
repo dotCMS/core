@@ -52,7 +52,6 @@ public class GifImageFilter extends ImageFilter {
 			ios.flush();
 			writer.dispose();
 			ios.close();
-			StrictImageReader.assertDecodable(tempResultFile);
 			resultFile.delete();
 			tempResultFile.renameTo(resultFile);
 			//writer.setOutput(output);

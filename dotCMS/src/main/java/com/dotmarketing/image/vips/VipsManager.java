@@ -150,6 +150,50 @@ public final class VipsManager {
         return VImage.newFromFile(arena, file.getAbsolutePath(), FAIL_ON_ERROR);
     }
 
+    /** Extensions whose libvips loader may hold several frames, so a full check decodes all of them. */
+    private static final java.util.Set<String> MULTI_PAGE_EXTENSIONS = java.util.Set.of("gif", "webp");
+
+    /**
+     * Tells whether libvips has a loader for this file, judged from its content. When it does, a
+     * failure to read the file is about the file's data (truncated or corrupt), not about an
+     * unsupported format or a delegate (PDF, AVIF...) missing from this libvips build.
+     *
+     * @param file the image file
+     * @return true when libvips is enabled and recognises the file's format
+     */
+    public static boolean hasLoader(final java.io.File file) {
+        if (!isEnabled()) {
+            return false;
+        }
+        final String[] loader = new String[1];
+        return Try.run(() -> run(arena -> loader[0] = VipsHelper.foreign_find_load(arena, file.getAbsolutePath())))
+                .map(ignored -> loader[0] != null && !loader[0].isEmpty())
+                .getOrElse(false);
+    }
+
+    /**
+     * Decodes every pixel of the file in libvips with {@code fail_on=error}, all frames for GIF and
+     * WebP. The work stays in native memory: {@code avg()} walks the pixels and returns one number, so
+     * nothing is copied into the JVM heap.
+     *
+     * <p>Known limit: a GIF cut off after its first complete frame still decodes. libvips' bundled
+     * libnsgif turns "end of data" into success once one frame is complete ({@code nsgif_data_scan}),
+     * so the file loads with fewer frames and no error at any {@code fail_on} level.</p>
+     *
+     * @param file the image file
+     * @return true when libvips is enabled and decodes the whole image without error
+     */
+    public static boolean decodesFully(final java.io.File file) {
+        if (!isEnabled()) {
+            return false;
+        }
+        final String ext = com.dotmarketing.util.UtilMethods.getFileExtension(file.getName());
+        final boolean multiPage = ext != null && MULTI_PAGE_EXTENSIONS.contains(ext.toLowerCase(java.util.Locale.ROOT));
+        return Try.run(() -> run(arena -> (multiPage
+                ? VImage.newFromFile(arena, file.getAbsolutePath(), VipsOption.Int("n", -1), FAIL_ON_ERROR)
+                : load(arena, file)).avg())).isSuccess();
+    }
+
     /**
      * Null-safe read of an integer metadata field. libvips {@code getInt} returns {@code null} (not
      * an exception) when a field such as {@code n-pages} or {@code page-height} is absent, so callers

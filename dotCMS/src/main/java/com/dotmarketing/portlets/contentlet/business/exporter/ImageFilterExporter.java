@@ -19,6 +19,7 @@ import com.dotmarketing.image.filter.ImageFilter;
 import com.dotmarketing.image.filter.ImageFilterAPI;
 import com.dotmarketing.image.filter.PDFImageFilter;
 import com.dotmarketing.image.filter.StrictImageReader;
+import com.dotmarketing.image.vips.VipsManager;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporter;
 import com.dotmarketing.portlets.contentlet.business.BinaryContentExporterException;
@@ -122,20 +123,46 @@ public class ImageFilterExporter implements BinaryContentExporter {
 
     }
 
-    /** Raster formats the pure-JVM decoder can verify; other intermediates are never discarded here. */
-    private static final Set<String> VERIFIABLE_INTERMEDIATE_EXTENSIONS = Set.of("png", "jpg", "jpeg", "gif");
+    /** Raster formats the pure-JVM decoder can verify when libvips is off; others are never discarded. */
+    private static final Set<String> JVM_VERIFIABLE_EXTENSIONS = Set.of("png", "jpg", "jpeg", "gif");
 
     /**
      * When a step fails, {@code input} is the file that step was reading. If that file is a cached
      * dotGenerated intermediate that no longer decodes (e.g. a short or damaged write), delete it so the
-     * next request regenerates it; otherwise every request reusing it keeps failing. The asset's own
-     * binary is never touched.
+     * next request regenerates it; otherwise every request reusing it keeps failing.
+     *
+     * @param input the file the failed step was reading
+     */
+    static void discardBrokenIntermediate(final File input) {
+        discardBrokenIntermediate(input, new File(ConfigUtils.getDotGeneratedPath()));
+    }
+
+    /**
+     * Same as {@link #discardBrokenIntermediate(File)}, with the cache folder given explicitly.
+     *
+     * <p>Only a {@code dotGenerated_*} file inside {@code cacheRoot} is ever deleted, so an asset's own
+     * binary (or an upload that happens to be named {@code dotGenerated_*}) is never touched. With
+     * libvips the check runs natively and covers every format it reads (WebP, AVIF...); without it,
+     * the JVM decoder checks PNG, JPEG and GIF.</p>
+     *
+     * @param input the file the failed step was reading
+     * @param cacheRoot the local rendition cache the intermediate must live in
      */
     // package-visible for tests
-    static void discardBrokenIntermediate(final File input) {
+    static void discardBrokenIntermediate(final File input, final File cacheRoot) {
         if (input == null || !input.isFile() || !input.getName().startsWith(WebKeys.GENERATED_FILE)
-                || !VERIFIABLE_INTERMEDIATE_EXTENSIONS.contains(
-                        UtilMethods.getFileExtension(input.getName()).toLowerCase())) {
+                || !isInside(input, cacheRoot)) {
+            return;
+        }
+        if (VipsManager.isEnabled()) {
+            // the intermediate was written by this engine, so failing to decode it means it is damaged
+            if (!VipsManager.decodesFully(input) && input.delete()) {
+                Logger.warn(ImageFilterExporter.class,
+                        "Discarded a damaged image intermediate so it is regenerated: " + input);
+            }
+            return;
+        }
+        if (!JVM_VERIFIABLE_EXTENSIONS.contains(UtilMethods.getFileExtension(input.getName()).toLowerCase())) {
             return;
         }
         try {
@@ -144,6 +171,19 @@ public class ImageFilterExporter implements BinaryContentExporter {
             Logger.warn(ImageFilterExporter.class,
                     "Discarded a damaged image intermediate so it is regenerated: " + input + " : " + e.getMessage());
         }
+    }
+
+    /**
+     * Tells whether a file lives under a folder, comparing real paths so {@code ..} or a symlink cannot
+     * escape it.
+     *
+     * @param file a file
+     * @param root a folder
+     * @return true when the file's real path is inside the folder's real path
+     */
+    private static boolean isInside(final File file, final File root) {
+        return Try.of(() -> file.getCanonicalFile().toPath().startsWith(root.getCanonicalFile().toPath()))
+                .getOrElse(false);
     }
     
     

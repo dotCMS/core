@@ -111,7 +111,6 @@ public class ThumbnailImageFilter extends ImageFilter {
             ImageIO.write(bgImage, "png", tempResultFile);
             bgImage.flush();
 
-            StrictImageReader.assertDecodable(tempResultFile);
             tempResultFile.renameTo(resultFile);
         } catch (Exception e) {
             throw new DotRuntimeException("unable to convert file:" + file + " : " + e.getMessage(), e);

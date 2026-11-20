@@ -591,27 +591,23 @@ public class VipsParityTest {
     }
 
     /**
-     * Resize a truncated image with {@code IMAGE_API_LIBVIPS_FALLBACK=true}: the libvips failure must
-     * reach the legacy engine. Either the legacy engine returns a fully decodable rendition, or it
-     * fails too and nothing is cached.
+     * Resize a truncated image with {@code IMAGE_API_LIBVIPS_FALLBACK=true}: libvips recognises the
+     * format but cannot decode it, so the input is damaged and the legacy engine is skipped. The
+     * libvips error is raised directly (it is the cause, not a legacy decode error) and nothing is cached.
      *
      * @param in truncated input staged by {@link #truncated}
-     * @throws Exception if the result cannot be read
      */
-    private void assertTruncatedFallsBackToLegacy(final File in) throws Exception {
+    private void assertTruncatedSkipsLegacyFallback(final File in) {
         final String previous = Config.getStringProperty(FALLBACK_PROPERTY, null);
         Config.setProperty(FALLBACK_PROPERTY, true);
         try {
-            final File result;
-            try {
-                result = new VipsResizeImageFilter().runFilter(in, params("resize_w", "200", "resize_h", "150"));
-            } catch (RuntimeException legacyAlsoFailed) {
-                assertTrue("legacy failed too, so nothing may be cached: " + renditionsBesides(in),
-                        renditionsBesides(in).isEmpty());
-                return;
-            }
-            assertTrue("legacy fallback produced a result", result.exists() && result.length() > 50);
-            assertTrue("legacy fallback result decodes", ImageIO.read(result) != null);
+            new VipsResizeImageFilter().runFilter(in, params("resize_w", "200", "resize_h", "150"));
+            org.junit.Assert.fail("truncated " + in.getName() + " must not render, with or without fallback");
+        } catch (com.dotmarketing.exception.DotRuntimeException expected) {
+            assertTrue("the libvips error must be raised, not a legacy one: " + expected.getCause(),
+                    expected.getCause() != null && String.valueOf(expected.getCause().getMessage())
+                            .startsWith("libvips operation failed"));
+            assertTrue("no rendition may be cached: " + renditionsBesides(in), renditionsBesides(in).isEmpty());
         } finally {
             Config.setProperty(FALLBACK_PROPERTY, previous);
         }
@@ -654,13 +650,13 @@ public class VipsParityTest {
     }
 
     @Test
-    public void runFilter_truncated_jpeg_with_fallback_reaches_legacy_engine() throws Exception {
-        assertTruncatedFallsBackToLegacy(truncated("test.jpg", "jpg", 0.35));
+    public void runFilter_truncated_jpeg_with_fallback_skips_legacy_engine() throws Exception {
+        assertTruncatedSkipsLegacyFallback(truncated("test.jpg", "jpg", 0.35));
     }
 
     @Test
-    public void runFilter_truncated_png_with_fallback_reaches_legacy_engine() throws Exception {
-        assertTruncatedFallsBackToLegacy(truncated("test.png", "png", 0.35));
+    public void runFilter_truncated_png_with_fallback_skips_legacy_engine() throws Exception {
+        assertTruncatedSkipsLegacyFallback(truncated("test.png", "png", 0.35));
     }
 
     @Test
@@ -673,70 +669,6 @@ public class VipsParityTest {
                 java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         final File out = new VipsResizeImageFilter().runFilter(in, params("resize_w", "200", "resize_h", "150"));
         assertEquals(new Dimension(200, 150), dims(out));
-    }
-
-    /**
-     * A libvips GIF filter whose "encode" writes a full-length animated GIF with corrupt image data
-     * inside a later frame, so frame 0 still decodes and the file still ends with its trailer.
-     * Models a damaged multi-frame write reaching the pre-publish check. (A GIF cut off after
-     * frame 0 is not used: libnsgif loads it with fewer frames and no error, see
-     * {@code VipsImageFilter#assertFullyDecodable}.)
-     */
-    class CorruptAnimatedGifFilter extends VipsGifImageFilter {
-        @Override
-        protected void transform(final File in, final File out, final Map<String, String[]> parameters) {
-            try {
-                final byte[] singleFrame = readAndDelete(animatedGif(1));
-                final byte[] animated = readAndDelete(animatedGif(4));
-                // frame 0 ends where the single-frame file does (minus its trailer byte); overwrite a
-                // few bytes in the middle of the later frames
-                final int frameZeroEnd = singleFrame.length - 1;
-                final int corruptAt = frameZeroEnd + (animated.length - frameZeroEnd) / 2;
-                java.util.Arrays.fill(animated, corruptAt, corruptAt + 6, (byte) 0xFF);
-                java.nio.file.Files.write(out.toPath(), animated);
-            } catch (Exception e) {
-                throw new IllegalStateException("unable to write corrupt animated gif", e);
-            }
-        }
-
-        @Override
-        protected String getFilterName() {
-            return "gif";
-        }
-    }
-
-    /**
-     * @param file a scratch file
-     * @return its bytes; the file is deleted so the fixture leaves nothing in the OS temp dir
-     * @throws Exception if the file cannot be read or deleted
-     */
-    private static byte[] readAndDelete(final File file) throws Exception {
-        final byte[] bytes = java.nio.file.Files.readAllBytes(file.toPath());
-        java.nio.file.Files.delete(file.toPath());
-        return bytes;
-    }
-
-    /**
-     * Given a libvips GIF filter that writes an animated rendition whose later frame is corrupt,
-     * when it runs with the fallback off, then the pre-publish check decodes every frame, fails,
-     * and nothing is cached. With a frame-0-only check the rendition would be published.
-     */
-    @Test
-    public void runFilter_animated_gif_with_corrupt_later_frame_is_not_cached() throws Exception {
-        final File dir = TRUNCATED_ROOT.newFolder();
-        final File in = new File(dir, "dotGenerated_animated.gif");
-        java.nio.file.Files.write(in.toPath(), readAndDelete(animatedGif(4)));
-
-        final String previous = Config.getStringProperty(FALLBACK_PROPERTY, null);
-        Config.setProperty(FALLBACK_PROPERTY, false);
-        try {
-            new CorruptAnimatedGifFilter().runFilter(in, new HashMap<>());
-            org.junit.Assert.fail("an animated gif rendition with a corrupt frame must not be published");
-        } catch (com.dotmarketing.exception.DotRuntimeException expected) {
-            assertTrue("no rendition may be cached: " + renditionsBesides(in), renditionsBesides(in).isEmpty());
-        } finally {
-            Config.setProperty(FALLBACK_PROPERTY, previous);
-        }
     }
 
     @Test

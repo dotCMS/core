@@ -56,8 +56,13 @@ public class ResizeGifImageFilter extends ImageFilter {
       final int height = (int) h;
 
       File tempResultFile = new File(resultFile.getAbsoluteFile() + "_" + System.currentTimeMillis() + ".tmp");
-      readWriteGIF(file, tempResultFile, maxFrames, loop, width, height);
-      StrictImageReader.assertDecodable(tempResultFile);
+      try {
+        readWriteGIF(file, tempResultFile, maxFrames, loop, width, height);
+      } catch (IOException | RuntimeException e) {
+        // never leave a partial gif behind in the rendition folder
+        tempResultFile.delete();
+        throw e;
+      }
       tempResultFile.renameTo(resultFile);
       return resultFile;
     } catch (Exception e) {
@@ -70,7 +75,11 @@ public class ResizeGifImageFilter extends ImageFilter {
       throws IOException {
     final BufferedImageOp resampler = new ResampleOp(width, height, ResampleOp.FILTER_TRIANGLE);
     final GifDecoder decoder = new GifDecoder();
-    decoder.read(inputFile.getAbsolutePath());
+    // GifDecoder reports a short or corrupt read through its status and keeps the frames it got,
+    // so an unchecked read would encode and cache a GIF with frames missing
+    if (decoder.read(inputFile.getAbsolutePath()) != GifDecoder.STATUS_OK) {
+      throw new IOException("unable to fully decode gif: " + inputFile);
+    }
     if(decoder.getFrameCount()==1) {
       BufferedImage dst = resampler.filter(StrictImageReader.read(inputFile), null);
       ImageIO.write(dst, "png", outputFile);
@@ -83,8 +92,11 @@ public class ResizeGifImageFilter extends ImageFilter {
     
     int frames = Math.min(maxFrames, decoder.getFrameCount());
 
+      // AnimatedGifEncoder reports write failures through its return values, not exceptions
       AnimatedGifEncoder animatedGif = new AnimatedGifEncoder();
-      animatedGif.start(outputFile.getAbsolutePath());
+      if (!animatedGif.start(outputFile.getAbsolutePath())) {
+        throw new IOException("unable to start writing gif: " + outputFile);
+      }
       animatedGif.setDelay(decoder.getDelay(0));
       animatedGif.setRepeat(loop);
       animatedGif.setSize(width, height);
@@ -94,10 +106,14 @@ public class ResizeGifImageFilter extends ImageFilter {
 
         BufferedImage frame = decoder.getFrame(i); // frame i
 
-        animatedGif.addFrame(resampler.filter(frame, null));
-        // animatedGif.addFrame(frame);
+        if (!animatedGif.addFrame(resampler.filter(frame, null))) {
+          animatedGif.finish();
+          throw new IOException("unable to write gif frame " + i + ": " + outputFile);
+        }
       }
-      animatedGif.finish();
+      if (!animatedGif.finish()) {
+        throw new IOException("unable to finish writing gif: " + outputFile);
+      }
     
   }
 

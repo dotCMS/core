@@ -71,7 +71,6 @@ public class JpegImageFilter extends ImageFilter {
     			writer.dispose();
 			}
 			
-	        StrictImageReader.assertDecodable(tempResultFile);
 	        tempResultFile.renameTo(resultFile);
 
 

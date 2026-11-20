@@ -103,7 +103,6 @@ public class CropImageFilter extends ImageFilter {
 			
 			ImageIO.write(out, FILE_EXT, tempResultFile);
 			out.flush();
-			StrictImageReader.assertDecodable(tempResultFile);
 			tempResultFile.renameTo(resultFile);
 		} catch (IOException e) {
 			throw new DotRuntimeException("unable to convert file:" + file + " : " + e.getMessage(), e);

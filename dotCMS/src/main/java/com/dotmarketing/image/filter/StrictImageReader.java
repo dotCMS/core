@@ -96,11 +96,13 @@ public final class StrictImageReader {
     }
 
     /**
-     * Checks that a just-written rendition decodes fully before it is published. On failure the
-     * file is deleted, so a partial write is never renamed into place.
+     * Checks that a cached rendition still decodes fully, and deletes it when it does not, so the next
+     * request regenerates it. Used on the legacy engine only; with libvips the check runs natively
+     * ({@code VipsManager.decodesFully}).
      *
-     * @param file the written (temp) rendition
-     * @throws IOException if the file does not decode; the file has been deleted
+     * @param file a generated rendition
+     * @throws IOException if the file does not decode; the file is deleted when possible (a failed
+     *                     delete is logged)
      */
     public static void assertDecodable(final File file) throws IOException {
         try {

@@ -691,8 +691,10 @@ public class BinaryExporterServlet extends HttpServlet {
 			if(!resp.isCommitted()){
 			  // the content exists but could not be rendered: report a server error and keep it out of
 			  // browser/CDN caches, so the next request retries instead of a cached "not found"
+			  // setStatus, not sendError: sendError dispatches to the custom 500 page, whose vanity
+			  // handler can turn the response into a 301 redirect
 			  resp.setHeader("Cache-Control", "no-store");
-			  resp.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+			  resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 			}
 		}catch (Exception e) {
 			Logger.debug(BinaryExporterServlet.class, e.getMessage(),e);
