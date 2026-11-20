@@ -80,11 +80,20 @@ test.describe('A toggled "new edit content screen" takes effect without a reload
         await expect(sidePanel.front.getByTestId('title')).toHaveCount(0);
     };
 
-    /** Closes the panel and waits for the listing's reload that the close starts. */
-    const closePanel = async (page: Page, sidePanel: SidePanel): Promise<void> => {
-        const listingReloaded = page.waitForResponse((response) =>
-            response.url().includes('ContentletAjax.searchContentlets.dwr')
-        );
+    /**
+     * Closes the panel. After the legacy editor the close reloads the listing, and the next open
+     * waits for that reload; after the new editor, which reports its saves, it reloads nothing.
+     */
+    const closePanel = async (
+        page: Page,
+        sidePanel: SidePanel,
+        { reloadsListing }: { reloadsListing: boolean }
+    ): Promise<void> => {
+        const listingReloaded = reloadsListing
+            ? page.waitForResponse((response) =>
+                  response.url().includes('ContentletAjax.searchContentlets.dwr')
+              )
+            : Promise.resolve();
 
         await sidePanel.close();
         await sidePanel.expectClosed();
@@ -105,12 +114,12 @@ test.describe('A toggled "new edit content screen" takes effect without a reload
 
         await openFromListing(page, sidePanel);
         await expectNewEditor(sidePanel);
-        await closePanel(page, sidePanel);
+        await closePanel(page, sidePanel, { reloadsListing: false });
 
         await setNewContentEditor(request, typeId, false);
         await openFromListing(page, sidePanel);
         await expectLegacyEditor(sidePanel);
-        await closePanel(page, sidePanel);
+        await closePanel(page, sidePanel, { reloadsListing: true });
 
         await setNewContentEditor(request, typeId, true);
         await openFromListing(page, sidePanel);
