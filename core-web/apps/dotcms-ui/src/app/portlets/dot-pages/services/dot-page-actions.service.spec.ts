@@ -554,12 +554,26 @@ describe('DotPageActionsService', () => {
             expect(openOptions().saved).toBeUndefined();
         });
 
-        it('should refresh the listing when the panel closes, with no callback from the menu', async () => {
+        // The legacy editor's workflow moves and language switches report nothing, so its close
+        // refreshes the listing.
+        it('should refresh the listing when the legacy editor closes, with no callback from the menu', async () => {
             await clickEdit();
 
+            openOptions().editorResolved?.('legacy');
             openOptions().closed?.();
 
             expect(mockPagesStore.getPages).toHaveBeenCalledTimes(1);
+        });
+
+        // The new editor reports each save and delete, which refreshed the listing already through
+        // the content change notification: its close refreshes nothing more (review R5).
+        it('should not refresh the listing when the new editor closes', async () => {
+            await clickEdit();
+
+            openOptions().editorResolved?.('new');
+            openOptions().closed?.();
+
+            expect(mockPagesStore.getPages).not.toHaveBeenCalled();
         });
 
         // The opener writes the panel to the Pages URL, as on every surface but UVE (FR-044).
