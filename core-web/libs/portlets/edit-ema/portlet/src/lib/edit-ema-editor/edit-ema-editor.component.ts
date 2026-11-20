@@ -1523,6 +1523,16 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
+     * A contentlet in the Story Block the block editor drawer shows asked to be edited: it opens
+     * in the side panel, above the drawer, in whichever editor its content type uses (#38303).
+     *
+     * @param contentlet The contentlet's inode and content type, as the block editor names them.
+     */
+    openBlockContentlet({ inode, contentType }: { inode: string; contentType: string }): void {
+        this.#openContent(this.#buildRequest({ mode: 'edit', inode, contentType }));
+    }
+
+    /**
      * The edit request for a contentlet on this page, completed with the page's context.
      *
      * @param contentlet The contentlet to edit.

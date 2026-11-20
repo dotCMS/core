@@ -301,7 +301,8 @@
     <dot-block-editor-sidebar
         #blockSidebar
         [variantName]="uveStore.pageVariantId()"
-        (onSaved)="reloadPage()" />
+        (onSaved)="reloadPage()"
+        (contentletEdit)="openBlockContentlet($event)" />
 }
 
 <div
