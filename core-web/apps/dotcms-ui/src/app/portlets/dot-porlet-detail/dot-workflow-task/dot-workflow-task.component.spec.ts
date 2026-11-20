@@ -10,7 +10,7 @@ import { DebugElement, Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { ActivatedRoute, Params } from '@angular/router';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
@@ -98,8 +98,9 @@ describe('DotWorkflowTaskComponent', () => {
      * Builds the component and runs its first change detection, which views the route's task.
      *
      * @param messageService What the app's `DotMessageService` is.
+     * @param beforeInit Runs before the first change detection, which initialises the component.
      */
-    const setup = (messageService: unknown): void => {
+    const setup = (messageService: unknown, beforeInit?: () => void): void => {
         TestBed.configureTestingModule({
             imports: [
                 DotWorkflowTaskDetailComponent,
@@ -191,6 +192,7 @@ describe('DotWorkflowTaskComponent', () => {
             onPanelEvents: vi.fn().mockReturnValue(releasePanelEvents)
         });
         vi.spyOn(dotIframeService, 'reloadData');
+        beforeInit?.();
         fixture.detectChanges();
         taskDetail = de.query(By.css('dot-workflow-task-detail'));
     };
@@ -423,6 +425,55 @@ describe('DotWorkflowTaskComponent', () => {
                 mode: 'edit',
                 identifier: IDENTIFIER,
                 languageId: 2
+            });
+        });
+    });
+
+    /**
+     * Back or Forward onto a task's entry that still names a panel the author left (a menu click
+     * away closes the panel and writes nothing to that entry) opens nothing: the panel URL service
+     * drops the params, and the task only follows the app's own navigations. The task reads the
+     * URL during the navigation that shows it, when the router can tell a Back from the app's own
+     * navigation, not once its dialog has shown, after the navigation ended (#38303, review R4).
+     */
+    describe('a panel the task URL names on Back or Forward', () => {
+        const IDENTIFIER = '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57';
+
+        let openContent: Mock;
+        let currentNavigation: Mock;
+
+        beforeEach(() => {
+            TestBed.resetTestingModule();
+            setup(messageServiceMock, () => {
+                currentNavigation = vi
+                    .spyOn(TestBed.inject(Router), 'currentNavigation')
+                    .mockReturnValue({ trigger: 'popstate' } as ReturnType<
+                        Router['currentNavigation']
+                    >) as unknown as Mock;
+                queryParams$.next({ editContent: IDENTIFIER, editContentLang: '2' });
+            });
+            // The Back navigation ends once the route is shown.
+            currentNavigation.mockReturnValue(null);
+            openContent = vi
+                .spyOn(dotCustomEventHandlerService, 'openContent')
+                .mockImplementation(() => undefined) as unknown as Mock;
+        });
+
+        it('should not open it once the task dialog has shown', () => {
+            taskDetail.triggerEventHandler('shown', undefined);
+
+            expect(openContent).not.toHaveBeenCalled();
+        });
+
+        it('should open a panel a later navigation of the app names', () => {
+            taskDetail.triggerEventHandler('shown', undefined);
+            queryParams$.next({ editContent: IDENTIFIER, editContentLang: '1' });
+
+            expect(openContent).toHaveBeenCalledTimes(1);
+            expect(openContent).toHaveBeenCalledWith({
+                mode: 'edit',
+                identifier: IDENTIFIER,
+                languageId: 1
             });
         });
     });

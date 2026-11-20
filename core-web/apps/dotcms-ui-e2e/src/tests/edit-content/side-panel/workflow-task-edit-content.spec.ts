@@ -67,6 +67,55 @@ async function waitForTaskDetailLoad(page: Page): Promise<void> {
     await frame?.waitForLoadState('load');
 }
 
+/**
+ * Opens a content's task from the Workflow Tasks list, as an author does: an app navigation to the
+ * task's URL, with the task dialog open on its detail.
+ *
+ * @param page - The page
+ * @param title - The content's title, which the list is narrowed to
+ * @param taskId - The task the row opens
+ */
+async function openTaskFromList(page: Page, title: string, taskId: string): Promise<void> {
+    await page.goto(Portlet.WorkflowTasks);
+
+    // The task list's filters are Dojo widgets; each one clicked runs the list's search. `check()`
+    // rather than `click()`: "All" is a radio whose handler toggles, so a second click would
+    // turn it off again, and both confirm the state they leave.
+    const taskList = getLegacyFrame(page);
+    await waitForDojoWidget(taskList, 'showClosed');
+    await taskList.locator('#keywords').fill(title);
+    await taskList.locator('#showClosed').check();
+    await taskList.locator('#showAllLink').check();
+    const taskRow = taskList.locator('td', { hasText: title }).first();
+    await expect(taskRow, 'the filtered task list shows the task').toBeVisible({
+        timeout: 20000
+    });
+    await taskRow.click();
+
+    await expect(page).toHaveURL(new RegExp(`/dotAdmin/#/c/workflow/${taskId}`));
+    await expect(taskDialog(page)).toBeVisible({ timeout: 20000 });
+    await expect(taskDetailFrame(page).getByRole('heading', { level: 1 })).toContainText(title, {
+        timeout: 20000
+    });
+    await waitForTaskDetailLoad(page);
+}
+
+/**
+ * Chooses "Edit Content" in the open task detail's actions menu, a dijit DropDownButton: chosen
+ * once the menu is open.
+ *
+ * @param page - The page with the task dialog open on its detail
+ */
+async function editTaskContent(page: Page): Promise<void> {
+    const detail = taskDetailFrame(page);
+
+    await waitForDojoWidget(detail, 'archiveDropDownButton');
+    await detail.locator('#archiveDropDownButton').click();
+    const editContent = detail.getByRole('menuitem', { name: 'Edit Content' });
+    await expect(editContent, 'the actions menu is open').toBeVisible();
+    await editContent.click();
+}
+
 test.describe('Workflow Tasks opens task content in the side panel over the task dialog', () => {
     let contentType: ContentType | null = null;
     let title: string;
@@ -106,38 +155,11 @@ test.describe('Workflow Tasks opens task content in the side panel over the task
     }) => {
         const sidePanel = new SidePanel(page);
         const taskId = await getWorkflowTaskId(request, inode);
-        const detail = taskDetailFrame(page);
-        const detailTitle = detail.getByRole('heading', { level: 1 });
+        const detailTitle = taskDetailFrame(page).getByRole('heading', { level: 1 });
         const typed = `${title} edited from its task`;
 
-        await page.goto(Portlet.WorkflowTasks);
-
-        // The task list's filters are Dojo widgets; each one clicked runs the list's search. `check()`
-        // rather than `click()`: "All" is a radio whose handler toggles, so a second click would
-        // turn it off again, and both confirm the state they leave.
-        const taskList = getLegacyFrame(page);
-        await waitForDojoWidget(taskList, 'showClosed');
-        await taskList.locator('#keywords').fill(title);
-        await taskList.locator('#showClosed').check();
-        await taskList.locator('#showAllLink').check();
-        const taskRow = taskList.locator('td', { hasText: title }).first();
-        await expect(taskRow, 'the filtered task list shows the task').toBeVisible({
-            timeout: 20000
-        });
-        await taskRow.click();
-
-        await expect(page).toHaveURL(new RegExp(`/dotAdmin/#/c/workflow/${taskId}`));
-        await expect(taskDialog(page)).toBeVisible({ timeout: 20000 });
-        await expect(detailTitle).toContainText(title, { timeout: 20000 });
-        await waitForTaskDetailLoad(page);
-
-        // "Edit Content" is in the detail's actions menu, a dijit DropDownButton: chosen once the
-        // menu is open.
-        await waitForDojoWidget(detail, 'archiveDropDownButton');
-        await detail.locator('#archiveDropDownButton').click();
-        const editContent = detail.getByRole('menuitem', { name: 'Edit Content' });
-        await expect(editContent, 'the actions menu is open').toBeVisible();
-        await editContent.click();
+        await openTaskFromList(page, title, taskId);
+        await editTaskContent(page);
 
         await sidePanel.expectOpen();
         await sidePanel.expectOnTop('the side panel is not above the task dialog');
@@ -163,6 +185,50 @@ test.describe('Workflow Tasks opens task content in the side panel over the task
         await sidePanel.expectClosed();
         await expect(taskDialog(page)).toBeVisible();
         await expect(page).toHaveURL(new RegExp(`/dotAdmin/#/c/workflow/${taskId}$`));
+    });
+
+    /**
+     * A menu click away from the task with its panel open closes the panel and leaves the task's
+     * entry naming it. Back onto that entry drops the params and opens nothing: the panel stays
+     * closed, and no entry is pushed over the one Forward returns to (review R4).
+     */
+    test('keeps the panel closed on Back onto the task after leaving it from the menu', async ({
+        page,
+        request
+    }) => {
+        const sidePanel = new SidePanel(page);
+        const taskId = await getWorkflowTaskId(request, inode);
+        // The menu's links carry the menu entry they came from (`mId`).
+        const contentPortletUrl = /\/dotAdmin\/#\/c\/content(\?mId=[^&]+)?$/;
+
+        await openTaskFromList(page, title, taskId);
+        await editTaskContent(page);
+        await sidePanel.expectOpen();
+        await expect(page).toHaveURL(new RegExp(`editContent=${identifier}`));
+
+        // An app navigation away, as the menu's link makes it. Dispatched on the link: the panel is
+        // modal, so its mask takes a pointer click on the menu.
+        await page.locator('a[href="#/c/content"]').first().dispatchEvent('click');
+        await expect(page).toHaveURL(contentPortletUrl);
+        await sidePanel.expectClosed();
+
+        await page.goBack();
+        await expect(taskDialog(page)).toBeVisible({ timeout: 20000 });
+        await waitForTaskDetailLoad(page);
+        await expect(page).toHaveURL(new RegExp(`/dotAdmin/#/c/workflow/${taskId}$`));
+        // The task dialog has shown, so a panel its URL named would open now. Nothing signals that
+        // none will, so the check gives one as long as an open takes here to appear.
+        await expect(taskDetailFrame(page).getByRole('heading', { level: 1 })).toContainText(title);
+        const panelOpened = await sidePanel.front.waitFor({ state: 'visible', timeout: 5000 }).then(
+            () => true,
+            () => false
+        );
+        expect(panelOpened, 'Back onto the task opens no panel').toBe(false);
+        await expect(page).toHaveURL(new RegExp(`/dotAdmin/#/c/workflow/${taskId}$`));
+
+        // The Content entry is still ahead: Back pushed nothing over it.
+        await page.goForward();
+        await expect(page).toHaveURL(contentPortletUrl);
     });
 
     test('opens the task and its content from the task URL with the side panel on top', async ({
