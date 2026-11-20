@@ -676,21 +676,26 @@ public class VipsParityTest {
     }
 
     /**
-     * A libvips GIF filter whose "encode" writes an animated GIF cut inside its later frames, so
-     * frame 0 still decodes. Models a truncated multi-frame write reaching the pre-publish check.
+     * A libvips GIF filter whose "encode" writes a full-length animated GIF with corrupt image data
+     * inside a later frame, so frame 0 still decodes and the file still ends with its trailer.
+     * Models a damaged multi-frame write reaching the pre-publish check. (A GIF cut off after
+     * frame 0 is not used: libnsgif loads it with fewer frames and no error, see
+     * {@code VipsImageFilter#assertFullyDecodable}.)
      */
-    class TruncatedAnimatedGifFilter extends VipsGifImageFilter {
+    class CorruptAnimatedGifFilter extends VipsGifImageFilter {
         @Override
         protected void transform(final File in, final File out, final Map<String, String[]> parameters) {
             try {
                 final byte[] singleFrame = readAndDelete(animatedGif(1));
                 final byte[] animated = readAndDelete(animatedGif(4));
-                // keep frame 0 whole (single-frame size minus its trailer byte) and part of the rest
+                // frame 0 ends where the single-frame file does (minus its trailer byte); overwrite a
+                // few bytes in the middle of the later frames
                 final int frameZeroEnd = singleFrame.length - 1;
-                final int keep = frameZeroEnd + (animated.length - frameZeroEnd) / 2;
-                java.nio.file.Files.write(out.toPath(), java.util.Arrays.copyOf(animated, keep));
+                final int corruptAt = frameZeroEnd + (animated.length - frameZeroEnd) / 2;
+                java.util.Arrays.fill(animated, corruptAt, corruptAt + 6, (byte) 0xFF);
+                java.nio.file.Files.write(out.toPath(), animated);
             } catch (Exception e) {
-                throw new IllegalStateException("unable to write truncated animated gif", e);
+                throw new IllegalStateException("unable to write corrupt animated gif", e);
             }
         }
 
@@ -711,8 +716,13 @@ public class VipsParityTest {
         return bytes;
     }
 
+    /**
+     * Given a libvips GIF filter that writes an animated rendition whose later frame is corrupt,
+     * when it runs with the fallback off, then the pre-publish check decodes every frame, fails,
+     * and nothing is cached. With a frame-0-only check the rendition would be published.
+     */
     @Test
-    public void runFilter_truncated_animated_gif_result_is_not_cached() throws Exception {
+    public void runFilter_animated_gif_with_corrupt_later_frame_is_not_cached() throws Exception {
         final File dir = TRUNCATED_ROOT.newFolder();
         final File in = new File(dir, "dotGenerated_animated.gif");
         java.nio.file.Files.write(in.toPath(), readAndDelete(animatedGif(4)));
@@ -720,8 +730,8 @@ public class VipsParityTest {
         final String previous = Config.getStringProperty(FALLBACK_PROPERTY, null);
         Config.setProperty(FALLBACK_PROPERTY, false);
         try {
-            new TruncatedAnimatedGifFilter().runFilter(in, new HashMap<>());
-            org.junit.Assert.fail("a truncated animated gif rendition must not be published");
+            new CorruptAnimatedGifFilter().runFilter(in, new HashMap<>());
+            org.junit.Assert.fail("an animated gif rendition with a corrupt frame must not be published");
         } catch (com.dotmarketing.exception.DotRuntimeException expected) {
             assertTrue("no rendition may be cached: " + renditionsBesides(in), renditionsBesides(in).isEmpty());
         } finally {

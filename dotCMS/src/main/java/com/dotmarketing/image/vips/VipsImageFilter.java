@@ -78,7 +78,12 @@ public abstract class VipsImageFilter extends ImageFilter {
      * any decode error or truncation into a {@link DotRuntimeException}.
      *
      * <p>Multi-page formats (animated GIF/WebP) are loaded with {@code n=-1} so every frame is
-     * decoded: a truncated write loses the last frames first, which a frame-0 check would miss.</p>
+     * decoded: corrupt data inside a later frame fails the check, where a frame-0 load would pass.</p>
+     *
+     * <p>Known limit: a GIF cut off after its first complete frame is not detected. libvips' bundled
+     * libnsgif turns "end of data" into success once one frame is complete ({@code nsgif_data_scan}),
+     * so the image loads with fewer frames and no error at any {@code fail_on} level. A truncated
+     * WebP is rejected by libwebp itself, whichever frames are loaded.</p>
      *
      * @param rendition the written temp file about to be renamed into place
      */
@@ -92,6 +97,8 @@ public abstract class VipsImageFilter extends ImageFilter {
     }
 
     /**
+     * Tells whether a rendition may hold several frames, so its check must decode all of them.
+     *
      * @param rendition a written rendition
      * @return true when its extension names a format whose libvips loader accepts {@code n} (pages)
      */
