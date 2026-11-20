@@ -1610,6 +1610,13 @@
                 return value.replaceAll('\"','&#34;').replaceAll(/\\/g, '&#92;');
             }
 
+            // Tabs and line breaks must be escaped or the hidden input holds invalid JSON
+            function escapeControlChars(value) {
+                return value.replace(/[\u0000-\u001f]/g, function (c) {
+                    return '\\u' + c.charCodeAt(0).toString(16).padStart(4, '0');
+                });
+            }
+
             function formatToJsonData(value) {
                 var removedBrackets = value.trim().substring(1, value.length-1);
                 var preformatted = removedBrackets.replaceAll(/:/g, '":"').replaceAll(/,/g, '","');
@@ -1618,7 +1625,7 @@
 
             // Escape chars and set value to hidden input
             var dotKeyValueHiddenIput = document.getElementById('<%=field.getVelocityVarName()%>');
-            dotKeyValueHiddenIput.value = formatToJsonData(escapeQuoteAndBackSlash("<%=Xss.encodeForJavaScript(keyValueDataRaw.toString())%>"));
+            dotKeyValueHiddenIput.value = formatToJsonData(escapeControlChars(escapeQuoteAndBackSlash("<%=Xss.encodeForJavaScript(keyValueDataRaw.toString())%>")));
 
             var dotKeyValue = document.querySelector('#<%=field.getVelocityVarName()%>KeyValue');
             dotKeyValue.uniqueKeys = "true";

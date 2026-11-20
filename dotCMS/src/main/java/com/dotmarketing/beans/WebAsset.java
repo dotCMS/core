@@ -143,8 +143,16 @@ public abstract class WebAsset extends Inode implements Permissionable, Versiona
 		this.modUser = modUser;
 	}
 
-	public void copy(WebAsset currentWebAsset) {		
+	/**
+	 * Copies the fields shared by every web asset from another asset into this one, including its
+	 * owner: permissions given to the CMS Owner role, which are copied along with the asset, only
+	 * apply to that user. Subclasses copy their own fields and then call this method.
+	 *
+	 * @param currentWebAsset the asset to copy from
+	 */
+	public void copy(final WebAsset currentWebAsset) {
 		this.modUser = currentWebAsset.getModUser();
+		this.owner = currentWebAsset.getOwner();
 		this.friendlyName = currentWebAsset.getFriendlyName();
 		this.showOnMenu = currentWebAsset.isShowOnMenu();
 		this.sortOrder = currentWebAsset.getSortOrder();
