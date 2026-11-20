@@ -6,11 +6,11 @@ import { type Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { DebugElement, Injectable } from '@angular/core';
+import { DebugElement, Injectable, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { ActivatedRoute, Params, Router } from '@angular/router';
+import { ActivatedRoute, Navigation, Params, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
@@ -475,6 +475,33 @@ describe('DotWorkflowTaskComponent', () => {
                 identifier: IDENTIFIER,
                 languageId: 1
             });
+        });
+    });
+
+    /**
+     * The router runs the component's first change detection after the Back has ended, so the
+     * URL is read with no navigation current: the last one tells it was a Back (#38303, review
+     * R4).
+     */
+    describe('a panel the task URL names, read after a Back ended', () => {
+        it('should not open it once the task dialog has shown', () => {
+            TestBed.resetTestingModule();
+            setup(messageServiceMock, () => {
+                vi.spyOn(TestBed.inject(Router), 'lastSuccessfulNavigation', 'get').mockReturnValue(
+                    signal({ trigger: 'popstate' } as Navigation)
+                );
+                queryParams$.next({
+                    editContent: '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57',
+                    editContentLang: '2'
+                });
+            });
+            const openContent = vi
+                .spyOn(dotCustomEventHandlerService, 'openContent')
+                .mockImplementation(() => undefined);
+
+            taskDetail.triggerEventHandler('shown', undefined);
+
+            expect(openContent).not.toHaveBeenCalled();
         });
     });
 });
