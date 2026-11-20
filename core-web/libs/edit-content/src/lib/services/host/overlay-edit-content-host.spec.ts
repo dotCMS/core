@@ -1,13 +1,40 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { Mock, vi } from 'vitest';
 
+import { Injector } from '@angular/core';
+
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotSidePanelRef } from '@dotcms/ui';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
+import { EditContentHost } from './edit-content-host.model';
 import { OverlayEditContentHost } from './overlay-edit-content-host';
 
+import { DotEditContentRequest } from '../../models/dot-edit-content-request.model';
+import { DotOpenContentEvent } from '../../models/dot-open-content-event.model';
+import {
+    DotEditContentOpenerService,
+    DotEditContentOpenOptions
+} from '../../opener/dot-edit-content-opener.service';
 import { DotRelatedContentNavigationStore } from '../../store/dot-related-content-navigation.store';
+
+/**
+ * Asks a host to open content, as a field would (#38303). Fails with a clear message while the
+ * host has no `openContent`.
+ *
+ * @param host The host under test.
+ * @param event What the field hands it.
+ */
+const openContent = (host: EditContentHost, event: DotOpenContentEvent): void => {
+    const withOpenContent = host as EditContentHost & {
+        openContent?: (event: DotOpenContentEvent) => void;
+    };
+
+    expect(typeof withOpenContent.openContent, 'the host can open content').toBe('function');
+    withOpenContent.openContent?.(event);
+};
 
 describe('OverlayEditContentHost', () => {
     let spectator: SpectatorService<OverlayEditContentHost>;
@@ -24,13 +51,18 @@ describe('OverlayEditContentHost', () => {
                 registerTitle: vi.fn()
             }),
             mockProvider(DynamicDialogConfig, { data: undefined }),
-            mockProvider(DynamicDialogRef, { close: vi.fn() })
+            mockProvider(DynamicDialogRef, { close: vi.fn() }),
+            mockProvider(DotEditContentOpenerService, {
+                open: vi.fn(() => new DotSidePanelRef(() => undefined))
+            })
         ]
     });
 
     beforeEach(() => {
         spectator = createHost();
         host = spectator.service;
+        // Shared across tests (providers are evaluated once).
+        (spectator.inject(DotEditContentOpenerService).open as Mock).mockClear();
         relatedNav = spectator.inject(
             DotRelatedContentNavigationStore
         ) as unknown as typeof relatedNav;
@@ -240,6 +272,136 @@ describe('OverlayEditContentHost', () => {
             ]);
         });
     });
+
+    /**
+     * A field asks the panel's host to open other content (#38303, R8). Inside a panel, a related
+     * item the Relationship field names replaces the panel's content in place, with a breadcrumb;
+     * anything else stacks a panel over this one. The discriminator is the event's `source`:
+     * `'relationship' | 'block-editor'`.
+     */
+    describe('openContent', () => {
+        /** The opener's `open`, as the mock records it. */
+        const opened = () => spectator.inject(DotEditContentOpenerService).open as Mock;
+
+        /** The options the host handed the opener on its only `open`. */
+        const openOptions = (): DotEditContentOpenOptions => {
+            expect(opened().mock.calls.length, 'the host stacks a panel through the opener').toBe(
+                1
+            );
+
+            return opened().mock.calls[0][1] as DotEditContentOpenOptions;
+        };
+
+        describe('an existing item a Relationship field names', () => {
+            it('opens it in place, as related content, and stacks no panel', () => {
+                const goToRelatedContent = vi.spyOn(host, 'goToRelatedContent');
+
+                openContent(host, {
+                    request: { mode: 'edit', inode: 'inode-b', title: 'B' },
+                    source: 'relationship',
+                    from: { inode: 'inode-a', title: 'A' },
+                    onSaved: vi.fn()
+                });
+
+                expect(goToRelatedContent).toHaveBeenCalledTimes(1);
+                // The origin is the field's: inside a panel only the field knows what it shows.
+                expect(goToRelatedContent.mock.calls[0][0]).toEqual({
+                    inode: 'inode-a',
+                    title: 'A'
+                });
+                expect(goToRelatedContent.mock.calls[0][1]).toEqual({
+                    inode: 'inode-b',
+                    title: 'B'
+                });
+                expect(opened().mock.calls.length).toBe(0);
+            });
+
+            it('starts a fresh trail in place when the field names no origin', () => {
+                const goToRelatedContent = vi.spyOn(host, 'goToRelatedContent');
+                const goToCrumb = vi.spyOn(host, 'goToCrumb');
+
+                openContent(host, {
+                    request: { mode: 'edit', inode: 'inode-b', title: 'B' },
+                    source: 'relationship',
+                    onSaved: vi.fn()
+                });
+
+                expect(goToCrumb).toHaveBeenCalledWith('inode-b', ['inode-b']);
+                expect(goToRelatedContent).not.toHaveBeenCalled();
+                expect(opened().mock.calls.length).toBe(0);
+            });
+        });
+
+        describe('content a Relationship field asks to create', () => {
+            const REQUEST: DotEditContentRequest = {
+                mode: 'new',
+                contentType: 'Blog',
+                title: 'New Blog',
+                relationship: {
+                    parentContentletId: 'parent-inode',
+                    relationshipName: 'blogs',
+                    isParent: true
+                }
+            };
+
+            it('stacks a panel through the opener with the host injector', () => {
+                openContent(host, { request: REQUEST, source: 'relationship', onSaved: vi.fn() });
+
+                expect(opened().mock.calls[0][0]).toEqual(REQUEST);
+                // Compared by identity: printing an injector runs the worker out of memory.
+                expect(openOptions().injector === spectator.inject(Injector)).toBe(true);
+            });
+
+            it('hands every save of the stacked panel to the field', () => {
+                const onSaved = vi.fn();
+                const contentlet = createFakeContentlet({ identifier: 'created-id' });
+                openContent(host, { request: REQUEST, source: 'relationship', onSaved });
+
+                openOptions().saved?.(contentlet);
+
+                expect(onSaved).toHaveBeenCalledWith(contentlet);
+            });
+
+            it('never replaces the panel content in place', () => {
+                const goToRelatedContent = vi.spyOn(host, 'goToRelatedContent');
+
+                openContent(host, { request: REQUEST, source: 'relationship', onSaved: vi.fn() });
+
+                expect(goToRelatedContent).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('content a block editor names', () => {
+            it('stacks a panel through the opener and never replaces the panel content', () => {
+                const goToRelatedContent = vi.spyOn(host, 'goToRelatedContent');
+                const request: DotEditContentRequest = {
+                    mode: 'edit',
+                    inode: 'inode-c',
+                    contentType: 'Blog'
+                };
+
+                openContent(host, { request, source: 'block-editor' });
+
+                expect(opened().mock.calls[0][0]).toEqual(request);
+                expect(openOptions().injector === spectator.inject(Injector)).toBe(true);
+                expect(goToRelatedContent).not.toHaveBeenCalled();
+            });
+        });
+
+        // Only an explicit Relationship edit replaces in place; anything unnamed stacks, which
+        // never discards the panel's own content.
+        describe('an edit that names no source', () => {
+            it('stacks a panel through the opener', () => {
+                const goToRelatedContent = vi.spyOn(host, 'goToRelatedContent');
+                const request: DotEditContentRequest = { mode: 'edit', inode: 'inode-d' };
+
+                openContent(host, { request });
+
+                expect(opened().mock.calls[0][0]).toEqual(request);
+                expect(goToRelatedContent).not.toHaveBeenCalled();
+            });
+        });
+    });
 });
 
 describe('OverlayEditContentHost without a dialog ref (side panel injector)', () => {
@@ -251,7 +413,8 @@ describe('OverlayEditContentHost without a dialog ref (side panel injector)', ()
                 titleCache: vi.fn().mockReturnValue({}),
                 registerTitle: vi.fn()
             }),
-            mockProvider(DynamicDialogConfig, { data: undefined })
+            mockProvider(DynamicDialogConfig, { data: undefined }),
+            mockProvider(DotEditContentOpenerService)
         ]
     });
 

@@ -291,7 +291,8 @@ export class DotEditContentLayoutComponent {
     }
 
     /**
-     * Sets up two intercepts for dirty-content confirmation when rendered inside a dialog:
+     * Sets up two intercepts for dirty-content confirmation, for a host that renders the editor
+     * inside a `DialogService` dialog (it runs only when a `DynamicDialogRef` is injected):
      *
      * 1. pDialog.close override — catches all UI-triggered closes (X button, ESC
      *    key, mask click). p-dialog.close() sets _visible = false synchronously
@@ -299,7 +300,11 @@ export class DotEditContentLayoutComponent {
      *    internal state changes — to prevent the hide animation from starting.
      *
      * 2. dialogRef.close override — catches programmatic closes (dialogRef.close()
-     *    called directly from code, e.g. DotEditContentDialogComponent.closeDialog()).
+     *    called directly from code by whoever opened the dialog).
+     *
+     * No Edit Content surface mounts the editor in such a dialog any more: the opener and the side
+     * panel replaced the centered dialog (#38303), and the side panel's own close guard is
+     * `requestClose()`. This stays for a dialog host until the layout's dialog support is removed.
      */
     #interceptDirtyClose(): void {
         const dialogRef = this.#dialogRef!;

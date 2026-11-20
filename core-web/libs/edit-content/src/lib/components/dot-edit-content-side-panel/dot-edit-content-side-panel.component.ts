@@ -19,7 +19,7 @@ import { DialogService, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { take } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { popFormBridge, pushFormBridge } from '@dotcms/edit-content-bridge';
+import { type FormBridgeFrame, popFormBridge, pushFormBridge } from '@dotcms/edit-content-bridge';
 import {
     ASSET_PICKER_LAUNCHER,
     AngularAssetPickerLauncher,
@@ -40,9 +40,10 @@ import { OverlayEditContentHost } from '../../services/host/overlay-edit-content
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
 
 /**
- * The new Edit Content editor as a side panel's content, as an alternative to the full-screen route
- * or the centered dialog. Openers open it through `DotSidePanelService` (or `injectSidePanel`), with
- * the content's title as the heading; it closes the panel through its `DotSidePanelRef`.
+ * The new Edit Content editor as a side panel's content, as an alternative to the full-screen route.
+ * Surfaces open it through `DotEditContentOpenerService` (or, while they still pass `data`,
+ * `DotSidePanelService`), with the content's title as the heading; it closes the panel through its
+ * `DotSidePanelRef`.
  *
  * It reuses the overlay editor plumbing: it provides {@link OverlayEditContentHost} (identity from
  * the dialog config, in-place navigation, chrome no-ops) and, since it is not opened through
@@ -160,9 +161,15 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
         return data ? [data] : [];
     });
 
+    /**
+     * This panel's place on the form bridge's stack. Popped by handle, so closing a panel while
+     * another is still stacked over it removes this panel's frame, not the stacked one's (#38303).
+     */
+    readonly #formBridgeFrame: FormBridgeFrame;
+
     constructor() {
         // Give the editor a clean form-bridge slot; restore the previous one on close.
-        pushFormBridge();
+        this.#formBridgeFrame = pushFormBridge();
 
         this.#panel.closed.pipe(take(1), takeUntilDestroyed()).subscribe(() => this.closed.emit());
 
@@ -214,7 +221,11 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
         }
     }
 
-    /** Fires the `data` lifecycle callbacks on close, matching {@link DotEditContentDialogComponent}. */
+    /**
+     * Fires the `data` lifecycle callbacks on close: the last save, then `onCancel`, the order the
+     * centered dialog this panel replaced used. Openers using the {@link request} input hear back
+     * through the outputs instead.
+     */
     #fireCloseCallbacks(): void {
         const data = this.data();
 
@@ -225,9 +236,9 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
         data?.onCancel?.();
     }
 
+    /** Gives back this panel's form-bridge frame; the drawer releases its own registrations. */
     ngOnDestroy(): void {
-        // The drawer releases its own registrations; only the form bridge is this content's.
-        popFormBridge();
+        popFormBridge(this.#formBridgeFrame);
     }
 }
 

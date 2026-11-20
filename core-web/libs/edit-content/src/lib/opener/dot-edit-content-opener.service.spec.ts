@@ -329,6 +329,38 @@ describe('DotEditContentOpenerService', () => {
     });
 
     /**
+     * The caller learns which editor shows, once it is known, so it can treat the two apart: the
+     * UVE reloads on close only for the legacy editor, whose workflow actions report nothing.
+     */
+    describe('editorResolved', () => {
+        it.each([
+            ['the new editor for a type that uses it', 'Blog', undefined, 'new'],
+            ['the legacy editor for a type that does not', 'Banner', undefined, 'legacy'],
+            ['the legacy editor when the caller forced it', 'Blog', 'legacy', 'legacy']
+        ] as const)('reports %s', async (_label, contentType, editor, expected) => {
+            const editorResolved = vi.fn();
+
+            spectator.service.open(
+                { ...EDIT_REQUEST, contentType },
+                { injector, editor, editorResolved }
+            );
+            await lastOpen();
+
+            expect(editorResolved).toHaveBeenCalledTimes(1);
+            expect(editorResolved).toHaveBeenCalledWith(expected);
+        });
+
+        it('reports nothing when the server refuses the request', async () => {
+            getContentletByInode.mockReturnValue(throwError(() => new Error('404')));
+            const editorResolved = vi.fn();
+
+            spectator.service.open({ mode: 'edit', inode: 'abc' }, { injector, editorResolved });
+
+            expect(editorResolved).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
      * "Switch to the old editor" reopens content whose type was just set back to the legacy
      * editor while its old choice is still remembered, so it forces the legacy editor (#38303).
      */
@@ -464,6 +496,42 @@ describe('DotEditContentOpenerService', () => {
             // Compared through a token: a failing `toBe` on two injectors prints both graphs.
             expect(second.injector.get(ASKING_PANEL, null)).toBe('the asking panel');
             expect(input<DotEditContentRequest>(second, 'request')).toEqual(event.request);
+        });
+
+        /**
+         * #38303 (US6) — stacking appends: the outlet keeps the panel underneath as it was, and
+         * closing the one on top leaves it open. The fake outlet records the panels on screen.
+         */
+        it('appends the stacked panel, and closing it leaves the first open and unchanged', async () => {
+            const onScreen: DotSidePanelRef[] = [];
+            open.mockImplementation(() => {
+                const ref: DotSidePanelRef = new DotSidePanelRef(() =>
+                    onScreen.splice(onScreen.indexOf(ref), 1)
+                );
+                onScreen.push(ref);
+
+                return ref;
+            });
+
+            const first = spectator.service.open(EDIT_REQUEST, { injector });
+            const { config: firstConfig } = await lastOpen();
+            // With a title, so nothing is fetched: an edit without one is fetched for its heading.
+            firstConfig.outputs?.['openContent']({
+                request: { mode: 'edit', inode: 'rel-1', contentType: 'Banner', title: 'Related' }
+            } as never);
+            await lastOpen();
+
+            expect(onScreen.length, 'two panels on screen').toBe(2);
+            const second = onScreen[1];
+            expect(second === first).toBe(false);
+
+            second.close();
+
+            expect(onScreen.length).toBe(1);
+            expect(onScreen[0] === first).toBe(true);
+            expect(first.isClosed).toBe(false);
+            expect(heading(firstConfig)).toBe('My post');
+            expect(input<DotEditContentRequest>(firstConfig, 'request')).toEqual(EDIT_REQUEST);
         });
 
         it("routes the stacked panel's saves to the event's reply", async () => {
