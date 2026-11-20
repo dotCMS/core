@@ -1275,7 +1275,7 @@ public class ContentTypeResource implements Serializable {
 									}
 							)
 					),
-					@ApiResponse(responseCode = "401", description = "Unauthorized: no logged-in back-end user"),
+					@ApiResponse(responseCode = "401", description = "Unauthorized"),
 					@ApiResponse(responseCode = "403", description = "Forbidden"),
 					@ApiResponse(responseCode = "404", description = "Not Found"),
 					@ApiResponse(responseCode = "500", description = "Internal Server Error")

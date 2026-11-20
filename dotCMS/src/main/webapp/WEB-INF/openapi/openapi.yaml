@@ -9275,7 +9275,7 @@ paths:
                 permissions: []
           description: Content type retrieved successfully
         "401":
-          description: "Unauthorized: no logged-in back-end user"
+          description: Unauthorized
         "403":
           description: Forbidden
         "404":
