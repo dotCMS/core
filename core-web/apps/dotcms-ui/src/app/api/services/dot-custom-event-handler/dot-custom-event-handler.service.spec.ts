@@ -634,6 +634,28 @@ describe('DotCustomEventHandlerService', () => {
                 expect(openOptions().injector === sidePanelHostInjector).toBe(true);
             });
 
+            /**
+             * A create in a folder names the folder in the portlet's URL beside `createContent`
+             * (`?folder=`, the deep link's and the Site Browser's), and the URL tracker owns it:
+             * written with the panel, gone when the panel closes, so a later create is not read
+             * back in a stale folder (#38303, review R3).
+             */
+            it('should hand the URL tracker the folder of a create in a folder', async () => {
+                await openContent({
+                    mode: 'new',
+                    contentType: 'Blog',
+                    folderInode: 'folder-inode'
+                });
+
+                expect(openOptions().url).toEqual({ extraParams: { folder: 'folder-inode' } });
+            });
+
+            it('should hand the URL tracker no folder for a create in none', async () => {
+                await openContent({ mode: 'new', contentType: 'Blog' });
+
+                expect(openOptions().url).toEqual({});
+            });
+
             // A save reloads the portlet through the content change notification (T174), and a
             // close reloads it whichever editor the panel showed.
             it('should reload the portlet when the panel closes, and leave a save to the notification', async () => {
